@@ -20,10 +20,12 @@ import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
-import { startAt, basketAdd, toSheet, sizeRow, emptyBasket } from "./counter-b-kit.mjs";   /* plan version 8: how an order starts */
+import { startAt, basketAdd, toSheet, sizeRow, emptyBasket, SLIP_PUB } from "./counter-b-kit.mjs";   /* plan version 8: how an order starts */
 /* a delivery's Where to is a saved spot (Counter Batch C, his answer 4 of 20 Oct 2026): Add a spot, a preset name, the area, Use this spot */
-const spotAddTo = (d, w, place) => { d.getElementById("spAdd").click(); d.querySelector('#osheet [data-k="spn:0"]').click();
-  const x = d.getElementById("oWhere"); x.value = place; x.dispatchEvent(new w.Event("input", { bubbles: true })); d.getElementById("spUse").click(); };
+/* 11 Nov 2026: a spot is a name and an address; the name is the order's place, so it carries the place an older check names */
+const spotAddTo = (d, w, place) => { d.getElementById("spAdd").click();
+  const type = (id, v) => { const x = d.getElementById(id); x.value = v; x.dispatchEvent(new w.Event("input", { bubbles: true })); };
+  type("spName", String(place).slice(0, 24)); type("spAddr", "12 Jalan " + place); d.getElementById("spUse").click(); };
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -3694,7 +3696,7 @@ await (async () => {
   /* a drawing is reported once. Two rows shipped for four versions and neither was wrong on its face. */
   for (const pr of read("PROD_IDS")) {
     w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
-    ok(count(html("ifrsPanel()"), "Owner&rsquo;s use") <= 1, `${pr}: the statement reports the owner's drawing once`);
+    ok(count(html("tabFinancials()"), "Owner&rsquo;s use") <= 1, `${pr}: the statement reports the owner's drawing once`);   /* 12 Nov 2026: one P&L, the IFRS fold gone */
   }
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
 
@@ -3835,9 +3837,10 @@ await (async () => {
     const monthly = +((fy.rev || 0) - (fy.cogs || 0)).toFixed(2);
     ok(+(monthly - F.gross).toFixed(2) === F.freightCos,
       `${pr}: the monthly gross margin and the statement's gross profit part by the freight in (${F.freightCos})`);
-    const panel = html("ifrsPanel()");
+    /* 12 Nov 2026: the one P&L states the bridge as its own row, Freight in, under the gross margin */
+    const panel = html("tabFinancials()");
     if (F.freightCos > 0.009)
-      ok(panel.includes(`under the gross margin above`), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
+      ok(/<td class="l salt-table__label">Freight in(<div|<\/td>)/.test(panel), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
 
     /* TWO FIGURES, TWO STATED BASES, EACH PROVED FROM THE BOOK (09 Sep 2026). This used to demand
        the statement's freight per unit equal the pricing engine's, "both the rate over the mean lot",
@@ -5255,7 +5258,8 @@ await (async () => {
   ok(/CY 2027, nothing yet/.test(jan), "on 1 January the CY column names its year and says it is empty");
   ok(/Dec 26/.test(jan) && !/Dec 26[^ ]/.test(jan), "the month column outside the CY year carries that year, so it cannot be read as part of it");
   ok(/Every figure is in ringgit/.test(jan) && /calendar year to date/.test(jan), "the period line reaches the screen and survives stripMethod");
-  ok(/whole book since it opened/.test(jan), "the IFRS statement names its own period, which is not the P&L's");
+  /* 12 Nov 2026: one P&L, the IFRS statement gone; the line whose period is not a month's, non-revenue, says how it is dated */
+  ok(/Non-revenue \w+ (at RM [\d.,]+\/unit, in the month of the count that found it|no count states a figure)/.test(jan), "non-revenue names how it is dated, which is not a sale's month");
   ok(/on the revenue in this column/.test(jan), "Still uncollected names the revenue it is measured on");
   ok(/as at today, not a movement in the period/.test(jan), "Closing stock says it is a point in time, not a flow");
   /* v428: THIS ASSERTION DEFENDED THE WRONG WORD FOR EIGHTEEN VERSIONS OF ITS OWN LIFETIME. v410
@@ -15605,12 +15609,14 @@ await (async () => {
       "the sizes stand on Order, each row carrying its own price, units above one and unit at one: " + JSON.stringify(rowsO));
     const lines = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => r.textContent.replace(/\s+/g, " ").trim());
     ok(!d.querySelector('#osheet input[name^="osize"]') && !d.querySelector("#osheet .oany") && lines.length === 1 && /2\.5 units/.test(lines[0]) && /RM 250\.00/.test(lines[0])
-      && /Change the units on Order[.]/.test(d.getElementById("osheet").textContent),
+      && /Change the units on Shop[.]/.test(d.getElementById("osheet").textContent),
       "the sheet chooses no size: it lists the line the tap made, with its figure, and says the units change on Order: " + JSON.stringify(lines));
     const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
+    /* 11 Nov 2026 (his answer "Always ask"): the way is never the last order's; the kit answered collect, so Deliver is chosen here */
+    [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === "Deliver to me").click();
     const where = d.getElementById("oWhere");
     ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && !where && !!d.getElementById("spAdd") && !/Same as last time/.test(d.getElementById("osheet").textContent),
-      "the way is the last order's; the place is no longer the last one given, no spot is picked and no Same as last time hint is drawn (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify({ where: where && where.value }));
+      "Deliver chosen, the place is not the last one given, no spot is picked and no Same as last time hint is drawn (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify({ where: where && where.value }));
     const foot = d.querySelector("#osheet .salt-sheet__foot");
     ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && (d.getElementById("oGo").getAttribute("aria-disabled") === "true") && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
       "the total and Review, the one filled control, sit in the sheet's foot, Review waiting for a spot and saying so (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(foot && foot.textContent));
@@ -16681,8 +16687,8 @@ await (async () => {
     ok(as.h1 === "Associates" && co.h1 === "Coverage" && co.hash === "#map",
       "Associates keeps its name, and the map is headed Coverage at its old address: " + JSON.stringify({ as, co }));
     const card = String(w77.eval("pbCard()")), empty = String(w77.eval("(function(){var m={textContent:''};pbEmpty({rows:[],soon:true,code:'CX0-AA',product:'salt'},m);return m.textContent;})()"));
-    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /nothing to print\./.test(empty) && !/tier/.test(empty),
-      "the board card sends him to Clients for their %, and says plainly when a book has no price to print: " + JSON.stringify(empty));
+    ok(/set on Salt Admin/.test(card) && !/Customers/.test(card) && /nothing to print\./.test(empty) && !/tier/.test(empty),
+      "the board card sends him to Salt Admin for their % (11 Nov 2026: the card left Clients), and says plainly when a book has no price to print: " + JSON.stringify(empty));
   } finally { try { w77.close(); } catch (e) { /* best effort */ } }
 })();
 section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point in it is named by them first");
@@ -40152,7 +40158,7 @@ await (async () => {
   } finally { a.W.close(); }
   const b = await open({ hash: "#prices" });
   try {
-    ok(shown(b.D) === "pPrices" && b.D.getElementById("placeT").textContent === "Order",
+    ok(shown(b.D) === "pPrices" && b.D.getElementById("placeT").textContent === "Shop",
       "an address naming a place opens that place at sign-in: " + JSON.stringify(shown(b.D)));
   } finally { b.W.close(); }
   const c = await open({ fresh: true });
@@ -40305,7 +40311,7 @@ await (async () => {
       win.scrollTo = () => {};
       win.fetch = async (path, init) => { const p = String(path), m = (init && init.method) || "GET";
         if (p === "/orders" && m === "POST") { posts.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "o9" } }) }; }
-        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: opt.fresh ? [] : past } : { ok: true };
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: opt.fresh ? [] : past } : p === "/slip/key" ? { ok: true, key: SLIP_PUB } : { ok: true };   /* 11 Nov 2026: a delivery seals its address */
         return { ok: true, status: 200, json: async () => j }; };
     } });
     const W = dom.window, D = W.document;
@@ -41446,6 +41452,7 @@ await (async () => {
     ...await sealCurrentLive(CN, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }),
     prices: await CN.encryptWith(ck, JSON.stringify(prices)) };
   const posted = [];
+  const slipPub20 = await (async () => { const k = await wcN.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]); const x = await wcN.subtle.exportKey("jwk", k.publicKey); return { kty: x.kty, crv: x.crv, x: x.x, y: x.y }; })();
   const dom = new JDN(lpN(u, "nm20", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcN, configurable: true }); } catch (e) { win.crypto = wcN; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -41454,7 +41461,8 @@ await (async () => {
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       if (p === "/orders" && m === "POST") posted.push(JSON.parse(init.body));
-      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : null;
+      /* 11 Nov 2026: a delivery seals its address, so this Counter files a slip key */
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/slip/key" ? { ok: true, key: slipPub20 } : null;
       return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
     };
   } });
@@ -41486,6 +41494,7 @@ await (async () => {
     for (let i = 0; i < 100 && d.getElementById("oPlace"); i++) await new Promise((r) => setTimeout(r, 50));
     d.querySelector('#osheet [data-k="close"]').click();   /* plan version 9: a new sheet is built from Order, so the sent one is closed first */
     await startAt(d);
+    button("Deliver to me").click();   /* 11 Nov 2026: Sent forgets the way, so the next sheet is told it again */
     spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
     button("Change").click();
@@ -42696,7 +42705,10 @@ await (async () => {
        The sheet is the basket's two lines, a size of each product, and Continue goes straight to the check. */
     await basketAdd(d, "salt", 2); await basketAdd(d, "oil", 10); await toSheet(d);
     const total = () => t(d.querySelector("#osheet .ototal .salt-kpi__value"));
-    d.getElementById("oBack").click();
+    /* a sheet that has not yet been told the way asks it (11 Nov 2026): choose Collect, then Review */
+    const way = async () => { const m = d.querySelector('#osheet [data-k="mode:0"]:not([aria-pressed="true"])'); if (m) { m.click(); await new Promise((r) => setTimeout(r, 30)); } const g = d.getElementById("oGo"); if (g && g.getAttribute("aria-disabled") !== "true" && !d.getElementById("oPlace")) g.click(); };
+    /* 11 Nov 2026 (his answer "Always ask"): Continue opens the form asking the way; Collect is chosen and the form stands */
+    d.querySelector('#osheet [data-k="mode:0"]').click(); await until(() => d.querySelector('#osheet [data-k="mode:0"][aria-pressed="true"]'));
     const fields = d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row").length;
     ok(fields === 2 && total() === "RM 285.00" && !d.querySelector("#osheet input.salt-option__input"),
       "the sheet lists a line each for the sizes of two products from the basket, one total: " + JSON.stringify([fields, total()]));
@@ -42731,7 +42743,7 @@ await (async () => {
     await startAt(d);
     const carried = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")];
     d.querySelector('#osheet [data-k="close"]').click();
-    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 5); await toSheet(d);
+    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 5); await toSheet(d); await way();
     d.getElementById("oPlace").click();
     await until(() => posted.length === 6 && !!d.querySelector("#osheet .osent"));
     ok(carried.length === 1 && posted.length === 6 && posted[4].rid !== posted[5].rid && posted[4].sheet === posted[5].sheet && posted[4].sheet !== posted[0].sheet
@@ -42739,7 +42751,7 @@ await (async () => {
       "the next sheet carries none of the sizes just placed, and a sheet of two chosen afresh goes under a sheet id of its own, each line its own request id: " + JSON.stringify([carried.length, posted.slice(4).map((x) => [x.product, x.sheet, x.rid])]));
     /* Change after one line placed: the placed product is off the form, and the rest go on under the same sheet (two chosen afresh, Batch B) */
     d.querySelector('#osheet [data-k="close"]').click();
-    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 10); await toSheet(d);
+    await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 10); await toSheet(d); await way();
     d.getElementById("oPlace").click();
     await until(() => posted.length === 8 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.getElementById("oBack").click();
@@ -42752,7 +42764,7 @@ await (async () => {
       "Change after a line is placed takes that product off the form, and the rest are placed under the same sheet: " + JSON.stringify([onForm, posted.slice(6).map((x) => [x.product, x.sheet])]));
     /* closed after one line placed: reopened, the placed product is not offered again */
     d.querySelector('#osheet [data-k="close"]').click();
-    await basketAdd(d, "salt", 2); await basketAdd(d, "oil", 10); await toSheet(d);
+    await basketAdd(d, "salt", 2); await basketAdd(d, "oil", 10); await toSheet(d); await way();
     d.getElementById("oPlace").click();
     await until(() => posted.length === 11 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.querySelector('#osheet [data-k="close"]').click();
@@ -44907,7 +44919,8 @@ await (async () => {
     const t = v.per.today, c = v.per.concentration;
     ok(t.quotes >= 20 && t.tierAt > 0 && t.tierAt < t.quotes / 2,
       "one Today render builds the row at the size for fewer than half its card quotes, once a size: " + JSON.stringify(t));
-    ok(c.quotes >= 60 && c.tierAt > 0 && c.tierAt < c.quotes / 2,
+    /* 11 Nov 2026: the Their % card (a quote a customer a size a book) left Clients, so a render quotes about 38 times, not 60 */
+    ok(c.quotes >= 30 && c.tierAt > 0 && c.tierAt < c.quotes / 2,
       "one Who buys render builds the row once a size, not once a quote: " + JSON.stringify(c));
     ok(v.parts === 13 && v.size > 1000 && v.unstable.length === 0 && v.diff.length === 0,
       "every part of every view draws the same with the row kept for the render as built fresh: " + JSON.stringify({ diff: v.diff, unstable: v.unstable }));
@@ -48550,9 +48563,19 @@ await (async () => {
   await (await import("./counter-c-confirm-line.mjs")).run({ ok, pageWork });
 })();
 
-section("Counter Batch C: saved spots on the phone, up to three an account, none picked on opening, Remove with no confirm, kept through Log out (P5)");
+section("Counter Batch C: spots on the phone, a name and an address or a point (11 Nov 2026), up to three an account, none picked on opening, Remove with no confirm, kept through Log out (P5)");
 await (async () => {
   await (await import("./counter-c-spots.mjs")).run({ ok, pageWork });
+})();
+
+section("11 Nov 2026: Shop and Orders, and every new order asks collect or deliver");
+await (async () => {
+  await (await import("./order-way-ask.mjs")).run({ ok, pageWork });
+})();
+
+section("11 Nov 2026: the page as wrangler bundles it, every delivery reaching its windows and Review");
+await (async () => {
+  await (await import("./bundled-page.mjs")).run({ ok, pageWork });
 })();
 
 section("v1377 Order as them: his Place on their page takes what theirs takes, refuses a note, an ask and a group order, seals the spot, reads the public slip key (1a)");
@@ -48881,6 +48904,11 @@ await (async () => {
 section("Counter blank-locality Add ID: owner device pair and real bridge");
 await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
+})();
+
+section("12 Nov 2026: a locality already filed in PLACED is public, so Place on the map files it again");
+await (async () => {
+  await (await import("./vault-filed-locality.mjs")).run({ ok });
 })();
 
 section("S1: the fold replays 20 staged batches, fixed at the one of 24 Oct 2026, byte-equal to the fold before the booking law moved");
@@ -50831,6 +50859,11 @@ await (async () => {
 section("Salt Admin: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-approve-card.mjs")).run({ ok, pageWork });
+})();
+
+section("12 Nov 2026: Salt Admin's Approve, leaner: a card says what it sets, approvals go on Confirm, one count");
+await (async () => {
+  await (await import("./admin-approve-lean.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");

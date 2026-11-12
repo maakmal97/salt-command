@@ -7,6 +7,7 @@
  *   4  the lock takes the opened spot off the page and seals the card again; a tap that closes a claim's slip leaves it, and a redraw of the
  *      card neither fetches it nor opens it again (Fable's review)
  *   5  a unit sealed alone draws no Maps; a practice order's spot, never filed, offers no Unlock
+ *   8  (11 Nov 2026) an address they typed is drawn as its Name and Address, with Maps searching those words
  * The real ECDH, HKDF and AES-GCM run in the page (the harness's webcrypto). Drawn by the maker harness (test/maker-act.mjs). */
 import { webcrypto } from "node:crypto";
 import { richOwnerPage, byAct, slipFixture } from "./maker-act.mjs";
@@ -15,7 +16,7 @@ import { readPin } from "../stmt/pin.js";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const b64 = (v) => Buffer.from(v).toString("base64");
-const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32), IDM = "e".repeat(32);
+const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32), IDM = "e".repeat(32), IDA = "f".repeat(32);
 /* a spot sealed as their phone seals it (stmt/page.js pinSeal): an ephemeral pair, ECDH with his public half, HKDF under 'salt-pin v1', AES-GCM */
 async function pinSeal(pubJwk, value) {
   const S = webcrypto.subtle, E = { name: "ECDH", namedCurve: "P-256" };
@@ -41,10 +42,11 @@ export async function run({ ok, pageWork }) {
   const sealed = { [IDP]: await pinSeal(fix.pub, { lat: 3.15, lng: 101.71, label: "Back door", unit: "Unit 12, floor 3" }),
     [IDU]: await pinSeal(fix.pub, { unit: "Unit 7", src: "unit" }),
     [IDL]: await pinSeal(fix.pub, { link: "https://maps.app.goo.gl/AbCdEf123", src: "link", label: "Gate" }),
-    [IDM]: await pinSeal(fix.pub, { link: "https://maps.apple/p/ZzYy99", src: "link" }) };
+    [IDM]: await pinSeal(fix.pub, { link: "https://maps.apple/p/ZzYy99", src: "link" }),
+    [IDA]: await pinSeal(fix.pub, { addr: "12 Jalan Lirau, Block B", src: "addr", label: "Home" }) };
   const base = { u: U, product: "salt", delivery: 10, msgs: [], history: [], payments: [], paid: 0, mode: "deliver", place: "Lirau", qty: 1, total: 50, status: "acknowledged", at: "2026-10-10T02:00:00.000Z" };
   const orders = [{ ...base, id: "ord-sp", pin: IDP }, { ...base, id: "ord-su", pin: IDU }, { ...base, id: "ord-sx", pin: IDX, test: true }, { ...base, id: "ord-sl", pin: IDL },
-    { ...base, id: "ord-sm", pin: IDM }];
+    { ...base, id: "ord-sm", pin: IDM }, { ...base, id: "ord-sa", pin: IDA }];
   let geoFail = false;
   const p = await richOwnerPage({ pageWork, slip: true, review: (j) => ({ ...j, orders: (j.orders || []).concat(orders) }),
     extra: (route) => { if (route === "/all/maker/geo/open") return geoFail ? { ok: false, error: "The link did not lead to a point." } : { ok: true, location: "https://www.google.com/maps/place/Gate/@3.0738,101.7255,17z" };
@@ -65,7 +67,7 @@ export async function run({ ok, pageWork }) {
     await unlock(gate);
     gate = gateOf("ord-sp");
     const opened = gate && gate.querySelector("[data-maker-pin]"), maps = opened && opened.querySelector("a[data-spot-maps]");
-    ok(!!opened && /Address\s*Back door/.test(t(opened)) && /Floor or unit\s*Unit 12, floor 3/.test(t(opened)) && !!maps && /3\.15,101\.71/.test(maps.getAttribute("href")) && pinReads() === 1,
+    ok(!!opened && /Name\s*Back door/.test(t(opened)) && /Floor or unit\s*Unit 12, floor 3/.test(t(opened)) && !!maps && /3\.15,101\.71/.test(maps.getAttribute("href")) && pinReads() === 1,
       "unlocked, the card opens their spot: its name, its floor or unit and Maps at the point: " + t(opened) + " " + (maps && maps.getAttribute("href")));
     /* 4 */
     await click(byAct(d, "nav.orders"));
@@ -99,5 +101,11 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "order.open", "ord-sm")); await click(byAct(d, "order.open", "ord-sm"));
     ok(!!SM && /could not be opened to a point just now/.test(t(SM)) && !SM.querySelector("a[data-spot-maps]") && firstGeo === 2 && geoN() === 2,
       "7 a link that will not open says so with no Maps, and a redraw does not open it again: " + t(SM) + " geo " + firstGeo + "/" + geoN());
+    /* 8 (11 Nov 2026, his word: a name and an address or a point) */
+    C = await open("ord-sa");
+    const SA = C && C.querySelector("[data-pin-gate] [data-maker-pin]"), saMaps = SA && SA.querySelector("a[data-spot-maps]");
+    ok(!!SA && /Name\s*Home/.test(t(SA)) && /Address\s*12 Jalan Lirau, Block B/.test(t(SA)) && !!saMaps
+      && saMaps.getAttribute("href") === "https://www.google.com/maps/search/?api=1&query=12%20Jalan%20Lirau%2C%20Block%20B" && !/could not be opened/.test(t(SA)),
+      "8 an address they typed is drawn as its Name and Address, with Maps searching it: " + t(SA) + " " + (saMaps && saMaps.getAttribute("href")));
   } finally { p.w.close(); }
 }

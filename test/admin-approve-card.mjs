@@ -178,9 +178,8 @@ export async function run({ ok, pageWork }) {
       "four of the five cards can be chosen (the claim's cannot), and the head counts the four it can decide: " + d.querySelector("#makerDrafts > .aphead").textContent);
     await p.pick("2026-10-15T12:52:26.992Z", "draft.approve");
     await p.confirm();
-    ok(p.sheet() && p.sheet().querySelector(".salt-sheet__title").textContent === "Decide 1 card?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2
-      && p.approves().length === 0 && sentMany().length === 0, "Confirm asks once for the merged card, listing both moves, and sends nothing as it opens");
-    await p.go();
+    /* 12 Nov 2026 (his Approve review): approvals alone go on Confirm, with no Sheet; the Sheet asks only when a Reject is among them */
+    ok(!p.sheet() && sentMany().length === 1, "Confirm sends the merged card at once, with no Sheet, an approval alone being chosen");
     ok(sentMany().length === 1 && J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && J(sentMany()[0].body.reject) === "[]" && !p.posts.some((x) => /\/drafts\/(?!decide-many)/.test(x.route)),
       "his yes sends ONE request carrying each draft of the card, in the order entered: " + J(p.approves()));
     ok(/^1 decided/.test(done(p)) && /1 approved\./.test(done(p)) && !p.card("2026-10-15T12:52:26.992Z"), "and says it was decided: " + done(p));
@@ -192,7 +191,7 @@ export async function run({ ok, pageWork }) {
     try {
       holder.refuse[id] = "Take the payment first";
       await p.tap("nav.orders"); await p.tap("part.orders.approve");
-      await p.pick("2026-10-15T12:52:26.992Z", "draft.approve"); await p.confirm(); await p.go();
+      await p.pick("2026-10-15T12:52:26.992Z", "draft.approve"); await p.confirm();
       const stays = p.card("2026-10-15T12:52:26.992Z") || p.card("2026-10-15T12:52:27.992Z"), why = stays && stays.querySelector(".aprefused");
       ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && /^1 decided, 1 refused|^0 decided, 1 refused/.test(done(p)) && !!why && /Refused/.test(why.textContent) && /Why: /.test(why.textContent) && /To fix: Take the payment first/.test(why.textContent),
         "a refusal of " + which + " leaves its card standing with Refused, why and how to fix it: " + done(p) + " / " + (why && why.textContent));

@@ -43,7 +43,9 @@ export async function run({ ok, pageWork }) {
       "the bar takes the credit off the goods, what they pay never under RM 0: " + J([note(A), note(B)]));
     /* 4 */
     A.d.getElementById("bkGo").click(); await A.settle();
-    const rows = [...A.d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => txt(r));
+    /* 11 Nov 2026 (his answer "Always ask"): the sheet waits for its way, so I will collect is answered, then Review */
+    const way0 = A.d.querySelector('#osheet [data-k="mode:0"]'); if (way0) { way0.click(); await A.settle(); A.d.getElementById("oGo").click(); await A.settle(); }
+    const rows =[...A.d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => txt(r));
     ok(rows.some((r) => /^Your credit\s*- RM 25\.00/.test(r)) && rows.some((r) => /^You pay\s*RM 75\.00/.test(r)), "the check reads Your credit, then You pay: " + J(rows));
     /* 5 */
     const acked = ord("20261027000000-cr1", "acknowledged", ago(2), { credit: 25, rowOn: kl(0) });

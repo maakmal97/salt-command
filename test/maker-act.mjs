@@ -213,7 +213,7 @@ const links = () => [
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null, before = null }) {
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null, before = null, landing = landingPage }) {
   const sockets = [], posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -265,7 +265,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     return { ok: true, accounts: [], refs: [], tiers: [], claims: [], threads: [], pools: [], lines: [] };
   };
   let failCash = false, lapsed = false;
-  const html = landingPage("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) });
+  /* landing: the landingPage that draws it, stmt/page.js's unless a test gives another (11 Nov 2026: the bundle as wrangler builds it) */
+  const html = landing("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) });
   const dom = new JSDOM(probe ? html.replace("  function fmtWhen(v){", "  window.__owner=function(s){return eval(s);};\n  function fmtWhen(v){") : html, {
     url: "https://counter.fixture.test/all" + hash, runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) {
@@ -330,7 +331,7 @@ export async function drawEverything(p) {
   p.snap("the rows to approve, the queue shut");
   /* 22 Oct 2026 (multi-tick Approve): Approve and Reject choose; the bar's Confirm asks on the sheet, let go with Keep, and Clear lets the choice go */
   await click(byAct(row, "draft.approve")); p.snap("a Desk row chosen to approve, the bar standing");
-  await click(byAct(d, "approve.confirm")); p.snap("Confirm, asking on the sheet"); await click(byAct(d, "ask.keep"));
+  /* 12 Nov 2026 (his Approve review): an approval alone goes on Confirm with no Sheet, so the Sheet is drawn for a rejection */
   await click(byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]'), "draft.reject")); p.snap("the row chosen to reject instead");
   await click(byAct(d, "approve.confirm")); p.snap("Confirm with a rejection, asking on the sheet"); await click(byAct(d, "ask.keep"));
   await click(byAct(d, "approve.clear"));

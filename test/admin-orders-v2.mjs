@@ -180,7 +180,7 @@ export async function run({ ok, pageWork }) {
     for (let i = 0; i < 20; i++) await Promise.resolve();
     const held = t(d.getElementById("makerDraftStatus"));
     release(); await p.work.quiet();
-    ok(!/Reading/.test(held) && !/Reading/.test(t(d.getElementById("makerDraftStatus"))) && /waiting for your approval/.test(t(d.getElementById("makerDraftStatus"))),
-      "Approve's line is not left on Reading while the read is out and Approve is hidden, and says its count once it lands: " + J([held, t(d.getElementById("makerDraftStatus"))]));
+    ok(!/Reading/.test(held) && !/Reading/.test(t(d.getElementById("makerDraftStatus"))) && t(d.getElementById("makerDraftStatus")) === "" && /to decide/.test(t(d.querySelector("#makerDrafts > .aphead"))),
+      "Approve's line is not left on Reading while the read is out and Approve is hidden, and once it lands is empty, the list's head counting the cards (12 Nov 2026): " + J([held, t(d.getElementById("makerDraftStatus"))]));
   } catch (e) { ok(false, "admin-orders-v2 stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }

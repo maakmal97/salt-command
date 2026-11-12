@@ -1060,6 +1060,32 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
   and monthly cost tables (five lines of six read "not measured"); Sourcing's three loss tiles are one, The gap; an associate's
   stream with nothing in it is not drawn. Kept, against draft 1: "Pays your time to" (`COST_BOOK.hourRM` is set) and the
   Associates fold "What counts, and why" (the one place the reward scheme is written).
+- **Round two (11 Nov 2026), his answers "off the Desk" and "one line".** Clients' Their % card (a row a customer a book, 260
+  rows, 80% of the page, 218 saying nothing) is gone with `driftSay`, `suggestSay`, `tierQueued`, `atSizes`, `partnerQueued` and
+  `partnerNote`; he sets a % on Salt Admin's account card. Clients keeps the heading and `pctLine()`, one line for the book in view
+  (who holds a % he set, read as the card read it, and who the engine suggests another) and the link `admin?to=customers/accounts`.
+  Associates says a departure and a vacancy in one line under the tree (`#nwStand`); the tree still marks the departed founder.
+- **Round three (11 Nov 2026), Today's Noticed, his three answers (one customer card a book; rhythm only where it changes buying;
+  repeat orders off Noticed).** Drawing only: `noticedDraw(live, hushed)` decides what Noticed draws from `observations()`, so every
+  observation keeps its id, its hush and its place in the snapshot's `obs`. A book's habit card (`cust:cadence:<book>`) carries its
+  message card (`promo:revive:<book>`) under the habit card's id, watch and figure, and a message card whose habit card is hushed goes
+  with it; the weekday card (`rhythm:dow`) carries the weekend; the pay window, a holiday and the fortnight draw only at watch; no
+  `dup:` pair and no `cust:oneanddone` is drawn. **At stake is what an Act or a Watch names, each once** (it added every figure,
+  RM 5,299 against RM 2,420 on 11 Nov 2026). The tag legend line went; the v1498 repeat-order grouping (`dupOf`, `dupCard`) with it.
+- **Round four (12 Nov 2026), Financials' two P&Ls, his answer "one P&L".** The monthly table (`tabFinancials`) carries what the IFRS
+  statement carried, at `ifrsPL`'s own rates, so its year column is the operating profit (measured equal on all five books on 12 Nov
+  2026): Freight in (a month's units sold times `freightPerUnit`, its basis on the row), Non-revenue (`nrsMonths`), Selling and
+  distribution only when not nought (a month's share of the units sold), then the two provisions and **Operating profit** (was Result
+  after provisions). `ifrsPanel` is gone; its value test is the row Lower of cost and net realisable value under Inventory.
+  **`nrsMonths(p, X)` dates non-revenue by the count that found it** (Fable's option A): at each counted day up to today the shortfall
+  is the opening plus units landed (`receivedOn||date`) less units handed over (the engine's `heldBefore`, now exported) less the count;
+  a lot or handover on the count's own day is read either side of it, whichever moves the shortfall least from the count before (28 Oct
+  2026's count came before that day's 25-unit lot); losses logged before the first count with a figure stand in their own months; the
+  latest month takes the gap to `selfUse` (`pin`, said on the row); a month is never floored, so one under nought is stock a count found
+  again. No count with a figure: the year carries it alone, said on the row. Said, not built: a surplus (`selfUse` is floored at nought,
+  so the pin then cancels a recovery), and a book with no count once it trades across two calendar years (the year would carry the
+  whole book). `X` is the suite's own sources (`test/desk-cleanup.mjs` L6). Fable's re-check: the nearest-candidate rule can hide a real loss on a count day up to that
+  day's same-day movement, in a month only when that count is its last; the next count puts it back, and the year is never touched.
 - **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
   a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
 - **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped

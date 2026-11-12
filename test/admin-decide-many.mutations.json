@@ -6,7 +6,7 @@
  {"name": "a claim ticked", "file": "stmt/owner.js", "find": "      if(!claim){\n        var pick=apPick[draft.id]", "replace": "      if(1){\n        var pick=apPick[draft.id]"},
  {"name": "the head counts every card", "file": "stmt/owner.js", "find": "    var ticks=live.filter(apTickable);", "replace": "    var ticks=live;"},
  {"name": "Approve all misses one", "file": "stmt/owner.js", "find": "ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; });", "replace": "ticks.slice(1).forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; });"},
- {"name": "the bar counts one way", "file": "stmt/owner.js", "find": "[A.length?A.length+' approve':'',R.length?R.length+' reject':'']", "replace": "[(A.length+R.length)+' approve']"},
+ {"name": "the bar counts one way", "file": "stmt/owner.js", "find": "[A.length?A.length+' to approve':'',R.length?R.length+' to reject':'']", "replace": "[(A.length+R.length)+' to approve']"},
  {"name": "Clear keeps the picks", "file": "stmt/owner.js", "find": "clear.addEventListener('click',function(){ apPick={}; drawMaker(); });", "replace": "clear.addEventListener('click',function(){ drawMaker(); });"},
  {"name": "no bar", "file": "stmt/owner.js", "find": "    drawDeskRows(draftRoot,queueRoot,pendingRows);\n    apBarDraw();", "replace": "    drawDeskRows(draftRoot,queueRoot,pendingRows);"},
  {"name": "sent before the yes", "file": "stmt/owner.js", "find": "    var n=A.length+R.length, extra=[];", "replace": "    var n=A.length+R.length, extra=[]; refs('/all/maker/drafts/decide-many',{approve:[],reject:[]});"},

@@ -547,7 +547,7 @@ function pricing(B,R,today,over=null){
 }
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
-  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,heldBefore,
   inputs,policy,fiveTiers,figures,
   ruleFor,shelfAt,marketCover,marketPace,marketWalk,marketOf,marketK,marketWhy,marketReplay,priceReading,marketScore,switchOn,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};

@@ -1,0 +1,6 @@
+[
+ {"name":"F1 the Worker does not pass PLACED to the check","file":"src/worker.js","find":"officialVaultPoint(point, book && book.state && book.state.PLACED)","replace":"officialVaultPoint(point)"},
+ {"name":"F1 a filed locality is not read","file":"src/vault-locality.js","find":"    if (Array.isArray(g) && typeof g[2] === \"string\" && g[2].trim() && E.placeKey(g[2]) === key) return true;","replace":"    continue;"},
+ {"name":"F2 any locality passes","file":"src/vault-locality.js","find":"  if (official.has(key)) return true;","replace":"  return true;"},
+ {"name":"F3 a filed locality matches inside a longer word","file":"src/vault-locality.js","find":"E.placeKey(g[2]) === key) return true;","replace":"(key.includes(E.placeKey(g[2])) || E.placeKey(g[2]).includes(key))) return true;"}
+]

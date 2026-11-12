@@ -6,5 +6,8 @@
  {"name":"File all takes a unit alone","file":"master/salt_command.html","find":"    if(!v||v.st!=='ok'||!pinFileable(o)||feePt(","replace":"    if(!v||(v.st!=='ok'&&v.st!=='unit')||!pinFileable(o)||feePt("},
  {"name":"filing carries the words","file":"master/salt_command.html","find":"const code=o.code,pt=v.pt,entry=placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'});","replace":"const code=o.code,pt=v.pt,entry=Object.assign(placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'}),{label:v.label,unit:v.unit});"},
  {"name":"a slip's seal named","file":"master/salt_command.html","find":"      if(p)words=pinWords(p);\n","replace":"      if(b===null)words={label:'Shop',unit:'Level 2'};else if(p)words=pinWords(p);\n"},
- {"name":"the name cut short","file":"master/salt_command.html","find":"label:p&&typeof p.label==='string'?p.label.slice(0,24):''","replace":"label:p&&typeof p.label==='string'?p.label.slice(0,2):''"}
+ {"name":"the name cut short","file":"master/salt_command.html","find":"label:p&&typeof p.label==='string'?p.label.slice(0,24):''","replace":"label:p&&typeof p.label==='string'?p.label.slice(0,2):''"},
+ {"name":"a typed address not read","file":"master/salt_command.html","find":"      else if(p.src==='addr'&&words.addr)st='addr';","replace":""},
+ {"name":"a typed address not named","file":"master/salt_command.html","find":"esc([v.label,v.unit,v.addr].filter(Boolean)","replace":"esc([v.label,v.unit].filter(Boolean)"},
+ {"name":"a typed address with no line","file":"master/salt_command.html","find":"  if(v.st==='addr')return named+","replace":"  if(false)return named+"}
 ]

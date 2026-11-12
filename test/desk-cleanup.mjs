@@ -3,13 +3,15 @@
  * Plan: docs/plan-desk-cleanup.html. Every check reads what the Desk draws or computes on the frozen book, never the source's text.
  *   F1  a debt past its term is one card: the credit rules it breaks ride on its Chase card as chips, and no Rule card repeats it
  *   F2  a partner's open sale at the Floor is no Margin floor breach; the same sale to anyone else still is
- *   F3  three or more repeat-order notes are one card naming each, and the counts beside the folds count cards
+ *   F3  Noticed: one customer card a book, rhythm only where it changes buying, no repeat order, At stake each figure once (11 Nov 2026)
  *   F4  with a live price already under the Floor, no card says the buying rate "can rise" by a negative figure
  *   F5  Rules says a party over a cap once, however many of its rows are over it
  *   F6  Financials' Gross margin is the sum of the books' own, never a dash because one row states no cost
  *   F7  a row corrected twice in a day draws one Correction line for that day
  *   F8  Analysis holds only the last correction of a field against its row, and counts a shelf truly empty, never one rebuilt under zero
  *   C1  Rules holds its register alone; Today no Money at stake chart; Financials no unmeasured line; Sourcing one gap tile; Associates no empty fold
+ *   C2  Clients' Their % is one line counted off TIER_OF with the link to Salt Admin; Associates says a departure and a vacancy in one line
+ *   L1-L5 one P&L: the year is the operating profit, freight and non-revenue in their months, no IFRS fold (12 Nov 2026)
  *   P1  the plan store is this device's, clamped on every read, and garbage reads as nothing
  *   P2  a what-if lot lands in its book's inventory and leaves the cash on its day, is said to be a what-if, and books nothing
  *   P3  Month ahead: demand moves revenue, the buying cost the cost of goods, running costs what is left; the first column never moves
@@ -51,16 +53,45 @@ export async function run({ ok }) {
 
     ok(f2.loss > 0, "F2.2 a partner's sale under its own lot's cost is a loss and still a breach: " + J(f2));
 
-    /* F3 */
-    const dups = E("observations().live.filter(o=>o.sev==='note'&&/^dup:/.test(o.id)).length");
+    /* F3 (11 Nov 2026, his three answers): Noticed draws one customer card a book, rhythm only where it changes buying, no repeat order.
+       Synthetic items through noticedDraw, so every branch is driven whatever the book holds today; then the page itself. */
+    const nd = (live, hushed = []) => E(`noticedDraw(${J(live)},${J(hushed)}).map(o=>({id:o.id,sev:o.sev,title:o.title,why:o.why,rm:o.rm}))`);
+    const it = (id, sev, title, why = "w", rm = 0) => ({ id, fam: "x", sev, title, why, rm, conf: "measured" });
+    const syn = nd([it("cust:cadence:salt", "watch", "13 customers are past their own habit on salt", "split", 1912),
+      it("promo:revive:salt", "note", "Three messages are worth about RM 853 on salt", "CA2, CJ4, CH4 lead", 853),
+      it("cust:cadence:oil", "watch", "6 customers are past their own habit on oil", "split", 374),
+      it("promo:revive:rice", "note", "Two messages are worth about RM 50 on rice", "CI5 lead", 50),
+      it("dup:CX1:2026-01-01:2026-01-03:90", "note", "CX1 bought the same thing twice in 2 days"), it("cust:oneanddone", "note", "17 of 53 bought once"),
+      it("rhythm:payday:salt", "note", "The pay window runs level with mid-month"), it("rhythm:holiday:salt", "note", "Next holiday 44 days out"),
+      it("rhythm:restock:salt", "note", "The next fortnight looks ordinary"), it("rhythm:restock:oil", "watch", "Buy about 12% more"),
+      it("rhythm:dow:salt", "note", "Friday is the busiest day", "Friday 2.30."), it("rhythm:weekend:salt", "watch", "Weekends run quieter", "28% less."),
+      it("int:nocost", "watch", "4 priced sales carry no cost")], [it("cust:cadence:candy", "watch", "hushed")].concat([]));
+    const sid = syn.map((o) => o.id), s1 = syn.find((o) => o.id === "cust:cadence:salt") || {};
+    ok(!sid.some((i) => /^dup:|oneanddone/.test(i)), "F3.1 no repeat order and no 'bought once' is drawn: " + J(sid));
+    ok(!sid.includes("promo:revive:salt") && s1.sev === "watch" && s1.rm === 1912 && s1.title === "13 customers are past their own habit on salt: three messages are worth about RM 853"
+      && /^CA2, CJ4, CH4 lead /.test(s1.why) && sid.includes("cust:cadence:oil") && sid.includes("promo:revive:rice"),
+      "F3.2 a book's habit card carries its message card, its own id, watch and figure; a message card with no habit card stands alone: " + J(s1));
+    const hz = nd([it("promo:revive:candy", "note", "Two messages are worth RM 9 on candy")], [it("cust:cadence:candy", "watch", "hushed")]);
+    ok(hz.length === 0, "F3.3 a message card whose habit card is hushed goes with it: " + J(hz));
+    ok(!sid.some((i) => /^rhythm:(payday|holiday):/.test(i) || i === "rhythm:restock:salt") && sid.includes("rhythm:restock:oil"),
+      "F3.4 the pay window, a holiday and the fortnight draw only when they reach watch: " + J(sid.filter((i) => /^rhythm/.test(i))));
+    const dw = syn.find((o) => o.id === "rhythm:dow:salt") || {};
+    ok(!sid.includes("rhythm:weekend:salt") && dw.sev === "note" && /Friday 2\.30\. Weekends run quieter: 28% less\./.test(dw.why),
+      "F3.5 the weekday pattern is one note, the weekend beside it: " + J(dw));
     E("switchTab('today')");
-    const obs = [...d.querySelectorAll("#sec-today details.obs .obst")].map(text);
-    const group = [...d.querySelectorAll("#sec-today details.obs")].find((x) => /repeat orders/.test(text(x.querySelector(".obst"))));
-    ok(dups >= 3 && !obs.some((t) => /bought the same thing twice/.test(t)) && !!group && group.querySelectorAll(".obsev li").length === dups,
-      `F3.1 ${dups} repeat-order notes are one card listing each: ` + J([obs.filter((t) => /twice|repeat/.test(t)).length, group && group.querySelectorAll(".obsev li").length]));
-    const integrity = [...d.querySelectorAll("#sec-today details.obsec")].find((x) => /^Integrity/.test(text(x.querySelector("summary"))));
-    ok(!!integrity && +text(integrity.querySelector("summary .ct")) === integrity.querySelectorAll("details.obs").length,
-      "F3.2 the count beside Integrity is the cards under it: " + J(integrity && [text(integrity.querySelector("summary .ct")), integrity.querySelectorAll("details.obs").length]));
+    const nt = d.querySelector("#sec-today details.noticed"), drawn = E("(function(){const X=observations();return noticedDraw(X.live,X.hushed).map(o=>({sev:o.sev,rm:o.rm||0}))})()");
+    const stk = [...nt.querySelectorAll(".salt-kpi")].find((k) => /At stake/.test(text(k.querySelector(".salt-kpi__label"))));
+    const stakeWant = drawn.reduce((a, o) => a + (o.sev !== "note" && o.rm > 0.009 ? o.rm : 0), 0);
+    const all = E("observations().live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0)");
+    ok(text(stk.querySelector(".salt-kpi__value")) === E(`fmt0(${stakeWant})`) && stakeWant < all && +text(nt.querySelector(":scope > summary .ct")) === drawn.length
+      && nt.querySelectorAll("details.obs").length === drawn.length && !/Tags:/.test(text(nt)),
+      "F3.6 At stake is what Act and Watch name, each once, the count is the cards drawn, and no tag legend: " + J([text(stk), stakeWant, all, drawn.length]));
+    /* a note that names a figure is drawn but at stake it is not: one invented note of RM 999 beside today's items */
+    const noteStake = E(`(function(){const keep=observations;observations=function(){const X=keep();
+      return Object.assign({},X,{live:X.live.concat([{id:'promo:test:salt',fam:'promo',sev:'note',conf:'measured',rm:999,tab:'pricing',title:'a note with a figure',why:'w'}])});};
+      try{const e=document.createElement('div');e.innerHTML=tabPlans();const k=[...e.querySelectorAll('.salt-kpi')].find(x=>/At stake/.test(x.querySelector('.salt-kpi__label').textContent));
+        return [k.querySelector('.salt-kpi__value').textContent.trim(),!!/a note with a figure/.test(e.textContent)];}finally{observations=keep;}})()`);
+    ok(noteStake[0] === text(stk.querySelector(".salt-kpi__value")) && noteStake[1], "F3.7 a note's figure is drawn on its card and left out of At stake: " + J(noteStake));
 
     /* F4: the walk answering a live price already under the Floor */
     const f4 = E(`(function(){const keep=boardHeadroom;
@@ -126,6 +157,62 @@ export async function run({ ok }) {
     const nw = html("network");
     ok(nw.querySelectorAll("details.obsec").length > 0 && ![...nw.querySelectorAll("details.obsec")].some((f) => /^(0|none)$/.test(text(f.querySelector("summary .ct"))) || text(f.querySelector(".card")) === "None."),
       "C1.5 Associates draws no fold that holds nothing");
+
+    /* C2 (11 Nov 2026, his answers "off the Desk" and "one line"): Clients draws no table of every customer's %, one line counting who
+       holds one (read off TIER_OF itself) and who the engine suggests another, with the link to Salt Admin's accounts; a book where nobody
+       holds one says so; Associates says the departure and the vacancy in one line under the tree, and draws no card for either */
+    E("setProd('salt');recompute();");
+    const cl = html("concentration"), pl = text(cl.querySelector("#pctLine"));
+    const want = E(`(function(){const ids=tierCustomers().filter(id=>partners.indexOf(id)<0);
+      const held=ids.filter(id=>{const o=TIER_OF[ownerOf(id)||id];return !!o&&typeof o.salt==='number';}).length;
+      const sugg=ids.filter(id=>{const g=suggestOf(id,'salt'),dr=driftOf(id,'salt');return !!g&&Math.abs(g.pct||0)>0.0001&&Math.abs(g.pct-(dr.d||0))>0.0001;}).length;
+      return [held,ids.length,sugg];})()`);
+    ok(!cl.querySelector(".tiertab") && !/what it quotes/.test(text(cl)) && pl === `On salt, ${want[0]} of ${want[1]} hold a % you set and ${want[2]} ${want[2] === 1 ? "is" : "are"} suggested another.`
+      && want[0] > 0 && !!cl.querySelector('a[href="admin?to=customers%2Faccounts"]'),
+      "C2.1 Clients draws one Their % line, counted off TIER_OF, and the link to Salt Admin, never a row a customer: " + J([pl, want, cl.querySelectorAll("tr").length]));
+    /* a suggestion equal to the % they already hold is no suggestion: every customer stubbed to hold +10% and be suggested +10% */
+    const same = E(`(function(){const kd=driftOf,ks=suggestOf;driftOf=()=>({hand:0.1,d:0.1});suggestOf=()=>({pct:0.1});
+      try{const e=document.createElement('div');e.innerHTML=pctLine();return e.querySelector('#pctLine').textContent;}finally{driftOf=kd;suggestOf=ks;}})()`);
+    ok(/ and 0 are suggested another\.$/.test(same), "C2.4 a suggestion equal to the % they hold is not counted: " + J(same));
+    E("setProd('gas');recompute();");
+    const glp = text(html("concentration").querySelector("#pctLine"));
+    E("setProd('salt');recompute();");
+    ok(glp === "Nobody holds a % on gas, and none is suggested.", "C2.2 a book where nobody holds a % says so: " + J(glp));
+    const nw2 = html("network"), st = text(nw2.querySelector("#nwStand"));
+    const dep2 = E("PEOPLE.departed.map(b=>b.id+' left '+b.since)"), vac2 = E("PEOPLE.roles.filter(r=>!r.holder).map(r=>r.short||r.title)");
+    ok(!nw2.querySelector(".pend") && dep2.length > 0 && vac2.length > 0 && dep2.every((c) => st.includes(c))
+      && st.includes("the " + vac2[0] + " seat is open since") && /DEPARTED/.test(text(nw2)),
+      "C2.3 Associates says the departure and the vacancy in one line, draws no card for either, and the tree still marks the departed: " + J([st, dep2, vac2]));
+
+    /* L1 to L5 (12 Nov 2026, his answer "one P&L"): the monthly table carries freight in and non-revenue, each in its month, so the
+       year is the operating profit ifrsPL states; the IFRS fold is gone and its value test is one row under Inventory */
+    const plOf = (p) => E(`(function(){setProdView(${J(p)});const F=ifrsPL(${J(p)});const e=document.createElement('div');e.innerHTML=tabFinancials();
+      const rows=[...e.querySelectorAll('table.pgrid tr')].map(r=>[...r.children].map(c=>c.textContent.trim()));
+      const cy=l=>{const r=rows.find(x=>x[0].indexOf(l)===0);return r?r[r.length-1]:null;};
+      return {op:cy('Operating profit'),opWant:fmt0(F.opProfit).replace(CUR+' ',''),frt:cy('Freight in'),frtWant:F.freightCos>0.004?fmt0(-F.freightCos).replace(CUR+' ',''):NIL,
+        nrv:cy('Lower of cost'),ifrs:/Statement of profit or loss/.test(e.textContent),text:e.textContent};})()`);
+    const books = E("PROD_IDS"), pls = books.map((p) => [p, plOf(p)]);
+    ok(pls.every(([, r]) => r.op === r.opWant), "L1 every book's year is the operating profit: " + J(pls.map(([p, r]) => [p, r.op, r.opWant])));
+    ok(pls.every(([, r]) => r.frt === r.frtWant) && /Freight in.{0,40}typed on \d+ lots?/.test(pls[0][1].text), "L2 freight in is charged on the units sold, the year its whole: " + J(pls.map(([p, r]) => [p, r.frt, r.frtWant])));
+    ok(pls.every(([, r]) => !r.ifrs && /^(cost|written down by .+|untested)$/.test(r.nrv || "")), "L3 the IFRS fold is gone and its value test is one row: " + J(pls.map(([p, r]) => [p, r.ifrs, r.nrv])));
+    const nm = E(`(function(){setProdView('salt');const N=nrsMonths('salt');const s=Object.values(N.by).reduce((a,v)=>a+v,0);return {sum:+s.toFixed(2),selfUse,pin:N.pin,neg:Object.values(N.by).some(v=>v<-0.009)};})()`);
+    const saltText = pls.find(([p]) => p === "salt")[1].text;
+    ok(Math.abs(nm.sum - nm.selfUse) < 0.011 && (Math.abs(nm.pin) > 0.009) === / the counts do not date sits in the latest/.test(saltText),
+      "L4 the months add to the shortfall Stock reads, and the part the counts do not date is said: " + J(nm));
+    const none = E(`(function(){const keep=COUNTS.slice();COUNTS.length=0;try{setProdView('salt');const F=ifrsPL('salt');const e=document.createElement('div');e.innerHTML=tabFinancials();
+      const r=[...e.querySelectorAll('table.pgrid tr')].map(x=>[...x.children].map(c=>c.textContent.trim())).find(x=>x[0].indexOf('Non-revenue')===0);
+      const o=[...e.querySelectorAll('table.pgrid tr')].map(x=>[...x.children].map(c=>c.textContent.trim())).find(x=>x[0].indexOf('Operating profit')===0);
+      return {cy:r[r.length-1],want:fmt0(-F.nonRev).replace(CUR+' ',''),months:r.slice(1,-1).every(c=>c===NIL),said:/no count states a figure/.test(r[0]),op:o[o.length-1],opWant:fmt0(F.opProfit).replace(CUR+' ','')};}finally{COUNTS.push(...keep);}})()`);
+    ok(none.cy === none.want && none.months && none.said && none.op === none.opWant, "L5 with no count holding a figure the year carries non-revenue alone, and says so: " + J(none));
+    /* L6: the walk on invented counts and lots. A 25-unit lot landed after the 31 Oct count is read after it; a lot ordered 10 Oct and
+       landed 5 Nov is dated by its landing; a count after today is left out; what the counts leave (25 against 20) sits in the latest month */
+    const syn6 = E(`nrsMonths(PROD,{counts:[{date:'2026-09-30',qty:90,product:PROD},{date:'2026-10-31',qty:80,product:PROD},{date:'2026-11-15',qty:155,product:PROD},{date:'2099-01-01',qty:0,product:PROD}],
+      logs:[],lots:[{date:'2026-09-01',u:100},{date:'2026-10-31',u:25},{date:'2026-10-10',receivedOn:'2026-11-05',u:50}],sales:[],op:0,total:25,recv:x=>x.u,now:'2026-11-20'})`);
+    ok(J(syn6.by) === J({ "2026-09": 10, "2026-10": 10, "2026-11": 5 }) && syn6.pin === 5,
+      "L6 a same-day lot after its count, a lot dated by its landing, a count after today, and the residual in the latest month: " + J(syn6));
+    const pinSaid = E(`(function(){const k=nrsMonths;nrsMonths=()=>({by:{},pin:5,last:'2026-11-15'});try{const e=document.createElement('div');e.innerHTML=tabFinancials();return / the counts do not date sits in the latest/.test(e.textContent);}finally{nrsMonths=k;}})()`);
+    ok(pinSaid === true, "L6.2 the part the counts do not date is said on the row");
+    E("setProdView('salt')");
 
     /* P1 */
     w.localStorage.removeItem("salt-plan-v1");

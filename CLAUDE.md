@@ -592,8 +592,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   opened on the Desk with the one unlock, the fee's point ahead of `vault-addr`, **and on Salt Admin too** (his answer of 20 Oct 2026,
   reversing the Desk's alone of 10 Oct): `GET /all/maker/pins/<u>/<id>` off the Counter's store, read with `keep` false so looking never
   keeps it past its 30 days, opened in his browser behind the one unlock, nothing stored; filing it as their place stays on the Desk. **Saved spots stay on the phone** (Counter Batch C, his
-  answers of 20 Oct 2026): three an account in localStorage, none picked when the sheet opens, kept through Log out; the seal carries the spot's
-  name and floor or unit beside the point, or a unit alone (`src: 'unit'`), which the Desk shows and never files or measures. The point is filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
+  answers of 20 Oct 2026): three an account in localStorage, none picked when the sheet opens, kept through Log out. **A spot is a name and EITHER its address
+  (typed, or a map link pasted) OR Use my location** (his word of 11 Nov 2026): the name alone travels in the clear, as the order's place; the seal carries
+  the name beside the point, or the typed address alone (`src: 'addr'`; an older seal's `src: 'unit'`), which the Desk and Salt Admin show and never file or measure. **Every
+  new order asks collect or deliver**, never preset from an earlier order (his answer of 11 Nov 2026); Home's tiles and Order again are the answer. The point is filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
 - **The confirm time is measured, never promised** (Counter Batch C, his answer of 20 Oct 2026): the median of his last 30 Accepts made in
   Counter hours, the time counted in open minutes only (his answer of 20 Oct 2026, `openMinutes`), up to the quarter hour (`stmt/confirm.js`, KV `confirm:within` filed hourly), said on a placed order only while open and
@@ -694,8 +696,8 @@ The rest: `docs/DESK.md`.
 npm install        # once
 npm run build      # master -> public/desk.html, after any master edit
 npm run dev        # build, then wrangler dev (live KV)
-npm test           # the suite split across processes (tools/suite-split.mjs), 5 to 12 minutes here; CI runs it too
-npm run test:serial  # the same suite in one process, 3 to 7 minutes; 4 GB heap
+npm test           # THE DEFAULT full run (his word of 12 Nov 2026): the suite split across four processes (tools/suite-split.mjs), 8.3 minutes here (measured 12 Nov 2026); CI runs it too
+npm run test:serial  # the same suite in one process, 21 to 27 minutes here (measured 12 Nov 2026); 4 GB heap. Only to rule out a cross-process fault
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
 node tools/standing.mjs   # the standing-state table a task closes with, about a minute

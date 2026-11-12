@@ -681,6 +681,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    empty answer line) and the shut queue fold's body */
 .adm .salt-approve>.maker-say:empty{display:none}
 .adm #makerQueue .salt-plan__body>*+*{margin-top:12px}
+.adm #makerDraftStatus:empty{display:none}
 .adm #makerQueue .salt-plan__body .maker-card{margin:12px 0 0}
 /* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
    the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
@@ -2545,6 +2546,11 @@ const TEST_DOOR = `
    single nonce, and so nothing about a statement is ever a fetchable asset. */
 const CLIENT_JS = `
 (function(){/*__TS__*/
+  /* 11 NOV 2026 (his report: a delivery's sheet showed no Review): THE BUNDLER'S __name, DOING NOTHING. wrangler bundles the Worker with
+     esbuild's keepNames, which writes __name(f, "f") inside every function that declares a named function or names an arrow, and this page
+     carries some Worker functions as their own source (slotSpan, slotNext and openParts for the windows, and the one distance on his page). Each
+     arrived calling a __name the page never had, so every delivery sheet threw at its windows and drew neither When nor Review. */
+  var __name=function(f){ return f; };
   /* THE TICKET INVALIDATES A FLOW THAT IS NO LONGER WANTED (04 Sep 2026 audit). A submit takes
      about a second in PBKDF2, and go.disabled does not stop the Enter key submitting a form at
      all, so a reader who pressed Enter twice had two flows in the air. Measured: he taps Lock now,
@@ -4659,10 +4665,8 @@ const CLIENT_JS = `
      Prices, so the two never differ: what was chosen in a sheet on this page, else the newest order's. It writes nothing; with no order
      and nothing chosen there is no way yet, and Prices draws no line */
   function wayNow(){
-    var L=oLatest(function(){ return true; });
-    if(draft.mode==null&&!L) return null;
-    var mode=draft.mode!=null?draft.mode:L&&L.mode==='deliver'?'deliver':'collect', W=draft.place!=null?null:oLatest(function(o){ return !!o.place; });
-    return {mode:mode==='deliver'?'deliver':'collect', place:draft.place!=null?String(draft.place):W?String(W.place):''};
+    if(draft.mode!=='collect'&&draft.mode!=='deliver') return null;
+    return {mode:draft.mode, place:draft.place!=null?String(draft.place):''};
   }
   function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
     return !!P&&(q==null||priceAt(P,q)!=null); }
@@ -4699,9 +4703,9 @@ const CLIENT_JS = `
         draft.pick[P0.product]=String(U&&U.product===P0.product&&oSoldHas(U.product,U.q)?U.q:P0.sizes[0].q); }
     }
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
-    var WN=wayNow();
-    if(draft.mode==null) draft.mode=WN?WN.mode:'collect';
-    if(draft.place==null){ draft.place=WN?WN.place:''; draft.placeWas=draft.place; }
+    /* 11 Nov 2026 (his answer "Always ask"): the way and the place are what was chosen on this page for this order (a sheet, Home's
+       tiles, Order again), never an earlier order's; Sent forgets both */
+    if(draft.place==null){ draft.place=''; draft.placeWas=''; }
     draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
     if(!osh){
       var wrap=el('div'); wrap.id='osheet';
@@ -4976,8 +4980,10 @@ const CLIENT_JS = `
     if(assoc&&draft.forFriend==null) return [tw('sh.whyFor'),'[data-k="for:0"]'];
     if(!quotes().length) return [tw('sh.whySize'),'[data-k^="size"]'];
     if(draft.pool) return ['',''];
-    /* 3 Nov 2026: never on Order as them, whose sheet draws no saved spot to pick (his report: Review stayed grey on every delivery) */
-    if(draft.mode==='deliver'&&!draft.amend&&!act&&!draft.spot&&spotsRead()) return [tw('sp.why'),'.ospots input,#spAdd'];
+    /* 11 Nov 2026 (his answer "Always ask"): the way is never preset from an earlier order, so a sheet waits for it */
+    if(draft.mode!=='collect'&&draft.mode!=='deliver') return [tw('sh.whyWay'),'[data-k="mode:0"]'];
+    /* 11 Nov 2026: a new delivery is always a spot, Order as them included (one kept for that order alone) */
+    if(draft.mode==='deliver'&&!draft.amend&&!draft.spot) return [tw('sp.why'),'.ospots input,#spAdd'];
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return [tw('sh.whyWhere'),'#oWhere'];
     if(draft.mode!=='deliver'&&draft.when==='day'&&!wantOk(draft.wantBy)) return [tw('sh.whyWhen',{n:WANT_DAYS}),'#oWant'];
     return ['',''];
@@ -5035,85 +5041,31 @@ const CLIENT_JS = `
         end(pinPt(a,b)?{lat:a, lng:b, acc:Math.round(+c.accuracy||0), src:'gps'}:null); },
       function(){ end(null); },{enableHighAccuracy:true, maximumAge:0, timeout:15000}); }catch(e){ end(null); }
   }
-  /* 4 Nov 2026 (his answers: one convention on every surface, OpenStreetMap search): THE EXACT SPOT IS ONE FIELD, as his collection
-     points' Place is: three letters or more and a moment's pause list up to five places found (OpenStreetMap, through our server, only
-     the words travel), a tap on one takes its point; a pasted map link or two figures are read at once; Use my location beside it. The
-     list and its line change in place, so typing is never redrawn under the thumb */
-  var pinTimer=null, pinSeq=0;
-  function pinField(){
-    var f=el('div','salt-field opin');
-    var lb=el('label','salt-field__label',tw('sh.pinT')); lb.htmlFor='oPinUrl'; f.appendChild(lb);
-    if(draft.pin){
-      f.appendChild(el('span','salt-field__hint',draft.pin.src==='search'&&draft.pinPlace?tw('sh.pinOkFound',{p:draft.pinPlace}):tw(draft.pin.src==='pin'?'sh.pinOkFigures':draft.pin.link?'sh.pinOkLink':'sh.pinOk')));
-      var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
-      off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; draft.pinPlace=''; sheetDraw(); });
-      f.appendChild(off); return f;
-    }
-    var li=el('input','salt-field__input'); li.id='oPinUrl'; li.type='text'; li.autocomplete='off'; li.spellcheck=false; li.placeholder=tw('sh.pinLinkPh'); li.value=draft.pinQ||'';
-    li.setAttribute('data-k','pinurl'); li.setAttribute('role','combobox'); li.setAttribute('aria-autocomplete','list'); li.setAttribute('aria-controls','oPinFound'); li.setAttribute('aria-expanded','false');
-    var L=el('div','salt-settings opinfound'); L.id='oPinFound'; L.setAttribute('role','listbox'); L.setAttribute('aria-label',tw('sh.pinFound')); L.hidden=true;
-    var hint=el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint'));
-    function pinShown(list,msg){
-      L.textContent='';
-      (list||[]).forEach(function(h,i){
-        var r=el('button','salt-settings__row salt-settings__row--action'); r.type='button'; r.setAttribute('role','option'); r.setAttribute('data-k','pinhit:'+i);
-        r.appendChild(el('span','salt-settings__label',String(h.name||''))); if(h.where) r.appendChild(el('span','salt-settings__value',String(h.where)));
-        r.addEventListener('click',function(){ if(!pinPt(+h.lat,+h.lng)) return; pinSeq++;
-          draft.pin={lat:+h.lat, lng:+h.lng, src:'search'}; draft.pinPlace=String(h.name||'').slice(0,80); draft.pinMsg=''; draft.pinQ=''; draft.pinPend=false; sheetDraw(); });
-        L.appendChild(r);
-      });
-      L.hidden=!L.firstChild; li.setAttribute('aria-expanded',String(!L.hidden)); hint.textContent=msg||tw('sh.pinHint');
-    }
-    /* the words and a search still on its way outlive a redraw (the key landing, a window chosen): the new field asks again */
-    function pinLook(w){
-      var mine=++pinSeq; draft.pinPend=true;
-      pinTimer=setTimeout(function(){
-        (act&&typeof actSearch==='function'?actSearch(w):api('/place/search',{q:w})).then(function(r){
-          if(mine!==pinSeq||!li.isConnected) return;
-          draft.pinPend=false;
-          var b=r&&r.body||{}, l=b.ok&&Array.isArray(b.places)?b.places.slice(0,5):null, st=r&&r.status;
-          pinShown(l||[],l?(l.length?'':tw('sh.pinNone')):st===429?tw('sh.pinWait429'):st===400?tw('sh.pinNone'):tw('sh.pinDown'));
-        },function(){ if(mine===pinSeq&&li.isConnected){ draft.pinPend=false; pinShown([],tw('sh.pinDown')); } });
-      },350);
-    }
-    li.addEventListener('input',function(){
-      var v=li.value, p=pinRead(v);
-      clearTimeout(pinTimer); draft.pinQ=v;
-      if(p){ pinSeq++; draft.pin=p; draft.pinMsg=''; draft.pinPlace=''; draft.pinQ=''; draft.pinPend=false; sheetDraw(); return; }
-      var w=String(v||'').replace(/ {2,}/g,' ').trim();
-      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ pinSeq++; draft.pinPend=false; pinShown([],''); return; }
-      pinLook(w);
-    });
-    li.addEventListener('change',function(){ var v=String(li.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); hint.textContent=draft.pinMsg; } });
-    f.appendChild(li); f.appendChild(L);
-    var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
-    here.addEventListener('click',pinHere); f.appendChild(here);
-    f.appendChild(hint);
-    clearTimeout(pinTimer);
-    if(draft.pinPend&&draft.pinQ){ var wq=String(draft.pinQ).replace(/ {2,}/g,' ').trim(); if(wq.length>=3) pinLook(wq); }
-    return f;
-  }
-  /* COUNTER BATCH C (20 Oct 2026, item 18; his answers 3, 4, 12 and 13): SAVED SPOTS, kept on this phone only, at most three an
-     account, under salt-spots:<username>. A spot is its name, its area words, a floor or unit and, if they shared one, its exact
-     point. The sheet opens with none picked and Review waits for one; picking one fills the area words and the seal's point. Log
-     out keeps them; only Remove drops one, with no confirm. Save on this phone off makes a spot for this order alone, stored
-     nowhere. A store that throws leaves the sheet as it was before them: the area field and the exact spot. */
-  var SPOT_MAX=3, SPOT_NAMES=['sp.shop','sp.store','sp.warehouse'];
+  /* 11 NOV 2026 (his word: "too complicated ... either enter their address, or use exact location, and a label. That is it"): A SPOT IS
+     A NAME AND ONE WAY TO FIND IT. The name is plain words (its grey suggestion Home, Shop or Work) and is the one part that travels
+     in the clear, as the order's place; the way to find it is EITHER the address as they type it, OR a map link pasted into that same
+     field, OR Use my location. The address, the link and the point are sealed on this phone to our key (salt-pin v1), so only
+     we can open them. A spot is kept on this phone by itself (at most three an account, under
+     salt-spots:<username>); Order as them and a store that throws keep it for this order alone. A spot filed before this day carried an
+     area and a floor or unit: both are read back as its address. Counter Batch C's rules stand: none picked on opening, one saved is
+     picked, Remove asks nothing. */
+  var SPOT_MAX=3;
   function spotKey(){ return 'salt-spots:'+user; }
   function spotPt(p){ return !!p&&typeof p==='object'&&(p.src==='gps'||p.src==='link'||p.src==='search'||p.src==='pin')&&(pinPt(p.lat,p.lng)||typeof p.link==='string'); }
-  function spotOk(s){ return !!s&&typeof s.id==='string'&&typeof s.label==='string'&&s.label.trim().length>0&&typeof s.place==='string'&&s.place.trim().length>=2; }
+  function spotAddrOf(s){ return spotCut(typeof s.addr==='string'?s.addr:[s.unit,s.place].filter(function(x){ return typeof x==='string'&&x.trim(); }).join(', '),200); }
+  function spotOk(s){ return !!s&&typeof s.id==='string'&&typeof s.label==='string'&&spotCut(s.label,24).length>=2&&(spotAddrOf(s).length>=5||spotPt(s.pt)); }
   function spotsRead(){
     try{ var v=JSON.parse(localStorage.getItem(spotKey())||'[]');
-      return (Array.isArray(v)?v:[]).filter(spotOk).slice(0,SPOT_MAX).map(function(s){ return {id:s.id, label:spotCut(s.label,24), place:spotCut(s.place,60), unit:spotCut(s.unit,40), pt:spotPt(s.pt)?s.pt:null}; }); }
+      return (Array.isArray(v)?v:[]).filter(spotOk).slice(0,SPOT_MAX).map(function(s){ return {id:s.id, label:spotCut(s.label,24), addr:spotAddrOf(s), pt:spotPt(s.pt)?s.pt:null}; }); }
     catch(e){ return null; }
   }
   function spotsWrite(L){ try{ localStorage.setItem(spotKey(),JSON.stringify(L.slice(0,SPOT_MAX))); return true; }catch(e){ return false; } }
   function spotCut(s,n){ return String(s||'').split(' ').filter(function(x){ return !!x; }).join(' ').slice(0,n).trim(); }
   var DOT=' '+String.fromCharCode(183)+' ';
-  function spotDetail(s){ return [s.place,s.unit].concat(s.pt?[tw('sp.exact')]:[]).filter(function(x){ return !!x; }).join(DOT); }
-  function spotPick(s){ draft.spot={id:s.id, label:s.label, place:s.place, unit:s.unit||'', pt:s.pt||null, once:!!s.once}; draft.place=s.place; draft.pin=s.pt||null; }
+  function spotDetail(s){ return s.pt?tw('sp.exact'):s.addr; }
+  function spotPick(s){ draft.spot={id:s.id, label:s.label, addr:s.addr||'', pt:s.pt||null, once:!!s.once}; draft.place=s.label; draft.pin=s.pt||null; }
   function spotOpen(s){
-    draft.spotEdit={id:s?s.id:'', label:s?s.label:'', place:s?s.place:'', unit:s?s.unit:'', save:!(s&&s.once), once:!!(s&&s.once)};
+    draft.spotEdit={id:s?s.id:'', label:s?s.label:'', addr:s?s.addr||'':'', once:!!(s&&s.once)};
     draft.pin=s&&s.pt||null; draft.pinMsg=''; draft.step='spot'; sheetDraw();
   }
   function spotList(L){
@@ -5125,40 +5077,45 @@ const CLIENT_JS = `
       r.type='radio'; r.name='ospot'; r.value=s.id; r.checked=cur===s.id; r.setAttribute('data-k','spot:'+i);
       r.addEventListener('change',function(){ spotPick(s); sheetDraw(); });
       var face=el('span','salt-option__face salt-option__face--tap'), tx=el('span','salt-option__text');
-      tx.appendChild(el('span','salt-option__label',s.label)); tx.appendChild(el('span','salt-option__detail',s.once?spotDetail(s)+DOT+tw('sp.once'):spotDetail(s)));
+      tx.appendChild(el('span','salt-option__label',s.label)); tx.appendChild(el('span','salt-option__detail',s.once&&!act?spotDetail(s)+DOT+tw('sp.once'):spotDetail(s)));
       face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); row.appendChild(lab);
       var ed=el('button','salt-ghost ospot__edit',tw('sp.edit')); ed.type='button'; ed.setAttribute('aria-label',tw('sp.editOf',{n:s.label})); ed.setAttribute('data-k','spotedit:'+i);
       ed.addEventListener('click',function(){ spotOpen(s); }); row.appendChild(ed); fs.appendChild(row);
     });
-    if(L.length<SPOT_MAX){ var add=el('button','salt-ghost ospot__add',tw('sp.add')); add.type='button'; add.id='spAdd'; add.setAttribute('data-k','spotadd');
-      add.addEventListener('click',function(){ spotOpen(null); }); fs.appendChild(add); }
+    if(rows.length<SPOT_MAX||act){ if(!(act&&draft.spot)){ var add=el('button','salt-ghost ospot__add',tw('sp.add')); add.type='button'; add.id='spAdd'; add.setAttribute('data-k','spotadd');
+      add.addEventListener('click',function(){ spotOpen(null); }); fs.appendChild(add); } }
     else { var full=el('p','salt-field__hint',tw('sp.full')); full.id='spFull'; fs.appendChild(full); }
     return fs;
   }
-  function spotWhy(E){ return !spotCut(E.label,24)?tw('sp.whyName'):spotCut(E.place,60).length<2?tw('sh.whyWhere'):''; }
+  function spotWhy(E){ return spotCut(E.label,24).length<2?tw('sp.whyName'):!draft.pin&&spotCut(E.addr,200).length<5?tw('sp.whyAddr'):''; }
   function drawSpot(){
     var E=draft.spotEdit, B=osh.body;
     sheetHead(tw(E.id?'sp.editH':'sp.addH'),function(){ draft.step='form'; draft.pin=draft.spot?draft.spot.pt:null; draft.spotEdit=null; sheetDraw(); });
     var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sp.name')); nl.htmlFor='spName';
-    var ng=el('div','salt-options__grid salt-options__grid--3');
     var ni=el('input','salt-field__input'); ni.id='spName'; ni.type='text'; ni.maxLength=24; ni.value=E.label; ni.autocomplete='off'; ni.placeholder=tw('sp.namePh'); ni.setAttribute('data-k','spname');
-    SPOT_NAMES.forEach(function(k,i){ var b=el('button','salt-ghost',tw(k)); b.type='button'; b.setAttribute('data-k','spn:'+i); b.setAttribute('aria-pressed',E.label===tw(k)?'true':'false');
-      b.addEventListener('click',function(){ E.label=tw(k); sheetDraw(); }); ng.appendChild(b); });
     ni.addEventListener('input',function(){ E.label=ni.value; spotFoot(); });
-    nf.appendChild(nl); nf.appendChild(ng); nf.appendChild(ni); B.appendChild(nf);
-    var uf=el('div','salt-field'), ul=el('label','salt-field__label',tw('sp.unit')); ul.htmlFor='spUnit';
-    var ui=el('input','salt-field__input'); ui.id='spUnit'; ui.type='text'; ui.maxLength=40; ui.value=E.unit; ui.autocomplete='off'; ui.placeholder=tw('sp.unitPh'); ui.setAttribute('data-k','spunit');
-    ui.addEventListener('input',function(){ E.unit=ui.value; });
-    uf.appendChild(ul); uf.appendChild(ui); B.appendChild(uf);
-    var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sp.area')); wl.htmlFor='oWhere';
-    var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=E.place; wi.autocomplete='off'; wi.placeholder=tw('sh.wherePh'); wi.setAttribute('data-k','where');
-    wi.addEventListener('input',function(){ E.place=wi.value; spotFoot(); });
-    wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(el('span','salt-field__hint',tw('sh.where'))); B.appendChild(wf);
-    slipKeyLoad(); if(SLIPKEY) B.appendChild(pinField());
-    if(!E.id||E.once){ var sv=el('label','salt-field spsave'), cb=el('input'); cb.type='checkbox'; cb.id='spSave'; cb.checked=!!E.save; cb.setAttribute('data-k','spsave');
-      cb.addEventListener('change',function(){ E.save=cb.checked; });
-      var st=el('span','spsave__t'); st.appendChild(el('span','salt-field__label',tw('sp.save'))); st.appendChild(el('span','salt-field__hint',tw('sp.saveHint')));
-      sv.appendChild(cb); sv.appendChild(st); B.appendChild(sv); }
+    nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+    slipKeyLoad();
+    var af=el('div','salt-field opin'), al=el('label','salt-field__label',tw('sp.addr')); al.htmlFor='spAddr'; af.appendChild(al);
+    if(draft.pin){
+      /* either-or: a point taken stands in the address's place, with Remove to type one instead */
+      af.appendChild(el('span','salt-field__hint',tw(draft.pin.src==='gps'?'sh.pinOk':draft.pin.src==='pin'?'sh.pinOkFigures':'sh.pinOkLink')));
+      var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
+      off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; sheetDraw(); });
+      af.appendChild(off);
+    } else {
+      var ai=el('textarea','salt-field__input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=200; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
+      ai.addEventListener('input',function(){
+        var p=pinRead(ai.value);
+        if(p){ draft.pin=p; draft.pinMsg=''; E.addr=''; sheetDraw(); return; }
+        E.addr=ai.value; spotFoot(); });
+      ai.addEventListener('change',function(){ var v=String(ai.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); var h=document.getElementById('spHint'); if(h) h.textContent=draft.pinMsg; } });
+      af.appendChild(ai);
+      var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
+      here.addEventListener('click',pinHere); af.appendChild(here);
+    }
+    var hint=el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint')); hint.id='spHint'; af.appendChild(hint);
+    B.appendChild(af);
     if(E.id&&!E.once){ var rm=el('button','salt-ghost spremove',tw('sp.remove')); rm.type='button'; rm.id='spRemove'; rm.setAttribute('data-k','spremove');
       rm.addEventListener('click',function(){ var L=spotsRead()||[]; spotsWrite(L.filter(function(s){ return s.id!==E.id; }));
         if(draft.spot&&draft.spot.id===E.id){ draft.spot=null; draft.place=''; }
@@ -5168,26 +5125,28 @@ const CLIENT_JS = `
   }
   function spotFoot(){
     var E=draft.spotEdit, F=osh.foot; F.textContent='';
-    var why=spotWhy(E), t=el('div','ototal'); t.appendChild(el('span','sub2',why||tw('sh.where'))); F.appendChild(t);
+    var why=spotWhy(E), t=el('div','ototal'); t.appendChild(el('span','sub2',why||tw('sh.pinHint'))); F.appendChild(t);
     var go=el('button','salt-pill salt-pill--md',tw('sp.use')); go.type='button'; go.id='spUse'; go.disabled=!!why; go.setAttribute('data-k','spuse');
     go.addEventListener('click',function(){
       if(spotWhy(E)) return;
-      var s={id:E.id||mintRid(), label:spotCut(E.label,24), place:spotCut(E.place,60), unit:spotCut(E.unit,40), pt:draft.pin&&spotPt(draft.pin)?draft.pin:null};
+      var pt=draft.pin&&spotPt(draft.pin)?draft.pin:null;
+      var s={id:E.id||mintRid(), label:spotCut(E.label,24), addr:pt?'':spotCut(E.addr,200), pt:pt};
+      /* kept on this phone by itself; Order as them keeps none on his */
       var kept=false;
-      if(E.save){ var L=spotsRead()||[], at=-1; L.forEach(function(x,i){ if(x.id===s.id) at=i; });
+      var L=act?null:spotsRead();   /* a store that cannot be read is not written: the spot serves this order alone */
+      if(L){ var at=-1; L.forEach(function(x,i){ if(x.id===s.id) at=i; });
         if(at>=0) L[at]=s; else if(L.length<SPOT_MAX) L.push(s);
         kept=(at>=0||L.indexOf(s)>=0)&&spotsWrite(L); }
       if(!kept) s.once=true;
       spotPick(s); draft.spotEdit=null; draft.step='form'; sheetDraw(); });
     F.appendChild(go); F.hidden=false;
   }
-  /* Counter Batch C (20 Oct 2026): what is sealed for a delivery. The exact point as read, with the picked spot's name and its
-     floor or unit beside it; a unit with no point is sealed on its own (src 'unit'); a spot with neither seals nothing. Both were
-     cut at the spot's step (spotFoot), one-off spots too, so a long unit is never refused after the sheet said yes. The name and the unit never leave the phone unsealed. */
+  /* what is sealed for a delivery: the point or link as read, else the address as typed (src 'addr'), with the spot's name beside it.
+     The name also travels in the clear as the order's place; the address never does. */
   function pinOf(){
-    var s=draft.spot, label=s&&s.label||'', unit=s&&s.unit||'', p=null;
-    if(draft.pin){ p=Object.assign({},draft.pin); if(label) p.label=label; if(unit) p.unit=unit; }
-    else if(unit){ p={unit:unit, src:'unit'}; if(label) p.label=label; }
+    var s=draft.spot, label=s&&s.label||'', addr=s&&s.addr||'', p=null;
+    if(draft.pin){ p=Object.assign({},draft.pin); if(label) p.label=label; }
+    else if(addr){ p={addr:addr, src:'addr'}; if(label) p.label=label; }
     return p;
   }
   function pinSeal(p){ return slipSeal(SLIPKEY,new TextEncoder().encode(JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))),'salt-pin v1'); }
@@ -5250,7 +5209,7 @@ const CLIENT_JS = `
     /* V5b2: the sheet picked so far, one verdict, said once under the sizes */
     var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ var lk=el('p','salt-insight',tw('sh.prepay',{c:rm(ceilingRM())})); lk.id='advLikely'; B.appendChild(lk); }
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
-      function(v){ draft.mode=v; sheetDraw(); }));
+      function(v){ draft.mode=v; sheetDraw(); },!draft.mode));
     /* plan version 3: HANDED OVER AND PAID NOW, his alone on Order as them, for a collected order: a settings row with its switch, as This device's */
     if(act&&draft.mode==='collect'&&!draft.amend&&!draft.pool){
       var nl=el('div','salt-settings'), nr=el('div','salt-settings__row'), nh=el('span','salt-settings__label',tw('sh.actNow')); nh.id='oNowH';
@@ -5271,13 +5230,13 @@ const CLIENT_JS = `
     }
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
     /* v1377: saved spots stay on their phone (Batch C), so Order as them asks the area and the exact spot afresh and keeps none on his */
-    var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend&&!act?spotsRead():null;
+    var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend?(act?[]:spotsRead()||[]):null;
     /* 2 Nov 2026: with one spot saved there is nothing to choose between, so it is picked (his report that Deliver would not
        progress: Review waited on a tap nothing asked for); two or more still open with none picked (Batch C, his answer 4) */
     if(SL&&SL.length===1&&!draft.spot) spotPick(SL[0]);
     /* 3 Nov 2026: To your last place and Order again pick the one saved spot at that place, once; a tap that promised nothing picks nothing */
-    if(SL&&draft.startPlace){ var hit=!draft.spot?SL.filter(function(s){ return s.place===draft.startPlace; }):[]; if(hit.length===1) spotPick(hit[0]); draft.startPlace=''; }
-    if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a saved spot's point or unit is sealed at Place, so the key is asked for here too */
+    if(SL&&draft.startPlace){ var hit=!draft.spot?SL.filter(function(s){ return s.label===draft.startPlace; }):[]; if(hit.length===1) spotPick(hit[0]); draft.startPlace=''; }
+    if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a spot's address or point is sealed at Place, so the key is asked for here too */
     else if(draft.mode==='deliver'){
       var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sh.whereTo')); wl.htmlFor='oWhere';
       var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
@@ -5285,10 +5244,8 @@ const CLIENT_JS = `
       var wh=el('span','salt-field__hint',whereHint());
       wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
       wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
-      /* 10 Oct 2026: AND THE EXACT SPOT, if they want to share it, offered once our key is filed (F13's slip key) */
-      if(!draft.pool){ slipKeyLoad();
-        if(draft.amend&&draft.pinKept) B.appendChild(el('p','salt-field__hint',tw('sh.pinKept')));
-        else if(!draft.amend&&SLIPKEY) B.appendChild(pinField()); }
+      /* an amendment keeps the spot the order was placed with */
+      if(draft.amend&&draft.pinKept) B.appendChild(el('p','salt-field__hint',tw('sh.pinKept')));
     }
     /* 10 Oct 2026: A DELIVERY asks for a time: as soon as it can, or one of the windows open now, each its next occurrence;
        a window no longer open (the clock moved, or the hours) leaves the choice at as soon as it can */
@@ -5516,7 +5473,7 @@ const CLIENT_JS = `
     var cco=c.pool?{any:false}:creditOff(sheetSum(c));
     if(cco.any){ row(tw('sh.credit'),'- '+rm(cco.c)); row(tw('sh.youPay'),rm(cco.pay),c.mode==='deliver'?tw('sh.youPayDeliv'):''); }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
-    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw(c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),tw('sh.pinShared'));
+    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw(c.pin&&c.pin.src==='addr'?'sp.addrRow':c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),tw('sh.pinShared'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
     if(!c.pool&&c.mode==='deliver') row(tw('sh.winRow'),c.slot&&c.span?tw('sh.winCheck',{d:ymdDay(winDay(c.slot)), a:winPart(c.span,0), b:winPart(c.span,1)}):tw('sh.soon'));
     else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
@@ -5646,6 +5603,7 @@ const CLIENT_JS = `
       :c.lines.some(function(l){ return l.agreed.prepay; })?'sh.actAgreedPrepay':'sh.actAgreed'):'';
     draft.now=false; draft.on=''; draft.buyer='';   /* plan version 3: each sheet asks again */
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
+    draft.mode=null; draft.place=null; draft.spot=null;   /* 11 Nov 2026: the next order asks its way afresh */
     sheetDraw();
     await ordersAgain(); if(mine!==ticket) return;
     drawOrder();
@@ -7668,7 +7626,7 @@ const CLIENT_JS = `
   function homeStart(){
     var box=el('div'); if(!bundle||ro()||hold||!sold().length) return box;
     box.appendChild(hHead(tw('sh.new')));
-    var g=el('div','salt-options__grid salt-options__grid--2'), w=wayNow();
+    var g=el('div','salt-options__grid salt-options__grid--2'), LD=oLatest(function(o){ return o.mode==='deliver'&&!!o.place; }), w=LD?{place:String(LD.place)}:null;
     [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
       var b=el('button','salt-option__face salt-option__face--tap hstart'), t=el('span','salt-option__text'); b.type='button'; b.setAttribute('data-start',x[0]);
       t.appendChild(el('span','salt-option__label',tw(x[1]))); t.appendChild(el('span','salt-option__detail',tw(x[2]))); b.appendChild(t);

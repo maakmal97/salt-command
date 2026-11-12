@@ -1,0 +1,122 @@
+[
+ {
+  "name": "the Their % card draws no figure",
+  "file": "stmt/owner.js",
+  "find": "          if(tierSets(d).length) tierLines(d).forEach(function(p){ card.appendChild(p); });\n",
+  "replace": ""
+ },
+ {
+  "name": "the figure is said as a fraction",
+  "file": "stmt/owner.js",
+  "find": "  function tierWord(v){ return v==null?'0%':pctWord(Math.round(Number(v)*100)); }",
+  "replace": "  function tierWord(v){ return v==null?'0%':String(v); }"
+ },
+ {
+  "name": "what it was is not said",
+  "file": "stmt/owner.js",
+  "find": "(was?', was '+was:'')",
+  "replace": "''"
+ },
+ {
+  "name": "the verb is Price %",
+  "file": "stmt/owner.js",
+  "find": "TIER:'Their %'",
+  "replace": "TIER:'Price %'"
+ },
+ {
+  "name": "its Approve names no figure",
+  "file": "stmt/owner.js",
+  "find": "return ts.length===1?'Approve '+tierWord(ts[0].v):'Approve'; }",
+  "replace": "return 'Approve'; }"
+ },
+ {
+  "name": "a no-figure entry draws RM 0.00 again",
+  "file": "stmt/owner.js",
+  "find": "          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning))); }\n",
+  "replace": ""
+ },
+ {
+  "name": "the reading is drawn whole",
+  "file": "stmt/owner.js",
+  "find": "card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning)))",
+  "replace": "card.appendChild(el('p','maker-facts apsays',d.reasoning))"
+ },
+ {
+  "name": "Approve all beside one card",
+  "file": "stmt/owner.js",
+  "find": "      if(ticks.length>1){\n        var all=",
+  "replace": "      if(ticks.length>0){\n        var all="
+ },
+ {
+  "name": "Approve all never stands",
+  "file": "stmt/owner.js",
+  "find": "      if(ticks.length>1){\n        var all=",
+  "replace": "      if(ticks.length>99){\n        var all="
+ },
+ {
+  "name": "the lead counts rows again",
+  "file": "stmt/owner.js",
+  "find": "    if(draftStatus) draftStatus.textContent='';",
+  "replace": "    if(draftStatus) draftStatus.textContent=pendingRows.length+' rows waiting for your approval';"
+ },
+ {
+  "name": "an empty lead is drawn",
+  "file": "stmt/page.js",
+  "find": ".adm #makerDraftStatus:empty{display:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the empty fold is drawn",
+  "file": "stmt/owner.js",
+  "find": "if(fold) fold.hidden=!held.length&&!bad.length;",
+  "replace": "if(fold) fold.hidden=false;"
+ },
+ {
+  "name": "the fold is never drawn",
+  "file": "stmt/owner.js",
+  "find": "if(fold) fold.hidden=!held.length&&!bad.length;",
+  "replace": "if(fold) fold.hidden=true;"
+ },
+ {
+  "name": "approvals ask on the Sheet again",
+  "file": "stmt/owner.js",
+  "find": "    var asked=R.length?ownerAsk(",
+  "replace": "    var asked=true?ownerAsk("
+ },
+ {
+  "name": "a Reject goes with no Sheet",
+  "file": "stmt/owner.js",
+  "find": "    var asked=R.length?ownerAsk(",
+  "replace": "    var asked=false?ownerAsk("
+ },
+ {
+  "name": "the bar says approve",
+  "file": "stmt/owner.js",
+  "find": "A.length?A.length+' to approve':''",
+  "replace": "A.length?A.length+' approve':''"
+ },
+ {
+  "name": "the Sheet row says RM 0.00",
+  "file": "stmt/owner.js",
+  "find": "item.amends||noFigure(item)?'':rm(item.total)",
+  "replace": "item.amends?'':rm(item.total)"
+ },
+ {
+  "name": "the Sheet row says no figure",
+  "file": "stmt/owner.js",
+  "find": ".concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+tierWord(s.v); }))",
+  "replace": ""
+ },
+ {
+  "name": "Approve all chooses a refused card too",
+  "file": "stmt/owner.js",
+  "find": "if(!apGone(g)) apPick[g.lead.id]='a';",
+  "replace": "apPick[g.lead.id]='a';"
+ },
+ {
+  "name": "the Sheet row's book is no tag",
+  "file": "stmt/owner.js",
+  "find": "ts.length===1?productTag(ts[0].product):item.product",
+  "replace": "item.product"
+ }
+]

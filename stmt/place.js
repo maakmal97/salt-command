@@ -18,8 +18,12 @@
 const MAX_HOPS = 3, PAGE_BYTES = 400000, TIMEOUT = 8000;
 const AGENT = "SaltPlaces/1 (place search and map links; contact through the site's owner)";
 
-function clean(s) {
-  if (typeof s !== "string" || s.length > 400) return null;
+/* 12 Nov 2026: the link he pastes is held to 400 characters, a hop's Location to 2,000. Google's answer for a short link
+   carries the whole address and its tracking words, 395 characters for a Kuala Lumpur apartment block from this laptop,
+   so a longer name, or the words Google adds for a Worker, ran past 400 and every such link was refused. */
+const LINK_MAX = 400, HOP_MAX = 2000;
+function clean(s, max = LINK_MAX) {
+  if (typeof s !== "string" || s.length > max) return null;
   let u;
   try { u = new URL(s.trim()); } catch (e) { return null; }
   if (u.protocol !== "https:" || u.username || u.password || u.port) return null;
@@ -82,7 +86,7 @@ export async function mapsOpen(url, fetchFn) {
       if (!next) break;
       let to; try { to = new URL(next, u); } catch (e) { break; }
       if (to.protocol === "http:") to.protocol = "https:";
-      const kept = clean(to.href);
+      const kept = clean(to.href, HOP_MAX);
       if (!kept || !(landed(kept) || mapsKind(kept))) break;
       u = kept;
     }

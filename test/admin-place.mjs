@@ -13,6 +13,9 @@
  *   U2  a tap puts the place's point in Place and names it under the list, and the list shuts
  *   U3  the arrows and Enter choose too; Escape shuts the list
  *   U4  Add point with an Apple short link opens it on the Worker and adds its point
+ *   W6  a short link whose answer runs past 400 characters opens to its point (12 Nov 2026); one past 2,000 is still refused
+ *   U8  a link that leads to no point says so in plain words on Place on the map, never the general sentence
+ *   U9  the Desk's refusal of a locality not on its lists says so in plain words too
  * Drawn by the maker harness (test/maker-act.mjs). */
 import fs from "fs";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
@@ -83,6 +86,16 @@ export async function run({ ok, pageWork }) {
   f = fake({ "https://maps.app.goo.gl/Xyz789": { to: "https://evil.test/steal" } });
   r = await mapsOpen("https://maps.app.goo.gl/Xyz789", f);
   ok(!r.ok && f.calls.length === 1 && !f.calls.some((c) => /evil/.test(c.url)), "a hop that leads off the makers' hosts is not followed");
+  /* W6 (12 Nov 2026, his Place on the map refused a short link): Google answers a short link with the whole address and its tracking
+     words, 395 characters for a Kuala Lumpur block from the laptop; a Location over 400 was refused, so the hop is held to 2,000 */
+  const LONG = "https://www.google.com/maps/place/Cendana+Apartment+Block+B,+Jalan+Tasik+Permaisuri+3,+Bandar+Sri+Permaisuri,+56000+Kuala+Lumpur,"
+    + "+Wilayah+Persekutuan+Kuala+Lumpur/@3.0976002,101.7126563,17z/data=!3m1!4b1!4m6!3m5!1s0x31cc35f15307c033:0x2622af29cf377297!8m2!3d3.0976002"
+    + "!4d101.7126563!16s%2Fg%2F12hkcndvq?entry=tts&g_ep=EgoyMDI2MTEwOC4wIOC7DCoASAFQAw%3D%3D&skid=a8a7622a-7dab-4714-b6a2-b387fd772f2d&hl=en-GB&gl=my";
+  f = fake({ "https://maps.app.goo.gl/Long01": { to: LONG }, "https://maps.app.goo.gl/Huge01": { to: LONG + "&x=" + "y".repeat(2000) } });
+  r = await mapsOpen("https://maps.app.goo.gl/Long01", f);
+  const lr = r.ok ? geo.link(r.location) : null, huge = await mapsOpen("https://maps.app.goo.gl/Huge01", f);
+  ok(LONG.length > 400 && !!lr && lr.lat === 3.0976 && lr.lng === 101.712656 && !huge.ok && /did not lead to a point/.test(huge.error),
+    "W6 a short link whose answer runs past 400 characters opens to its point, and one past 2,000 is still refused: " + JSON.stringify([LONG.length, r.ok, huge.ok]));
 
   /* W4 */
   const PHOTON = (w) => "https://photon.komoot.io/api/?q=" + encodeURIComponent(w) + "&limit=8&lang=en&lat=3.139&lon=101.687&bbox=99.6,0.8,119.3,7.4";
@@ -180,4 +193,32 @@ export async function run({ ok, pageWork }) {
     ok(searched.length === before + 1 && idl.value === "3.14915, 101.71295" && byAct(form("Change a name or place"), "record.amend-id.link").value === "3.07380, 101.72550",
       "U7 a place searched on Add ID puts its point there, and Use my location on Amend ID its own: " + JSON.stringify([idl.value, searched.length - before]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* U8 (12 Nov 2026): a link the opener cannot follow says why on Place on the map, never the general sentence */
+  let opens = false;
+  const q = await richOwnerPage({ pageWork, slip: true, extra: (route) => route === "/all/maker/geo/expand" ? (opens ? { ok: true, location: LONG } : { ok: false, error: "The link did not lead to a point." })
+    : route === "/all/maker/inputs/place" ? { ok: false, error: "A public locality must be on the official place list or gazetteer; exact addresses stay encrypted." } : undefined });
+  try {
+    await q.work.quiet();
+    const click = async (e) => { if (e) e.click(); await q.work.quiet(); };
+    await click(byAct(q.d, "nav.record")); await click(byAct(q.d, "part.record.customers"));
+    const pf = [...q.d.querySelectorAll("#makerInputs section.maker-input")].find((s) => s.querySelector("h3").textContent === "Place on the map");
+    await click(pf && byAct(pf, "vault.unlock")); const pass = byAct(q.d, "vault.passphrase"); if (pass) pass.value = q.slipPass; await click(byAct(q.d, "vault.open"));
+    const who = pf && byAct(pf, "record.place.party"), link = pf && byAct(pf, "record.place.link");
+    if (who && who.options.length > 1) who.value = who.options[1].value;
+    if (link) link.value = "https://maps.app.goo.gl/Gone01";
+    await click(pf && byAct(pf, "record.place.send"));
+    const said = pf ? [...pf.querySelectorAll('[role="status"]')].map(t).join(" / ") : "";
+    ok(/That link did not lead to a map point[.] Paste the full link, or tap Use my location[.]/.test(said) && !/could not do that/.test(said),
+      "U8 a short link that leads to no point says so on Place on the map: " + said);
+    /* U9 (12 Nov 2026): the Desk's locality refusal, which his tap met once the link opened, in plain words too */
+    opens = true;
+    const loc = pf && byAct(pf, "record.place.locality");
+    if (loc) loc.value = "Bandar Tun Razak, Kuala Lumpur";
+    if (link) link.value = "https://maps.app.goo.gl/Gone02";
+    await click(pf && byAct(pf, "record.place.send"));
+    const said9 = pf ? [...pf.querySelectorAll('[role="status"]')].map(t).join(" / ") : "";
+    ok(/That place cannot be filed beside a point[.] Choose another from the list[.]/.test(said9) && !/could not do that/.test(said9),
+      "U9 the Desk's locality refusal says so on Place on the map: " + said9);
+  } catch (e) { ok(false, "U8 stopped on an error: " + (e && e.message)); } finally { q.w.close(); }
 }

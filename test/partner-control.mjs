@@ -63,9 +63,7 @@ export async function run({ ok }) {
   const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
   w.eval("setProd('salt');recompute();");
   const pick = rd("(function(){return tierCustomers().filter(function(id){return partners.indexOf(id)<0&&associates.indexOf(id)<0&&!isBucket(id)&&id[0]==='C'&&id.indexOf('-R')<0;})[0];})()");
-  const before = String(w.eval("driftCard()"));
   const floorBefore = rd("cardQuote(" + JSON.stringify(pick) + ",1)");
   const q = rd("queue.filter(function(x){return x&&x.payload&&x.payload.mode==='partner';})");
-  const after = String(w.eval("driftCard()"));
   const floorNow = rd("(function(){var C=pxCost(),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});return PRICING_ENGINE.floorTotal(1,C,P);})()");
 }

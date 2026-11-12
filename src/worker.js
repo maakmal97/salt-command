@@ -2069,7 +2069,7 @@ async function handleVaultInput(env, operation, body) {
   const book = await readBook(env.SALT_LEDGER);
   const points = operation === "place" ? Object.values(input.places || {}) : input.geo ? [input.geo] : [];
   for (const point of points)
-    if (!await officialVaultPoint(point))
+    if (!await officialVaultPoint(point, book && book.state && book.state.PLACED))
       return json({ ok: false, error: "A public locality must be on the official place list or gazetteer; exact addresses stay encrypted." }, 400);
   const built = makerLedgerInput(operation, input, book);
   if (built.error) return json({ ok: false, error: built.error }, 400);

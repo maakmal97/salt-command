@@ -902,11 +902,6 @@ export const OWNER_JS = `
     try{ var c=await readParty(); return (c.parties||[]).filter(function(code){ return !/[-]R$/.test(code); }); }
     catch(e){ return []; }
   }
-  /* 4 Nov 2026 (one convention on every surface): their spot's place search on Order as them goes through his own road, as Shop's points do */
-  async function actSearch(q){
-    try{ return {status:200, body:await refs('/all/maker/geo/search',{q:q})}; }
-    catch(e){ return {status:e.status||0, body:{ok:false}}; }
-  }
   async function actKey(){
     try{ return {status:200, body:await refs('/all/maker/slip/key')}; }
     catch(e){ return {status:e.status||0, body:{ok:false}}; }
@@ -1221,6 +1216,11 @@ export const OWNER_JS = `
   var REFUSAL_GENERAL='The Counter could not do that. Try again.';
   /*REFUSALS*/
   var REFUSALS={
+    /* 12 Nov 2026: the map link opener's own words (stmt/place.js mapsOpen), which fell to the general sentence on Place on the map */
+    'The link did not lead to a point.':'That link did not lead to a map point. Paste the full link, or tap Use my location.',
+    'The link did not answer.':'The map link did not answer. Try again, or paste the full link.',
+    'Only a Google Maps or Apple Maps link is opened here.':'Only a Google Maps or Apple Maps link is opened here.',
+    'A public locality must be on the official place list or gazetteer; exact addresses stay encrypted.':'That place cannot be filed beside a point. Choose another from the list.',
     'Say which figure changes.':'Change at least one of the units, the price or the delivery.',
     'A size and a price are above nothing.':'Units and price must each be above zero.',
     'A reply is 1 to 200 characters.':'A reply is 1 to 200 characters.',
@@ -1833,7 +1833,7 @@ export const OWNER_JS = `
   }
   /* Salt Admin A to C (20 Oct 2026), P4, HIS ANSWER: THE DELIVERY ADDRESS, their sealed spot, opened here too after the one unlock (it was the
      Desk's alone). Sealed while shut, with Unlock; open, the Address (the spot's name), its floor or unit and Maps from the point, each from the
-     seal and nothing stored but in page memory: the opened part carries data-maker-pin, and makerVaultLock (the lock, a hidden page, a lapse)
+     seal and nothing stored but in page memory (11 Nov 2026: the Name, then the Address as they typed it, with Maps searching it): the opened part carries data-maker-pin, and makerVaultLock (the lock, a hidden page, a lapse)
      takes it off and lets the held copy go. A unit alone has no Maps. Filing it as their place
      stays on the Desk. */
   function spotHref(lat,lng){
@@ -1863,17 +1863,22 @@ export const OWNER_JS = `
     function said(text){ head(false); note.textContent=text; box.appendChild(note); }
     function adSpotPaint(p){
       head(false);
-      var part=el('div','adspot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'';
+      var part=el('div','adspot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'', addr=typeof p.addr==='string'?p.addr.slice(0,200):'';
       part.setAttribute('data-maker-pin','');
-      if(label) led.appendChild(ordLine('Address',label));
+      /* 11 Nov 2026: a spot is a name and its typed address, or a point; one filed before carried a floor or unit */
+      if(label) led.appendChild(ordLine('Name',label));
+      if(addr) led.appendChild(ordLine('Address',addr));
       if(unit) led.appendChild(ordLine('Floor or unit',unit));
       if(led.firstChild) part.appendChild(led);
       var row=el('div','adspot__acts');
-      if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
+      if(p.src==='addr'&&addr){
+        var q=el('a','salt-ghost adspot__maps'); q.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr); q.target='_blank'; q.rel='noopener'; q.setAttribute('data-spot-maps','');
+        q.appendChild(pinSvg()); q.appendChild(document.createTextNode('Maps')); row.appendChild(q);
+      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
         var a=el('a','salt-ghost adspot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
         if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
         a.appendChild(pinSvg()); a.appendChild(document.createTextNode('Maps')); row.appendChild(a);
-      }else if(p.src!=='unit') part.appendChild(el('p','msg','Their link could not be opened to a point just now.'));
+      }else if(p.src!=='unit'&&p.src!=='addr') part.appendChild(el('p','msg','Their link could not be opened to a point just now.'));
       var lk=ghost(['Lock','vault.lock','spot:'+key]); lk.addEventListener('click',function(){ makerVaultLock(); }); row.appendChild(lk);
       part.appendChild(row);
       part.appendChild(el('p','msg','File it as their place on the Desk.'));
@@ -5084,7 +5089,9 @@ export const OWNER_JS = `
      and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
   function deskAskRow(item){
     var rid=draftRid(item);
-    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
+    /* a Their % row says its figure, its book the typed tag (no book is named in words on Salt Admin) */
+    var ts=tierSets(item);
+    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends||noFigure(item)?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].concat(ts.map(function(s){ return (ts.length>1?s.code+' ':'')+tierWord(s.v); })).filter(Boolean).join(', '),ts.length===1?productTag(ts[0].product):item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
   }
   function deskAskRows(draft){ return groupOf(draft).drafts.map(deskAskRow); }
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
@@ -5127,7 +5134,8 @@ export const OWNER_JS = `
     var open=(makerData.orders||[]).filter(ordOpen);
     var pendingRows=(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; });
     makerOpenOrders=open;
-    if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
+    /* 12 Nov 2026 (his Approve review): the list's head counts the cards he decides, so the lead no longer counts rows beside it; it keeps only Reading, a refusal or an answer, and is not drawn while empty */
+    if(draftStatus) draftStatus.textContent='';
     /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
        with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
     var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={};
@@ -6287,7 +6295,7 @@ export const OWNER_JS = `
       return k==='hand'?'Approve: handover on '+n+' lines':k==='pay'?'Approve: payment on '+n+' lines':k==='join'?'Approve: one order of '+n+' lines':approveWord(n); }
     if(k==='sell') return 'Approve the sale';
     if(k==='buy') return 'Approve the purchase';
-    if(k==='other') return 'Approve';
+    if(k==='other'){ var ts=g.drafts.length===1?tierSets(g.lead):[]; return ts.length===1?'Approve '+tierWord(ts[0].v):'Approve'; }
     if(!rid) return 'Approve: '+AP_WORD[k].toLowerCase();
     if(k==='close') return 'Approve: '+rid+' closed';
     if(k==='cancel') return 'Approve: '+rid+' cancelled';
@@ -6382,22 +6390,25 @@ export const OWNER_JS = `
     var gs=apGroups(), A=gs.filter(function(g){ return apPick[g.lead.id]==='a'; }), R=gs.filter(function(g){ return apPick[g.lead.id]==='r'; });
     bar.textContent=''; bar.hidden=!(A.length+R.length);
     if(bar.hidden) return;
-    bar.appendChild(el('span','apbar__line',[A.length?A.length+' approve':'',R.length?R.length+' reject':''].filter(Boolean).join(' · ')));
+    bar.appendChild(el('span','apbar__line',[A.length?A.length+' to approve':'',R.length?R.length+' to reject':''].filter(Boolean).join(' · ')));
     var clear=actOn(el('button','salt-ghost','Clear'),'approve.clear'); clear.type='button';
     clear.addEventListener('click',function(){ apPick={}; drawMaker(); });
     var go=actOn(el('button','salt-pill salt-pill--sm','Confirm'),'approve.confirm'); go.type='button'; ynTag(go,'approve:confirm');
     go.addEventListener('click',function(){ apConfirm(go,A,R); });
     bar.appendChild(clear); bar.appendChild(go);
   }
+  /* 12 Nov 2026 (his Approve review): ticking a card and tapping Confirm is already the second look, so a batch of approvals goes on Confirm. The Sheet asks
+     only when a Reject is among them: a rejected row a site order made is written onto that order, and that is asked first. */
   function apConfirm(go,A,R){
     var n=A.length+R.length, extra=[];
     if(A.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--a',A.length+' to approve')); A.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
     if(R.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--r',R.length+' to reject')); R.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
-    return ownerAsk(go,'approve:confirm',{title:'Decide '+n+(n===1?' card?':' cards?'), extra:extra, plain:true,
+    var asked=R.length?ownerAsk(go,'approve:confirm',{title:'Decide '+n+(n===1?' card?':' cards?'), extra:extra, plain:true,
       say:['Each is decided as drafted. One that cannot go stays here with why and how to fix it; the rest go.'],
-      go:'Confirm '+n, keep:'Not yet'}).then(function(yes){
+      go:'Confirm '+n, keep:'Not yet'}):Promise.resolve(true);
+    return asked.then(function(yes){
       if(!yes||makerBusy) return;
-      makerBusy=true;
+      makerBusy=true; go.disabled=true;
       var ids=function(gs){ return [].concat.apply([],gs.map(function(g){ return g.drafts.map(function(d){ return d.id; }); })); };
       var lead={}, grp={}; A.concat(R).forEach(function(g){ g.drafts.forEach(function(d){ lead[d.id]=g.lead.id; grp[d.id]=g; }); });
       return refs('/all/maker/drafts/decide-many',{approve:ids(A), reject:ids(R)}).then(function(j){
@@ -6429,9 +6440,13 @@ export const OWNER_JS = `
     var ticks=live.filter(apTickable);
     if(ticks.length){
       var hr=el('div','aphead'); hr.appendChild(el('span','aphead__n',ticks.length+' to decide'));
-      var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
-      all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
-      hr.appendChild(all); draftRoot.appendChild(hr);
+      /* 12 Nov 2026 (his Approve review): Approve all beside one card is that card's Approve, so it stands from two */
+      if(ticks.length>1){
+        var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
+        all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
+        hr.appendChild(all);
+      }
+      draftRoot.appendChild(hr);
     }
     live.forEach(function(g){
       var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
@@ -6451,7 +6466,11 @@ export const OWNER_JS = `
         if(r.fg) card.appendChild(nowAfter(r.fg));
       });
       else if(!draft.amends){
-        g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty,d.product||'salt',d.total)); var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
+        g.drafts.forEach(function(d){
+          if(tierSets(d).length) tierLines(d).forEach(function(p){ card.appendChild(p); });
+          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning))); }
+          else card.appendChild(bookLine(d.qty,d.product||'salt',d.total));
+          var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
         if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip: Approve decides both.':g.drafts.length+' books, one trip: Approve decides all of them.'));
       }
       if(fg&&fg.approvedBefore) card.appendChild(el('p','salt-insight aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
@@ -6500,6 +6519,8 @@ export const OWNER_JS = `
       if(counted) counted.textContent=String(held.length);
       /* plan 1: a queue key the Desk could not read is said first, by its name, and never read as an empty queue */
       var bad=unreadableKeys();
+      /* 12 Nov 2026 (his Approve review): with nothing sent and no key unread the fold says nothing worth a line, so it is not drawn */
+      var fold=document.getElementById('makerQueue'); if(fold) fold.hidden=!held.length&&!bad.length;
       if(bad.length){ var ub=el('p','msg bad',unreadableLine(bad)); ub.setAttribute('data-unreadable',''); queueRoot.appendChild(ub); }
       if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
       held.forEach(function(entry){
@@ -7255,8 +7276,33 @@ export const OWNER_JS = `
     p.appendChild(document.createTextNode(units(qty)+(product?' ':''))); if(product) p.appendChild(bookTag(product));
     p.appendChild(document.createTextNode(', '+rm(total))); return p;
   }
-  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Price %', REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
+  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Their %',REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
   function entryWord(e){ return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry'; }
+  /* 12 Nov 2026 (his Approve review): A CARD SAYS WHAT IT APPROVES. A Their % row is each book and the figure it sets, read off the row as drafted, and what it was
+     where the drafter's flag says it moves; an entry with no size and no sum draws no money line (it drew RM 0.00) but the first sentence of the drafter's reading */
+  function tierSets(d){
+    var t=(d.collection==='tierset'&&d.row&&d.row.tiers)||{}, out=[];
+    Object.keys(t).forEach(function(c){ var ps=t[c]||{}; Object.keys(ps).forEach(function(p){ out.push({code:c, product:p, v:ps[p]}); }); });
+    return out;
+  }
+  function tierWord(v){ return v==null?'0%':pctWord(Math.round(Number(v)*100)); }
+  /* the drafter says a figure as "20% off", "30% lift" or "not set"; the card says it as the stepper does */
+  function tierWas(d,s){
+    var said=function(w){ var m=/^([0-9.]+)% (off|lift)$/.exec(w); return m?pctWord(Math.round(+m[1])*(m[2]==='off'?-1:1)):w==='not set'?'0%':w; };
+    var hit=null; (d.flags||[]).forEach(function(f){ var m=/^([^ ]+?)'s (.+?) moves from (.+?) to (.+?)[.]$/.exec(String(f)); if(m&&m[1]===s.code&&String(m[2]).toLowerCase()===String(s.product).toLowerCase()) hit=said(m[3]); });
+    return hit;
+  }
+  function tierLines(d){
+    var sets=tierSets(d), many=Object.keys((d.row||{}).tiers||{}).length>1;
+    return sets.map(function(s){
+      var p=el('p','maker-facts aptier'), was=tierWas(d,s);
+      if(many) p.appendChild(document.createTextNode(s.code+' '));
+      p.appendChild(productTag(s.product)); p.appendChild(document.createTextNode(' '+tierWord(s.v)+(was?', was '+was:'')));
+      return p;
+    });
+  }
+  function firstSentence(s){ s=noBook(String(s||'')).trim(); var m=/^.*?[.!?](?=[ ]|$)/.exec(s); return m?m[0]:s; }
+  function noFigure(d){ return d.qty==null&&d.total==null; }
   /* what a Desk row is, in the order a person says it: the kind, the size, the sum; its book is the mark its card draws before these words (needCard, mark) */
   function rowWhat(d){ var e=d.entry||{}; return [entryWord(e), d.qty==null?'':units(d.qty), rm(d.total)].filter(Boolean).join(', '); }
   function ghost(t, lit){ var L=labOf(t), b=actOn(el('button','salt-ghost'+(lit?' salt-ghost--lit':''),L[0]),L[1],L[2]); b.type='button'; return b; }

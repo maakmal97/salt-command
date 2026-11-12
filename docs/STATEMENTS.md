@@ -742,6 +742,17 @@ The suite section "Account leads with this device, and the door names the app" (
   back to the basket; Remove on the check takes a line out while nothing is placed. It is page memory: lost on a reload and at sign-out.
 - **Sent forgets what was placed** on every road (his answer 3, reversing V4b's keep): the next sheet does not offer a size just placed.
 
+### A spot made simple, Shop, and the way always asked (11 Nov 2026)
+
+- His word: "either enter their address (plain text or using links), or use exact location (GPS), and a label. That is it." Add a spot asks a
+  **Name** (plain words, grey suggestion Home, Shop or Work, 2 to 24) and an **Address** (typed, 5 to 200, or a map link pasted into the same field,
+  read by `pinRead`) **or Use my location**; a point taken stands in the address's place with Remove. No preset names, floor or unit, area, place
+  search or Save box: a spot is kept by itself (three at most), or for this order alone on Order as them or when the store cannot be read. The name
+  is the order's `place`, in the clear; the address is sealed (`salt-pin v1`, `{addr, src: 'addr', label}`) and read on the Desk and Salt Admin after
+  the one unlock (Name, Address, Maps searching the words), never filed or measured. A spot kept before this day is read back with its floor and
+  area as its address. Order is named **Shop** (`place.prices`); **every new order asks collect or deliver** (`formMiss`, `sh.whyWay`), Sent
+  forgets the way, and Home's tiles and Order again are the answer. Sections "Counter Batch C: spots on the phone" and "11 Nov 2026: Shop and Orders".
+
 ### Counter Batch C: saved spots, the sealed name and unit, the confirm time, Help, the sliders (his answers of 20 Oct 2026)
 
 - **Saved spots** (item 18; his answers 3, 4, 12 and 13). A delivery's Where to is the spots kept on this phone for this account, localStorage
@@ -3258,14 +3269,19 @@ it.
 ## Multi-tick Approve (22 Oct 2026, his suggestion and answers; `docs/plan-approve-many.html`, canvas Salt Admin Approve)
 
 - **A card is ticked, not decided.** On Orders > Approve each card's Approve and Reject choose (one or the other, the card whole: a trip's rows,
-  or every move on one order); **Approve all** chooses Approve on every card that can go; the bar counts both ways with **Clear** and **Confirm**.
+  or every move on one order); **Approve all**, shown from two cards, chooses Approve on every card that can go; the bar counts "to approve" and "to reject" with **Clear** and **Confirm**.
   A payment they say they sent is never ticked: it is answered on its order. A pick is kept by the card's first draft and let go when it leaves.
-- **Confirm asks once** (the page's Sheet, "Decide N cards?", the rows under "to approve" and "to reject") and its yes sends ONE
+- **Confirm sends approvals at once; it asks only when a Reject is among them** (12 Nov 2026, his Approve review: the tick and Confirm are already the
+  second look; a rejected row a site order made is written onto its order, so that is asked: the page's Sheet, "Decide N cards?", the rows under
+  "to approve" and "to reject"). Either way ONE
   `POST /all/maker/drafts/decide-many` `{approve, reject}` (every draft id of each card, 1 to 50 in all, none twice), relayed to the Desk's
   `/_internal/maker/drafts/decide-many`, which runs each card's own one-tap decision (`decideDraft`) in the order entered with the dispatch and the
   live tell held, carries on past a refusal, and answers `{decided, refused: [{id, error, fix}]}`; one dispatch follows if anything was approved
   (also on doubt, when a card threw after its write), so the batch folds as one version. A trip's row ticked the other way is refused as its trip's.
 - **After it**, the list heads with what was decided, and a refused card stays with **Refused**, why, and how to fix it (`refusalFix`).
+- **A card says what it approves** (12 Nov 2026): a Their % card draws each book's tag and the figure as the stepper says it (and what it was, off the
+  drafter's "moves from" flag), its Approve naming the figure; an entry with no size and no sum draws the first sentence of the drafter's reading, never
+  RM 0.00. The list's head counts the cards (the lead no longer counts rows), and the drafter's queue fold is not drawn while nothing is sent.
 - **No overlaps**: Needs you no longer lists rows to approve; the glance's fifth tile, **To approve**, counts the cards and opens Approve.
 - The Desk's one-tap `/drafts/<id>/approve|reject` and the bridge's `/_internal/maker/drafts/<id>/approve|reject` stand unchanged; Salt Admin no
   longer calls the second.

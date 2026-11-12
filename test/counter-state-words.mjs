@@ -182,8 +182,10 @@ export async function run({ ok }) {
     await until(() => L.d.getElementById("oNew"));
     await startAt(L.d);
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
-    L.d.getElementById("spAdd").click(); L.d.querySelector('#osheet [data-k="spn:0"]').click();
-    const wh = L.d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new L.w.Event("input", { bubbles: true })); L.d.getElementById("spUse").click();
+    /* 11 Nov 2026: a spot is a name and an address */
+    L.d.getElementById("spAdd").click();
+    for (const [id, v] of [["spName", "Old market"], ["spAddr", "12 Jalan Old market"]]) { const x = L.d.getElementById(id); x.value = v; x.dispatchEvent(new L.w.Event("input", { bubbles: true })); }
+    L.d.getElementById("spUse").click();
     const formText = t(L.d.getElementById("osheet"));
     L.d.getElementById("oGo").click();
     const checkText = t(L.d.getElementById("osheet")), delRow = [...L.d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => t(r.querySelector(".salt-ledger__label")) === "Delivery");
@@ -280,6 +282,8 @@ export async function run({ ok }) {
     const M = await open({ open: body2, post: async () => ({ ok: false, status: moved2.status, json: async () => moved2.j }) });
     tab(M, "order"); await until(() => M.d.getElementById("oNew"));
     await basketAdd(M, "salt", 2); await basketAdd(M, "oil", 10); await toSheet(M);
+    /* 11 Nov 2026 (his answer "Always ask"): a new sheet waits for its way */
+    const way0 = M.d.querySelector('#osheet [data-k="mode:0"]'); if (way0) way0.click();
     if (M.d.getElementById("oGo")) M.d.getElementById("oGo").click();
     M.d.getElementById("oPlace").click();
     await until(() => M.d.querySelector("#osheet .salt-insight--copper"));

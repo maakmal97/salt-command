@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="2c880782aaea65d2";
+var SALT_BUILD_ID="d96cdbef98a51e5c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9572,7 +9572,7 @@ function pricing(B,R,today,over=null){
 }
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
-  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,heldBefore,
   inputs,policy,fiveTiers,figures,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
@@ -12006,7 +12006,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1502","d":"11 Nov 2026","t":"A CUSTOMER'S PRICE ASK IS ANSWERED WITH AN OFFER ON SALT ADMIN","n":["<b>HIS REPORT OF 11 NOV 2026: AN ORDER OF 12.5 UNITS AT RM 880 WOULD NOT AGREE.</b> The customer had asked for a price on the Counter (RM 800). The Desk agrees an asked order only by an offer they take, and Salt Admin never read an ask, so its card offered Agree and each tap fell to the general refusal.","<b>SALT ADMIN NOW ANSWERS AN ASK WITH AN OFFER.</b> The card says what they asked and the list price, starts Goods at their figure, and its one pill is Offer them; the row and Needs you say Offer. An offer of his to an ask holds the card as Waiting for them, with Take back the offer.","<b>NO DESK REFUSAL ON ACCEPT, OFFER OR WITHDRAW FALLS TO THE GENERAL SENTENCE.</b> Thirteen sentences added to the refusal table; a check reads every one off the Desk's code, so a new one without words is red. His offer of RM 875 on that order was sent the same evening."]}];
+const evolution=[{"v":"v1509","d":"12 Nov 2026","t":"ONE P&L ON FINANCIALS, ITS YEAR THE OPERATING PROFIT","n":["<b>HIS ANSWER \"ONE P&L\".</b> The monthly table ended at a result RM 6,279 above the truer figure on salt, which sat in a folded IFRS statement: it never charged freight in or the non-revenue salt. It now carries both, at the statement's own rates, and ends at Operating profit, so its year equals the statement on every book (salt RM 15,479). The IFRS fold is gone; its value test is one row under Inventory, and the debtors row says how much is written off.","<b>NON-REVENUE IN THE MONTH OF THE COUNT THAT FOUND IT.</b> The shortfall is walked at each count; a lot or a handover on the count's own day is read on the side that moves it least; losses logged before the first count stand in their months; what the counts leave sits in the latest month and is said. A month under nought is stock a count found again. Freight in falls on the units sold in the month.","Said, not built: a surplus (the shortfall is never under nought), and a book with no count once it trades across two calendar years. A real loss on a count day can hide behind that day's other moves until the next count; the year is never touched. Twelve new checks, each red by its own mutation; Fable reviewed the design and the diff, and re-checked its findings closed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12159,7 +12159,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Nov 2026, 18:43 KL';
+const LAST_UPDATED='12 Nov 2026, 07:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16733,6 +16733,38 @@ function tabLedger(){
    (barter, rebate units) is included with a matching in-kind expense so it nets to
    nil cash; provisions follow the desk ladder and are charged in the month the
    receivable arose. Cash view = money actually in, by the same order month. */
+/* 12 NOV 2026, HIS ANSWER "ONE P&L": THE MONTHLY TABLE CARRIES WHAT THE IFRS STATEMENT CARRIED, so its year is the operating profit.
+   Non-revenue units are dated by the count that found them (Fable's option A of 12 Nov 2026): the shortfall is walked at each
+   counted day (same-day moves read either side of the count, below), the opening plus every unit received by then less every unit handed over by then (the engine's heldBefore at the
+   next day) less the count, and a month's charge is how far the walk moved across it. Losses logged before the first count with a
+   figure stand in their own months. The latest month takes the gap to the walk's own selfUse (`pin`: an undated loan, a row entered
+   after its count), so the units add to what Stock and the Floor read. A count that finds stock earlier counts missed gives a month
+   under nought, a recovery, never floored. No count with a figure: null, and the table carries the charge in the year alone. */
+/* X, the suite's alone: {counts, logs, lots, sales, op, total, recv, now} in place of the book's */
+function nrsMonths(p,X){
+  X=X||{};
+  const nx=d=>new Date(Date.parse(d+'T00:00:00Z')+864e5).toISOString().slice(0,10);
+  const now=X.now||obsISO(TODAY), last={};(X.counts||COUNTS).filter(c=>(c.product||DEFAULT_PROD)===p&&c.date&&typeof c.qty==='number'&&String(c.date)<=now).forEach(c=>{last[String(c.date)]=c;});
+  const days=Object.keys(last).sort();if(!days.length)return null;
+  const op=X.op!=null?X.op:+(openingFor(p).qty||0), lots=X.lots||pPurch(p).filter(x=>poLive(x)), sales=X.sales||pSales(p), recvOf=X.recv||poRecvUnits, H=SNAPSHOT_ENGINE.heldBefore, by={};
+  const add=(m,u)=>{if(Math.abs(u)>1e-6)by[m]=(by[m]||0)+u;};
+  const landed=x=>String(x.receivedOn||x.date||'');   /* the engine dates a lot by its landing (Fable's review, 12 Nov 2026) */
+  const logs=(X.logs||(typeof selfUseLog!=='undefined'?selfUseLog:[])).filter(r=>(r.product||DEFAULT_PROD)===p&&r.date&&String(r.date)<days[0]);
+  logs.forEach(r=>add(String(r.date).slice(0,7),+r.kg||0));
+  let prev=logs.reduce((a,r)=>a+(+r.kg||0),0);
+  /* A COUNT IS TAKEN DURING ITS DAY, so a lot landed or a sale handed over that same day may stand either side of it (Fable's review
+     of 12 Nov 2026: 28 Oct's count came before that day's 25-unit lot). Each side is read, and the one that moves the shortfall least
+     from the count before stands: a misplaced lot moves it by the whole lot, which no real loss does. */
+  days.forEach(d=>{const lotsBy=end=>lots.filter(x=>end?landed(x)<=d:landed(x)<d).reduce((a,x)=>a+recvOf(x),0);
+    const heldBy=end=>sales.reduce((a,s)=>a+H(s,end?nx(d):d),0);
+    const r1=lotsBy(true),r0=lotsBy(false),h1=heldBy(true),h0=heldBy(false);
+    const S=[[r1,h1],[r0,h1],[r1,h0],[r0,h0]].map(([r,h])=>op+r-h-last[d].qty).reduce((b,x)=>Math.abs(x-prev)<Math.abs(b-prev)-1e-9?x:b);
+    add(d.slice(0,7),S-prev);prev=S;});
+  const total=X.total!=null?X.total:p===PROD?+selfUse||0:prev, pin=+(total-prev).toFixed(2);
+  add(days[days.length-1].slice(0,7),pin);
+  Object.keys(by).forEach(k=>by[k]=+by[k].toFixed(4));
+  return {by,pin,last:days[days.length-1]};
+}
 function finRows(){
   const m={};
   const bump=(mo,k,v)=>{if(!m[mo])m[mo]={rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0};m[mo][k]+=v;};
@@ -16970,45 +17002,7 @@ function drawFinCharts(){
   });
 }
 /* The statement, presented the way a reader who knows the standards expects to see it. */
-function ifrsPanel(){
-  const F=ifrsPL(PROD), P=PRODUCTS[PROD], c=pxCost();
-  const L=(lab,v,opt)=>{opt=opt||{};
-    return `<tr class="${opt.cls||''}"><td class="l salt-table__label">${lab}${opt.ref?`<div class="iref">${esc(opt.ref)}</div>`:''}</td>
-      <td class="mono" style="${opt.neg?'color:var(--crim)':''}">${v==null?NIL:(opt.neg?'('+fmt0(Math.abs(v))+')':fmt0(v))}</td>
-      <td class="l salt-table__label isub">${esc(opt.n||'')}</td></tr>`;};
-  /* SAME RULE AS THE COST PANEL (v401): Study, so it folds, and the summary carries the operating
-     result rather than the title alone. The h2 became the summary. The date it carried is the
-     desk's own as-of and is on the header already; "movement costs at today's rates" is the one
-     thing here that the P&L above deliberately does NOT do, so that half stays. */
-  return `<details class="obsec" style="margin-top:18px"><summary>Statement of profit or loss <span class="tag salt-status buychip">IFRS</span> <span class="q">whole book since it opened, movement costs at today's rates</span><span class="ct">${fmt0(F.opProfit)} operating</span></summary>
-  <div class="card">
-    <table class="salt-table fintab istmt"><tbody>
-      ${L('Revenue',F.rev,{ref:'IFRS 15',n:`${units(F.soldUnits)} recognised on transfer of control`})}
-      ${L('Cost of sales: goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
-      ${L('Cost of sales: freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit`})}
-      ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct==null?'no revenue yet':`${F.grossPct}% of revenue`}${F.freightCos>0.009?`, and ${fmt0(F.freightCos)} under the gross margin above, which charges goods only`:''}`})}
-      ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
-      ${L('Non-revenue '+P.name.toLowerCase(),-F.nonRev,{neg:true,ref:'IAS 2.16(a)',n:F.nonRevUnits?`${units(F.nonRevUnits)} out without a sale, at ${fmt(F.unitCost)}`:'none'})}
-      ${L('Impairment: trade receivables',-+(F.ecl+F.wOff).toFixed(2),{neg:true,ref:'IFRS 9',n:F.wOff?`${fmt0(F.wOff)} written off${F.ecl?`, ${fmt0(F.ecl)} loss allowance on open balances`:''}`:F.ecl?'loss allowance on open balances':'no open balance'})}
-      ${L('Impairment: supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
-      ${L('<b>Operating profit</b>',F.opProfit,{cls:'tot',n:F.opPct==null?'no revenue yet':`${F.opPct}% of revenue`})}
-    </tbody></table>
-    <div class="dsc" style="margin-top:9px">Pricing basis ${fmt(c.eff)}, balance-sheet cost ${fmt(c.landed)}: the three lines under gross profit are in the price but cannot sit in inventory.</div>
-    <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
-    <table class="salt-table fintab istmt" style="margin-top:8px"><tbody>
-      ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Median Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
-      ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
-    </tbody></table>
-    <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
-         established for this product", the carrying row already reads "cost, untested against
-         NRV", and the ref column already cites IAS 2.6. Three statements of one fact, of which
-         the paragraph was the only one that was never on screen: it carries no figure, so the
-         cull deleted it on every oil render, and folding this panel would have PUBLISHED it
-         rather than tidying it away. IAS 2.9 is the standard the paragraph cited and the row
-         did not, so the citation moved onto the row rather than going with the prose. -->
-  </div></details>`;
-}
+/* 12 Nov 2026: ifrsPanel left with his answer "one P&L"; ifrsPL stays, the monthly table charges its rates. */
 /* v801: on a phone the P&L draws one group of columns beside CY; the switch picks which, per book's own table */
 function finGroup(b){const t=b.parentNode.parentNode.querySelector('table.pgrid');if(!t)return;t.className=t.className.replace(/fg-p[mqh]/,'fg-'+b.getAttribute('data-g'));
   [].forEach.call(b.parentNode.children,x=>x.classList.toggle('on',x===b));}
@@ -17025,8 +17019,14 @@ function tabFinancials(){
      column at desktop width. A phone cannot hold ten at any size worth reading, so there the table carries a switch,
      months, quarters or halves, each beside CY, and draws one group at a time (design/desk.css). */
   const thisMo=TODAY.toISOString().slice(0,7), fyYear=thisMo.slice(0,4);
+  /* 12 Nov 2026: freight in by the units sold in the month, non-revenue by the count that found it, selling by the month's share of
+     the units sold; each at the rates ifrsPL charges, so the year column is its operating profit */
+  const F=ifrsPL(PROD), NM=nrsMonths(PROD), unitsAll=all.reduce((a,[,v])=>a+v.kg,0);
+  all.forEach(([mo,v])=>{v.frt=v.kg*F.freightPerUnit;v.sell=unitsAll>0?F.selling*v.kg/unitsAll:0;v.nrs=0;});
+  if(NM)Object.keys(NM.by).forEach(mo=>{let e=all.find(x=>x[0]===mo);if(!e){e=[mo,{rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0,frt:0,nrs:0,sell:0}];all.push(e);all.sort((a,b)=>a[0]<b[0]?-1:1);}
+    e[1].nrs=NM.by[mo]*F.unitCost;});
   const first=all.length?all.map(x=>x[0]).sort()[0]:thisMo;
-  const seed=()=>({rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
+  const seed=()=>({rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0,frt:0,nrs:0,sell:0});
   const sumOf=ms=>ms.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},seed());
   const moOf=i=>{const d=new Date(Date.UTC(+fyYear,+thisMo.slice(5,7)-1-i,1));return d.toISOString().slice(0,7);};
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -17046,7 +17046,9 @@ function tabFinancials(){
   cols.forEach((c,i)=>{c.cls=c.g+(i===0||cols[i-1].g!==c.g?' g0':'')+(c.old?' pold':'');});
   /* v427: A CARRIED BALANCE IS NOT A PERIOD CHARGE: the tile below takes the whole book, the rows take the period */
   const bookAll=sumOf(all);
-  const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
+  const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.frt-v.nrs-v.sell-v.provAR-v.provSup;
+  /* with no count holding a figure the charge is dated nowhere, so it stands in the year alone (fyNrs) */
+  const fyNrs=NM?fy.nrs:F.nonRev; if(!NM)fy.nrs=F.nonRev;
   /* THE FIGURE WITHOUT ITS CURRENCY, said once in the corner cell; a nil reads as a dash */
   const n0=v=>fmt0(v).replace(CUR+' ','');
   /* v385: a negative uncollected figure is an overtender held against goods, and the row says which a minus is */
@@ -17063,18 +17065,22 @@ function tabFinancials(){
     <tr><td class="l salt-table__label">Revenue</td>${col('rev')}${fyc(n0(fy.rev))}</tr>
     <tr><td class="l salt-table__label">Cost of goods</td>${col('cogs',1)}${fyc(n0(-fy.cogs),'color:var(--crim)')}</tr>
     <tr class="tot"><td class="l salt-table__label">Gross margin</td>${each(c=>td(c,`<b>${n0(gm(c.v))}</b><em class="finpct">${gmp(c.v).toFixed(1)}%</em>`))}${fyc(`<b>${n0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em>`)}</tr>
-    <tr><td class="l salt-table__label">Provision held: debtors</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):NIL,'color:var(--crim)')}</tr>
+    <tr><td class="l salt-table__label">Freight in${F.lots?`<div style="font-size:11px;font-weight:400;color:var(--mut)">${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit sold</div>`:''}</td>${col('frt',1)}${fyc(fy.frt>0.004?n0(-fy.frt):NIL,'color:var(--crim)')}</tr>
+    <tr><td class="l salt-table__label">Non-revenue ${esc(PRODUCTS[PROD].name.toLowerCase())}<div style="font-size:11px;font-weight:400;color:var(--mut)">${NM?`at ${fmt(F.unitCost)}/unit, in the month of the count that found it${Math.abs(NM.pin)>0.009?` &middot; ${units(NM.pin)} the counts do not date sits in the latest`:''}`:'no count states a figure, so the year carries it alone'}</div></td>${NM?col('nrs',1):each(c=>td(c,NIL))}${fyc(Math.abs(fyNrs)>0.004?n0(-fyNrs):NIL,fyNrs>0.004?'color:var(--crim)':'')}</tr>
+    ${F.selling>0.009?`<tr><td class="l salt-table__label">Selling and distribution</td>${col('sell',1)}${fyc(n0(-fy.sell),'color:var(--crim)')}</tr>`:''}
+    <tr><td class="l salt-table__label">Provision held: debtors${F.wOff>0.009?`<div style="font-size:11px;font-weight:400;color:var(--mut)">${fmt0(F.wOff)} written off, ${fmt0(F.ecl)} loss allowance on open balances</div>`:''}</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):NIL,'color:var(--crim)')}</tr>
     <tr><td class="l salt-table__label">Provision held: supplier default</td>${col('provSup',1)}${fyc(fy.provSup?n0(-fy.provSup):NIL,'color:var(--crim)')}</tr>
-    <tr class="tot"><td class="l salt-table__label">Result after provisions</td>${each(c=>td(c,`<b>${n0(net(c.v))}</b>`))}${fyc(`<b>${n0(net(fy))}</b>`)}</tr>
+    <tr class="tot"><td class="l salt-table__label">Operating profit</td>${each(c=>td(c,`<b>${n0(net(c.v))}</b>`))}${fyc(`<b>${n0(net(fy))}</b>`)}</tr>
     ${grp('Cash against it')}
     <tr><td class="l salt-table__label">Collected in cash</td>${col('cash')}${fyc(n0(fy.cash))}</tr>
     <tr><td class="l salt-table__label">Settled in kind</td>${col('inkind')}${fyc(n0(fy.inkind))}</tr>
     <tr class="tot"><td class="l salt-table__label">Still uncollected<div style="font-size:11px;font-weight:400;color:var(--mut)">on the revenue in this column, not the whole book</div></td>${each(c=>td(c,unc(c.v)))}${fyc(unc(fy))}</tr>
     ${grp('Inventory behind it')}
     <tr class="tot"><td class="l salt-table__label">Closing inventory<div style="font-size:11px;font-weight:400;color:var(--mut)">as at today, not a movement in the period &middot; ${units(currentStock)} at ${fmt(stockCostFor(PROD))}/unit, before freight in</div></td>${cols.map(c=>`<td class="${c.cls}"></td>`).join('')}${fyc(n0(currentStock*stockCostFor(PROD)))}</tr>
+    <tr><td class="l salt-table__label">Lower of cost and net realisable value</td>${cols.map(c=>`<td class="${c.cls}"></td>`).join('')}${fyc(F.nrvTested?(F.writeDown>0.009?'written down by '+n0(F.writeDown):'cost'):'untested')}</tr>
   </tbody></table>
-  ${(all.undated&&all.undated.length)?`<div class="fincap" style="color:var(--amber)"><b>${all.undated.length} order${all.undated.length===1?'':'s'} carrying ${fmt0(all.undated.reduce((a,t)=>a+((+t.total||0)-txPendRM(t)),0))} of revenue ${all.undated.length===1?'is':'are'} held out of this statement, because ${all.undated.length===1?'it has':'they have'} no date and a month is the only key it has.</b> ${all.undated.map(t=>{const n=(+t.total||0)-txPendRM(t);return ID(t.customer)+' '+fmt0(n)+(Math.abs(n-(+t.total||0))>0.005?' of '+fmt0(t.total)+' ordered':'');}).join(', ')}. ${all.undated.length===1?'It counts':'They count'} on Overview and in the IFRS statement below, which do not need one, so the two figures differ by exactly this much. Give the row a date and it joins the month it belongs to.</div>`:''}
-  <div class="fincap">Every figure is in ringgit, goods at each lot's own rate and freight in only in the IFRS statement. The months are the last six the book has traded in, whichever year; the quarters and halves are this calendar year's, each summing its own months; <b>CY ${fyYear}</b> is the calendar year to date, so on the 1st of January it is empty while a month beside it is not; and Closing inventory is as at today. The IFRS statement below covers the whole book since it opened, which is why its revenue is the larger figure. The two <b>Provision held</b> rows are each period's debts measured at <b>today's</b> ladder, so a period's figure moves as its own debts age even though nothing happened in it.</div>`;
+  ${(all.undated&&all.undated.length)?`<div class="fincap" style="color:var(--amber)"><b>${all.undated.length} order${all.undated.length===1?'':'s'} carrying ${fmt0(all.undated.reduce((a,t)=>a+((+t.total||0)-txPendRM(t)),0))} of revenue ${all.undated.length===1?'is':'are'} held out of this statement, because ${all.undated.length===1?'it has':'they have'} no date and a month is the only key it has.</b> ${all.undated.map(t=>{const n=(+t.total||0)-txPendRM(t);return ID(t.customer)+' '+fmt0(n)+(Math.abs(n-(+t.total||0))>0.005?' of '+fmt0(t.total)+' ordered':'');}).join(', ')}. ${all.undated.length===1?'It counts':'They count'} on Overview, which needs no date, so the two figures differ by exactly this much. Give the row a date and it joins the month it belongs to.</div>`:''}
+  <div class="fincap">Every figure is in ringgit, goods at each lot's own rate, freight in by the units sold, and non-revenue at today's cost a unit in the month of the count that found it, so a month under nought is stock a count found again. The months are the last six the book has traded in, whichever year; the quarters and halves are this calendar year's, each summing its own months; <b>CY ${fyYear}</b> is the calendar year to date, so on the 1st of January it is empty while a month beside it is not; and Closing inventory is as at today. The two <b>Provision held</b> rows are each period's debts measured at <b>today's</b> ladder, so a period's figure moves as its own debts age even though nothing happened in it.</div>`;
   /* TWO TABLES RESTATING EACH OTHER ARE ONE TABLE (v401). The cash table's first row was
      `col(v.rev)` -- the SAME EXPRESSION as the P&L's Revenue row, under a different word, in a
      second table under a second heading, on both books. So the part carried the year's revenue
@@ -17106,7 +17112,7 @@ function tabFinancials(){
   <div class="card" style="margin-top:14px"><div class="cardh">The year, by month <span class="sub">revenue and gross margin</span></div><div class="chartbox" style="height:180px"><canvas id="finMonthChart"></canvas></div></div>
   <h2 style="margin-top:18px">Profit and loss, and the cash against it <span class="sub" style="font-weight:400">accrual by order date, pending excluded</span> <span class="rule"></span></h2>
   <div class="card">${pl}</div>
-  ${costPanel()}${ifrsPanel()}`;
+  ${costPanel()}`;
 }
 
 /* ---- what it actually costs to put one order in one customer's hands ---------------
@@ -18361,26 +18367,44 @@ function obsCard(o){
   </details>`;
 }
 
+/* 11 Nov 2026, HIS THREE ANSWERS ON NOTICED: one customer card a book, rhythm only where it changes buying, and repeat orders off
+   Noticed. DRAWING ONLY: every observation keeps its id, its hush and its place in the snapshot's obs; this is what Noticed draws.
+   - A book's habit card and its message card name the same people: one card, the habit card's id (so Hide on Salt Admin hushes it),
+     its watch and its figure, the message card's three names leading. A message card whose habit card is hushed goes with it.
+   - The weekday pattern is one card (the busiest and quietest day, the weekend beside it), a note: the restock signal already weighs
+     each weekday. The pay window, a holiday and the fortnight draw only when they move what to buy, which is when they reach watch.
+   - A repeat order told apart by its dates is a real second order, so it is not drawn; "bought once" repeats Clients' tile. */
+function noticedDraw(live,hushed){
+  const ids=new Set(live.concat(hushed).map(o=>o.id)), byId=Object.fromEntries(live.map(o=>[o.id,o]));
+  const gate=/^rhythm:(payday|holiday|restock):/;
+  const out=[];
+  live.forEach(o=>{
+    if(/^dup:/.test(o.id)||o.id==='cust:oneanddone')return;
+    if(gate.test(o.id)&&o.sev!=='watch')return;
+    if(/^rhythm:weekend:/.test(o.id)&&byId[o.id.replace('weekend','dow')])return;
+    if(/^promo:revive:/.test(o.id)&&ids.has(o.id.replace('promo:revive','cust:cadence')))return;
+    if(/^rhythm:dow:/.test(o.id)){const we=byId[o.id.replace('dow','weekend')];
+      out.push(we?Object.assign({},o,{sev:'note',why:o.why+' '+we.title+': '+we.why}):o);return;}
+    if(/^rhythm:weekend:/.test(o.id)){out.push(Object.assign({},o,{sev:'note'}));return;}
+    if(/^cust:cadence:/.test(o.id)){const rv=byId[o.id.replace('cust:cadence','promo:revive')];
+      out.push(rv?Object.assign({},o,{title:o.title+': '+rv.title.charAt(0).toLowerCase()+rv.title.slice(1).replace(/ on [^ ]+$/,''),why:rv.why+' '+o.why}):o);return;}
+    out.push(o);});
+  return out;
+}
 function tabPlans(){
   const X=observations(), R=X.R, F=X.F;
-  const live=X.live, hushed=X.hushed;
+  const hushed=X.hushed, live=noticedDraw(X.live,hushed);
   const acts=live.filter(o=>o.sev==='act').length;
   const watch=live.filter(o=>o.sev==='watch').length;
-  const stake=live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0);
-  /* 10 Nov 2026: SIXTEEN NOTES SAYING ONE THING ARE ONE NOTE. A repeat order told apart by its dates is a note a pair, and the
-     pairs buried the rest of Integrity. Three or more are drawn as one card listing them, its button opening every row; each
-     pair is still its own observation (its id, its hush on Salt Admin), so nothing the snapshot carries moves. */
-  const dupOf=L=>{const D=L.filter(o=>o.sev==='note'&&/^dup:/.test(o.id));return D.length>=3?D:[];};
-  const dupCard=D=>obsCard({id:D[0].id,sev:'note',conf:'measured',tab:'ledger',rm:D.reduce((a,o)=>a+(+o.rm||0),0),
-    rows:[...new Set(D.flatMap(o=>o.rows||[]))],title:`${D.length} repeat orders inside a few days, each told apart by its dates`,
-    why:'The same party, size and total twice within days, with something on the rows telling them apart, so each reads as a real second order. Listed once so they do not bury the rest.',
-    ev:D.map(o=>o.title+(o.rm>0.009?', '+fmt0(o.rm):''))});
+  /* 11 Nov 2026: At stake is what an Act or a Watch names, each once. It added every figure on Noticed, so a repeat order already
+     sold and the message card's three customers (inside their habit card's figure) were counted: RM 5,299 against RM 2,420. */
+  const stake=live.reduce((a,o)=>a+(o.sev!=='note'&&o.rm>0.009?o.rm:0),0);
+  /* 10 Nov 2026 drew three or more repeat-order notes as one card; since 11 Nov 2026 none is drawn (noticedDraw). */
   const fam=k=>{const L=live.filter(o=>o.fam===k);if(!L.length)return '';
-    const D=dupOf(L), rest=D.length?L.filter(o=>D.indexOf(o)<0):L, n=rest.length+(D.length?1:0);
     return `<details class="obsec"${L.some(o=>o.sev==='act')?' open':''}>
-      <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct${n?'':' zero'}">${n}</span></summary>
-      <div style="padding-bottom:12px">${rest.map(obsCard).join('')}${D.length?dupCard(D):''}</div></details>`;};
-  const liveN=live.length-(dupOf(live).length?dupOf(live).length-1:0);
+      <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct">${L.length}</span></summary>
+      <div style="padding-bottom:12px">${L.map(obsCard).join('')}</div></details>`;};
+  const liveN=live.length;
 
   /* v385: SPLIT, NOT SHORTENED, AND THE BRANCH NOBODY RENDERS TODAY WAS ALREADY OVER THE LINE.
      stripMethod cuts an .insight past NOTE_MIN to its FIRST sentence, and here the caveat is the
@@ -18403,10 +18427,9 @@ function tabPlans(){
   <div class="kpis k4">
     <div class="kpi salt-kpi ${acts?'r':'g'}"><div class="l salt-kpi__label">Act</div><div class="v salt-kpi__value">${acts}</div><div class="n salt-kpi__note">${acts?'costs something to ignore':'nothing pressing'}</div></div>
     <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing slipping'}</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):NIL}</div><div class="n salt-kpi__note">where an item names a figure</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):NIL}</div><div class="n salt-kpi__note">named by Act and Watch</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Hushed</div><div class="v salt-kpi__value">${hushed.length}</div><div class="n salt-kpi__note">${hushed.length?'dismissed or snoozed':'nothing hidden'}</div></div>
   </div>
-  <div class="insight salt-insight">Tags: <b>measured</b>, <b>thin</b> (under-sampled), <b>no sample</b>.</div>
   <div class="insight salt-insight">${esc(rhythmCount)}</div>
   ${rhythmCaveat?`<div class="insight salt-insight">${esc(rhythmCaveat)}</div>`:''}
   ${fam('rhythm')}${fam('integrity')}${fam('customer')}${fam('pricing')}${fam('promo')}${fam('upkeep')}
@@ -19212,52 +19235,18 @@ function suggestOf(code,prod){return SNAPSHOT_ENGINE.suggestOf(snapCtx(),prod||P
 /* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
    and a supplier holds no figure. One who has not bought yet is listed too, so a figure can be set before they do. */
 function tierCustomers(){return SNAPSHOT_ENGINE.tierCustomers(snapCtx());}
-/* what waits for approval, code to product to figure, a null clearing one; a registration's starting figure waits too (v645) */
-function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
-  queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
-  return o;}
-/* ============ 05 OCT 2026: THE DRIFT CARD ============
-   One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
-   has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
-   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Median Price, so
-   a row drifting up says the signal there is terms or prepayment. */
-/* a % as the card says it: +10%, or 0% */
-function driftSay(d){const n=Math.round((+d||0)*100);return n>0?'+'+n+'%':n<0?n+'%':'0%';}
-/* the engine's suggestion in a line: the % and, in a few words, why */
-function suggestSay(sg){
-  if(!sg||!(Math.abs(sg.pct)>0.0001))return 'No % suggested';
-  const w=PRICING_ENGINE.suggestWhy(sg);
-  return 'Suggested '+driftSay(sg.pct)+(w.length?': '+w.join(', '):'');
-}
-/* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Salt Admin (a name-free `partner` entry for a code already on the
-   roster). The desk shows the standing of one queued before B5 of #62 at once, as the fold will file it: the code in `partners`, and an
-   associate (with the -R account) if they were none, so cardQuote reads the floor and the bench lists them before the fold lands. */
-function partnerQueued(code){return queue.some(q=>q&&q.payload&&q.payload.mode==='partner'&&q.payload.code===code);}
-function partnerNote(id){
-  if(partners.indexOf(id)>=0||isBucket(id))return '';
-  return partnerQueued(id)?'<span class="iref">Waiting under Approve: partner, pays the Floor</span>':'';
-}
-/* the three sizes the card quotes: salt's 1, 3 and 12.5; a stated board's smallest, middle and largest rung (22 Oct 2026) */
-function atSizes(p){const R=TIER_RULE[p]||{};if(R.drift)return [1,3,12.5];const r=(R.rungs||[]).map(Number).sort((a,b)=>a-b);return r.length?[...new Set([r[0],r[Math.floor(r.length/2)],r[r.length-1]])]:[];}
-function driftCard(){
-  const ids=tierCustomers(),books=PROD_IDS.filter(p=>pctBook(p));if(!ids.length||!books.length)return '';
-  const keep=PROD,waiting=tierQueued();let hand=0,up=0,down=0;const rows=[];
-  try{books.forEach(p=>{PROD=p;recompute();
-    ids.forEach(id=>{
-      if(isPartner(id)){   /* 06 Oct 2026, his decision: a partner pays cost, so no drift moves their price and none is set here */
-        const atP=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-        rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>Partner</b>${partnerQueued(id)?' &middot; waiting under Approve':''}<br><span class="iref">pays the Floor; no % applies</span><br><span class="iref">${atP}</span></div></td></tr>`);return;}
-      const dr=driftOf(id,p),w=!!waiting[id]&&p in waiting[id],wv=w?waiting[id][p]:undefined;
-      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;if(dr.d<-0.0001)down++;
-      const at=atSizes(p).map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-      const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
-      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set by you &middot; ':'')+suggestSay(sg);
-      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${Math.abs(dr.d)>0.0001?driftSay(dr.d):'Median Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
-    });});}
-  finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Each customer's % on the Median Price or the board <span class="sub">yours to set; the suggestion is the engine's</span></div>
-    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} are set by you, ${up} sit above the Median Price and ${down} below it; salt runs from -100% at the Floor to +100% at the Ceiling, a board from -30% to +30%.</div></div>`;
+/* 11 Nov 2026, HIS ANSWER "OFF THE DESK": THE THEIR % CARD LEFT CLIENTS. It drew a row a customer a book, 260 rows and 80% of the
+   page's height, and 218 of them said nothing (no % set, nothing waiting, no suggestion). He sets a % on Salt Admin's account card,
+   which shows its prices live; Clients keeps one line for the book in view, and the link that opens Salt Admin's accounts. */
+function pctLine(){
+  if(!pctBook(PROD))return '';
+  const ids=tierCustomers().filter(id=>!isPartner(id));if(!ids.length)return '';
+  let held=0,sugg=0;
+  ids.forEach(id=>{const dr=driftOf(id,PROD);if(dr.hand!=null)held++;
+    const sg=suggestOf(id,PROD);if(sg&&Math.abs(sg.pct||0)>0.0001&&Math.abs((sg.pct||0)-(dr.d||0))>0.0001)sugg++;});
+  const nm=PRODUCTS[PROD].name.toLowerCase();
+  return `<div class="insight salt-insight" id="pctLine">${held||sugg?`On ${nm}, ${held} of ${ids.length} hold a % you set and ${sugg} ${sugg===1?'is':'are'} suggested another.`:`Nobody holds a % on ${nm}, and none is suggested.`}</div>
+  <div style="margin-top:8px">${adminLink('customers/accounts','Set it on Salt Admin')}</div>`;
 }
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 /* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
@@ -20685,7 +20674,7 @@ function tabConcentration(){
   <div style="margin-top:16px">${crCard}</div>
 
   <h2 style="margin-top:18px">Their % <span class="rule"></span></h2>
-  ${driftCard()}
+  ${pctLine()}
 
   <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
@@ -20978,6 +20967,11 @@ function tabNetwork(){
     .join('');
   const vac=PEOPLE.roles.filter(r=>!r.holder);
   const dep=prin.filter(x=>isDeparted(x.id)).concat(bench.filter(x=>isDeparted(x.id)));
+  /* 11 Nov 2026, his answer "one line": a departure and a vacancy were a card each above the figures. They are settled facts,
+     said once under the tree; the tree still marks the departed founder on his own node. */
+  const gone=dep.map(x=>ID(x.id)+' left '+departOf(x.id).since);
+  const seat=vac.length?(gone.length?'the ':'The ')+esc(vac[0].short||vac[0].title)+' seat is open since '+vac[0].since:'';
+  const standLine=gone.length||seat?`<div class="insight salt-insight" id="nwStand" style="margin:-8px 0 14px;text-align:center">${[gone.join(', '),seat].filter(Boolean).join('; ')}.</div>`:'';
   const tree=`<div style="text-align:center;margin:6px 0 18px">
     <div style="display:inline-block;background:var(--card2);border:1px solid var(--gold);border-radius:10px;padding:8px 20px;font-weight:600;color:var(--gold)">You</div>
     <div style="height:16px;border-left:1px solid var(--line);width:0;margin:2px auto"></div>
@@ -20989,19 +20983,7 @@ function tabNetwork(){
          standing rather than because trade passes through him, is what the tree DRAWS: one
          stem each, straight to you, his shorter than theirs. -->
   </div>
-  ${dep.length?dep.map(x=>{const dd=departOf(x.id);
-    /* v401: A DEPARTURE IS A STATE, NOT AN ESSAY. This was 569 rendered characters: the date,
-       the reason, the whole book note, and then his R1 and R3 again, which his own card and
-       the vacancy below both already carry. What is left is the state, the declared reason
-       and, from v403 on his call of 29 Aug, NO FOLDED ESSAY: the book note is one clause
-       and this changelog holds the story that was cut.
-       IT IS AN .insight RATHER THAN A .dsc DELIBERATELY. Without the figures it no longer
-       matches FIGURE, so as a .dsc the strip would cull it; an insight is trimmed at
-       NOTE_MIN but never removed, and this one is comfortably under. */
-    return `<div class="pend"><h3>${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
-      <div class="insight salt-insight">Left ${dd.since}, ${esc(dd.reason)}; his referrals stay attributed to him.</div></div>`;}).join(''):''}
-  ${vac.length?`<div class="pend def"><h3>Vacant: ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
-    <div class="insight salt-insight">Open since ${vac[0].since}${dep.length?`; the seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
+  ${standLine}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
@@ -21371,12 +21353,12 @@ async function ordTell(){
    point at all (src 'unit'); both are read after the one unlock and shown on the card, kept in ORD_PIN with the point and
    dropped with it. A unit alone measures no fee and files nothing: the fee falls back to the filed place. */
 let ORD_PIN={};
-const pinWords=p=>({label:p&&typeof p.label==='string'?p.label.slice(0,24):'',unit:p&&typeof p.unit==='string'?p.unit.slice(0,40):''});
+const pinWords=p=>({label:p&&typeof p.label==='string'?p.label.slice(0,24):'',unit:p&&typeof p.unit==='string'?p.unit.slice(0,40):'',addr:p&&typeof p.addr==='string'?p.addr.slice(0,200):''});
 async function ordPinPoint(o){
   if(!o||!o.pin||o.mode!=='deliver'||!feeOpen()||!vaultSlipKey)return null;
   const k=o.id;if(ORD_PIN[k])return ORD_PIN[k].pt||null;
   const mine={st:'looking'};ORD_PIN[k]=mine;
-  let st='err',msg='',pt=null,words={label:'',unit:''};
+  let st='err',msg='',pt=null,words={label:'',unit:'',addr:''};
   try{const r=await fetch('pins/'+encodeURIComponent(o.u)+'/'+encodeURIComponent(o.pin),{cache:'no-store',headers:qHeaders()});
     let j=null;try{j=await r.json();}catch(e){}
     if(r.status===404)msg='The spot they shared is no longer kept, so the fee is measured to their filed place.';
@@ -21385,6 +21367,7 @@ async function ordPinPoint(o){
       if(p)words=pinWords(p);
       if(!p)msg='The spot they shared would not open with this key.';
       else if(p.src==='unit'&&words.unit)st='unit';
+      else if(p.src==='addr'&&words.addr)st='addr';   /* 11 Nov 2026: the address as they typed it, no point */
       else if(feePt(p))pt=feePt(p);
       else if(typeof p.link==='string'){const L=mapsLink(p.link);
         if(L&&L.short){try{const x=await fetch('geo/expand',{method:'POST',headers:qHeaders(),body:JSON.stringify({url:L.short})});
@@ -21406,8 +21389,9 @@ function ordPinLine(o){
   /* an agreed order's card reads no fee, so its spot is opened here, once, when the card is drawn unlocked */
   if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>pinDraw());},0);return '<p class="ordline ordpin">Opening the spot they shared.</p>';}
   if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
-  const named=v.label||v.unit?`<p class="ordline ordpin ordpinname">${esc([v.label,v.unit].filter(Boolean).join(' \u00b7 '))}</p>`:'';
+  const named=v.label||v.unit||v.addr?`<p class="ordline ordpin ordpinname">${esc([v.label,v.unit,v.addr].filter(Boolean).join(' \u00b7 '))}</p>`:'';
   if(v.st==='unit')return named+'<p class="ordline ordpin">A unit, no exact spot: the fee is measured to their filed place.</p>';
+  if(v.st==='addr')return named+'<p class="ordline ordpin">An address, no exact spot: the fee is measured to their filed place.</p>';
   if(v.st!=='ok')return named+`<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
   const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;
   const can=!same&&pinFileable(o);
@@ -21695,7 +21679,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Median Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Median Price lifted by their %, set on Salt Admin; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>

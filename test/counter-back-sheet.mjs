@@ -292,6 +292,8 @@ export async function run({ ok, pageWork }) {
     /* ---- 5: a Sheet that will not close, will not close for Back */
     const Pl = await open();
     await openRow(Pl);
+    /* 11 Nov 2026 (his answer "Always ask"): the sheet waits for its way */
+    const way0 = Pl.d.querySelector('#osheet [data-k="mode:0"]'); if (way0 && way0.getAttribute("aria-pressed") !== "true") way0.click();
     Pl.d.getElementById("oGo").click(); await until(() => Pl.d.getElementById("oPlace"));
     Pl.d.getElementById("oPlace").click(); await until(() => Pl.st.posts === 1);
     await goBack(Pl); await until(() => stateIs(Pl, 1));

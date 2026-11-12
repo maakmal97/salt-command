@@ -15,16 +15,6 @@
   "replace": ""
  },
  {
-  "name": "F3.1 the repeat notes are never grouped",
-  "find": "return D.length>=3?D:[];};",
-  "replace": "return D.length>=999?D:[];};"
- },
- {
-  "name": "F3.2 the fold counts items, not cards",
-  "find": "<span class=\"ct${n?'':' zero'}\">${n}</span></summary>\n      <div style=\"padding-bottom:12px\">${rest.map(obsCard)",
-  "replace": "<span class=\"ct${n?'':' zero'}\">${L.length}</span></summary>\n      <div style=\"padding-bottom:12px\">${rest.map(obsCard)"
- },
- {
   "name": "F4.1 a negative headroom is a card again",
   "find": "    if(H&&H.live>0&&!(H.headroom<0)){",
   "replace": "    if(H&&H.live>0){"
@@ -153,5 +143,175 @@
   "name": "P2.6 a thirteenth lot is taken",
   "find": "  const full=P.lots.length>=12;",
   "replace": "  const full=false;"
+ },
+ {
+  "name": "C2.1 the Their % table returns",
+  "find": "  <h2 style=\"margin-top:18px\">Their % <span class=\"rule\"></span></h2>\n  ${pctLine()}",
+  "replace": "  <h2 style=\"margin-top:18px\">Their % <span class=\"rule\"></span></h2>\n  ${pctLine()}<table class=\"salt-table tiertab\"><tr><td>x</td></tr></table>"
+ },
+ {
+  "name": "C2.1 every customer counted as holding a %",
+  "find": "if(dr.hand!=null)held++;",
+  "replace": "held++;"
+ },
+ {
+  "name": "C2.4 a suggestion equal to what they hold is counted",
+  "find": "&&Math.abs((sg.pct||0)-(dr.d||0))>0.0001)sugg++;",
+  "replace": ")sugg++;"
+ },
+ {
+  "name": "C2.1 a partner counted",
+  "find": "const ids=tierCustomers().filter(id=>!isPartner(id));if(!ids.length)return '';",
+  "replace": "const ids=tierCustomers();if(!ids.length)return '';"
+ },
+ {
+  "name": "C2.1 no link to Salt Admin",
+  "find": "${adminLink('customers/accounts','Set it on Salt Admin')}",
+  "replace": ""
+ },
+ {
+  "name": "C2.2 an empty book reads its zeros",
+  "find": "${held||sugg?`On ${nm}",
+  "replace": "${true?`On ${nm}"
+ },
+ {
+  "name": "C2.3 a departure card returns",
+  "find": "  ${standLine}`;",
+  "replace": "  ${standLine}<div class=\"pend\"><h3>x</h3></div>`;"
+ },
+ {
+  "name": "C2.3 the seat dropped",
+  "find": "[gone.join(', '),seat].filter(Boolean)",
+  "replace": "[gone.join(', ')].filter(Boolean)"
+ },
+ {
+  "name": "C2.3 the departure dropped",
+  "find": "const gone=dep.map(x=>ID(x.id)+' left '",
+  "replace": "const gone=[].map(x=>ID(x.id)+' left '"
+ },
+ {
+  "name": "F3.1 repeat orders are drawn again",
+  "find": "if(/^dup:/.test(o.id)||o.id==='cust:oneanddone')return;",
+  "replace": "if(o.id==='cust:oneanddone')return;"
+ },
+ {
+  "name": "F3.1 bought once is drawn again",
+  "find": "if(/^dup:/.test(o.id)||o.id==='cust:oneanddone')return;",
+  "replace": "if(/^dup:/.test(o.id))return;"
+ },
+ {
+  "name": "F3.2 the message card stands beside its habit card",
+  "find": "const rv=byId[o.id.replace('cust:cadence','promo:revive')];",
+  "replace": "const rv=null;"
+ },
+ {
+  "name": "F3.2 the message card is drawn as well",
+  "find": "if(/^promo:revive:/.test(o.id)&&ids.has(o.id.replace('promo:revive','cust:cadence')))return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.3 a hushed habit card leaves its message card",
+  "find": "const ids=new Set(live.concat(hushed).map(o=>o.id)),",
+  "replace": "const ids=new Set(live.map(o=>o.id)),"
+ },
+ {
+  "name": "F3.4 the rhythm gate opens",
+  "find": "if(gate.test(o.id)&&o.sev!=='watch')return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.5 the weekend stands apart",
+  "find": "if(/^rhythm:weekend:/.test(o.id)&&byId[o.id.replace('weekend','dow')])return;",
+  "replace": ""
+ },
+ {
+  "name": "F3.5 the weekday card keeps the weekend's watch",
+  "find": "out.push(we?Object.assign({},o,{sev:'note',why:",
+  "replace": "out.push(we?Object.assign({},o,{sev:we.sev,why:"
+ },
+ {
+  "name": "F3.7 At stake adds every figure",
+  "find": "const stake=live.reduce((a,o)=>a+(o.sev!=='note'&&o.rm>0.009?o.rm:0),0);",
+  "replace": "const stake=live.reduce((a,o)=>a+(o.rm>0.009?o.rm:0),0);"
+ },
+ {
+  "name": "F3.6 the count is the observations, not the cards",
+  "find": "  const liveN=live.length;",
+  "replace": "  const liveN=X.live.length;"
+ },
+ {
+  "name": "F3.6 the tag legend returns",
+  "find": "  <div class=\"insight salt-insight\">${esc(rhythmCount)}</div>",
+  "replace": "  <div class=\"insight salt-insight\">Tags: <b>measured</b>.</div>\n  <div class=\"insight salt-insight\">${esc(rhythmCount)}</div>"
+ },
+ {
+  "name": "L1 the year leaves non-revenue out",
+  "find": "net=v=>gm(v)-v.frt-v.nrs-v.sell-v.provAR-v.provSup;",
+  "replace": "net=v=>gm(v)-v.frt-v.sell-v.provAR-v.provSup;"
+ },
+ {
+  "name": "L1 the year leaves freight out",
+  "find": "net=v=>gm(v)-v.frt-v.nrs-v.sell-v.provAR-v.provSup;",
+  "replace": "net=v=>gm(v)-v.nrs-v.sell-v.provAR-v.provSup;"
+ },
+ {
+  "name": "L2 freight charged on revenue, not units",
+  "find": "v.frt=v.kg*F.freightPerUnit;",
+  "replace": "v.frt=v.rev*F.freightPerUnit/100;"
+ },
+ {
+  "name": "L3 the IFRS fold returns",
+  "find": "  ${costPanel()}`;",
+  "replace": "  ${costPanel()}<details><summary>Statement of profit or loss</summary></details>`;"
+ },
+ {
+  "name": "L3 the value test row is gone",
+  "find": "<tr><td class=\"l salt-table__label\">Lower of cost and net realisable value</td>",
+  "replace": "<tr><td class=\"l salt-table__label\">Value</td>"
+ },
+ {
+  "name": "L4 a recovery month is floored",
+  "find": "add(d.slice(0,7),S-prev);prev=S;",
+  "replace": "add(d.slice(0,7),Math.max(0,S-prev));prev=S;"
+ },
+ {
+  "name": "L6 the latest month takes no pin",
+  "find": "  add(days[days.length-1].slice(0,7),pin);\n",
+  "replace": "\n"
+ },
+ {
+  "name": "L6 the undated part is not said",
+  "find": "${Math.abs(NM.pin)>0.009?",
+  "replace": "${false?"
+ },
+ {
+  "name": "L5 with no count the year reads nothing",
+  "find": "if(!NM)fy.nrs=F.nonRev;",
+  "replace": ""
+ },
+ {
+  "name": "L5 with no count it says nothing",
+  "find": "'no count states a figure, so the year carries it alone'",
+  "replace": "''"
+ },
+ {
+  "name": "L2 the freight row says no basis",
+  "find": "${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}",
+  "replace": "${fmt0(F.freightTot)}"
+ },
+ {
+  "name": "L6 a same-day lot is always read in",
+  "find": "].map(([r,h])=>op+r-h-last[d].qty).reduce((b,x)=>Math.abs(x-prev)<Math.abs(b-prev)-1e-9?x:b);",
+  "replace": "].map(([r,h])=>op+r-h-last[d].qty)[0];"
+ },
+ {
+  "name": "L6 a lot dated by its order",
+  "find": "const landed=x=>String(x.receivedOn||x.date||'');",
+  "replace": "const landed=x=>String(x.date||'');"
+ },
+ {
+  "name": "L6 a count after today is read",
+  "find": "typeof c.qty==='number'&&String(c.date)<=now)",
+  "replace": "typeof c.qty==='number')"
  }
 ]

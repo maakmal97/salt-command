@@ -38,7 +38,5 @@ export async function run({ ok }) {
   ok(n > 10 && offEngine === 0, "the engine's partner quote is the Floor at every rung: " + offEngine + " of " + n + " off");
   ok(offDesk === 0, "the desk's card for a partner is the floor at every rung of every book: " + offDesk + " off");
   ok(offList === 0 && offGrid === 0, "a partner's sealed list and grid are the floor on every book: " + offList + " sizes, " + offGrid + " grid points off");
-  /* the Drift card names a partner as such and offers no drift to set; an associate who is no partner keeps theirs */
-  const card = String(w.eval("(function(){setProd('salt');recompute();return driftCard();})()"));
   ok(moved === 0, "an associate who is no partner is still quoted off the board, never under the floor: " + moved + " books wrong");
 }

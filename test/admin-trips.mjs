@@ -356,7 +356,8 @@ export async function run({ ok, pageWork }) {
     c1.querySelector('[data-act="draft.approve"]').click(); await p.work.quiet();
     const first = p.d.querySelector('#makerDrafts [data-maker-card] [data-act="draft.approve"]');
     ok(p.posts.length === 0 && first.getAttribute("aria-pressed") === "true", "choosing Approve on the card sends nothing and marks it pressed: " + J(p.posts));
-    byAct(p.d, "approve.confirm").click(); await p.work.quiet(); p.d.getElementById("ynGo").click(); await p.work.quiet();
+    /* 12 Nov 2026 (his Approve review): an approval alone goes on Confirm, with no Sheet */
+    byAct(p.d, "approve.confirm").click(); await p.work.quiet();
     const many = p.posts.filter((x) => x.route === "/all/maker/drafts/decide-many");
     ok(many.length === 1 && p.posts.filter((x) => /\/approve$/.test(x.route)).length === 0 && J(many[0].body) === J({ approve: ds.slice(0, 3).map((d) => d.id), reject: [] }),
       "his one yes approves each line's handover in the order entered, in one request: " + J(p.posts.map((x) => [x.route, x.body])));
