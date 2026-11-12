@@ -313,5 +313,30 @@
   "name": "L6 a count after today is read",
   "find": "typeof c.qty==='number'&&String(c.date)<=now)",
   "replace": "typeof c.qty==='number')"
+ },
+ {
+  "name": "S1 the tile at the average cost",
+  "find": "&asymp; ${fmt0(selfUse*nrRate)} at ${fmt(nrRate)}/unit, as the P&amp;L charges it",
+  "replace": "&asymp; ${fmt0(selfUse*wavgBuy)} at ${fmt(nrRate)}/unit, as the P&amp;L charges it"
+ },
+ {
+  "name": "S2 a loss row at the average cost",
+  "find": "<td>${units(suUnits)}</td><td>${fmt0(suUnits*nrRate)}</td>",
+  "replace": "<td>${units(suUnits)}</td><td>${fmt0(suUnits*wavgBuy)}</td>"
+ },
+ {
+  "name": "S3 the received line sums the lots' whole quantity",
+  "find": "const u=receivedPO.reduce((a,p)=>a+poRecvUnits(p),0),",
+  "replace": "const u=receivedPO.reduce((a,p)=>a+poRecvUnits(p),0)+1,"
+ },
+ {
+  "name": "S3 every lot a line again",
+  "find": "    ...(receivedPO.length?[(()=>{",
+  "replace": "    ...receivedPO.map(p=>['Received '+p.date,'+'+units(poRecvUnits(p)),NIL]),...([].length?[(()=>{"
+ },
+ {
+  "name": "S4 the repeat fold returns",
+  "find": "  ${''/* 12 Nov 2026, his answer: 'Why each loss is booked where it is' repeated the card above, entry for entry, and went */}",
+  "replace": "  ${sec('Why each loss is booked where it is','x',1,'x')}"
  }
 ]

@@ -12,6 +12,7 @@
  *   C1  Rules holds its register alone; Today no Money at stake chart; Financials no unmeasured line; Sourcing one gap tile; Associates no empty fold
  *   C2  Clients' Their % is one line counted off TIER_OF with the link to Salt Admin; Associates says a departure and a vacancy in one line
  *   L1-L5 one P&L: the year is the operating profit, freight and non-revenue in their months, no IFRS fold (12 Nov 2026)
+ *   S1-S4 Stock's On hand: non-revenue at the P&L's rate, the reconciliation in totals, the repeat fold gone (12 Nov 2026)
  *   P1  the plan store is this device's, clamped on every read, and garbage reads as nothing
  *   P2  a what-if lot lands in its book's inventory and leaves the cash on its day, is said to be a what-if, and books nothing
  *   P3  Month ahead: demand moves revenue, the buying cost the cost of goods, running costs what is left; the first column never moves
@@ -212,6 +213,27 @@ export async function run({ ok }) {
       "L6 a same-day lot after its count, a lot dated by its landing, a count after today, and the residual in the latest month: " + J(syn6));
     const pinSaid = E(`(function(){const k=nrsMonths;nrsMonths=()=>({by:{},pin:5,last:'2026-11-15'});try{const e=document.createElement('div');e.innerHTML=tabFinancials();return / the counts do not date sits in the latest/.test(e.textContent);}finally{nrsMonths=k;}})()`);
     ok(pinSaid === true, "L6.2 the part the counts do not date is said on the row");
+    E("setProdView('salt')");
+
+    /* S1 to S4 (12 Nov 2026, Stock's On hand, his answers "totals, lots once" and "cut the repeat, keep the method") */
+    const oh = E(`JSON.stringify(PROD_IDS.map(function(p){setProdView(p);const F=ifrsPL(p);const e=document.createElement('div');e.innerHTML=builders.inventory();
+      const T=x=>x.textContent.trim();const k=[...e.querySelectorAll('.salt-kpi')].find(x=>T(x.querySelector('.salt-kpi__label')).indexOf('Non-revenue')===0);
+      const rec=[...e.querySelectorAll('details.obsec')].find(d=>T(d.querySelector('summary')).indexOf('Inventory reconciliation')===0);
+      const lots=[...e.querySelectorAll('details.obsec')].find(d=>T(d.querySelector('summary')).indexOf('Lots and sourcing')===0);
+      const rows=rec?[...rec.querySelectorAll('tbody tr')].map(r=>[...r.children].map(T)):[];
+      const att=[...e.querySelectorAll('.stkwrap tr.tot')].map(r=>[...r.children].map(T)).find(r=>r[0]==='Attributed');
+      const su=selfUseLog.filter(r=>(r.product||DEFAULT_PROD)===p).reduce((a,r)=>a+r.kg,0);
+      return {p,tile:k?T(k.querySelector('.salt-kpi__value'))+'|'+T(k.querySelector('.salt-kpi__note')):'',want:fmt0(F.nonRev),
+        recv:rows.filter(r=>/^Received/.test(r[0])).map(r=>r[0]),lots:lots?lots.querySelectorAll('tbody tr').length:0,lotsWant:receivedPO.length+1+defaultPO.length+pPurch(p).filter(x=>poOpenUnits(x)>0.0001&&poLive(x)).length,
+        sum:+rows.filter(r=>/^[+-]/.test(r[1])).reduce((a,r)=>a+parseFloat(r[1].replace(/[^0-9.+-]/g,'')),0).toFixed(2),onHand:currentStock,
+        att:att?att[2]:null,attWant:su>0?fmt0(su*F.unitCost):null,repeat:/Why each loss is booked where it is/.test(e.textContent),method:/How it is measured/.test(e.textContent)===!restockFor(p).empty};}))`);
+    const ohs = JSON.parse(oh);
+    ok(ohs.every((x) => (x.tile.split("|")[1] || "").indexOf("≈ " + x.want + " at ") === 0) && ohs.some((x) => x.want !== "RM 0"),
+      "S1 the non-revenue tile on every book says the figure the P&L charges: " + J(ohs.map((x) => [x.p, x.tile.split("|")[1], x.want])));
+    ok(ohs.filter((x) => x.attWant).every((x) => x.att === x.attWant) && ohs.some((x) => x.attWant), "S2 the shrinkage card values each loss at the P&L's rate: " + J(ohs.map((x) => [x.p, x.att, x.attWant])));
+    ok(ohs.every((x) => x.recv.length <= 1 && (!x.recv.length || /^Received, \d+ lots?$/.test(x.recv[0])) && Math.abs(x.sum - x.onHand) < 0.011),
+      "S3 the reconciliation is totals, one Received line, and it adds to what is on hand: " + J(ohs.map((x) => [x.p, x.recv, x.sum, x.onHand])));
+    ok(ohs.every((x) => !x.repeat && x.method && x.lots === x.lotsWant), "S4 the repeat fold is gone, the method fold stays, and Lots and sourcing lists every lot: " + J(ohs.map((x) => [x.p, x.repeat, x.method, x.lots, x.lotsWant])));
     E("setProdView('salt')");
 
     /* P1 */
