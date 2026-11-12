@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ce17d2c6f470f8d5";
+var SALT_BUILD_ID="45f0c8eb22954ed7";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12006,7 +12006,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1511","d":"12 Nov 2026","t":"THE DESK STOPS MISREADING ITS OWN BOOK","n":["<b>HIS \"YES, DATA FAULTS\".</b> Of the three faults the Desk reported, two were the Desk's. The reconstructed inventory on Analysis spread the whole shrinkage evenly over the book's life and landed a lot whole on its received day, though p026 landed half on 19 Sep and half on 20 Sep: salt dipped to -21.35 and oil went under nought on 13 days. A lot now lands on each day a part of it landed, and shrinkage falls on the count that found it, as the P&L dates it: oil, candy, rice and gas never dip, salt on 6 days by at most 2.6 units, each a sale dated before the lot that served it landed.","<b>TWO CARDS THAT MISJUDGED.</b> The under-floor card named three sales and none was under the Floor: two were reward units at cost, one the partner, who pays the Floor of the day by rule. It now leaves those out, keeping the partner's resale and a typed one-off. The no-cost card counted a paid order not yet handed over, whose cost comes with the handover.","Left for him: s212, s221 and s230 truly carry no cost, a Correction each on Salt Admin. Twelve new checks, each red by its own mutation; Fable reviewed and re-checked closed."]}];
+const evolution=[{"v":"v1512","d":"12 Nov 2026","t":"SALT ADMIN: THE PILL SAYS WHAT AN ANSWER STILL WAITS FOR","n":["<b>HIS SCREENSHOT OF AN ASK UNDER THE FLOOR.</b> A customer asked for a price under salt's Floor. The Desk read the figures and asked for a reason, as it should, but the card's pill said Figures not read, greyed, with the Desk's sentence a screen above it. The pill now says Give a reason, and its tap puts him on the Reason line.","<b>A READ THAT FAILED IS READ AGAIN BY THE PILL.</b> It says Read the figures again and does so; the pill is grey only while a read is on its way.","Nothing prices, books or moves money. Two new checks and six mutations, each proved red."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12159,7 +12159,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Nov 2026, 09:47 KL';
+const LAST_UPDATED='12 Nov 2026, 21:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
