@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ab81f0d10d646534";
+var SALT_BUILD_ID="67dfc08d59e2cd02";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -20206,7 +20206,7 @@ function rewardSchemeWords(prod){
   if(w&&w.step!=null){const d=String(w.since);return {walk:true,
     unit:'every '+w.times+' units’ landed cost of margin, '+fmt0(w.step)+' today',
     window:'paid in full, from '+(+d.slice(8))+' '+MAP_MON[+d.slice(5,7)-1]+' '+d.slice(0,4),
-    r3:'For the reward, the orders of a customer they introduce count here in that customer’s first '+POSITION_ENGINE.R3_DAYS+' days, at full margin, and none after.'};}
+    r3:'For the reward, the orders of a customer they introduce count here in that customer’s first '+nDays(POSITION_ENGINE.R3_DAYS)+', at full margin, and none after.'};}
   return {walk:false,unit:'every '+fmt0(rewardUnitMargin(prod,'associate'))+' of an associate’s margin, '+fmt0(rewardUnitMargin(prod))+' of a customer’s',
     window:'whole ledger',
     r3:'For the reward, the margin on every order of each customer they introduced counts in the same pool, one step down only, against a hurdle '+rewardR3Hurdle(prod)+' times higher, since each of those orders also counts for its own customer.'};

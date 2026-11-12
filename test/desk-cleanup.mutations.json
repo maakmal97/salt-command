@@ -401,7 +401,7 @@
  },
  {
   "name": "A1 R3 keeps the old hurdle sentence",
-  "find": "r3:'For the reward, the orders of a customer they introduce count here in that customer’s first '+POSITION_ENGINE.R3_DAYS+' days, at full margin, and none after.'};}",
+  "find": "r3:'For the reward, the orders of a customer they introduce count here in that customer’s first '+nDays(POSITION_ENGINE.R3_DAYS)+', at full margin, and none after.'};}",
   "replace": "r3:'For the reward, the margin on every order counts against a hurdle 1.2 times higher.'};}"
  },
  {
