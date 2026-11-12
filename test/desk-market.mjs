@@ -48,7 +48,7 @@ export async function run({ ok }) {
     ok(rd.length > 1 && rows.length === rd.length && want.length > 0 && want.length < rd.length && J(hrefs(reading)) === J(want)
       && rows.every((tr, i) => (tr.querySelectorAll("a").length === 1) === !!rd[i].suggest) && /Use RM \d/.test(text(reading)),
       "M3.1 a Use link on the suggested sizes only: " + J([rows.length, hrefs(reading), want]));
-    ok(/his tap, never automatic/.test(text(reading)), "M3.2 it says a re-anchor is his tap and never automatic");
+    ok(/your tap, never automatic/.test(text(reading)), "M3.2 it says a re-anchor is your tap and never automatic");
 
     const anchors = [...d.querySelectorAll("#mkAnchors li")].map(text);
     ok(anchors.length === 2 && /6\.25 unit anchored at RM 700 from 12 Nov 2026/.test(anchors[0]) && !/Outside/.test(anchors[0])

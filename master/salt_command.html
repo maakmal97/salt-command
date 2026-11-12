@@ -21787,7 +21787,7 @@ function marketPanels(){
         +(Q?'<td class="mono mkq">'+(qq?qq.shown+' shown, '+qq.placed+' placed':NIL)+'</td>':'')
         +'<td>'+(r.suggest?adminLink('anchor/'+r.q+'/'+r.best,'Use '+fmt(r.best)):'')+'</td></tr>';}).join('')
       +'</tbody></table></div>':'<div class="dsc">No salt sold in the last 90 days.</div>')
-    +'<div class="dsc">A re-anchor is suggested where the profit-best and the Median differ by RM 5 or more over 10 or more sales. It is his tap, never automatic.</div>'
+    +'<div class="dsc">A re-anchor is suggested where the profit-best and the Median differ by RM 5 or more over 10 or more sales. It is your tap, never automatic.</div>'
     +(anchors.length?'<ul class="dsc" id="mkAnchors" style="margin:6px 0 0 18px;padding:0">'+anchors.map(a=>'<li>'+units(a.q)+' anchored at '+fmt(a.price)+(a.from?' from '+esc(a.from):'')+(a.outside?'. <b>Outside the band: '+esc(a.outside.why||'')+'</b>':'')+'</li>').join('')+'</ul>':'')+'</div>';
   const sc=renderMemo('mkScore|'+PROD,()=>SNAPSHOT_ENGINE.marketScore(C,'salt'));
   const score=sc?'<div class="card" id="mkScore" style="margin-top:14px"><div class="cardh">This week <span class="sub">'+esc(sc.from)+' to '+esc(sc.to)+'</span></div>'

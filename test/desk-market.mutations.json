@@ -5,7 +5,7 @@
   {"name": "M2.2 the card always offers Switch off", "find": "(sw?adminLink('market/off','Switch off'):adminLink('market/on','Switch on'))", "replace": "adminLink('market/off','Switch off')"},
   {"name": "M3.1 every size gets a Use link", "find": "(r.suggest?adminLink(", "replace": "(true?adminLink("},
   {"name": "M3.1 the Use link carries the Median, not the profit-best", "find": "'anchor/'+r.q+'/'+r.best", "replace": "'anchor/'+r.q+'/'+r.median"},
-  {"name": "M3.2 the tap line is gone", "find": "It is his tap, never automatic.", "replace": "It is made for him."},
+  {"name": "M3.2 the tap line is gone", "find": "It is your tap, never automatic.", "replace": "It is made for him."},
   {"name": "M4 an outside point is not marked", "find": "(a.outside?'. <b>Outside the band: '", "replace": "(false?'. <b>Outside the band: '"},
   {"name": "M5.1 the Quotes column is always drawn", "find": "(Q?'<th>Quotes</th>':'')", "replace": "'<th>Quotes</th>'"},
   {"name": "M5.2 an answer that is not ok is taken", "find": "j&&j.ok===true&&", "replace": "j&&"},
