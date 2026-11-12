@@ -737,6 +737,8 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
       .map((r) => ({ party: r.party, since: r.since, amount: +r.amount, ...(r.rid ? { rid: r.rid } : {}) })),
     editWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "edit")
       .map((entry) => ({ party: entry.payload.party, since: entry.payload.since, amount: +entry.payload.amount })),
+    /* 11 Nov 2026, the price band's version 2 (Salt Admin's Market part): the day's move and its words as the snapshot reads them, the points he has set, the sizes a point may name and the market edits waiting under Approve; nothing here prices */
+    ...marketCatalog(book, pending),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -927,6 +929,20 @@ export function makerPartner(body, book, pending = []) {
   return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
     raw: "Make " + body.code + " a partner: pays the Floor, keeps every associate property"
       + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
+}
+
+function marketCatalog(book, pending) {
+  const snap = ((book && book.pricing && book.pricing.byProduct) || {}).salt, R = snap && snap.inputs && snap.inputs.policy && snap.inputs.policy.tierRule;
+  const m = snap && snap.market, doc = ((book && book.state && book.state.MARKET) || {}).salt || {};
+  const G = R && PRICING_ENGINE.gridOf(R);
+  return {
+    market: m && typeof m === "object" ? { day: m.day, k: m.k, on: m.on !== false, why: typeof m.why === "string" ? m.why : "" } : null,
+    marketSizes: G ? PRICING_ENGINE.gridSizes(G).filter((q) => q <= 12.5 + 1e-9 && PRICING_ENGINE.onGrid(q, G)) : [],
+    marketPoints: (Array.isArray(doc.anchors) ? doc.anchors : []).filter((a) => a && +a.q > 0 && +a.price > 0)
+      .map((a) => ({ q: +a.q, price: +a.price, from: a.from, ...(a.outside && typeof a.outside.why === "string" ? { outside: { side: a.outside.side, why: a.outside.why } } : {}) })),
+    marketWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "edit" && POSITION_ENGINE.MARKET_KINDS.includes(entry.payload.kind))
+      .map((entry) => ({ kind: entry.payload.kind, ...(entry.payload.q != null ? { q: +entry.payload.q } : {}), ...(entry.payload.price != null ? { price: +entry.payload.price } : {}) }))
+  };
 }
 
 /* 11 NOV 2026, THE PRICE BAND'S VERSION 2 (his answer: the switch and the re-anchor on Salt Admin, approved): Off, On or Use this point, drafted

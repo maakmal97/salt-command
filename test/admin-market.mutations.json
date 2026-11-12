@@ -1,0 +1,194 @@
+[
+ {
+  "name": "ADMIN_TO loses market/off and market/on",
+  "file": "src/worker.js",
+  "find": "|market\\/(off|on)|anchor",
+  "replace": "|anchor"
+ },
+ {
+  "name": "ADMIN_TO takes any anchor",
+  "file": "src/worker.js",
+  "find": "anchor\\/\\d{1,3}(\\.\\d{1,2})?\\/\\d{1,5}",
+  "replace": "anchor\\/[^|]+"
+ },
+ {
+  "name": "Shop loses its Market tab",
+  "file": "stmt/page.js",
+  "find": "[\"hours\", \"Hours\"], [\"market\", \"Market\"], ",
+  "replace": "[\"hours\", \"Hours\"], "
+ },
+ {
+  "name": "the Market section shows under Hours",
+  "file": "stmt/page.js",
+  "find": "data-in=\"shop.market\"",
+  "replace": "data-in=\"shop.hours\""
+ },
+ {
+  "name": "market/on is not an address",
+  "file": "stmt/owner.js",
+  "find": "market:/^(off|on)$/",
+  "replace": "market:/^(off)$/"
+ },
+ {
+  "name": "a market address is not acted on",
+  "file": "stmt/owner.js",
+  "find": "else if(w[0]==='market') marketFor(w[1]);",
+  "replace": ""
+ },
+ {
+  "name": "market/off asks when the move is already off",
+  "file": "stmt/owner.js",
+  "find": "(r.kind==='off')===mkt.market.on",
+  "replace": "(r.kind==='off')!==mkt.market.on"
+ },
+ {
+  "name": "an anchor address leaves the form empty",
+  "file": "stmt/owner.js",
+  "find": "mktForm={q:String(q),price:String(price)};",
+  "replace": "mktForm={q:'',price:''};"
+ },
+ {
+  "name": "the switch always sends Off",
+  "file": "stmt/owner.js",
+  "find": "kind:on?'marketOff':'marketOn'",
+  "replace": "kind:'marketOff'"
+ },
+ {
+  "name": "the switch sends without asking",
+  "file": "stmt/owner.js",
+  "find": "ownerAsk(sw,'market:switch',{title:",
+  "replace": "Promise.resolve(true)||ownerAsk(sw,'market:switch',{title:"
+ },
+ {
+  "name": "a waiting switch does not say so",
+  "file": "stmt/owner.js",
+  "find": "swWait?'Waiting under Approve.'",
+  "replace": "swWait?''"
+ },
+ {
+  "name": "a waiting switch stays live",
+  "file": "stmt/owner.js",
+  "find": "sw.disabled=swWait;",
+  "replace": "sw.disabled=false;"
+ },
+ {
+  "name": "the form sends another price",
+  "file": "stmt/owner.js",
+  "find": "q:+sel.value, price:p}, answer)",
+  "replace": "q:+sel.value, price:p+5}, answer)"
+ },
+ {
+  "name": "the form lets a price off the RM 5 steps go",
+  "file": "stmt/owner.js",
+  "find": "Math.abs(p/5-Math.round(p/5))>1e-9||!sel.value",
+  "replace": "!sel.value"
+ },
+ {
+  "name": "an outside refusal is not asked about",
+  "file": "stmt/owner.js",
+  "find": "if(error.detail&&error.detail.outside){ mktOut=",
+  "replace": "if(false){ mktOut="
+ },
+ {
+  "name": "the outside sentence is not shown",
+  "file": "stmt/owner.js",
+  "find": "out.appendChild(el('p','salt-insight',mktOut.say));",
+  "replace": ""
+ },
+ {
+  "name": "Let it stand is open without a reason",
+  "file": "stmt/owner.js",
+  "find": "go.type='button'; go.disabled=!oneOffOk(why.value);",
+  "replace": "go.type='button';"
+ },
+ {
+  "name": "a reason never lets it stand",
+  "file": "stmt/owner.js",
+  "find": "mktWhy=why.value; go.disabled=!oneOffOk(why.value); });",
+  "replace": "mktWhy=why.value; go.disabled=true; });"
+ },
+ {
+  "name": "Let it stand sends no reason",
+  "file": "stmt/owner.js",
+  "find": ", why:why.value.trim()}, answer);",
+  "replace": "}, answer);"
+ },
+ {
+  "name": "a point's outside reason is not listed",
+  "file": "stmt/owner.js",
+  "find": "(p.outside?'. Outside the band: '+p.outside.why:'')",
+  "replace": "''"
+ },
+ {
+  "name": "the catalogue offers sizes past 12.5",
+  "file": "src/maker-inputs.js",
+  "find": "q <= 12.5 + 1e-9 &&",
+  "replace": "q <= 100 &&"
+ },
+ {
+  "name": "the catalogue reads no points",
+  "file": "src/maker-inputs.js",
+  "find": "(Array.isArray(doc.anchors) ? doc.anchors : [])",
+  "replace": "[]"
+ },
+ {
+  "name": "the catalogue drops the outside reason",
+  "file": "src/maker-inputs.js",
+  "find": "...(a.outside && typeof a.outside.why === \"string\" ? { outside: { side: a.outside.side, why: a.outside.why } } : {})",
+  "replace": "...{}"
+ },
+ {
+  "name": "the catalogue reads no market",
+  "file": "src/maker-inputs.js",
+  "find": "market: m && typeof m === \"object\" ? {",
+  "replace": "market: null ? {"
+ },
+ {
+  "name": "the market edits waiting take any edit",
+  "file": "src/maker-inputs.js",
+  "find": "entry.payload.mode === \"edit\" && POSITION_ENGINE.MARKET_KINDS.includes(entry.payload.kind))\n      .map((entry) => ({ kind",
+  "replace": "entry.payload.mode === \"edit\")\n      .map((entry) => ({ kind"
+ },
+ {
+  "name": "Approve calls a point Edit",
+  "file": "stmt/owner.js",
+  "find": "anchor:'Median point'};",
+  "replace": "anchor:'Edit'};"
+ },
+ {
+  "name": "a market card has no code word",
+  "file": "stmt/owner.js",
+  "find": "(isMarketDraft(draft)?'Median Price':'no code')",
+  "replace": "'no code'"
+ },
+ {
+  "name": "Approve hides the Median move flag",
+  "file": "stmt/owner.js",
+  "find": "[/^The Median at .* goes from/i,'median'],",
+  "replace": ""
+ },
+ {
+  "name": "a new customer starts at Not set",
+  "file": "stmt/owner.js",
+  "find": "{ select.value='0.3'; id.appendChild(",
+  "replace": "{ id.appendChild("
+ },
+ {
+  "name": "the line says the Median Price",
+  "file": "stmt/owner.js",
+  "find": "'Starts at +30%.'",
+  "replace": "'Starts at the Median Price.'"
+ },
+ {
+  "name": "Add them leaves the start alone",
+  "file": "stmt/owner.js",
+  "find": "if(d.product==='salt'){ d.select.value='0.3'; ",
+  "replace": "if(d.product==='salt'){ "
+ },
+ {
+  "name": "the links card says the Median Price list",
+  "file": "stmt/page.js",
+  "find": "A guest link opens the +30% list for everybody;",
+  "replace": "A guest link opens the Median Price list for everybody;"
+ }
+]

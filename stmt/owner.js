@@ -72,6 +72,7 @@ export const OWNER_JS = `
     'customers.associates':function(){ if(!cards) loadCards(); else drawCards(); },
     'shop.hours':function(){ loadMakerHours(); loadMakerPoints(); },
     'shop.notice':function(){ loadMakerBulletin(); },
+    'shop.market':function(){ loadMarket(); },
     'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }
   };
   /* every element that names where it shows is shown there and hidden elsewhere: a card, a form, a section or a whole place. Record's
@@ -104,11 +105,15 @@ export const OWNER_JS = `
   /* 9 Nov 2026, his word (every Desk conclusion leads to the correct path): the Desk's Act links land here through its /admin, which passes only
      the addresses its ADMIN_TO lists. Three name one thing rather than a place: row/<rid> opens that row in the sale form (as Ledger check's tap),
      acct/<code> that account's card, tip/<id> Desk reminders with that reminder chosen. Each is a want, read once and then left for the place. */
-  var WANTS={row:/^[slp][0-9]{1,6}$/, acct:/^[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}$/, tip:/^[A-Za-z0-9:._+-]{1,120}$/};
+  var WANTS={row:/^[slp][0-9]{1,6}$/, acct:/^[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}$/, tip:/^[A-Za-z0-9:._+-]{1,120}$/, market:/^(off|on)$/};
+  /* 11 Nov 2026 (the price band's version 2): market/off and market/on open Shop's Market part with the switch's question ready; anchor/<size>/<price> opens it with the
+     re-anchor form filled, nothing sent. Each is a want, as the others are. */
+  var ANCHOR_Q=/^[0-9]{1,3}([.][0-9]{1,2})?$/, ANCHOR_P=/^[0-9]{1,5}$/;
   function addrOf(h){
     var t=String(h||'').replace(/^#/,'').split('/'), k=t[0];
+    if(k==='anchor'&&t.length===3) return ANCHOR_Q.test(t[1])&&ANCHOR_P.test(t[2])&&+t[1]>0&&+t[2]>0?{place:'shop', part:'market', want:['anchor',t[1]+'/'+t[2]]}:null;
     if(Object.prototype.hasOwnProperty.call(WANTS,k)&&t.length===2){ var key=''; try{ key=decodeURIComponent(t[1]); }catch(e){ key=''; }
-      return WANTS[k].test(key)?{place:k==='acct'?'customers':'record', part:k==='acct'?'accounts':k==='tip'?'pricing':'entry', want:[k,key]}:null; }
+      return WANTS[k].test(key)?{place:k==='acct'?'customers':k==='market'?'shop':'record', part:k==='acct'?'accounts':k==='tip'?'pricing':k==='market'?'market':'entry', want:[k,key]}:null; }
     if(Object.prototype.hasOwnProperty.call(PART_ADDR,k+'/'+t[1])){ var m=PART_ADDR[k+'/'+t[1]]; return {place:m[0], part:m[1]}; }
     if(!Object.prototype.hasOwnProperty.call(ADDR,k)) return null;
     var a=ADDR[k], part=t[1]||a[1];
@@ -3282,6 +3287,8 @@ export const OWNER_JS = `
       var tlo=typeof item.driftMin==='number'?item.driftMin/100:-0.3, thi=typeof item.driftMax==='number'?item.driftMax/100:0.3;
       typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder=tlo+' to '+thi;typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
+      /* 11 Nov 2026, his word (always start a stranger at +30%): salt's starting % is +30% unless he chooses another; the Median Price and every other preset stay his to pick */
+      if(item.product==='salt'&&presets.some(function(p){ return String(p.value)==='0.3'; })){ select.value='0.3'; id.appendChild(el('p','salt-settings__foot ostart30','Starts at +30%.')); }
       return {product:item.product,select:select,typed:typed,lo:tlo,hi:thi};
     });
     /* 25 Oct 2026 (Record redesign P7, his Ask J): the code they will get, worked out as Add the customer works it out, shown as the name and place are typed;
@@ -3302,7 +3309,7 @@ export const OWNER_JS = `
       idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
-    joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,filled:false};
+    joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,drifts:idDrifts,filled:false};
     /* Fable's re-check: the link is told its code only while the name is the one it sealed, so a name typed over it (in one go or after emptying) is another
        customer and is never told; the place stays his to correct, and a nickname is put right afterwards by Amend ID */
     idName.addEventListener('input',function(){ if(joinForm&&joinForm.name===idName) joinForm.filled=!!joinHold&&idName.value.trim()===joinHold.name; });
@@ -6189,6 +6196,7 @@ export const OWNER_JS = `
      and computed nowhere here, only what changes marked; then at most two lines that ask a decision; then Approve, saying the result, Reject and Details, which keeps the
      drafter's whole note, every flag and the row. Every draft on one row, or on one trip, is one card and one Approve. */
   function draftAt(d){ return String(d&&d.id||''); }
+  function isMarketDraft(d){ var p=((d.entry||{}).payload)||{}; return p.mode==='edit'&&Object.prototype.hasOwnProperty.call(MARKET_WORD,p.kind); }
   function draftParty(d){ var e=d.entry||{}, p=e.payload||{}; return d.party||e.party||p.party||''; }
   function draftRid(d){ var r=d.row||{}, f=d.figures||{}; return f.rid||r.rid||(/^[a-z]{1,3}[0-9]+$/i.test(String(d.amends||''))?d.amends:''); }
   /* where the entry came from: Salt Admin's own inputs carry their request, a site order's its id (his taps on it are the Desk's own), the laptop's queue holds the bare
@@ -6317,7 +6325,8 @@ export const OWNER_JS = `
   /* THE LINES THAT ASK A DECISION, two at most and in his words: what the customer will owe against the ceiling when the card raises it, then the drafter's flags that
      ask one (under the floor, a refund opens, stock below zero, a twin). Every flag stands in Details whatever is drawn here. */
   var AP_ASK=[[/under the floor|loses money/i,'floor'],[/refund|overpaid|more than the order is owed|more than it is worth/i,'refund'],
-    [/inventory the book puts at|owed out|unmeetable|a count of this book/i,'stock'],[/on the book by party, date, size and total/i,'twin']];
+    [/inventory the book puts at|owed out|unmeetable|a count of this book/i,'stock'],[/on the book by party, date, size and total/i,'twin'],
+    [/^The Median at .* goes from/i,'median'],[/^Outside the band/i,'band']];
   function sentenceCase(s){
     s=noBook(s).replace(/\\b([A-Z][A-Z]+)\\b/g,function(w){ return /^(RM|COGS|ID|MYT)$/.test(w)?w:w.toLowerCase(); });
     s=s.split(/[.!?] /)[0].split(', which')[0].split(': ')[0].replace(/[.]$/,'');
@@ -6452,7 +6461,7 @@ export const OWNER_JS = `
       var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
       var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
       /* the head: the customer's code and the book's mark */
-      party.appendChild(document.createTextNode(draftParty(draft)||'no code'));
+      party.appendChild(document.createTextNode(draftParty(draft)||(isMarketDraft(draft)?'Median Price':'no code')));
       if(g.tripMoves) party.appendChild(document.createTextNode(' · '+tripMoveRows(g).length+' books, one order'));
       else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' ')); party.appendChild(productTag(draft.product)); }
       head.appendChild(party);
@@ -7167,6 +7176,7 @@ export const OWNER_JS = `
     var f=joinForm; if(!joinHold||!f||!f.name.isConnected) return;
     f.kind.value='customer'; f.kind.dispatchEvent(new Event('change',{bubbles:true}));
     f.name.value=joinHold.name; f.place.value=joinHold.place;
+    (f.drifts||[]).forEach(function(d){ if(d.product==='salt'){ d.select.value='0.3'; d.select.dispatchEvent(new Event('change',{bubbles:true})); } });   /* 11 Nov 2026: a new customer starts at +30% */
     f.name.dispatchEvent(new Event('input',{bubbles:true})); f.place.dispatchEvent(new Event('input',{bubbles:true}));
     f.filled=true; f.status.textContent='Filled from the join link of '+codeByUser(joinHold.by)+(codeOfUser(joinHold.by)?', their first week counting for them':'')+'; check them, then add.';
     openForm('new-customer');
@@ -7276,8 +7286,14 @@ export const OWNER_JS = `
     p.appendChild(document.createTextNode(units(qty)+(product?' ':''))); if(product) p.appendChild(bookTag(product));
     p.appendChild(document.createTextNode(', '+rm(total))); return p;
   }
-  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Their %',REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
-  function entryWord(e){ return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry'; }
+  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Their %',REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan', EDIT:'Edit'};
+  /* 11 Nov 2026: an edit of the market is named by its kind and, for a point, the figures he sent */
+  var MARKET_WORD={marketOff:'Market move off', marketOn:'Market move on', anchor:'Median point'};
+  function entryWord(e){
+    var p=e&&e.payload;
+    if(p&&p.mode==='edit'&&Object.prototype.hasOwnProperty.call(MARKET_WORD,p.kind)) return MARKET_WORD[p.kind]+(p.kind==='anchor'&&+p.q>0&&+p.price>0?', '+units(+p.q)+', '+rm(+p.price):'');
+    return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry';
+  }
   /* 12 Nov 2026 (his Approve review): A CARD SAYS WHAT IT APPROVES. A Their % row is each book and the figure it sets, read off the row as drafted, and what it was
      where the drafter's flag says it moves; an entry with no size and no sum draws no money line (it drew RM 0.00) but the first sentence of the drafter's reading */
   function tierSets(d){
@@ -7703,7 +7719,7 @@ export const OWNER_JS = `
     if(a) openNeed(a.username); else showPlace('customers','accounts',{fresh:true,push:true});
   }
   /* the want's own address is replaced first, by the place he was on: the want then pushes its place, so Back leaves it rather than opening it again */
-  function wantGo(w){ if(w[0]==='row') amendFor(w[1]); else if(w[0]==='acct') acctFor(w[1]); else if(w[0]==='tip') tipFor(w[1]); }
+  function wantGo(w){ if(w[0]==='row') amendFor(w[1]); else if(w[0]==='acct') acctFor(w[1]); else if(w[0]==='tip') tipFor(w[1]); else if(w[0]==='market') marketFor(w[1]); else if(w[0]==='anchor') marketFor('anchor',w[1].split('/')[0],w[1].split('/')[1]); }
   function owedGo(r, sect){
     var o=siteOrderOf(r);
     if(o) openOrderAt(o.id, sect); else amendFor(r.rid);
@@ -8368,6 +8384,95 @@ export const OWNER_JS = `
      all three; the names are stmt/testusers.js's list. */
   var TEST_ALL=${JSON.stringify(TEST_USERS)};
   var TEST_LINE='Password 0000-0000-0000-0000 for all three. Username 0000-0000 shows every case; 0000-0001 is locked, for paying only; 0000-0002 is fresh, with room to order.';
+  /* ---- 11 NOV 2026, THE PRICE BAND'S VERSION 2: SHOP > MARKET. The market move's switch, the day's words, the Median points he has set and a form to re-anchor one. Everything is an
+     edit he approves next, under Approve; nothing here prices. Off and On ask once on the Sheet. A point outside the band is refused with what it means, and one Reason line lets it stand. ---- */
+  var mkt=null, mktSaid='', mktReady=null, mktForm={q:'',price:''}, mktOut=null, mktWhy='';
+  function loadMarket(){
+    return refs('/all/maker/inputs').then(function(j){ mkt=(j&&j.catalog)||{}; mktSaid=''; },function(e){ mktSaid=e.message; }).then(function(){ drawMarket(); marketAct(); });
+  }
+  function marketFor(kind,q,price){
+    mktReady={kind:kind};
+    if(kind==='anchor'){ mktForm={q:String(q),price:String(price)}; mktOut=null; mktWhy=''; }
+    showPlace('shop','market',{fresh:true,push:true});
+  }
+  function marketAct(){
+    var r=mktReady; if(!r||!mkt||!mkt.market) return; mktReady=null;
+    if(r.kind==='anchor') return;
+    var sw=document.querySelector('#makerMarket [data-act="market.switch"]');
+    if(sw&&(r.kind==='off')===mkt.market.on&&!sw.disabled) sw.click();
+  }
+  async function marketSend(body,answer){
+    try{ await refs('/all/maker/inputs/edit',body); mktOut=null; mktWhy=''; mktSaid=body.kind==='anchor'?'Sent. The point stands once you approve it, under Approve.':'Sent. It takes effect once you approve it, under Approve.'; await loadMarket(); }
+    catch(error){
+      if(error.detail&&error.detail.outside){ mktOut={say:noBook(error.raw||error.message)}; drawMarket(); return; }
+      mktSaid=''; refusal(answer,error);
+    }
+  }
+  function drawMarket(){
+    var box=document.getElementById('makerMarket'); if(!box) return;
+    box.textContent='';
+    if(!mkt){ box.appendChild(el('p','salt-settings__foot',mktSaid||'Reading.')); return; }
+    var m=mkt.market, waits=mkt.marketWaiting||[];
+    if(!m){ box.appendChild(el('p','salt-settings__foot','Salt has no market move to set.')); return; }
+    var swWait=waits.some(function(k){ return k.kind!=='anchor'; }), ptWait=waits.filter(function(k){ return k.kind==='anchor'; });
+    var list=el('div','salt-settings'), row=el('div','salt-settings__row'), lab=el('span','salt-settings__label','Market move'); lab.id='mktH';
+    var sw=actOn(el('button','salt-switch'),'market.switch'); sw.type='button'; sw.setAttribute('role','switch'); sw.setAttribute('aria-checked',String(!!m.on)); sw.setAttribute('aria-labelledby','mktH'); sw.disabled=swWait;
+    row.appendChild(lab); row.appendChild(sw); list.appendChild(row);
+    var today=el('div','salt-settings__row salt-settings__row--text'); today.appendChild(el('span','salt-settings__label',swWait?'Waiting under Approve.':m.why||(m.on?'On.':'Off: salt is at the plain Median Price.')));
+    today.setAttribute('data-market-today',''); list.appendChild(today); box.appendChild(list);
+    box.appendChild(el('p','salt-settings__foot','Salt moves within 15 points under and 20 over the Median Price, 5 a day, by what stock says.'));
+    sw.addEventListener('click',function(){
+      var on=!!m.on;
+      ownerAsk(sw,'market:switch',{title:on?'Switch the market move off?':'Switch the market move on?', plain:true,
+        say:[on?'Salt goes back to the plain Median Price at the next publish.':'It climbs from nought, 5 points a day at most.','You approve it next, under Approve.'], go:on?'Switch off':'Switch on', keep:'Not now'}).then(function(yes){
+        if(!yes) return;
+        marketSend({at:new Date().toISOString(), kind:on?'marketOff':'marketOn', product:'salt'}, today.firstChild);
+      });
+    });
+    /* the re-anchor form */
+    box.appendChild(el('h3','salt-settings__head','Re-anchor the Median'));
+    var form=el('div','salt-settings amform'), sizes=(mkt.marketSizes||[]).slice();
+    if(mktForm.q&&sizes.indexOf(+mktForm.q)<0) sizes.push(+mktForm.q);
+    var sel=actOn(el('select','salt-field__input'),'market.size'), price=actOn(el('input','salt-field__input salt-field__input--mono'),'market.price');
+    sizes.forEach(function(q){ var o=el('option',null,units(q)); o.value=String(q); sel.appendChild(o); });
+    sel.value=mktForm.q&&sizes.indexOf(+mktForm.q)>=0?String(+mktForm.q):(sizes.length?String(sizes[0]):'');
+    price.type='number'; price.step='5'; price.min='5'; price.inputMode='numeric'; price.value=mktForm.price||'';
+    [['Size',sel],['Price (RM)',price]].forEach(function(p){ var r=el('label','salt-settings__row mrow'); r.appendChild(el('span','salt-settings__label',p[0])); r.appendChild(p[1]); form.appendChild(r); });
+    var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
+    var send=actOn(el('button','salt-pill salt-pill--md','Send'),'market.send'); send.type='button'; send.disabled=ptWait.length>0;
+    var keep=function(){ mktForm={q:sel.value,price:price.value}; if(mktOut){ mktOut=null; mktWhy=''; drawMarket(); } };
+    sel.addEventListener('change',keep); price.addEventListener('input',keep);
+    send.addEventListener('click',function(){
+      var p=Number(price.value);
+      if(!(p>0)||Math.abs(p/5-Math.round(p/5))>1e-9||!sel.value){ answer.textContent='Choose a size and a price in steps of RM 5.'; return; }
+      mktForm={q:sel.value,price:price.value};
+      marketSend({at:new Date().toISOString(), kind:'anchor', product:'salt', q:+sel.value, price:p}, answer);
+    });
+    box.appendChild(form);
+    if(mktOut){
+      var out=el('div','salt-settings'), why=actOn(el('input','salt-field__input'),'market.why'); why.type='text'; why.maxLength=120; why.value=mktWhy; why.setAttribute('data-one-off','');
+      out.appendChild(el('p','salt-insight',mktOut.say));
+      var wr=el('label','salt-settings__row mrow'); wr.appendChild(el('span','salt-settings__label',ONE_OFF_WORDS.reason)); wr.appendChild(why); out.appendChild(wr);
+      var go=actOn(el('button','salt-pill salt-pill--md',ONE_OFF_WORDS.go),'market.stand'); go.type='button'; go.disabled=!oneOffOk(why.value);
+      why.addEventListener('input',function(){ mktWhy=why.value; go.disabled=!oneOffOk(why.value); });
+      go.addEventListener('click',function(){ if(!oneOffOk(why.value)) return; marketSend({at:new Date().toISOString(), kind:'anchor', product:'salt', q:+sel.value, price:Number(price.value), why:why.value.trim()}, answer); });
+      box.appendChild(out); box.appendChild(go);
+    } else box.appendChild(send);
+    box.appendChild(answer);
+    if(mktSaid) answer.textContent=mktSaid;
+    if(ptWait.length) box.appendChild(el('p','salt-settings__foot','A point waits under Approve; send another once it is decided.'));
+    var pts=mkt.marketPoints||[];
+    if(pts.length){
+      box.appendChild(el('h3','salt-settings__head','Points you have set'));
+      var pl=el('div','salt-settings');
+      pts.forEach(function(p){
+        var r=el('div','salt-settings__row salt-settings__row--text'); r.setAttribute('data-market-point',String(p.q));
+        r.appendChild(el('span','salt-settings__label',units(p.q)+', '+rm(p.price)+', from '+p.from+(p.outside?'. Outside the band: '+p.outside.why:'')));
+        pl.appendChild(r);
+      });
+      box.appendChild(pl);
+    }
+  }
   var TEST_SHOWS=['Every case','Locked, to pay','Fresh, to order'];
   function drawTest(){
     var box=document.getElementById('mTest'); if(!box) return;

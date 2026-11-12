@@ -104,7 +104,7 @@
  {
   "name": "Guest links back to two sentences",
   "file": "stmt/page.js",
-  "find": "A guest link opens the Median Price list for everybody; naming whose friend it is stays your note.</p>",
+  "find": "A guest link opens the +30% list for everybody; naming whose friend it is stays your note.</p>",
   "replace": "A guest link opens the Median Price list, the same for everybody. Name the customer whose friend it is, as your own note.</p>"
  },
  {

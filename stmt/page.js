@@ -2063,7 +2063,7 @@ const ADMIN_PARTS = {
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
+  shop: [["hours", "Hours"], ["market", "Market"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
 /* 20 Oct 2026 (Counter Batch C, item 21): a place whose parts fit a phone's slider draws them as one, measured in Chromium at 358px:
@@ -2282,7 +2282,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerChatList"></div><div id="makerChatOpen" class="salt-pane" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'
         + "<h2>Guest links</h2>"
-        + '<p class="lead">A guest link opens the Median Price list for everybody; naming whose friend it is stays your note.</p>'
+        + '<p class="lead">A guest link opens the +30% list for everybody; naming whose friend it is stays your note.</p>'
         + '<label class="lbl salt-field__label" for="gintro">Whose friend?</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
         + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'
@@ -2327,6 +2327,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true)
+        + '<section data-in="shop.market" aria-labelledby="makerMarketTitle"><h2 id="makerMarketTitle" class="sr">Market</h2><div id="makerMarket"></div></section>'
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'

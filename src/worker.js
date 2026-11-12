@@ -86,7 +86,7 @@ const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
  * 9 Nov 2026, his word (every conclusion leads to the correct path): `?to=` names the Salt Admin place a Desk conclusion is acted on,
  * one of a fixed list (ADMIN_TO): a place and part, a row (`row/<rid>`, its sale form), an account (`acct/<code>`) or a Desk reminder
  * (`tip/<id>`). Anything else lands on Approve as before, so the Desk can never send Salt Admin an address it does not know. */
-export const ADMIN_TO = /^(needs|orders\/(todo|open|done|ended|approve|payments|group|ledger)|customers\/(accounts|messages|links|associates)|record\/(entry|customers|pricing)|row\/[slp]\d{1,6}|acct\/[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}|tip\/[A-Za-z0-9:._+-]{1,120})$/;
+export const ADMIN_TO = /^(needs|orders\/(todo|open|done|ended|approve|payments|group|ledger)|customers\/(accounts|messages|links|associates)|record\/(entry|customers|pricing)|market\/(off|on)|anchor\/\d{1,3}(\.\d{1,2})?\/\d{1,5}|row\/[slp]\d{1,6}|acct\/[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}|tip\/[A-Za-z0-9:._+-]{1,120})$/;
 export function adminRedirect(env, want) {
   let to = null;
   const hash = typeof want === "string" && ADMIN_TO.test(want) ? want : "orders/approve";
