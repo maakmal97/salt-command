@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="45f0c8eb22954ed7";
+var SALT_BUILD_ID="ab81f0d10d646534";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -20196,6 +20196,21 @@ function rewardRuleTxt(prod,who){
   if(who!=='associate'&&prod==='salt'&&loyalRuleTxt())return loyalRuleTxt();   /* 21 Oct 2026: the loyalty unit is a customer's reward */
   if(who!=='associate'&&rewardWalkOf(null))return 'held as it stood on '+rewardWalkOf(null).since+', not redeemed';   /* 20 Oct 2026 */
   return 'a free unit per '+fmt0(m)+' of margin';}
+/* 12 NOV 2026: THE ASSOCIATES FOLD QUOTES THE SCHEME IN FORCE. It still said the margin hurdle of v623 (RM 470, R3 at 1.2 times, the
+   whole ledger) three weeks after the walk replaced it: from the switch a unit is `times` units' landed cost of margin, paid in full,
+   and R3 counts only in a new customer's first R3_DAYS days, at full margin (plan version 6). The old words stay for a book read
+   before the switch. */
+function rewardSchemeWords(prod){
+  if(rewardUnitMargin(prod,'associate')==null)return null;
+  const w=rewardWalkOf(null);
+  if(w&&w.step!=null){const d=String(w.since);return {walk:true,
+    unit:'every '+w.times+' units’ landed cost of margin, '+fmt0(w.step)+' today',
+    window:'paid in full, from '+(+d.slice(8))+' '+MAP_MON[+d.slice(5,7)-1]+' '+d.slice(0,4),
+    r3:'For the reward, the orders of a customer they introduce count here in that customer’s first '+POSITION_ENGINE.R3_DAYS+' days, at full margin, and none after.'};}
+  return {walk:false,unit:'every '+fmt0(rewardUnitMargin(prod,'associate'))+' of an associate’s margin, '+fmt0(rewardUnitMargin(prod))+' of a customer’s',
+    window:'whole ledger',
+    r3:'For the reward, the margin on every order of each customer they introduced counts in the same pool, one step down only, against a hurdle '+rewardR3Hurdle(prod)+' times higher, since each of those orders also counts for its own customer.'};
+}
 /* 21 OCT 2026: WHAT COUNTS FOR A CUSTOMER, in his words; null before the loyalty unit's switch */
 function loyalRuleTxt(){const s=REWARD.stated.salt&&REWARD.stated.salt.loyal;return s?'a unit at cost per '+s.every+' units at their price, paused by a late payment or a write-off':null;}
 /* 20 OCT 2026: THE WALK, read through the engine on the desk's own rows. null off salt or before the switch; with id null, the scheme
@@ -21043,18 +21058,18 @@ function tabNetwork(){
     <div class="netmap">
       <div class="nstream nv">
         <div class="nsh"><span class="tag salt-status pendingt">R1</span> Bought from you</div>
-        <div class="nsw">His own orders, priced.</div>
-        <div class="nswhy">A partner who is also a buyer. Pooled with R2 and R3 into one count of margin, <b>${rewardRuleTxt(PROD,'associate')}</b>.</div>
+        <div class="nsw">Their own orders, priced.</div>
+        <div class="nswhy">An associate who is also a buyer. Pooled with R2 and R3 into one count of margin, <b>${rewardRuleTxt(PROD,'associate')}</b>.</div>
       </div>
       <div class="nstream ng">
         <div class="nsh"><span class="tag salt-status paid">R2</span> Sold for you</div>
-        <div class="nsw">Onward sales he runs, booked to him; the end buyer has no separate line.</div>
+        <div class="nsw">Onward sales they run, booked to them; the end buyer has no separate line.</div>
         <div class="nswhy">Revenue you would not have made alone. Booked to their -R account and pooled into the same count, since it cannot be told from their own buying.</div>
       </div>
       <div class="nstream ni">
         <div class="nsh"><span class="tag salt-status" style="background:rgba(228,233,236,.16);color:var(--ice)">R3</span> Brought you</div>
         <div class="nsw">First-order value of each new customer they introduce.</div>
-        <div class="nswhy">Network growth. For the reward, the margin on every order of each customer they introduced counts in the same pool, one step down only, against a hurdle ${rewardR3Hurdle(PROD)} times higher, since each of those orders also counts for its own customer.</div>
+        <div class="nswhy" id="nwR3Why">Network growth. ${(rewardSchemeWords(PROD)||{r3:'No reward on this book.'}).r3}</div>
       </div>
     </div>
     <!-- ============ v385: THE THREE FIGURES ON THIS CARD WERE WRONG ============
@@ -21075,10 +21090,10 @@ function tabNetwork(){
          v618: THE BAND CHIPS WENT WITH THE BANDS. One rule remains, and the summary of this fold
          states it for associates and customers alike. -->
     <div class="neq" style="margin:11px 0 0;padding-top:11px">
-      ${rewardUnitMargin(PROD)==null?`<span class="nchip" style="color:var(--dim)">no reward on this book</span>`:`<span class="nchip ngold">every ${fmt0(rewardUnitMargin(PROD,'associate'))} of an associate's margin, ${fmt0(rewardUnitMargin(PROD))} of a customer's</span>
+      ${(RW=>!RW?`<span class="nchip" style="color:var(--dim)">no reward on this book</span>`:`<span class="nchip ngold" id="nwRwUnit">${RW.unit}</span>
       <span class="nop">&rarr;</span>
       <span class="nchip ng">one whole free unit</span>
-      <span class="nchip" style="color:var(--dim)">whole ledger &middot; written-off orders earn nothing</span>`}
+      <span class="nchip" style="color:var(--dim)" id="nwRwWin">${RW.window} &middot; written-off orders earn nothing</span>`)(rewardSchemeWords(PROD))}
     </div>
     <div class="neq">
       <span class="nchip nv">R1 Bought</span>
@@ -21086,7 +21101,7 @@ function tabNetwork(){
       <span class="nchip ng">R2 Sold for you</span>
       <span class="nop">=</span>
       <span class="nchip ngold">Made you</span>
-      <span class="nbranch">R3 &rarr; <span class="nchip ni">rebate &amp; rank</span>, kept out</span>
+      <span class="nbranch" id="nwR3Branch">R3 &rarr; <span class="nchip ni">${rewardSchemeWords(PROD)?'stars &amp; reward':'stars'}</span>, kept out</span>
     </div>
     <!-- v385: THIS WAS 331 CHARACTERS AND THE READER GOT 111 OF THEM. stripMethod trims any
          .insight at or over NOTE_MIN to its FIRST SENTENCE wherever it sits, so the reason R3
@@ -21099,16 +21114,16 @@ function tabNetwork(){
          because it is already the chip directly above this, and saying it twice is what the
          departed block was doing. -->
     <div class="insight salt-insight" style="margin:6px 0 0">
-      <b>R2 is in "Made you":</b> an onward sale has no separate buyer line, so his is the only line it can count on.
+      <b>R2 is in "Made you":</b> an onward sale has no separate buyer line, so theirs is the only line it can count on.
     </div>
     <div class="insight salt-insight" style="margin:4px 0 0">
-      <b>R3 is not:</b> a referred customer trades on his own line, so counting it here too would count the same ringgit twice.
+      <b>R3 is not:</b> a referred customer trades on their own line, so counting it here too would count the same ringgit twice.
     </div>
   </div></details>
   <!-- v401: the caption under this chart is deleted, and like the note under the tree it had
        not rendered since v372: a .dsc with no figure, culled on every render. The chart's own
        legend names the three streams, which is what the caption was for. -->
-  <div class="card" style="margin-top:14px"><div class="cardh">What each partner is made of <span class="sub">bought, sold for you, brought you</span></div><div class="chartbox" style="height:180px"><canvas id="nwPartnerChart"></canvas></div></div>
+  <div class="card" style="margin-top:14px"><div class="cardh">What each associate is made of <span class="sub">bought, sold for you, brought you</span></div><div class="chartbox" style="height:180px"><canvas id="nwPartnerChart"></canvas></div></div>
   <h2 style="margin-top:22px">Associates <span class="rule"></span></h2>
   ${cards}`;
 }
