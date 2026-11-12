@@ -51872,8 +51872,13 @@ await (async () => {
   /* and a stranger, by any guest or standing link, is quoted the Median Price: a drift book has no level for a link to follow */
   const set13 = JSON.stringify(snap.byProduct.salt.ladder.map((r) => r.prices[r.prices.length - 1]));
   const gs = (b) => JSON.stringify((b.products.find((p) => p.product === "salt") || { sizes: [] }).sizes.map((x) => x.price));
-  ok(gs(PL.guestBoard(bk12, snap, new Date())) === set13 && PL.boardList === undefined && PL.tierBoard === undefined,
-    "the one guest board, which every guest and standing link reads, quotes salt at the Median Price: " + set13);
+  /* 11 Nov 2026, his word "Always start a stranger at +30%": the board is the place the rule names as `start` on the band, never under the Median */
+  const PE13 = (await import("../engine/pricing.mjs")).default, in13 = snap.byProduct.salt.inputs, C13 = PE13.costStack(in13.cost), P13 = in13.policy;
+  const set13n = JSON.parse(set13), g13 = JSON.parse(gs(PL.guestBoard(bk12, snap, new Date())));
+  const at13 = JSON.stringify(snap.byProduct.salt.ladder.map((r) => PE13.quoteAt(r.q, C13, P13, P13.tierRule.start)));
+  ok(P13.tierRule.start === 0.3 && JSON.stringify(g13) === at13 && g13.length === set13n.length && g13.every((v, i) => v >= set13n[i]) && g13.some((v, i) => v > set13n[i])
+    && PL.boardList === undefined && PL.tierBoard === undefined,
+    "the one guest board, which every guest and standing link reads, quotes salt at +30% on the band, never under the Median Price: " + JSON.stringify([g13, set13n]));
   /* 14. THE DRAFTER AND THE FOLD TAKE A DRIFT ON SALT AND REFUSE A LEVEL THERE */
   const D = await import("../src/drafter.js"), F = await import("../tools/fold.mjs");
   const mir = { sales: [], purchases: [], state: { roster: ["CZ9-DA"], PRODUCTS: { salt: { name: "Salt" } }, TIER_OF: { "CZ9-DA": { salt: 0.2 } } },
@@ -51919,7 +51924,7 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/A guest link opens the +30% list for everybody[;]/.test(pg17)   /* 1 Nov 2026: one sentence, the one list for everybody kept */ && !/prices follow|two levels above/.test(pg17),
+  ok(/A guest link opens the \+30% list for everybody[;]/.test(pg17)   /* 1 Nov 2026: one sentence, the one list for everybody kept */ && !/prices follow|two levels above/.test(pg17),
     "the guest-link lead says every link opens the +30% list, and no longer that the prices follow the customer he names");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
      The snapshot leaves a drift book out of tierOf and carries its % apart (byProduct.salt.lift, the hand or nought), so no
