@@ -50371,6 +50371,11 @@ await (async () => {
   await (await import("./admin-places.mjs")).run({ ok, pageWork });
 })();
 
+section("11 Nov 2026: Salt Admin's Market part, the switch and the re-anchor, and a new customer starting at +30%");
+await (async () => {
+  await (await import("./admin-market.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's mini ledger: Open orders, Pending orders and the latest twenty, read off the folded book by the engine (16 Oct 2026)");
 await (async () => {
   await (await import("./maker-ledger.mjs")).run({ ok });
@@ -51865,8 +51870,8 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/A guest link opens the Median Price list for everybody[;]/.test(pg17)   /* 1 Nov 2026: one sentence, the one list for everybody kept */ && !/prices follow|two levels above/.test(pg17),
-    "the guest-link lead says every link opens the Median Price list, and no longer that the prices follow the customer he names");
+  ok(/A guest link opens the +30% list for everybody[;]/.test(pg17)   /* 1 Nov 2026: one sentence, the one list for everybody kept */ && !/prices follow|two levels above/.test(pg17),
+    "the guest-link lead says every link opens the +30% list, and no longer that the prices follow the customer he names");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
      The snapshot leaves a drift book out of tierOf and carries its % apart (byProduct.salt.lift, the hand or nought), so no
      reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
