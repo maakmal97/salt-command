@@ -9310,13 +9310,13 @@ function movedIn(s,inWin){
 /* 13 Nov 2026 (Fable's review of the market): WHEN A LOT'S UNITS LANDED, the Desk's lotLandings (v1511) to the letter: a Fulfilment step a part,
    the rest on receivedOn, else the lot's date; one step for the whole lot dated before a stated receivedOn lands on receivedOn; steps past what was
    received land the lot whole on its day. A lot received by a Fulfilment days after its order no longer reads as stock on the day it was ordered. */
-function landingsOf(x){
-  const tot=POSITION_ENGINE.poRecvUnits(x),whole=String(x.receivedOn||x.date||'');let acc=0;const o=[];
-  (x.amend||[]).forEach(a=>{if(a&&a.kind==='Fulfilment'&&!a.undone&&+a.kg>0.0001&&a.date){o.push([String(a.date),+a.kg]);acc+=+a.kg;}});
-  if(x.receivedOn&&o.length===1&&Math.abs(o[0][1]-tot)<0.0001&&o[0][0]<String(x.receivedOn))return [[String(x.receivedOn),tot]];
-  if(acc>tot+0.0001)return tot>0.0001?[[whole,tot]]:[];
-  const rest=+(tot-acc).toFixed(4);if(Math.abs(rest)>0.0001)o.push([whole,rest]);
-  return o;
+function landingsOf(lot){
+  const all=POSITION_ENGINE.poRecvUnits(lot),day=String(lot.receivedOn||lot.date||''),out=[];let got=0;
+  (lot.amend||[]).forEach(st=>{if(st&&st.kind==='Fulfilment'&&!st.undone&&+st.kg>0.0001&&st.date){out.push([String(st.date),+st.kg]);got+=+st.kg;}});
+  if(lot.receivedOn&&out.length===1&&Math.abs(out[0][1]-all)<0.0001&&out[0][0]<String(lot.receivedOn))return [[String(lot.receivedOn),all]];
+  if(got>all+0.0001)return all>0.0001?[[day,all]]:[];
+  const left=+(all-got).toFixed(4);if(Math.abs(left)>0.0001)out.push([day,left]);
+  return out;
 }
 /* THE SHELF AT THE START OF DAY t (his answer: one plain cover): the last count dated before it (its qty), else the opening; plus the units of
    each live lot received since, less every handover and recorded loss since. An estimate: a count is taken as the day's end. */

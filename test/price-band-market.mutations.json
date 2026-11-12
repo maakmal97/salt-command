@@ -32,8 +32,8 @@
  {
   "name": "the shelf takes no lot",
   "file": "engine/snapshot.mjs",
-  "find": "if(u>0&&inWin(x.receivedOn||x.date))shelf+=u;",
-  "replace": "if(u>0&&inWin(x.receivedOn||x.date))shelf+=0;"
+  "find": "landingsOf(x).forEach(l=>{if(inWin(l[0]))shelf+=l[1];});",
+  "replace": "landingsOf(x).forEach(l=>{if(inWin(l[0]))shelf+=0;});"
  },
  {
   "name": "the shelf ignores a count",
@@ -206,14 +206,14 @@
  {
   "name": "a new ID starts at nought",
   "file": "engine/apply.mjs",
-  "find": "if (typeof st === \"number\" && !(p in rt)) {",
-  "replace": "if (false) {"
+  "find": "if (typeof st === \"number\" && !(p in rt) && !(sf",
+  "replace": "if (false && !(sf"
  },
  {
   "name": "a chosen nought is overwritten",
   "file": "engine/apply.mjs",
-  "find": "if (typeof st === \"number\" && !(p in rt)) {",
-  "replace": "if (typeof st === \"number\") {"
+  "find": "if (typeof st === \"number\" && !(p in rt) && !(sf",
+  "replace": "if (typeof st === \"number\" && !(sf"
  },
  {
   "name": "a supplier starts too",
