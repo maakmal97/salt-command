@@ -86,7 +86,9 @@
   `suggestOf`, and the Desk's price readers beside `ONE_OFFS` (which stays the list of customers set aside whole, and is not written by this).
   **Salt Admin**: the placed card and Change the order show the Desk's sentence, one Reason line and Let it stand, which sends the same figures
   with the reason (acts `order.one-off-reason`, `order.one-off`, `order.amend-reason`, drawn only after the refusal; both allow-lists,
-  `src/maker.js` and `stmt/maker.js`, take `oneOff`, and the bridge relays `outside`). **Salt Counter**: nothing; the reason goes to the Desk
+  `src/maker.js` and `stmt/maker.js`, take `oneOff`, and the bridge relays `outside`). **The placed card's pill says what it waits for**
+  (12 Nov 2026, `waitDraw`): Choose the delivery charge, Give a reason (its tap puts him on the Reason line) or Read the figures again (its
+  tap reads them), grey only while a read is on its way; it was the greyed Figures not read for an asked reason too. **Salt Counter**: nothing; the reason goes to the Desk
   and the ledger row, never to the site, and no customer view names it. `payFault`, `rowRoom`, COGS, refunds and stock read nothing of it.
   **Not built, said**: no surface types a Median point, so that half of the plan's paragraph has nothing to check; Pricing's 30-day tally of
   one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on salt in its old words and knows no Ceiling; an undo off
@@ -1105,6 +1107,13 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
     RM 3.40, RM 80, RM 34 on the latest lot at their handover).
   - Said, not fixed (Fable): the partner exclusion goes by who is a partner today, so a row from before they were one is left out too;
     a sale handed over before the walk's first day would be dropped (none today); loans are undated in the shrink walk and land in its pin.
+  - The three Corrections of `cost` were approved and booked on 12 Nov 2026 (Book seq 209 to 211, no fallback).
+- **Associates' What counts, and why (12 Nov 2026), his word "the stale Associates fold".** It still stated v623's scheme (RM 470 of
+  margin a unit, R3 against a hurdle 1.2 times higher, the whole ledger) three weeks after the walk replaced it. `rewardSchemeWords(prod)`
+  reads the scheme in force: from the switch the unit chip is the walk's step (`times` units' landed cost, today's figure), the window
+  "paid in full, from" the switch's day, and R3 counts a new customer's orders in their first `R3_DAYS` days at full margin, none after;
+  a book read before the switch keeps the old words; a book with no reward says so. R3's branch says what R3 feeds (the stars, which
+  read R2 and R3 over revenue, and the reward), never the rank, which orders by Made you. The fold and the chart say associate and they.
 - **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
   a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
 - **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped

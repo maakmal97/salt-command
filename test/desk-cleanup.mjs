@@ -11,6 +11,7 @@
  *   F8  Analysis holds only the last correction of a field against its row, and counts a shelf truly empty, never one rebuilt under zero
  *   C1  Rules holds its register alone; Today no Money at stake chart; Financials no unmeasured line; Sourcing one gap tile; Associates no empty fold
  *   C2  Clients' Their % is one line counted off TIER_OF with the link to Salt Admin; Associates says a departure and a vacancy in one line
+ *   A1  the Associates fold quotes the scheme in force: the walk's step and window, R3 in a first week (12 Nov 2026)
  *   L1-L5 one P&L: the year is the operating profit, freight and non-revenue in their months, no IFRS fold (12 Nov 2026)
  *   S1-S4 Stock's On hand: non-revenue at the P&L's rate, the reconciliation in totals, the repeat fold gone (12 Nov 2026)
  *   D1-D4 the data faults: lots by their landings, shrink on its count, the under-floor and no-cost cards (12 Nov 2026)
@@ -185,6 +186,27 @@ export async function run({ ok }) {
     ok(!nw2.querySelector(".pend") && dep2.length > 0 && vac2.length > 0 && dep2.every((c) => st.includes(c))
       && st.includes("the " + vac2[0] + " seat is open since") && /DEPARTED/.test(text(nw2)),
       "C2.3 Associates says the departure and the vacancy in one line, draws no card for either, and the tree still marks the departed: " + J([st, dep2, vac2]));
+
+    /* A1 (12 Nov 2026, his word "the stale Associates fold"): What counts, and why quotes the scheme in force, the walk's step and window
+       and R3's first week, read off the engine; a book read before the switch keeps the old hurdle words; a book with no reward says so */
+    const fold = (p, stub) => E(`(function(){setProd(${J(p)});recompute();const k=rewardWalkOf;${stub ? "rewardWalkOf=()=>null;" : ""}
+      try{const e=document.createElement('div');e.innerHTML=builders.network();const t=x=>x?x.textContent.replace(/\\s+/g,' ').trim():'';
+        const c=[...e.querySelectorAll('.cardh')].find(h=>/made of/.test(h.textContent));
+        return {unit:t(e.querySelector('#nwRwUnit')),win:t(e.querySelector('#nwRwWin')),r3:t(e.querySelector('#nwR3Why')),br:t(e.querySelector('#nwR3Branch')),
+          fold:t(e.querySelector('details.obsec')),chart:t(c)};}finally{rewardWalkOf=k;setProd('salt');recompute();}})()`);
+    const rw = E("(function(){const w=rewardWalkOf(null);return {times:w.times,step:fmt0(w.step),since:w.since,days:POSITION_ENGINE.R3_DAYS};})()");
+    const a1 = fold("salt"), sd = rw.since.split("-"), mon = E("MAP_MON")[+sd[1] - 1];
+    ok(a1.unit === `every ${rw.times} units’ landed cost of margin, ${rw.step} today` && a1.win === `paid in full, from ${+sd[2]} ${mon} ${sd[0]} · written-off orders earn nothing`,
+      "A1.1 on salt the fold's chips are the walk's step and its window: " + J([a1.unit, a1.win, rw]));
+    ok(a1.r3.includes(`first ${rw.days} days, at full margin, and none after`) && !/hurdle|1\.2 times/.test(a1.r3) && a1.br === "R3 → stars & reward, kept out",
+      "A1.2 R3 counts in a new customer's first week, never against the old hurdle, and the branch says what R3 feeds: " + J([a1.r3, a1.br]));
+    const a1o = fold("salt", true), a1g = fold("oil");
+    ok(/against a hurdle 1\.2 times higher/.test(a1o.r3) && /^every RM 470 of an associate.s margin, RM 500 of a customer.s$/.test(a1o.unit) && /^whole ledger /.test(a1o.win),
+      "A1.3 a book read before the switch keeps the old hurdle words: " + J([a1o.unit, a1o.win, a1o.r3]));
+    ok(a1g.unit === "" && /No reward on this book\.$/.test(a1g.r3) && a1g.br === "R3 → stars, kept out",
+      "A1.4 a book with no reward says so and promises none: " + J([a1g.unit, a1g.r3, a1g.br]));
+    ok(!/\b(his|he|him)\b/i.test(a1.fold) && a1.chart.startsWith("What each associate is made of"),
+      "A1.5 the fold says they, and the chart names associates, never partners: " + J([a1.chart, a1.fold.match(/\b(his|he|him)\b/gi) || []]));
 
     /* L1 to L5 (12 Nov 2026, his answer "one P&L"): the monthly table carries freight in and non-revenue, each in its month, so the
        year is the operating profit ifrsPL states; the IFRS fold is gone and its value test is one row under Inventory */

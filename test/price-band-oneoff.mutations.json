@@ -334,5 +334,41 @@
   "file": "stmt/owner.js",
   "find": "    if(go){ go.disabled=true; input.addEventListener('input',function(){ go.disabled=!oneOffOk(input.value); }); }",
   "replace": ""
+ },
+ {
+  "name": "the pill of an asked reason says the figures were not read",
+  "file": "stmt/owner.js",
+  "find": "makerPlacedSay(error.raw,true); waitDraw(true,true);",
+  "replace": "makerPlacedSay(error.raw,true);"
+ },
+ {
+  "name": "the Give a reason pill is greyed",
+  "file": "stmt/owner.js",
+  "find": "else if(ask) b.addEventListener('click',function(){ var w=card.querySelector('[data-one-off]'); if(!w) return; if(w.scrollIntoView) w.scrollIntoView({block:'center'}); w.focus(); });",
+  "replace": "else if(ask) b.disabled=true;"
+ },
+ {
+  "name": "the Give a reason pill leads nowhere",
+  "file": "stmt/owner.js",
+  "find": "if(w.scrollIntoView) w.scrollIntoView({block:'center'}); w.focus(); });",
+  "replace": "if(w.scrollIntoView) w.scrollIntoView({block:'center'}); });"
+ },
+ {
+  "name": "the Give a reason pill reads the figures instead",
+  "file": "stmt/owner.js",
+  "find": "else if(ask) b.addEventListener('click',function(){ var w=card.querySelector('[data-one-off]'); if(!w) return;",
+  "replace": "else if(ask) b.addEventListener('click',function(){ makerPlacedRead(); var w=card.querySelector('[data-one-off]'); if(!w) return;"
+ },
+ {
+  "name": "a failed read greys the pill",
+  "file": "stmt/owner.js",
+  "find": "else if(bad) b.addEventListener('click',makerPlacedRead);",
+  "replace": ""
+ },
+ {
+  "name": "a failed read's pill says the figures were not read",
+  "file": "stmt/owner.js",
+  "find": "ask?ONE_OFF_WORDS.give:bad?'Read the figures again':'Reading the figures'",
+  "replace": "ask?ONE_OFF_WORDS.give:bad?'Figures not read':'Reading the figures'"
  }
 ]

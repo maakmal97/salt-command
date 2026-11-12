@@ -326,8 +326,8 @@
   {
     "name": "the stand-in for Agree does not ask for the charge",
     "file": "stmt/owner.js",
-    "find": "pick?'Choose the delivery charge':bad?",
-    "replace": "pick?'Reading the figures':bad?"
+    "find": "pick?'Choose the delivery charge':ask?",
+    "replace": "pick?'Reading the figures':ask?"
   },
   {
     "name": "the stand-in does not take him to the charge",

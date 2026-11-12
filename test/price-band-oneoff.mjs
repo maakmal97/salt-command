@@ -271,7 +271,7 @@ export async function run({ ok, skip }) {
     "Salt Admin's road relays the ask with its figures and carries his reason to the Desk: " + JSON.stringify({ pv: [mPv.status, mPv.j], w: [mPvW.status, mPvW.j.error], rs: [mRs.status, mRs.j], rsW: [mRsW.status, mRsW.j] }));
 
   /* ---- 17 to 19. SALT ADMIN'S PAGE, in the actual owner script: the Reason field and Let it stand on a placed order and on Change the order ---- */
-  const posts = [];
+  const posts = [], fails = { n: 0 };
   const PL = "20261110090001-pla", AG = "20261110090002-ack", RAISE = "20261110090003-pla";
   const orderFix = (id, status, patch = {}) => ({ id, u: "abcd-efgh", product: "salt", qty: 1, total: 120, status, mode: "collect", history: [], ...patch });
   const reviewBody = { ok: true, drafts: [], orders: [orderFix(PL, "placed"), orderFix(AG, "acknowledged"), orderFix(RAISE, "placed")] };
@@ -287,6 +287,7 @@ export async function run({ ok, skip }) {
           const body = JSON.parse(init.body), kind = String(path).split("/").pop();
           posts.push({ kind, path: String(path), body });
           const out = body.total < 65 ? "under" : body.total > 175 ? "over" : null;
+          if (kind === "preview" && fails.n > 0) { fails.n--; return Response.json({ ok: false, error: "The Desk is not answering." }, { status: 503 }); }
           if ((kind === "preview" || kind === "accept" || kind === "restate") && out && !body.oneOff) return Response.json(asked(out), { status: 409 });
           if (kind === "preview") return Response.json({ ok: true, hash: "h-" + posts.length, offerHash: "o-" + posts.length, quote: body.total, delivery: 0, row: { qty: 1, total: body.total },
             cost: { unit: 50, total: 50, source: "purchase" }, card: 120, floor: { rm: 65, at: 1, exact: true }, margin: { rm: body.total - 50, pct: 0 },
@@ -388,5 +389,25 @@ export async function run({ ok, skip }) {
     const pvNew = of1("preview", RAISE).pop(), fresh = card(RAISE).querySelector("[data-one-off]");
     ok(pvNew.body.total === 30 && pvNew.body.oneOff === undefined && fresh && fresh.value === "",
       "a new goods total is read without the old reason and asked afresh: " + JSON.stringify({ body: pvNew.body, line: fresh && fresh.value }));
+    /* 22. (12 Nov 2026, his screenshot of an ask under the Floor) THE PILL SAYS WHAT THE ASK WAITS FOR: Give a reason, a button that sends nothing and
+       puts him on the Reason line, never the greyed Figures not read */
+    const waitOf = (id) => card(id).querySelector("[data-accept-wait]");
+    const pill = waitOf(RAISE), sentBefore = posts.length;
+    if (pill) pill.click();
+    ok(!!pill && pill.textContent === "Give a reason" && pill.disabled === false && doc.activeElement === fresh && posts.length === sentBefore
+      && !/Figures not read/.test(card(RAISE).textContent),
+      "while a reason is asked the pill says Give a reason, and its tap puts him on the Reason line and sends nothing: "
+      + JSON.stringify({ pill: pill && [pill.textContent, pill.disabled], on: doc.activeElement && doc.activeElement.getAttribute("data-act"), sent: posts.length - sentBefore }));
+    /* 23. A READ THAT FAILED IS READ AGAIN BY THE PILL ITSELF: it says so, is never greyed, and its tap reads the same figures once more */
+    fails.n = 1;
+    again.value = "150"; fire(again, "input"); fire(again, "change");
+    await until(() => waitOf(RAISE) && waitOf(RAISE).textContent === "Read the figures again");
+    const retry = waitOf(RAISE), readsBefore = of1("preview", RAISE).length, lit23 = !!retry && retry.textContent === "Read the figures again" && retry.disabled === false && !card(RAISE).querySelector("[data-accept]");
+    if (retry) retry.click();
+    await until(() => card(RAISE).querySelector("[data-accept]"));
+    const pvRetry = of1("preview", RAISE).pop();
+    ok(lit23 && of1("preview", RAISE).length === readsBefore + 1 && pvRetry.body.total === 150 && !!card(RAISE).querySelector("[data-accept]") && !waitOf(RAISE),
+      "a read that failed leaves the pill saying Read the figures again, lit, and its tap reads the same figures and brings the answer back: "
+      + JSON.stringify({ pill: retry && [retry.textContent, retry.disabled], reads: of1("preview", RAISE).length - readsBefore, body: pvRetry && pvRetry.body, accept: !!card(RAISE).querySelector("[data-accept]") }));
   } catch (err) { ok(false, "Salt Admin's page stopped on an error: " + (err && err.stack || err)); } finally { browser.window.close(); }
 }

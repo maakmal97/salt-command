@@ -388,5 +388,50 @@
   "name": "D3 a partner's one-off is left out",
   "find": "(isPartner(s.customer)&&!isResellAcct(s.customer)&&!s.oneOff)",
   "replace": "(isPartner(s.customer)&&!isResellAcct(s.customer))"
+ },
+ {
+  "name": "A1 the walk's words are not read",
+  "find": "if(w&&w.step!=null){const d=String(w.since);return {walk:true,",
+  "replace": "if(false){const d=String(w.since);return {walk:true,"
+ },
+ {
+  "name": "A1 the window loses its day",
+  "find": "window:'paid in full, from '+(+d.slice(8))+' '",
+  "replace": "window:'paid in full, from '+d+' '"
+ },
+ {
+  "name": "A1 R3 keeps the old hurdle sentence",
+  "find": "r3:'For the reward, the orders of a customer they introduce count here in that customer’s first '+nDays(POSITION_ENGINE.R3_DAYS)+', at full margin, and none after.'};}",
+  "replace": "r3:'For the reward, the margin on every order counts against a hurdle 1.2 times higher.'};}"
+ },
+ {
+  "name": "A1 the old words lose the R3 hurdle",
+  "find": "against a hurdle '+rewardR3Hurdle(prod)+' times higher, since",
+  "replace": "against a hurdle, since"
+ },
+ {
+  "name": "A1 a book with no reward reads the old figures",
+  "find": "  if(rewardUnitMargin(prod,'associate')==null)return null;\n  const w=rewardWalkOf(null);",
+  "replace": "  const w=rewardWalkOf(null);"
+ },
+ {
+  "name": "A1 the branch says stars on a book with no reward",
+  "find": "${rewardSchemeWords(PROD)?'stars &amp; reward':'stars'}",
+  "replace": "stars &amp; reward"
+ },
+ {
+  "name": "A1 the branch back to rebate and rank",
+  "find": "${rewardSchemeWords(PROD)?'stars &amp; reward':'stars'}",
+  "replace": "rebate &amp; rank"
+ },
+ {
+  "name": "A1 the fold says his",
+  "find": "<div class=\"nsw\">Their own orders, priced.</div>",
+  "replace": "<div class=\"nsw\">His own orders, priced.</div>"
+ },
+ {
+  "name": "A1 the chart names partners",
+  "find": "<div class=\"cardh\">What each associate is made of <span class=\"sub\">",
+  "replace": "<div class=\"cardh\">What each partner is made of <span class=\"sub\">"
  }
 ]
