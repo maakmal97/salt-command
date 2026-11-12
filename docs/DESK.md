@@ -128,8 +128,18 @@
   is where a new customer or associate who names no figure starts (the fold's `fresh` start; a figure he picks, nought included, stands; a partner,
   a bucket and a supplier hold none), and the guest board quotes salt there (`guestBoard`). **The suite's frozen book holds the switch off**
   (`test/fixtures/book-frozen.json` `MARKET`), so no check's salt price moves with the calendar; the market's own checks turn it on in their own
-  book. Said, not modelled: a loan in kind, a lot part received over several days (all on its `receivedOn`), a row dated earlier and entered later
-  (a past day can read anew, so the walk is a reading, not a record). Checks: `test/price-band-market.mjs`, `test/desk-market.mjs`.
+  book. Said, not modelled: a loan in kind, a row dated earlier and entered later (a past day can read anew, so the walk is a reading, not a record,
+  and a count, Correction or lot dated back can move today by more than 5 points between two publishes; Fable, said, 13 Nov 2026). **Live as v1514
+  (13 Nov 2026)**, with Fable's review applied: a lot lands on each day a part landed (`landingsOf`, the Desk's `lotLandings`); a served book's `MARKET`
+  reaches an open Desk through `bookApply`'s document loop; their price at Accept is the lower of the card and the total their list quoted at Place
+  (`entry.payload.listed`, `listStamp`), and an amendment at the same size keeps the lower of the card and the stamp it had; a point is set at 12.5
+  units or under (`makerMarket` and `marketEditRow`); the +30% start is the fold's only for an Add ID stamped from `TIER_RULE.salt.startFrom`
+  (the push), and the Approve card says it (`startLine`); `pricingSnapshot` opens one render memo a book (3.7 s to 1.8 s). Said, not changed: the
+  move between midnight and the daily publish is yesterday's on Accept, Salt Admin and the Counter; a switch's `from` is the day asked, not approved;
+  a strict compaction lets one row go per market edit as per any edit; a point's multiple is struck at drafting. **Quotes**: `stmt/quotes.js` files
+  KV `quote:<KL day>:<username>` (30 a day, 10 lines, 120 days), the counts on the key's metadata, so the Desk's `GET /quotes` (relayed to the
+  Counter's `/desk/quotes`) lists keys and reads at most 200 that carry none (`partial`). Checks: `test/price-band-market.mjs`, `test/desk-market.mjs`,
+  `test/admin-market.mjs`, `test/counter-quotes.mjs`, `test/band-v2-fixes.mjs`.
 - **Their %** (`TIER_OF[code][book]`: -1 to +1 on salt's band since 10 Nov 2026, -0.3 to +0.3 on a stated board since his decision of 21 Oct 2026,
   `liftRange`, held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Median Price, a negative one a discount, applied inside the walk, and nought is the Median Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID

@@ -86,7 +86,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      Median goes to a place on the band, from supply alone (one plain cover at the start of the day: +15 at 3 days or fewer, +5 to 7, 0 to
      14, -10 past it), held -15 to +20, 5 points a day at most towards it, a stand-down for 7 days when margin a day falls two weeks running
      while it is up; the pace is said and NEVER priced (`acts` false: no measured basis); each day read off the book as it stood when the
-     day began, so trading moves no price until tomorrow; nought before `since`, the day it shipped. **Their % rides on the moved Median**
+     day began, so trading moves no price until tomorrow; nought before `since`, the day it shipped (13 Nov 2026, v1514). **Their % rides on the moved Median**
      (his answer): -100% stays the Floor, +100% the Ceiling, a partner the Floor. **His switch and his Median points are the book's `MARKET`
      document, written only by an `edit` he approves** (Salt Admin, `makerMarket`, the drafter's `marketEditRow`, the fold and the tap):
      off is the plain Median from that day, on climbs from nought, a point is a multiple of the COGS Floor at a size (`withPoints`, `ruleFor`),
@@ -107,7 +107,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      note, never read as a %. **The switch's carry-over is booked and gone** (the list he approved, `docs/plan-salt-price-band-carry.html`; his Approve of 11 Nov 2026 booked the
      15 places): the book holds each carried customer's place on the band, read as it stands, and no table or reader of one is in the rule or the engine. The old curve (`driftMultiple` over a rule's `ends`) stays in the engine
      for a rule that carries `ends`; none does. **Everyone held 0% at the band's switch; a new ID that names no figure starts at +30%**
-     (his word of 11 Nov 2026, the fold's `fresh` start in `engine/apply.mjs`; a figure he picks, nought included, stands). He sets it on the customer's own card under Salt Admin's
+     (his word of 11 Nov 2026, the fold's `fresh` start in `engine/apply.mjs`, only for an Add ID stamped from `TIER_RULE.salt.startFrom`, the moment v1514 shipped; a figure he picks, nought included, stands). He sets it on the customer's own card under Salt Admin's
      Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a stepper in steps of 5 between the ends the catalog gives
      (`driftMin`, `driftMax`, sent with `driftUnit`), its prices shown live off the Desk before it goes to Approve
      (`makerDriftPreview`, any whole %), or picks at Add ID from salt's presets -50%, -30%, -20%, -10%, Median Price, +10%, +20%,
