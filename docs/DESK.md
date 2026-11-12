@@ -86,7 +86,9 @@
   `suggestOf`, and the Desk's price readers beside `ONE_OFFS` (which stays the list of customers set aside whole, and is not written by this).
   **Salt Admin**: the placed card and Change the order show the Desk's sentence, one Reason line and Let it stand, which sends the same figures
   with the reason (acts `order.one-off-reason`, `order.one-off`, `order.amend-reason`, drawn only after the refusal; both allow-lists,
-  `src/maker.js` and `stmt/maker.js`, take `oneOff`, and the bridge relays `outside`). **Salt Counter**: nothing; the reason goes to the Desk
+  `src/maker.js` and `stmt/maker.js`, take `oneOff`, and the bridge relays `outside`). **The placed card's pill says what it waits for**
+  (12 Nov 2026, `waitDraw`): Choose the delivery charge, Give a reason (its tap puts him on the Reason line) or Read the figures again (its
+  tap reads them), grey only while a read is on its way; it was the greyed Figures not read for an asked reason too. **Salt Counter**: nothing; the reason goes to the Desk
   and the ledger row, never to the site, and no customer view names it. `payFault`, `rowRoom`, COGS, refunds and stock read nothing of it.
   **Not built, said**: no surface types a Median point, so that half of the plan's paragraph has nothing to check; Pricing's 30-day tally of
   one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on salt in its old words and knows no Ceiling; an undo off
