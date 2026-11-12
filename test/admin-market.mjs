@@ -45,11 +45,12 @@ export async function run({ ok, pageWork }) {
   {
     const p = await open();
     const tabs = [...p.d.querySelectorAll('.aparts[data-place="shop"] button[data-part]')].map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent);
-    enter(p.d, "shop", "market"); await p.work.quiet();
+    const tab = p.d.querySelector('[data-act="part.shop.market"]');   /* a missing tab is a red check, never a crash */
+    if (tab) { enter(p.d, "shop", "market"); await p.work.quiet(); }
     const sec = p.d.getElementById("makerMarket"), other = p.d.getElementById("makerBulletin");
     const here = shown(sec), notHere = !shown(other);
     enter(p.d, "shop", "notice"); await p.work.quiet();
-    ok(tabs.join() === "hours:Hours,market:Market,notice:Notice,practice:Practice,device:This device" && here && notHere && !shown(sec),
+    ok(!!tab && tabs.join() === "hours:Hours,market:Market,notice:Notice,practice:Practice,device:This device" && here && notHere && !shown(sec),
       "Shop has a Market tab beside Hours and Notice, and its section shows in that part alone: " + tabs.join());
   }
 
@@ -145,7 +146,7 @@ export async function run({ ok, pageWork }) {
     const mk = cat.market;
     ok(mk && typeof mk.day === "string" && typeof mk.k === "number" && typeof mk.on === "boolean" && typeof mk.why === "string" && mk.why.length > 0
       && Array.isArray(cat.marketSizes) && cat.marketSizes.includes(1) && cat.marketSizes.includes(12.5) && Math.max(...cat.marketSizes) === 12.5
-      && cat.marketPoints.length === 2 && cat.marketPoints[0].price === 130 && cat.marketPoints[1].outside.why === "clearance day"
+      && cat.marketPoints.length === 2 && cat.marketPoints[0].price === 130 && (cat.marketPoints[1].outside || {}).why === "clearance day"
       && cat.marketWaiting.length === 1 && cat.marketWaiting[0].kind === "anchor" && cat.marketWaiting[0].price === 135 && Array.isArray(cat.editWaiting) && Array.isArray(cat.openRefunds),
     "the catalogue carries the market (day, move, on, why), the sizes up to 12.5, the points he set with their reasons and only the market edits waiting: " + JSON.stringify([mk, cat.marketSizes, cat.marketWaiting]));
     const none = MI.makerInputCatalog({ ...desk, state: { roster: [], associates: [] } }, {}, [], []);
@@ -178,14 +179,15 @@ export async function run({ ok, pageWork }) {
     const q = await richOwnerPage({ pageWork, inputsAnswer: (j) => { j.catalog.products = [{ product: "salt", drift: true, driftMin: -100, driftMax: 100, driftPresets: [{ name: "Median Price", value: 0 }, { name: "+30%", value: 0.3 }] }]; return j; } });
     await q.work.quiet(); enter(q.d, "record", "customers"); await q.work.quiet();
     ok(q.d.querySelector('input[data-act="record.add-id.drift"]:checked').value === "0.3", "the form opens on +30%: " + q.d.querySelector('input[data-act="record.add-id.drift"]:checked').value);
-    const owner = readFileSync(join(REPO, "stmt", "owner.js"), "utf8");
-    const apply = owner.slice(owner.indexOf("function joinApply"), owner.indexOf("function joinForget"));
-    ok(/f\.drifts/.test(apply) && /'0\.3'/.test(apply), "and the join link's Add them sets salt's start to +30% as it fills the form");
+    /* the join link's Add them keeping +30% is drawn in test/order-stream-v7-ui.mjs (U4c), where a sealed join is opened */
   }
 
-  /* 12: the links card */
+  /* 12: the links card, as drawn */
   {
-    const page = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-    ok(page.includes("A guest link opens the +30% list for everybody;") && !page.includes("A guest link opens the Median Price list"), "the links card says a guest link opens the +30% list for everybody");
+    const p = await open();
+    enter(p.d, "customers", "links"); await p.work.quiet();
+    const lead = p.d.querySelector("#oLinks .lead");
+    ok(shown(lead) && lead.textContent === "A guest link opens the +30% list for everybody; naming whose friend it is stays your note.",
+      "the links card says a guest link opens the +30% list for everybody: " + (lead && lead.textContent));
   }
 }

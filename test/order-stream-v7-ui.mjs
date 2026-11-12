@@ -60,7 +60,8 @@ export async function run({ ok, pageWork }) {
     jopen0001: rec("jopen0001"), jsent0001: rec("jsent0001", { state: "sent", seal, sentAt: AT }),
     jspent001: rec("jspent001", { state: "spent" }), jaddedw01: rec("jaddedw01", { state: "added", code: "CX2-ZED", addedAt: AT }), jsentw001: rec("jsentw001", { state: "sent", seal, sentAt: AT })
   };
-  const p = await richOwnerPage({ pageWork, slip: true, extra: answers(state) });
+  /* 13 Nov 2026: salt's presets as the catalogue sends them, +30% among them, so Add them shows the new customer's start (his word "Always start a stranger at +30%") */
+  const p = await richOwnerPage({ pageWork, slip: true, extra: answers(state), inputsAnswer: (j) => { j.catalog.products = j.catalog.products.map((x) => x.product === "salt" ? { ...x, driftMin: -100, driftMax: 100, driftPresets: [{ name: "Median Price", value: 0 }, { name: "+30%", value: 0.3 }] } : x); return j; } });
   try {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); }, posts = (re) => p.posts.filter((x) => re.test(x.route));
@@ -118,6 +119,7 @@ export async function run({ ok, pageWork }) {
     const addId = p.posts.find((x) => /add-id$/.test(x.route)), told = posts(/\/all\/joins\/jsent0001\/added$/);
     ok(!!addId && told.length === 1 && told[0].body && J(Object.keys(told[0].body)) === J(["code"]) && told[0].body.code === addId.body.code && /^[A-Z]{1,3}[0-9]{1,2}-[A-Z0-9]{1,6}$/.test(addId.body.code),
       "U4 when the Add ID is sent the join is told its code and nothing else: " + J([addId && addId.body.code, told.map((x) => x.body)]));
+    ok(!!addId && addId.body.tiers && addId.body.tiers.salt === 0.3 && addId.body.unit === "band", "U4c (13 Nov 2026) the join's new customer starts salt at +30% on the band: " + J(addId && [addId.body.tiers, addId.body.unit]));
     ok(!!addId && addId.body.introducer === "CX1-ZED", "U4b (plan version 6, R3) the join's Add ID names the associate whose link brought them, by code: " + J(addId && addId.body.introducer));
     ok(!p.wire.some((w) => w.includes(NAME)) && !J(told).includes("Zed") && state.jsent0001.state === "added" && !d.querySelector('#nlist [data-need="j:jsent0001"]'),
       "U5 no request carries the plaintext name, and the card leaves To do once the join is added");
