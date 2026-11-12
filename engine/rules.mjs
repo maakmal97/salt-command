@@ -300,7 +300,7 @@ const TIER_RULE={
         /* 11 Nov 2026, his word: "Always start a stranger at +30%": a new ID that names no figure starts here (the fold), and the guest board shows it */
         start:0.3,
         /* 13 Nov 2026 (Fable): only an Add ID stamped at or after the moment the start shipped takes it; one approved before, still open in the Book's view, keeps 0% */
-        startFrom:"2026-11-12T16:00:00Z",
+        startFrom:"2026-11-12T20:05:00Z",
         market:{since:"2026-11-13", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
                 pace:{short:14, long:56, fast:1.25, slow:0.75, k:0.05, acts:false}, stand:{weeks:2, hold:7}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],

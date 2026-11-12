@@ -5713,7 +5713,7 @@ const TIER_RULE={
         /* 11 Nov 2026, his word: "Always start a stranger at +30%": a new ID that names no figure starts here (the fold), and the guest board shows it */
         start:0.3,
         /* 13 Nov 2026 (Fable): only an Add ID stamped at or after the moment the start shipped takes it; one approved before, still open in the Book's view, keeps 0% */
-        startFrom:"2026-11-12T16:00:00Z",
+        startFrom:"2026-11-12T20:05:00Z",
         market:{since:"2026-11-13", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
                 pace:{short:14, long:56, fast:1.25, slow:0.75, k:0.05, acts:false}, stand:{weeks:2, hold:7}},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
@@ -12038,7 +12038,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1513","d":"12 Nov 2026","t":"THE ASSOCIATES FOLD SAYS THE SCHEME IN FORCE","n":["<b>HIS WORD, THE STALE FOLD.</b> Associates’ What counts, and why still stated the scheme of 14 Sep: a unit per RM 470 of an associate’s margin over the whole ledger, and R3 counted on every order of a customer they introduced against a hurdle 1.2 times higher. Since 20 Oct a unit is 10 units’ landed cost of margin, paid in full, and R3 counts only in a new customer’s first 7 days, at full margin. The fold now reads both off the engine, so it moves with the step.","<b>THE SMALLER WORDS.</b> R3 feeds the stars and the reward, never the rank, which goes by Made you; the fold says associate and they, and the chart is What each associate is made of. A book with no reward says so and promises none.","Five new checks, each red by its own mutation (nine mutations). Words only: nothing prices or books from the fold."]}];
+const evolution=[{"v":"v1514","d":"13 Nov 2026","t":"THE PRICE BAND, VERSION 2: THE MARKET","n":["<b>HIS YES TO VERSION 2 OF THE PRICE BAND, THE MARKET.</b> From 13 Nov 2026 salt's Median moves each day to a place on the band, from supply alone: one plain cover at the start of the day, +15 at 3 days or fewer, +5 to 7, 0 to 14, -10 past it; held -15 to +20 and 5 points a day at most. Trading today moves no price until tomorrow. Their % rides on the moved Median; -100% stays the Floor, +100% the Ceiling, a partner the Floor. The pace is said, never priced. Every move carries its reason in words.","<b>HIS SWITCH AND HIS POINTS.</b> Shop > Market on Salt Admin: the switch (off is the plain Median from that day, on climbs from nought) and a re-anchor of a Median point at 12.5 units or under, each an edit he approves under Approve. A point outside the band is asked once and stands with his reason. The Desk's Pricing shows the move, the 90-day reading with a suggested re-anchor (his tap), the week's scorecard and the replay.","<b>A STRANGER STARTS AT +30%</b> (his word): a new ID that names no figure, from this version on, and the guest board. Everyone held before keeps their figure.","<b>EVERY QUOTE SHOWN IS RECORDED</b> (usernames only, 120 days): the Desk's reading counts shown and placed by size. Fable reviewed: their price at Accept and on an amendment at the same size is the lower of the card and what they were quoted; lots land on the day each part landed; an Add ID approved before this version keeps 0%."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12191,7 +12191,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Nov 2026, 21:44 KL';
+const LAST_UPDATED='13 Nov 2026, 04:05 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
