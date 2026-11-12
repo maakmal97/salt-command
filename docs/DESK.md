@@ -1050,6 +1050,11 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
   so the pin then cancels a recovery), and a book with no count once it trades across two calendar years (the year would carry the
   whole book). `X` is the suite's own sources (`test/desk-cleanup.mjs` L6). Fable's re-check: the nearest-candidate rule can hide a real loss on a count day up to that
   day's same-day movement, in a month only when that count is its last; the next count puts it back, and the year is never touched.
+- **Round five (12 Nov 2026), Stock's On hand, his answers "totals, lots once" and "cut the repeat, keep the method".** Every
+  non-revenue figure on the page is valued at `ifrsPL`'s `unitCost` (`nrRate`, the average cost plus a unit's freight in), so the
+  tile, the shrinkage card and the reconciliation say what the P&L charges (the tile read RM 5,812 against RM 5,882). The Inventory
+  reconciliation is totals: one "Received, N lots" line summing what landed; Lots and sourcing lists the lots once. The fold "Why each
+  loss is booked where it is", which repeated the shrinkage card entry for entry, is gone; "How it is measured" stays.
 - **Analysis** holds only the last correction of a field against its row and never a note's prose; its empty-inventory tile counts
   a level within 0.05 of nought, never one rebuilt under it. **The Ledger trail** draws one Correction line a day.
 - **The planners read and never write.** `planGet`/`planSet` keep `{dem, cost, run, lots}` in localStorage `salt-plan-v1`, clamped
