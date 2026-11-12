@@ -13,6 +13,7 @@
  *   C2  Clients' Their % is one line counted off TIER_OF with the link to Salt Admin; Associates says a departure and a vacancy in one line
  *   L1-L5 one P&L: the year is the operating profit, freight and non-revenue in their months, no IFRS fold (12 Nov 2026)
  *   S1-S4 Stock's On hand: non-revenue at the P&L's rate, the reconciliation in totals, the repeat fold gone (12 Nov 2026)
+ *   D1-D4 the data faults: lots by their landings, shrink on its count, the under-floor and no-cost cards (12 Nov 2026)
  *   P1  the plan store is this device's, clamped on every read, and garbage reads as nothing
  *   P2  a what-if lot lands in its book's inventory and leaves the cash on its day, is said to be a what-if, and books nothing
  *   P3  Month ahead: demand moves revenue, the buying cost the cost of goods, running costs what is left; the first column never moves
@@ -234,6 +235,37 @@ export async function run({ ok }) {
     ok(ohs.every((x) => x.recv.length <= 1 && (!x.recv.length || /^Received, \d+ lots?$/.test(x.recv[0])) && Math.abs(x.sum - x.onHand) < 0.011),
       "S3 the reconciliation is totals, one Received line, and it adds to what is on hand: " + J(ohs.map((x) => [x.p, x.recv, x.sum, x.onHand])));
     ok(ohs.every((x) => !x.repeat && x.method && x.lots === x.lotsWant), "S4 the repeat fold is gone, the method fold stays, and Lots and sourcing lists every lot: " + J(ohs.map((x) => [x.p, x.repeat, x.method, x.lots, x.lotsWant])));
+    E("setProdView('salt')");
+
+    /* D1 to D4 (12 Nov 2026, the data faults): the scans and the walk no longer misjudge the book */
+    /* D1 a lot lands on each day a part of it landed, the rest on receivedOn, the whole poRecvUnits */
+    const ll = E(`JSON.stringify([lotLandings({qty:37.5,receivedQty:37.5,date:'2026-09-19',receivedOn:'2026-09-20',amend:[{kind:'Fulfilment',kg:18.75,date:'2026-09-19'},{kind:'Fulfilment',kg:18.75,date:'2026-09-20'}]},x=>37.5),
+      lotLandings({qty:25,date:'2026-09-22'},x=>25),lotLandings({qty:30,date:'2026-09-01',receivedOn:'2026-09-03',amend:[{kind:'Fulfilment',kg:10,date:'2026-09-02'},{kind:'Fulfilment',kg:5,date:'2026-09-02',undone:'2026-09-04'}]},x=>30),
+      lotLandings({qty:25,date:'2026-08-31',receivedOn:'2026-09-02',amend:[{kind:'Fulfilment',kg:25,date:'2026-08-31'}]},x=>25),
+      lotLandings({qty:30,date:'2026-09-01',receivedOn:'2026-09-05',amend:[{kind:'Fulfilment',kg:25,date:'2026-09-02'},{kind:'Fulfilment',kg:15,date:'2026-09-03'}]},x=>30)])`);
+    ok(ll === J([[["2026-09-19", 18.75], ["2026-09-20", 18.75]], [["2026-09-22", 25]], [["2026-09-02", 10], ["2026-09-03", 20]], [["2026-09-02", 25]], [["2026-09-05", 30]]]),
+      "D1 a lot lands on each part's day (an undone step left out, the rest on receivedOn), one whole step before receivedOn on receivedOn, steps past what landed on its day: " + ll);
+    /* D2 the walk reads the landings and takes shrink on its count days: landing nothing moves its end by every unit received, and a
+       day with no move and no count moves it by nothing */
+    const wk = E(`(function(){setProdView('salt');const sh=stockHistory();const end=sh[sh.length-1].raw;const recv=receivedPO.reduce((a,p)=>a+poRecvUnits(p),0);
+      const keep=lotLandings;lotLandings=()=>[];let end0;try{const s2=stockHistory();end0=s2[s2.length-1].raw;}finally{lotLandings=keep;}
+      const ND=nrsDays('salt'),moved={};pSales('salt').forEach(s=>{(s.amend||[]).forEach(a=>{if(a.date)moved[a.date]=1;});moved[s.deliveredOn||s.date]=1;});
+      pPurch('salt').forEach(x=>lotLandings(x).forEach(([d])=>moved[d]=1));COUNTS.forEach(c=>moved[c.date]=1);
+      let quiet=null;for(let i=1;i<sh.length;i++){if(!moved[sh[i].iso]&&!(ND&&ND.on[sh[i].iso])){quiet=Math.abs(sh[i].raw-sh[i-1].raw);break;}}
+      return {end,cur:currentStock,drop:+(end-end0).toFixed(2),recv:+recv.toFixed(2),quiet,nd:!!ND};})()`);
+    ok(Math.abs(wk.end - wk.cur) < 0.011 && Math.abs(wk.drop - wk.recv) < 0.011 && wk.nd && wk.quiet !== null && wk.quiet < 0.0001,
+      "D2 the walk lands lots by their landings, takes shrink on count days, and still ends on the count: " + J(wk));
+    /* D3 the under-floor card leaves out a goodwill row and the partner, and still names a stranger under the Floor */
+    const uf = E(`(function(){const keep=obsDemandRows,day=obsISO(TODAY),pt=(partners||[])[0];
+      const row=(rid,c,gw)=>({rid,customer:c,product:'salt',date:day,qty:12.5,total:5,cash:5,deliveredQty:12.5,deliveredOn:day,goodwill:gw||undefined});
+      obsDemandRows=p=>p==='salt'?keep(p).concat([row('zuf1','CZ9-UFA'),row('zuf2','CZ9-UFB',true)].concat(pt?[row('zuf3',pt),row('zuf4',pt+'-R'),Object.assign(row('zuf5',pt),{oneOff:{why:'w',side:'under',by:5}})]:[])):keep(p);
+      try{const o=observations().live.find(x=>x.id==='int:underfloor');return {pt:!!pt,rows:o?o.rows:[]};}finally{obsDemandRows=keep;}})()`);
+    ok(uf.pt && uf.rows.includes("zuf1") && !uf.rows.includes("zuf2") && !uf.rows.includes("zuf3") && uf.rows.includes("zuf4") && uf.rows.includes("zuf5"),
+      "D3 a goodwill row and the partner's own order are no sale under the Floor; a stranger, the partner's resale and a typed one-off still are: " + J(uf));
+    /* D4 a sale with nothing handed over takes its cost at the handover, so it is not missing one; a handed-over row with none is */
+    const nc = E(`(function(){const day=obsISO(TODAY);const a={rid:'znc1',customer:'CZ9-NCA',product:'salt',date:day,qty:2,total:200,cash:200,deliveredQty:0},b={rid:'znc2',customer:'CZ9-NCB',product:'salt',date:day,qty:2,total:200,cash:200,deliveredQty:2,deliveredOn:day};
+      sales.push(a,b);try{const o=observations().live.find(x=>x.id==='int:nocost');return o?o.rows:[];}finally{sales.splice(sales.indexOf(a),1);sales.splice(sales.indexOf(b),1);}})()`);
+    ok(!nc.includes("znc1") && nc.includes("znc2"), "D4 a sale with nothing handed over is not missing a cost; one handed over with none is: " + J(nc));
     E("setProdView('salt')");
 
     /* P1 */

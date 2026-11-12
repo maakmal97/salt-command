@@ -10716,7 +10716,9 @@ await (async () => {
        them, so it could carry up to 0.02 of rounding against a margin of 0.01. Unrounded the
        arithmetic is exact. The plug is spread evenly over the days after day 0, so 7 unit in raises
        it by 7: day 0 moves nothing, and the loan day moves 7 less one day's share. */
-    const days7 = withIn.length - 1, want7 = 7 - 7 / Math.max(1, days7);
+    /* 12 Nov 2026: with a count holding a figure the plug falls on the count that found it (nrsDays), not spread, so the loan day
+       moves by the whole 7 and the 7's share of the plug lands on the latest count; with none the even spread stands as before */
+    const nd7 = w.eval("!!nrsDays(PROD)") === true, days7 = withIn.length - 1, want7 = nd7 ? 7 : 7 - 7 / Math.max(1, days7);
     const d0 = withIn[0].raw - without[0].raw, dL = (withIn[i].raw - withIn[i - 1].raw) - (without[i].raw - without[i - 1].raw);
     ok(i > 0 && Math.abs(d0) < 1e-9 && Math.abs(dL - want7) < 1e-9, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(4)}, the loan day ${dL.toFixed(4)}, want ${want7.toFixed(4)})`);
     try { w.close(); } catch (e) { }
