@@ -171,8 +171,8 @@
  {
   "name": "the row id leads the head again",
   "file": "stmt/owner.js",
-  "find": "party.appendChild(document.createTextNode(draftParty(draft)||'no code'));",
-  "replace": "party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));"
+  "find": "party.appendChild(document.createTextNode(draftParty(draft)||(isMarketDraft(draft)?'Median Price':'no code')));",
+  "replace": "party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||(isMarketDraft(draft)?'Median Price':'no code'))));"
  },
  {
   "name": "the claim link opens no card",

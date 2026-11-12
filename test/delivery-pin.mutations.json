@@ -27,7 +27,7 @@
  {"name":"maps.google.com needs /maps (4 Nov 2026)","file":"stmt/place-link.js","find":"(h.indexOf('maps.')===0||","replace":"(false||"},
  {"name":"a link after words is refused (4 Nov 2026)","file":"stmt/place-link.js","find":"const s=String(text==null?'':text).trim(),m=","replace":"const s=String(text==null?'':text).trim(),m=/^ *[a-z]/i.test(text)&&!/^ *https?:/i.test(text)?null:"},
  {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/place-link.js","find":":h==='maps.apple.com'?'apple':null;","replace":":null;"},
- {"name":"the search needs no session (4 Nov 2026)","file":"stmt/worker.js","find":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\") || p === \"/place/search\") return handleCustomer(","replace":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\")) return handleCustomer("},
+ {"name":"the search needs no session (4 Nov 2026)","file":"stmt/worker.js","find":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\") || p === \"/place/search\" || p === \"/quote\") return handleCustomer(","replace":"|| p === \"/thread\" || p === \"/pools\" || p.startsWith(\"/pools/\") || p === \"/quote\") return handleCustomer("},
  {"name":"the search is never braked (4 Nov 2026)","file":"stmt/worker.js","find":"    if (n >= PLACE_PER_MINUTE) return false;\n","replace":""},
  {"name":"two figures read as a link (4 Nov 2026)","file":"stmt/page.js","find":"src:r.src==='pin'?'pin':'link'}","replace":"src:'link'}"}
 ]

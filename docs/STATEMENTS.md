@@ -2987,6 +2987,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
 | `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's %, the printed board sizes and the tips, one form at a time. |
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours and the collection points, reading both. |
+| `part.shop.market` | The strip under Shop (tab: Market) | Shows the market move, its switch, the Median points and the re-anchor form, reading the catalogue (11 Nov 2026, the price band version 2). |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
 | `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Admin, reading nothing. |

@@ -147,10 +147,10 @@ export async function run({ ok }) {
     doc.getElementById("vaultGo").click();
     check(await waitFor(() => /open on this phone/.test(section.textContent)) && doc.getElementById("vaultPass").value === "",
       "the one unlock opens the page for Add ID, which has no password field of its own");
-    check(!!driftSelect && !!typed && driftSelect.value === "" && typed.closest("label").hidden
+    check(!!driftSelect && !!typed && driftSelect.value === "0.3" && typed.closest("label").hidden
       && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",-0.5,-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.5,typed"
       && typed.min === "-1" && typed.max === "1" && typed.step === "0.05" && typed.getAttribute("inputmode") === null,
-    "generated Add ID offers none by default, the rule presets, and a typed % bounded -1 to 1 with no decimal pad (it has no minus key): "
+    "generated Add ID starts salt at +30% (his word of 11 Nov 2026), offers the rule presets, and a typed % bounded -1 to 1 with no decimal pad (it has no minus key): "
       + [...section.querySelectorAll("fieldset.maker-tiles legend")].map((legend) => legend.textContent).join("|"));
     if (!driftSelect || !typed) throw new Error("Add ID did not render the starting drift controls.");
     pick("typed");

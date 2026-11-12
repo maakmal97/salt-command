@@ -257,9 +257,9 @@ export async function run({ ok, pageWork }) {
   try {
     await tb.tap("nav.shop"); await tb.tap("part.shop.hours");
     const strip = tb.d.querySelector('.aparts[data-place="shop"]'), tabs = strip ? [...strip.querySelectorAll("button")] : [];
-    ok(!!strip && strip.classList.contains("salt-nav__links") && !!strip.closest("nav.salt-nav") && tabs.length === 4 && tabs.every((b) => b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && !b.classList.contains("salt-tabs__pill"))
-      && JSON.stringify(tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected"))) === JSON.stringify(["Hours:true", "Notice:false", "Practice:false", "This device:false"]),
-      "Shop's four parts are the Nav bar's text tabs, Hours chosen: " + tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected")).join());
+    ok(!!strip && strip.classList.contains("salt-nav__links") && !!strip.closest("nav.salt-nav") && tabs.length === 5 && tabs.every((b) => b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && !b.classList.contains("salt-tabs__pill"))
+      && JSON.stringify(tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected"))) === JSON.stringify(["Hours:true", "Market:false", "Notice:false", "Practice:false", "This device:false"]),
+      "Shop's five parts (Market since 11 Nov 2026) are the Nav bar's text tabs, Hours chosen: " + tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected")).join());
     ok(["makerPointsTitle", "mHelpH"].every((id) => tb.d.getElementById(id).classList.contains("salt-settings__head")), "Collection points and Help head their sections as every group of settings does");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { tb.w.close(); }
   /* P6.4: the customer's own Look row is drawn as it was */
