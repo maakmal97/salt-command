@@ -92,6 +92,42 @@
   one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on salt in its old words and knows no Ceiling; an undo off
   the site road does not restore a mark; the Desk page's own overlay (`ovAmend`) does not carry the mark until the row is booked; the reason is
   free text on a public repo's ledger and nothing scans it for a name. Checks: `test/price-band-oneoff.mjs`.
+- **The price band, version 2: the market** (his answer B of 10 Nov 2026 and his answers of 11 Nov 2026; `TIER_RULE.salt.market`, the snapshot
+  engine's market section). **The move**: `marketWalk(C, p, day, from)` walks from the rule's `since` (the day the version shipped) a day at a time, each
+  day read off the book as it stood when the day began (rows dated before it): `shelfAt` rebuilds the shelf from the last count before it (its
+  `qty`, the count taken as the day's end), else the opening, plus every live lot received since, less every handover (the trail read as
+  `heldBefore` reads it) and recorded loss since; `marketCover` is `restockPlan`'s `coverDays` over the demand before the day and that shelf,
+  with no rhythm, dues or holidays (his answer: one plain cover every day, so today, the walk and the replay agree; it can differ from the
+  restock light's cover by about a day). Supply's points are `supply` ([[3, +15], [7, +5], [14, 0]], `long` -10 past it, nought with no demand);
+  the pace (last 14 days against the last 56, ±5 at ±25%) is said and never priced while `pace.acts` is false. The target is held to `min` and
+  `max` (-15, +20), the move goes `step` (5 points) a day at most towards it, and a stand-down (`fellRunning`: margin a day, goods less the
+  row's own cost over seven days, under the week before it `stand.weeks` times running while the move is up) caps the target at nought for
+  `stand.hold` days. `marketOf` is the day's entry (memoised), `marketK` its number, `marketWhy` the one place the words are made ("Median +5: 4.2 days
+  of cover, moving 5 a day towards +15."). **In the walk** (`driftWalk`, `P.market`, band rules only) the Median goes to `bandTop(plain, Floor,
+  Ceiling, k)` on a path of its own (the rate and margin laws, a rise never under the plain Median, a fall never over it); a customer's % is a
+  place between the Floor, the MOVED Median and the Ceiling (his answer: it rides), so -100% is the Floor and +100% the Ceiling whatever the
+  move, and a partner is quoted the Floor apart from the walk. A row carries `set` (today's Median), and `plain` and `market` when moved.
+  `policy(C, p)` carries `market` and `tierRule: ruleFor(C, p)`; `policy(C, p, true)` is the plain policy the evidence reads (`suggestOf`, the
+  90-day reading, the replay's posts), so the day's move never moves what past sales say. The PRICING snapshot carries `byProduct.salt.market`
+  `{day, k, on, why}`; the cards, the price lists, the drafter and `quoteOff` follow the policy. **His switch and his points** are the book's
+  `MARKET` document (`{salt: {switch: [{on, from, at}], anchors: [{q, x, price, from, at, outside?}]}}`; the page reads `MARKET_BOOK`, `{}` while the
+  book has none, and the extract reads it as `MARKET`), written only by an `edit` he approves: Salt Admin's `POST /all/maker/inputs/edit` with kind
+  `marketOff`, `marketOn` or `anchor` (`makerMarket`: a switch carries nothing else, a point is a price in steps of RM 5 at an ordered size, outside
+  the band on the plain policy it answers 400 with `outside` and stands with his `why`, a second market edit while one waits is a twin); the
+  drafter's `marketEditRow` strikes a point's multiple `x` on the COGS Floor at the size (`floorBase`) and flags what the Median becomes there;
+  the fold and the tap (`engine/apply.mjs`, `it.market`) file it once by the entry's moment, from the KL day it was asked (`klDayOf`); the tap
+  check compares `MARKET` (`EDIT_PURE`). `switchOn(C, p, day)` reads the newest switch dated on or before the day, on with none: off is nought
+  that day and after, on climbs from nought. `ruleFor` merges his points (`withPoints`, the newest at a size winning, each from its day). **The
+  readings** (the Desk's Pricing): `priceReading` (90 days, per size: sales, declined, usual, profit-best, plain Median; the profit-best is the
+  price paid that earns most per buyer seen, price less exact cost times those who paid it or more and those who cancelled at a higher price;
+  a re-anchor SUGGESTED at 10 sales or more and RM 5 or more off, his tap through the Act road `anchor/<q>/<price>`), `marketScore` (the week
+  against the eight before: margin a day, orders, new buyers, regulars won back, what the move added, an estimate) and `marketReplay` (the walk
+  from the book's first sale on today's cost and posts, beside what was paid). **A stranger at +30%** (his word of 11 Nov 2026): `TIER_RULE.salt.start`
+  is where a new customer or associate who names no figure starts (the fold's `fresh` start; a figure he picks, nought included, stands; a partner,
+  a bucket and a supplier hold none), and the guest board quotes salt there (`guestBoard`). **The suite's frozen book holds the switch off**
+  (`test/fixtures/book-frozen.json` `MARKET`), so no check's salt price moves with the calendar; the market's own checks turn it on in their own
+  book. Said, not modelled: a loan in kind, a lot part received over several days (all on its `receivedOn`), a row dated earlier and entered later
+  (a past day can read anew, so the walk is a reading, not a record). Checks: `test/price-band-market.mjs`, `test/desk-market.mjs`.
 - **Their %** (`TIER_OF[code][book]`: -1 to +1 on salt's band since 10 Nov 2026, -0.3 to +0.3 on a stated board since his decision of 21 Oct 2026,
   `liftRange`, held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Median Price, a negative one a discount, applied inside the walk, and nought is the Median Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID

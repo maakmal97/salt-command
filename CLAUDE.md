@@ -72,8 +72,8 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
    - **SALT'S PRICE IS THE MEDIAN PRICE AND THEIR %** (his decisions of 05, 18 and 21 Oct 2026). **It was named the Set Price until
      10 Nov 2026 (his word): every word he reads says Median Price, a customer reads neither, and the identifiers stay** (`T2`,
-     `ladderRow`, `TIER_RULE`, `PRICE_SET`, `drift`). **The Median Price is what a
-     stranger is quoted**, and a customer pays less only on a negative % of his: per size the Floor times a
+     `ladderRow`, `TIER_RULE`, `PRICE_SET`, `drift`). **A stranger is quoted +30% on salt's band** (his word of 11 Nov 2026, "Always start a
+     stranger at +30%": the guest board, `tools/pricelist.mjs` `guestBoard`, and a new ID that names no figure, `TIER_RULE.salt.start`), and a customer pays less only on a negative % of his: per size the Floor times a
      multiple (3 at half a unit, 2.4 at 1, 2.004 at 6.25, 1.596 at 12.5, sliding in the log of size, flat
      above 12.5; `TIER_RULE.salt.points`; 1.2 times the old 2.5, 2, 1.67, 1.33 by his word of 10 Nov 2026, RM 120 at 1 unit; the
      price band's version 1 moved none of it). The grid runs half a unit to 25 in quarters and is walked smallest
@@ -81,7 +81,18 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      lesser of the last and this size's multiple on the EXACT rate, never compounded, so the quoted rate may rise
      by under RM 5 a unit between quarters; the price goes down to RM 5; it is lifted so the ringgit margin over
      the Floor never falls below the largest margin of a smaller size; and it is held between the Floor and the
-     Ceiling. **Row zero of `ladderRow` is the Median Price and is load bearing** (phone, mirror and suite read
+     Ceiling. **THE MEDIAN MOVES WITH THE MARKET, BOUNDED, SAID AND SWITCHED BY HIM** (the price band's version 2, his answer B and his answers of
+     11 Nov 2026; `TIER_RULE.salt.market`, the snapshot engine's `marketWalk` and `marketOf`, read by `driftWalk` as `P.market`): each day the
+     Median goes to a place on the band, from supply alone (one plain cover at the start of the day: +15 at 3 days or fewer, +5 to 7, 0 to
+     14, -10 past it), held -15 to +20, 5 points a day at most towards it, a stand-down for 7 days when margin a day falls two weeks running
+     while it is up; the pace is said and NEVER priced (`acts` false: no measured basis); each day read off the book as it stood when the
+     day began, so trading moves no price until tomorrow; nought before `since`, the day it shipped. **Their % rides on the moved Median**
+     (his answer): -100% stays the Floor, +100% the Ceiling, a partner the Floor. **His switch and his Median points are the book's `MARKET`
+     document, written only by an `edit` he approves** (Salt Admin, `makerMarket`, the drafter's `marketEditRow`, the fold and the tap):
+     off is the plain Median from that day, on climbs from nought, a point is a multiple of the COGS Floor at a size (`withPoints`, `ruleFor`),
+     one outside the band asked once and marked. The 90-day reading SUGGESTS a point (10 sales or more, RM 5 or more off); nothing
+     re-anchors by itself. The evidence (the suggestion, the reading) reads the plain Median (`policy(C, p, true)`). The suite's frozen book
+     holds the switch off. **Row zero of `ladderRow` is the Median Price and is load bearing** (phone, mirror and suite read
      `[0]`; the code stays `T2`); choose a row by code, never by index. `PRICE_SET` is cleared and the drafter
      refuses a new one; the one figure he sets at Accept, on one order, is that row's total, which `PRICE_SET`
      never records.
@@ -95,12 +106,13 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      before the band** (`unitOf`, `unitOk`): refused at Salt Admin's inputs, flagged by the drafter and dropped by the fold with a
      note, never read as a %. **The switch's carry-over is booked and gone** (the list he approved, `docs/plan-salt-price-band-carry.html`; his Approve of 11 Nov 2026 booked the
      15 places): the book holds each carried customer's place on the band, read as it stands, and no table or reader of one is in the rule or the engine. The old curve (`driftMultiple` over a rule's `ends`) stays in the engine
-     for a rule that carries `ends`; none does. **Everyone starts at 0%**. He sets it on the customer's own card under Salt Admin's
+     for a rule that carries `ends`; none does. **Everyone held 0% at the band's switch; a new ID that names no figure starts at +30%**
+     (his word of 11 Nov 2026, the fold's `fresh` start in `engine/apply.mjs`; a figure he picks, nought included, stands). He sets it on the customer's own card under Salt Admin's
      Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a stepper in steps of 5 between the ends the catalog gives
      (`driftMin`, `driftMax`, sent with `driftUnit`), its prices shown live off the Desk before it goes to Approve
      (`makerDriftPreview`, any whole %), or picks at Add ID from salt's presets -50%, -30%, -20%, -10%, Median Price, +10%, +20%,
      +30% and +50% (a board's run -30% to +30%); it is queued, folded as `tierset`, and a null clears it. **Nothing automatic
-     prices**: the engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
+     prices a customer but the bounded market move above**: the engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
      `suggestPct`) SUGGESTS a % he may take with Use the suggestion: on salt the median PLACE on the band of their
      last five salt sales (`bandPct` at each sale's own size, never under nought) plus a share for a write-off (30%), a long late
      or 14 days overdue (20%) or a late (10%), LESS a good record's discount (`suggest.good`, 30%, times `autoDrift`'s good score,
