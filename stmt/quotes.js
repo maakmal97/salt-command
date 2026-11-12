@@ -25,6 +25,11 @@ export function checkQuote(body) {
   }
   return { sheet: body.sheet, lines };
 }
+/* 13 Nov 2026, the read stays inside a Worker's limits: the Desk's read lists the keys and takes each day's counts off the key's metadata, so a 90-day window costs list calls,
+   not one read a key; a key with no metadata (or a summary past KV's 1,024 bytes) is read whole */
+export const tally = (list) => { const t = {}; for (const x of list) for (const l of x.lines || []) { const k = l.b + "|" + l.q, e = (t[k] = t[k] || [0, 0]); e[0]++; if (l.placed) e[1]++; } return t; };
+const putList = (env, key, list) => { const t = tally(list), meta = JSON.stringify(t).length <= 900 ? { t } : undefined;
+  return env.STMT.put(key, JSON.stringify(list), meta ? { expirationTtl: QUOTE_TTL, metadata: meta } : { expirationTtl: QUOTE_TTL }); };
 const sig = (lines) => lines.map((l) => l.b + "|" + l.q + "|" + l.p).join(",");
 const listOf = async (env, key) => { const l = await env.STMT.get(key, "json").catch(() => null); return Array.isArray(l) ? l : []; };
 
@@ -36,7 +41,7 @@ export async function fileQuote(env, u, body, now = Date.now()) {
   if (list.some((x) => x.sheet === c.sheet && sig(x.lines) === sig(c.lines))) return { ok: true, again: true };
   if (list.length >= QUOTE_DAY_CAP) return { error: "that is enough quotes for one day", status: 429 };
   list.push({ at: new Date(now).toISOString(), u, sheet: c.sheet, lines: c.lines });
-  await env.STMT.put(key, JSON.stringify(list.slice(-QUOTE_DAY_CAP)), { expirationTtl: QUOTE_TTL });
+  await putList(env, key, list.slice(-QUOTE_DAY_CAP));
   return { ok: true };
 }
 
@@ -52,7 +57,7 @@ export async function markPlaced(env, u, order, now = Date.now()) {
     if (!hit) for (let i = list.length - 1; i >= 0 && !hit; i--) if (open(list[i])) hit = list[i];
     if (!hit) return false;
     open(hit).placed = true;
-    await env.STMT.put(key, JSON.stringify(list), { expirationTtl: QUOTE_TTL });
+    await putList(env, key, list);
     return true;
   } catch (e) { return false; }
 }
@@ -73,9 +78,12 @@ export async function quoteSummary(env, days, now = Date.now()) {
     for (const k of r.keys) {
       const day = k.name.split(":")[1];
       if (!(day >= from && day <= to)) continue;
-      for (const x of await listOf(env, k.name)) for (const l of x.lines || []) {
-        const bk = (books[l.b] = books[l.b] || {}), e = (bk[String(l.q)] = bk[String(l.q)] || { shown: 0, placed: 0 });
-        e.shown++; if (l.placed) e.placed++;
+      const t = k.metadata && k.metadata.t && typeof k.metadata.t === "object" ? k.metadata.t : tally(await listOf(env, k.name));
+      for (const bq of Object.keys(t)) {
+        const [b, q] = bq.split("|"), n = t[bq];
+        if (!QUOTE_BOOKS.includes(b) || !Array.isArray(n)) continue;
+        const bk = (books[b] = books[b] || {}), e = (bk[String(+q)] = bk[String(+q)] || { shown: 0, placed: 0 });
+        e.shown += +n[0] || 0; e.placed += +n[1] || 0;
       }
     }
     cursor = r.list_complete ? undefined : r.cursor;

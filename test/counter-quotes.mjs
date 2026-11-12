@@ -10,6 +10,7 @@
  *   Q6  the 31st quote of a day is refused
  *   Q7  Place marks the matching line placed, by the sheet where the order carries one, else by book and size
  *   Q8  the Desk reading sums shown and placed by book and size over the window and leaves older days out
+ *   Q8b a filed day carries its counts on the key, so the reading lists the keys and reads none (13 Nov 2026)
  *   Q9  the Desk route needs X-Stmt-Desk
  *   Q10 the Desk relay needs X-Salt-Key and passes the answer; unconfigured it is a 503
  * Each proved red by its own mutation (test/counter-quotes.mutations.json). */
@@ -19,11 +20,11 @@ import * as C from "../tools/stmt-crypto.mjs";
 import { rig, U1, rid } from "./pool.mjs";
 
 class KV {
-  constructor() { this.m = new Map(); this.opts = new Map(); }
+  constructor() { this.m = new Map(); this.opts = new Map(); this.gets = 0; }
   async put(k, v, o) { this.m.set(k, v); this.opts.set(k, o || null); }
-  async get(k, type) { if (!this.m.has(k)) return null; const raw = this.m.get(k); return type === "json" ? JSON.parse(raw) : raw; }
+  async get(k, type) { this.gets++; if (!this.m.has(k)) return null; const raw = this.m.get(k); return type === "json" ? JSON.parse(raw) : raw; }
   async delete(k) { this.m.delete(k); }
-  async list({ prefix = "" } = {}) { return { keys: [...this.m.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })), list_complete: true }; }
+  async list({ prefix = "" } = {}) { return { keys: [...this.m.keys()].filter((k) => k.startsWith(prefix)).map((name) => { const o = this.opts.get(name); return o && o.metadata ? { name, metadata: o.metadata } : { name }; }), list_complete: true }; }
 }
 const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
 const SHEET = "s".repeat(32);
@@ -153,6 +154,21 @@ export async function run({ ok, pageWork }) {
   "Q8 the Desk reading sums shown and placed by book and size over the days asked, 90 by default, and leaves the older days out: " + JSON.stringify([r30.b, r1.b]));
   const bad0 = await call("/desk/quotes?days=0", undefined, dk, senv), bad121 = await call("/desk/quotes?days=121", undefined, dk, senv), badx = await call("/desk/quotes?days=abc", undefined, dk, senv);
   ok([bad0, bad121, badx].every((r) => r.status === 400), "Q8 days outside 1 to 120 are refused 400");
+
+  /* Q8b: the counts ride on each key, so a 90-day window is list calls, never one read a key (a Worker's subrequests are limited) */
+  {
+    const Q = await import("../stmt/quotes.js");
+    const k3 = new KV(), e3 = { STMT: k3 }, day = Date.now();
+    await Q.fileQuote(e3, "aaaa-bbbb", { sheet: SHEET, lines: [{ b: "salt", q: 1, p: 100 }, { b: "oil", q: 3, p: 115 }] }, day);
+    await Q.fileQuote(e3, "aaaa-bbbb", { sheet: "t".repeat(32), lines: [{ b: "salt", q: 1, p: 105 }] }, day);
+    await Q.fileQuote(e3, "cccc-dddd", { sheet: SHEET, lines: [{ b: "salt", q: 2.5, p: 250 }] }, day - 3 * 864e5);
+    await Q.markPlaced(e3, "aaaa-bbbb", { product: "salt", qty: 1 }, day);
+    k3.gets = 0;
+    const sum = await Q.quoteSummary(e3, 30, day);
+    const want = { salt: { "1": { shown: 2, placed: 1 }, "2.5": { shown: 1, placed: 0 } }, oil: { "3": { shown: 1, placed: 0 } } };
+    ok(k3.gets === 0 && JSON.stringify(sum.books) === JSON.stringify(want),
+      "Q8b each day's counts ride on its key, a placing included, so the reading reads no key: " + JSON.stringify([k3.gets, sum.books]));
+  }
 
   /* Q9 */
   const nokey = await call("/desk/quotes", undefined, {}, senv), wrong = await call("/desk/quotes", undefined, { "X-Stmt-Desk": "nope" }, senv), cust = await call("/desk/quotes", undefined, undefined, senv);
