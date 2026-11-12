@@ -340,7 +340,9 @@ export function pricingSnapshot(w) {
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {});
+    /* 11 Nov 2026 (the price band's version 2): the day's market move, its reason and his switch, the engine's pricing() field, for the drafter, Salt Admin and the price list's reader */
+    const market = call("(function(){try{var m=SNAPSHOT_ENGINE.marketOf(snapCtx()," + JSON.stringify(p) + ");return m?{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:SNAPSHOT_ENGINE.marketWhy(m)}:null;}catch(e){return null;}})()");
+    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {}, market ? { market } : {});
   }
 
   return {

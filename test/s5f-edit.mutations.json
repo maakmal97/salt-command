@@ -122,14 +122,14 @@
  {
   "name": "a twin edit is queued",
   "file": "src/maker-inputs.js",
-  "find": "entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\"",
-  "replace": "false && entry.payload && entry.payload.mode === \"edit\""
+  "find": "entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\" && entry.payload.party === body.party",
+  "replace": "false && entry.payload && entry.payload.mode === \"edit\" && entry.payload.party === body.party"
  },
  {
   "name": "a retry of the same request is its own twin",
   "file": "src/maker-inputs.js",
-  "find": "entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\"",
-  "replace": "entry.payload && entry.payload.mode === \"edit\""
+  "find": "entry.at !== body.at && entry.payload && entry.payload.mode === \"edit\" && entry.payload.party === body.party",
+  "replace": "entry.payload && entry.payload.mode === \"edit\" && entry.payload.party === body.party"
  },
  {
   "name": "the catalogue lists a paid refund",

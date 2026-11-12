@@ -50,8 +50,8 @@
  {
   "name": "a lifted price carries an extra five on top of the % the customer holds",
   "file": "engine/pricing.mjs",
-  "find": "return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k};",
-  "replace": "return {q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p>s.p?p+5:p,d:k};"
+  "find": "set:s.p,p:p,d:k},",
+  "replace": "set:s.p,p:p>s.p?p+5:p,d:k},"
  },
  {
   "name": "driftAt walks the size alone, not the grid beneath it, so it can disagree with the grid by a step",
@@ -86,8 +86,8 @@
  {
   "name": "the snapshot carries the map as drift again, which an old reader would read as a drift from -1 to +1",
   "file": "engine/snapshot.mjs",
-  "find": "lift?{lift,suggest}:{});",
-  "replace": "lift?{drift:lift,suggest}:{});"
+  "find": "lift?{lift,suggest}:{},",
+  "replace": "lift?{drift:lift,suggest}:{},"
  },
  {
   "name": "the Counter's card off the board reads the old drift map",

@@ -20,8 +20,8 @@
  {
   "name": "the Set Price is struck on the new Floor",
   "file": "engine/pricing.mjs",
-  "find": "const s=step(rS,mS,fb*m*1)",
-  "replace": "const s=step(rS,mS,fl*m*1)"
+  "find": "const s0=step(rS,mS,fb*m*1)",
+  "replace": "const s0=step(rS,mS,fl*m*1)"
  },
  {
   "name": "a held % is struck on the new Floor",
