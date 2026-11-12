@@ -1,0 +1,164 @@
+[
+ {
+  "name": "Q1 the check posts no quote",
+  "file": "stmt/page.js",
+  "find": "    quoteSend(draft.check);\n",
+  "replace": ""
+ },
+ {
+  "name": "Q1 the same lines post again",
+  "file": "stmt/page.js",
+  "find": " if(draft.qSig===sg) return; draft.qSig=sg;",
+  "replace": " draft.qSig=sg;"
+ },
+ {
+  "name": "Q1 the post carries the rate, not the price shown",
+  "file": "stmt/page.js",
+  "find": "{b:l.product,q:l.q,p:l.total}",
+  "replace": "{b:l.product,q:l.q,p:l.rate}"
+ },
+ {
+  "name": "Q2 a practice account posts",
+  "file": "stmt/page.js",
+  "find": "||!session||TESTS.indexOf(user)>=0) return;\n      var ls=[]",
+  "replace": "||!session) return;\n      var ls=[]"
+ },
+ {
+  "name": "Q3 Order as them posts",
+  "file": "stmt/page.js",
+  "find": "if(!c||act||c.amend||c.pool||!session||TESTS",
+  "replace": "if(!c||c.amend||c.pool||TESTS"
+ },
+ {
+  "name": "Q4 an unknown book is filed",
+  "file": "stmt/quotes.js",
+  "find": "!QUOTE_BOOKS.includes(l.b)",
+  "replace": "false"
+ },
+ {
+  "name": "Q4 a size of nought is filed",
+  "file": "stmt/quotes.js",
+  "find": "l.q <= 0 || l.q > 100000",
+  "replace": "l.q > 100000"
+ },
+ {
+  "name": "Q4 a price below nought is filed",
+  "file": "stmt/quotes.js",
+  "find": "l.p <= 0 || l.p > 1e7",
+  "replace": "l.p > 1e7"
+ },
+ {
+  "name": "Q4 any number of lines is filed",
+  "file": "stmt/quotes.js",
+  "find": "!ls.length || ls.length > QUOTE_LINES",
+  "replace": "!ls.length"
+ },
+ {
+  "name": "Q4 a quote with no sheet is filed",
+  "file": "stmt/quotes.js",
+  "find": "typeof body.sheet !== \"string\" || !SHEET_RE.test(body.sheet)",
+  "replace": "false"
+ },
+ {
+  "name": "Q5 filed under the username first",
+  "file": "stmt/quotes.js",
+  "find": "\"quote:\" + day + \":\" + u",
+  "replace": "\"quote:\" + u + \":\" + day"
+ },
+ {
+  "name": "Q5 the list never expires",
+  "file": "stmt/quotes.js",
+  "find": "QUOTE_TTL = 120 * 86400",
+  "replace": "QUOTE_TTL = 1"
+ },
+ {
+  "name": "Q5 a practice account's quote is filed",
+  "file": "stmt/worker.js",
+  "find": "const r = isTest(u) ? (() =>",
+  "replace": "const r = false ? (() =>"
+ },
+ {
+  "name": "Q5 a repeat is filed again",
+  "file": "stmt/quotes.js",
+  "find": "if (list.some((x) => x.sheet === c.sheet && sig(x.lines) === sig(c.lines))) return { ok: true, again: true };",
+  "replace": ""
+ },
+ {
+  "name": "Q6 no daily cap",
+  "file": "stmt/quotes.js",
+  "find": "list.length >= QUOTE_DAY_CAP",
+  "replace": "list.length >= 1e9"
+ },
+ {
+  "name": "Q7 Place marks nothing",
+  "file": "stmt/worker.js",
+  "find": "if (!isTest(u) && !(pb && pb.ask === true)) await markPlaced(",
+  "replace": "if (false) await markPlaced("
+ },
+ {
+  "name": "Q7 the order's sheet is not passed",
+  "file": "stmt/worker.js",
+  "find": "sheet: pb && pb.sheet });",
+  "replace": "sheet: undefined });"
+ },
+ {
+  "name": "Q7 the sheet id is not preferred",
+  "file": "stmt/quotes.js",
+  "find": "let hit = sheet ? list.find(",
+  "replace": "let hit = false ? list.find("
+ },
+ {
+  "name": "Q7 any line of the book and none of the size",
+  "file": "stmt/quotes.js",
+  "find": "l.b === b && l.q === +q.toFixed(4) && !l.placed",
+  "replace": "!l.placed"
+ },
+ {
+  "name": "Q8 every day is summed, the window ignored",
+  "file": "stmt/quotes.js",
+  "find": "if (!(day >= from && day <= to)) continue;",
+  "replace": ""
+ },
+ {
+  "name": "Q8 every shown line counts as placed",
+  "file": "stmt/quotes.js",
+  "find": "if (l.placed) e.placed++;",
+  "replace": "e.placed++;"
+ },
+ {
+  "name": "Q8 the default window is 30 days",
+  "file": "stmt/quotes.js",
+  "find": "QUOTE_DAYS_DEFAULT = 90",
+  "replace": "QUOTE_DAYS_DEFAULT = 30"
+ },
+ {
+  "name": "Q8 days past 120 are taken",
+  "file": "stmt/quotes.js",
+  "find": "n >= 1 && n <= QUOTE_DAYS_MAX",
+  "replace": "n >= 1"
+ },
+ {
+  "name": "Q9 the Desk route opens without its key",
+  "file": "stmt/worker.js",
+  "find": "  if (!deskOk(request, env)) return json({ ok: false, error: \"desk key required\" }, 401);\n  if (p === \"/desk/bulletin\")",
+  "replace": "  if (p === \"/desk/bulletin\")"
+ },
+ {
+  "name": "Q10 the Desk's /quotes opens without the write key",
+  "file": "src/worker.js",
+  "find": "|| p === \"/quotes\" || p === \"/hush\"",
+  "replace": "|| p === \"/hush\""
+ },
+ {
+  "name": "Q10 the relay drops the days",
+  "file": "src/orders.js",
+  "find": "\"/desk/quotes?days=\" + encodeURIComponent(days == null ? \"\" : days)",
+  "replace": "\"/desk/quotes\""
+ },
+ {
+  "name": "Q10 an unconfigured relay is not a 503",
+  "file": "src/orders.js",
+  "find": "encodeURIComponent(days == null ? \"\" : days));\n  if (!r) return { ok: false, status: 503,",
+  "replace": "encodeURIComponent(days == null ? \"\" : days));\n  if (!r) return { ok: false, status: 502,"
+ }
+]

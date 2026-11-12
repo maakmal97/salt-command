@@ -4707,7 +4707,7 @@ const CLIENT_JS = `
     /* 11 Nov 2026 (his answer "Always ask"): the way and the place are what was chosen on this page for this order (a sheet, Home's
        tiles, Order again), never an earlier order's; Sent forgets both */
     if(draft.place==null){ draft.place=''; draft.placeWas=''; }
-    draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
+    draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null; draft.qSheet=''; draft.qSig='';
     if(!osh){
       var wrap=el('div'); wrap.id='osheet';
       var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
@@ -5352,7 +5352,20 @@ const CLIENT_JS = `
       digest:(prices&&prices.digest)||''};
     /* from the list the form drew: the open windows, and an amendment's own window kept while it is still to end */
     if(draft.check.slot){ var cs=winOpen().concat(draft.amend&&draft.ownSlot?[draft.ownSlot]:[]).filter(function(n){ return n.slot===draft.check.slot; })[0]; draft.check.span=cs?cs.span:''; }
+    quoteSend(draft.check);
     draft.step='check'; draft.snote=''; sheetDraw();
+  }
+  /* BAND VERSION 2: what the check shows is recorded, once a sheet and set of lines, fire and forget. Never on Order as them, a practice
+     account, an amendment or a group order, and never a word on the sheet: a refusal or a lost request is not their business. */
+  function quoteSend(c){
+    try{
+      if(!c||act||c.amend||c.pool||!session||TESTS.indexOf(user)>=0) return;
+      var ls=[]; c.lines.forEach(function(l){ if(!l.over&&l.total>0&&l.q>0) ls.push({b:l.product,q:l.q,p:l.total}); });
+      if(!ls.length||ls.length>10) return;
+      if(!draft.qSheet) draft.qSheet=mintRid();
+      var sg=draft.qSheet+JSON.stringify(ls); if(draft.qSig===sg) return; draft.qSig=sg;
+      fetch('/quote',{method:'POST',cache:'no-store',headers:{'X-Stmt-Session':session,'content-type':'application/json'},body:JSON.stringify({sheet:draft.qSheet,lines:ls})}).catch(function(){});
+    }catch(e){}
   }
   function sheetSum(c){ var t=0; c.lines.forEach(function(l){ t+=l.total; }); return +t.toFixed(2); }
   /* S4 4.4: THE LIST MOVED BETWEEN REVIEW AND PLACE. The Worker compares the stamp Place carried with the account's own
