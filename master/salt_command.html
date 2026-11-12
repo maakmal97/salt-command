@@ -21728,6 +21728,64 @@ async function pbUsers(){if(PB_USERS)return PB_USERS;if(!cloudMode())return {};
     const inv={};Object.keys((j&&j.users)||{}).forEach(u=>{inv[j.users[u]]=u;});PB_USERS=inv;
     PB_SITE=(j&&typeof j.site==='string'&&/^https?:\/\//.test(j.site))?j.site.replace(/\/+$/,''):null;}catch(e){PB_USERS=null;}
   return PB_USERS||{};}
+/* 11 NOV 2026, THE PRICE BAND'S VERSION 2 ON THE DESK (docs/plan-salt-price-band.html Steps 3 and 4): four panels on Pricing for salt alone, all read from
+   the engine (SNAPSHOT_ENGINE.marketOf, priceReading, marketScore, marketReplay), none a pricing rule. Market move: today's move, its reason and his
+   switch. Median reading, 90 days: what sold at each size, with a re-anchor SUGGESTED and his tap on Salt Admin. This week: the scorecard. Replay: drawn
+   only when opened, since it walks the whole book. His switch and a re-anchor are Salt Admin's (adminLink); the Desk only links. */
+let MK_QUOTES=null,MK_QUOTES_TRIED=false,mkRepOpen=false;
+async function mkQuotesLoad(){
+  if(MK_QUOTES_TRIED||!cloudMode())return;MK_QUOTES_TRIED=true;
+  let j=null;try{const r=await fetch('quotes?days=90',{cache:'no-store',headers:qHeaders()});if(r.ok){try{j=await r.json();}catch(e){}}}catch(e){}
+  if(j&&j.ok===true&&j.books&&typeof j.books==='object'){MK_QUOTES=j.books;if(curAddr==='pricing')render();}
+}
+const mkPts=v=>{const n=Math.round(Math.abs(v)*100);return n?(v>0?'+':'-')+n:'0';};
+function mkRepBody(){
+  const R=renderMemo('mkReplay|'+PROD,()=>SNAPSHOT_ENGINE.marketReplay(snapCtx(),'salt',1));
+  if(!R||!R.length)return '<div class="dsc">No replay yet.</div>';
+  return '<div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Day</th><th>Move</th><th>Quote at 1 unit</th><th>Median paid at 1 unit</th></tr></thead><tbody>'
+    +R.slice().reverse().map(r=>'<tr><td class="l salt-table__label">'+esc(r.day)+'</td><td class="mono">'+(r.on===false?'off':mkPts(r.k))+'</td><td class="mono">'+(r.quote!=null?fmt(r.quote):NIL)+'</td><td class="mono">'+(r.paid!=null?fmt(r.paid)+' <span class="iref">('+r.n+')</span>':NIL)+'</td></tr>').join('')
+    +'</tbody></table></div>';
+}
+function mkRepToggle(el){mkRepOpen=!!el.open;const b=document.getElementById('mkRepBody');if(b)b.innerHTML=mkRepOpen?mkRepBody():'';}
+function marketPanels(){
+  if(PROD!=='salt')return '';
+  const C=snapCtx(),m=SNAPSHOT_ENGINE.marketOf(C,'salt');if(!m)return '';
+  mkQuotesLoad();
+  const on=m.on!==false&&!m.before,sw=SNAPSHOT_ENGINE.switchOn(C,'salt',m.day),K=SNAPSHOT_ENGINE.cost(C,'salt');
+  const P0=SNAPSHOT_ENGINE.policy(C,'salt',true),P1=SNAPSHOT_ENGINE.policy(C,'salt');
+  const plain=K&&P0?PRICING_ENGINE.quoteAt(1,K,P0,0):null,today=K&&P1?PRICING_ENGINE.quoteAt(1,K,P1,0):null;
+  const log=(m.log||[]).slice(-14).reverse();
+  const card='<div class="card" id="mkCard" style="margin-top:14px"><div class="cardh">Market move <span class="sub">'+(m.before?'starts '+esc(m.since):sw?'switch on':'switch off')+'</span></div>'
+    +'<div class="mono" id="mkMove" style="font-size:28px">'+(on?mkPts(m.k||0):'0')+'</div>'
+    +'<div class="dsc" id="mkWhy">'+esc(SNAPSHOT_ENGINE.marketWhy(m))+'</div>'
+    +'<div class="dsc">Median at 1 unit: '+(plain!=null?fmt(plain):NIL)+' plain, '+(today!=null?fmt(today):NIL)+' today.</div>'
+    +'<div style="margin-top:8px">'+(sw?adminLink('market/off','Switch off'):adminLink('market/on','Switch on'))+'</div>'
+    +(log.length?'<div class="tblw"><table class="salt-table fintab istmt" id="mkLog"><thead><tr><th class="l salt-table__label">Day</th><th>Move</th><th>Cover</th><th>Held</th></tr></thead><tbody>'
+      +log.map(e=>'<tr><td class="l salt-table__label">'+esc(e.day)+'</td><td class="mono">'+(e.on===false?'off':mkPts(e.k))+'</td><td class="mono">'+(e.on===false?NIL:e.none?'none':e.long?'over 14':(+e.cover).toFixed(1)+' d')+'</td><td>'+(e.stood?'stood down':'')+'</td></tr>').join('')
+      +'</tbody></table></div>':'')+'</div>';
+  const rd=renderMemo('mkReading|'+PROD,()=>SNAPSHOT_ENGINE.priceReading(C,'salt',90))||[];
+  const Q=MK_QUOTES&&MK_QUOTES.salt?MK_QUOTES.salt:null;
+  const anchors=((MARKET_BOOK.salt&&MARKET_BOOK.salt.anchors)||[]).filter(a=>a&&a.q!=null);
+  const reading='<div class="card" id="mkReading" style="margin-top:14px"><div class="cardh">Median reading, 90 days <span class="sub">what sold at each size</span></div>'
+    +(rd.length?'<div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>Sales</th><th>Declined</th><th>Usual paid</th><th>Profit-best</th><th>Median</th>'+(Q?'<th>Quotes</th>':'')+'<th></th></tr></thead><tbody>'
+      +rd.map(r=>{const qq=Q&&Q[String(r.q)];return '<tr data-q="'+r.q+'"><td class="l salt-table__label">'+units(r.q)+'</td><td class="mono">'+r.sales+'</td><td class="mono">'+r.declined+'</td><td class="mono">'+(r.usual!=null?fmt(r.usual):NIL)+'</td><td class="mono">'+(r.best!=null?fmt(r.best):NIL)+'</td><td class="mono">'+(r.median!=null?fmt(r.median):NIL)+'</td>'
+        +(Q?'<td class="mono mkq">'+(qq?qq.shown+' shown, '+qq.placed+' placed':NIL)+'</td>':'')
+        +'<td>'+(r.suggest?adminLink('anchor/'+r.q+'/'+r.best,'Use '+fmt(r.best)):'')+'</td></tr>';}).join('')
+      +'</tbody></table></div>':'<div class="dsc">No salt sold in the last 90 days.</div>')
+    +'<div class="dsc">A re-anchor is suggested where the profit-best and the Median differ by RM 5 or more over 10 or more sales. It is his tap, never automatic.</div>'
+    +(anchors.length?'<ul class="dsc" id="mkAnchors" style="margin:6px 0 0 18px;padding:0">'+anchors.map(a=>'<li>'+units(a.q)+' anchored at '+fmt(a.price)+(a.from?' from '+esc(a.from):'')+(a.outside?'. <b>Outside the band: '+esc(a.outside.why||'')+'</b>':'')+'</li>').join('')+'</ul>':'')+'</div>';
+  const sc=renderMemo('mkScore|'+PROD,()=>SNAPSHOT_ENGINE.marketScore(C,'salt'));
+  const score=sc?'<div class="card" id="mkScore" style="margin-top:14px"><div class="cardh">This week <span class="sub">'+esc(sc.from)+' to '+esc(sc.to)+'</span></div>'
+    +'<table class="salt-table fintab istmt"><tbody>'
+    +'<tr><td class="l salt-table__label">Margin a day</td><td class="mono">'+fmt(sc.margin)+' <span class="iref">against '+fmt(sc.prior)+' over the eight weeks before</span></td></tr>'
+    +'<tr><td class="l salt-table__label">Orders</td><td class="mono">'+sc.orders+'</td></tr>'
+    +'<tr><td class="l salt-table__label">New buyers</td><td class="mono">'+sc.newBuyers+'</td></tr>'
+    +'<tr><td class="l salt-table__label">Regulars won back</td><td class="mono">'+sc.wonBack+'</td></tr>'
+    +'<tr><td class="l salt-table__label">What the move added</td><td class="mono">'+fmt(sc.added)+' <span class="iref">estimate</span></td></tr></tbody></table></div>':'';
+  const rep='<details class="card" id="mkReplay" style="margin-top:14px"'+(mkRepOpen?' open':'')+' ontoggle="mkRepToggle(this)"><summary class="tapsum" style="cursor:pointer;min-height:44px">Replay</summary>'
+    +'<div class="dsc">The move replayed on today’s cost and posts, day by day, beside what was paid at 1 unit.</div><div id="mkRepBody">'+(mkRepOpen?mkRepBody():'')+'</div></details>';
+  return card+reading+score+rep;
+}
 function pbCard(){
   const who=roster.filter(id=>!id.startsWith('S'));
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
@@ -22188,6 +22246,7 @@ function tabPricing(){
     <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)},`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
+    ${marketPanels()}
     ${pbCard()}
     <!-- v393: THE EDITOR FOLDS. Seventeen tickboxes and nineteen number boxes were standing
          open inside the board card, which on a 375px phone put the thing he acts on, the
