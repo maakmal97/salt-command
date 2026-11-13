@@ -121,22 +121,32 @@ export async function flip(io, opts = {}) {
   return { ...out, ok: true, wayBack: WAY_BACK };
 }
 
-/** after the first tap: is the Book the source and healthy. Reads only. */
-export async function verify(io) {
-  const checks = [], add = (id, ok, text) => checks.push({ id, ok: ok === true, text });
-  add("source", flagOf(io, "book_source") === "book", "book_source reads book");
-  add("roster", flagOf(io, "book_roster") === "on", "book_roster reads on");
+/** what --verify reads, each check with what it read (`got`) and ok true, false, or null when it could not be read. Reads only. `steady` adds the two flags the flip never
+    moves (book_tap on, book_read book), which the flip board reads beside them (14 Nov 2026). --verify is this with an unread check read as not ok. */
+export async function health(io, opts = {}) {
+  const checks = [], add = (id, ok, text, got, unread) => checks.push({ id, ok: unread ? null : ok === true, text, got });
+  const flagIs = (id, t, want) => { const v = flagOf(io, t); add(id, v === want, t + " reads " + want, v, v === null); };
+  flagIs("source", "book_source", "book");
+  flagIs("roster", "book_roster", "on");
+  if (opts.steady) { flagIs("tap", "book_tap", "on"); flagIs("read", "book_read", "book"); }
   const rc = await io.get("/book/readcheck");
   /* 10 Nov 2026, the first verify after the flip: the readcheck compares the Book with D1's mirror, which nothing re-seeds once the Book is the source, so PRICING and OPEN (stamped
      book@<rev>) and, after the first tap, the sales differ from it by design. What still says the Book is unwell is an entry the base cannot take or one under a draft not approved, a
      compaction that would be refused, or a side that did not answer: those fail the line; a difference from the frozen mirror is counted and said */
   const differ = Array.isArray(rc.body.differ) ? rc.body.differ.map(String) : [];
   const sick = differ.filter((d) => /^entry |^compaction|did not answer/.test(d));
-  add("readcheck", rc.status === 200 && rc.body.source === "book" && !rc.body.error && (rc.body.ok === true || differ.length > 0) && !sick.length, "the readcheck answers for the Book as the source, no entry stuck or under a draft not approved, a compaction that would hold: " + JSON.stringify({ source: rc.body.source, rev: rc.body.bookRev, sick, frozenMirror: differ.length - sick.length }));
+  add("readcheck", rc.status === 200 && rc.body.source === "book" && !rc.body.error && (rc.body.ok === true || differ.length > 0) && !sick.length, "the readcheck answers for the Book as the source, no entry stuck or under a draft not approved, a compaction that would hold: " + JSON.stringify({ source: rc.body.source, rev: rc.body.bookRev, sick, frozenMirror: differ.length - sick.length }),
+    { source: rc.body.source || null, rev: Number.isInteger(rc.body.bookRev) ? rc.body.bookRev : null, sick: sick.length, frozenMirror: differ.length - sick.length }, rc.status !== 200);
   const unb = io.d1("SELECT COUNT(*) AS n FROM draft WHERE status='approved' AND committed_at IS NULL AND json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.booked_seq') IS NULL");
-  add("unbooked", !unb.error && +unb.rows[0].n === 0, "approved drafts unbooked: " + (unb.error ? "unread" : unb.rows[0].n));
+  add("unbooked", !unb.error && +unb.rows[0].n === 0, "approved drafts unbooked: " + (unb.error ? "unread" : unb.rows[0].n), unb.error ? null : +unb.rows[0].n, !!unb.error);
   const fb = io.d1("SELECT COUNT(*) AS n FROM draft WHERE json_extract(CASE WHEN json_valid(row) THEN row ELSE '{}' END,'$.tap_fallback') IS NOT NULL AND decided_at >= strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day')");
-  add("fallbacks", !fb.error && +fb.rows[0].n === 0, "approvals that fell back in the last day: " + (fb.error ? "unread" : fb.rows[0].n));
+  add("fallbacks", !fb.error && +fb.rows[0].n === 0, "approvals that fell back in the last day: " + (fb.error ? "unread" : fb.rows[0].n), fb.error ? null : +fb.rows[0].n, !!fb.error);
+  return { ok: checks.every((c) => c.ok === true), checks };
+}
+
+/** after the first tap: is the Book the source and healthy. Reads only: health's five checks, an unread one read as not ok. */
+export async function verify(io) {
+  const checks = (await health(io)).checks.map((c) => ({ id: c.id, ok: c.ok === true, text: c.text }));
   return { ok: checks.every((c) => c.ok), checks };
 }
 

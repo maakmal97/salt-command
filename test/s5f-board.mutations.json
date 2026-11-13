@@ -248,7 +248,7 @@
  {
   "name": "a locked way back keeps its Copy",
   "file": "tools/flip-board.mjs",
-  "find": "${view.backReady ? cmdBlock(b.cmd, false) : textBlock(b.cmd)}",
+  "find": "${ready ? cmdBlock(b.cmd, false) : textBlock(b.cmd)}",
   "replace": "${cmdBlock(b.cmd, false)}"
  },
  {
@@ -292,5 +292,203 @@
   "file": "tools/flip-board.mjs",
   "find": "pre(\"Marked before the load\", p && p.markBeforeLoad, true, yes(p && p.markBeforeLoad), \"yes\"),",
   "replace": ""
+ },
+ {
+  "name": "a PLAN step is left out of the record",
+  "file": "tools/flip-board.mjs",
+  "find": "PLAN.filter((s) => s[0] !== \"8\").map(",
+  "replace": "PLAN.filter((s) => s[0] !== \"8\" && s[0] !== \"6\").map("
+ },
+ {
+  "name": "flipped on any source but d1",
+  "file": "tools/flip-board.mjs",
+  "find": "export const flippedOf = (pre) => !!pre && pre.source === \"book\";",
+  "replace": "export const flippedOf = (pre) => !!pre && pre.source !== \"d1\";"
+ },
+ {
+  "name": "the tool flips on the way-back file",
+  "file": "tools/flip-board.mjs",
+  "find": "  if (flippedOf(pre)) {",
+  "replace": "  if (flippedOf(pre) || (ev && ev.wayBack)) {"
+ },
+ {
+  "name": "the flipped shape writes the gate's history",
+  "file": "tools/flip-board.mjs",
+  "find": "    writeFileSync(out, renderFlipped(view));",
+  "replace": "    writeFileSync(out, renderFlipped(view)); writeFileSync(val(\"--history\") || HISTORY, \"[]\");"
+ },
+ {
+  "name": "an unread reading is healthy",
+  "file": "tools/flip-board.mjs",
+  "find": "items.every((i) => i.ok === true) ? true : null, items",
+  "replace": "true, items"
+ },
+ {
+  "name": "a false reading is only unverified",
+  "file": "tools/flip-board.mjs",
+  "find": "ok: items.some((i) => i.ok === false) ? false : items.every",
+  "replace": "ok: items.every"
+ },
+ {
+  "name": "an odd reading is true",
+  "file": "tools/flip-board.mjs",
+  "find": "const tri = (v) => (v === true ? true : v === false ? false : null);",
+  "replace": "const tri = (v) => (v ? true : v === false ? false : null);"
+ },
+ {
+  "name": "health that could not run is healthy",
+  "file": "tools/flip-board.mjs",
+  "find": "return { id, label, ok: c ? tri(c.ok) : null, detail",
+  "replace": "return { id, label, ok: c ? tri(c.ok) : true, detail"
+ },
+ {
+  "name": "health reads an unread check as false",
+  "file": "tools/flip.mjs",
+  "find": "checks.push({ id, ok: unread ? null : ok === true, text, got })",
+  "replace": "checks.push({ id, ok: ok === true, text, got })"
+ },
+ {
+  "name": "verify takes an unread check as ok",
+  "file": "tools/flip.mjs",
+  "find": ".map((c) => ({ id: c.id, ok: c.ok === true, text: c.text }))",
+  "replace": ".map((c) => ({ id: c.id, ok: c.ok !== false, text: c.text }))"
+ },
+ {
+  "name": "a readcheck that did not answer reads false",
+  "file": "tools/flip.mjs",
+  "find": "frozenMirror: differ.length - sick.length }, rc.status !== 200);",
+  "replace": "frozenMirror: differ.length - sick.length }, false);"
+ },
+ {
+  "name": "the readcheck's revision is not read",
+  "file": "tools/flip.mjs",
+  "find": "rev: Number.isInteger(rc.body.bookRev) ? rc.body.bookRev : null,",
+  "replace": "rev: null,"
+ },
+ {
+  "name": "the steady flags are not read",
+  "file": "tools/flip.mjs",
+  "find": "if (opts.steady) { flagIs(\"tap\", \"book_tap\", \"on\"); flagIs(\"read\", \"book_read\", \"book\"); }",
+  "replace": "/* the steady flags are not read */"
+ },
+ {
+  "name": "the gate is judged live once flipped",
+  "file": "tools/flip-board.mjs",
+  "find": "const gates = judge({}).lines.map((l) => ({ id: l.id, text: l.text, s: snap ?",
+  "replace": "const gates = judge(ev).lines.map((l) => ({ id: l.id, text: l.text, s: l.ok !== null ? STATE(l.ok) : snap ?"
+ },
+ {
+  "name": "any snapshot before the flip is the record",
+  "file": "tools/flip-board.mjs",
+  "find": " && Date.parse(s.at) >= Date.parse(at) - DAY)",
+  "replace": ")"
+ },
+ {
+  "name": "a snapshot after the flip is the record",
+  "file": "tools/flip-board.mjs",
+  "find": "Date.parse(s.at) < Date.parse(at) && ",
+  "replace": ""
+ },
+ {
+  "name": "the gate is not labelled as the pre-flip record",
+  "file": "tools/flip-board.mjs",
+  "find": "G0 to G9: pre-flip record, not live</h2>",
+  "replace": "G0 to G9</h2>"
+ },
+ {
+  "name": "the way back is usable without the file",
+  "file": "tools/flip-board.mjs",
+  "find": "snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: !!way };",
+  "replace": "snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: true };"
+ },
+ {
+  "name": "the way back's time is always the record's",
+  "file": "tools/flip-board.mjs",
+  "find": "ROW(\"Way back written\", view.wayAt ? view.wayAt : RECORD.wayBack + \" (the record)\"",
+  "replace": "ROW(\"Way back written\", RECORD.wayBack + \" (the record)\""
+ },
+ {
+  "name": "his words are read from the way-back file",
+  "file": "tools/flip-board.mjs",
+  "find": "return { writtenAt: Number.isFinite(at) ? new Date(at).toISOString() : null, bookRev:",
+  "replace": "return { his: w.his, writtenAt: Number.isFinite(at) ? new Date(at).toISOString() : null, bookRev:"
+ },
+ {
+  "name": "a malformed sha is kept",
+  "file": "tools/flip-board.mjs",
+  "find": "sha: /^[0-9a-f]{7,40}$/.test(String(w.sha)) ? String(w.sha).slice(0, 8) : null,",
+  "replace": "sha: String(w.sha).slice(0, 8),"
+ },
+ {
+  "name": "a reading's words are not escaped",
+  "file": "tools/flip-board.mjs",
+  "find": "title=\"${esc(i.detail)}\">${esc(i.detail)}</span>",
+  "replace": "title=\"${esc(i.detail)}\">${i.detail}</span>"
+ },
+ {
+  "name": "--flipped-on takes any words",
+  "file": "tools/flip-board.mjs",
+  "find": "const over = opts.flippedOn ? attested(opts.flippedOn, now) : null;",
+  "replace": "const over = opts.flippedOn ? { date: opts.flippedOn, why: null } : null;"
+ },
+ {
+  "name": "no export in the window is unverified",
+  "file": "tools/flip-board.mjs",
+  "find": "return { ok: ex.unread ? null : false, detail: \"none in \"",
+  "replace": "return { ok: null, detail: \"none in \""
+ },
+ {
+  "name": "the export tile does not say the last in git",
+  "file": "tools/flip-board.mjs",
+  "find": "exp.last || exp.detail)}",
+  "replace": "exp.detail)}"
+ },
+ {
+  "name": "a failed export is healthy",
+  "file": "tools/flip-board.mjs",
+  "find": "if (ex.at) return { ok: ex.conclusion === \"success\",",
+  "replace": "if (ex.at) return { ok: true,"
+ },
+ {
+  "name": "a skipped day's step counts",
+  "file": "tools/flip-board.mjs",
+  "find": "if (s && s.conclusion && s.conclusion !== \"skipped\") return",
+  "replace": "if (s && s.conclusion) return"
+ },
+ {
+  "name": "a run older than the window counts",
+  "file": "tools/flip-board.mjs",
+  "find": "inWin = rows.filter((r) => Date.parse(r.createdAt) >= from)",
+  "replace": "inWin = rows.filter((r) => true)"
+ },
+ {
+  "name": "a run that cannot be read is not counted",
+  "file": "tools/flip-board.mjs",
+  "find": "catch (e) { unread++; continue; }",
+  "replace": "catch (e) { continue; }"
+ },
+ {
+  "name": "the script assumes a Reset",
+  "file": "tools/flip-board.mjs",
+  "find": "  if (reset) reset.addEventListener(\"click\", function () {",
+  "replace": "  reset.addEventListener(\"click\", function () {"
+ },
+ {
+  "name": "the board's io lets a throw through",
+  "file": "tools/flip-board.mjs",
+  "find": "get: async (p) => { try { return answered(await get(p)); } catch (e) { return { status: 0, body: {} }; } } };",
+  "replace": "get: async (p) => answered(await get(p)) };"
+ },
+ {
+  "name": "a login page is taken as the readcheck's answer",
+  "file": "tools/flip-board.mjs",
+  "find": "const answered = (r) => (r && r.status === 200 && (!r.body || typeof r.body.ok !== \"boolean\") ? { status: 0, body: {} } : r);",
+  "replace": "const answered = (r) => r;"
+ },
+ {
+  "name": "the board's io reads a failed D1 read as empty",
+  "file": "tools/flip-board.mjs",
+  "find": "return rows ? { rows } : { error: \"unread\" };",
+  "replace": "return { rows: rows || [] };"
  }
 ]

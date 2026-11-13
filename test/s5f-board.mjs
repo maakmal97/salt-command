@@ -190,4 +190,125 @@ export async function run({ ok }) {
     ok(/not attested/.test(bad.row) && /not a real/.test(bad.why) && !/--backup-opened/.test(bad.refresh) && bad.g7 === "u" && /not attested/.test(later.row) && /after today/.test(later.why) && /02 Nov 2026/.test(good.row) && !good.why && / --backup-opened 2026-11-02$/.test(good.refresh) && good.g7 === "m",
       "an attestation that is not a real date, or is after today, is not taken: the board says why and leaves it out of the refresh: " + JSON.stringify([bad, later].map((x) => x.why)));
   }
+
+  /* 8: after the flip (14 Nov 2026, his word "Flipped record + health"): the flipped shape on evidence alone, Healthy only when every reading is true, the gate never judged again */
+  {
+    const H = (over = {}) => ({ ok: true, checks: [["source", "book"], ["roster", "on"], ["tap", "on"], ["read", "book"]].map(([id, got]) => ({ id, ok: true, text: id, got }))
+      .concat([{ id: "readcheck", ok: true, text: "rc", got: { source: "book", rev: 412, sick: 0, frozenMirror: 3 } }, { id: "unbooked", ok: true, text: "u", got: 0 }, { id: "fallbacks", ok: true, text: "f", got: 0 }])
+      .map((c) => (c.id in over ? { ...c, ok: over[c.id] } : c)) });
+    const EX = { at: "2026-11-13T16:30:00.000Z", conclusion: "success", unread: 0 }, WAY = { writtenAt: "2026-11-09T18:57:10.132Z", bookRev: 368, sha: "fd55a2b9", flags: { book_source: "d1" } };
+    const fev = (o = {}) => ({ ...green(), now: "2026-11-14T02:00:00.000Z", pre: { ...green().pre, source: "book" }, health: H(), export: EX, wayBack: WAY, ...o });
+    const fdoc = (ev, hist = [], opts = {}) => doc(B.renderFlipped(B.flippedView(ev, hist, opts), B.RUNBOOK, bare));
+    const hs = (ev) => fdoc(ev).querySelector("[data-verdict]").getAttribute("data-health");
+
+    /* 8a: the shape follows book_source as read, through the tool itself: never flipped on d1 or unread, whatever the way-back file */
+    const dir = mkdtempSync(join(tmpdir(), "flip-board-8-"));
+    try {
+      const cli = (ev, name) => { const f = join(dir, name + ".json"), out = join(dir, name + ".html"), hf = join(dir, name + "-hist.json"); writeFileSync(f, JSON.stringify(ev)); writeFileSync(hf, JSON.stringify([{ at: "2026-10-29T00:00:00.000Z", ok: false, gates: { G0: "n" } }]));
+        const r = spawnSync(process.execPath, [join(REPO, "tools", "flip-board.mjs"), "--offline", f, "--out", out, "--history", hf], { cwd: REPO, encoding: "utf8", timeout: 60000 });
+        const html = existsSync(out) ? readFileSync(out, "utf8") : ""; return { status: r.status, flipped: /data-verdict="flipped"/.test(html) && /Flipped \d/.test(html), hist: JSON.parse(readFileSync(hf, "utf8")).length, err: (r.stdout + r.stderr).slice(0, 120) }; };
+      const d1Way = cli({ ...green(), wayBack: WAY }, "d1way"), unread = cli({ ...green(), pre: { ...green().pre, source: null }, wayBack: WAY }, "unread"), unreadNone = cli({ ...green(), pre: null, wayBack: null }, "none"), book = cli(fev(), "book");
+      ok(d1Way.status === 0 && !d1Way.flipped && !unread.flipped && unread.status === 0 && !unreadNone.flipped && book.status === 0 && book.flipped && B.flippedOf({ source: "book" }) && !B.flippedOf({ source: "d1" }) && !B.flippedOf({}) && !B.flippedOf(null),
+        "the board is Flipped only when book_source reads book: on d1 or unread it keeps the gate's shape, way-back file or not: " + JSON.stringify([d1Way, unread, unreadNone, book].map((x) => [x.status, x.flipped, x.err])));
+      ok(book.hist === 1 && d1Way.hist === 2, "once flipped the gate's history is read and never written; before, each read is appended: " + [book.hist, d1Way.hist].join());
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+
+    /* 8b: Healthy only when every reading is true; one false is Not healthy, one unread Unverified, never Healthy */
+    {
+      const d = fdoc(fev());
+      ok(hs(fev()) === "m" && /^Flipped 10 Nov 2026$/.test(d.querySelector("[data-verdict] h2").textContent) && /Healthy/.test(d.querySelector("[data-verdict] .salt-status").textContent) && d.querySelector('[data-count="ok"]').textContent === "8",
+        "with every reading true the page says Flipped 10 Nov 2026 and Healthy, eight of eight");
+      const ids = ["source", "roster", "tap", "read", "readcheck", "unbooked", "fallbacks"];
+      const falses = ids.map((id) => hs(fev({ health: H({ [id]: false }) }))), nulls = ids.map((id) => hs(fev({ health: H({ [id]: null }) }))), odd = hs(fev({ health: H({ unbooked: "yes" }) }));
+      ok(falses.every((s) => s === "n") && nulls.every((s) => s === "u") && odd === "u", "any reading false is Not healthy and any unread is Unverified, never Healthy: " + JSON.stringify({ falses, nulls, odd }));
+      const ex = [hs(fev({ export: { ...EX, conclusion: "failure" } })), hs(fev({ export: null })), hs(fev({ export: { at: null, unread: 0 } })), hs(fev({ export: { at: null, unread: 1 } })), hs(fev({ health: null }))];
+      ok(ex.join() === "n,u,n,u,u" && fdoc(fev({ health: null })).querySelectorAll('[data-item][data-state="u"]').length === 7,
+        "the day's export: failed or none in 30 hours is Not healthy, Actions unread or a run unread Unverified; health that could not run leaves every reading Unverified: " + ex.join());
+      const du = fdoc(fev({ health: H({ readcheck: null }) })).querySelector('[data-item="readcheck"]');
+      ok(du.getAttribute("data-state") === "u" && /Unverified/.test(du.querySelector(".salt-status").textContent) && du.querySelector(".salt-status--dashed") && !/\bMet\b|Healthy/.test(du.textContent), "an unread reading draws Unverified and dashed, never Met");
+    }
+
+    /* 8c: the gate is the pre-flip record, never judged again; a mark only from a snapshot the history kept in the day before the way back */
+    {
+      const d = fdoc(fev()), rows = [...d.querySelectorAll("[data-gate]")];
+      ok(G.judge(fev()).lines.filter((l) => l.ok === true).length >= 9 && rows.length === 10 && rows.every((r) => r.getAttribute("data-state") === "none" && !r.querySelector(".salt-status")) && /pre-flip record, not live/.test(d.querySelector("#h-gate").textContent) && /No pre-flip snapshot kept/.test(d.querySelector("[data-pre-flip]").textContent),
+        "flipped, the gate's lines are drawn as text with no mark, even over evidence the judge would call met, and say no snapshot was kept");
+      const snap = (at, g4) => ({ at, ok: false, gates: { ...Object.fromEntries(["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"].map((k) => [k, "m"])), G4: g4 } });
+      const kept = fdoc(fev(), [snap("2026-10-29T00:00:00.000Z", "u"), snap("2026-11-09T16:00:00.000Z", "n"), snap("2026-11-09T19:30:00.000Z", "u")]);
+      const st = (dd) => [...dd.querySelectorAll("[data-gate]")].map((r) => r.getAttribute("data-state")).join("");
+      ok(st(kept) === "mmmmnmmmmm" && /last snapshot kept before it, 10 Nov 2026, 00:00 MYT/.test(kept.querySelector("[data-pre-flip]").textContent) && st(fdoc(fev(), [snap("2026-11-08T12:00:00.000Z", "n")])) === "none".repeat(10) && st(fdoc(fev(), [snap("2026-11-09T19:00:00.000Z", "n")])) === "none".repeat(10),
+        "the marks are the newest snapshot kept in the day before the way back was written; one older, or after it, gives none: " + st(kept));
+      ok(/so it read true when the way back was written, 10 Nov 2026, 02:57:10 MYT/.test(d.querySelector("[data-pre-flip]").textContent), "and the page says the gate read true when flip.mjs wrote the way back, at its second");
+    }
+
+    /* 8d: the record, the way back and the runbook as run */
+    {
+      const d = fdoc(fev()), nf = fdoc(fev({ wayBack: null }));
+      const backs = (dd) => ({ copy: dd.querySelectorAll("[data-back] [data-copy]").length, locked: dd.querySelectorAll("[data-back][data-locked]").length, cmds: dd.querySelectorAll("[data-back] [data-cmd]").length });
+      ok(JSON.stringify(backs(d)) === '{"copy":3,"locked":0,"cmds":3}' && JSON.stringify(backs(nf)) === '{"copy":0,"locked":3,"cmds":3}' && nf.querySelectorAll("[data-back] [data-lock]").length === 3 && /not on this laptop/.test(B.BACK_NO_FILE) && /seeds D1's mirror/.test(d.querySelector("#h-back").parentNode.textContent),
+        "flipped, the way back can be copied once the way-back file is read, and is text only, saying why, without it; the re-seed warning stays: " + JSON.stringify([backs(d), backs(nf)]));
+      ok(/10 Nov 2026, 02:57:10 MYT$/.test(d.querySelector('[data-rec="way"]').textContent) && !/the record/.test(d.querySelector('[data-rec="way"]').textContent) && /\(the record\)/.test(nf.querySelector('[data-rec="way"]').textContent) && /Flipped 10 Nov 2026/.test(nf.querySelector("[data-verdict] h2").textContent),
+        "the way back's time is the file's when it is read and the record's, said so, when it is not");
+      const steps = [...d.querySelectorAll("[data-step]")].map((li) => li.getAttribute("data-step"));
+      ok(steps.join() === "P1,P2,P3,P4,P5,GO,S0,S3,S4,S5,S6,S7,S8" && [...d.querySelectorAll("[data-step]")].every((li) => /Done/.test(li.querySelector(".salt-status").textContent)) && !d.querySelector("[data-tick]") && !d.querySelector("[data-reset]"),
+        "the runbook is drawn as run, every step Done and nothing to tick: " + steps.join());
+      const errs = [], vc = new VirtualConsole(); vc.on("jsdomError", (e) => errs.push(e.message));
+      const w = new JSDOM(B.renderFlipped(B.flippedView(fev(), []), B.RUNBOOK, bare), { url: "https://board.test/", runScripts: "dangerously", virtualConsole: vc }).window;
+      w.document.querySelector('[data-look="night"]').click();
+      ok(!errs.length && w.document.documentElement.getAttribute("data-theme") === "night", "the page's script runs with no ticks and no Reset on it: " + errs.join(" | "));
+      const on = (v) => { const dd = fdoc(fev(), [], { flippedOn: v }); return [dd.querySelector("[data-verdict] h2").textContent, (dd.querySelector("[data-flipped-why]") || {}).textContent || ""]; };
+      const [o1, o2] = [on("2026-11-11"), on("2026-02-30")];
+      ok(o1[0] === "Flipped 11 Nov 2026" && !o1[1] && o2[0] === "Flipped 10 Nov 2026" && /not a real/.test(o2[1]), "--flipped-on sets the date shown only when it is a real date not after today; otherwise it is said and the way-back file's day stands: " + JSON.stringify([o1, o2]));
+    }
+
+    /* 8e: privacy and escapes: his typed words are never read from the way-back file; what is read is escaped */
+    {
+      const tmp = mkdtempSync(join(tmpdir(), "flip-way-"));
+      try {
+        const f = join(tmp, "w.json"); writeFileSync(f, JSON.stringify({ writtenAt: "2026-11-09T18:57:10.132Z", his: "My secret go here", sha: "<img src=x>", bookRev: 368, flags: { book_source: "d1", "<b>": "x", book_tap: "<i>" } }));
+        const w = B.readWayBack(f), html = B.renderFlipped(B.flippedView(fev({ wayBack: w }), []), B.RUNBOOK, bare);
+        ok(w && !("his" in w) && w.sha === null && JSON.stringify(w.flags) === '{"book_source":"d1"}' && !/My secret go/.test(html) && B.readWayBack(join(tmp, "none.json")) === null, "the way-back file is read for its time, revision, sha and flags alone, never his words, and a malformed field is dropped: " + JSON.stringify(w));
+      } finally { rmSync(tmp, { recursive: true, force: true }); }
+      const bad = H(); bad.checks.find((c) => c.id === "readcheck").got.source = "<script>alert(1)</script>"; bad.checks.find((c) => c.id === "source").got = "<img src=x onerror=1>";
+      const html = B.renderFlipped(B.flippedView(fev({ health: bad }), []), B.RUNBOOK, bare);
+      ok(!/<script>alert|<img src=x/.test(html) && /&lt;script&gt;alert/.test(html) && /&lt;img src=x/.test(html), "a reading's words are escaped on the page");
+    }
+
+    /* 8f: the readings are flip.mjs's own (health, the same checks --verify runs), each unread one null, which --verify still reads as not ok */
+    {
+      const dead = { d1: () => ({ error: "unread" }), get: async () => ({ status: 0, body: {} }) };
+      const hd = await F.health(dead, { steady: true }), vd = await F.verify(dead);
+      ok(hd.checks.map((c) => c.id).join() === "source,roster,tap,read,readcheck,unbooked,fallbacks" && hd.checks.every((c) => c.ok === null) && hd.ok === false,
+        "with nothing readable every health reading is null (Unverified), the steady flags read beside --verify's: " + JSON.stringify(hd.checks.map((c) => [c.id, c.ok])));
+      ok(!vd.ok && vd.checks.length === 5 && vd.checks.every((c) => c.ok === false) && vd.checks.map((c) => c.id).join() === "source,roster,readcheck,unbooked,fallbacks" && vd.checks.every((c) => Object.keys(c).join() === "id,ok,text"),
+        "and --verify over the same reads each as not ok, its five checks and its shape unchanged: " + JSON.stringify(vd.checks.map((c) => [c.id, c.ok])));
+      const live = stub({ book_source: "book", book_roster: "on" }); live.io.get = async () => ({ status: 200, body: { ok: false, source: "book", bookRev: 412, differ: ["state.PRICING"] } });
+      const hl = await F.health(live.io, { steady: true }), hv = B.healthOf(hl, EX);
+      ok(hl.ok && hv.ok === true && hv.rev === 412 && hv.items.find((i) => i.id === "readcheck").detail === "rev 412, 0 stuck, 1 frozen", "over a healthy stand-in every reading is true and the readcheck says its revision and the frozen mirror: " + hv.items.find((i) => i.id === "readcheck").detail);
+      const io = B.boardIo(async () => { throw new TypeError("fetch failed"); }, () => null);
+      let g; try { g = await io.get("/book/readcheck"); } catch (e) { g = { threw: e.message }; }
+      const r = io.d1("SELECT 1");
+      ok(g.status === 0 && r.error && !r.rows, "the board's io answers a Book call that throws as no answer and a D1 read that failed as unread, so neither is taken as healthy: " + JSON.stringify(g));
+      const page = B.boardIo(async () => ({ status: 200, body: {} }), () => [{ n: 0, mode: "on" }]), real = B.boardIo(async () => ({ status: 200, body: { ok: false, source: "book" } }), () => [{ n: 0 }]);
+      const lp = await F.health(page, { steady: true });
+      ok((await page.get("/book/readcheck")).status === 0 && (await real.get("/book/readcheck")).status === 200 && lp.checks.find((c) => c.id === "readcheck").ok === null,
+        "a 200 that is not the readcheck's own answer (Access's login page, no key or login set) is no answer, so the readcheck reads Unverified, never Not healthy");
+    }
+
+    /* 8g: the day's export off the chain's step list, over a stand-in for gh and git */
+    {
+      const now = "2026-11-14T02:00:00.000Z", step = (c) => JSON.stringify({ jobs: [{ steps: [{ name: B.DAY_STEP, conclusion: c }] }] });
+      const gh = (runs, views, last = "") => (cmd, args) => cmd === "git" ? { code: 0, out: last } : args[1] === "list" ? { code: 0, out: JSON.stringify(runs) } : views[args[2]] === undefined ? { code: 1, out: "no" } : { code: 0, out: views[args[2]] };
+      const runs = [{ databaseId: 3, createdAt: "2026-11-14T01:00:00Z", status: "completed" }, { databaseId: 2, createdAt: "2026-11-13T20:00:00Z", status: "completed" }, { databaseId: 1, createdAt: "2026-11-10T20:00:00Z", status: "completed" }];
+      const found = B.collectExport(now, gh(runs, { 3: step("skipped"), 2: step("success"), 1: step("success") }));
+      const none = B.collectExport(now, gh(runs, { 3: step("skipped"), 2: step("skipped"), 1: step("success") }, "2026-11-11T09:53:44Z\n"));
+      const blind = B.collectExport(now, gh(runs, { 3: step("skipped") })), dark = B.collectExport(now, () => ({ code: 1, out: "gh: not logged in" }));
+      ok(found.at === "2026-11-13T20:00:00Z" && found.conclusion === "success" && none.at === null && none.unread === 0 && none.lastCommit === "2026-11-11T09:53:44.000Z" && blind.at === null && blind.unread === 1 && dark === null,
+        "the newest run of the last 30 hours whose day's export step ran is the reading, a skipped step passed over, an older run never counted, a run unread counted, Actions unread null: " + JSON.stringify([found, none, blind]));
+      ok(B.exportCheck(found).ok === true && B.exportCheck(none).ok === false && /11 Nov 2026, 17:53 MYT/.test(B.exportCheck(none).last) && B.exportCheck(blind).ok === null && B.exportCheck(dark).ok === null && B.exportCheck({ ...found, conclusion: "failure" }).ok === false,
+        "and it is judged: ran and succeeded true; none in the window false, saying the last in git; anything unread null: " + B.exportCheck(none).detail + " / " + B.exportCheck(none).last);
+      const tileNote = fdoc(fev({ export: none })).querySelectorAll(".salt-glance__item")[2].textContent;
+      ok(/not in 30 hours/.test(tileNote) && /the last in git 11 Nov 2026, 17:53 MYT/.test(tileNote), "and the page's export tile says when git last took one: " + tileNote);
+    }
+  }
 }

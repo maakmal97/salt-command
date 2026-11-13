@@ -5,13 +5,17 @@
  * memory aid kept in the browser; the gate is enforced by flip-gate.mjs and flip.mjs, and every flag and the flip need his typed go.
  * Privacy: the page and the history carry counts, codes, statuses and the gate's own text; every line read off a log is scrubbed of anything
  * shaped like a key, token or link.
+ * AFTER THE FLIP (14 Nov 2026, his word "Flipped record + health"; the flip ran on 10 Nov 2026): once book_source READS book the board takes its flipped
+ * shape: the flip's record, the Book's live health as flip.mjs --verify reads it (flip.mjs `health`, read only) with the day's export, the runbook as
+ * run, the way back, and the gate as the pre-flip record, never judged again. Its history is read, never written, in that shape.
  *
- *   node tools/flip-board.mjs [--since YYYY-MM-DD] [--backup-opened YYYY-MM-DD] [--out file.html] [--offline evidence.json] [--history file.json] */
+ *   node tools/flip-board.mjs [--since YYYY-MM-DD] [--backup-opened YYYY-MM-DD] [--flipped-on YYYY-MM-DD] [--out file.html] [--offline evidence.json] [--history file.json] */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { GATE, judge, collect, attested } from "./flip-gate.mjs";
-import { PLAN, realGet, WAY_BACK } from "./flip.mjs";
+import { GATE, judge, collect, attested, collectPre, d1 as gateD1, shellFor } from "./flip-gate.mjs";
+import { PLAN, realGet, WAY_BACK, health } from "./flip.mjs";
 import { DATA_DIR } from "./book.mjs";   /* flip.mjs's own data folder, where its way back is written */
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -21,10 +25,10 @@ export const CAP = 60;
 const DAY = 864e5, MYT = 8 * 36e5, MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** 24-hour Kuala Lumpur time, DD Mon YYYY */
-export function myt(iso, withTime = true) {
+export function myt(iso, withTime = true, seconds = false) {
   const t = Date.parse(iso); if (!Number.isFinite(t)) return "unknown";
   const d = new Date(t + MYT), p = (n) => String(n).padStart(2, "0");
-  return `${p(d.getUTCDate())} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}` + (withTime ? `, ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} MYT` : "");
+  return `${p(d.getUTCDate())} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}` + (withTime ? `, ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}${seconds ? ":" + p(d.getUTCSeconds()) : ""} MYT` : "");
 }
 /* G0 reads the UTC date (flip-gate.mjs), so every day count here does too: the board and the gate never disagree on whether the day has come */
 const utcDay = (iso) => String(iso).slice(0, 10);
@@ -197,6 +201,10 @@ function cmdBlock(cmd, locked) {
 /* the way back is offered only once there is something to go back from: before that, --back would re-seed the mirror from this checkout */
 export const BACK_LOCKED = "nothing has flipped; --back would re-seed the mirror from this checkout.";
 const textBlock = (cmd) => `<div class="salt-settings"><div class="salt-settings__cell"><pre class="salt-ledger fb-cmd" data-cmd>${esc(cmd)}</pre></div></div>`;
+/** the way back's three forms, with Copy only when `ready`; otherwise text, with the chip and the reason (both shapes) */
+const backForms = (runbook, ready, word, why) => runbook.back.map((b) => `<div class="salt-stack salt-stack--tight" data-back="${esc(b.id)}"${ready ? "" : ' data-locked=""'}><p class="salt-settings__head">${esc(b.title)} <span class="salt-status salt-status--copper">Typed go</span></p>
+${ready ? cmdBlock(b.cmd, false) : textBlock(b.cmd)}<p class="salt-settings__foot">${esc(b.when)}</p>
+${ready ? "" : `<p class="salt-settings__foot" data-lock><span class="salt-status salt-status--ember">${esc(word)}</span> ${esc(why)}</p>`}</div>`).join("\n");
 function step(id, title, { cmd, does, read, typed, locked }) {
   return `<li class="salt-stack salt-stack--tight" data-step="${esc(id)}"${locked ? ' data-locked=""' : ""}>
 <label class="salt-option"><input type="checkbox" class="salt-option__input" data-tick="${esc(id)}"${locked ? " disabled" : ""}><span class="salt-option__face"><span class="salt-option__lead"><span class="salt-status salt-status--mist" data-word>Not ticked</span></span><span class="salt-option__text"><span class="salt-option__label"><span>${esc(id)}</span> <span data-title>${esc(title)}</span>${typed ? ' <span class="salt-status salt-status--copper">Typed go</span>' : ""}</span><span class="salt-option__detail">${esc(does)}</span></span></span></label>
@@ -212,34 +220,7 @@ export function renderPage(view, runbook = RUNBOOK, assets = loadAssets()) {
   const tile = (label, value, note) => `<div class="salt-glance__item"><span class="salt-glance__label">${esc(label)}</span><span class="salt-glance__value">${esc(value)}</span>${note ? `<span class="salt-glance__note">${esc(note)}</span>` : ""}</div>`;
   const flipSteps = PLAN.filter(([n]) => n !== "8").map(([n, text]) => step("S" + n, text, { does: "Run by the --go above, never by hand.", read: "In its output: " + runbook.did[n], locked: lock }));
   const last = PLAN.find(([n]) => n === "8");
-  return `<!doctype html>
-<html lang="en-GB" data-theme="tide">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; img-src data:">
-<title>Flip gate board</title>
-<script>try{var p=JSON.parse(localStorage.getItem("salt-flip-board")||"{}");if(p&&p.look==="night")document.documentElement.setAttribute("data-theme","night");}catch(e){}</script>
-<style>
-${assets.fonts}
-${assets.css}
-/* layout only, on the system's tokens, no colour, face or token set here; each is a gap logged in docs/DESK.md (the flip board) for salt-ds:
-   a page column, the padded root's phone gutter, the browser's own margins, a card that may shrink, a bare list, a code block */
-.fb-main { max-width: 75rem; margin: 0 auto; gap: var(--salt-space-6); }
-@media (max-width: 560px) { body.salt-root--padded { padding: var(--salt-space-4); } }
-.fb-main p, .fb-h { margin: 0; }
-.fb-main article { min-width: 0; overflow-wrap: anywhere; }
-.fb-plain { list-style: none; margin: 0; padding: 0; }
-.fb-cmd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-</style>
-</head>
-<body class="salt-root salt-root--padded">
-<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
-<main class="salt-root__content salt-stack fb-main">
-<header class="salt-stack">
-<div class="salt-row"><p class="salt-eyebrow salt-eyebrow--copper">Salt Command · S5f</p>
-<div class="salt-segment" role="radiogroup" aria-label="Theme" style="--n:2;--i:1"><button type="button" class="salt-segment__opt" role="radio" aria-checked="false" data-look="night">Night</button><button type="button" class="salt-segment__opt" role="radio" aria-checked="true" data-look="tide">Tide</button></div></div>
-<h1 class="salt-title salt-title--sm">Flip gate</h1>
+  return `${pageTop(assets)}
 <section class="salt-band" aria-label="Verdict" data-verdict="${view.ok ? "true" : "false"}">
 <h2 class="salt-eyebrow salt-eyebrow--brass">The gate reads ${view.ok ? "TRUE" : "NOT TRUE"}</h2>
 <div class="salt-row">${chip(s).replace(WORD[s], view.ok ? "True" : "Not true")}</div>
@@ -284,16 +265,49 @@ ${step("S8", last[1], { cmd: runbook.verify, does: "Approve one real row in Salt
 <section class="salt-stack" aria-labelledby="h-back">
 <h2 class="salt-eyebrow salt-eyebrow--brass" id="h-back">The way back</h2>
 <p class="salt-settings__foot">flip.mjs writes the way back first, to 10_Data/flip-way-back.json. --back never turns book_outbox.</p>
-${runbook.back.map((b) => `<div class="salt-stack salt-stack--tight" data-back="${esc(b.id)}"${view.backReady ? "" : ' data-locked=""'}><p class="salt-settings__head">${esc(b.title)} <span class="salt-status salt-status--copper">Typed go</span></p>
-${view.backReady ? cmdBlock(b.cmd, false) : textBlock(b.cmd)}<p class="salt-settings__foot">${esc(b.when)}</p>
-${view.backReady ? "" : `<p class="salt-settings__foot" data-lock><span class="salt-status salt-status--ember">Locked</span> ${esc(BACK_LOCKED)}</p>`}</div>`).join("\n")}
+${backForms(runbook, view.backReady, "Locked", BACK_LOCKED)}
 </section>
 
 <section class="salt-stack" aria-labelledby="h-not">
 <h2 class="salt-eyebrow salt-eyebrow--brass" id="h-not">Not proved by the gate</h2>
 <ul class="salt-settings fb-plain">${runbook.notProved.map((t) => `<li class="salt-settings__row salt-settings__row--text"><span class="salt-settings__label">${esc(t)}</span></li>`).join("")}</ul>
 </section>
-</main>
+${PAGE_END}`;
+}
+
+/** the page's head, its look's segment and its title, the same in both shapes */
+function pageTop(assets) {
+  return `<!doctype html>
+<html lang="en-GB" data-theme="tide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; img-src data:">
+<title>Flip gate board</title>
+<script>try{var p=JSON.parse(localStorage.getItem("salt-flip-board")||"{}");if(p&&p.look==="night")document.documentElement.setAttribute("data-theme","night");}catch(e){}</script>
+<style>
+${assets.fonts}
+${assets.css}
+/* layout only, on the system's tokens, no colour, face or token set here; each is a gap logged in docs/DESK.md (the flip board) for salt-ds:
+   a page column, the padded root's phone gutter, the browser's own margins, a card that may shrink, a bare list, a code block */
+.fb-main { max-width: 75rem; margin: 0 auto; gap: var(--salt-space-6); }
+@media (max-width: 560px) { body.salt-root--padded { padding: var(--salt-space-4); } }
+.fb-main p, .fb-h { margin: 0; }
+.fb-main article { min-width: 0; overflow-wrap: anywhere; }
+.fb-plain { list-style: none; margin: 0; padding: 0; }
+.fb-cmd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+</head>
+<body class="salt-root salt-root--padded">
+<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
+<main class="salt-root__content salt-stack fb-main">
+<header class="salt-stack">
+<div class="salt-row"><p class="salt-eyebrow salt-eyebrow--copper">Salt Command · S5f</p>
+<div class="salt-segment" role="radiogroup" aria-label="Theme" style="--n:2;--i:1"><button type="button" class="salt-segment__opt" role="radio" aria-checked="false" data-look="night">Night</button><button type="button" class="salt-segment__opt" role="radio" aria-checked="true" data-look="tide">Tide</button></div></div>
+<h1 class="salt-title salt-title--sm">Flip gate</h1>`;
+}
+
+const PAGE_END = `</main>
 <script>
 (function () {
   var KEY = "salt-flip-board", st = { ticks: {}, look: "tide" };
@@ -306,7 +320,8 @@ ${view.backReady ? "" : `<p class="salt-settings__foot" data-lock><span class="s
     word(b);
     b.addEventListener("change", function () { var id = b.getAttribute("data-tick"); if (b.checked) st.ticks[id] = 1; else delete st.ticks[id]; word(b); save(); });
   });
-  document.querySelector("[data-reset]").addEventListener("click", function () {
+  var reset = document.querySelector("[data-reset]");
+  if (reset) reset.addEventListener("click", function () {
     var yes = true; try { yes = window.confirm("Clear every tick on this page?"); } catch (e) { yes = false; }
     if (!yes) return; st.ticks = {}; boxes.forEach(function (b) { b.checked = false; word(b); }); save();
   });
@@ -328,7 +343,163 @@ ${view.backReady ? "" : `<p class="salt-settings__foot" data-lock><span class="s
 </body>
 </html>
 `;
+
+/* ---- AFTER THE FLIP (14 Nov 2026, his word "Flipped record + health") ---- */
+
+/** the flipped shape is taken on evidence alone: book_source READ as book. Unread or d1 is never flipped, whatever is on disk (flip.mjs writes its way-back file before any flag moves) */
+export const flippedOf = (pre) => !!pre && pre.source === "book";
+
+/** flip.mjs's way-back file, for the record: when it was written, the Book's revision then, the sha and the flags as they stood; his typed words are never read out of it. null when missing or unreadable */
+export function readWayBack(file) {
+  try {
+    const w = JSON.parse(readFileSync(file, "utf8")); if (!w || typeof w !== "object") return null;
+    const at = Date.parse(w.writtenAt);
+    return { writtenAt: Number.isFinite(at) ? new Date(at).toISOString() : null, bookRev: Number.isInteger(w.bookRev) ? w.bookRev : null, sha: /^[0-9a-f]{7,40}$/.test(String(w.sha)) ? String(w.sha).slice(0, 8) : null,
+      flags: w.flags && typeof w.flags === "object" ? Object.fromEntries(Object.entries(w.flags).filter(([k, v]) => /^book_[a-z]+$/.test(k) && /^[a-z0-9]{1,8}$/.test(String(v)))) : null };
+  } catch (e) { return null; }
 }
+
+/** the flip as the record has it (docs/DESK.md "The flip ran on 10 Nov 2026"; MEMORY.md "THE FLIP RAN"): his words of record, not read live. Commit shas only, never a run id */
+export const RECORD = {
+  on: "2026-11-10", wayBack: "10 Nov 2026, 02:57:10 MYT", from: "docs/DESK.md, \"The flip ran on 10 Nov 2026\"",
+  rows: [["Roster watermark", "seq 177, pushed as 2033e25d"], ["Compaction", "compacted 0, marked 177"], ["First export", "revision 368, 400 rows (347 sales, 53 purchases), pushed as ef61381"],
+    ["Verify", "ok at 03:29 MYT"], ["First tap after the flip", "a stock count approved 03:49 MYT, booked at seq 178, no fallback; verify ok again at 04:10 MYT"]],
+  since: ["git is the Book's daily export: the day's run writes ledger/book.json from the Book.", "The fold and D1's mirror stand still: the readcheck counts its differences as the frozen mirror.",
+    "drafts.mjs --approve, update.mjs and d1.mjs --seed refuse while book_source reads book."],
+};
+
+const run = (cmd, args) => { const r = spawnSync(cmd, args, { cwd: REPO, encoding: "utf8", shell: shellFor(cmd), maxBuffer: 64 * 1024 * 1024 }); return { code: r.status === null ? 1 : r.status, out: (r.stdout || "") + (r.stderr || "") }; };
+/** the io flip.mjs's health reads through: the gate's D1 read (tried again before it is unread) and the Book's GET, a throw answered as no answer (unread). A 200 that is not the
+    route's own answer (no boolean ok: Access's login page, which fetch follows to when no key or login is set; 14 Nov 2026) is no answer either, never a readcheck that failed */
+export function boardIo(get = realGet(), d1 = (sql) => gateD1(sql, run)) {
+  const answered = (r) => (r && r.status === 200 && (!r.body || typeof r.body.ok !== "boolean") ? { status: 0, body: {} } : r);
+  return { d1: (sql) => { const rows = d1(sql); return rows ? { rows } : { error: "unread" }; }, get: async (p) => { try { return answered(await get(p)); } catch (e) { return { status: 0, body: {} }; } } };
+}
+
+export const DAY_STEP = "Export the Book to git (the day's record)", EXPORT_HOURS = 30;
+/** the newest chain run of the last EXPORT_HOURS whose day's export step ran (not skipped), off gh's step list; null when Actions cannot be read. Reads only */
+export function collectExport(now, sh = run, limit = 60) {
+  const list = sh("gh", ["run", "list", "--workflow", "cloud-commit.yml", "--limit", String(limit), "--json", "databaseId,createdAt,status"]);
+  let rows = null; try { rows = list.code === 0 ? JSON.parse(list.out) : null; } catch (e) { rows = null; }
+  if (!Array.isArray(rows)) return null;
+  const from = Date.parse(now) - EXPORT_HOURS * 36e5, inWin = rows.filter((r) => Date.parse(r.createdAt) >= from).sort((x, y) => Date.parse(y.createdAt) - Date.parse(x.createdAt));
+  let unread = rows.length >= limit && inWin.length === rows.length ? 1 : 0;   /* the list ran out inside the window: an older run there was never seen */
+  for (const r of inWin.filter((x) => x.status === "completed")) {
+    let steps; try { const v = sh("gh", ["run", "view", String(r.databaseId), "--json", "jobs"]); steps = JSON.parse(v.out).jobs.flatMap((j) => j.steps || []); } catch (e) { unread++; continue; }
+    const s = steps.find((x) => x.name === DAY_STEP);
+    if (s && s.conclusion && s.conclusion !== "skipped") return { at: r.createdAt, conclusion: s.conclusion, unread };
+  }
+  const last = sh("git", ["log", "origin/master", "--grep", "^Book export ", "-1", "--format=%cI"]), lt = Date.parse(String(last.out).trim());
+  return { at: null, conclusion: null, unread, lastCommit: last.code === 0 && Number.isFinite(lt) ? new Date(lt).toISOString() : null };
+}
+
+/** the day's export, judged: true only when the newest that ran in the window succeeded; none in the window is false, unless a run there could not be read */
+export function exportCheck(ex) {
+  if (!ex) return { ok: null, detail: "Actions unread", last: null };
+  if (ex.at) return { ok: ex.conclusion === "success", detail: (ex.conclusion === "success" ? "" : ex.conclusion + " ") + myt(ex.at), last: null };
+  return { ok: ex.unread ? null : false, detail: "none in " + EXPORT_HOURS + " hours" + (ex.unread ? ", " + ex.unread + " unread" : ""), last: ex.lastCommit ? "the last in git " + myt(ex.lastCommit) : null };
+}
+
+export const HEALTH = [["source", "book_source book"], ["roster", "book_roster on"], ["tap", "book_tap on"], ["read", "book_read book"],
+  ["readcheck", "Readcheck, nothing stuck"], ["unbooked", "Approved, unbooked: 0"], ["fallbacks", "Fallbacks today: 0"], ["export", "Day's export, 30 hours"]];
+/** the readings from flip.mjs's health (null when it could not run) and the day's export: Healthy only when every reading is true, Not healthy when one is false, else Unverified */
+export function healthOf(h, ex) {
+  const by = Object.fromEntries(((h && Array.isArray(h.checks)) ? h.checks : []).map((c) => [c.id, c]));
+  const tri = (v) => (v === true ? true : v === false ? false : null);
+  const said = (c) => { const g = c && c.got; if (!c || c.ok === null) return "unread"; if (c.id !== "readcheck") return g === null || g === undefined ? "unread" : typeof g === "number" ? String(g) : "reads " + g;
+    return `${g.source === "book" ? "" : (g.source || "no source") + ", "}rev ${g.rev === null ? "unread" : g.rev}, ${g.sick} stuck, ${g.frozenMirror} frozen`; };
+  const items = HEALTH.map(([id, label]) => { if (id === "export") { const e = exportCheck(ex); return { id, label, ok: e.ok, detail: scrub(e.detail), last: e.last }; } const c = by[id]; return { id, label, ok: c ? tri(c.ok) : null, detail: scrub(said(c)) }; });
+  return { ok: items.some((i) => i.ok === false) ? false : items.every((i) => i.ok === true) ? true : null, items, rev: by.readcheck && by.readcheck.ok !== null && by.readcheck.got ? by.readcheck.got.rev : null };
+}
+
+/** the flipped shape's data. Pure: the clock is ev.now. ev: {now, pre, health (flip.mjs health), export (collectExport), wayBack (readWayBack)}. The gate is the pre-flip record: its
+ * lines' words from the judge run over no evidence, a mark only from a snapshot the history kept in the day before the way back was written, never judged again. */
+export function flippedView(ev, history = [], opts = {}) {
+  const now = ev.now || null, way = ev.wayBack || null, at = way && way.writtenAt ? way.writtenAt : null;
+  const over = opts.flippedOn ? attested(opts.flippedOn, now) : null;
+  const onShown = over && over.date ? myt(over.date + "T00:00:00.000Z", false) : at ? myt(at, false) : myt(RECORD.on + "T00:00:00.000Z", false);
+  const snap = at ? (Array.isArray(history) ? history : []).filter((s) => s && s.gates && Date.parse(s.at) < Date.parse(at) && Date.parse(s.at) >= Date.parse(at) - DAY).sort((x, y) => Date.parse(x.at) - Date.parse(y.at)).pop() || null : null;
+  const gates = judge({}).lines.map((l) => ({ id: l.id, text: l.text, s: snap ? (["m", "n", "u"].includes(snap.gates[l.id]) ? snap.gates[l.id] : "u") : null }));
+  const h = healthOf(ev.health, ev.export);
+  return { flipped: true, now, nowMyt: now ? myt(now) : "unknown", onShown, onFrom: over && over.date ? "your --flipped-on" : at ? "the way-back file" : "the record", flippedOnWhy: over && !over.date ? scrub(over.why) : null,
+    wayAt: at ? myt(at, true, true) : null, way, daysSince: now ? Math.max(0, Math.floor((Date.parse(now) - Date.parse(at || RECORD.on + "T00:00:00+08:00")) / DAY)) : null,
+    health: h, gates, snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: !!way };
+}
+
+const STEP_DONE = (id, title) => `<li class="salt-settings__row salt-settings__row--text" data-step="${esc(id)}"><span class="salt-settings__label">${esc(id)} ${esc(title)}</span><span class="salt-status salt-status--verdigris">Done</span></li>`;
+const ROW = (label, value, attr = "") => `<div class="salt-settings__row salt-settings__row--text"${attr}><span class="salt-settings__label">${esc(label)}: ${esc(value)}</span></div>`;
+const HWORD = { m: "Healthy", n: "Not healthy", u: "Unverified" };
+
+/** the flipped page: the verdict is the flip and the Book's health; the runbook a record; the way back; the gate as the pre-flip record. Everything inlined, as renderPage */
+export function renderFlipped(view, runbook = RUNBOOK, assets = loadAssets()) {
+  const h = view.health, hs = STATE(h.ok), tally = (v) => h.items.filter((i) => i.ok === v).length, w = view.way, exp = h.items.find((i) => i.id === "export");
+  const tile = (label, value, note) => `<div class="salt-glance__item"><span class="salt-glance__label">${esc(label)}</span><span class="salt-glance__value">${esc(value)}</span>${note ? `<span class="salt-glance__note">${esc(note)}</span>` : ""}</div>`;
+  const said = h.ok === true ? "Every reading is healthy: the Book is the source and books the taps." : h.ok === false ? "A reading is not healthy: read it below, and the way back below that." : "Not every reading could be made, and none unread is taken as healthy.";
+  const record = [ROW("Way back written", view.wayAt ? view.wayAt : RECORD.wayBack + " (the record)", ' data-rec="way"'), w && w.bookRev !== null ? ROW("Book revision at the way back", w.bookRev) : "", w && w.sha ? ROW("Checkout at the way back", w.sha) : "",
+    ROW("book_source", "book, read live"), ...RECORD.rows.map(([k, v]) => ROW(k, v))].filter(Boolean).join("\n");
+  const pf = PLAN.filter((s) => s[0] !== "8").map(([n, t]) => STEP_DONE("S" + n, t)), last = PLAN.find(([n]) => n === "8");
+  return `${pageTop(assets)}
+<section class="salt-band" aria-label="Verdict" data-verdict="flipped" data-health="${hs}">
+<h2 class="salt-eyebrow salt-eyebrow--brass">Flipped ${esc(view.onShown)}</h2>
+<div class="salt-row">${chip(hs).replace(WORD[hs], HWORD[hs])}</div>
+<p class="salt-band__when"><span data-count="ok">${tally(true)}</span> healthy, <span data-count="not">${tally(false)}</span> not healthy, <span data-count="unv">${tally(null)}</span> unverified, of ${h.items.length} readings. ${esc(said)}</p>
+<div class="salt-band__foot"><span class="salt-kpi__label">Snapshot</span><span class="salt-band__ref" data-now>${esc(view.nowMyt)}</span></div>
+</section>
+<div class="salt-glance">
+${tile("Days since the flip", view.daysSince === null ? "unknown" : view.daysSince, "flipped " + view.onShown + ", from " + view.onFrom)}
+${tile("Book revision", h.rev === null || h.rev === undefined ? "unread" : h.rev, "the readcheck's, live")}
+${tile("The day's export", exp.ok === true ? "ran" : exp.ok === false ? "not in 30 hours" : "unread", exp.last || exp.detail)}
+</div>
+${view.flippedOnWhy ? `<p class="salt-settings__foot" data-flipped-why><span class="salt-status salt-status--ember">Not taken</span> --flipped-on ${esc(view.flippedOnWhy)}</p>` : ""}
+<p class="salt-settings__head">Refresh this board</p>
+${cmdBlock("node tools/flip-board.mjs", false)}
+</header>
+
+<section class="salt-stack" aria-labelledby="h-health">
+<h2 class="salt-eyebrow salt-eyebrow--brass" id="h-health">Live health</h2>
+<ul class="salt-settings fb-plain">
+${h.items.map((i) => `<li class="salt-settings__row" data-item="${esc(i.id)}" data-state="${STATE(i.ok)}"><span class="salt-settings__text"><span class="salt-settings__label">${esc(i.label)}</span><span class="salt-settings__sub" title="${esc(i.detail)}">${esc(i.detail)}</span></span>${chip(STATE(i.ok))}</li>`).join("\n")}
+</ul>
+<p class="salt-settings__foot">What node tools/flip.mjs --verify reads (it writes nothing), with book_tap and book_read beside it and the day's export off the chain's step list. A reading that could not be made is Unverified, never Met.</p>
+</section>
+
+<section class="salt-stack" aria-labelledby="h-record">
+<h2 class="salt-eyebrow salt-eyebrow--brass" id="h-record">The flip, as recorded</h2>
+<div class="salt-settings">
+${record}
+</div>
+<p class="salt-settings__foot">From ${esc(RECORD.from)}; the way back's time, revision and checkout from 10_Data/flip-way-back.json${w ? "" : ", which is not on this laptop"}.</p>
+<p class="salt-settings__head">Since the flip</p>
+<ul class="salt-settings fb-plain">${RECORD.since.map((t) => `<li class="salt-settings__row salt-settings__row--text"><span class="salt-settings__label">${esc(t)}</span></li>`).join("")}</ul>
+</section>
+
+<section class="salt-stack" aria-labelledby="h-back">
+<h2 class="salt-eyebrow salt-eyebrow--brass" id="h-back">The way back</h2>
+<p class="salt-settings__foot">flip.mjs wrote the way back first, to 10_Data/flip-way-back.json. --back never turns book_outbox, and every form seeds D1's mirror (d1.mjs --seed, a full replace).</p>
+${backForms(runbook, view.backReady, "Text only", BACK_NO_FILE)}
+</section>
+
+<section class="salt-stack" aria-labelledby="h-run">
+<h2 class="salt-eyebrow salt-eyebrow--brass" id="h-run">The runbook, as run</h2>
+<ol class="salt-settings fb-plain">
+${runbook.pre.map((p) => STEP_DONE(p.id, p.title)).join("\n")}
+${STEP_DONE(runbook.go.id, runbook.go.title)}
+${pf.join("\n")}
+${STEP_DONE("S8", last[1])}
+</ol>
+<p class="salt-settings__foot">The record, not a to-do: from ${esc(RECORD.from)}. Nothing here is ticked or kept.</p>
+</section>
+
+<section class="salt-stack" aria-labelledby="h-gate">
+<h2 class="salt-eyebrow salt-eyebrow--brass" id="h-gate">The gate, G0 to G9: pre-flip record, not live</h2>
+<p class="salt-settings__foot" data-pre-flip>Not judged again: after the flip G9 reads book_source book by design. flip.mjs --go starts only once the gate reads true${view.wayAt ? ", so it read true when the way back was written, " + esc(view.wayAt) : ""}. ${view.snap ? "The marks are the last snapshot kept before it, " + esc(myt(view.snap.at)) + "." : "No pre-flip snapshot kept: the lines are shown without marks."}</p>
+<ul class="salt-settings fb-plain">
+${view.gates.map((g) => `<li class="salt-settings__row salt-settings__row--text" data-gate="${esc(g.id)}" data-state="${g.s || "none"}"><span class="salt-settings__label">${esc(g.id)} ${esc(g.text)}</span>${g.s ? chip(g.s) : ""}</li>`).join("\n")}
+</ul>
+</section>
+${PAGE_END}`;
+}
+export const BACK_NO_FILE = "the way-back file is not on this laptop, or cannot be read: the commands are text until it is back.";
 
 /** the system's own stylesheet and faces, read from the repo's vendored copy, the faces as data URIs */
 export function loadAssets() {
@@ -340,9 +511,22 @@ export function loadAssets() {
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const a = process.argv.slice(2), val = (f) => { const i = a.indexOf(f); return i >= 0 ? a[i + 1] : null; };
-  let ev;
-  if (val("--offline")) ev = JSON.parse(readFileSync(val("--offline"), "utf8"));
-  else {
+  let ev = val("--offline") ? JSON.parse(readFileSync(val("--offline"), "utf8")) : null;
+  /* the shape follows book_source as read: flipped only when it reads book (an unread source keeps the gate's shape, which claims nothing) */
+  let pre = ev ? ev.pre : null;
+  if (!ev) { try { pre = collectPre(run); } catch (e) { pre = null; } }
+  if (flippedOf(pre)) {
+    if (!ev) { const now = new Date().toISOString(); let h = null; try { h = await health(boardIo(), { steady: true }); } catch (e) { h = null; } ev = { now, pre, health: h, export: collectExport(now) }; }
+    if (!("wayBack" in ev)) ev.wayBack = readWayBack(WAY_BACK);
+    /* the gate's history is read for the pre-flip record and never written once flipped: the gate is not judged again */
+    const view = flippedView(ev, readHistory(val("--history") || (val("--offline") ? "" : HISTORY)), { flippedOn: val("--flipped-on") });
+    const out = resolve(val("--out") || OUT);
+    if (!existsSync(dirname(out))) mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, renderFlipped(view));
+    console.log(`  Flipped ${view.onShown}; health ${HWORD[STATE(view.health.ok)]}: ${view.health.items.map((i) => i.id + " " + HWORD[STATE(i.ok)]).join(", ")}`);
+    console.log("  " + pathToFileURL(out).href);
+  } else {
+  if (!ev) {
     const since = val("--since") || GATE.since;
     try { ev = await collect({ since: val("--since"), backupOpened: val("--backup-opened"), get: realGet() }); }
     catch (e) { ev = { since: since + "T00:00:00.000Z", now: new Date().toISOString(), runs: [], d1: null, pre: null, collectError: String(e && e.message || e).slice(0, 200) }; }
@@ -357,4 +541,5 @@ if (isMain) {
   writeFileSync(out, renderPage(viewOf(ev, judged, history, { wayBack: existsSync(WAY_BACK) })));
   console.log(`  The gate reads ${judged.ok ? "TRUE" : "NOT TRUE"}: ${judged.lines.map((l) => l.id + " " + WORD[STATE(l.ok)]).join(", ")}`);
   console.log("  " + pathToFileURL(out).href);
+  }
 }
