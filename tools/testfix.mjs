@@ -502,6 +502,9 @@ export const FEATURES = [
   ["Collect and Deliver tiles on Home, each opening the sheet with its way (Counter Batch B)", (f) => f.prices.products.some((p) => p.sizes && p.sizes.length) && stageOf(f) === 0],
   ["Order again on an order handed over in full, its size still on the list (Counter Batch B)", (f) => has(f, (o) => +o.moved > 0 && +o.moved >= +o.qty - 0.0004
     && !["cancelled", "declined"].includes(o.status) && !o.pool && f.prices.products.some((p) => p.product === o.product && (p.sizes.some((z) => z.q === o.qty) || onGrid(p.grid, o.qty))))],
+  ["the reminder's tap, Time for more?, opens Order at their usual: a size ordered more than once that is still on the list, nothing overdue (price band version 3, 13 Nov 2026)", (f) => {
+    const n = {}; f.orders.filter((o) => !["cancelled", "declined"].includes(o.status) && !o.pool).forEach((o) => { const k = o.product + "|" + o.qty; n[k] = (n[k] || 0) + 1; });
+    return stageOf(f) === 0 && Object.entries(n).some(([k, c]) => { const [b, q] = k.split("|"); return c > 1 && f.prices.products.some((p) => p.product === b && (p.sizes || []).some((z) => String(z.q) === q)); }); }],
   ["a basket of two marks on Prices, under the open-order limit (Counter Batch B)", (f) => f.prices.products.filter((p) => p.sizes && p.sizes.length).length > 1 && stageOf(f) === 0
     && new Set(f.orders.filter((o) => OPEN_STATES.includes(o.status)).map((o) => o.sheet || o.id)).size < 5],
   ["the way on Prices, the newest order's, a delivery with its place (Counter Batch B)", (f) => { const n = f.orders.slice().sort((a, b) => String(b.at).localeCompare(String(a.at)))[0];
