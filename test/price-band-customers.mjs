@@ -86,7 +86,7 @@ export async function run({ ok }) {
     "C4 a lapsed regular with a write-off is marked and offered no win-back: " + J([hw.state, hw.writeOff, S.winBack(Cw, "salt", "RC1-CC")]));
   const snapL = { byProduct: { salt: Object.assign({}, pr.byProduct.salt, { habits: { "RC1-CC": { state: "lapsed", since: 30, gap: 5 } }, lift: {} }) } };
   const full = winBackOf(snapL, "RC1-CC", 6.25);
-  ok(full && winBackOf(snapL, "RC1-CC", 6.25, full.price) === null && winBackOf(snapL, "RC1-CC", 6.25, full.price + 5).price === full.price && winBackOf(snapL, "RC1-CC-R", 6.25) === null,
+  ok(full && winBackOf(snapL, "RC1-CC", 6.25, full.price) === null && winBackOf(snapL, "RC1-CC", 6.25, full.price + 5).price === full.price && winBackOf(snapL, "RC1-CC", 6.25, full.price + 5).now === full.price + 5 && winBackOf(snapL, "RC1-CC-R", 6.25) === null,
     "C4 the win-back is offered only under what they would pay (the lower of the card and their list), and never on a friend's order on an associate's -R account: " + J(full));
 
   /* C5 */

@@ -141,7 +141,7 @@ export function winBackOf(pricing, code, qty, card) {
   /* under what they would pay: the lower of the card today and what their list quoted (`card`, Accept's card0) */
   const pay = +card > 0 ? Math.min(now, +card) : now;
   if (!(price > 0) || !(now > 0) || !(price < pay - 0.004)) return null;
-  return { from: lift, to, price: +(+price).toFixed(2), now: +(+now).toFixed(2), since: h.since, gap: h.gap };
+  return { from: lift, to, price: +(+price).toFixed(2), now: +(+pay).toFixed(2), since: h.since, gap: h.gap };   /* now: what they would pay (Fable's re-check) */
 }
 
 /** Band version 2: the quotes customers were shown, shown and placed by book and size over `days` Kuala Lumpur days, read off the site

@@ -172,5 +172,11 @@
     "file": "engine/snapshot.mjs",
     "find": "(t=>t?{test:{q:t.q,rm:t.rm,week:t.week,weeks:t.weeks,from:t.from}}:{})(testOf(C,p))",
     "replace": "({})"
+  },
+  {
+    "name": "C4 the win-back says the card today, not what they would pay",
+    "file": "src/orders.js",
+    "find": "now: +(+pay).toFixed(2), since",
+    "replace": "now: +(+now).toFixed(2), since"
   }
 ]
