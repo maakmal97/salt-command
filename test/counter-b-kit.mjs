@@ -36,7 +36,7 @@ export const ord = (id, status, at, extra = {}) => Object.assign({ id, status, a
 export const done = (id, at, extra = {}) => ord(id, "done", at, Object.assign({ moved: extra.qty || 1, movedOn: at.slice(0, 10), paid: extra.total || 100 }, extra));
 
 /* page: the module whose landingPage draws it, stmt/page.js unless a test gives another (11 Nov 2026: the bundle as wrangler builds it, test/bundled-page.mjs) */
-export async function open({ ok, pageWork, user = "abcd-efgh", orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null, body: liveBody = "<p>Live</p>", page = null } = {}) {
+export async function open({ ok, pageWork, user = "abcd-efgh", orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null, card = null, body: liveBody = "<p>Live</p>", page = null, hash = "", sw = null } = {}) {
   const P = page || await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
@@ -51,8 +51,9 @@ export async function open({ ok, pageWork, user = "abcd-efgh", orders = [], asso
   /* refuse: the products whose Place answers as a dropped request (503), until the check lifts it */
   const st = { orders: orders.map((o) => JSON.parse(JSON.stringify(o))), posts: [], polls: [], n: 0, refuse: new Set() };
   let work;
-  const dom = new JSDOM(P.landingPage(u, "nbb", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+  const dom = new JSDOM(P.landingPage(u, "nbb", null), { url: "https://site.test/" + hash, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    if (sw) Object.defineProperty(win.navigator, "serviceWorker", { value: sw, configurable: true });
     win.scrollTo = () => {}; win.open = () => null; win.HTMLElement.prototype.scrollIntoView = () => {};
     win.matchMedia = (q) => { const m = /min-width:\s*(\d+)px/.exec(q); return { matches: !!(m && width >= +m[1]), media: q, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }; };
     try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* no look Sheet over the page */ }

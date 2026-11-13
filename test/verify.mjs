@@ -24274,8 +24274,9 @@ await (async () => {
   /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner; 16 Oct 2026 (plan 4):
      corrected, a step taken back, the twenty-first, its three cases the thirty-first; 18 Oct 2026 (Counter Batch A):
      point-moved, a collection point changed, the twenty-second, its one body the thirty-second; 02 Nov 2026 (Order as them): placed,
-     an order he placed for them, the twenty-third, its one body the thirty-third */
-  ok(!own.length && kinds.length === 23 && seen.length === 33 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+     an order he placed for them, the twenty-third, its one body the thirty-third; 13 Nov 2026 (price band version 3): remind, the reminder
+     to a late regular, the twenty-fourth, its one body the thirty-fourth */
+  ok(!own.length && kinds.length === 24 && seen.length === 34 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -48667,6 +48668,11 @@ await (async () => {
 section("11 Nov 2026: salt price band version 2, every quote a customer is shown is recorded and the Desk reads the count");
 await (async () => {
   await (await import("./counter-quotes.mjs")).run({ ok, pageWork });
+})();
+
+section("13 Nov 2026: salt price band version 3, the reminder to a late regular: who is listed, one wake a cycle at 10:00, its tap opens Order");
+await (async () => {
+  await (await import("./counter-remind.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter Batch C: the Desk reads the spot's name and unit after the unlock, a unit alone never filed (P7)");

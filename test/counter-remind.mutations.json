@@ -1,0 +1,230 @@
+[
+  {
+    "name": "R1 early and due are listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "if (!h || (h.state !== \"late\" && h.state !== \"lapsed\") || !/^",
+    "replace": "if (!h || !/^"
+  },
+  {
+    "name": "R1 an owing habit is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "if (+h.owes > 0.009 || partners.has(code)",
+    "replace": "if (partners.has(code)"
+  },
+  {
+    "name": "R1 a partner is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "partners.has(code) || POSITION_ENGINE.isBucket(code)) continue;",
+    "replace": "POSITION_ENGINE.isBucket(code)) continue;"
+  },
+  {
+    "name": "R1 a bucket is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "partners.has(code) || POSITION_ENGINE.isBucket(code)) continue;",
+    "replace": "partners.has(code)) continue;"
+  },
+  {
+    "name": "R1 a written-off party is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "h.writeOff === true || out_.has(code)",
+    "replace": "out_.has(code)"
+  },
+  {
+    "name": "R1 a banned or departed party is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "out_.has(code) || open.has(code)",
+    "replace": "open.has(code)"
+  },
+  {
+    "name": "R1 a party with an order open on the book is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "out_.has(code) || open.has(code)) continue;",
+    "replace": "out_.has(code)) continue;"
+  },
+  {
+    "name": "R1 a code with no username is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "if (!u || TEST_USERS.includes(u) ||",
+    "replace": "if (TEST_USERS.includes(u) ||"
+  },
+  {
+    "name": "R1 a practice account is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "TEST_USERS.includes(u) || !(owed",
+    "replace": "!(owed"
+  },
+  {
+    "name": "R1 an owing statement is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "!(owed.get(code) <= 0.009)",
+    "replace": "false"
+  },
+  {
+    "name": "R1 a code the sheet does not read is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "!(owed.get(code) <= 0.009)",
+    "replace": "owed.get(code) > 0.009"
+  },
+  {
+    "name": "R1 a habit with no last day is listed",
+    "file": "tools/stmt-publish.mjs",
+    "find": "|| !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(h.last))) continue;",
+    "replace": ") continue;"
+  },
+  {
+    "name": "R3 a lifted ban is read as banned",
+    "file": "tools/stmt-publish.mjs",
+    "find": ".filter((x) => x && !x.lifted)",
+    "replace": ".filter((x) => x)"
+  },
+  {
+    "name": "R3 the departed are not read",
+    "file": "tools/stmt-publish.mjs",
+    "find": ".concat(P.departed || [])",
+    "replace": ""
+  },
+  {
+    "name": "R2 the plan puts no list",
+    "file": "tools/stmt-publish.mjs",
+    "find": "if (pricing && r.records.length) puts.push({ key: \"remind\"",
+    "replace": "if (false) puts.push({ key: \"remind\""
+  },
+  {
+    "name": "R2 the plan puts a list with no snapshot",
+    "file": "tools/stmt-publish.mjs",
+    "find": "if (pricing && r.records.length) puts.push({ key: \"remind\"",
+    "replace": "if (r.records.length) puts.push({ key: \"remind\""
+  },
+  {
+    "name": "R2 the plan reads no sheet",
+    "file": "tools/stmt-publish.mjs",
+    "find": "remindMap(pricing, sheet, byUser, peopleOut())",
+    "replace": "remindMap(pricing, [], byUser, peopleOut())"
+  },
+  {
+    "name": "W1 the wake is of another kind",
+    "file": "stmt/remind.js",
+    "find": "{ k: \"remind\", o: \"\" }",
+    "replace": "{ k: \"due\", o: \"\" }"
+  },
+  {
+    "name": "W1 the wake carries an order id",
+    "file": "stmt/remind.js",
+    "find": "{ k: \"remind\", o: \"\" }",
+    "replace": "{ k: \"remind\", o: \"x\" }"
+  },
+  {
+    "name": "W1 the mark lapses in 60 days",
+    "file": "stmt/remind.js",
+    "find": "REMIND_TTL = 120 * 86400",
+    "replace": "REMIND_TTL = 60 * 86400"
+  },
+  {
+    "name": "W1 the mark is the day it was sent",
+    "file": "stmt/remind.js",
+    "find": "put(key, day,",
+    "replace": "put(key, now.toISOString().slice(0, 10),"
+  },
+  {
+    "name": "W2 a second tick sends again",
+    "file": "stmt/remind.js",
+    "find": "if (was === day) { out.held++; continue; }",
+    "replace": "if (false) { out.held++; continue; }"
+  },
+  {
+    "name": "W3 it sends at any hour",
+    "file": "stmt/remind.js",
+    "find": "if (klHour(now) !== REMIND_HOUR || !env.STMT) return out;",
+    "replace": "if (!env.STMT) return out;"
+  },
+  {
+    "name": "W3 the hour is 11:00",
+    "file": "stmt/remind.js",
+    "find": "REMIND_HOUR = 10;",
+    "replace": "REMIND_HOUR = 11;"
+  },
+  {
+    "name": "W4 a new order day is never reminded",
+    "file": "stmt/remind.js",
+    "find": "if (was === day)",
+    "replace": "if (was)"
+  },
+  {
+    "name": "W5 a practice account is reminded",
+    "file": "stmt/remind.js",
+    "find": "|| isTest(u) || (skip",
+    "replace": "|| (skip"
+  },
+  {
+    "name": "W6 the send ignores the chase's customers",
+    "file": "stmt/remind.js",
+    "find": " || (skip && skip.has(u))",
+    "replace": ""
+  },
+  {
+    "name": "W6 the Worker names nobody to skip",
+    "file": "stmt/worker.js",
+    "find": "sendReminders(env, now, owing)",
+    "replace": "sendReminders(env, now, new Set())"
+  },
+  {
+    "name": "W8 an open order does not stop it",
+    "file": "stmt/remind.js",
+    "find": "if (mine.some((o) => OPEN_STATES.includes(o.status)))",
+    "replace": "if (false)"
+  },
+  {
+    "name": "W7 the words lose their stop",
+    "file": "stmt/words.js",
+    "find": "\"news.remind\": \"Time for more? Your usual is one tap away.\"",
+    "replace": "\"news.remind\": \"Time for more? Your usual is one tap away\""
+  },
+  {
+    "name": "S1 the banner has no tag of its own",
+    "file": "stmt/sw.js",
+    "find": "ag ? 'remind' : o ?",
+    "replace": "o ?"
+  },
+  {
+    "name": "S1 the tap names no Order",
+    "file": "stmt/sw.js",
+    "find": "th ? '#thread' : ag ? '#again' : ''",
+    "replace": "th ? '#thread' : ''"
+  },
+  {
+    "name": "S1 the tap carries no again",
+    "file": "stmt/sw.js",
+    "find": "thread: th, again: ag }",
+    "replace": "thread: th, again: false }"
+  },
+  {
+    "name": "S2 an open page is not told",
+    "file": "stmt/sw.js",
+    "find": "again: !!d.again }",
+    "replace": "again: false }"
+  },
+  {
+    "name": "P1 the address opens nothing",
+    "file": "stmt/page.js",
+    "find": "var wantAgain=location.hash==='#again';",
+    "replace": "var wantAgain=false;"
+  },
+  {
+    "name": "P2 Order opens with no address",
+    "file": "stmt/page.js",
+    "find": "var wantAgain=location.hash==='#again';",
+    "replace": "var wantAgain=true;"
+  },
+  {
+    "name": "P4 the open page's message opens nothing",
+    "file": "stmt/page.js",
+    "find": "if(d.again===true) wantAgain=true;",
+    "replace": ""
+  },
+  {
+    "name": "P3 the gate does not stop it",
+    "file": "stmt/page.js",
+    "find": "    if(ro()||hold||hidePrices) return;\n    var U=oUsual();",
+    "replace": "    var U=oUsual();"
+  }
+]

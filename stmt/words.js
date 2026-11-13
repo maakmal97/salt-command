@@ -1177,6 +1177,7 @@ export const EN = {
   "news.declined": "Order declined",
   "news.cancelled": "Order cancelled",
   "news.rate": "How was your order?",
+  "news.remind": "Time for more? Your usual is one tap away.",
   "news.offer": "A figure for your order",
   "news.offer.b": "Tap to see it and answer.",
   "news.confirm": "Your order needs your yes",
