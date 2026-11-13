@@ -2,8 +2,8 @@
   {
     "name": "ADMIN_TO loses market/off and market/on",
     "file": "src/worker.js",
-    "find": "|market\\/(off|on)|anchor",
-    "replace": "|anchor"
+    "find": "|market\\/(off|on)|shop\\/calendar|anchor",
+    "replace": "|shop\\/calendar|anchor"
   },
   {
     "name": "ADMIN_TO takes any anchor",

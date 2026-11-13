@@ -443,6 +443,20 @@ export async function auditStates({ pageWork }) {
     await o.work.quiet();
     states.push(["a day with money and goods owed", actAudit(o.d)]);
   } finally { o.w.close(); }
+  /* 13 Nov 2026 (the price band's version 3): a day with a regular to name, a mark on the calendar and a lapsed regular's Accept with its win-back line */
+  const wbPreview = { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200, floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 },
+    winBack: { from: 0.2, to: 0.1, price: 180, now: 200, since: 35, gap: 7 } };
+  const c3 = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: [{ ...placed, id: "ord-v3", status: "placed", mode: "collect", qty: 2, total: 200 }] }),
+    inputsAnswer: (j) => { j.catalog.habits = [{ code: "CX1-ZED", state: "lapsed", since: 35, gap: 7, usual: 1, margin30: 60, owes: 0 }]; return j; },
+    extra: (route) => route === "/all/maker/calendar" ? { ok: true, calendar: { v: 1, list: [{ id: "a1b2c3d4e5f6", name: "Hari Raya", from: "2027-03-10", to: "2027-03-14" }] } }
+      : route === "/all/maker/orders/ord-v3/preview" ? wbPreview : undefined });
+  try {
+    await c3.work.quiet(); await c3.work.quiet();
+    enter(c3.d, "shop", "calendar"); await c3.work.quiet();
+    enter(c3.d, "needs"); await c3.work.quiet();
+    c3.card("ord-v3"); await c3.work.quiet(); await c3.work.quiet();
+    states.push(["a regular to name, a mark on the calendar and a win-back", actAudit(c3.d)]);
+  } finally { c3.w.close(); }
   /* 22 Oct 2026 (canvas Needs you): from 860px a card opens beside the list with every way of its row, the second choice among them; a queue key the
      Desk could not read and an override of the hours are cards of their own */
   const until = new Date(Date.now() + 6 * 3600e3).toISOString();

@@ -322,7 +322,9 @@ function customerReadingFor(book, owner, rid, today) {
   return { customer: true, code: owner, rates, unitNow: card && med ? two(card / med) : null, highest: rates.length ? Math.max(...rates.map((r) => r.rate)) : null,
     cadence: cad ? { every: cad.med, orders: cad.n, last: cad.last } : null, dueIn,
     loyal: { units: loyal.units, every: loyal.every, earned: loyal.earned, paused: loyal.paused, why: loyal.why, order: loyal.order, unit: loyal.unit },
-    cost, held, suggest, gain, pair: !!gain && !loyal.paused && onCadence };
+    cost, held, suggest, gain, pair: !!gain && !loyal.paused && onCadence,
+    /* 13 Nov 2026, version 3: their habit and the size warning as the snapshot holds them (never priced) */
+    habit: snap && snap.habits && object(snap.habits[owner]) ? snap.habits[owner] : null };
 }
 export function makerCoverPlan(body, book, pending = []) {
   if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)
@@ -739,6 +741,8 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
       .map((entry) => ({ party: entry.payload.party, since: entry.payload.since, amount: +entry.payload.amount })),
     /* 11 Nov 2026, the price band's version 2 (Salt Admin's Market part): the day's move and its words as the snapshot reads them, the points he has set, the sizes a point may name and the market edits waiting under Approve; nothing here prices */
     ...marketCatalog(book, pending),
+    /* 13 Nov 2026, the price band's version 3 (Salt Admin's customers): the regulars who are due, late or lapsed and the newest week's new buyers, as the snapshot reads them; nothing here prices */
+    ...customersCatalog(book),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -931,11 +935,25 @@ export function makerPartner(body, book, pending = []) {
       + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
 }
 
+/** Version 3: the snapshot's habits of the regulars who need a word (lapsed, then late, then due; the larger margin a month first) and the newest week of new buyers. */
+function customersCatalog(book) {
+  const snap = ((book && book.pricing && book.pricing.byProduct) || {}).salt;
+  const hs = snap && snap.habits && typeof snap.habits === "object" ? snap.habits : {}, RANK = { lapsed: 0, late: 1, due: 2 };
+  const habits = Object.keys(hs).filter((c) => hs[c] && RANK[hs[c].state] != null)
+    .sort((a, b) => RANK[hs[a].state] - RANK[hs[b].state] || (+hs[b].margin30 || 0) - (+hs[a].margin30 || 0) || (a < b ? -1 : 1))
+    .map((c) => ({ code: c, state: hs[c].state, since: hs[c].since, gap: hs[c].gap, usual: hs[c].usual, margin30: hs[c].margin30, owes: hs[c].owes }));
+  const wk = snap && snap.buyers && Array.isArray(snap.buyers.weeks) ? snap.buyers.weeks[snap.buyers.weeks.length - 1] : null;
+  return { habits, buyers: wk ? { count: wk.count, introduced: wk.introduced, back: wk.back, thin: !!snap.buyers.thin } : null };
+}
+
 function marketCatalog(book, pending) {
   const snap = ((book && book.pricing && book.pricing.byProduct) || {}).salt, R = snap && snap.inputs && snap.inputs.policy && snap.inputs.policy.tierRule;
   const m = snap && snap.market, doc = ((book && book.state && book.state.MARKET) || {}).salt || {};
   const G = R && PRICING_ENGINE.gridOf(R);
   return {
+    /* 13 Nov 2026, version 3: the price test, on the days it runs, so the move is never unseen */
+    test: snap && snap.test && typeof snap.test === "object" && +snap.test.q > 0 && Number.isFinite(+snap.test.rm)
+      ? { q: +snap.test.q, rm: +snap.test.rm, week: +snap.test.week, weeks: +snap.test.weeks, from: snap.test.from } : null,
     market: m && typeof m === "object" ? { day: m.day, k: m.k, on: m.on !== false, why: typeof m.why === "string" ? m.why : "" } : null,
     marketSizes: G ? PRICING_ENGINE.gridSizes(G).filter((q) => q <= 12.5 + 1e-9 && PRICING_ENGINE.onGrid(q, G)) : [],
     marketPoints: (Array.isArray(doc.anchors) ? doc.anchors : []).filter((a) => a && +a.q > 0 && +a.price > 0)

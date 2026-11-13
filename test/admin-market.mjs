@@ -50,7 +50,7 @@ export async function run({ ok, pageWork }) {
     const sec = p.d.getElementById("makerMarket"), other = p.d.getElementById("makerBulletin");
     const here = shown(sec), notHere = !shown(other);
     enter(p.d, "shop", "notice"); await p.work.quiet();
-    ok(!!tab && tabs.join() === "hours:Hours,market:Market,notice:Notice,practice:Practice,device:This device" && here && notHere && !shown(sec),
+    ok(!!tab && tabs.join() === "hours:Hours,market:Market,calendar:Calendar,notice:Notice,practice:Practice,device:This device" && here && notHere && !shown(sec),
       "Shop has a Market tab beside Hours and Notice, and its section shows in that part alone: " + tabs.join());
   }
 

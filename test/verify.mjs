@@ -50421,6 +50421,11 @@ await (async () => {
   await (await import("./admin-market.mjs")).run({ ok, pageWork });
 })();
 
+section("13 Nov 2026: Salt Admin's customers, the regulars on Needs you, their habit, the win-back at Accept and Shop's Calendar (the price band's version 3)");
+await (async () => {
+  await (await import("./admin-customers-v3.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin's mini ledger: Open orders, Pending orders and the latest twenty, read off the folded book by the engine (16 Oct 2026)");
 await (async () => {
   await (await import("./maker-ledger.mjs")).run({ ok });

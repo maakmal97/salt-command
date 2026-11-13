@@ -60,6 +60,7 @@ import { payCodes, shapeAccounts } from "./paycodes.js";
 import { payDownKept, liveAccounts, railDownKey } from "./paystate.js";
 import { PAY_ACCOUNTS } from "./pay.js";
 import { takePin, keepPin, readPin } from "./pin.js";
+import { readCalendar } from "./calendar.js";
 import { fileQuote, markPlaced, daysOf, quoteSummary, checkQuote } from "./quotes.js";   /* band version 2: every quote shown is recorded */
 import { handleMaker, publicHours, customerAmend, takeNudge, fileConfirm } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePay, isExample,
@@ -1135,6 +1136,11 @@ async function handleDesk(request, env, p, m) {
     if (days == null) return json({ ok: false, error: "days is a whole number from 1 to 120" }, 400);
     return json(await quoteSummary(env, days));
   }
+  /* band version 3: his calendar of marks, read by the Desk (nothing is priced from it here) */
+  if (p === "/desk/calendar") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, calendar: await readCalendar(env) });
+  }
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const q = new URL(request.url).searchParams;
@@ -2204,7 +2210,7 @@ const worker = {
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/my/joins") return handleMyJoins(request, env, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/calendar" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {

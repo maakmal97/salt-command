@@ -2063,7 +2063,7 @@ const ADMIN_PARTS = {
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["market", "Market"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
+  shop: [["hours", "Hours"], ["market", "Market"], ["calendar", "Calendar"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
 /* 20 Oct 2026 (Counter Batch C, item 21): a place whose parts fit a phone's slider draws them as one, measured in Chromium at 358px:
@@ -2328,6 +2328,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true)
         + '<section data-in="shop.market" aria-labelledby="makerMarketTitle"><h2 id="makerMarketTitle" class="sr">Market</h2><div id="makerMarket"></div></section>'
+        + '<section data-in="shop.calendar" aria-labelledby="makerCalTitle"><h2 id="makerCalTitle" class="sr">Calendar</h2><div id="makerCalendar"></div></section>'
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
