@@ -20892,6 +20892,7 @@ function tabConcentration(){
 
   <h2 style="margin-top:18px">Their % <span class="rule"></span></h2>
   ${pctLine()}
+  ${clientsHabits()}
 
   <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
@@ -21949,6 +21950,65 @@ function marketPanels(){
     +'<div class="dsc">The move replayed on today’s cost and posts, day by day, beside what was paid at 1 unit.</div><div id="mkRepBody">'+(mkRepOpen?mkRepBody():'')+'</div></details>';
   return card+reading+score+rep;
 }
+/* 13 NOV 2026, THE PRICE BAND'S VERSION 3 ON THE DESK (docs/plan-salt-price-band.html, "The customers"): readings only, all from the engine (SNAPSHOT_ENGINE.testOf,
+   testReading, calendarLift, newBuyers, habits), none a pricing rule, and each drawn for the book whose rule carries it (`test`, `habit`), never by its name.
+   Pricing: the Price test card and the Calendar card (his marks come from the Counter's KV `calendar` through the keyed GET /calendar, asked once, and nothing of
+   the calendar is drawn until it answers). Clients: the new-buyer weeks and the habits. Adding or removing a mark and opening an account are Salt Admin's (adminLink). */
+let CK_CAL=null,CK_CAL_TRIED=false;
+async function ckCalLoad(){
+  if(CK_CAL_TRIED||!cloudMode())return;CK_CAL_TRIED=true;
+  let j=null;try{const r=await fetch('calendar',{cache:'no-store',headers:qHeaders()});if(r.ok){try{j=await r.json();}catch(e){}}}catch(e){}
+  if(j&&Array.isArray(j.list)&&j.ok===true){CK_CAL=j.list;if(curAddr==='pricing')render();}
+}
+const CK_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function ckDay(iso){const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(String(iso||''));return m?(+m[3])+' '+CK_MON[+m[2]-1]:esc(String(iso||''));}
+function ckRange(a,b){if(!b||b===a)return ckDay(a);const x=String(a).slice(0,7)===String(b).slice(0,7);return x?(+String(a).slice(8))+' to '+ckDay(b):ckDay(a)+' to '+ckDay(b);}
+const ckPct=v=>{const n=Math.round(v*100);return (n>0?'+':'')+n+'%';};
+function testPanel(){
+  const R=TIER_RULE[PROD],T=R&&R.band&&R.test;if(!T)return '';
+  const C=snapCtx(),t=SNAPSHOT_ENGINE.testOf(C,PROD),rd=renderMemo('ckTest|'+PROD,()=>SNAPSHOT_ENGINE.testReading(C,PROD));
+  const now=t?'RM '+Math.abs(t.rm)+(t.rm>0?' up':' down')+' at '+units(t.q)+', week '+t.week+' of '+t.weeks:'No test today';
+  const est=!rd||rd.up.days<7||rd.down.days<7,tag=est?' <span class="iref est">estimate</span>':'';
+  const row=(lab,x)=>'<tr><td class="l salt-table__label">'+lab+'</td><td class="mono">'+(x.ordersDay!=null?x.ordersDay:NIL)+tag+'</td><td class="mono">'+(x.marginDay!=null?fmt(x.marginDay):NIL)+tag+'</td><td class="mono">'+x.days+'</td></tr>';
+  return '<div class="card" id="ckTest" style="margin-top:14px"><div class="cardh">Price test <span class="sub">'+units(+T.q)+' alone, RM '+(+T.rm)+' up and down by the week</span></div>'
+    +'<div class="mono" id="ckTestNow" style="font-size:22px">'+now+'</div>'
+    +(rd?'<div class="tblw"><table class="salt-table fintab istmt" id="ckTestRead"><thead><tr><th class="l salt-table__label">Weeks</th><th>Orders a day</th><th>Margin a day</th><th>Days measured</th></tr></thead><tbody>'
+      +row('Up',rd.up)+row('Down',rd.down)+'</tbody></table></div>':'')
+    +'<div class="dsc" id="ckTestNote">From '+ckDay(T.from)+' for '+T.weeks+' weeks, at '+units(+T.q)+' only, riding on the day’s Median. A reading with fewer than 7 days of each side is an estimate.</div></div>';
+}
+function calendarPanel(){
+  const R=TIER_RULE[PROD],T=R&&R.band&&R.test;if(!T)return '';
+  ckCalLoad();if(!CK_CAL)return '';
+  const L=SNAPSHOT_ENGINE.calendarLift(snapCtx(),PROD,CK_CAL).slice().sort((a,b)=>String(a.from)<String(b.from)?-1:1);
+  const li=L.map(x=>{
+    const head=esc(x.name)+', '+ckRange(x.from,x.to)+': ';
+    if(x.passed)return '<li>'+head+(x.lift!=null?'<span class="mono">'+ckPct(x.lift)+'</span> units a day against the 28 days before':'no sales in the 28 days before to measure against')+'</li>';
+    const sg=x.suggest;
+    return '<li>'+head+'coming'+(sg?', measured '+x.measured+' times: hold '+sg.hold+' units; '+(sg.move?'a +'+Math.round(sg.move*100)+' move':'no move')+' is his to switch':(x.measured?', measured '+x.measured+(x.measured===1?' time':' times'):''))+'</li>';}).join('');
+  return '<div class="card" id="ckCal" style="margin-top:14px"><div class="cardh">Calendar <span class="sub">his marks and what each lifted</span></div>'
+    +(L.length?'<ul class="dsc" id="ckCalList" style="margin:6px 0 0 18px;padding:0">'+li+'</ul>':'<div class="dsc" id="ckCalNone">No marks yet.</div>')
+    +'<div class="dsc" id="ckCalNote">A suggestion comes once a name has passed twice, and it is information only: nothing moves until he switches it.</div>'
+    +'<div style="margin-top:8px">'+adminLink('shop/calendar','Add or remove marks')+'</div></div>';
+}
+function customerPanels(){return testPanel()+calendarPanel();}
+/* Clients: the new buyers by week and the regulars who need a word, for the book whose rule carries `habit` */
+function clientsHabits(){
+  const R=TIER_RULE[PROD];if(!R||!R.band||!R.habit)return '';
+  const C=snapCtx(),nb=renderMemo('ckNew|'+PROD,()=>SNAPSHOT_ENGINE.newBuyers(C,PROD)),hs=renderMemo('ckHab|'+PROD,()=>SNAPSHOT_ENGINE.habits(C,PROD))||[];
+  if(!nb&&!hs.length)return '';
+  const tot=nb?nb.weeks.reduce((t,w)=>t+w.count,0):0;
+  const buyers=nb?'<div class="card" id="ckBuyers"><div class="cardh">New buyers <span class="sub">first orders by week, eight weeks</span></div>'
+    +'<div class="dsc" id="ckBuyersLine">'+tot+' new in eight weeks, '+nb.mean+' a week.'+(nb.thin?' <b>Thin: each of the last two weeks ran under half that.</b>':'')+'</div>'
+    +'<div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Week from</th><th>New</th><th>Through an associate</th><th>Came back</th></tr></thead><tbody>'
+    +nb.weeks.map(w=>'<tr><td class="l salt-table__label">'+ckDay(w.from)+'</td><td class="mono">'+w.count+'</td><td class="mono">'+w.introduced+'</td><td class="mono">'+w.back+'</td></tr>').join('')
+    +'</tbody></table></div></div>':'';
+  const need=hs.filter(h=>h.state==='due'||h.state==='late'||h.state==='lapsed');
+  const habit='<div class="card" id="ckHabits" style="margin-top:14px"><div class="cardh">Regulars <span class="sub">due, late or lapsed, '+hs.length+(hs.length===1?' regular':' regulars')+' in all</span></div>'
+    +(need.length?'<div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Customer</th><th>State</th><th>Days since</th><th>Usual gap</th><th>A month</th><th></th></tr></thead><tbody>'
+      +need.slice(0,12).map(h=>'<tr data-c="'+esc(h.code)+'"><td class="l salt-table__label">'+esc(h.code)+'</td><td>'+h.state+'</td><td class="mono">'+h.since+'</td><td class="mono">'+h.gap+' d</td><td class="mono">'+fmt(h.margin30)+'</td><td>'+adminLink('acct/'+encodeURIComponent(h.code),'Account')+'</td></tr>').join('')
+      +'</tbody></table></div>'+(need.length>12?'<div class="dsc" id="ckHabMore">'+(need.length-12)+' more, furthest first.</div>':''):'<div class="dsc" id="ckHabNone">Nobody is due, late or lapsed.</div>')+'</div>';
+  return '<div style="margin-top:12px">'+buyers+habit+'</div>';
+}
 function pbCard(){
   const who=roster.filter(id=>!id.startsWith('S'));
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
@@ -22410,6 +22470,7 @@ function tabPricing(){
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${marketPanels()}
+    ${customerPanels()}
     ${pbCard()}
     <!-- v393: THE EDITOR FOLDS. Seventeen tickboxes and nineteen number boxes were standing
          open inside the board card, which on a 375px phone put the thing he acts on, the
