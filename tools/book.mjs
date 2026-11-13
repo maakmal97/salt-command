@@ -298,7 +298,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null, lift = null, suggest = null;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null, lift = null, suggest = null, habits = null, buyers = null;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -319,6 +319,9 @@ export function pricingSnapshot(w) {
       sizesHere = call("PRICE_TIERS && PRICE_TIERS.sizes") || sizes;
       /* A6: the rungs the desk's own board table lists (shSizes: the book's sizes cut to boardBy), hidden ones included, for Maker's printed-sizes input */
       rungs = call("typeof shSizes==='function'?shSizes():null");
+      /* 13 Nov 2026: every regular's habit (the price band's version 3), as the engine's pricing() carries it */
+      habits = call("(function(){try{var h=SNAPSHOT_ENGINE.habits(snapCtx()," + JSON.stringify(p) + ");return h.length?SNAPSHOT_ENGINE.habitMap(h,snapCtx()," + JSON.stringify(p) + "):null;}catch(e){return null;}})()");
+      buyers = call("(function(){try{return SNAPSHOT_ENGINE.newBuyers(snapCtx()," + JSON.stringify(p) + ")||null;}catch(e){return null;}})()");
       /* v651: Ambassador and the tiers at this book's rungs, the prices the customer's page quotes from */
       /* 19 Sep 2026: `fixed` TRAVELS WITH THE ROW. A product priced by a stated board says so on its
          own ladder rows, and this map dropped the flag, so the customer's price list could not tell a
@@ -344,9 +347,7 @@ export function pricingSnapshot(w) {
     finally { try { w.eval("if(typeof RENDER_MEMO!=='undefined')RENDER_MEMO=null;"); } catch (e) { } if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
     /* 11 Nov 2026 (the price band's version 2): the day's market move, its reason and his switch, the engine's pricing() field, for the drafter, Salt Admin and the price list's reader */
     const market = call("(function(){try{var m=SNAPSHOT_ENGINE.marketOf(snapCtx()," + JSON.stringify(p) + ");return m?{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:SNAPSHOT_ENGINE.marketWhy(m)}:null;}catch(e){return null;}})()");
-    /* 13 Nov 2026: every regular's habit (the price band's version 3), as the engine's pricing() carries it */
-    const habits = call("(function(){try{var h=SNAPSHOT_ENGINE.habits(snapCtx()," + JSON.stringify(p) + ");return h.length?SNAPSHOT_ENGINE.habitMap(h):null;}catch(e){return null;}})()");
-    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {}, market ? { market } : {}, habits ? { habits } : {});
+    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {}, market ? { market } : {}, habits ? { habits } : {}, buyers ? { buyers } : {});
   }
 
   return {

@@ -9509,8 +9509,8 @@ function habitOf(C,p,code){
       next:addDays(last,Math.round(gap))};
   });
 }
-/* the snapshot's shape of the habits, by code */
-function habitMap(hs){const o={};hs.forEach(h=>{o[h.code]={state:h.state,gap:h.gap,usual:h.usual,last:h.last,since:h.since,next:h.next,margin30:h.margin30,owes:h.owes};});return o;}
+/* the snapshot's shape of the habits, by code, each with its size warning (shown on This customer, never priced) */
+function habitMap(hs,C,p){const o={};hs.forEach(h=>{const w=C&&p?sizeWarn(C,p,h.code):null;o[h.code]=Object.assign({state:h.state,gap:h.gap,usual:h.usual,last:h.last,since:h.since,next:h.next,margin30:h.margin30,owes:h.owes},w?{warn:{perUnit:w.perUnit,units30:w.units30,bigger:w.bigger,tenOff:w.tenOff}}:{});});return o;}
 /* every regular on the book, those who need a word first (lapsed, late, due), then the largest margin a month */
 function habits(C,p){
   if(!habitRule(C,p)||!C.today)return [];
@@ -9726,7 +9726,9 @@ function pricing(B,R,today,over=null){
       /* 11 Nov 2026: the day's market move, its reason and his switch, for the drafter, Salt Admin and the price list's reader */
       (m=>m?{market:{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:marketWhy(m)}}:{})(marketOf(C,p)),
       /* 13 Nov 2026: every regular's habit (the price band's version 3), for Accept's win-back and the publish's reminder; nothing prices from it */
-      (hs=>hs.length?{habits:habitMap(hs)}:{})(habits(C,p)));
+      (hs=>hs.length?{habits:habitMap(hs,C,p)}:{})(habits(C,p)),
+      /* and the new-buyer line, eight weeks by road */
+      (nb=>nb?{buyers:nb}:{})(newBuyers(C,p)));
   }
   return out;
 }
