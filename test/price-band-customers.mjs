@@ -77,11 +77,26 @@ export async function run({ ok }) {
     && winBackOf({ byProduct: { salt: Object.assign({}, pr.byProduct.salt, { habits: { "RC1-CC": { state: "late" } } }) } }, "RC1-CC", 6.25) === null,
     "C4 at his Accept the Worker prices the win-back at the order's size off the snapshot, for a lapsed regular alone: " + J(wo));
 
+  /* C4, Fable's review of 13 Nov 2026: a written-off party is no habit to approach; the Worker's win-back is under what they would pay, and never a friend's order */
+  const wo1 = book({ sales: sales.concat([sale("RC1-CC", "2026-09-10", 1, 120, { defaulted: true, cash: 0, defaultedOn: "2026-10-01" })]) });
+  const Cw = ctx(wo1, "2026-10-20"), hw = S.habitOf(Cw, "salt", "RC1-CC");
+  const pw = pricingFromBook(wo1, new Date("2026-10-20T04:00:00Z"));
+  ok(hw.state === "lapsed" && hw.writeOff === true && S.winBack(Cw, "salt", "RC1-CC") === null && pw.byProduct.salt.habits["RC1-CC"].writeOff === true
+    && winBackOf(pw, "RC1-CC", 6.25) === null,
+    "C4 a lapsed regular with a write-off is marked and offered no win-back: " + J([hw.state, hw.writeOff, S.winBack(Cw, "salt", "RC1-CC")]));
+  const snapL = { byProduct: { salt: Object.assign({}, pr.byProduct.salt, { habits: { "RC1-CC": { state: "lapsed", since: 30, gap: 5 } }, lift: {} }) } };
+  const full = winBackOf(snapL, "RC1-CC", 6.25);
+  ok(full && winBackOf(snapL, "RC1-CC", 6.25, full.price) === null && winBackOf(snapL, "RC1-CC", 6.25, full.price + 5).price === full.price && winBackOf(snapL, "RC1-CC-R", 6.25) === null,
+    "C4 the win-back is offered only under what they would pay (the lower of the card and their list), and never on a friend's order on an associate's -R account: " + J(full));
+
   /* C5 */
   const nb = S.newBuyers(ctx(book(), "2026-10-20"), "salt");
   const onW = nb.weeks.find((x) => x.from <= "2026-10-12" && "2026-10-12" < x.to);
   ok(nb.weeks.length === 8 && onW && onW.count === 1 && onW.introduced === 1 && onW.back === 0 && nb.weeks.reduce((t, x) => t + x.count, 0) === 6 && nb.weeks.reduce((t, x) => t + x.back, 0) === 5,
     "C5 first orders by week, the introduced among them and who came back, a partner left out: " + J(nb.weeks.map((x) => [x.from, x.count, x.introduced, x.back])));
+  const two = book({ sales: sales.concat([sale("NW1-NN", "2026-10-14", 1, 120), sale("NW1-NN", "2026-10-14", 2, 225)]) });
+  const nw = S.newBuyers(ctx(two, "2026-10-20"), "salt").weeks.find((x) => x.from <= "2026-10-14" && "2026-10-14" < x.to);
+  ok(nw && nw.count === 1 && nw.back === 0, "C5 a first sheet of two lines on one day is one order day, so its buyer has not come back: " + J(nw));
   ok(nb.thin === false && S.newBuyers(ctx(book(), "2026-11-10"), "salt").thin === true,
     "C5 thin when the newest two weeks each run under half the eight weeks' mean");
 
@@ -115,6 +130,16 @@ export async function run({ ok }) {
     && tr.down.orders === 1 + sales.filter((s) => s.qty === 1 && s.customer !== "PA1-PP" && s.date >= "2026-10-12" && s.date < "2026-10-19").length && tr.up.marginDay > 0,
     "C8 the reading counts orders and margin a day at 1 unit, a partner left out, the up weeks against the down: " + J(tr));
 
+  /* C8, Fable's review: the suggestion leaves out a sale at the test's size inside its weeks, which paid the test, not their place */
+  const tsale = (d) => sale("SG1-SS", d, 1, 150, { paidOn: d });
+  const base = ["2026-09-01", "2026-09-08", "2026-09-15", "2026-09-22", "2026-09-29"].map((d) => sale("SG1-SS", d, 1, 120, { paidOn: d }));
+  const withT = book({ sales: sales.concat(base, ["2026-10-06", "2026-10-13", "2026-10-15"].map(tsale)) }), without = book({ sales: sales.concat(base) });
+  const sgA = S.suggestOf(ctx(withT, "2026-10-20"), "salt", "SG1-SS"), sgB = S.suggestOf(ctx(without, "2026-10-20"), "salt", "SG1-SS");
+  const Rn = JSON.parse(JSON.stringify(Rm)); delete Rn.TIER_RULE.salt.test;
+  const sgC = S.suggestOf(ctx(withT, "2026-10-20", Rn), "salt", "SG1-SS");
+  /* the good record counts every paid sale, test or not; the places leave the test out, so the suggestion stays a discount */
+  ok(sgA && sgA.pct < 0 && sgC && sgC.pct > 0, "C8 the suggestion places their sales as if the test's sales were not there, so RM 150 test sales do not lift it: " + J([sgA && sgA.pct, sgB && sgB.pct, sgC && sgC.pct]));
+
   /* C9 */
   const marks = [{ name: "Payday", from: "2026-09-25", to: "2026-09-27" }, { name: "Payday", from: "2026-10-09", to: "2026-10-11" }, { name: "Payday", from: "2026-10-25", to: "2026-10-27" }];
   const cl = S.calendarLift(C, "salt", marks);
@@ -129,6 +154,7 @@ export async function run({ ok }) {
     "C10 each habit carries its size warning and the snapshot the new-buyer line, for Salt Admin to read: " + J([hRA.warn, pl.byProduct.salt.buyers && pl.byProduct.salt.buyers.mean]));
   const live = pricingFromBook(book(), new Date("2026-11-17T04:00:00Z"));
   ok(pl.byProduct.salt.habits && pl.byProduct.salt.habits["RC1-CC"].state === "lapsed" && !("PA1-PP" in pl.byProduct.salt.habits) && J(live.byProduct.salt.inputs.policy.test) === J({ q: 1, rm: 5 })
-    && S.policy(ctx(book(), "2026-11-17", RULES), "salt", true).test === undefined,
+    && S.policy(ctx(book(), "2026-11-17", RULES), "salt", true).test === undefined && J(live.byProduct.salt.test) === J({ q: 1, rm: 5, week: 1, weeks: 8, from: "2026-11-16" })
+    && pl.byProduct.salt.test === undefined,
     "C10 the snapshot carries each regular's habit, and the day's policy the test (the plain policy, which the evidence reads, none): " + J([pl.byProduct.salt.habits && Object.keys(pl.byProduct.salt.habits), live.byProduct.salt.inputs.policy.test]));
 }

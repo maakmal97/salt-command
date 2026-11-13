@@ -9500,17 +9500,19 @@ function habitOf(C,p,code){
     const gaps=[];for(let i=1;i<days.length;i++)gaps.push((dayAt(days[i])-dayAt(days[i-1]))/864e5);
     const gap=Math.max(1,medOf(gaps)),last=days[days.length-1],since=Math.round((dayAt(to)-dayAt(last))/864e5);
     const usual=medOf(rows.map(s=>+s.qty));
+    /* 13 Nov 2026 (Fable): a party with a write-off is not approached (the Desk's approachable), so no win-back and no reminder reads them as a habit to answer */
+    const writtenOff=C.B.sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((t,s)=>t+POSITION_ENGINE.txWrittenOff(s),0)>0.004;
     const state=since>Math.max(H.lapse*gap,H.lapseDays)?'lapsed':since>H.late*gap?'late':since>=gap?'due':'early';
     const span=Math.max(30,(dayAt(to)-dayAt(days[0]))/864e5);
     const m=rows.filter(s=>typeof s.cost==='number'&&isFinite(s.cost)).reduce((t,s)=>t+POSITION_ENGINE.txGoods(s)-s.cost,0);
     const units=rows.reduce((t,s)=>t+ +s.qty,0);
     return {code:who,regular:true,orders:days.length,gap:+gap.toFixed(1),usual:+usual.toFixed(2),last,since,state,
       margin30:+(m*30/span).toFixed(2),units30:+(units*30/span).toFixed(2),owes:+POSITION_ENGINE.partyOwedRM(C.B.sales,who).toFixed(2),
-      next:addDays(last,Math.round(gap))};
+      next:addDays(last,Math.round(gap)),writeOff:writtenOff};
   });
 }
 /* the snapshot's shape of the habits, by code, each with its size warning (shown on This customer, never priced) */
-function habitMap(hs,C,p){const o={};hs.forEach(h=>{const w=C&&p?sizeWarn(C,p,h.code):null;o[h.code]=Object.assign({state:h.state,gap:h.gap,usual:h.usual,last:h.last,since:h.since,next:h.next,margin30:h.margin30,owes:h.owes},w?{warn:{perUnit:w.perUnit,units30:w.units30,bigger:w.bigger,tenOff:w.tenOff}}:{});});return o;}
+function habitMap(hs,C,p){const o={};hs.forEach(h=>{const w=C&&p?sizeWarn(C,p,h.code):null;o[h.code]=Object.assign({state:h.state,gap:h.gap,usual:h.usual,last:h.last,since:h.since,next:h.next,margin30:h.margin30,owes:h.owes},h.writeOff?{writeOff:true}:{},w?{warn:{perUnit:w.perUnit,units30:w.units30,bigger:w.bigger,tenOff:w.tenOff}}:{});});return o;}
 /* every regular on the book, those who need a word first (lapsed, late, due), then the largest margin a month */
 function habits(C,p){
   if(!habitRule(C,p)||!C.today)return [];
@@ -9536,7 +9538,7 @@ function sizeWarn(C,p,code){
 /* THE WIN-BACK (his answer F, the size his of 11 Nov 2026): at his Accept of a lapsed regular's order, a place ten points under their own, never
    under `winBackFloor`, so the order still earns; a suggestion he takes or leaves, their card never changed */
 function winBack(C,p,code){
-  const H=habitRule(C,p),h=habitOf(C,p,code);if(!H||!h||!h.regular||h.state!=='lapsed')return null;
+  const H=habitRule(C,p),h=habitOf(C,p,code);if(!H||!h||!h.regular||h.state!=='lapsed'||h.writeOff)return null;
   const d=driftS(C,p,h.code),pc=d&&typeof d.d==='number'?d.d:0;
   const k=Math.max(H.winBackFloor,+(pc-H.winBack).toFixed(4));
   return k<pc-1e-9?{from:pc,to:k,since:h.since,gap:h.gap}:null;
@@ -9546,7 +9548,9 @@ function winBack(C,p,code){
 function newBuyers(C,p){
   if(!habitRule(C,p)||!C.today)return null;
   const to=todayISO(C),rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&!s.rewardOf&&s.date&&+s.qty>0).sort((a,b)=>String(a.date)<String(b.date)?-1:1);
-  const first={},n={};rows.forEach(s=>{const o=ownerOf(s.customer)||s.customer;n[o]=(n[o]||0)+1;if(!(o in first))first[o]=String(s.date);});
+  /* came back counts distinct order days up to today (Fable: a two-line first sheet is one day) */
+  const first={},days={};rows.filter(s=>String(s.date)<=to).forEach(s=>{const o=ownerOf(s.customer)||s.customer;(days[o]=days[o]||new Set()).add(String(s.date));if(!(o in first))first[o]=String(s.date);});
+  const n={};Object.keys(days).forEach(o=>{n[o]=days[o].size;});
   const intro={};(C.B.introductions||[]).forEach(x=>{if(x&&x.customer)intro[x.customer]=x.by;});
   const weeks=[];for(let i=7;i>=0;i--){const a=addDays(to,-7*(i+1)),b=addDays(to,-7*i);
     const who=Object.keys(first).filter(o=>first[o]>=a&&first[o]<b&&!isPartner(C,o));
@@ -9670,7 +9674,9 @@ function suggestOf(C,p,code){
   return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
     const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=policy(C,p,true);   /* 11 Nov 2026: the plain Median, his points in, the day's move out */
     /* 10 Nov 2026 (his ask D): a sale he let stand outside the band as a one-off (row.oneOff) is left out of the evidence */
-    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&!x.oneOff&&x.date&&x.total>0&&x.qty>0)
+    /* 13 Nov 2026 (Fable): a sale at the price test's size inside its weeks paid the test, not their place, so the evidence leaves it out */
+    const T=R.band&&R.test&&R.test.from?R.test:null,inTest=x=>T&&Math.abs(+x.qty-+T.q)<0.009&&String(x.date)>=T.from&&String(x.date)<addDays(T.from,7*T.weeks);
+    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&!x.oneOff&&x.date&&x.total>0&&x.qty>0&&!inTest(x))
       .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
     const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
     /* 10 Nov 2026: on a band each of those sales is also placed on it at its own size (the engine's bandPct between today's Floor, Median and Ceiling) */
@@ -9727,6 +9733,8 @@ function pricing(B,R,today,over=null){
       (m=>m?{market:{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:marketWhy(m)}}:{})(marketOf(C,p)),
       /* 13 Nov 2026: every regular's habit (the price band's version 3), for Accept's win-back and the publish's reminder; nothing prices from it */
       (hs=>hs.length?{habits:habitMap(hs,C,p)}:{})(habits(C,p)),
+      /* the day's price test, said beside the market move wherever a reader prints it (Fable) */
+      (t=>t?{test:{q:t.q,rm:t.rm,week:t.week,weeks:t.weeks,from:t.from}}:{})(testOf(C,p)),
       /* and the new-buyer line, eight weeks by road */
       (nb=>nb?{buyers:nb}:{})(newBuyers(C,p)));
   }

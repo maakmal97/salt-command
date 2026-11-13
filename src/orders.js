@@ -128,16 +128,19 @@ export async function bulletinRelay(env, method, body) {
 /** 13 NOV 2026, THE PRICE BAND'S VERSION 3, THE WIN-BACK (his answer F and of 11 Nov 2026): at his Accept of a LAPSED regular's order, a place
  *  `habit.winBack` under their own, never under `habit.winBackFloor`, priced off the snapshot at the order's size (the engine's quoteAt, held at the
  *  Floor). A suggestion his Accept may take as its price; their card never changes. Null for anyone else, a partner, or where it would not be lower. */
-export function winBackOf(pricing, code, qty) {
+export function winBackOf(pricing, code, qty, card) {
   const sp = ((pricing && pricing.byProduct) || {}).salt, owner = POSITION_ENGINE.ownerCode(code), h = sp && sp.habits && sp.habits[owner];
   const I = sp && sp.inputs, R = I && I.policy && I.policy.tierRule, H = R && R.habit;
-  if (!h || h.state !== "lapsed" || !H || !(+qty > 0) || (sp.partners || []).includes(owner)) return null;
+  /* 13 Nov 2026 (Fable): never a written-off party, never a friend's order on an associate's -R bucket */
+  if (!h || h.state !== "lapsed" || h.writeOff || !H || !(+qty > 0) || (sp.partners || []).includes(owner) || POSITION_ENGINE.isBucket(code)) return null;
   const lift = sp.lift && typeof sp.lift[owner] === "number" ? sp.lift[owner] : 0;
   const to = Math.max(H.winBackFloor, +(lift - H.winBack).toFixed(4));
   if (!(to < lift - 1e-9)) return null;
   let K, now, price;
   try { K = PRICING_ENGINE.costStack(I.cost); now = PRICING_ENGINE.quoteAt(+qty, K, I.policy, lift); price = PRICING_ENGINE.quoteAt(+qty, K, I.policy, to); } catch (e) { return null; }
-  if (!(price > 0) || !(now > 0) || !(price < now - 0.004)) return null;
+  /* under what they would pay: the lower of the card today and what their list quoted (`card`, Accept's card0) */
+  const pay = +card > 0 ? Math.min(now, +card) : now;
+  if (!(price > 0) || !(now > 0) || !(price < pay - 0.004)) return null;
   return { from: lift, to, price: +(+price).toFixed(2), now: +(+now).toFixed(2), since: h.since, gap: h.gap };
 }
 
@@ -458,7 +461,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror, why) 
     usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
     reward: product === "salt" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost, day: d.row && d.row.date }) : null, rwd: rc.cross ? "cross" : null,
     loyal: product === "salt" ? loyalReading(book, code, { qty, goods, card: card0, today: today0 }) : null,
-    winBack: product === "salt" ? winBackOf(book.pricing, code, qty) : null,
+    winBack: product === "salt" ? winBackOf(book.pricing, code, qty, card0) : null,
     hash: await stageDigest("ack", entry, d, pricing) },
     credit > 0.004 ? { credit } : {},   /* 27 Oct 2026: their credit, named only when some is spent */
     entry.payload.second ? { second: true } : {},   /* plan version 3: a second sale keyed apart from an equal one today, named on the card */

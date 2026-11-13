@@ -38,8 +38,8 @@
   {
     "name": "C4 the win-back for anyone late",
     "file": "engine/snapshot.mjs",
-    "find": "if(!H||!h||!h.regular||h.state!=='lapsed')return null;",
-    "replace": "if(!H||!h||!h.regular||h.state==='early')return null;"
+    "find": "if(!H||!h||!h.regular||h.state!=='lapsed'||h.writeOff)return null;",
+    "replace": "if(!H||!h||!h.regular||h.state==='early'||h.writeOff)return null;"
   },
   {
     "name": "C4 the win-back has no floor",
@@ -50,8 +50,8 @@
   {
     "name": "C4 the Worker offers it to the late",
     "file": "src/orders.js",
-    "find": "if (!h || h.state !== \"lapsed\" || !H",
-    "replace": "if (!h || h.state === \"early\" || !H"
+    "find": "if (!h || h.state !== \"lapsed\" || h.writeOff || !H",
+    "replace": "if (!h || h.state === \"early\" || h.writeOff || !H"
   },
   {
     "name": "C5 an introduction is not counted",
@@ -129,6 +129,48 @@
     "name": "C10 the snapshot carries no buyers",
     "file": "engine/snapshot.mjs",
     "find": "(nb=>nb?{buyers:nb}:{})(newBuyers(C,p))",
+    "replace": "({})"
+  },
+  {
+    "name": "C4 a write-off is offered the win-back",
+    "file": "engine/snapshot.mjs",
+    "find": "h.state!=='lapsed'||h.writeOff)return null;",
+    "replace": "h.state!=='lapsed')return null;"
+  },
+  {
+    "name": "C4 the Worker offers a write-off the win-back",
+    "file": "src/orders.js",
+    "find": "h.state !== \"lapsed\" || h.writeOff || !H",
+    "replace": "h.state !== \"lapsed\" || !H"
+  },
+  {
+    "name": "C4 the win-back ignores what they would pay",
+    "file": "src/orders.js",
+    "find": "  const pay = +card > 0 ? Math.min(now, +card) : now;",
+    "replace": "  const pay = now;"
+  },
+  {
+    "name": "C4 the win-back on a friend's order",
+    "file": "src/orders.js",
+    "find": " || POSITION_ENGINE.isBucket(code)) return null;",
+    "replace": ") return null;"
+  },
+  {
+    "name": "C5 came back counts rows",
+    "file": "engine/snapshot.mjs",
+    "find": "const n={};Object.keys(days).forEach(o=>{n[o]=days[o].size;});",
+    "replace": "const n={};rows.forEach(s=>{const o=ownerOf(s.customer)||s.customer;n[o]=(n[o]||0)+1;});"
+  },
+  {
+    "name": "C8 the suggestion reads the test's sales",
+    "file": "engine/snapshot.mjs",
+    "find": "&&x.total>0&&x.qty>0&&!inTest(x))",
+    "replace": "&&x.total>0&&x.qty>0)"
+  },
+  {
+    "name": "C10 the snapshot says no test",
+    "file": "engine/snapshot.mjs",
+    "find": "(t=>t?{test:{q:t.q,rm:t.rm,week:t.week,weeks:t.weeks,from:t.from}}:{})(testOf(C,p))",
     "replace": "({})"
   }
 ]
