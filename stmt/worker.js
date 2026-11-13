@@ -68,6 +68,7 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
 import { readPoints, resolvePoint } from "./points.js";
+import { sendReminders } from "./remind.js";
 import { mintSession, dropSession, sessionUser, sessionOfToken, onBook, liveConnect, liveDrop, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
 
@@ -2303,6 +2304,11 @@ const worker = {
           if (r.sent) asked++; else rateQuiet++;
         }
         if (asked || rateQuiet) console.log("rate: " + JSON.stringify({ slot, asked, quiet: rateQuiet }));
+        /* PRICE BAND V3: the reminder to a late regular, once a day at 10:00 (stmt/remind.js), never over the chase */
+        try {
+          const rm = await sendReminders(env, now, owing);
+          if (rm.sent || rm.quiet || rm.held || rm.open) console.log("remind: " + JSON.stringify(rm));
+        } catch (e) { console.log("remind FAILED: " + String((e && e.stack) || e)); }
       } catch (e) {
         console.log("chase FAILED: " + String((e && e.stack) || e));
       }

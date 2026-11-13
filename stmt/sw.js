@@ -29,7 +29,7 @@ import { WORDS } from "./words.js";
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
 const KINDS = ["confirmed", "confirmed-credit", "ready-collect", "ready-deliver", "reply", "paid", "notfound", "due",
-  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate", "message", "pool-closed", "offer", "confirm", "corrected", "point-moved", "placed"];
+  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate", "message", "pool-closed", "offer", "confirm", "corrected", "point-moved", "placed", "remind"];
 /* Step 1b: the cases a kind's body is chosen by (stmt/orders.js payCase), and the kinds whose body is his own text:
    his line on the order (reply), his line on the account's thread (message, Step 7) and his reason at Decline or Cancel */
 export const CASES = ["owed", "waiting", "paid"];
@@ -63,12 +63,13 @@ self.addEventListener('push', function(e){
   var o = n && typeof n.o === 'string' && /^[0-9]{14}-[a-z0-9]{1,8}$/.test(n.o) ? n.o : '';
   /* Step 7: his line on the account's thread opens the thread (#thread), never an order */
   var th = !!(n && n.k === 'message');
-  var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : th ? '#thread' : ''), order: o, thread: th };
+  var ag = !!(n && n.k === 'remind');
+  var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : th ? '#thread' : ag ? '#again' : ''), order: o, thread: th, again: ag };
   e.waitUntil(Promise.resolve().then(function(){
     /* one banner a message of his (plan F1): his line takes its own tag, so a second line never replaces the first unseen */
     var m = n && LINE_KINDS.indexOf(n.k) >= 0 && typeof n.m === 'string' && /^[0-9TZ:.-]{10,30}$/.test(n.m) ? n.m : '';
     if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k))
-      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + (th ? 'thread' : o) + '-' + m : n.k === 'pool-closed' && o ? 'pool-' + o : o ? 'order-' + o : 'order-update', renotify: true, data: to });
+      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + (th ? 'thread' : o) + '-' + m : n.k === 'pool-closed' && o ? 'pool-' + o : ag ? 'remind' : o ? 'order-' + o : 'order-update', renotify: true, data: to });
     return fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
       .catch(function(){ return null; })
       .then(function(b){
@@ -93,7 +94,7 @@ self.addEventListener('notificationclick', function(e){
       try { path = new URL(c.url).pathname; } catch (x) { path = ''; }
       /* S5 5.6: only the Counter's own page can open an order; a guest board or his own page in another tab cannot */
       if (c.url.indexOf(self.registration.scope) === 0 && (path === '/' || path.indexOf('/s/') === 0) && 'focus' in c) {
-        try { c.postMessage({ salt: 'news', order: d.order || '', thread: !!d.thread }); } catch (x) {}
+        try { c.postMessage({ salt: 'news', order: d.order || '', thread: !!d.thread, again: !!d.again }); } catch (x) {}
         return c.focus();
       }
     }
