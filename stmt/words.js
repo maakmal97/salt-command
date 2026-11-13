@@ -1177,7 +1177,8 @@ export const EN = {
   "news.declined": "Order declined",
   "news.cancelled": "Order cancelled",
   "news.rate": "How was your order?",
-  "news.remind": "Time for more? Your usual is one tap away.",
+  "news.remind": "Time for more?",
+  "news.remind.b": "Your usual is one tap away.",   /* his words of 11 Nov 2026, the title a question and the body the rest, as every banner is built */
   "news.offer": "A figure for your order",
   "news.offer.b": "Tap to see it and answer.",
   "news.confirm": "Your order needs your yes",

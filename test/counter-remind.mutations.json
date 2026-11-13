@@ -176,8 +176,8 @@
   {
     "name": "W7 the words lose their stop",
     "file": "stmt/words.js",
-    "find": "\"news.remind\": \"Time for more? Your usual is one tap away.\"",
-    "replace": "\"news.remind\": \"Time for more? Your usual is one tap away\""
+    "find": "\"news.remind\": \"Time for more?\",",
+    "replace": "\"news.remind\": \"Time for more\","
   },
   {
     "name": "S1 the banner has no tag of its own",
@@ -226,5 +226,11 @@
     "file": "stmt/page.js",
     "find": "    if(ro()||hold||hidePrices) return;\n    var U=oUsual();",
     "replace": "    var U=oUsual();"
+  },
+  {
+    "name": "W7 the body is not his",
+    "file": "stmt/words.js",
+    "find": "\"news.remind.b\": \"Your usual is one tap away.\",",
+    "replace": "\"news.remind.b\": \"Your usual is ready.\","
   }
 ]

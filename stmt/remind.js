@@ -1,5 +1,5 @@
 /* PRICE BAND VERSION 3: THE REMINDER TO A LATE REGULAR (his answers of 13 Nov 2026). One automatic wake a cycle to a regular who is late or
- * lapsed and owes nothing, in the plain words "Time for more? Your usual is one tap away." (news.remind): no product word, no figure, no name.
+ * lapsed and owes nothing, in his plain words "Time for more?" and "Your usual is one tap away." (news.remind and its body): no product word, no figure, no name.
  * The publish writes KV `remind` = {username: last order day} (tools/stmt-publish.mjs remindMap); the hourly cron sends here once a day at
  * 10:00 Kuala Lumpur. A CYCLE IS THE LAST ORDER DAY: `reminded:<username>` holds the day it was reminded for, written BEFORE the send (a tick
  * firing twice sends once), and a new order moves the day, so the next cycle is reminded again. Never a practice account, never one the chase

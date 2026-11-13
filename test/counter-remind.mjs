@@ -58,7 +58,8 @@ class KV {
   async list({ prefix = "" } = {}) { return { keys: [...this.m.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })), list_complete: true }; }
 }
 const J = JSON.stringify;
-const WORDS_EXACT = "Time for more? Your usual is one tap away.";
+/* his words of 11 Nov 2026, the title a question and the body the rest, as every banner is built (the banner rule: a title is one phrase) */
+const WORDS_EXACT = "Time for more?", BODY_EXACT = "Your usual is one tap away.";
 
 export async function run({ ok, pageWork }) {
   const { remindMap, planPublish } = await import("../tools/stmt-publish.mjs");
@@ -90,9 +91,7 @@ export async function run({ ok, pageWork }) {
   /* ---- R2: the real plan ---- */
   const root = mkdtempSync(join(tmpdir(), "remind-"));
   try {
-    const { readFileSync: rf } = await import("node:fs");
-    const bookPath = process.env.SALT_BOOK || new URL("../ledger/book.json", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
-    const bk = JSON.parse(rf(decodeURIComponent(bookPath), "utf8"));
+    const bk = (await import("./frozen.mjs")).frozenBook();   /* the suite's frozen book, never the live one */
     const { partyTotals, klToday } = await import("../tools/make_statements.mjs");
     const day = klToday(new Date("2026-11-14T00:00:00Z"));
     const pool = [...new Set((bk.sales || []).filter((s) => s.customer && !/-R$/.test(s.customer)).map((s) => s.customer))];
@@ -171,7 +170,7 @@ export async function run({ ok, pageWork }) {
 
   /* ---- W7, S1, S2 ---- */
   const wd = WD.WORDS.en["news.remind"];
-  ok(wd === WORDS_EXACT && !/[0-9]|salt|oil|candy|rice|gas|RM/i.test(wd) && SW.NEWS.remind === WORDS_EXACT,
+  ok(wd === WORDS_EXACT && WD.WORDS.en["news.remind.b"] === BODY_EXACT && !/[0-9]|salt|oil|candy|rice|gas|RM/i.test(wd + BODY_EXACT) && SW.NEWS.remind === WORDS_EXACT,
     "W7 the words are his, with no product word, figure or name, and the service worker's table has them: " + wd);
   const shown = [], handlers = {}, opened = [], posted = [], focused = [];
   let clients = [];
@@ -182,7 +181,7 @@ export async function run({ ok, pageWork }) {
   let pr; shown.length = 0;
   handlers.push({ data: { json: () => ({ k: "remind", o: "" }) }, waitUntil: (x) => { pr = x; } }); await pr;
   const sh = shown[0] || [];
-  ok(sh[0] === WORDS_EXACT && sh[2] === "remind" && /#again$/.test((sh[3] || {}).url || "") && (sh[3] || {}).again === true && !(sh[3] || {}).order,
+  ok(sh[0] === WORDS_EXACT && sh[1] === BODY_EXACT && sh[2] === "remind" && /#again$/.test((sh[3] || {}).url || "") && (sh[3] || {}).again === true && !(sh[3] || {}).order,
     "S1 the service worker shows his words under the kind's own tag, its tap naming Order and no order: " + J(sh));
   const click = async () => { let p; handlers.notificationclick({ notification: { close() {}, data: sh[3] }, waitUntil: (x) => { p = x; } }); await p; };
   await click();

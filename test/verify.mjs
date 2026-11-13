@@ -15034,7 +15034,8 @@ await (async () => {
     /* v666: the snapshot also carries each customer's PROFILE, which a write-off rightly moves, because a defaulted order
        is not a priced order and drops out of how they buy. The claim here is that no PRICE moves, so the profile is taken
        out of what is compared rather than letting a correct reading turn the price check red. */
-    const snap34 = () => { const s = ps34(w34); delete s.takenAt; delete s.profileOf; delete s.profileRule; w34.eval("setProd('salt');recompute();"); return JSON.stringify(s); };
+    /* 13 Nov 2026: the habits and the new-buyer line are readings, not prices (a write-off rightly marks its habit), so the price comparison leaves them out */
+    const snap34 = () => { const s = ps34(w34); delete s.takenAt; delete s.profileOf; delete s.profileRule; Object.values(s.byProduct || {}).forEach((b) => { delete b.habits; delete b.buyers; }); w34.eval("setProd('salt');recompute();"); return JSON.stringify(s); };
     /* 10 Nov 2026: a write-off is one of the three categories salt's Floor now carries, so it rightly moves the Floor; the claim here is that nothing ELSE moves, so the share is set aside in this window (test/floor-nrs.mjs holds it) */
     w34.eval("RULES.nrsFloor={};recompute();");
     const A = read34(), recvA = recvText34(), apprA = approachText34(), snapA = snap34();
