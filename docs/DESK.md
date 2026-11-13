@@ -140,6 +140,18 @@
   KV `quote:<KL day>:<username>` (30 a day, 10 lines, 120 days), the counts on the key's metadata, so the Desk's `GET /quotes` (relayed to the
   Counter's `/desk/quotes`) lists keys and reads at most 200 that carry none (`partial`). Checks: `test/price-band-market.mjs`, `test/desk-market.mjs`,
   `test/admin-market.mjs`, `test/counter-quotes.mjs`, `test/band-v2-fixes.mjs`.
+- **The price band, version 3: the customers, the engine** (live as v1515, 13 Nov 2026; his answers E, F and G of 10 Nov and of 11 and 13 Nov 2026;
+  `TIER_RULE.salt.habit` and `.test`, the snapshot engine's V3 section). `habitOf` reads a party's salt order days in 180 (`pbPriced`, no goodwill or reward, an
+  -R bucket with its owner): a regular at 4, the gap and the usual the medians, early, due past one gap, late past 1.5, lapsed past 3 gaps or 21 days, `margin30`,
+  `owes`, and `writeOff` (a party with a write-off is not approached); a partner has none. `habits` lists the regulars by need then margin; `sizeWarn` says what a
+  lot of three times their usual and 10 points off would cost a month at their units; `winBack` (and the Worker's `winBackOf` on Accept's preview, under the lower of
+  the card and their list, never an -R bucket) is 10 points under their place for a lapsed regular, never under -80%. `newBuyers` counts first orders by week,
+  introduced, came back (distinct order days) and thin; `calendarLift` measures his marks against the 28 days before and suggests after two passes. **The price test**
+  (`testOf`, `P.test` {q, rm}): RM 5 up at 1 unit in even weeks and RM 5 down in odd from `from` (16 Nov 2026) for `weeks` (8), nought with the switch off; `driftWalk`
+  moves that size alone and keeps its running state untested; the plain policy carries none; `suggestOf` leaves the test's sales out; `testReading` compares the
+  weeks. The snapshot carries `habits` (with `warn`), `buyers` and `test`. Said: from 00:00 Monday to the daily publish the Worker and the sealed lists hold last
+  week's test (the customer is not hurt: their price is the lower of the card and their list); `testReading` sorts by row date. Checks:
+  `test/price-band-customers.mjs`; the Counter's reminder is `test/counter-remind.mjs` (docs/STATEMENTS.md).
 - **The price band, version 3: the customers, on the Desk** (13 Nov 2026; the engine is `testOf`, `testReading`, `calendarLift`, `newBuyers` and
   `habits` in the snapshot engine). Readings only, each drawn for the book whose rule carries it (`test`, `habit`), never by its name. **Pricing**, after
   the market panels: the Price test card (this week's test, "RM 5 up at 1 unit, week 1 of 8", or No test today, and orders a day and margin a day at that
