@@ -2299,6 +2299,7 @@ const worker = {
         /* F10: HOW WAS YOUR ORDER, at the same slots, two days after the last handover: each order asked once, its ask
            written on it first (markRateAsk), and one wake a customer, opening the newest order it asks about */
         let asked = 0, rateQuiet = 0;
+        const rated = new Set();
         for (const { u, orders } of await toRate(env, now)) {
           /* NEVER OVER THE CHASE: a customer owed a chase this slot hears only that a payment is due, since the two
              banners share an order's tag and the later would replace it; nothing is written, so a later slot asks */
@@ -2307,12 +2308,13 @@ const worker = {
           for (const o of orders) if (await markRateAsk(env, u, o.id)) fresh.push(o);
           if (!fresh.length) continue;
           const r = await wakeCustomer(env, u, { k: "rate", o: fresh[0].id });
+          rated.add(u);   /* one wake a customer a slot: the reminder passes them by */
           if (r.sent) asked++; else rateQuiet++;
         }
         if (asked || rateQuiet) console.log("rate: " + JSON.stringify({ slot, asked, quiet: rateQuiet }));
         /* PRICE BAND V3: the reminder to a late regular, once a day at 10:00 (stmt/remind.js), never over the chase */
         try {
-          const rm = await sendReminders(env, now, owing);
+          const rm = await sendReminders(env, now, new Set([...owing, ...rated]));
           if (rm.sent || rm.quiet || rm.held || rm.open) console.log("remind: " + JSON.stringify(rm));
         } catch (e) { console.log("remind FAILED: " + String((e && e.stack) || e)); }
       } catch (e) {

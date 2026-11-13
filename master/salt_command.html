@@ -21964,9 +21964,12 @@ function marketPanels(){
    the calendar is drawn until it answers). Clients: the new-buyer weeks and the habits. Adding or removing a mark and opening an account are Salt Admin's (adminLink). */
 let CK_CAL=null,CK_CAL_TRIED=false;
 async function ckCalLoad(){
-  if(CK_CAL_TRIED||!cloudMode())return;CK_CAL_TRIED=true;
+  /* asked once a load: a good answer stands, a failed one is asked again a minute on, never on every draw (Fable); CK_CAL_TRIED is the last ask's time */
+  if(!cloudMode()||CK_CAL||(CK_CAL_TRIED&&Date.now()-CK_CAL_TRIED<60000))return;CK_CAL_TRIED=Date.now();
   let j=null;try{const r=await fetch('calendar',{cache:'no-store',headers:qHeaders()});if(r.ok){try{j=await r.json();}catch(e){}}}catch(e){}
-  if(j&&Array.isArray(j.list)&&j.ok===true){CK_CAL=j.list;if(curAddr==='pricing')render();}
+  /* the Desk's GET /calendar answers {ok, calendar: {v, list}} (calendarRelay over the Counter's /desk/calendar) */
+  const L=j&&j.ok===true&&j.calendar&&Array.isArray(j.calendar.list)?j.calendar.list:null;
+  if(L){CK_CAL=L;if(curAddr==='pricing')render();}
 }
 /* the month's three letters from a string, so no list stands at the top level (the ledger extract reads every top-level array as book data) */
 function ckDay(iso){const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(String(iso||''));return m?(+m[3])+' '+'JanFebMarAprMayJunJulAugSepOctNovDec'.substr((+m[2]-1)*3,3):esc(String(iso||''));}

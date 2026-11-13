@@ -74,11 +74,19 @@ export async function run({ ok }) {
       draw();
       return d.getElementById("ckCal");
     };
-    const refused = await viaFetch({ ok: false, list: [{ id: "a", name: "Payday", from: "2026-09-25", to: "2026-09-27" }] });
+    /* the Desk's GET /calendar answers {ok, calendar: {v, list}} (calendarRelay), the shape the Worker sends (Fable, 13 Nov 2026) */
+    const refused = await viaFetch({ ok: false, calendar: { v: 1, list: [{ id: "a", name: "Payday", from: "2026-09-25", to: "2026-09-27" }] } });
     ok(!refused && E("CK_CAL") === null, "K4.2 an answer that is not ok draws no calendar");
+    /* a failed read is asked again a minute on, not before */
+    calls.length = 0; E("CK_CAL_TRIED=Date.now()-1000"); await E("ckCalLoad()"); const soon = calls.length;
+    E("CK_CAL_TRIED=Date.now()-61000"); await E("ckCalLoad()");
+    ok(soon === 0 && calls.length === 1, "K4.2 a failed read is asked again a minute on, never sooner: " + J([soon, calls.length]));
     const marks = [{ id: "a", name: "Payday", from: "2026-09-25", to: "2026-09-27" }, { id: "b", name: "Sale", from: "2026-12-01", to: "2026-12-01" }];
     calls.length = 0; seen = null;
-    const cal = await viaFetch({ ok: true, list: marks });
+    const flat = await viaFetch({ ok: true, list: marks });
+    ok(!flat && E("CK_CAL") === null, "K4.2 a list outside the calendar document is not read as one");
+    calls.length = 0; seen = null;
+    const cal = await viaFetch({ ok: true, calendar: { v: 1, list: marks } });
     ok(!!cal && calls.length === 1 && calls[0][0] === "calendar" && !!calls[0][1] && J(seen) === J([marks, "salt"]),
       "K4.3 an ok answer draws it, asked once on the keyed route, the marks and the book handed to the engine: " + J([calls.length, calls[0] && calls[0][0], seen]));
     E("render()");

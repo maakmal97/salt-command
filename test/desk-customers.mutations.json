@@ -1,34 +1,177 @@
 [
-  {"name": "K1.1 the week and the weeks swapped", "find": "', week '+t.week+' of '+t.weeks", "replace": "', week '+t.weeks+' of '+t.week"},
-  {"name": "K1.2 a down week still says up", "find": "(t.rm>0?' up':' down')", "replace": "' up'"},
-  {"name": "K1.3 outside the test the card says something else", "find": ":'No test today'", "replace": ":'No test'"},
-  {"name": "K2.1 margin a day shows orders a day", "find": "fmt(x.marginDay)", "replace": "fmt(x.ordersDay)"},
-  {"name": "K2.2 an estimate only when both sides are short", "find": "rd.up.days<7||rd.down.days<7", "replace": "rd.up.days<7&&rd.down.days<7"},
-  {"name": "K2.3 an unmeasured figure reads 0", "find": "(x.ordersDay!=null?x.ordersDay:NIL)", "replace": "(x.ordersDay||0)"},
-  {"name": "K3 the test card is drawn for a rule with no test", "find": "const R=TIER_RULE[PROD],T=R&&R.band&&R.test;if(!T)return '';\n  const C=snapCtx(),t=SNAPSHOT_ENGINE.testOf", "replace": "const R=TIER_RULE[PROD],T=R&&R.band&&(R.test||{q:1,rm:5,from:'2026-11-16',weeks:8});if(!T)return '';\n  const C=snapCtx(),t=SNAPSHOT_ENGINE.testOf"},
-  {"name": "K3.2 the calendar is drawn for a rule with no test", "find": "const R=TIER_RULE[PROD],T=R&&R.band&&R.test;if(!T)return '';\n  ckCalLoad();", "replace": "const R=TIER_RULE[PROD],T=R&&R.band&&(R.test||{q:1});if(!T)return '';\n  ckCalLoad();"},
-  {"name": "K4.1 the calendar is drawn before the route answers", "find": "ckCalLoad();if(!CK_CAL)return '';", "replace": "ckCalLoad();"},
-  {"name": "K4.2 an answer that is not ok is taken", "find": "Array.isArray(j.list)&&j.ok===true", "replace": "Array.isArray(j.list)"},
-  {"name": "K4.3 the route is asked with no key", "find": "fetch('calendar',{cache:'no-store',headers:qHeaders()})", "replace": "fetch('calendar',{cache:'no-store'})"},
-  {"name": "K4.3 the engine is handed no marks", "find": "calendarLift(snapCtx(),PROD,CK_CAL)", "replace": "calendarLift(snapCtx(),PROD,[])"},
-  {"name": "K4.4 the route is asked on every draw", "find": "if(CK_CAL_TRIED||!cloudMode())return;CK_CAL_TRIED=true;", "replace": "if(!cloudMode())return;CK_CAL_TRIED=true;"},
-  {"name": "K5.1 the marks are not sorted by date", "find": "String(a.from)<String(b.from)?-1:1", "replace": "0"},
-  {"name": "K5.1 a mark with nothing before it says nothing", "find": "'no sales in the 28 days before to measure against'", "replace": "''"},
-  {"name": "K5.2 the lift is read at ten times its size", "find": "Math.round(v*100);return (n>0?'+':'')", "replace": "Math.round(v*10);return (n>0?'+':'')"},
-  {"name": "K5.3 the link goes to the wrong place", "find": "adminLink('shop/calendar'", "replace": "adminLink('shop/hours'"},
-  {"name": "K6.1 the hold reads the times measured", "find": "hold '+sg.hold+' units", "replace": "hold '+x.measured+' units"},
-  {"name": "K6.1 the move is never suggested", "find": "(sg.move?'a +'+Math.round(sg.move*100)+' move':'no move')", "replace": "'no move'"},
-  {"name": "K6.2 every coming mark carries a suggestion", "find": "const sg=x.suggest;", "replace": "const sg=x.suggest||{hold:1,move:0.05};"},
-  {"name": "K6.2 a coming mark measured once says nothing of it", "find": ":(x.measured?', measured '", "replace": ":(false?', measured '"},
-  {"name": "K6.3 the card does not say information only", "find": "and it is information only: nothing moves", "replace": "and nothing moves"},
-  {"name": "K7.1 through an associate and came back swapped", "find": "'+w.introduced+'</td><td class=\"mono\">'+w.back+'", "replace": "'+w.back+'</td><td class=\"mono\">'+w.introduced+'"},
-  {"name": "K7.1 the total counts those who came back", "find": "nb.weeks.reduce((t,w)=>t+w.count,0)", "replace": "nb.weeks.reduce((t,w)=>t+w.back,0)"},
-  {"name": "K7.2 Thin whatever the engine says", "find": "(nb.thin?' <b>Thin", "replace": "(true?' <b>Thin"},
-  {"name": "K7.3 Thin never said", "find": "(nb.thin?' <b>Thin", "replace": "(false?' <b>Thin"},
-  {"name": "K8.1 an early regular is listed", "find": "h.state==='due'||h.state==='late'||h.state==='lapsed'", "replace": "true"},
-  {"name": "K8.1 the list is reversed", "find": "need.slice(0,12).map(", "replace": "need.slice(0,12).reverse().map("},
-  {"name": "K8.2 the account link goes to the wrong place", "find": "adminLink('acct/'+encodeURIComponent(h.code)", "replace": "adminLink('account/'+encodeURIComponent(h.code)"},
-  {"name": "K8.3 nobody-needs-a-word line is gone", "find": "Nobody is due, late or lapsed.", "replace": "."},
-  {"name": "K8.4 the rest are not counted", "find": "(need.length>12?'<div class=\"dsc\" id=\"ckHabMore\">", "replace": "(false?'<div class=\"dsc\" id=\"ckHabMore\">"},
-  {"name": "K9 Clients draws the habits for a rule with no habit", "find": "if(!R||!R.band||!R.habit)return '';", "replace": "if(!R||!R.band)return '';"}
+  {
+    "name": "K1.1 the week and the weeks swapped",
+    "find": "', week '+t.week+' of '+t.weeks",
+    "replace": "', week '+t.weeks+' of '+t.week"
+  },
+  {
+    "name": "K1.2 a down week still says up",
+    "find": "(t.rm>0?' up':' down')",
+    "replace": "' up'"
+  },
+  {
+    "name": "K1.3 outside the test the card says something else",
+    "find": ":'No test today'",
+    "replace": ":'No test'"
+  },
+  {
+    "name": "K2.1 margin a day shows orders a day",
+    "find": "fmt(x.marginDay)",
+    "replace": "fmt(x.ordersDay)"
+  },
+  {
+    "name": "K2.2 an estimate only when both sides are short",
+    "find": "rd.up.days<7||rd.down.days<7",
+    "replace": "rd.up.days<7&&rd.down.days<7"
+  },
+  {
+    "name": "K2.3 an unmeasured figure reads 0",
+    "find": "(x.ordersDay!=null?x.ordersDay:NIL)",
+    "replace": "(x.ordersDay||0)"
+  },
+  {
+    "name": "K3 the test card is drawn for a rule with no test",
+    "find": "const R=TIER_RULE[PROD],T=R&&R.band&&R.test;if(!T)return '';\n  const C=snapCtx(),t=SNAPSHOT_ENGINE.testOf",
+    "replace": "const R=TIER_RULE[PROD],T=R&&R.band&&(R.test||{q:1,rm:5,from:'2026-11-16',weeks:8});if(!T)return '';\n  const C=snapCtx(),t=SNAPSHOT_ENGINE.testOf"
+  },
+  {
+    "name": "K3.2 the calendar is drawn for a rule with no test",
+    "find": "const R=TIER_RULE[PROD],T=R&&R.band&&R.test;if(!T)return '';\n  ckCalLoad();",
+    "replace": "const R=TIER_RULE[PROD],T=R&&R.band&&(R.test||{q:1});if(!T)return '';\n  ckCalLoad();"
+  },
+  {
+    "name": "K4.1 the calendar is drawn before the route answers",
+    "find": "ckCalLoad();if(!CK_CAL)return '';",
+    "replace": "ckCalLoad();"
+  },
+  {
+    "name": "K4.2 an answer that is not ok is taken",
+    "find": "Array.isArray(j.list)&&j.ok===true",
+    "replace": "Array.isArray(j.list)"
+  },
+  {
+    "name": "K4.3 the route is asked with no key",
+    "find": "fetch('calendar',{cache:'no-store',headers:qHeaders()})",
+    "replace": "fetch('calendar',{cache:'no-store'})"
+  },
+  {
+    "name": "K4.3 the engine is handed no marks",
+    "find": "calendarLift(snapCtx(),PROD,CK_CAL)",
+    "replace": "calendarLift(snapCtx(),PROD,[])"
+  },
+  {
+    "name": "K4.4 the route is asked on every draw",
+    "find": "if(CK_CAL_TRIED||!cloudMode())return;CK_CAL_TRIED=true;",
+    "replace": "if(!cloudMode())return;CK_CAL_TRIED=true;"
+  },
+  {
+    "name": "K5.1 the marks are not sorted by date",
+    "find": "String(a.from)<String(b.from)?-1:1",
+    "replace": "0"
+  },
+  {
+    "name": "K5.1 a mark with nothing before it says nothing",
+    "find": "'no sales in the 28 days before to measure against'",
+    "replace": "''"
+  },
+  {
+    "name": "K5.2 the lift is read at ten times its size",
+    "find": "Math.round(v*100);return (n>0?'+':'')",
+    "replace": "Math.round(v*10);return (n>0?'+':'')"
+  },
+  {
+    "name": "K5.3 the link goes to the wrong place",
+    "find": "adminLink('shop/calendar'",
+    "replace": "adminLink('shop/hours'"
+  },
+  {
+    "name": "K6.1 the hold reads the times measured",
+    "find": "hold '+sg.hold+' units",
+    "replace": "hold '+x.measured+' units"
+  },
+  {
+    "name": "K6.1 the move is never suggested",
+    "find": "(sg.move?'a +'+Math.round(sg.move*100)+' move':'no move')",
+    "replace": "'no move'"
+  },
+  {
+    "name": "K6.2 every coming mark carries a suggestion",
+    "find": "const sg=x.suggest;",
+    "replace": "const sg=x.suggest||{hold:1,move:0.05};"
+  },
+  {
+    "name": "K6.2 a coming mark measured once says nothing of it",
+    "find": ":(x.measured?', measured '",
+    "replace": ":(false?', measured '"
+  },
+  {
+    "name": "K6.3 the card does not say information only",
+    "find": "and it is information only: nothing moves",
+    "replace": "and nothing moves"
+  },
+  {
+    "name": "K7.1 through an associate and came back swapped",
+    "find": "'+w.introduced+'</td><td class=\"mono\">'+w.back+'",
+    "replace": "'+w.back+'</td><td class=\"mono\">'+w.introduced+'"
+  },
+  {
+    "name": "K7.1 the total counts those who came back",
+    "find": "nb.weeks.reduce((t,w)=>t+w.count,0)",
+    "replace": "nb.weeks.reduce((t,w)=>t+w.back,0)"
+  },
+  {
+    "name": "K7.2 Thin whatever the engine says",
+    "find": "(nb.thin?' <b>Thin",
+    "replace": "(true?' <b>Thin"
+  },
+  {
+    "name": "K7.3 Thin never said",
+    "find": "(nb.thin?' <b>Thin",
+    "replace": "(false?' <b>Thin"
+  },
+  {
+    "name": "K8.1 an early regular is listed",
+    "find": "h.state==='due'||h.state==='late'||h.state==='lapsed'",
+    "replace": "true"
+  },
+  {
+    "name": "K8.1 the list is reversed",
+    "find": "need.slice(0,12).map(",
+    "replace": "need.slice(0,12).reverse().map("
+  },
+  {
+    "name": "K8.2 the account link goes to the wrong place",
+    "find": "adminLink('acct/'+encodeURIComponent(h.code)",
+    "replace": "adminLink('account/'+encodeURIComponent(h.code)"
+  },
+  {
+    "name": "K8.3 nobody-needs-a-word line is gone",
+    "find": "Nobody is due, late or lapsed.",
+    "replace": "."
+  },
+  {
+    "name": "K8.4 the rest are not counted",
+    "find": "(need.length>12?'<div class=\"dsc\" id=\"ckHabMore\">",
+    "replace": "(false?'<div class=\"dsc\" id=\"ckHabMore\">"
+  },
+  {
+    "name": "K9 Clients draws the habits for a rule with no habit",
+    "find": "if(!R||!R.band||!R.habit)return '';",
+    "replace": "if(!R||!R.band)return '';"
+  },
+  {
+    "name": "K4.2 the flat list is read",
+    "find": "const L=j&&j.ok===true&&j.calendar&&Array.isArray(j.calendar.list)?j.calendar.list:null;",
+    "replace": "const L=j&&j.ok===true&&Array.isArray(j.list)?j.list:null;"
+  },
+  {
+    "name": "K4.2 a failed read is never asked again",
+    "find": "if(!cloudMode()||CK_CAL||(CK_CAL_TRIED&&Date.now()-CK_CAL_TRIED<60000))return;",
+    "replace": "if(!cloudMode()||CK_CAL||CK_CAL_TRIED)return;"
+  },
+  {
+    "name": "K4.2 a failed read is asked again at once",
+    "find": "if(!cloudMode()||CK_CAL||(CK_CAL_TRIED&&Date.now()-CK_CAL_TRIED<60000))return;",
+    "replace": "if(!cloudMode()||CK_CAL)return;"
+  }
 ]

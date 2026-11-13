@@ -8,7 +8,8 @@
  *       a bucket, a code with no username, a practice account, a habit with no last day, a written-off party, a banned or departed one, one with an order open on the book and a code the sheet does not read stay out
  *   R3  the publish reads the banned and departed off the book
  *   R2  the real plan: planPublish puts `remind` from the snapshot's habits and the sheet's owed, and puts none without a snapshot
- *   W1  the cron at 10:00 sends one wake of kind remind, sealed {k, o} and nothing else, and files `reminded:<username>` as the cycle day for 120 days
+ *   W1  the cron at 10:00 sends one wake of kind remind, sealed {k, o} and nothing else, and files `reminded:<username>` as the cycle day for 400 days
+ *   W9  a list older than two days sends nothing; W10 a phone that cannot read the kind is not woken and its cycle is not spent (Fable, 13 Nov 2026)
  *   W2  a second tick in the same hour sends nothing
  *   W3  no wake at any other hour
  *   W4  a new order day is a new cycle and is reminded again; the same cycle the next day is not
@@ -107,7 +108,7 @@ export async function run({ ok, pageWork }) {
       const plan = await planPublish(root, "", new Date("2026-11-14T00:00:00Z"), [], null, px("late"), null, { noRetire: true });
       const put = plan.puts.find((x) => x.key === "remind"), plan0 = await planPublish(root, "", new Date("2026-11-14T00:00:00Z"), [], null, null, null, { noRetire: true });
       const plan1 = await planPublish(root, "", new Date("2026-11-14T00:00:00Z"), [], null, px("early"), null, { noRetire: true });
-      ok(put && J(JSON.parse(put.value)) === J({ [UA]: "2026-10-01" }) && !plan0.puts.some((x) => x.key === "remind") && J(JSON.parse(plan1.puts.find((x) => x.key === "remind").value)) === "{}",
+      ok(put && J((({ _day, ...rest }) => rest)(JSON.parse(put.value))) === J({ [UA]: "2026-10-01" }) && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(JSON.parse(put.value)._day) && !plan0.puts.some((x) => x.key === "remind") && J((({ _day, ...rest }) => rest)(JSON.parse(plan1.puts.find((x) => x.key === "remind").value))) === "{}",
         "R2 the publish plan puts the list off the snapshot's habits and the sheet's owed, an empty one when nobody qualifies, and none with no snapshot: " + J([put && put.value, plan0.puts.map((x) => x.key)]));
     }
   } finally { rmSync(root, { recursive: true, force: true }); }
@@ -127,34 +128,36 @@ export async function run({ ok, pageWork }) {
     const w = []; hits.length = 0; logs.length = 0;
     console.log = (...x) => { logs.push(x.join(" ")); };
     try { await stmtW.scheduled({ cron: "0 * * * *", scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => w.push(p) }); await Promise.all(w); } finally { console.log = realLog; }
-    const read = []; for (const h of hits) read.push([h.u, await phones[h.u].read(h.body)]);
+    const read = []; for (const h of hits) read.push([h.u, phones[h.u] && h.body ? await phones[h.u].read(h.body) : { k: "bare" }]);   /* a phone with no keys gets a bare wake */
     return read;
   };
   const kinds = (r, u) => r.filter((x) => x[0] === u).map((x) => x[1].k);
+  /* the publish stamps the list with its day (_day); a list older than two days sends nothing */
+  const seed = (o, n = 0) => kv.put("remind", J(Object.assign({ _day: D(n) }, o)));
   try {
-    await kv.put("remind", J({ [UA]: D(-14) }));
+    await seed({ [UA]: D(-14) });
     const t1 = await tick(at(0, "02"));
     const mark = await kv.get("reminded:" + UA);
-    ok(J(t1) === J([[UA, { k: "remind", o: "" }]]) && mark === D(-14) && (kv.opts.get("reminded:" + UA) || {}).expirationTtl === 120 * 86400,
-      "W1 the 10:00 tick sends one wake of kind remind, sealed {k, o} and nothing else, and files reminded:<username> as the cycle day for 120 days: " + J([t1, mark, kv.opts.get("reminded:" + UA)]));
+    ok(J(t1) === J([[UA, { k: "remind", o: "" }]]) && mark === D(-14) && (kv.opts.get("reminded:" + UA) || {}).expirationTtl === 400 * 86400,
+      "W1 the 10:00 tick sends one wake of kind remind, sealed {k, o} and nothing else, and files reminded:<username> as the cycle day for 400 days, longer than the habit window: " + J([t1, mark, kv.opts.get("reminded:" + UA)]));
     const t2 = await tick(at(0, "02"));
     ok(t2.length === 0 && await kv.get("reminded:" + UA) === D(-14), "W2 a second tick in the same hour sends nothing: " + J(t2));
-    await kv.put("remind", J({ [UA]: D(-14), [UB]: D(-20) }));
+    await seed({ [UA]: D(-14), [UB]: D(-20) });
     const t3 = [await tick(at(0, "03")), await tick(at(0, "01")), await tick(at(-1, "17")), await tick(at(0, "14"))];
     ok(t3.every((r) => r.length === 0) && await kv.get("reminded:" + UB) === null,
       "W3 no wake at 09:00, 11:00 or any other hour, and a customer not yet reminded is left unmarked: " + J(t3));
     const t3b = await tick(at(0, "02"));
     ok(J(t3b) === J([[UB, { k: "remind", o: "" }]]) && await kv.get("reminded:" + UB) === D(-20),
       "W3 at 10:00 the next customer is reminded and the one already reminded for that cycle is not: " + J(t3b));
-    await kv.put("remind", J({ [UA]: D(-14), [UB]: D(-20) }));
+    await seed({ [UA]: D(-14), [UB]: D(-20) });
     const same = await tick(at(1, "02"));
-    await kv.put("remind", J({ [UA]: D(-3), [UB]: D(-20) }));
+    await seed({ [UA]: D(-3), [UB]: D(-20) });
     const fresh = await tick(at(1, "02"));
     ok(same.length === 0 && J(fresh) === J([[UA, { k: "remind", o: "" }]]) && await kv.get("reminded:" + UA) === D(-3),
       "W4 the same cycle the next day is not reminded again, a new order day is a new cycle and is: " + J([same, fresh]));
 
     /* W5, W6: a practice account, and a customer the chase is waking */
-    await kv.put("remind", J({ [UT]: D(-9), [UC]: D(-9) }));
+    await seed({ [UT]: D(-9), [UC]: D(-9) });
     await kv.put("order:" + UC + ":20261101010101-wc1", J(done("20261101010101-wc1", ago(24 * 3), { u: UC, moved: 1, movedOn: D(-3), paid: 0, total: 100 })));
     const t5 = await tick(at(2, "02"));
     ok(kinds(t5, UT).length === 0 && await kv.get("reminded:" + UT) === null, "W5 a practice account in the list is never woken and never marked: " + J(t5));
@@ -162,10 +165,20 @@ export async function run({ ok, pageWork }) {
       "W6 a customer holding goods unpaid hears the chase alone this hour, and is not marked as reminded: " + J(t5));
     /* W8: an order of theirs open on the Counter */
     await subscribe(UD);
-    await kv.put("remind", J({ [UD]: D(-9) }));
+    await seed({ [UD]: D(-9) }, 3);
     await kv.put("order:" + UD + ":20261101010102-wd1", J(ord("20261101010102-wd1", "placed", ago(5), { u: UD })));
     const t8 = await tick(at(3, "02"));
     ok(kinds(t8, UD).length === 0 && await kv.get("reminded:" + UD) === null, "W8 a customer with an order open on the Counter is not reminded at the send, and not marked: " + J(t8));
+    /* W9: a list stamped three days ago sends nothing, marks nothing */
+    await seed({ [UA]: D(-41) }, 1);
+    const t9 = await tick(at(4, "02"));
+    ok(!t9.some((x) => x[1].k === "remind") && await kv.get("reminded:" + UA) !== D(-41), "W9 a list more than two days old sends nothing: " + J(t9));
+    /* W10: a phone filed with no keys cannot read the kind: not woken (no bare wake with other words) and its cycle not spent */
+    const UE = "nokey-0001", epE = "https://push.example/" + UE; ownerOf[epE] = UE;
+    await kv.put("push:" + UE + ":" + await endpointId(epE), J({ endpoint: epE, keys: null, at: new Date().toISOString() }));
+    await seed({ [UE]: D(-30) }, 5);
+    const t10 = await tick(at(5, "02"));
+    ok(!hits.some((h) => h.u === UE) && await kv.get("reminded:" + UE) === null, "W10 a phone that cannot read the reminder is not woken and its cycle is not spent: " + J(t10));
   } finally { globalThis.fetch = realFetch; console.log = realLog; }
 
   /* ---- W7, S1, S2 ---- */

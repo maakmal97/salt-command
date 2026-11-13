@@ -139,12 +139,12 @@ export function sealedNews(news, o) {
 /** Wake every phone one customer has subscribed. Never throws: a banner is not worth an error path.
     `news` is { k, o, v?, t?, m? } (sealedNews): a kind the service worker has words for (NEWS in stmt/sw.js), and the
     order a tap opens. */
-export async function wakeCustomer(env, u, news) { return wake(env, u, "salt-order", news); }
+export async function wakeCustomer(env, u, news, opts) { return wake(env, u, "salt-order", news, opts); }
 /* v761: AND EVERY PHONE ON THE SITE, for a notice that is for everybody. Same send, same clearing
    of a subscription the service has given up on, a different collapsing topic so a notice does not
    replace an order's banner on the lock screen and neither replaces the other. */
 export async function wakeEveryone(env) { return wake(env, null, "salt-notice"); }
-async function wake(env, u, topic, news) {
+async function wake(env, u, topic, news, opts) {
   try {
     const key = await signingKey(env);
     const pub = env.STMT_VAPID_PUBLIC_KEY;
@@ -174,6 +174,8 @@ async function wake(env, u, topic, news) {
          with nothing, as before: a key the page's check passed but WebCrypto refuses must not cost the wake */
       let body = null;
       if (keys) { try { body = await sealFor(keys, text); } catch { body = null; } }
+      /* a wake that must carry its own words (the reminder) goes to sealed phones only */
+      if (!body && opts && opts.sealedOnly) continue;
       let r;
       try {
         if (body) { Object.assign(headers, { Topic: orderTopic, "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" }); sealed++; }

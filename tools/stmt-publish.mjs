@@ -226,7 +226,7 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      records rather than in a write of its own. Given only when the desk was opened for prices. */
   if (assoc) puts.push({ key: "assoc", value: JSON.stringify(assoc) });
   /* the reminder's list, from the same snapshot as the lists; no snapshot, no list, and the last one stands */
-  if (pricing && r.records.length) puts.push({ key: "remind", value: JSON.stringify(remindMap(pricing, sheet, byUser, peopleOut())) });
+  if (pricing && r.records.length) puts.push({ key: "remind", value: JSON.stringify(Object.assign({ _day: new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10) }, remindMap(pricing, sheet, byUser, peopleOut()))) });   /* stamped with its day, so a stale list sends nothing */
   return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched.filter((u) => !spares.has(u)),
     spares: [...spares], stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, sheet, users: usersMap(root) };
 }

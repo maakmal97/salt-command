@@ -232,5 +232,29 @@
     "file": "stmt/words.js",
     "find": "\"news.remind.b\": \"Your usual is one tap away.\",",
     "replace": "\"news.remind.b\": \"Your usual is ready.\","
+  },
+  {
+    "name": "W9 a stale list still sends",
+    "file": "stmt/remind.js",
+    "find": "  if (!stamp || (Date.parse(today) - Date.parse(stamp)) / 864e5 > REMIND_STALE_DAYS) { out.stale = true; return out; }",
+    "replace": ""
+  },
+  {
+    "name": "W10 a keyless phone gets the bare wake",
+    "file": "stmt/push.js",
+    "find": "      if (!body && opts && opts.sealedOnly) continue;",
+    "replace": ""
+  },
+  {
+    "name": "W10 a cycle is spent with nothing sealed",
+    "file": "stmt/remind.js",
+    "find": "    else { out.quiet++; try { if (was) await env.STMT.put(key, was, { expirationTtl: REMIND_TTL }); else await env.STMT.delete(key); } catch {} }",
+    "replace": "    else out.quiet++;"
+  },
+  {
+    "name": "W1 the mark lasts 120 days",
+    "file": "stmt/remind.js",
+    "find": "export const REMIND_TTL = 400 * 86400;",
+    "replace": "export const REMIND_TTL = 120 * 86400;"
   }
 ]
