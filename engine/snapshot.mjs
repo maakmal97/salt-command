@@ -227,12 +227,12 @@ function inputs(C,p){
 /* 11 Nov 2026: the policy carries the day's market move on a band book (marketOf) and his re-anchored points (ruleFor). `plain` leaves the move
    out: the evidence (a past sale's place, the 90-day reading) is read against the plain Median, never the day's move. */
 function policy(C,p,plain){
-  const R=C.R,pq=C.B.quotes[p]||null,mk=plain?null:marketK(C,p);
+  const R=C.R,pq=C.B.quotes[p]||null,mk=plain?null:marketK(C,p),tt=plain?null:testOf(C,p);
   return Object.assign({LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
     stated:setPricesFor(C,p),
     tierRule:ruleFor(C,p),
     tiers:(pq&&pq.tiers)?pq.tiers:[],
-    boardSizes:sizesFor(C,p)},mk?{market:mk}:{});
+    boardSizes:sizesFor(C,p)},mk?{market:mk}:{},tt?{test:{q:tt.q,rm:tt.rm}}:{});
 }
 
 /* ============ 11 NOV 2026, THE PRICE BAND'S VERSION 2: THE MARKET (docs/plan-salt-price-band.html Steps 3 and 4, "Dependable") ============
@@ -421,6 +421,118 @@ function marketScore(C,p){
   const mean=prior.reduce((t,v)=>t+v,0)/prior.length;
   return {from:a,to:to,margin:+marginDay(C,p,a,to).toFixed(2),prior:+mean.toFixed(2),orders:week.length,newBuyers:newB,wonBack:back,added:+added.toFixed(2)};
 }
+/* ============ 13 NOV 2026, THE PRICE BAND'S VERSION 3: THE CUSTOMERS (docs/plan-salt-price-band.html, "The engine"; his answers E, F, G and of 11 Nov 2026) ============
+   Readings on the book, no model and no state. Nothing here prices but the price test, which the policy carries as `test` and the walk reads at its
+   one size alone. A regular is a buyer with `habit.regular` order days or more in the window; their gap is the median gap between those days, their
+   usual the median size; early, due (past one gap), late (past `late` gaps) or lapsed (past `lapse` gaps or `lapseDays`, whichever is longer).
+   A partner, a bucket's own account and an order of goodwill or a reward are not habits. */
+function habitRule(C,p){const R=C.R.TIER_RULE[p];return R&&R.band&&R.habit?R.habit:null;}
+const medOf=a=>{const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length?(s.length%2?s[m]:(s[m-1]+s[m])/2):null;};
+function habitOf(C,p,code){
+  const H=habitRule(C,p);if(!H||!C.today||!code)return null;
+  const who=ownerOf(code)||code;if(isPartner(C,who))return null;
+  return viaMemo(C,'habit|'+p+'|'+who+'|'+todayISO(C),()=>{
+    const to=todayISO(C),from=addDays(to,-H.window);
+    const rows=pSales(C.B,p).filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)&&pbPriced(s)&&!s.goodwill&&!s.rewardOf&&s.date&&+s.qty>0
+      &&String(s.date)>=from&&String(s.date)<=to);
+    const days=[...new Set(rows.map(s=>String(s.date)))].sort();
+    if(days.length<H.regular)return {code:who,regular:false,orders:days.length};
+    const gaps=[];for(let i=1;i<days.length;i++)gaps.push((dayAt(days[i])-dayAt(days[i-1]))/864e5);
+    const gap=Math.max(1,medOf(gaps)),last=days[days.length-1],since=Math.round((dayAt(to)-dayAt(last))/864e5);
+    const usual=medOf(rows.map(s=>+s.qty));
+    const state=since>Math.max(H.lapse*gap,H.lapseDays)?'lapsed':since>H.late*gap?'late':since>=gap?'due':'early';
+    const span=Math.max(30,(dayAt(to)-dayAt(days[0]))/864e5);
+    const m=rows.filter(s=>typeof s.cost==='number'&&isFinite(s.cost)).reduce((t,s)=>t+POSITION_ENGINE.txGoods(s)-s.cost,0);
+    const units=rows.reduce((t,s)=>t+ +s.qty,0);
+    return {code:who,regular:true,orders:days.length,gap:+gap.toFixed(1),usual:+usual.toFixed(2),last,since,state,
+      margin30:+(m*30/span).toFixed(2),units30:+(units*30/span).toFixed(2),owes:+POSITION_ENGINE.partyOwedRM(C.B.sales,who).toFixed(2),
+      next:addDays(last,Math.round(gap))};
+  });
+}
+/* the snapshot's shape of the habits, by code */
+function habitMap(hs){const o={};hs.forEach(h=>{o[h.code]={state:h.state,gap:h.gap,usual:h.usual,last:h.last,since:h.since,next:h.next,margin30:h.margin30,owes:h.owes};});return o;}
+/* every regular on the book, those who need a word first (lapsed, late, due), then the largest margin a month */
+function habits(C,p){
+  if(!habitRule(C,p)||!C.today)return [];
+  const RANK={lapsed:0,late:1,due:2,early:3};
+  const who=[...new Set(pSales(C.B,p).map(s=>ownerOf(s.customer)||s.customer).filter(Boolean))];
+  return who.map(c=>habitOf(C,p,c)).filter(h=>h&&h.regular).sort((a,b)=>RANK[a.state]-RANK[b.state]||b.margin30-a.margin30||(a.code<b.code?-1:1));
+}
+/* THE SIZE WARNING (shown on the customer's card, never priced): what a bigger lot or ten points off would do to what they earn him a month, at
+   their own units a month. A bigger lot is the smallest ordered size at three times their usual or more, at their own place on the band. */
+function sizeWarn(C,p,code){
+  const h=habitOf(C,p,code);if(!h||!h.regular)return null;
+  const K=cost(C,p),P0=policy(C,p,true);if(!K||!P0)return null;
+  const d=driftS(C,p,h.code),pc=d&&typeof d.d==='number'?d.d:0;
+  const at=(q,k)=>{const x=PRICING_ENGINE.quoteAt(q,K,P0,k);return x==null?null:(x-PRICING_ENGINE.costTotal(q,K,P0))/q;};
+  const now=at(h.usual,pc);if(now==null)return null;
+  const big=shownSizes(C,p).filter(q=>q>=3*h.usual-1e-9).sort((a,b)=>a-b)[0];
+  const bigU=big!=null?at(big,pc):null;
+  const off=at(h.usual,Math.max(-1,pc-0.1));
+  return {usual:h.usual,perUnit:+now.toFixed(2),units30:h.units30,
+    bigger:bigU!=null?{q:big,perUnit:+bigU.toFixed(2),less30:+((now-bigU)*h.units30).toFixed(2)}:null,
+    tenOff:off!=null?{less30:+((now-off)*h.units30).toFixed(2)}:null};
+}
+/* THE WIN-BACK (his answer F, the size his of 11 Nov 2026): at his Accept of a lapsed regular's order, a place ten points under their own, never
+   under `winBackFloor`, so the order still earns; a suggestion he takes or leaves, their card never changed */
+function winBack(C,p,code){
+  const H=habitRule(C,p),h=habitOf(C,p,code);if(!H||!h||!h.regular||h.state!=='lapsed')return null;
+  const d=driftS(C,p,h.code),pc=d&&typeof d.d==='number'?d.d:0;
+  const k=Math.max(H.winBackFloor,+(pc-H.winBack).toFixed(4));
+  return k<pc-1e-9?{from:pc,to:k,since:h.since,gap:h.gap}:null;
+}
+/* NEW BUYERS (the plan's "New buyers"): first orders by week over eight weeks, each by its road (an introduction of an associate's, or their own),
+   how many came back, and thin when the newest two weeks each run under half the eight weeks' mean */
+function newBuyers(C,p){
+  if(!habitRule(C,p)||!C.today)return null;
+  const to=todayISO(C),rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&!s.rewardOf&&s.date&&+s.qty>0).sort((a,b)=>String(a.date)<String(b.date)?-1:1);
+  const first={},n={};rows.forEach(s=>{const o=ownerOf(s.customer)||s.customer;n[o]=(n[o]||0)+1;if(!(o in first))first[o]=String(s.date);});
+  const intro={};(C.B.introductions||[]).forEach(x=>{if(x&&x.customer)intro[x.customer]=x.by;});
+  const weeks=[];for(let i=7;i>=0;i--){const a=addDays(to,-7*(i+1)),b=addDays(to,-7*i);
+    const who=Object.keys(first).filter(o=>first[o]>=a&&first[o]<b&&!isPartner(C,o));
+    weeks.push({from:a,to:b,count:who.length,introduced:who.filter(o=>intro[o]).length,back:who.filter(o=>n[o]>1).length});}
+  const mean=weeks.reduce((t,w)=>t+w.count,0)/weeks.length;
+  return {weeks,mean:+mean.toFixed(2),thin:mean>0&&weeks.slice(-2).every(w=>w.count<mean/2)};
+}
+/* THE PRICE TEST (his answer G and of 11 Nov 2026; RM 5 his answer of 13 Nov 2026): at `test.q` alone, from the rule's `from` (a Monday) for `weeks`
+   weeks, `rm` ringgit up in the even weeks and down in the odd, riding on the day's Median; nought before and after, and while his switch is off */
+function testOf(C,p){
+  const R=C.R.TIER_RULE[p],T=R&&R.band&&R.test;if(!T||!T.from||!C.today)return null;
+  const d=todayISO(C);if(d<T.from)return null;
+  const w=Math.floor((dayAt(d)-dayAt(T.from))/(7*864e5));if(w>=T.weeks)return null;
+  if(marketRule(C,p)&&!switchOn(C,p,d))return null;
+  return {q:+T.q,rm:w%2===0?+T.rm:-T.rm,week:w+1,weeks:T.weeks,from:T.from};
+}
+/* what the test measured: orders and margin a day at its size, the up weeks against the down weeks */
+function testReading(C,p){
+  const R=C.R.TIER_RULE[p],T=R&&R.band&&R.test;if(!T||!T.from||!C.today)return null;
+  const to=todayISO(C),q=+T.q,acc={up:{days:0,orders:0,margin:0},down:{days:0,orders:0,margin:0}};
+  const rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&!s.rewardOf&&!s.oneOff&&s.date&&Math.abs(+s.qty-q)<0.009&&!isPartner(C,s.customer));
+  for(let d=T.from,i=0;d<to&&i<T.weeks*7;d=addDays(d,1),i++){
+    if(marketRule(C,p)&&!switchOn(C,p,d))continue;
+    const side=Math.floor(i/7)%2===0?'up':'down',x=acc[side];x.days++;
+    rows.filter(s=>String(s.date)===d).forEach(s=>{x.orders++;if(typeof s.cost==='number'&&isFinite(s.cost))x.margin+=POSITION_ENGINE.txGoods(s)-s.cost;});
+  }
+  const per=x=>({days:x.days,orders:x.orders,ordersDay:x.days?+(x.orders/x.days).toFixed(2):null,marginDay:x.days?+(x.margin/x.days).toFixed(2):null});
+  return {q,from:T.from,weeks:T.weeks,up:per(acc.up),down:per(acc.down)};
+}
+/* THE CALENDAR (his answer of 11 Nov 2026: marks stand at once, removable): each mark {name, from, to} his on Salt Admin (Counter KV `calendar`, not the
+   book). The lift is the book's units a day inside the mark against the 28 days before it; a name that has passed twice is suggested stock to hold
+   and a move of +5, his tap */
+function calendarLift(C,p,marks){
+  if(!C.today||!Array.isArray(marks))return [];
+  const to=todayISO(C),rows=pSales(C.B,p).filter(s=>pbPriced(s)&&!s.goodwill&&s.date&&+s.qty>0);
+  const units=(a,b)=>rows.filter(s=>String(s.date)>=a&&String(s.date)<b).reduce((t,s)=>t+ +s.qty,0);
+  const out=marks.filter(m=>m&&m.name&&m.from&&m.to&&String(m.to)>=String(m.from)).map(m=>{
+    const end=addDays(m.to,1),n=Math.round((dayAt(end)-dayAt(m.from))/864e5),passed=end<=to;
+    const before=units(addDays(m.from,-28),m.from)/28,inside=passed?units(m.from,end)/n:null;
+    return {name:m.name,from:m.from,to:m.to,passed,lift:passed&&before>0?+(inside/before-1).toFixed(3):null,perDay:inside==null?null:+inside.toFixed(2)};});
+  const byName={};out.filter(x=>x.lift!=null).forEach(x=>{(byName[x.name]=byName[x.name]||[]).push(x);});
+  out.forEach(x=>{const past=byName[x.name]||[];x.measured=past.length;
+    if(!x.passed&&past.length>=2){const l=medOf(past.map(y=>y.lift)),pd=medOf(past.map(y=>y.perDay));
+      const n=Math.round((dayAt(addDays(x.to,1))-dayAt(x.from))/864e5);x.suggest={hold:+(pd*n).toFixed(1),move:l>0?0.05:0,lift:l};}});
+  return out;
+}
 /* the board for a book, on its own rungs (its stated prices, or its floor, Set Price and Ceiling); null for a book with no rule. `cost` is a function, read only when there is a rule */
 function fiveTiers(C,p,cost){
   const R=C.R.TIER_RULE[p];
@@ -552,7 +664,9 @@ function pricing(B,R,today,over=null){
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
       lift?{lift,suggest}:{},
       /* 11 Nov 2026: the day's market move, its reason and his switch, for the drafter, Salt Admin and the price list's reader */
-      (m=>m?{market:{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:marketWhy(m)}}:{})(marketOf(C,p)));
+      (m=>m?{market:{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:marketWhy(m)}}:{})(marketOf(C,p)),
+      /* 13 Nov 2026: every regular's habit (the price band's version 3), for Accept's win-back and the publish's reminder; nothing prices from it */
+      (hs=>hs.length?{habits:habitMap(hs)}:{})(habits(C,p)));
   }
   return out;
 }
@@ -561,6 +675,7 @@ return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPri
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,heldBefore,
   inputs,policy,fiveTiers,figures,
   ruleFor,shelfAt,marketCover,marketPace,marketWalk,marketOf,marketK,marketWhy,marketReplay,priceReading,marketScore,switchOn,
+  habitOf,habits,habitMap,sizeWarn,winBack,newBuyers,testOf,testReading,calendarLift,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 

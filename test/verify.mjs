@@ -50556,6 +50556,11 @@ await (async () => {
   await (await import("./desk-cleanup.mjs")).run({ ok });
 })();
 
+section("13 Nov 2026: the price band's version 3, the customers: habits, the win-back, new buyers, the price test and the calendar");
+await (async () => {
+  await (await import("./price-band-customers.mjs")).run({ ok });
+})();
+
 section("13 Nov 2026: Fable's review of the price band's version 2, the findings applied");
 await (async () => {
   const m = await import("./band-v2-fixes.mjs");

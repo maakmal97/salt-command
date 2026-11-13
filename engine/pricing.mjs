@@ -599,6 +599,9 @@ function driftWalk(sizes,C,P,pct){
      same laws on a path of its own; a customer's % is then a place between the Floor, the MOVED Median and the Ceiling (his answer: their % rides
      on it), so -100% stays the Floor and +100% the Ceiling, and a partner, quoted the Floor apart from this walk, never moves. */
   const mk=band&&typeof P.market==='number'&&isFinite(P.market)?Math.max(BAND_MIN,Math.min(BAND_MAX,P.market)):0;
+  /* 13 NOV 2026, THE PRICE BAND'S VERSION 3, THE PRICE TEST (his answer G and of 11 Nov 2026; his answer of 13 Nov 2026, RM 5): P.test {q, rm} moves the
+     Median at that one size by rm ringgit, riding on the day's move; the walk's running state is left as it was untested, so no other size moves, and their % rides on the tested Median there */
+  const tq=band&&P.test&&typeof P.test.rm==='number'&&isFinite(P.test.rm)&&+P.test.q>0?+P.test.q:null, tk=tq!=null?Math.max(-50,Math.min(50,P.test.rm)):0;
   let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity, rM=Infinity, mM=-Infinity;
   return sizes.map(q=>{
     /* fb is the COGS Floor the multiples, the margin lift and the Ceiling are struck on; fl is the Floor the price is held over (10 Nov 2026) */
@@ -619,15 +622,20 @@ function driftWalk(sizes,C,P,pct){
     /* the moved Median: a place mk on the band over the plain one, held on its own side of it (a rise never under it, a fall never over it) */
     let s=s0;
     if(Math.abs(mk)>1e-9){const z=step(rM,mM,bandTop(s0.p,lo,hi,mk));rM=z.rate;mM=z.mg;s={rate:z.rate,mg:z.mg,p:mk>0?Math.max(z.p,s0.p):Math.min(z.p,s0.p)};}
+    /* the tested Median at its size alone: the day's Median and tk ringgit, held between the Floor and the Ceiling and on its own side */
+    const tested=tq!=null&&Math.abs(q-tq)<1e-9&&Math.abs(tk)>1e-9;
+    if(tested){const t=Math.min(Math.max(s.p+tk,lo),hi);s={rate:s.rate,mg:s.mg,p:tk>0?Math.max(t,s.p):Math.min(t,s.p),untested:s.p};}
     let p=s.p;
     /* on a band their % is a place between the three posts as quoted at this size (bandTop over the walked Median, the Floor and the Ceiling) */
-    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));rP=x.rate;mP=x.mg;p=x.p;
+    if(Math.abs(k)>1e-9){const x=step(rP,mP,band?bandTop(s.p,lo,hi,k):R.ends?fb*driftMultiple(q,R,k):fb*m*(1+k));
+      /* at the tested size the % path's state is the one the untested Median gives, so the next size never feels the test */
+      if(tested){const u=step(rP,mP,bandTop(s.untested,lo,hi,k));rP=u.rate;mP=u.mg;}else{rP=x.rate;mP=x.mg;}p=x.p;
       /* THE % NEVER CROSSES THE MEDIAN, AND -100% IS THE FLOOR ITSELF (10 Nov 2026). The place is struck on the Median as quoted, which is rounded, so
          the % path's running rate can sit a hair under the Median's own where the Ceiling holds the Median: a lift is then held at the Median or over
          it, size by size (a discount cannot pass it: its target, its rate and its margin are each the Median's or less). And the margin lift is not the Floor's business: at -100% the price is the Floor, what a
          partner pays, on any cost. */
       if(band)p=k<=BAND_MIN+1e-9?lo:k>0?Math.max(p,s.p):p;}
-    return Object.assign({q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k},Math.abs(mk)>1e-9?{plain:s0.p,market:mk}:{});
+    return Object.assign({q:q,floor:+fl.toFixed(2),ceiling:+(band?hi:ceil).toFixed(2),set:s.p,p:p,d:k},Math.abs(mk)>1e-9||tested?{plain:s0.p}:{},Math.abs(mk)>1e-9?{market:mk}:{},tested?{test:tk}:{});
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============

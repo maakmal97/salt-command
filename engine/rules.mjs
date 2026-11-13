@@ -303,6 +303,13 @@ const TIER_RULE={
         startFrom:"2026-11-12T20:05:00Z",
         market:{since:"2026-11-13", step:0.05, min:-0.15, max:0.2, supply:[[3,0.15],[7,0.05],[14,0]], long:-0.1,
                 pace:{short:14, long:56, fast:1.25, slow:0.75, k:0.05, acts:false}, stand:{weeks:2, hold:7}},
+        /* 13 Nov 2026, THE PRICE BAND'S VERSION 3, THE CUSTOMERS (his answers E, F and G of 10 Nov 2026 and of 11 Nov 2026): a regular has `regular` order days
+           in `window` days; late past `late` of their gaps, lapsed past `lapse` gaps or `lapseDays`, whichever is longer; the win-back at his Accept is a place
+           `winBack` under theirs, never under `winBackFloor`. The reminder: one a cycle to a late regular who owes nothing. The price test moves 1 unit alone,
+           `rm` ringgit up in its even weeks and down in its odd (one rounding step, his answer of 13 Nov 2026: 5 points round down to nothing at 1 unit),
+           from `from` (the Monday after the version) for `weeks`, riding on the day's Median. */
+        habit:{regular:4, late:1.5, lapse:3, lapseDays:21, window:180, winBack:0.1, winBackFloor:-0.8},
+        test:{q:1, rm:5, from:"2026-11-16", weeks:8},
         points:[[0.5,3],[1,2.4],[6.25,2.004],[12.5,1.596]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3, good:0.3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},

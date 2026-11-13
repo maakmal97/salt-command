@@ -1,0 +1,22 @@
+[
+  {"name": "C1 a regular needs one order day fewer", "file": "engine/snapshot.mjs", "find": "if(days.length<H.regular)return {code:who,regular:false,orders:days.length};", "replace": "if(days.length<H.regular-1)return {code:who,regular:false,orders:days.length};"},
+  {"name": "C1 late is one gap", "file": "engine/snapshot.mjs", "find": ":since>H.late*gap?'late':", "replace": ":since>gap?'late':"},
+  {"name": "C1 lapsed never waits 21 days", "file": "engine/snapshot.mjs", "find": "since>Math.max(H.lapse*gap,H.lapseDays)?'lapsed'", "replace": "since>H.lapse*gap?'lapsed'"},
+  {"name": "C1 a partner has a habit", "file": "engine/snapshot.mjs", "find": "const who=ownerOf(code)||code;if(isPartner(C,who))return null;\n  return viaMemo(C,'habit|'", "replace": "const who=ownerOf(code)||code;\n  return viaMemo(C,'habit|'"},
+  {"name": "C2 the list is not sorted by need", "file": "engine/snapshot.mjs", "find": ".sort((a,b)=>RANK[a.state]-RANK[b.state]||b.margin30-a.margin30||(a.code<b.code?-1:1));", "replace": ".sort((a,b)=>b.margin30-a.margin30||(a.code<b.code?-1:1));"},
+  {"name": "C3 a bigger lot is the next size up", "file": "engine/snapshot.mjs", "find": "const big=shownSizes(C,p).filter(q=>q>=3*h.usual-1e-9)", "replace": "const big=shownSizes(C,p).filter(q=>q>h.usual+1e-9)"},
+  {"name": "C4 the win-back for anyone late", "file": "engine/snapshot.mjs", "find": "if(!H||!h||!h.regular||h.state!=='lapsed')return null;", "replace": "if(!H||!h||!h.regular||h.state==='early')return null;"},
+  {"name": "C4 the win-back has no floor", "file": "engine/snapshot.mjs", "find": "const k=Math.max(H.winBackFloor,+(pc-H.winBack).toFixed(4));", "replace": "const k=+(pc-H.winBack).toFixed(4);"},
+  {"name": "C4 the Worker offers it to the late", "file": "src/orders.js", "find": "if (!h || h.state !== \"lapsed\" || !H", "replace": "if (!h || h.state === \"early\" || !H"},
+  {"name": "C5 an introduction is not counted", "file": "engine/snapshot.mjs", "find": "introduced:who.filter(o=>intro[o]).length", "replace": "introduced:0"},
+  {"name": "C5 never thin", "file": "engine/snapshot.mjs", "find": "thin:mean>0&&weeks.slice(-2).every(w=>w.count<mean/2)", "replace": "thin:false"},
+  {"name": "C6 the test never alternates", "file": "engine/snapshot.mjs", "find": "rm:w%2===0?+T.rm:-T.rm", "replace": "rm:+T.rm"},
+  {"name": "C6 the test never stops", "file": "engine/snapshot.mjs", "find": "if(w>=T.weeks)return null;", "replace": ""},
+  {"name": "C6 the test runs with the switch off", "file": "engine/snapshot.mjs", "find": "  if(marketRule(C,p)&&!switchOn(C,p,d))return null;\n  return {q:+T.q", "replace": "  return {q:+T.q"},
+  {"name": "C7 the test leaks into the next size", "file": "engine/pricing.mjs", "find": "if(tested){const u=step(rP,mP,bandTop(s.untested,lo,hi,k));rP=u.rate;mP=u.mg;}else{rP=x.rate;mP=x.mg;}", "replace": "rP=x.rate;mP=x.mg;"},
+  {"name": "C7 the test moves no price", "file": "engine/pricing.mjs", "find": "if(tested){const t=Math.min(Math.max(s.p+tk,lo),hi);", "replace": "if(false){const t=Math.min(Math.max(s.p+tk,lo),hi);"},
+  {"name": "C8 the reading counts a partner", "file": "engine/snapshot.mjs", "find": "&&Math.abs(+s.qty-q)<0.009&&!isPartner(C,s.customer));", "replace": "&&Math.abs(+s.qty-q)<0.009);"},
+  {"name": "C9 a mark is measured once", "file": "engine/snapshot.mjs", "find": "if(!x.passed&&past.length>=2){", "replace": "if(!x.passed&&past.length>=1){"},
+  {"name": "C10 the snapshot carries no habits", "file": "engine/snapshot.mjs", "find": "(hs=>hs.length?{habits:habitMap(hs)}:{})(habits(C,p))", "replace": "({})"},
+  {"name": "C10 the evidence reads the test", "file": "engine/snapshot.mjs", "find": "tt=plain?null:testOf(C,p);", "replace": "tt=testOf(C,p);"}
+]

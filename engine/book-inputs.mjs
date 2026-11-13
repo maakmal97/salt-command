@@ -34,7 +34,9 @@ export function inputsFromBook(book) {
     costRule: book.COST_RULE || {}, defaultProd: DEFAULT_PROD, refunds: book.customerRefunds || [],
     roster: book.roster || [], partners: book.partners || [], tierOf: book.TIER_OF || {}, prodOrder: book.PROD_ORDER || [],
     /* 11 Nov 2026: his market switch and re-anchored points (the price band's version 2); absent is on, with none */
-    market: book.MARKET && typeof book.MARKET === "object" ? book.MARKET : {}
+    market: book.MARKET && typeof book.MARKET === "object" ? book.MARKET : {},
+    /* 13 Nov 2026: the associates' introductions, read by the new-buyer line (the price band's version 3) */
+    introductions: Array.isArray(book.INTRODUCTIONS) ? book.INTRODUCTIONS : []
   };
 }
 

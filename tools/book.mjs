@@ -344,7 +344,9 @@ export function pricingSnapshot(w) {
     finally { try { w.eval("if(typeof RENDER_MEMO!=='undefined')RENDER_MEMO=null;"); } catch (e) { } if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
     /* 11 Nov 2026 (the price band's version 2): the day's market move, its reason and his switch, the engine's pricing() field, for the drafter, Salt Admin and the price list's reader */
     const market = call("(function(){try{var m=SNAPSHOT_ENGINE.marketOf(snapCtx()," + JSON.stringify(p) + ");return m?{day:m.day,k:m.k,on:m.on!==false&&!m.before,why:SNAPSHOT_ENGINE.marketWhy(m)}:null;}catch(e){return null;}})()");
-    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {}, market ? { market } : {});
+    /* 13 Nov 2026: every regular's habit (the price band's version 3), as the engine's pricing() carries it */
+    const habits = call("(function(){try{var h=SNAPSHOT_ENGINE.habits(snapCtx()," + JSON.stringify(p) + ");return h.length?SNAPSHOT_ENGINE.habitMap(h):null;}catch(e){return null;}})()");
+    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {}, market ? { market } : {}, habits ? { habits } : {});
   }
 
   return {
