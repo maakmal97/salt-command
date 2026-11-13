@@ -90,5 +90,13 @@ export async function run({ ok }) {
     const real10 = await s.owner("/all/test/reset", { u: "abcd-efgh" });
     ok(moved === "declined" && one.status === 200 && back === "placed" && all.status === 200 && e0.status === 400 && real10.status === 400,
       "Reset under /all/test restores one account or all, and refuses Start empty for 0000-0000 and any real username: " + JSON.stringify([moved, one.status, back, all.status, e0.status, real10.status]));
+
+    /* 11. the practice calendar (13 Nov 2026): an invented one, Add and Remove answered by the real rules, his own KV calendar never written */
+    const c11 = await (await s.owner("/all/test/maker/calendar", undefined, undefined, "GET")).json();
+    const add11 = await (await s.owner("/all/test/maker/calendar", { add: { name: "School holiday", from: c11.calendar && c11.calendar.list[0].from, to: c11.calendar && c11.calendar.list[0].to } })).json();
+    const bad11 = await s.owner("/all/test/maker/calendar", { add: { name: "X", from: "2026-01-02", to: "2026-01-01" } });
+    const kept = await s.env.STMT.get("calendar");
+    ok(c11.ok && c11.test === true && c11.calendar.list.length === 1 && add11.ok && add11.calendar.list.length === 2 && bad11.status === 400 && kept === null,
+      "The practice calendar answers an invented list, Add by the real rules, and writes nothing to his calendar: " + JSON.stringify([c11.calendar, add11.calendar && add11.calendar.list.length, bad11.status, kept]));
   } finally { s.close(); }
 }

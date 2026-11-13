@@ -515,7 +515,7 @@ function stockWithDates(desk, expected, test) {
    alone. Every other kind, every real order and every real username answers 404; the reads come from the fixtures and call no Desk route;
    a reply on a test account's thread is written in-process and wakes nobody (Fable's review). */
 const TEST_KINDS = { review: ["GET"], "order-action": ["POST"], "order-move": ["POST"], claim: ["POST"], claims: ["GET"], thread: ["POST"],
-  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"], stock: ["GET"], place: ["POST"], "slip-pub": ["GET"] };
+  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"], stock: ["GET"], place: ["POST"], "slip-pub": ["GET"], calendar: ["GET", "POST"] };
 async function testMaker(request, env, op) {
   const method = request.method;
   if (!Object.hasOwn(TEST_KINDS, op.kind) || !TEST_KINDS[op.kind].includes(method)) return json({ ok: false, error: "not found" }, 404);
@@ -535,6 +535,17 @@ async function testMaker(request, env, op) {
     return json({ ok: true, test: true, orders, drafts: [], refused: [], queue: [], unreadable: [], trips: [], sameDay: [], rows: [], refunds: {} });
   }
   /* the glance's stock: one fixed example book and a day three days on, nothing real read and no Desk called */
+  /* 13 Nov 2026: the practice calendar is an invented one; Add and Remove answer by the real rules against it and store nothing (his marks are never written from /all/test) */
+  if (op.kind === "calendar") {
+    const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), day = (n) => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
+    const example = { v: 1, list: [{ id: "e0e0e0e0e0e0", name: "Payday", from: day(10), to: day(12) }] };
+    if (method === "GET") return json({ ok: true, test: true, calendar: example });
+    const parsed = await bodyOf(request);
+    if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+    const next = applyCalendar(example, parsed.body, today, () => "e1e1e1e1e1e1");
+    if (next.error) return json({ ok: false, error: next.error }, 400);
+    return json({ ok: true, test: true, calendar: next.cal });
+  }
   if (op.kind === "stock") return json(stockWithDates(EXAMPLE_STOCK, { salt: klDay(new Date(Date.now() + 3 * 864e5).toISOString()) }, true));
   if (op.kind === "claims") return json({ ok: true, test: true, claims: await fixtures((u, f) => f.account.claims.map((c) => ({ ...c, test: true }))) });
   if (op.kind === "pools") {
