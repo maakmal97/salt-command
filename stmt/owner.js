@@ -73,6 +73,7 @@ export const OWNER_JS = `
     'shop.hours':function(){ loadMakerHours(); loadMakerPoints(); },
     'shop.notice':function(){ loadMakerBulletin(); },
     'shop.market':function(){ loadMarket(); },
+    'shop.calendar':function(){ loadCalendar(); },
     'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }
   };
   /* every element that names where it shows is shown there and hidden elsewhere: a card, a form, a section or a whole place. Record's
@@ -736,6 +737,15 @@ export const OWNER_JS = `
      the meter and the figures are its rows, what it means the grey line under it */
   function acctHead(box, t){ var h=el('h2','salt-settings__head ahead2',t); h.appendChild(productTag('salt')); box.appendChild(h); }
   function rowOf(L, node, cls){ var r=el('div','salt-settings__row '+cls); r.appendChild(node); L.appendChild(r); return r; }
+  /* 13 Nov 2026 (the price band's version 3): THEIR HABIT AND THE SIZE WARNING, from the snapshot's habit (never priced): how often and how much, and how late; what a bigger lot or ten points off would do to what they earn him a month */
+  function habitRows(L, h){
+    if(!h||!(+h.gap>0)) return;
+    var late=Math.round((+h.since||0)-(+h.gap)), said='Every '+(+h.gap)+' d, usually '+units(h.usual)+(h.state!=='early'&&late>0?'; late '+late+' d':'');
+    var hr=acctLine(L,'Habit',said); hr.setAttribute('data-habit',h.state||'');
+    var w=h.warn||{};
+    if(w.bigger&&+w.bigger.less30>0){ var bw=lineRow('A '+(+w.bigger.q)+'-unit lot earns '+rmShort(+w.bigger.less30)+' less a month',null,''); bw.setAttribute('data-warn','bigger'); L.appendChild(bw); }
+    if(w.tenOff&&+w.tenOff.less30>0){ var tw=lineRow('10% off costs '+rmShort(+w.tenOff.less30)+' a month',null,''); tw.setAttribute('data-warn','tenOff'); L.appendChild(tw); }
+  }
   function paintCust(box, r){
     box.textContent='';
     if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }
@@ -755,6 +765,7 @@ export const OWNER_JS = `
     if(r.highest!=null) acctLine(L,'Highest',rmShort(r.highest));
     if(r.cadence) acctLine(L,'Orders every',r.cadence.every+' days');
     if(r.dueIn!=null) acctLine(L,'Next order due',r.dueIn>0?'in '+r.dueIn+(r.dueIn===1?' day':' days'):r.dueIn===0?'today':(-r.dueIn)+(r.dueIn===-1?' day':' days')+' late');
+    habitRows(L,r.habit);
     var y=r.loyal||{}, m=el('div','salt-meter salt-meter--verdigris'), ml=el('div','salt-meter__line'), a1=el('span',null,'Loyalty '), a2=el('span',null,'They see ');
     var share=Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)));
     a1.appendChild(el('b',null,(+y.units||0)+' of '+(y.every||20)+' units')); a2.appendChild(el('b',null,share+'%'));
@@ -5608,6 +5619,16 @@ export const OWNER_JS = `
           qfigs.textContent='';
           if(q.result.test) qfigs.appendChild(el('p','salt-insight','A practice order: nothing is priced or checked, and '+(q.result.prepay?'they pay first.':'it goes on credit.')));
           else makerPlacedReading(qfigs,q.result);
+          /* 13 Nov 2026 (the price band's version 3, the win-back): a lapsed regular's Accept is offered a Goods price under their own, his tap alone; Use fills the Goods field and the figures are read again, nothing is sent until his Accept */
+          var wb=q.result.winBack;
+          if(!q.result.test&&wb&&typeof wb.price==='number'&&wb.price>0){
+            var wl=el('p','salt-insight','Lapsed '+(+wb.since)+' d: win back at '+rm(wb.price)+', '+Math.round(((+wb.from)-(+wb.to))*100)+'% under their price.'); wl.setAttribute('data-winback','');
+            var use=pill(['Use','order.winback',order.id]); use.addEventListener('click',function(){
+              total.value=String(wb.price); total.dispatchEvent(new Event('input',{bubbles:true})); total.dispatchEvent(new Event('change',{bubbles:true}));
+            });
+            wl.appendChild(document.createTextNode(' ')); wl.appendChild(use); qfigs.appendChild(wl);
+            var wf=el('p','salt-settings__foot','Their order then reads under their price: it counts to no loyalty unit, and as given on an associate’s reward.'); wf.setAttribute('data-winback-foot',''); qfigs.appendChild(wf);
+          }
           var old=card.querySelector('[data-accept]'); if(old) old.remove();
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
@@ -7651,6 +7672,30 @@ export const OWNER_JS = `
     return item('watch','watch','Accounts','x:pool', sheetAt||'', {who:'Accounts', title:t, what:t, counts:false,
       why:'A walk-in takes one at Add ID, so run the pool on the laptop to make ten again.', open:(wide()?function(){}:null)});
   }
+  /* 13 NOV 2026 (the price band's version 3, the customers): ONE CARD FOR THE REGULARS WHO NEED A WORD, read off the Desk's catalogue (habits: due, late or lapsed, lapsed first, then late,
+     then due, the larger margin a month first). It is To do while one has lapsed (a win-back is his tap, at their next Accept) and FYI while they are only due or late. Its tap opens the first
+     one's account; the rest are named in its why. A second line, FYI, says the week's new buyers. Nothing here prices. */
+  var habitsNow=null, buyersNow=null, habitsRead=false;
+  function readHabits(){
+    return refs('/all/maker/inputs').then(function(j){
+      var c=(j&&j.catalog)||{}; habitsRead=true;
+      if(changed('habits',[c.habits||[],c.buyers||null])){ habitsNow=Array.isArray(c.habits)?c.habits:[]; buyersNow=c.buyers&&typeof c.buyers==='object'?c.buyers:null; drawNeeds(); }
+    },function(){});
+  }
+  function habitSay(h){ return h.code+' '+h.state+', '+(+h.since)+' d, usual '+units(h.usual); }
+  function habitNeed(hs){
+    var first=hs[0], lapsed=hs.some(function(h){ return h.state==='lapsed'; }), go=function(){ acctFor(first.code); };
+    var named=hs.slice(0,5).map(habitSay), more=hs.length>5?'; '+(hs.length-5)+' more':'';
+    return item(lapsed?'now':'watch','accounts','Regulars','x:habits', '', {who:habitSay(first), title:habitSay(first), mark:'salt', rm:0,
+      what:hs.length+(hs.length===1?' regular is':' regulars are')+' past their usual gap', why:named.join('; ')+more+'.', open:go}, function(c){
+      mainButton(c,'Open','need.habit','x:habits', go);
+    });
+  }
+  function buyersNeed(b){
+    var t=(b.count>0?b.count+' new this week':'No new buyers this week')+(b.introduced>0?', '+b.introduced+' through an associate':'')+(b.back>0?', '+b.back+' came back':'')+(b.thin?'. Thin against the weeks before':'');
+    return item('watch','accounts','New buyers','x:buyers', '', {who:t, title:t, mark:'salt', what:t, counts:false,
+      why:'First orders in the last 7 days, against the eight weeks before.', open:(wide()?function(){}:null)});
+  }
   function suiteRow(r){ return /^suite:/.test(String(r&&r.id||'')); }
   function suiteNeed(rows){
     var r=rows.slice().sort(function(a,b){ return String(a.seenAt||'')<String(b.seenAt||'')?1:-1; })[0], v=String(r.id).slice(6);
@@ -7930,6 +7975,8 @@ export const OWNER_JS = `
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
     if(sheetSpares!=null&&sheetSpares<POOL_LOW) L.push(poolNeed(sheetSpares));
+    if(habitsNow&&habitsNow.length) L.push(habitNeed(habitsNow));
+    if(buyersNow&&(buyersNow.count>0||buyersNow.thin)) L.push(buyersNeed(buyersNow));
     if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
     if(owed) owed.goods.forEach(function(r){ if(r&&r.rid) L.push(goodsNeed(r)); });
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
@@ -8208,6 +8255,8 @@ export const OWNER_JS = `
     var jobs=TESTING?[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true)]:[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop(), loadOwed()];
     /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
+    /* 13 Nov 2026 (the price band's version 3): the regulars who need a word and the week's new buyers, read with the Desk's catalogue once and on a Retry, never on the poll's tick; a failed read keeps what was read and says nothing (it is not what he waits on) */
+    if(!TESTING&&(!tick||!habitsRead)) jobs.push(readHabits());
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
     /* 22 Oct 2026: the poll's tick reads the stock again (Stock by book), a failure keeping what was read */
     if(tick&&glanceStock&&!glanceStockOut) jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); redrawLead(); },function(){}));
@@ -8425,7 +8474,15 @@ export const OWNER_JS = `
     var sw=actOn(el('button','salt-switch'),'market.switch'); sw.type='button'; sw.setAttribute('role','switch'); sw.setAttribute('aria-checked',String(!!m.on)); sw.setAttribute('aria-labelledby','mktH'); sw.disabled=swWait;
     row.appendChild(lab); row.appendChild(sw); list.appendChild(row);
     var today=el('div','salt-settings__row salt-settings__row--text'); today.appendChild(el('span','salt-settings__label',swWait?'Waiting under Approve.':m.why||(m.on?'On.':'Off: salt is at the plain Median Price.')));
-    today.setAttribute('data-market-today',''); list.appendChild(today); box.appendChild(list);
+    today.setAttribute('data-market-today',''); list.appendChild(today);
+    /* 13 Nov 2026 (version 3): on the days the price test runs it is said under the move, so the move is never unseen */
+    var pt=mkt.test;
+    if(pt&&+pt.q>0&&isFinite(+pt.rm)){
+      var tr0=el('div','salt-settings__row salt-settings__row--text'); tr0.setAttribute('data-market-test','');
+      tr0.appendChild(el('span','salt-settings__label','Price test: '+rmShort(Math.abs(+pt.rm))+(+pt.rm>=0?' up':' down')+' at '+units(pt.q)+', week '+(+pt.week)+' of '+(+pt.weeks)));
+      list.appendChild(tr0);
+    }
+    box.appendChild(list);
     box.appendChild(el('p','salt-settings__foot','Salt moves within 15 points under and 20 over the Median Price, 5 a day, by what stock says.'));
     sw.addEventListener('click',function(){
       var on=!!m.on;
@@ -8478,6 +8535,61 @@ export const OWNER_JS = `
       });
       box.appendChild(pl);
     }
+  }
+  /* ---- 13 NOV 2026, THE PRICE BAND'S VERSION 3: SHOP > CALENDAR. His marks, a name and the days it runs (Hari Raya, a school holiday), which the Desk measures against the 28 days before each. Add and Remove stand at once,
+     with no Approve: a mark prices nothing. A name is 2 to 30 characters, the days real and within a year of today, the last on or after the first. ---- */
+  var cal=null, calSaid='', calForm={name:'',from:'',to:''};
+  function loadCalendar(){
+    return refs('/all/maker/calendar').then(function(j){ cal=(j&&j.calendar&&j.calendar.list)||[]; calSaid=''; },function(e){ calSaid=e.message; }).then(drawCalendar);
+  }
+  function calDay(d,n){ var t=new Date(d+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+n); return t.toISOString().slice(0,10); }
+  function calFault(f){
+    var name=String(f.name||'').trim(), today=tripToday();
+    if(name.length<2||name.length>30||/[<>]/.test(name)) return 'A name is 2 to 30 characters.';
+    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(f.from||'')||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(f.to||'')) return 'Choose both days.';
+    if(f.to<f.from) return 'The last day is on or after the first.';
+    if(f.to>calDay(today,365)||f.from<calDay(today,-365)) return 'Choose days within a year of today.';
+    return '';
+  }
+  async function calendarSend(body,answer){
+    try{ var j=await refs('/all/maker/calendar',body); cal=(j&&j.calendar&&j.calendar.list)||[]; calSaid=body.add?'Added.':'Removed.'; if(body.add) calForm={name:'',from:'',to:''}; drawCalendar(); }
+    catch(error){ calSaid=''; refusal(answer,error); }
+  }
+  function drawCalendar(){
+    var box=document.getElementById('makerCalendar'); if(!box) return;
+    box.textContent='';
+    if(!cal){ box.appendChild(el('p','salt-settings__foot',calSaid||'Reading.')); return; }
+    var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
+    box.appendChild(el('h3','salt-settings__head','Marks'));
+    if(!cal.length) box.appendChild(el('p','salt-settings__foot','No marks yet.'));
+    else {
+      var list=el('div','salt-settings');
+      cal.slice().sort(function(a,b){ return a.from<b.from?-1:a.from>b.from?1:0; }).forEach(function(m){
+        var r=el('div','salt-settings__row'), tx=el('div','salt-settings__text');
+        r.setAttribute('data-cal-mark',m.id); tx.appendChild(el('span','salt-settings__label',m.name)); tx.appendChild(el('span','salt-settings__sub',dayMon(m.from+'T04:00:00Z')+(m.to!==m.from?' to '+dayMon(m.to+'T04:00:00Z'):'')));
+        r.appendChild(tx);
+        var rm0=actOn(el('button','salt-ghost','Remove'),'calendar.remove',m.id); rm0.type='button';
+        rm0.addEventListener('click',function(){ rm0.disabled=true; calendarSend({remove:m.id},answer); });
+        r.appendChild(rm0); list.appendChild(r);
+      });
+      box.appendChild(list);
+    }
+    box.appendChild(el('h3','salt-settings__head','Add a mark'));
+    var form=el('div','salt-settings amform');
+    var name=actOn(el('input','salt-field__input'),'calendar.name'), from=actOn(el('input','salt-field__input'),'calendar.from'), to=actOn(el('input','salt-field__input'),'calendar.to');
+    name.type='text'; name.maxLength=30; name.value=calForm.name; from.type='date'; from.value=calForm.from; to.type='date'; to.value=calForm.to;
+    [['Name',name],['From',from],['To',to]].forEach(function(p){ var r=el('label','salt-settings__row mrow'); r.appendChild(el('span','salt-settings__label',p[0])); r.appendChild(p[1]); form.appendChild(r); });
+    var keep=function(){ calForm={name:name.value,from:from.value,to:to.value}; };
+    [name,from,to].forEach(function(n){ n.addEventListener('input',keep); n.addEventListener('change',keep); });
+    var add=actOn(el('button','salt-pill salt-pill--md','Add'),'calendar.add'); add.type='button';
+    add.addEventListener('click',function(){
+      keep(); var f=calFault(calForm);
+      if(f){ answer.textContent=f; return; }
+      calendarSend({add:{name:calForm.name.trim(),from:calForm.from,to:calForm.to}},answer);
+    });
+    box.appendChild(form); box.appendChild(add); box.appendChild(answer);
+    if(calSaid) answer.textContent=calSaid;
+    box.appendChild(el('p','salt-settings__foot','A mark stands at once. The Desk measures how much each ran above the 28 days before it.'));
   }
   var TEST_SHOWS=['Every case','Locked, to pay','Fresh, to order'];
   function drawTest(){
