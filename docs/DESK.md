@@ -140,6 +140,15 @@
   KV `quote:<KL day>:<username>` (30 a day, 10 lines, 120 days), the counts on the key's metadata, so the Desk's `GET /quotes` (relayed to the
   Counter's `/desk/quotes`) lists keys and reads at most 200 that carry none (`partial`). Checks: `test/price-band-market.mjs`, `test/desk-market.mjs`,
   `test/admin-market.mjs`, `test/counter-quotes.mjs`, `test/band-v2-fixes.mjs`.
+- **The price band, version 3: the customers, on the Desk** (13 Nov 2026; the engine is `testOf`, `testReading`, `calendarLift`, `newBuyers` and
+  `habits` in the snapshot engine). Readings only, each drawn for the book whose rule carries it (`test`, `habit`), never by its name. **Pricing**, after
+  the market panels: the Price test card (this week's test, "RM 5 up at 1 unit, week 1 of 8", or No test today, and orders a day and margin a day at that
+  size in the up weeks against the down weeks, marked estimate while either side has fewer than 7 days) and the Calendar card (`calendarPanel`: his marks
+  with their lift in units a day against the 28 days before, and for a coming mark measured twice the suggestion to hold N units and a +5 move, information
+  only). His marks are the Counter's KV `calendar`, read once through the keyed `GET /calendar` (`ckCalLoad`, cloud mode only); nothing of the calendar is
+  drawn until it answers ok, and adding or removing a mark is Salt Admin's (`adminLink('shop/calendar')`). **Clients**, under Their %: `clientsHabits`
+  draws the eight weeks of new buyers (new, through an associate, came back, Thin when the engine says two weeks run under half the mean) and the regulars
+  due, late or lapsed (twelve at most, the engine's order), each linked to its account on Salt Admin. Checks: `test/desk-customers.mjs`.
 - **Their %** (`TIER_OF[code][book]`: -1 to +1 on salt's band since 10 Nov 2026, -0.3 to +0.3 on a stated board since his decision of 21 Oct 2026,
   `liftRange`, held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Median Price, a negative one a discount, applied inside the walk, and nought is the Median Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID

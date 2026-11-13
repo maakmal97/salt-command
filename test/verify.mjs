@@ -50573,6 +50573,11 @@ await (async () => {
   await (await import("./desk-market.mjs")).run({ ok });
 })();
 
+section("13 Nov 2026: the price band's customers on the Desk, the price test, the calendar, the new buyers and the habits");
+await (async () => {
+  await (await import("./desk-customers.mjs")).run({ ok });
+})();
+
 section("9 Nov 2026: no scrollbar on any Salt surface, so a page that scrolls and one that does not are the same width");
 await (async () => {
   await (await import("./no-scrollbars.mjs")).run({ ok });
