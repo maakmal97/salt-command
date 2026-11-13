@@ -5711,6 +5711,7 @@ const CLIENT_JS = `
     drawHome();
     openWanted();
     thWanted();
+    againWanted();
   }
 
   /* S5 5.3 (D11, his answer of 24 Sep 2026): WHERE AN ORDER IS, IN THE CUSTOMER'S WORDS. The record's states are the
@@ -8069,6 +8070,16 @@ const CLIENT_JS = `
     if(thSheetEl&&thSheetEl.hidden) thOpen(null); else thRead();
   }
 
+  /* PRICE BAND V3: the reminder's banner (Time for more?) opens Order at their usual, once they are in; never on his view, never where nothing
+     can be ordered from here (the overdue gate). The usual is oUsual's, the size they order most, which Order's stepper already tags. */
+  var wantAgain=location.hash==='#again';
+  function againWanted(){
+    if(!wantAgain||view||!session||!lapse.hidden) return;
+    wantAgain=false;
+    try{ if(location.hash==='#again') history.replaceState(history.state,'',location.pathname+location.search); }catch(e){}
+    if(ro()||hold||hidePrices) return;
+    var U=oUsual(); goOrder(U?U.product:'',U?+U.q:null);
+  }
   /* S12 12.2: A BANNER'S TAP OPENS ITS ORDER. The service worker opens the Counter at #o=<id>, or tells a
      page already open, which re-reads first: focusing it alone showed whatever it drew last. The order opens
      on the next draw that has it, which for a closed page is the one after signing in; one that is not
@@ -8091,6 +8102,7 @@ const CLIENT_JS = `
         var d=ev&&ev.data;
         if(!d||d.salt!=='news') return;
         wantOrder=orderIn('#o='+(d.order||''));
+        if(d.again===true) wantAgain=true;   /* the reminder opens Order */
         if(d.thread===true) wantThread=true;   /* Step 7: his line on the thread opens the thread */
         if(!session) return;   /* at the door: it opens once they are in */
         var mine=ticket;
@@ -8098,6 +8110,7 @@ const CLIENT_JS = `
         if(mine!==ticket) return;
         openWanted();
         thWanted();
+        againWanted();
       });
   }catch(e){ /* a browser that will not listen still opens the page */ }
 
