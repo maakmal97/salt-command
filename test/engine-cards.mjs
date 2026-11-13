@@ -40,7 +40,7 @@ export async function run({ ok }) {
   const loan = +w.eval("loanDrawUnits()");
   w.eval("PROD=" + JSON.stringify(keep) + ";recompute();");
   const B = J("({sales:sales,purchases:purchases,opening:PROD_OPENING,statedStockBy:statedStockBy,statedStock:STATED_STOCK,supplierReceivable:typeof supplierReceivable!=='undefined'?supplierReceivable:null,"
-    + "counts:COUNTS,selfUseLog:selfUseLog,quotes:QUOTES,priceSet:PRICE_SET,costRule:COST_RULE,defaultProd:DEFAULT_PROD,roster:roster,partners:partners,tierOf:TIER_OF,prodOrder:PROD_ORDER})");
+    + "counts:COUNTS,selfUseLog:selfUseLog,quotes:QUOTES,priceSet:PRICE_SET,costRule:COST_RULE,defaultProd:DEFAULT_PROD,roster:roster,partners:partners,tierOf:TIER_OF,prodOrder:PROD_ORDER,introductions:typeof INTRODUCTIONS!=='undefined'?INTRODUCTIONS:[]})");   /* 13 Nov 2026: the new-buyer line reads the introductions, as the page's snapCtx does */
   B.loanDrawUnits = () => loan;
   const R = { ...RULES_MOD };
 
