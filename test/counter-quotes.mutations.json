@@ -146,8 +146,8 @@
   {
     "name": "Q10 the Desk's /quotes opens without the write key",
     "file": "src/worker.js",
-    "find": "|| p === \"/quotes\" || p === \"/hush\"",
-    "replace": "|| p === \"/hush\""
+    "find": "|| p === \"/quotes\" || p === \"/calendar\" || p === \"/hush\"",
+    "replace": "|| p === \"/calendar\" || p === \"/hush\""
   },
   {
     "name": "Q10 the relay drops the days",

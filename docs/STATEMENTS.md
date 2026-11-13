@@ -2904,6 +2904,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `bar.approve` | Same bar, Approve, brass with the rows to approve | Goes to Orders > Approve; its badge counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
+| `need.habit` | Needs you card for the regulars who are due, late or lapsed | Opens the first one's account on Customers (the card's why names the rest). |
+| `order.winback` | Order card, Agree, the win-back line | Fills Goods with the win-back price the preview suggests for a lapsed regular and reads the figures again; nothing is sent until his Accept. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |
 | `need.signin-link` | Needs you card for an account with an address refused | Makes their one-time sign-in link, then shares it. |
@@ -2988,6 +2990,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's %, the printed board sizes and the tips, one form at a time. |
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours and the collection points, reading both. |
 | `part.shop.market` | The strip under Shop (tab: Market) | Shows the market move, its switch, the Median points and the re-anchor form, reading the catalogue (11 Nov 2026, the price band version 2). |
+| `part.shop.calendar` | The strip under Shop (tab: Calendar) | Shows his calendar of marks and the form that adds one, reading the Counter's list (13 Nov 2026, the price band version 3). |
+| `calendar.name` | Shop > Calendar, Add a mark | The mark's name, 2 to 30 characters. |
+| `calendar.from` | Shop > Calendar, Add a mark | The mark's first day. |
+| `calendar.to` | Shop > Calendar, Add a mark | The mark's last day, on or after the first and within a year of today. |
+| `calendar.add` | Shop > Calendar, Add a mark | Adds the mark at once (`POST /all/maker/calendar {add}`); nothing waits under Approve, since a mark prices nothing. |
+| `calendar.remove` | Shop > Calendar, a mark's row | Removes that mark at once (`POST /all/maker/calendar {remove: id}`). |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
 | `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Admin, reading nothing. |

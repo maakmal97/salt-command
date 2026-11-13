@@ -70,7 +70,7 @@ export async function run({ ok, pageWork }) {
     const p = await open({});
     const strip$ = p.d.querySelector('.aparts[data-place="shop"]');
     const pills = strip$ ? [...strip$.querySelectorAll("button")].map((b) => b.getAttribute("data-part") + ":" + b.textContent + ":" + b.getAttribute("data-act")) : [];
-    ok(J(pills) === J(["hours:Hours:part.shop.hours", "market:Market:part.shop.market", "notice:Notice:part.shop.notice", "practice:Practice:part.shop.practice", "device:This device:part.shop.device"]),
+    ok(J(pills) === J(["hours:Hours:part.shop.hours", "market:Market:part.shop.market", "calendar:Calendar:part.shop.calendar", "notice:Notice:part.shop.notice", "practice:Practice:part.shop.practice", "device:This device:part.shop.device"]),
       "Shop has a fifth part, This device, after Hours, Market, Notice and Practice, its tab with the act part.shop.device: " + J(pills));
     const once = (id) => p.d.querySelectorAll('[id="' + id + '"]').length;
     const row = p.d.getElementById("lookRow"), sec = p.d.getElementById("oLook");

@@ -122,8 +122,8 @@
  {
   "name": "the evidence reads the day's move",
   "file": "engine/snapshot.mjs",
-  "find": "const R=C.R,pq=C.B.quotes[p]||null,mk=plain?null:marketK(C,p);",
-  "replace": "const R=C.R,pq=C.B.quotes[p]||null,mk=marketK(C,p);"
+  "find": "const R=C.R,pq=C.B.quotes[p]||null,mk=plain?null:marketK(C,p),tt=",
+  "replace": "const R=C.R,pq=C.B.quotes[p]||null,mk=marketK(C,p),tt="
  },
  {
   "name": "the cards leave the move out",

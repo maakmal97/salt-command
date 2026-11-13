@@ -1,0 +1,356 @@
+[
+  {
+    "name": "the catalogue drops the customers",
+    "file": "src/maker-inputs.js",
+    "find": "    ...customersCatalog(book),\n",
+    "replace": ""
+  },
+  {
+    "name": "the catalogue does not rank lapsed before late before due",
+    "file": "src/maker-inputs.js",
+    "find": "RANK[hs[a].state] - RANK[hs[b].state] || ",
+    "replace": ""
+  },
+  {
+    "name": "the catalogue lets an early regular in",
+    "file": "src/maker-inputs.js",
+    "find": "filter((c) => hs[c] && RANK[hs[c].state] != null)",
+    "replace": "filter((c) => hs[c])"
+  },
+  {
+    "name": "the catalogue reads the oldest week of buyers",
+    "file": "src/maker-inputs.js",
+    "find": "snap.buyers.weeks[snap.buyers.weeks.length - 1]",
+    "replace": "snap.buyers.weeks[0]"
+  },
+  {
+    "name": "the catalogue invents a count of buyers when there are none",
+    "file": "src/maker-inputs.js",
+    "find": "thin: !!snap.buyers.thin } : null };",
+    "replace": "thin: false } : { count: 0 } };"
+  },
+  {
+    "name": "Needs you never reads the regulars",
+    "file": "stmt/owner.js",
+    "find": "    if(!TESTING&&(!tick||!habitsRead)) jobs.push(readHabits());\n",
+    "replace": ""
+  },
+  {
+    "name": "the regulars' card is always To do",
+    "file": "stmt/owner.js",
+    "find": "return item(lapsed?'now':'watch','accounts','Regulars'",
+    "replace": "return item('now','accounts','Regulars'"
+  },
+  {
+    "name": "the regulars' card is never To do",
+    "file": "stmt/owner.js",
+    "find": "return item(lapsed?'now':'watch','accounts','Regulars'",
+    "replace": "return item('watch','accounts','Regulars'"
+  },
+  {
+    "name": "the regulars' card has no book tag",
+    "file": "stmt/owner.js",
+    "find": "title:habitSay(first), mark:'salt', rm:0,",
+    "replace": "title:habitSay(first), rm:0,"
+  },
+  {
+    "name": "the regulars' card names the wrong one first",
+    "file": "stmt/owner.js",
+    "find": "title:habitSay(first),",
+    "replace": "title:habitSay(hs[hs.length-1]),"
+  },
+  {
+    "name": "a card with nobody to name is drawn",
+    "file": "stmt/owner.js",
+    "find": "if(habitsNow&&habitsNow.length) L.push(habitNeed(habitsNow));",
+    "replace": "if(habitsNow) L.push(habitNeed(habitsNow.length?habitsNow:[{code:'ZZ1-AAA',state:'due',since:1,usual:1}]));"
+  },
+  {
+    "name": "the regulars' card's why names only the first",
+    "file": "stmt/owner.js",
+    "find": "why:named.join('; ')+more+'.'",
+    "replace": "why:named.slice(0,1).join('; ')+'.'"
+  },
+  {
+    "name": "the regulars' card opens the last account",
+    "file": "stmt/owner.js",
+    "find": "go=function(){ acctFor(first.code); };",
+    "replace": "go=function(){ acctFor(hs[hs.length-1].code); };"
+  },
+  {
+    "name": "the buyers' line leaves the introduced out",
+    "file": "stmt/owner.js",
+    "find": "(b.introduced>0?', '+b.introduced+' through an associate':'')",
+    "replace": "''"
+  },
+  {
+    "name": "the buyers' line leaves the came back out",
+    "file": "stmt/owner.js",
+    "find": "(b.back>0?', '+b.back+' came back':'')",
+    "replace": "''"
+  },
+  {
+    "name": "the buyers' line never says thin",
+    "file": "stmt/owner.js",
+    "find": "(b.thin?'. Thin against the weeks before':'')",
+    "replace": "''"
+  },
+  {
+    "name": "the buyers' line is said in a quiet week",
+    "file": "stmt/owner.js",
+    "find": "if(buyersNow&&(buyersNow.count>0||buyersNow.thin))",
+    "replace": "if(buyersNow)"
+  },
+  {
+    "name": "This customer has no Habit line",
+    "file": "stmt/owner.js",
+    "find": "var hr=acctLine(L,'Habit',said);",
+    "replace": "var hr=acctLine(L,'Habit','');"
+  },
+  {
+    "name": "the habit never says how late",
+    "file": "stmt/owner.js",
+    "find": "Math.round((+h.since||0)-(+h.gap))",
+    "replace": "0"
+  },
+  {
+    "name": "an early regular is called late",
+    "file": "stmt/owner.js",
+    "find": "h.state!=='early'&&late>0",
+    "replace": "late!==0"
+  },
+  {
+    "name": "This customer leaves the bigger lot out",
+    "file": "stmt/owner.js",
+    "find": "if(w.bigger&&+w.bigger.less30>0){",
+    "replace": "if(false){"
+  },
+  {
+    "name": "This customer says a warning of nothing",
+    "file": "stmt/owner.js",
+    "find": "if(w.tenOff&&+w.tenOff.less30>0){",
+    "replace": "if(w.tenOff){"
+  },
+  {
+    "name": "This customer invents a habit",
+    "file": "stmt/owner.js",
+    "find": "    habitRows(L,r.habit);\n",
+    "replace": "    habitRows(L,r.habit||{gap:7,usual:1,since:0,state:'early'});\n"
+  },
+  {
+    "name": "the customer reading drops the habit",
+    "file": "src/maker-inputs.js",
+    "find": "object(snap.habits[owner]) ? snap.habits[owner] : null };",
+    "replace": "false ? 1 : null };"
+  },
+  {
+    "name": "the customer reading invents a habit",
+    "file": "src/maker-inputs.js",
+    "find": "object(snap.habits[owner]) ? snap.habits[owner] : null };",
+    "replace": "object(snap.habits[owner]) ? snap.habits[owner] : {} };"
+  },
+  {
+    "name": "the win-back line says another price",
+    "file": "stmt/owner.js",
+    "find": "'Lapsed '+(+wb.since)+' d: win back at '+rm(wb.price)",
+    "replace": "'Lapsed '+(+wb.since)+' d: win back at '+rm(wb.now)"
+  },
+  {
+    "name": "Use fills the wrong figure",
+    "file": "stmt/owner.js",
+    "find": "total.value=String(wb.price);",
+    "replace": "total.value=String(wb.now);"
+  },
+  {
+    "name": "Use does not read the figures again",
+    "file": "stmt/owner.js",
+    "find": "total.dispatchEvent(new Event('change',{bubbles:true}));",
+    "replace": ""
+  },
+  {
+    "name": "the win-back line is drawn without one",
+    "file": "stmt/owner.js",
+    "find": "var wb=q.result.winBack;",
+    "replace": "var wb=q.result.winBack||{from:0.2,to:0.1,price:90,now:100,since:35};"
+  },
+  {
+    "name": "the win-back line has no foot",
+    "file": "stmt/owner.js",
+    "find": "wf.setAttribute('data-winback-foot',''); qfigs.appendChild(wf);",
+    "replace": "wf.setAttribute('data-winback-foot','');"
+  },
+  {
+    "name": "the win-back foot leaves the loyalty unit out",
+    "file": "stmt/owner.js",
+    "find": "it counts to no loyalty unit, and as given",
+    "replace": "and as given"
+  },
+  {
+    "name": "Shop loses its Calendar tab",
+    "file": "stmt/page.js",
+    "find": "[\"market\", \"Market\"], [\"calendar\", \"Calendar\"], ",
+    "replace": "[\"market\", \"Market\"], "
+  },
+  {
+    "name": "the Calendar part is not read",
+    "file": "stmt/owner.js",
+    "find": "    'shop.calendar':function(){ loadCalendar(); },\n",
+    "replace": ""
+  },
+  {
+    "name": "the Calendar section shows under Hours",
+    "file": "stmt/page.js",
+    "find": "data-in=\"shop.calendar\"",
+    "replace": "data-in=\"shop.hours\""
+  },
+  {
+    "name": "a mark's last day is not listed",
+    "file": "stmt/owner.js",
+    "find": "(m.to!==m.from?' to '+dayMon(m.to+'T04:00:00Z'):'')",
+    "replace": "''"
+  },
+  {
+    "name": "Add lets a last day before the first through",
+    "file": "stmt/owner.js",
+    "find": "if(f.to<f.from) return",
+    "replace": "if(false) return"
+  },
+  {
+    "name": "Add lets a short name through",
+    "file": "stmt/owner.js",
+    "find": "if(name.length<2||name.length>30||/[<>]/.test(name)) return",
+    "replace": "if(false) return"
+  },
+  {
+    "name": "Add lets days over a year out through",
+    "file": "stmt/owner.js",
+    "find": "if(f.to>calDay(today,365)||f.from<calDay(today,-365)) return",
+    "replace": "if(false) return"
+  },
+  {
+    "name": "Add sends the name untrimmed",
+    "file": "stmt/owner.js",
+    "find": "calendarSend({add:{name:calForm.name.trim(),",
+    "replace": "calendarSend({add:{name:calForm.name,"
+  },
+  {
+    "name": "Remove sends the name, not the id",
+    "file": "stmt/owner.js",
+    "find": "calendarSend({remove:m.id},answer)",
+    "replace": "calendarSend({remove:m.name},answer)"
+  },
+  {
+    "name": "the calendar route is not routed",
+    "file": "stmt/maker.js",
+    "find": "  if (path === \"/all/maker/calendar\") return { kind: \"calendar\" };\n",
+    "replace": ""
+  },
+  {
+    "name": "a mark may end before it starts",
+    "file": "stmt/calendar.js",
+    "find": "if (m.to < m.from) return",
+    "replace": "if (false) return"
+  },
+  {
+    "name": "a mark's year is four thousand days",
+    "file": "stmt/calendar.js",
+    "find": "export const CAL_DAYS = 365;",
+    "replace": "export const CAL_DAYS = 4000;"
+  },
+  {
+    "name": "a mark's name may be one letter",
+    "file": "stmt/calendar.js",
+    "find": "if (name.length < 2 ||",
+    "replace": "if (name.length < 0 ||"
+  },
+  {
+    "name": "a mark with a false date is taken",
+    "file": "stmt/calendar.js",
+    "find": "&& new Date(s + \"T00:00:00Z\").toISOString().slice(0, 10) === s;",
+    "replace": ";"
+  },
+  {
+    "name": "sixty-one marks are taken",
+    "file": "stmt/calendar.js",
+    "find": "if (cal.list.length >= CAL_MAX)",
+    "replace": "if (cal.list.length > CAL_MAX)"
+  },
+  {
+    "name": "a mark that is not there is removed",
+    "file": "stmt/calendar.js",
+    "find": "!cal.list.some((x) => x.id === body.remove)",
+    "replace": "false"
+  },
+  {
+    "name": "a mark's id is six hex digits",
+    "file": "stmt/maker.js",
+    "find": "new Uint8Array(6)",
+    "replace": "new Uint8Array(3)"
+  },
+  {
+    "name": "the Counter does not answer /desk/calendar",
+    "file": "stmt/worker.js",
+    "find": "p === \"/desk/quotes\" || p === \"/desk/calendar\" || p === \"/desk/waiting\"",
+    "replace": "p === \"/desk/quotes\" || p === \"/desk/waiting\""
+  },
+  {
+    "name": "the Desk's /calendar is not keyed",
+    "file": "src/worker.js",
+    "find": "|| p === \"/quotes\" || p === \"/calendar\" || p === \"/hush\"",
+    "replace": "|| p === \"/quotes\" || p === \"/hush\""
+  },
+  {
+    "name": "the Desk's relay asks for the quotes",
+    "file": "src/orders.js",
+    "find": "await site(env, \"/desk/calendar\")",
+    "replace": "await site(env, \"/desk/quotes?days=\")"
+  },
+  {
+    "name": "the Desk's /calendar takes a write",
+    "file": "src/worker.js",
+    "find": "    if (p === \"/calendar\") {\n      if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n",
+    "replace": "    if (p === \"/calendar\") {\n"
+  },
+  {
+    "name": "ADMIN_TO loses shop/calendar",
+    "file": "src/worker.js",
+    "find": "|shop\\/calendar|",
+    "replace": "|"
+  },
+  {
+    "name": "ADMIN_TO takes shop/calendar/anything",
+    "file": "src/worker.js",
+    "find": "|shop\\/calendar|",
+    "replace": "|shop\\/calendar(\\/.*)?|"
+  },
+  {
+    "name": "the catalogue drops the price test",
+    "file": "src/maker-inputs.js",
+    "find": "+snap.test.q > 0 && Number.isFinite(+snap.test.rm)",
+    "replace": "false"
+  },
+  {
+    "name": "the catalogue invents a price test",
+    "file": "src/maker-inputs.js",
+    "find": "from: snap.test.from } : null,",
+    "replace": "from: snap.test.from } : { q: 1, rm: 5, week: 1, weeks: 8, from: \"x\" },"
+  },
+  {
+    "name": "Market never says the price test",
+    "file": "stmt/owner.js",
+    "find": "if(pt&&+pt.q>0&&isFinite(+pt.rm)){",
+    "replace": "if(false){"
+  },
+  {
+    "name": "a price test down reads up",
+    "file": "stmt/owner.js",
+    "find": "(+pt.rm>=0?' up':' down')",
+    "replace": "' up'"
+  },
+  {
+    "name": "Market says a price test on a day none runs",
+    "file": "stmt/owner.js",
+    "find": "var pt=mkt.test;",
+    "replace": "var pt=mkt.test||{q:1,rm:5,week:1,weeks:8};"
+  }
+]

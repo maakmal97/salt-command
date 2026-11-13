@@ -23,11 +23,11 @@ const PARTS = {
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["market", "Market"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
+  shop: [["hours", "Hours"], ["market", "Market"], ["calendar", "Calendar"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* the sections that stand for a place or a part, and so show or do not */
 const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderList", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
-  "oCards", "oLedger", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook", "makerMarket"];
+  "oCards", "oLedger", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook", "makerMarket", "makerCalendar"];
 const SHOWS = {
   needs: "mHome",
   "orders/todo": "oOrders makerOrderList makerReview", "orders/open": "oOrders makerOrderList makerReview",
@@ -37,7 +37,7 @@ const SHOWS = {
   "customers/associates": "oCustomers oCards",
   "record/entry": "oRecord makerInputs", "record/customers": "oRecord makerInputs",
   "record/pricing": "oRecord makerInputs",
-  "shop/hours": "oShop makerSchedule", "shop/market": "oShop makerMarket", "shop/notice": "oShop makerBulletin", "shop/practice": "oShop mTest", "shop/device": "oShop oLook"
+  "shop/hours": "oShop makerSchedule", "shop/market": "oShop makerMarket", "shop/calendar": "oShop makerCalendar", "shop/notice": "oShop makerBulletin", "shop/practice": "oShop mTest", "shop/device": "oShop oLook"
 };
 /* the forms of Record, by the part each belongs to (the page also draws an Unsent entry for the loan this device kept) */
 const FORMS = {

@@ -140,6 +140,17 @@
   KV `quote:<KL day>:<username>` (30 a day, 10 lines, 120 days), the counts on the key's metadata, so the Desk's `GET /quotes` (relayed to the
   Counter's `/desk/quotes`) lists keys and reads at most 200 that carry none (`partial`). Checks: `test/price-band-market.mjs`, `test/desk-market.mjs`,
   `test/admin-market.mjs`, `test/counter-quotes.mjs`, `test/band-v2-fixes.mjs`.
+- **The price band, version 3: Salt Admin's customers** (13 Nov 2026, the engine's habits, win-back, new buyers and calendar of commits 5350401d and f7acfb3a). The
+  catalogue (`makerInputCatalog`, `customersCatalog`) carries `habits` (due, late and lapsed only, lapsed then late then due, the larger `margin30` first),
+  `buyers` (the newest week's count, introduced, back and `thin`) and `test` (the price test on the days it runs); `makerCustomerReadingOf` carries the
+  snapshot's `habit`. Needs you reads the catalogue once and on a Retry (never on the poll's tick): one card for the regulars, **To do while one has lapsed**
+  (a win-back is his tap) and FYI while they are only due or late, its tap and Open going to the first one's account (`acctFor`), the rest in its why; and one FYI
+  line for the week's buyers. This customer says their habit and the size warning in words. At Accept the preview's `winBack` is one line with Use, which fills
+  Goods with its price and reads the figures again, sends nothing, and says the order then reads under their price (no loyalty unit, given on an associate's reward).
+  Shop > Market says the price test under the day's move. **Shop > Calendar**: his marks `{id, name, from, to}`, Counter KV `calendar` (`stmt/calendar.js`, 60
+  at most, a name of 2 to 30 characters, real days within a year of today, the last on or after the first), through `GET|POST /all/maker/calendar` (`{add}` or
+  `{remove}`), standing at once with no Approve since a mark prices nothing; the Desk reads it by the Counter's `/desk/calendar` (`X-Stmt-Desk`), `calendarRelay`
+  and the keyed `GET /calendar`; the Act road takes `shop/calendar`. Said, not built: nothing on the Desk reads the calendar yet beyond the relay.
 - **Their %** (`TIER_OF[code][book]`: -1 to +1 on salt's band since 10 Nov 2026, -0.3 to +0.3 on a stated board since his decision of 21 Oct 2026,
   `liftRange`, held until he changes it; `cardQuote` reads it through `driftOf`). It is the move on the Median Price, a negative one a discount, applied inside the walk, and nought is the Median Price. **Everyone
   starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID
