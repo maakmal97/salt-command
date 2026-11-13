@@ -116,7 +116,7 @@
   {
     "name": "W1 the mark lapses in 60 days",
     "file": "stmt/remind.js",
-    "find": "REMIND_TTL = 120 * 86400",
+    "find": "REMIND_TTL = 400 * 86400",
     "replace": "REMIND_TTL = 60 * 86400"
   },
   {
@@ -164,7 +164,7 @@
   {
     "name": "W6 the Worker names nobody to skip",
     "file": "stmt/worker.js",
-    "find": "sendReminders(env, now, owing)",
+    "find": "sendReminders(env, now, new Set([...owing, ...rated]))",
     "replace": "sendReminders(env, now, new Set())"
   },
   {

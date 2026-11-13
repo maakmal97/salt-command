@@ -46,8 +46,8 @@
   },
   {
     "name": "K4.2 an answer that is not ok is taken",
-    "find": "Array.isArray(j.list)&&j.ok===true",
-    "replace": "Array.isArray(j.list)"
+    "find": "const L=j&&j.ok===true&&j.calendar&&",
+    "replace": "const L=j&&j.calendar&&"
   },
   {
     "name": "K4.3 the route is asked with no key",
@@ -61,8 +61,8 @@
   },
   {
     "name": "K4.4 the route is asked on every draw",
-    "find": "if(CK_CAL_TRIED||!cloudMode())return;CK_CAL_TRIED=true;",
-    "replace": "if(!cloudMode())return;CK_CAL_TRIED=true;"
+    "find": "if(!cloudMode()||CK_CAL||(CK_CAL_TRIED&&Date.now()-CK_CAL_TRIED<60000))return;CK_CAL_TRIED=Date.now();",
+    "replace": "if(!cloudMode())return;CK_CAL_TRIED=Date.now();"
   },
   {
     "name": "K5.1 the marks are not sorted by date",
