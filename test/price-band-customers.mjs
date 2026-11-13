@@ -124,8 +124,9 @@ export async function run({ ok }) {
 
   /* C10 */
   const pl = pricingFromBook(book(), new Date("2026-10-20T04:00:00Z"));
-  ok(pl.byProduct.salt.habits["RA1-AA"].warn && pl.byProduct.salt.habits["RA1-AA"].warn.bigger.q === 3 && pl.byProduct.salt.buyers && pl.byProduct.salt.buyers.weeks.length === 8,
-    "C10 each habit carries its size warning and the snapshot the new-buyer line, for Salt Admin to read: " + J([pl.byProduct.salt.habits["RA1-AA"].warn, pl.byProduct.salt.buyers && pl.byProduct.salt.buyers.mean]));
+  const hRA = (pl.byProduct.salt.habits || {})["RA1-AA"] || {};
+  ok(hRA.warn && hRA.warn.bigger && hRA.warn.bigger.q === 3 && pl.byProduct.salt.buyers && pl.byProduct.salt.buyers.weeks.length === 8,
+    "C10 each habit carries its size warning and the snapshot the new-buyer line, for Salt Admin to read: " + J([hRA.warn, pl.byProduct.salt.buyers && pl.byProduct.salt.buyers.mean]));
   const live = pricingFromBook(book(), new Date("2026-11-17T04:00:00Z"));
   ok(pl.byProduct.salt.habits && pl.byProduct.salt.habits["RC1-CC"].state === "lapsed" && !("PA1-PP" in pl.byProduct.salt.habits) && J(live.byProduct.salt.inputs.policy.test) === J({ q: 1, rm: 5 })
     && S.policy(ctx(book(), "2026-11-17", RULES), "salt", true).test === undefined,
