@@ -45,6 +45,38 @@ export function readDeskBuildId(file = join(REPO, "public", "rev.json")) {
   return rev.id;
 }
 
+/* PRICE BAND V3, THE REMINDER'S LIST (his answers of 13 Nov 2026): KV `remind` = {username: last order day} for each salt regular the engine reads
+   late or lapsed (the snapshot's habits, by owner code) who owes nothing, on the habit and on their live statement (`sheet`, partyTotals). Never a
+   partner, a bucket, a code with no username or a practice account. The Worker sends one wake a cycle, a cycle being that last order day
+   (stmt/remind.js). Codes map to usernames the way the sheet does, through _users.json; nothing here names a person. */
+export function remindMap(pricing, sheet, users, out_ = new Set()) {
+  const sp = pricing && pricing.byProduct && pricing.byProduct.salt, hs = (sp && sp.habits) || {}, partners = new Set((sp && sp.partners) || []);
+  const owed = new Map((sheet || []).map((r) => [r.code, r.t && +r.t.owed]));
+  /* an order of theirs open on the book (agreed, not handed over, or goods still to get) is their next order already on its way */
+  const open = new Set((sheet || []).filter((r) => r.t && (+r.t.pend > 0.009 || +r.t.toGet > 0.009)).map((r) => r.code));
+  const byCode = {};
+  for (const [u, c] of Object.entries(users || {})) byCode[c] = u;
+  const out = {};
+  for (const [code, h] of Object.entries(hs)) {
+    if (!h || (h.state !== "late" && h.state !== "lapsed") || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(h.last))) continue;
+    if (+h.owes > 0.009 || partners.has(code) || POSITION_ENGINE.isBucket(code)) continue;
+    /* a written-off party is not approached (the habit says so), nor one banned or departed (`out_`), nor one with an order open */
+    if (h.writeOff === true || out_.has(code) || open.has(code)) continue;
+    const u = byCode[code];
+    if (!u || TEST_USERS.includes(u) || !(owed.get(code) <= 0.009)) continue;
+    out[u] = h.last;
+  }
+  return out;
+}
+
+/* the codes the book holds banned (not lifted) or departed, from ledger/book.json (SALT_BOOK overrides, as the statements' own reader does) */
+export function peopleOut() {
+  try {
+    const b = JSON.parse(readFileSync(process.env.SALT_BOOK || join(REPO, "ledger", "book.json"), "utf8")), P = (b.state && b.state.PEOPLE) || b.PEOPLE || {};
+    return new Set((P.banned || []).filter((x) => x && !x.lifted).concat(P.departed || []).map((x) => x && x.id).filter(Boolean));
+  } catch (e) { return new Set(); }
+}
+
 /* THE USERNAME-TO-CODE MAP, FOR THE DESK'S OWN STORE (06 Sep 2026). An order placed on the
    statements site names a username and nothing else; the ledger's Worker turns that into the
    desk code from this map, which the publish writes to the DESK's KV (stmt-users), never to the
@@ -193,6 +225,8 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   /* v691: the associates' report card rides the same bulk put, so it lands or fails with the
      records rather than in a write of its own. Given only when the desk was opened for prices. */
   if (assoc) puts.push({ key: "assoc", value: JSON.stringify(assoc) });
+  /* the reminder's list, from the same snapshot as the lists; no snapshot, no list, and the last one stands */
+  if (pricing && r.records.length) puts.push({ key: "remind", value: JSON.stringify(remindMap(pricing, sheet, byUser, peopleOut())) });
   return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched.filter((u) => !spares.has(u)),
     spares: [...spares], stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, sheet, users: usersMap(root) };
 }
