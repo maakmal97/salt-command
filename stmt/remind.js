@@ -40,7 +40,7 @@ export async function sendReminders(env, now, skip, wake = wakeCustomer) {
     try { await env.STMT.put(key, day, { expirationTtl: REMIND_TTL }); } catch { out.unmarked = (out.unmarked || 0) + 1; continue; }   /* no mark, no send (Fable) */
     /* sealed phones only: a phone that cannot read the kind would show the bare wake's words, not his; nothing sealed went out, the cycle is not spent */
     const r = await wake(env, u, { k: "remind", o: "" }, { sealedOnly: true });
-    if (r && r.sealed > 0) out.sent++;
+    if (r && r.sent > 0) out.sent++;   /* delivered: with sealedOnly every send is sealed, and a refused one spends no cycle (Fable's re-check) */
     else { out.quiet++; try { if (was) await env.STMT.put(key, was, { expirationTtl: REMIND_TTL }); else await env.STMT.delete(key); } catch {} }
   }
   return out;

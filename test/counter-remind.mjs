@@ -122,7 +122,7 @@ export async function run({ ok, pageWork }) {
   const subscribe = async (u) => { const ph = await phone(), ep = "https://push.example/" + u; phones[u] = ph; ownerOf[ep] = u; await kv.put("push:" + u + ":" + await endpointId(ep), J({ endpoint: ep, keys: ph.keys, at: new Date().toISOString() })); };
   for (const u of [UA, UB, UT, UC]) await subscribe(u);
   const realFetch = globalThis.fetch, realLog = console.log;
-  globalThis.fetch = async (url, init) => { const s = String(url); if (s.startsWith("https://push.example/")) { hits.push({ u: ownerOf[s], body: init.body }); return new Response("", { status: 201 }); } return realFetch(url, init); };
+  globalThis.fetch = async (url, init) => { const s = String(url); if (s.startsWith("https://push.example/")) { hits.push({ u: ownerOf[s], body: init.body }); if (s.includes("/refused-")) return new Response("", { status: 500 }); return new Response("", { status: 201 }); } return realFetch(url, init); };
   const D = (n) => kl(n), at = (n, hh) => D(n) + "T" + hh + ":00:00Z";   /* 02:00Z is 10:00 in Kuala Lumpur */
   const tick = async (iso) => {
     const w = []; hits.length = 0; logs.length = 0;
@@ -178,6 +178,11 @@ export async function run({ ok, pageWork }) {
     await kv.put("push:" + UE + ":" + await endpointId(epE), J({ endpoint: epE, keys: null, at: new Date().toISOString() }));
     await seed({ [UE]: D(-30) }, 5);
     const t10 = await tick(at(5, "02"));
+    /* W11: a sealed send the push service refuses spends no cycle */
+    const UF = "refused-0001"; await subscribe(UF);
+    await seed({ [UF]: D(-30) }, 5);
+    const t11 = await tick(at(5, "02"));
+    ok(hits.some((h) => h.u === UF) && await kv.get("reminded:" + UF) === null, "W11 a reminder the push service refuses spends no cycle: " + J(t11.map((x) => x[0])));
     ok(!hits.some((h) => h.u === UE) && await kv.get("reminded:" + UE) === null, "W10 a phone that cannot read the reminder is not woken and its cycle is not spent: " + J(t10));
   } finally { globalThis.fetch = realFetch; console.log = realLog; }
 

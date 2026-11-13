@@ -2315,7 +2315,7 @@ const worker = {
         /* PRICE BAND V3: the reminder to a late regular, once a day at 10:00 (stmt/remind.js), never over the chase */
         try {
           const rm = await sendReminders(env, now, new Set([...owing, ...rated]));
-          if (rm.sent || rm.quiet || rm.held || rm.open) console.log("remind: " + JSON.stringify(rm));
+          if (rm.sent || rm.quiet || rm.held || rm.open || rm.stale || rm.unread || rm.unmarked) console.log("remind: " + JSON.stringify(rm));
         } catch (e) { console.log("remind FAILED: " + String((e && e.stack) || e)); }
       } catch (e) {
         console.log("chase FAILED: " + String((e && e.stack) || e));

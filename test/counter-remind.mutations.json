@@ -256,5 +256,11 @@
     "file": "stmt/remind.js",
     "find": "export const REMIND_TTL = 400 * 86400;",
     "replace": "export const REMIND_TTL = 120 * 86400;"
+  },
+  {
+    "name": "W10 an undelivered sealed send spends the cycle",
+    "file": "stmt/remind.js",
+    "find": "    if (r && r.sent > 0) out.sent++;",
+    "replace": "    if (r && r.sealed > 0) out.sent++;"
   }
 ]
