@@ -28,7 +28,7 @@ import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, quotesRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -86,7 +86,7 @@ const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
  * 9 Nov 2026, his word (every conclusion leads to the correct path): `?to=` names the Salt Admin place a Desk conclusion is acted on,
  * one of a fixed list (ADMIN_TO): a place and part, a row (`row/<rid>`, its sale form), an account (`acct/<code>`) or a Desk reminder
  * (`tip/<id>`). Anything else lands on Approve as before, so the Desk can never send Salt Admin an address it does not know. */
-export const ADMIN_TO = /^(needs|orders\/(todo|open|done|ended|approve|payments|group|ledger)|customers\/(accounts|messages|links|associates)|record\/(entry|customers|pricing)|market\/(off|on)|anchor\/\d{1,3}(\.\d{1,2})?\/\d{1,5}|row\/[slp]\d{1,6}|acct\/[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}|tip\/[A-Za-z0-9:._+-]{1,120})$/;
+export const ADMIN_TO = /^(needs|orders\/(todo|open|done|ended|approve|payments|group|ledger)|customers\/(accounts|messages|links|associates)|record\/(entry|customers|pricing)|market\/(off|on)|shop\/calendar|anchor\/\d{1,3}(\.\d{1,2})?\/\d{1,5}|row\/[slp]\d{1,6}|acct\/[A-Z0-9]{2,4}(-[A-Z0-9]{1,6}){1,2}|tip\/[A-Za-z0-9:._+-]{1,120})$/;
 export function adminRedirect(env, want) {
   let to = null;
   const hash = typeof want === "string" && ADMIN_TO.test(want) ? want : "orders/approve";
@@ -2967,7 +2967,7 @@ export default {
     if ((p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/book/page"   /* S5d: the Book's view is the whole ledger, cost and margin included */
-      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/quotes" || p === "/hush"
+      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/quotes" || p === "/calendar" || p === "/hush"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
       || p === "/vault/addr" || p === "/vault/pair" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
@@ -3122,6 +3122,12 @@ export default {
     if (p === "/quotes") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       const r = await quotesRelay(env, url.searchParams.get("days"));
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* band version 3: his calendar of marks (read only, keyed) */
+    if (p === "/calendar") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const r = await calendarRelay(env);
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* A5: the hushed Whiteboard tips, one store for the desk and Counter Maker */

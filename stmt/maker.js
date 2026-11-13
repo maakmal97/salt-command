@@ -21,6 +21,7 @@ async function sheetFollow(env, o, slot) {
   return out;
 }
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
+import { CAL_KEY, readCalendar, applyCalendar } from "./calendar.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
 import { slotSpan, WINDOWS } from "./window.js";
@@ -278,6 +279,21 @@ async function makerPoints(request, env, method) {
   return json({ ok: true, points: next, examples: EXAMPLE_POINTS });
 }
 
+/* 13 Nov 2026, the price band's version 3: HIS CALENDAR OF MARKS (stmt/calendar.js). GET reads the list; POST {add: {name, from, to}} or {remove: id} stands at once, no Approve (it prices nothing). */
+async function makerCalendar(request, env, method) {
+  if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
+  if (method === "GET") return json({ ok: true, calendar: await readCalendar(env) });
+  if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const parsed = await bodyOf(request);
+  if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+  const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  const mint = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const next = applyCalendar(await readCalendar(env), parsed.body, today, mint);
+  if (next.error) return json({ ok: false, error: next.error }, 400);
+  await env.STMT.put(CAL_KEY, JSON.stringify(next.cal));
+  return json({ ok: true, calendar: next.cal });
+}
+
 /* ---- THE TEST SURFACE: EVERY MOVE ON AN EXAMPLE ORDER (his answers of 18 Oct 2026, Asks 2, 6 and 7) ----------------------------------
  * One road for example orders, on /all and /all/test alike. Each tap composes the body the Desk would send and runs it through the order
  * book's own decideDesk in the account's fixture alone (actor deskorder), so every rule a real order keeps holds here, and nothing is
@@ -387,6 +403,7 @@ function internalOperation(path) {
   if (withdrawal) return { kind: "queue-withdraw", id: withdrawal[1] };
   if (path === "/all/maker/hours") return { kind: "hours" };
   if (path === "/all/maker/points") return { kind: "points" };
+  if (path === "/all/maker/calendar") return { kind: "calendar" };
   if (path === "/all/maker/inputs") return { kind: "inputs" };
   if (path === "/all/maker/vault") return { kind: "vault" };
   if (path === "/all/maker/vault/addr") return { kind: "vault-addr" };
@@ -594,6 +611,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
     }
     if (op.kind === "hours") return await makerHours(request, env, method);
     if (op.kind === "points") return await makerPoints(request, env, method);
+    if (op.kind === "calendar") return await makerCalendar(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
        Close. Close is the order book's first (each joiner told once), then each joined order is previewed and accepted through
        the Desk, as his own Accept on its card would be; a joined order the Desk will not accept is written on the pool as
