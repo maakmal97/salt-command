@@ -164,7 +164,10 @@ const putISince = (at) => idb("readwrite", (st) => st.put(String(at), "isince"))
 const INFORM = { folded: ["Folded and live", "The new version is live.", "./desk"],
   "fold-refused": ["A fold was refused", "Open the desk to see why.", "./desk"],
   "suite-red": ["The suite failed on the live build", "The desk is working; the next session reads the run.", "./desk"],
-  stock: ["A stock light changed", "Open Stock to see which.", "./desk#stock"] };
+  stock: ["A stock light changed", "Open Stock to see which.", "./desk#stock"],
+  /* 14 Nov 2026: the 09:00 digest's word on git's copy of the Book (src/worker.js exportAlarm), sent on the digest's own salt wake */
+  export: ["No export of the Book to git today", "The Book holds every row; the export can be dispatched by hand.", "./desk"],
+  "export-unchecked": ["The day's export could not be checked", "GitHub did not answer the desk at 09:00.", "./desk"] };
 
 /* THE STATUS IS ONE BANNER, NOT A PILE. It keeps a single tag, so a second wake REPLACES the first rather than
    stacking behind it: four a day that each replace the last is a glance; four that queue up is a chore, and a
