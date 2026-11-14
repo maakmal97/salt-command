@@ -90,7 +90,8 @@ on:
         description: 'Prove the fold key with one cheap call, then stop'
         type: boolean
         default: false
-      # S5f-6: with the Book as the source, export it to git now (the day's record) instead of waiting for the 00:23 Kuala Lumpur net. Ignored while git is the source.
+      # S5f-6: with the Book as the source, export it to git now (the day's record). The Desk Worker sends this from 00:05 Kuala Lumpur until the day's export lands
+      # (src/worker.js exportAsk, 14 Nov 2026), and a scheduled run exports when the rule says it is due. Ignored while git is the source.
       export:
         description: 'Export the Book to git (only when the Book is the source)'
         type: boolean
@@ -286,11 +287,21 @@ jobs:
       #          cheap call and then stop.
       - name: What this run does
         id: plan
+        # the day-export rule reads this run's own list of runs and jobs (permissions: actions: read)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           fold=0
-          # S5f-6: with the Book as the source nothing folds; the day's export (a scheduled run that starts between 00:00 and 05:59 in Kuala Lumpur, which the 00:23 net is however late GitHub starts it, or a dispatch asking for it) is a deploy, since it rebuilds the page over the exported book
+          # S5f-6: with the Book as the source nothing folds; the day's export is a deploy, since it rebuilds the page over the exported book. A dispatch asking for it always
+          # exports. A SCHEDULED RUN EXPORTS WHEN THE RULE SAYS IT IS DUE (14 Nov 2026, the day-export plan): no export has landed today in Kuala Lumpur and no run named for
+          # today's export is running, whatever hour GitHub starts it (it starts them two to six hours late, so the old window of 00:00 to 05:59 missed 12 to 14 Nov 2026).
+          # The rule is src/day-export.js, the one the Desk Worker reads when it asks from 00:05. Only the exit code is read, inside the `if`: not due (1) and cannot tell
+          # (2) both leave export at 0, and neither turns this step red.
           export=0
-          if [ "${{ steps.source.outputs.mode }}" = "book" ] && { [ "${{ inputs.export }}" = "true" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$(TZ=Asia/Kuala_Lumpur date +%H)" -lt 6 ]; }; }; then export=1; fi
+          if [ "${{ steps.source.outputs.mode }}" = "book" ]; then
+            if [ "${{ inputs.export }}" = "true" ]; then export=1
+            elif [ "${{ github.event_name }}" = "schedule" ] && node tools/day-export.mjs --due; then export=1; fi
+          fi
           if [ "${{ steps.guard.outputs.staged }}" = "1" ] || [ "${{ steps.commit.outputs.staged }}" = "1" ]; then fold=1; fi
           deploy=0
           if [ "${{ github.event_name }}" = "push" ]; then deploy=1; fi
