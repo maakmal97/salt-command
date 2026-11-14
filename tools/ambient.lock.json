@@ -1,0 +1,10 @@
+{
+  "version": "0.6.0",
+  "commit": "10065b352faef81033ac4bdbe7cee69a3a4b1c5a",
+  "tokens": "e1568ba1fb26b765d8e73d0df9001d7819de2a61d1bd0814c8033881cf082854",
+  "files": {
+    "ambient.css": "ca44f13d2cb2e8f22f9e4a0c7b33cfe848f6f69e9c24c5a62953c50f1a2a1596",
+    "ambient.js": "a6242cd9a205d3c97eaa3b8985c385d8ab9367f6e5fa19b78549297b198f8541",
+    "icons.svg": "33008cedfc5b0570ee0f896bb1961ba1dfcfe4aade1e1392c9b1a65c849f18ae"
+  }
+}

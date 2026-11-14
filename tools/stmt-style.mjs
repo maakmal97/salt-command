@@ -42,6 +42,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { carried } from "./ambientsync.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -317,6 +318,22 @@ b.short{color:var(--salt-ember)}
   .qrb{border-color:var(--salt-paper-rule)}.qrt code{color:var(--salt-paper-copper)}
 }`;
 
+/* 14 NOV 2026, THE MOVE TO AMBIENT (docs/plan-ambient-move.html, his answers of 14 Nov 2026: Salt Admin first). Salt Admin's page carries
+   Ambient, which tools/ambientsync.mjs pulls into design/ambient/ and checks there against its lock: the token block, ambient.css,
+   ambient.js and the icon sprite, each byte for byte as pulled (a carried copy is never edited here), and Salt Admin's own layer,
+   design/admin.css, which reads --amb-* tokens only. They travel to the Worker as JSON strings and are interpolated into the page,
+   never pasted into its template literals, where a backslash in ambient.js would be eaten and a backtick in a comment would end the
+   literal; the suite proves the served page holds each one whole, its hash the lock's. The Counter keeps salt-ds until its own move. */
+export function ambientParts() {
+  const dir = join(REPO, "design", "ambient"), read = (f) => readFileSync(join(dir, f), "utf8").replace(/\r\n/g, "\n");
+  const tokens = carried();
+  if (tokens == null) throw new Error("stmt-style: design/ambient/app.css carries no DESIGN tokens block: run node tools/ambientsync.mjs --pull");
+  const own = join(REPO, "design", "admin.css");
+  const admin = existsSync(own) ? readFileSync(own, "utf8").replace(/\r\n/g, "\n") : "";
+  if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(admin.replace(/\/\*[\s\S]*?\*\//g, ""))) throw new Error("stmt-style: design/admin.css names a colour; it reads --amb-* tokens only");
+  return { tokens, css: read("ambient.css"), js: read("ambient.js"), icons: read("icons.svg"), admin };
+}
+
 /** The whole stylesheet for a statement document. */
 export function statementCss() {
   return saltTokens() + LAYER;
@@ -381,7 +398,16 @@ function moduleText() {
     + " */\n"
     + "export const STATEMENT_CSS = " + JSON.stringify(statementCss()) + ";\n"
     + "export const SITE_RECIPES = " + JSON.stringify(siteRecipes()) + ";\n"
-    + "export const FONT_FACE_CSS = " + JSON.stringify(fontFaceCss()) + ";\n";
+    + "export const FONT_FACE_CSS = " + JSON.stringify(fontFaceCss()) + ";\n"
+    + ambientModule();
+}
+function ambientModule() {
+  const a = ambientParts();
+  return "export const AMB_TOKENS = " + JSON.stringify(a.tokens) + ";\n"
+    + "export const AMB_CSS = " + JSON.stringify(a.css) + ";\n"
+    + "export const AMB_JS = " + JSON.stringify(a.js) + ";\n"
+    + "export const AMB_ICONS = " + JSON.stringify(a.icons) + ";\n"
+    + "export const ADMIN_CSS = " + JSON.stringify(a.admin) + ";\n";
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

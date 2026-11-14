@@ -1,0 +1,1452 @@
+/* Ambient components. Plain classes over the tokens in tokens.css; behaviour, where a part has
+ * any, is in ambient.js. No colour is named in this file: every one is a token, so every pair
+ * drawn here is one scripts/build-tokens.mjs has measured. No size under 12px, no control under
+ * --amb-tap, no field under 16px, dvh and never vh, transform and opacity the only things that
+ * move. npm run check holds the file to each of those.
+ *
+ * THE SHELL. An app is one .amb-shell the height of the screen; it never scrolls. Inside it,
+ * .amb-screen scrolls, and .amb-appbar, .amb-dock and .amb-toast float over it. The shell is a
+ * size container named amb, and every wider layout is a container query on it, never a media
+ * query: a shell 390px wide lays out as a phone wherever it sits. */
+
+/* ---- Base ---- */
+.amb, .amb *, .amb *::before, .amb *::after { box-sizing: border-box; }
+.amb {
+  margin: 0;
+  color: var(--amb-ink);
+  background: var(--amb-base);
+  font: 400 var(--amb-text-body)/1.4 var(--amb-font);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+/* :where() keeps these as light as a bare element, so a part's one class always outranks them */
+:where(.amb) button, :where(.amb) input, :where(.amb) select, :where(.amb) textarea { font: inherit; color: inherit; }
+/* and each control states its own face and colour too, so an app's bare `button { ... }`, loaded
+   before this file or after it, cannot reach in and change them */
+.amb-pill, .amb-circle, .amb-chip, .amb-more, .amb-segment__opt, .amb-plate__row, .amb-input, .amb-tab, .amb-action, .amb-handle, .amb-row, .amb-row__main { font-family: inherit; }
+.amb-chip, .amb-more, .amb-plate__row, .amb-input { color: inherit; }
+.amb [hidden] { display: none !important; }
+/* a part of the page given its own mood or theme takes that mood's ink with it */
+:where(.amb) [data-mood], :where(.amb) [data-theme] { color: var(--amb-ink); }
+.amb :focus-visible { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
+/* over the mesh the ring is the ink, the one colour measured against every stop */
+.amb-mesh :focus-visible, .amb-appbar :focus-visible { outline-color: var(--amb-ink); }
+.amb-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.amb-num { font-variant-numeric: tabular-nums; }
+.amb-pos { color: var(--amb-pos); }
+.amb-neg { color: var(--amb-neg); }
+.amb-muted { color: var(--amb-ink-2); }
+
+/* ---- Icons: 24px strokes from src/icons.svg, drawn in the text's own colour ---- */
+.amb-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.amb-icon { flex: none; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.amb-icon--sm { width: 20px; height: 20px; }
+.amb-icon--xs { width: 14px; height: 14px; stroke-width: 2.6; }
+
+/* ---- Shell, screen, wrap ---- */
+.amb-shell {
+  position: relative;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  container: amb / inline-size;
+  color: var(--amb-ink);
+  background: var(--amb-base);
+}
+.amb-screen {
+  --amb-inset-l: var(--amb-safe-left);
+  position: absolute;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--amb-safe-right) calc(var(--amb-space-6) + var(--amb-safe-bottom)) var(--amb-inset-l);
+}
+/* a screen with a dock under it leaves the dock's height clear, so its last row can be reached */
+.amb-screen--docked { padding-bottom: var(--amb-bleed); scroll-padding-bottom: var(--amb-bleed); }
+.amb-wrap { width: min(100%, var(--amb-measure)); margin-inline: auto; }
+.amb-wrap--narrow { --amb-measure: 440px; }
+.amb-wrap--wide { --amb-measure: 1080px; }
+/* A frame: a shell shown at a phone's size inside another page (a mock-up, a board, a preview).
+   An app never uses one: its one shell is the screen. The frame holds what the shell fixes. */
+.amb-frame { width: min(100%, 390px); margin-inline: auto; }
+.amb-frame > .amb-shell { height: 760px; border: 1px solid var(--amb-line-field); border-radius: 40px; transform: translateZ(0); --amb-mesh-h: 330px; --amb-safe-top: 0px; --amb-safe-bottom: 0px; }
+.amb-frame--wide { width: 100%; }
+.amb-frame--wide > .amb-shell { height: 660px; border-radius: var(--amb-radius-lg); }
+.amb-frame__name { margin: 0 0 var(--amb-space-2); font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink-2); text-align: center; }
+/* A board: two or more frames on one page. It sets them side by side where there is room and
+   carries the page's one heading, so a mock-up of several screens needs no layout of its own. */
+.amb-board { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: var(--amb-space-6) var(--amb-space-5); padding: var(--amb-space-6) var(--amb-space-4) var(--amb-space-8); color: var(--amb-ink); background: var(--amb-base); }
+.amb-board > .amb-frame { flex: 0 1 390px; min-width: 0; margin-inline: 0; }
+.amb-board > .amb-board__head, .amb-board > .amb-frame--wide { flex: 0 0 100%; }
+.amb-board__head { display: grid; gap: var(--amb-space-1); text-align: center; }
+.amb-board__title { margin: 0; font-size: var(--amb-text-title1); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+.amb-board__sub { margin: 0; font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
+.amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }
+.amb-stack > * { min-width: 0; }
+/* one block after another in a screen keeps the gap a stack keeps inside itself */
+.amb-screen > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-space-4); }
+
+/* ---- The mesh: a mood's three stops over its base, fading into the base at the foot ---- */
+/* Painted as gradients, never as blurred discs: a blur filter on a layer this size is drawn
+   again whenever anything over it moves. The stops are solved so --amb-ink reads on each of
+   them and on every blend between them, so the mesh carries --amb-ink and no other ink. */
+.amb-mesh {
+  background-color: var(--amb-base);
+  background-image:
+    linear-gradient(to bottom, transparent 50%, var(--amb-base) 96%),
+    radial-gradient(ellipse 74% 80% at 100% 0%, var(--amb-mesh-2) 14%, transparent 78%),
+    radial-gradient(ellipse 50% 50% at 64% 48%, var(--amb-mesh-3) 0%, transparent 74%),
+    radial-gradient(ellipse 98% 86% at 0% 58%, var(--amb-mesh-1) 16%, transparent 80%);
+  background-repeat: no-repeat;
+}
+/* ambient.js adds this for the length of a change of mood, so the colours glide and a change
+   of theme does not */
+.amb-glide {
+  transition: --amb-base calc(var(--amb-dur) * 2) var(--amb-ease), --amb-surface calc(var(--amb-dur) * 2) var(--amb-ease),
+    --amb-raised calc(var(--amb-dur) * 2) var(--amb-ease), --amb-well calc(var(--amb-dur) * 2) var(--amb-ease),
+    --amb-mesh-1 calc(var(--amb-dur) * 2) var(--amb-ease), --amb-mesh-2 calc(var(--amb-dur) * 2) var(--amb-ease),
+    --amb-mesh-3 calc(var(--amb-dur) * 2) var(--amb-ease);
+}
+
+/* ---- App bar: glass circles floating over whatever scrolls under them ---- */
+.amb-appbar {
+  position: absolute;
+  z-index: 20;
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--amb-space-2);
+  padding: calc(var(--amb-safe-top) + var(--amb-space-2)) calc(var(--amb-safe-right) + var(--amb-space-4)) 0 calc(var(--amb-safe-left) + var(--amb-space-4));
+  pointer-events: none;
+}
+.amb-appbar > * { pointer-events: auto; }
+.amb-appbar__group { display: flex; gap: var(--amb-space-2); }
+
+/* ---- Hero: the stack that stands on the mesh ---- */
+.amb-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: var(--amb-mesh-h);
+  margin: 0 calc(-1 * var(--amb-safe-right)) 0 calc(-1 * var(--amb-inset-l));
+  padding: calc(var(--amb-safe-top) + var(--amb-tap) + var(--amb-space-6)) calc(var(--amb-safe-right) + var(--amb-space-5)) var(--amb-space-7) calc(var(--amb-inset-l) + var(--amb-space-5));
+  text-align: center;
+}
+.amb-hero__title { margin: var(--amb-space-2) 0 0; font-size: var(--amb-text-title1); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; text-wrap: balance; }
+.amb-hero__sub { margin: 2px 0 0; font-size: var(--amb-text-body); letter-spacing: -0.01em; text-wrap: balance; }
+.amb-hero__time { margin: var(--amb-space-1) 0 0; font-size: var(--amb-text-caption); font-weight: 500; }
+/* a screen whose subject is below the hero (a code, a card): the stack alone, no flood to fill */
+.amb-hero--compact { min-height: 0; padding-bottom: var(--amb-space-5); }
+.amb-cluster { display: flex; align-items: center; justify-content: center; gap: var(--amb-space-5); margin-top: var(--amb-space-5); }
+.amb-glyph { display: grid; place-items: center; width: 72px; height: 72px; border: 1px solid var(--amb-rim); border-radius: 50%; background: var(--amb-solid-circle); }
+.amb-glyph > .amb-icon { width: 32px; height: 32px; }
+
+/* ---- Buttons: the pill and the circle ---- */
+.amb-pill, .amb-circle {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  cursor: pointer;
+  text-decoration: none;
+  touch-action: manipulation;
+  transition: transform var(--amb-dur-fast) var(--amb-ease-fast), opacity var(--amb-dur-fast) var(--amb-ease-fast);
+}
+.amb-pill:active, .amb-circle:active { transform: scale(.95); }
+.amb-pill:disabled, .amb-circle:disabled, .amb-pill[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; }
+/* the one solid object on the mesh: white on a dark page, the deep ink on a light one */
+.amb-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--amb-space-2);
+  min-height: var(--amb-pill-h);
+  padding: 0 28px;
+  border: 1px solid transparent;
+  border-radius: var(--amb-radius-pill);
+  background: var(--amb-pill);
+  color: var(--amb-on-pill);
+  font-size: var(--amb-text-callout);
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+.amb-pill--accent { background: var(--amb-accent); color: var(--amb-on-accent); }
+.amb-pill--quiet { border-color: var(--amb-line-field); background: none; color: var(--amb-ink); }
+.amb-pill--sm { min-height: var(--amb-tap); padding: 0 var(--amb-space-4); font-size: var(--amb-text-subhead); font-weight: 600; }
+.amb-pill--block { display: flex; width: 100%; }
+.amb-circle {
+  display: inline-grid;
+  place-items: center;
+  width: var(--amb-tap);
+  height: var(--amb-tap);
+  padding: 0;
+  border: 1px solid var(--amb-rim);
+  border-radius: 50%;
+  background: var(--amb-solid-circle);
+  color: var(--amb-ink);
+}
+.amb-circle--lg { width: var(--amb-pill-h); height: var(--amb-pill-h); }
+.amb-circle--plain { border-color: transparent; background: none; color: var(--amb-ink-2); }
+
+/* ---- Chip: an eyebrow, a status, a count ---- */
+.amb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid var(--amb-line);
+  border-radius: var(--amb-radius-pill);
+  background: var(--amb-well);
+  font-size: var(--amb-text-caption);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.amb-chip--glass { border-color: var(--amb-rim); background: var(--amb-solid-circle); }
+.amb-chip--pos { color: var(--amb-pos); }
+.amb-chip--neg { color: var(--amb-neg); }
+.amb-chip--warn { color: var(--amb-warn); }
+.amb-chip__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amb-pos); }
+
+/* ---- Blurb, More, the drawer it opens ---- */
+.amb-blurb { max-width: calc(65ch + 2 * var(--amb-space-4)); margin: 0; padding: var(--amb-space-4) var(--amb-space-4) 0; font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
+.amb-more {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--amb-tap);
+  min-height: var(--amb-tap);
+  margin: 0 var(--amb-space-4);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--amb-text-caption);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.amb-drawer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--amb-space-2); margin: 0 var(--amb-space-4) var(--amb-space-3); }
+.amb-stat { padding: 10px var(--amb-space-3); border-radius: var(--amb-radius-sm); background: var(--amb-well); }
+.amb-stat__label { display: block; font-size: var(--amb-text-caption); color: var(--amb-ink-2); }
+.amb-stat__value { display: block; margin-top: 2px; font-size: var(--amb-text-subhead); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---- Section heading ---- */
+.amb-section {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--amb-space-3);
+  margin: 0;
+  padding: var(--amb-space-6) var(--amb-space-4) var(--amb-space-2);
+  font-size: var(--amb-text-title3);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.amb-section__note { font-size: var(--amb-text-footnote); font-weight: 500; letter-spacing: 0; color: var(--amb-ink-2); }
+
+/* ---- List and row: thumb, two lines, what trails, an indented hairline ---- */
+.amb-list { margin: 0 var(--amb-space-4); padding: 0; list-style: none; }
+.amb-list--ruled { border-top: 1px solid var(--amb-line); }
+/* rows that open with something other than a thumb (a handle): the hairline runs the full width */
+.amb-list--full .amb-row::after { left: 0; }
+.amb-row, .amb-row__main {
+  display: flex;
+  align-items: center;
+  gap: var(--amb-space-3);
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+.amb-row { position: relative; width: 100%; min-height: var(--amb-row-h); padding: var(--amb-space-2) 0; }
+.amb-row::after { content: ""; position: absolute; inset: auto 0 0 var(--amb-hairline-inset); height: 1px; background: var(--amb-line); }
+.amb-list > :last-child.amb-row::after, .amb-list > :last-child > .amb-row::after { display: none; }
+/* a row is tappable whole (an a or a button), or carries .amb-row__main beside its own controls */
+.amb-row__main { flex: 1 1 auto; min-width: 0; min-height: var(--amb-thumb); padding: 0; }
+a.amb-row, button.amb-row, .amb-row__main {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform var(--amb-dur-fast) var(--amb-ease-fast);
+}
+a.amb-row:active, button.amb-row:active, .amb-row__main:active { transform: scale(.985); }
+.amb-row__text { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.amb-row__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--amb-text-callout); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.amb-row__sub { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--amb-text-footnote); line-height: 1.3; color: var(--amb-ink-2); overflow-wrap: anywhere; }
+/* a badge at the head of the second line: the mark that a thing is on file, out of the amount's way */
+.amb-row__sub > .amb-badge { display: inline-grid; width: 14px; height: 14px; margin-right: 5px; vertical-align: -2px; }
+.amb-row__sub > .amb-badge > .amb-icon { width: 10px; height: 10px; }
+/* a row that measures something: its meter runs under the text and what trails, beside the thumb,
+   so every row's meter is the same length whatever the amount beside it */
+.amb-row--meter { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px var(--amb-space-3); }
+.amb-row--meter > .amb-thumb { grid-row: 1 / span 2; }
+.amb-row--meter > .amb-meter { grid-column: 2 / -1; }
+.amb-row__trail { flex: none; display: flex; align-items: center; gap: var(--amb-space-2); }
+.amb-row__amount { font-size: var(--amb-text-subhead); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* the row on screen in the pane beside the list */
+.amb-row[aria-current="true"] { width: calc(100% + 16px); margin-inline: -8px; padding-inline: 8px; border-radius: var(--amb-radius-md); background: var(--amb-well); }
+.amb-row[aria-current="true"]::after { display: none; }
+/* suspended: the thumb greys and the title steps back; the reason is a word on the second line */
+.amb-row.is-off .amb-thumb { filter: grayscale(1); opacity: .6; }
+.amb-row.is-off .amb-row__title { color: var(--amb-ink-3); }
+
+/* ---- Thumb: the squircle. It takes its own data-mood, so a row can show its kind. ---- */
+.amb-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--amb-thumb);
+  height: var(--amb-thumb);
+  overflow: hidden;
+  border: 1px solid var(--amb-rim);
+  border-radius: var(--amb-radius-thumb);
+  background: linear-gradient(135deg, var(--amb-mesh-1), var(--amb-mesh-2));
+  color: var(--amb-ink);
+  font-size: var(--amb-text-caption);
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.amb-thumb--sm { width: 36px; height: 36px; }
+.amb-thumb--round { border-radius: 50%; }
+/* for a picture the app draws itself (Salt QR's coin): no edge, no corner, nothing clipped */
+.amb-thumb--bare { overflow: visible; border: 0; border-radius: 0; background: none; }
+.amb-thumb > canvas, .amb-thumb > img { display: block; width: 100%; height: 100%; }
+
+/* ---- Badge: a small mark that says a thing is so. Never a button. ---- */
+.amb-badge { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--amb-ink-2); color: var(--amb-base); }
+
+/* ---- Meter: a native progress element, so its length needs no style attribute ---- */
+/* the track carries a 3:1 edge, so the length a fill is read against can be seen */
+.amb-meter { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 8px; overflow: hidden; border: 1px solid var(--amb-line-field); border-radius: var(--amb-radius-pill); background: var(--amb-well); color: var(--amb-accent); }
+.amb-meter::-webkit-progress-bar { background: var(--amb-well); }
+.amb-meter::-webkit-progress-value { border-radius: var(--amb-radius-pill); background: var(--amb-accent); }
+.amb-meter::-moz-progress-bar { border-radius: var(--amb-radius-pill); background: var(--amb-accent); }
+
+/* ---- Segment: one choice of a few. Salt QR's rail switch; it wraps and never scrolls. ---- */
+.amb-segment { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--amb-line); border-radius: calc(var(--amb-tap) / 2 + 4px); background: var(--amb-well); }
+.amb-segment__opt {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: var(--amb-tap);
+  padding: 2px var(--amb-space-2);
+  border: 0;
+  border-radius: var(--amb-radius-pill);
+  background: none;
+  font-size: var(--amb-text-footnote);
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  color: var(--amb-ink-2);
+  transition: background-color var(--amb-dur-fast) var(--amb-ease-fast), color var(--amb-dur-fast) var(--amb-ease-fast);
+}
+.amb-segment__opt[aria-pressed="true"] { background: var(--amb-pill); color: var(--amb-on-pill); }
+.amb-segment__count { font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* ---- Pane and plate: a raised surface; a plate is a pane of label-over-value rows ---- */
+.amb-pane, .amb-plate { border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); }
+.amb-pane { padding: var(--amb-space-4); }
+.amb-plate { display: flex; flex-direction: column; padding: 0 var(--amb-space-4); }
+.amb-plate__row {
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--amb-space-3);
+  width: 100%;
+  min-height: 60px;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--amb-line);
+  background: none;
+  text-align: left;
+}
+.amb-plate__row:last-child { border-bottom: 0; }
+button.amb-plate__row { cursor: pointer; touch-action: manipulation; }
+.amb-plate__text { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.amb-plate__label { font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--amb-ink-2); }
+/* the value is the figure, and it wraps before it shrinks */
+.amb-plate__value { font-family: var(--amb-font-mono); font-size: var(--amb-text-body); font-weight: 500; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* a name, not a number: the page's own face */
+.amb-plate__value--words { font-family: inherit; font-weight: 600; }
+.amb-plate__act { flex: none; font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-accent); }
+.amb-plate__row.is-copied .amb-plate__value, .amb-plate__row.is-copied .amb-plate__act { color: var(--amb-pos); }
+/* a secret: masked, shown in full, or sealed where this device holds no key for it */
+.amb-secret[data-state="masked"] .amb-plate__value, .amb-secret[data-state="sealed"] .amb-plate__value { letter-spacing: .08em; }
+.amb-secret[data-state="sealed"] .amb-plate__value { color: var(--amb-ink-3); }
+.amb-seal { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink-2); }
+
+/* ---- Code frame: the field a payment code stands in ---- */
+/* The frame is the system's. The code is the app's: it is never rounded, clipped, scaled out of
+   square or painted over, so nothing here sets overflow and nothing sits on top of the field. */
+.amb-codeframe { display: grid; justify-items: center; gap: var(--amb-space-3); margin: 0; }
+.amb-codeframe__field {
+  display: grid;
+  place-items: center;
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  padding: var(--amb-space-4);
+  border-radius: var(--amb-radius-lg);
+  background: var(--amb-qr-field);
+  box-shadow: var(--amb-shadow-float);
+}
+.amb-codeframe__field > canvas, .amb-codeframe__field > svg, .amb-codeframe__field > img { display: block; width: 100%; height: 100%; border-radius: 0; }
+/* for a code that draws its own field and edge (Salt QR's coin): the frame adds nothing */
+.amb-codeframe--bare .amb-codeframe__field { padding: 0; border-radius: 0; background: none; box-shadow: none; }
+.amb-codeframe__caption { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); text-align: center; }
+
+/* ---- Fields. Never under 16px, never under 48px tall. ---- */
+.amb-field { display: grid; gap: 6px; text-align: left; }
+.amb-field__label { font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink-2); }
+.amb-field__hint { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.amb-field__error { font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-neg); }
+.amb-input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: var(--amb-pill-h);
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--amb-line-field);
+  border-radius: var(--amb-radius-md);
+  background: var(--amb-well);
+  font-size: var(--amb-text-field);
+  line-height: 1.3;
+}
+.amb-input::placeholder { color: var(--amb-ink-3); opacity: 1; }
+.amb-input:focus-visible { outline-offset: 1px; border-color: var(--amb-accent); }
+.amb-field.is-error .amb-input { border-color: var(--amb-neg); }
+/* the native controls the system does not draw keep their own workings and take the field's size
+   and edge: a select keeps its arrow, a multi-line field its lines */
+select.amb-input { -webkit-appearance: menulist; appearance: auto; }
+textarea.amb-input { min-height: 96px; padding-block: 12px; resize: none; }
+/* an amount being entered: the figure alone, as large as the screen's title */
+.amb-input--amount { min-height: 72px; border-color: transparent; background: none; font-size: var(--amb-text-display); font-weight: 700; letter-spacing: -0.02em; text-align: center; font-variant-numeric: tabular-nums; }
+.amb-search { position: relative; }
+.amb-search > .amb-icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: var(--amb-ink-2); pointer-events: none; }
+.amb-search > .amb-input { padding-left: 46px; border-radius: var(--amb-radius-pill); }
+.amb-form { display: grid; gap: var(--amb-space-3); width: min(100%, 400px); margin-inline: auto; padding: 0 var(--amb-space-4); }
+.amb-or { display: flex; align-items: center; gap: var(--amb-space-3); font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.amb-or::before, .amb-or::after { content: ""; flex: 1; height: 1px; background: var(--amb-line); }
+
+/* ---- Switch: a native checkbox, 44px tall, the track and knob drawn inside it ---- */
+.amb-switch { -webkit-appearance: none; appearance: none; position: relative; flex: none; width: 51px; height: var(--amb-tap); margin: 0; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+.amb-switch::before { content: ""; position: absolute; inset: calc(50% - 15.5px) 0; border-radius: var(--amb-radius-pill); background: var(--amb-line-field); transition: background-color var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-switch::after { content: ""; position: absolute; top: calc(50% - 13.5px); left: 2px; width: 27px; height: 27px; border-radius: 50%; background: var(--amb-on-accent); transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-switch:checked::before { background: var(--amb-accent); }
+.amb-switch:checked::after { transform: translateX(20px); }
+.amb-handle { -webkit-appearance: none; appearance: none; flex: none; display: grid; place-items: center; width: var(--amb-tap); height: var(--amb-tap); padding: 0; border: 0; border-radius: 50%; background: none; color: var(--amb-ink-2); cursor: grab; touch-action: none; }
+
+/* ---- Card: a bank card at its true proportion, flooded by its own mood ---- */
+.amb-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--amb-space-2);
+  width: min(100%, 360px);
+  aspect-ratio: 1.586;
+  overflow: hidden;
+  padding: 18px var(--amb-space-5);
+  border: 1px solid var(--amb-rim);
+  border-radius: 18px;
+  container-type: inline-size;
+  background-color: var(--amb-raised);
+  background-image:
+    radial-gradient(ellipse 90% 120% at 100% 0%, var(--amb-mesh-2) 0%, transparent 72%),
+    radial-gradient(ellipse 50% 60% at 62% 56%, var(--amb-mesh-3) 0%, transparent 70%),
+    radial-gradient(ellipse 85% 115% at 0% 100%, var(--amb-mesh-1) 0%, transparent 74%);
+  box-shadow: var(--amb-shadow-float);
+  color: var(--amb-ink);
+}
+.amb-card__issuer { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-2); font-size: var(--amb-text-subhead); font-weight: 700; }
+.amb-card__number { align-self: center; font-family: var(--amb-font-mono); font-size: min(1.125rem, 6.2cqi); font-weight: 600; letter-spacing: .04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.amb-card__meta { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--amb-space-2); font-size: var(--amb-text-caption); font-weight: 500; }
+.amb-card__meta strong { display: block; font-size: var(--amb-text-footnote); font-weight: 600; }
+.amb-card__network { font-size: var(--amb-text-callout); font-weight: 800; font-style: italic; }
+
+/* ---- Tiles: one figure each ---- */
+.amb-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--amb-space-3); padding-inline: var(--amb-space-4); }
+/* a tile is a size container, so its figure is set from the tile's own width and holds one line where it can */
+.amb-tile { container-type: inline-size; display: grid; align-content: start; gap: var(--amb-space-1); min-width: 0; padding: 14px var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); }
+.amb-tile__label { font-size: var(--amb-text-caption); font-weight: 600; color: var(--amb-ink-2); }
+.amb-tile__figure { font-size: clamp(var(--amb-text-body), 16.5cqi, var(--amb-text-title2)); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+/* a currency code before a figure: smaller and quieter than the number it leads. In a tile it
+   takes a line of its own, so every tile's figure sits at the same height. */
+.amb-unit { font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: 0; color: var(--amb-ink-2); }
+.amb-tile__figure > .amb-unit { display: block; }
+.amb-tile__delta { font-size: var(--amb-text-footnote); font-weight: 600; }
+.amb-tile__spark { display: block; width: 100%; height: 36px; margin-top: var(--amb-space-1); fill: none; stroke: var(--amb-accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- Drop zone: a label around a file input, so it works from the keyboard ---- */
+.amb-drop {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  min-height: 136px;
+  padding: var(--amb-space-5) var(--amb-space-4);
+  border: 1.5px dashed var(--amb-line-field);
+  border-radius: var(--amb-radius-lg);
+  background: var(--amb-surface);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--amb-dur-fast) var(--amb-ease-fast);
+}
+.amb-drop.is-over, .amb-drop:focus-within { border-style: solid; border-color: var(--amb-accent); }
+.amb-drop:focus-within { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
+.amb-drop__title { font-size: var(--amb-text-callout); font-weight: 600; }
+.amb-drop__hint { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+
+/* ---- Notice ---- */
+.amb-notice { display: flex; align-items: flex-start; gap: var(--amb-space-3); padding: 14px var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-md); background: var(--amb-well); font-size: var(--amb-text-subhead); }
+.amb-notice--warn { border-color: var(--amb-warn); }
+.amb-notice--warn > .amb-icon { color: var(--amb-warn); }
+.amb-notice__title { display: block; font-weight: 700; }
+
+/* ---- Table: figures in columns; a stack of labelled lines where there is no room ---- */
+.amb-table { width: 100%; border-collapse: collapse; font-size: var(--amb-text-subhead); font-variant-numeric: tabular-nums; }
+.amb-table th { padding: var(--amb-space-2) var(--amb-space-3) var(--amb-space-2) 0; border-bottom: 1px solid var(--amb-line-field); font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: .05em; text-align: left; text-transform: uppercase; color: var(--amb-ink-2); }
+.amb-table td { padding: 10px var(--amb-space-3) 10px 0; border-bottom: 1px solid var(--amb-line); vertical-align: top; }
+.amb-table .is-num { text-align: right; padding-right: 0; }
+.amb-table td > .amb-chip { justify-self: start; }
+/* what a table of figures adds: a caption that says what it shows, a row's own heading, a totals
+   row under a heavier rule, and a second line in a cell (a reason, or which way a figure moved) */
+.amb-table caption { padding: 0 0 var(--amb-space-2); font-size: var(--amb-text-subhead); font-weight: 700; line-height: 1.3; text-align: left; caption-side: top; }
+.amb-table tbody th, .amb-table tfoot th { padding: 10px var(--amb-space-3) 10px 0; border-bottom: 1px solid var(--amb-line); font-size: inherit; font-weight: 600; letter-spacing: 0; text-transform: none; color: inherit; vertical-align: top; }
+.amb-table tfoot th, .amb-table tfoot td { border-top: 2px solid var(--amb-line-field); border-bottom: 0; font-weight: 700; }
+.amb-table__sub { display: block; font-size: var(--amb-text-footnote); font-weight: 500; line-height: 1.35; white-space: normal; }
+/* the financial table: the unit is in the heading, so a cell holds a figure and a figure never wraps */
+.amb-table--figures thead th { vertical-align: bottom; }
+.amb-table--figures td.is-num { white-space: nowrap; }
+/* before and after: what was steps back, what is now stands forward. Three columns, so it never stacks. */
+.amb-table--compare { max-width: 38rem; }
+.amb-table--compare td { text-align: right; }
+.amb-table--compare td, .amb-table--compare thead th:not(:first-child) { padding-right: 0; padding-left: var(--amb-space-3); }
+.amb-table--compare td:nth-child(2) { color: var(--amb-ink-2); }
+.amb-table--compare td:last-child { font-weight: 700; }
+/* the action register: its last column is the state, a word that is never broken */
+.amb-table--register td:last-child { white-space: nowrap; }
+@container amb (max-width: 719px) {
+  .amb-table--stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .amb-table--stack tr { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--amb-line); }
+  .amb-table--stack td { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: var(--amb-space-2); padding: 0; border: 0; }
+  .amb-table--stack td::before { content: attr(data-label); font-size: var(--amb-text-caption); font-weight: 600; color: var(--amb-ink-2); }
+  .amb-table--stack .is-num { text-align: left; }
+  /* a row's heading leads its stack of lines; the totals keep their rule; figures keep to the right */
+  .amb-table--stack caption { padding-bottom: var(--amb-space-3); border-bottom: 1px solid var(--amb-line-field); font-size: var(--amb-text-callout); }
+  .amb-table--stack tbody th, .amb-table--stack tfoot th { display: block; padding: 0 0 2px; border: 0; }
+  .amb-table--stack tfoot th { font-weight: 700; }
+  /* the last part of a section leaves the closing rule to the section after it */
+  .amb-sec > .amb-stack:last-child > .amb-table--stack:last-child > tbody:last-child > tr:last-child { border-bottom: 0; }
+  .amb-table--stack tfoot tr { border-top: 2px solid var(--amb-line-field); border-bottom: 0; }
+  .amb-table--stack tfoot th, .amb-table--stack tfoot td { border-top: 0; }
+  .amb-table--stack td:empty { display: none; }
+  .amb-table--figures.amb-table--stack td { grid-template-columns: minmax(0, 1fr) auto; }
+  .amb-table--figures.amb-table--stack td::before { text-align: left; }
+  .amb-table--figures.amb-table--stack .is-num { text-align: right; }
+  .amb-table--register.amb-table--stack td:last-child { white-space: normal; }
+}
+.amb-code { margin: 0; padding: var(--amb-space-3) var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-md); background: var(--amb-well); font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---- Documents: a page that is read, not operated (a report, a plan, a memo, a board) ---- */
+/* One shell and no frame. The hero states the finding; .amb-doc holds the contents and the body;
+   the body holds sections, each one job under one heading. From 960px the contents stand beside
+   the body and stay in view. Every colour here is a pair an app's part already draws. */
+.amb-hero--doc {
+  --amb-doc-gutter: calc(max(0px, (100% - 1080px) / 2) + var(--amb-space-4));
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 0;
+  padding: calc(var(--amb-safe-top) + var(--amb-space-8)) calc(var(--amb-safe-right) + var(--amb-doc-gutter)) var(--amb-space-7) calc(var(--amb-inset-l) + var(--amb-doc-gutter));
+  text-align: left;
+}
+.amb-hero--doc > .amb-hero__title { max-width: 26ch; margin-top: var(--amb-space-3); }
+.amb-hero--doc > .amb-hero__sub { max-width: 62ch; margin-top: var(--amb-space-3); line-height: 1.45; }
+.amb-hero--doc > .amb-hero__time { margin-top: var(--amb-space-3); }
+.amb-doc { width: min(100%, 1080px); margin-inline: auto; padding-bottom: var(--amb-space-8); }
+.amb-doc__body { min-width: 0; }
+.amb-doc__body > * + * { margin-top: var(--amb-space-4); }
+.amb-doc__body > .amb-blurb, .amb-sec > .amb-blurb { padding-top: 0; }
+/* figures at the head of a document sit four across where there is room, two and two on a phone */
+.amb-doc__body .amb-tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+/* contents: one link a section, numbered by the list itself, each a full 44px */
+.amb-contents { margin: 0 var(--amb-space-4) var(--amb-space-5); padding: var(--amb-space-2) 0; border-block: 1px solid var(--amb-line); }
+.amb-contents__title { margin: 0; padding: var(--amb-space-2) 0 var(--amb-space-1); font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--amb-ink-2); }
+.amb-contents__list { columns: 2; column-gap: var(--amb-space-4); margin: 0; padding: 0; list-style: none; counter-reset: amb-contents; }
+.amb-contents__list > li { break-inside: avoid; }
+.amb-contents__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--amb-space-2);
+  min-height: var(--amb-tap);
+  padding: 6px var(--amb-space-2) 6px var(--amb-space-3);
+  border-radius: var(--amb-radius-sm);
+  font-family: inherit;
+  font-size: var(--amb-text-subhead);
+  font-weight: 500;
+  line-height: 1.25;
+  text-decoration: none;
+  color: var(--amb-ink-2);
+  counter-increment: amb-contents;
+  transition: color var(--amb-dur-fast) var(--amb-ease-fast), background-color var(--amb-dur-fast) var(--amb-ease-fast);
+}
+.amb-contents__link::before { content: counter(amb-contents); flex: none; min-width: 1.1rem; font-variant-numeric: tabular-nums; }
+/* the section on screen: its link in the full ink and a bar beside it, never colour alone */
+.amb-contents__link[aria-current] { font-weight: 700; color: var(--amb-ink); }
+.amb-contents__link[aria-current]::after { content: ""; position: absolute; inset: 10px auto 10px 0; width: 3px; border-radius: 2px; background: var(--amb-accent); }
+/* a section: one job, under one heading. Its parts keep one gap, whatever they are. */
+.amb-sec { scroll-margin-top: var(--amb-space-4); }
+.amb-sec:focus-visible { outline: none; }
+.amb-doc__body > .amb-sec { margin-top: var(--amb-space-7); }
+.amb-sec > * + * { margin-top: var(--amb-space-4); }
+.amb-sec > .amb-section { margin: 0 var(--amb-space-4); padding: var(--amb-space-5) 0 var(--amb-space-2); border-top: 1px solid var(--amb-line); font-size: var(--amb-text-title2); }
+.amb-sec > .amb-section + * { margin-top: var(--amb-space-2); }
+/* one rule between two things, never two: a list under its heading drops its opening rule, and the
+   last part of a section leaves the closing rule to the section after it */
+.amb-sec > .amb-section + .amb-stack > .amb-findings:first-child { border-top: 0; }
+.amb-sec > .amb-stack:last-child > .amb-findings:last-child > .amb-finding:last-child { border-bottom: 0; padding-bottom: 0; }
+.amb-sec > .amb-stack:last-child > .amb-table:last-child > tbody:last-child > tr:last-child > * { border-bottom: 0; }
+/* prose: running text at a measure of about 60 of this face's characters, some 75 letters a line */
+.amb-prose { max-width: calc(60ch + 2 * var(--amb-space-4)); padding-inline: var(--amb-space-4); font-size: var(--amb-text-body); line-height: 1.55; }
+.amb-stack > .amb-prose { padding-inline: 0; }
+.amb-prose > * { margin: 0; }
+.amb-prose > * + * { margin-top: .8em; }
+.amb-prose > h3 { margin-top: 1.4em; font-size: inherit; font-weight: 700; line-height: 1.3; }
+.amb-prose > ul, .amb-prose > ol { padding-left: 1.3em; }
+.amb-prose li + li { margin-top: .35em; }
+.amb-prose strong { font-weight: 700; }
+/* evidence: how far a claim can be trusted, as one of four words, each with a mark of its own
+   shape: verified is filled, an estimate half filled, an assumption hollow, unverified broken */
+.amb-claim { display: inline-flex; align-items: center; gap: 6px; font-size: var(--amb-text-caption); font-weight: 700; letter-spacing: .05em; line-height: 1.3; text-transform: uppercase; white-space: nowrap; color: var(--amb-ink-2); }
+.amb-claim::before { content: ""; flex: none; width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 50%; }
+.amb-claim--verified { color: var(--amb-pos); }
+.amb-claim--verified::before { background: currentColor; }
+.amb-claim--estimate::before { background: linear-gradient(to right, currentColor 50%, transparent 50%); }
+.amb-claim--assumption::before { background: none; }
+.amb-claim--unverified { color: var(--amb-warn); }
+.amb-claim--unverified::before { border-style: dotted; }
+/* a source, in one format, and the one line under a figure that says what it rests on */
+.amb-cite { font-size: var(--amb-text-footnote); font-style: normal; color: var(--amb-ink-2); }
+.amb-basis { display: block; max-width: 64ch; margin: 0; font-size: var(--amb-text-footnote); font-weight: 400; line-height: 1.45; letter-spacing: 0; color: var(--amb-ink-2); }
+.amb-basis > .amb-claim { margin-right: 6px; }
+.amb-tile > .amb-basis { margin-top: var(--amb-space-1); padding-top: var(--amb-space-2); border-top: 1px solid var(--amb-line); font-size: var(--amb-text-caption); }
+.amb-tile > .amb-basis > .amb-claim { display: flex; margin: 0 0 2px; }
+.amb-stack > .amb-table + .amb-basis { margin-top: calc(-1 * var(--amb-space-2)); }
+/* a second standing has a basis of its own, close under the first */
+.amb-stack > .amb-basis + .amb-basis { margin-top: calc(-1 * var(--amb-space-3)); }
+/* verdict: the judgement as a word on a line of its own, over one line that reads it */
+.amb-verdict { display: grid; justify-items: start; gap: var(--amb-space-3); padding: var(--amb-space-5); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); }
+.amb-verdict__reading { max-width: 44ch; margin: 0; font-size: var(--amb-text-title2); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; }
+/* findings: each with its severity as a word in a column of its own, then what was found */
+.amb-findings { margin: 0; padding: 0; border-top: 1px solid var(--amb-line); list-style: none; }
+.amb-finding { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--amb-space-1) var(--amb-space-3); align-items: start; padding: var(--amb-space-4) 0; border-bottom: 1px solid var(--amb-line); }
+.amb-finding > * { grid-column: 2; }
+.amb-finding > .amb-chip { grid-column: 1; grid-row: 1 / span 4; justify-self: start; }
+.amb-finding__title { margin: 0; font-size: var(--amb-text-callout); font-weight: 700; line-height: 1.3; }
+.amb-finding > .amb-basis { max-width: 70ch; }
+.amb-finding__text { max-width: 60ch; margin: 0; font-size: var(--amb-text-subhead); line-height: 1.5; }
+/* steps: a sequence with one stage lit. Done is filled a tone back, now is the full ink with a ring
+   (the strongest mark in light and in dark), what is to come is hollow; each says so in a word as
+   well. Dated, the same list is a timeline. */
+.amb-steps { margin: 0; padding: 0; list-style: none; counter-reset: amb-step; }
+.amb-step { position: relative; display: grid; grid-template-columns: 36px minmax(0, 36rem) auto; justify-content: start; gap: 2px var(--amb-space-3); align-items: start; padding-bottom: var(--amb-space-5); counter-increment: amb-step; }
+.amb-step:last-child { padding-bottom: 0; }
+.amb-step > * { grid-column: 2; }
+.amb-step::before { content: counter(amb-step); grid-column: 1; grid-row: 1 / span 4; display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid var(--amb-line-field); border-radius: 50%; font-size: var(--amb-text-footnote); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-step::after { content: ""; position: absolute; top: 42px; bottom: 6px; left: 17px; width: 2px; border-radius: 1px; background: var(--amb-line); }
+.amb-step:last-child::after { display: none; }
+.amb-step.is-done::before { border-color: transparent; background: var(--amb-ink-2); color: var(--amb-base); }
+.amb-step.is-now::before { border-color: transparent; background: var(--amb-pill); color: var(--amb-on-pill); outline: 2px solid var(--amb-pill); outline-offset: 2px; }
+.amb-step > .amb-chip { grid-column: 3; grid-row: 1 / span 4; margin-top: 6px; }
+.amb-step__date { font-size: var(--amb-text-footnote); font-weight: 600; line-height: 1.4; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-step__title { padding-top: 7px; font-size: var(--amb-text-callout); font-weight: 600; line-height: 1.3; }
+.amb-step__text { max-width: 60ch; font-size: var(--amb-text-subhead); line-height: 1.45; color: var(--amb-ink-2); }
+/* the dated list's mark is 22px narrower, so its words run 22px further and both lists' states share an edge */
+.amb-steps--dated > .amb-step { grid-template-columns: 14px minmax(0, calc(36rem + 22px)) auto; }
+.amb-steps--dated > .amb-step::before { content: ""; width: 14px; height: 14px; margin-top: 2px; }
+.amb-steps--dated > .amb-step::after { top: 22px; bottom: 2px; left: 6px; }
+.amb-steps--dated > .amb-step > .amb-chip { margin-top: 0; }
+.amb-steps--dated .amb-step__title { padding-top: 0; }
+/* change marks, on a draft only: the words that are new, that changed, that were removed. Each
+   has a form of its own (a line under, a broken line under, a line through), never colour alone. */
+.amb-new, .amb-changed { padding: 1px 3px; border-radius: 3px; background: var(--amb-well); color: inherit; text-decoration: none; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.amb-new { border-bottom: 2px solid var(--amb-pos); }
+.amb-changed { border-bottom: 2px dashed var(--amb-warn); }
+.amb-removed { color: var(--amb-ink-2); text-decoration: line-through; }
+/* a list in a document runs the body's width, level with the tables */
+.amb-doc__body .amb-list { max-width: none; }
+/* under 960px the page is one column, and what leads the body (a blurb, the key figures) comes
+   before the contents: a first screen shows the headline and its figures, then the way in */
+@container amb (max-width: 959px) {
+  .amb-doc { display: flex; flex-direction: column; }
+  .amb-doc__body { display: contents; }
+  .amb-doc__body > :not(.amb-sec):not(.amb-sec ~ *) { order: -1; }
+  .amb-contents ~ .amb-doc__body > :not(.amb-sec):has(+ .amb-sec) { margin-bottom: var(--amb-space-5); }
+  /* the section after the contents opens with a rule of its own */
+  .amb-contents { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+}
+@container amb (min-width: 960px) {
+  .amb-doc { display: grid; grid-template-columns: 232px minmax(0, 1fr); column-gap: var(--amb-space-6); align-items: start; }
+  /* a section that opens the body needs no rule over it: the headline is its edge */
+  .amb-doc__body > .amb-sec:first-child { margin-top: 0; }
+  .amb-doc__body > .amb-sec:first-child > .amb-section { padding-top: 0; border-top: 0; }
+  /* a short document has no contents: its body keeps to a reading width, level with the headline */
+  .amb-doc > .amb-doc__body:first-child { grid-column: 1 / -1; max-width: 816px; }
+  .amb-contents { position: sticky; top: var(--amb-space-5); margin: 0 0 0 var(--amb-space-4); padding: 0; border: 0; }
+  .amb-contents__list { columns: 1; }
+}
+/* on a phone a finding's severity stands above its title, and a step's state beside its first
+   line, so the words keep the page's width */
+@container amb (max-width: 719px) {
+  .amb-step > .amb-chip { grid-row: 1; }
+  .amb-steps--dated > .amb-step > .amb-chip { margin-block: -3px; }
+  .amb-step__text, .amb-steps--dated .amb-step__title { grid-column: 2 / -1; }
+  .amb-finding { grid-template-columns: minmax(0, 1fr); }
+  .amb-finding > * { grid-column: 1; }
+  .amb-finding > .amb-chip { grid-row: auto; margin-bottom: var(--amb-space-1); }
+}
+@container amb (max-width: 20rem) {
+  .amb-contents__list { columns: 1; }
+  .amb-step { grid-template-columns: 36px minmax(0, 1fr); }
+  .amb-steps--dated > .amb-step { grid-template-columns: 14px minmax(0, 1fr); }
+  .amb-step > .amb-chip { grid-column: 2; grid-row: auto; justify-self: start; margin-top: var(--amb-space-1); }
+}
+
+/* ---- Data: a page of figures that is watched, not read through (a dashboard, an analysis) ---- */
+/* A chart is drawn in the page, with no library. Its drawing is an inline SVG whose coordinates
+   are the data's own: the viewBox is as wide as the points are many and as tall as the axis, and
+   one group turns it the right way up, so a bar's height is its figure and a line's points are
+   its figures. Lengths are attributes and never a style, so the policy has nothing to refuse; a
+   colour is a class over a series token, never an attribute. Every chart carries its figures as
+   text beside it. A chart stands on the base, a surface or a well: never on the mesh or on glass. */
+.amb-series-1 { color: var(--amb-series-1); }
+.amb-series-2 { color: var(--amb-series-2); }
+.amb-series-3 { color: var(--amb-series-3); }
+.amb-series-4 { color: var(--amb-series-4); }
+/* the frame every drawing stands in: what is measured and in what unit, the drawing, its legend,
+   its figures, its basis */
+.amb-chart { --amb-chart-gutter: 2.5rem; container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--amb-space-3); min-width: 0; margin: 0; }
+.amb-chart__title { font-size: var(--amb-text-subhead); font-weight: 700; line-height: 1.3; }
+.amb-chart__note { display: block; margin-top: 2px; font-size: var(--amb-text-footnote); font-weight: 400; line-height: 1.4; color: var(--amb-ink-2); }
+.amb-chart > .amb-basis { max-width: none; }
+/* under a pane's heading the chart's title steps back: one bold line a pane, not two */
+.amb-pane .amb-chart__title, .amb-pane .amb-table > caption { font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink-2); }
+/* two charts in one stack part by more than a line of small print */
+.amb-chart + .amb-chart { margin-top: var(--amb-space-5); }
+/* the plot: a scale down the left whose every figure draws its own line across, the marks over
+   the lines, and a label under each point */
+.amb-chart__plot { --amb-chart-h: clamp(150px, 46cqi, 232px); display: grid; grid-template-columns: var(--amb-chart-gutter) minmax(0, 1fr); column-gap: var(--amb-space-2); font-size: var(--amb-text-caption); line-height: 1; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-chart__scale { grid-area: 1 / 1 / 2 / -1; display: flex; flex-direction: column; height: calc(var(--amb-chart-h) + 1em); margin: 0; padding: 0; list-style: none; }
+.amb-chart__scale > li { flex: 1 1 0; display: grid; grid-template-columns: var(--amb-chart-gutter) minmax(0, 1fr); column-gap: var(--amb-space-2); align-items: start; text-align: right; }
+.amb-chart__scale > li::after { content: ""; margin-top: calc(.5em - .5px); border-top: 1px solid var(--amb-line); }
+/* the last figure of the scale is the foot of the axis: a line that carries meaning */
+.amb-chart__scale > li:last-child { flex: none; }
+.amb-chart__scale > li:last-child::after { border-top-color: var(--amb-line-field); }
+/* an axis that does not start at zero has no foot to stand on: its last line is one more of the scale */
+.amb-chart__plot--raised > .amb-chart__scale > li:last-child::after { border-top-color: var(--amb-line); }
+.amb-chart__marks { grid-area: 1 / 2; display: block; width: 100%; height: var(--amb-chart-h); margin-top: .5em; overflow: visible; }
+.amb-chart__marks rect { fill: currentColor; }
+/* a line keeps its weight whatever the plot's shape, and each series its own make of line, so a
+   line is told by more than its colour: whole, broken, dotted, a dash and a dot */
+.amb-chart__marks polyline { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.amb-chart__marks polyline.amb-series-2 { stroke-dasharray: 7 6; }
+.amb-chart__marks polyline.amb-series-3 { stroke-dasharray: 1 6; }
+.amb-chart__marks polyline.amb-series-4 { stroke-dasharray: 12 6 1 6; }
+.amb-chart__axis { grid-area: 2 / 2; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 6px 0 0; padding: 0; list-style: none; line-height: 1.3; text-align: center; }
+.amb-chart__axis > li { overflow: hidden; white-space: nowrap; }
+/* the figures behind the drawing, one tap away: a table under a 44px line */
+.amb-chart__figures { border-top: 1px solid var(--amb-line); }
+.amb-chart__figures > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-3); min-height: var(--amb-tap); font-family: inherit; font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink-2); cursor: pointer; list-style: none; touch-action: manipulation; }
+.amb-chart__figures > summary::-webkit-details-marker { display: none; }
+.amb-chart__figures > summary::after { content: ""; flex: none; width: 8px; height: 8px; margin: 0 6px 4px 0; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-chart__figures[open] > summary::after { margin-bottom: -4px; transform: rotate(-135deg); }
+.amb-chart__figures > .amb-table { max-width: 34rem; margin-bottom: var(--amb-space-2); font-size: var(--amb-text-footnote); }
+.amb-chart__figures > .amb-table .is-num { padding-left: var(--amb-space-3); }
+/* the legend: a key and a name for each series, in the order they are drawn */
+.amb-legend { display: flex; flex-wrap: wrap; gap: 6px var(--amb-space-4); margin: 0; padding: 0; list-style: none; font-size: var(--amb-text-footnote); line-height: 1.3; }
+.amb-legend > li { display: flex; align-items: center; gap: var(--amb-space-2); min-width: 0; }
+.amb-legend__key { flex: none; width: 12px; height: 12px; border-radius: 3px; background: currentColor; }
+.amb-legend__name { min-width: 0; color: var(--amb-ink); overflow-wrap: anywhere; }
+/* a line's key is its line */
+.amb-legend--lines .amb-legend__key { width: 26px; height: 3px; border-radius: 2px; }
+.amb-legend--lines .amb-legend__key.amb-series-2 { background: repeating-linear-gradient(to right, currentColor 0 8px, transparent 8px 13px); }
+.amb-legend--lines .amb-legend__key.amb-series-3 { background: repeating-linear-gradient(to right, currentColor 0 3px, transparent 3px 7px); }
+.amb-legend--lines .amb-legend__key.amb-series-4 { background: repeating-linear-gradient(to right, currentColor 0 11px, transparent 11px 15px, currentColor 15px 18px, transparent 18px 22px); width: 22px; }
+/* with figures it is the chart's own table: a line a piece, its figure, its share of the whole */
+.amb-legend:has(.amb-legend__value) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.amb-legend:has(.amb-legend__value) > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 3rem; padding: 7px 0; border-bottom: 1px solid var(--amb-line); }
+.amb-legend:has(.amb-legend__value) > li:last-child { border-bottom: 0; padding-bottom: 0; }
+.amb-legend__value, .amb-legend__share { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.amb-legend__value { font-weight: 600; }
+.amb-legend__share { color: var(--amb-ink-2); }
+/* the share bar: one whole in two to four pieces, each as long as its figure. A hair of the
+   ground stands between two pieces, so they part without leaning on their colours. */
+.amb-chart__share { display: block; width: 100%; height: 16px; overflow: hidden; border-radius: var(--amb-radius-pill); }
+.amb-chart__share > rect { fill: currentColor; stroke: var(--amb-base); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.amb-pane .amb-chart__share > rect { stroke: var(--amb-surface); }
+/* the calendar strip: a month by its weeks, each day a mark that grows with its count: hollow for
+   none, then three sizes. Size carries it, so one colour is enough and none is needed. */
+.amb-cal { width: 100%; max-width: 25rem; border-collapse: collapse; table-layout: fixed; font-size: var(--amb-text-caption); line-height: 1.2; font-variant-numeric: tabular-nums; text-align: center; color: var(--amb-ink-2); }
+.amb-cal th { padding: 0 0 6px; font-weight: 600; }
+.amb-cal td { height: 46px; padding: 3px 0; vertical-align: top; }
+.amb-cal__mark { display: grid; place-items: center; width: 22px; height: 22px; margin: 2px auto 0; }
+.amb-cal__mark::before { content: ""; box-sizing: border-box; width: 8px; height: 8px; border: 2px solid var(--amb-line-field); border-radius: 50%; }
+.amb-cal__mark--1::before, .amb-cal__mark--2::before, .amb-cal__mark--3::before { border: 0; background: var(--amb-series-1); }
+.amb-cal__mark--1::before { border-radius: 2px; }
+.amb-cal__mark--2::before { width: 14px; height: 14px; border-radius: 4px; }
+.amb-cal__mark--3::before { width: 22px; height: 22px; border-radius: 6px; }
+.amb-legend .amb-cal__mark { flex: none; width: auto; margin: 0; }
+/* the rates strip: several rates and their moves on one surface, hairlines between, one basis
+   for them all. It wraps and never scrolls. */
+.amb-tiles.amb-tiles--strip { display: grid; grid-template-columns: repeat(var(--amb-strip-cols, 2), minmax(0, 1fr)); gap: 0; padding: 0; overflow: hidden; border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); }
+.amb-tiles--strip > .amb-tile { gap: 2px; padding: 12px var(--amb-space-4); border: 0; border-radius: 0; background: none; box-shadow: 1px 0 0 var(--amb-line), 0 1px 0 var(--amb-line); }
+.amb-tiles--strip .amb-tile__figure { font-size: var(--amb-text-body); }
+.amb-tiles--strip > .amb-basis { grid-column: 1 / -1; max-width: none; padding: 10px var(--amb-space-4); }
+/* its columns follow how many rates it holds, so a line is never left with one stretched tile:
+   two across on a phone, and the last of an odd number takes its whole line */
+.amb-tiles--strip > .amb-tile:nth-child(odd):nth-last-child(2) { grid-column: span 2; }
+/* the large figure: the one number the page is about, leading its tiles */
+.amb-tile--lead .amb-tile__figure { font-size: clamp(var(--amb-text-title1), 13cqi, var(--amb-text-display)); line-height: 1.05; letter-spacing: -0.02em; }
+/* the provisional figure: a number that may still move, in a broken edge. The word Provisional
+   stands beside it; the edge alone says nothing to a reader who cannot see it. */
+.amb-prov { display: inline-block; margin: -1.5px -7px; padding: 0 6px; border: 1.5px dashed var(--amb-line-field); border-radius: var(--amb-radius-sm); }
+/* a dashboard: tiles across the head, then panes in a grid. One column on a phone, two from
+   720px, twelfths from 960px: a pane is a third, a half, two thirds or the whole width. */
+.amb-dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--amb-space-4); width: min(100%, 1080px); margin-inline: auto; padding: 0 var(--amb-space-4) var(--amb-space-8); }
+:where(.amb-dash > *), :where(.amb-dash > .amb-pane > *) { min-width: 0; }
+.amb-dash > .amb-tiles { padding-inline: 0; }
+.amb-dash > .amb-pane { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--amb-space-3); }
+.amb-pane__title { margin: 0; font-size: var(--amb-text-callout); font-weight: 700; line-height: 1.3; text-wrap: balance; }
+.amb-dash > .amb-pane > .amb-list { margin-inline: 0; max-width: none; }
+.amb-tile--lead .amb-prov { margin-top: 2px; }
+@container amb (min-width: 21.5rem) {
+  .amb-tiles > .amb-tile--lead { grid-column: span 2; }
+}
+/* two tiles across: a last tile left alone under the large figure takes the whole line */
+@container amb (min-width: 21.5rem) and (max-width: 31.5rem) {
+  .amb-tiles:not(.amb-tiles--strip) > .amb-tile--lead ~ .amb-tile:last-child:nth-child(even) { grid-column: span 2; }
+}
+@container amb (min-width: 34rem) {
+  .amb-tiles--strip > .amb-tile:nth-child(odd):nth-last-child(2) { grid-column: auto; }
+  .amb-tiles--strip:has(> .amb-tile:nth-child(3)) { --amb-strip-cols: 3; }
+  .amb-tiles--strip:has(> .amb-tile:nth-child(4):nth-last-child(2)), .amb-tiles--strip:has(> .amb-tile:nth-child(7)) { --amb-strip-cols: 4; }
+  .amb-tiles--strip > .amb-tile:nth-child(5):nth-last-child(2), .amb-tiles--strip > .amb-tile:nth-child(7):nth-last-child(2) { grid-column: span 2; }
+}
+@container amb (min-width: 60rem) {
+  .amb-dash > .amb-tiles--strip:has(> .amb-tile:nth-child(5):nth-last-child(2)) { --amb-strip-cols: 5; }
+  .amb-dash > .amb-tiles--strip:has(> .amb-tile:nth-child(6):nth-last-child(2)) { --amb-strip-cols: 6; }
+  .amb-dash > .amb-tiles--strip:has(> .amb-tile:nth-child(7):nth-last-child(2)) { --amb-strip-cols: 7; }
+  .amb-dash > .amb-tiles--strip > .amb-tile:nth-child(5):nth-last-child(2), .amb-dash > .amb-tiles--strip > .amb-tile:nth-child(7):nth-last-child(2) { grid-column: auto; }
+}
+@container amb (min-width: 720px) {
+  .amb-dash { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .amb-dash > .amb-tiles, .amb-dash > .amb-pane--wide, .amb-dash > .amb-pane--full { grid-column: 1 / -1; }
+}
+@container amb (min-width: 960px) {
+  .amb-dash { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--amb-space-5); }
+  .amb-dash > .amb-pane { grid-column: span 4; }
+  .amb-dash > .amb-pane--half { grid-column: span 6; }
+  .amb-dash > .amb-pane--wide { grid-column: span 8; }
+  .amb-dash > .amb-pane--full, .amb-dash > .amb-tiles { grid-column: 1 / -1; }
+}
+
+/* ---- Decks: a slide is a 16:9 face that scales with its frame ---- */
+/* The face is drawn at 960 by 540. From a frame 960px wide it takes a zoom that CSS works out
+   from the frame's own width, so everything on it (its type, tiles, a chart, a table) scales as
+   one and no script sets a size. Zoom lays the face out again, where a transform would not: a
+   slide that holds too much grows taller than 16:9 and is never cut. Under 960px nothing is
+   scaled down, because type would fall under 12px: the face is as wide as its frame and grows to
+   what it holds. The face is a container named amb, so every part on it lays out as it would in
+   a shell 864px wide. */
+.amb-deck { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--amb-space-5); padding: var(--amb-space-5) var(--amb-space-4) var(--amb-space-8); counter-reset: amb-slide; }
+.amb-slide { container: amb-slide / inline-size; width: min(100%, 1280px, max(20rem, calc((100dvh - 2 * var(--amb-space-6)) * 16 / 9))); margin: 0; overflow: clip; border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); counter-increment: amb-slide; scroll-margin: var(--amb-space-6); }
+.amb-slide__face { container: amb / inline-size; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; gap: var(--amb-space-4); min-height: 56.25cqi; padding: var(--amb-space-5) var(--amb-space-4) var(--amb-space-4); color: var(--amb-ink); }
+:where(.amb-slide__face > *), :where(.amb-slide__body > *) { min-width: 0; }
+.amb-slide__head { display: grid; gap: var(--amb-space-1); }
+/* which part of the deck the slide belongs to, over a title that says what the slide shows */
+.amb-slide__kicker { margin: 0; font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: .05em; line-height: 1.3; text-transform: uppercase; color: var(--amb-ink-2); }
+.amb-slide__title { max-width: 36ch; margin: 0; font-size: var(--amb-text-title2); font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+/* the body holds one part, or two: in the middle of the room the face leaves it */
+.amb-slide__body { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; gap: var(--amb-space-4); }
+.amb-slide__body > .amb-tiles, .amb-slide__body > .amb-prose, .amb-slide__body > .amb-stack { padding-inline: 0; }
+.amb-slide__body > .amb-list { max-width: none; margin-inline: 0; }
+.amb-slide .amb-chart__plot { --amb-chart-h: 150px; }
+/* steps keep their state at the face's edge; two columns of figures keep a gap between their heads */
+.amb-slide .amb-steps > .amb-step { grid-template-columns: 36px minmax(0, 1fr) auto; }
+.amb-slide .amb-steps--dated > .amb-step { grid-template-columns: 14px minmax(0, 1fr) auto; }
+.amb-slide .amb-table thead .is-num + .is-num, .amb-paper .amb-table thead .is-num + .is-num { padding-left: var(--amb-space-3); }
+@container amb (max-width: 473px) {
+  .amb-slide__body > .amb-tiles:not(.amb-tiles--strip) > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* the running foot: the deck's name, its date, and the slide's number, counted by the deck */
+.amb-slide__foot { display: flex; align-items: baseline; gap: var(--amb-space-3); padding-top: var(--amb-space-2); border-top: 1px solid var(--amb-line); font-size: var(--amb-text-caption); font-weight: 500; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-slide__foot > :first-child { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.amb-slide__foot > :not(:first-child) { flex: none; white-space: nowrap; }
+.amb-slide__foot::after { content: counter(amb-slide); min-width: 1.5em; font-weight: 700; text-align: right; color: var(--amb-ink); }
+/* the cover: the deck's title block, low on the mood's mesh. The same four lines as a document's
+   headline (a chip, the title, what follows from it, whose it is), so there is one title block. */
+.amb-slide--cover > .amb-slide__face { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 0; padding-bottom: var(--amb-space-6); }
+.amb-slide--cover .amb-hero__title { max-width: 22ch; margin-top: var(--amb-space-3); }
+.amb-slide--cover .amb-hero__sub, .amb-slide--break .amb-hero__sub { max-width: 54ch; margin-top: var(--amb-space-3); line-height: 1.45; }
+.amb-slide--cover .amb-hero__time { margin-top: var(--amb-space-4); }
+/* the section break: a short bar, which part this is, and its name, on the well */
+.amb-slide--break > .amb-slide__face { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--amb-space-2); background: var(--amb-well); }
+.amb-slide--break > .amb-slide__face::before { content: ""; width: 48px; height: 4px; margin-bottom: var(--amb-space-3); border-radius: 2px; background: var(--amb-accent); }
+.amb-slide--break .amb-slide__title { max-width: 22ch; font-size: var(--amb-text-title1); }
+@container amb (min-width: 720px) {
+  .amb-slide__body--two { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: var(--amb-space-6); }
+  .amb-slide--break .amb-slide__title { font-size: var(--amb-text-large); }
+}
+@supports (zoom: tan(atan2(1px, 1px))) {
+  @container amb-slide (min-width: 960px) {
+    .amb-slide__face { width: 960px; min-height: 540px; padding: var(--amb-space-7) var(--amb-space-8) var(--amb-space-5); zoom: tan(atan2(100cqi, 960px)); }
+    .amb-slide__title { max-width: none; font-size: var(--amb-text-title1); }
+    .amb-slide--cover > .amb-slide__face { padding-bottom: var(--amb-space-8); }
+    .amb-slide--cover .amb-hero__title { font-size: var(--amb-text-display); line-height: 1.08; }
+  }
+}
+
+/* ---- Paper: a page made for print. One sheet that grows on a screen; A4 pages on paper ---- */
+/* A sheet is a surface, which is white in every light mood, so paper is no new ground and every
+   ink on it is already measured. On a screen it is one sheet as wide as A4 that grows with what
+   it holds and is never cut. In print it flows over A4 pages: its running head is said once in
+   the markup and repeats at the top of every page as a table's header does, and the page marks
+   are drawn by the page itself. No script and no style attribute has a hand in either. */
+.amb-paper { container: amb / inline-size; width: min(100%, 210mm); min-height: min(141.4cqi, 297mm); margin: var(--amb-space-5) auto var(--amb-space-8); border: 1px solid var(--amb-line); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); color: var(--amb-ink); }
+/* the running head: whose paper this is, then its standing and date, over a hairline */
+.amb-paper__head { font-size: var(--amb-text-caption); font-weight: 600; line-height: 1.3; color: var(--amb-ink-2); }
+.amb-paper__head::before { content: ""; display: block; height: var(--amb-space-3); }
+.amb-paper__head > span { float: left; max-width: 62%; margin-left: var(--amb-space-4); }
+.amb-paper__head > span + span { float: right; max-width: 34%; margin: 0 var(--amb-space-4) 0 0; font-weight: 500; text-align: right; }
+.amb-paper__head::after { content: ""; display: block; clear: both; margin: 0 var(--amb-space-4) var(--amb-space-4); padding-top: var(--amb-space-2); border-bottom: 1px solid var(--amb-line); }
+/* the headline on a sheet: the mood's mesh fades into the paper, not into the screen's ground */
+.amb-paper > .amb-hero--doc { margin: 0; padding: var(--amb-space-7) var(--amb-space-4) var(--amb-space-6); }
+.amb-paper > .amb-mesh, .amb-hero--cover.amb-mesh {
+  background-color: var(--amb-surface);
+  background-image:
+    linear-gradient(to bottom, transparent 40%, var(--amb-surface) 96%),
+    radial-gradient(ellipse 74% 80% at 100% 0%, var(--amb-mesh-2) 14%, transparent 78%),
+    radial-gradient(ellipse 50% 50% at 64% 48%, var(--amb-mesh-3) 0%, transparent 74%),
+    radial-gradient(ellipse 98% 86% at 0% 58%, var(--amb-mesh-1) 16%, transparent 80%);
+}
+.amb-paper > .amb-doc { padding-bottom: var(--amb-space-6); }
+/* the cover: the same headline given a sheet to itself, before the paper */
+.amb-hero--cover { justify-content: flex-end; width: min(100%, 210mm); min-height: min(141.4cqi, 297mm, calc(100dvh - 2 * var(--amb-space-5))); margin: var(--amb-space-5) auto 0; padding: var(--amb-space-8) var(--amb-space-5); border: 1px solid var(--amb-line); box-shadow: var(--amb-shadow-card); }
+.amb-hero--cover + .amb-paper { margin-top: var(--amb-space-5); }
+
+/* ---- Print: light, whole, and nothing cut in two that reads as one ---- */
+@media print {
+  /* paper is light, whatever the device or the page is held to */
+  :root:not([data-theme="light"]), [data-theme] { --amb-on-light: initial; --amb-on-dark: ; }
+  /* a fill is printed as it was measured: white words on a pill stay on their pill */
+  .amb { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* the shell stops being a window: the page is as long as what it holds */
+  .amb-shell { height: auto; overflow: visible; background: none; }
+  .amb-screen { position: static; overflow: visible; padding: 0; }
+  .amb-appbar, .amb-dock, .amb-toast { display: none; }
+  .amb-tile, .amb-row, .amb-finding, .amb-step, .amb-notice, .amb-verdict, .amb-plate, .amb-code, .amb-table tr, .amb-table--compare, .amb-paper__head { break-inside: avoid; }
+  .amb-section, .amb-pane__title, .amb-chart__title, .amb-table caption { break-after: avoid; }
+  /* a chart's picture, title and legend hold together; its open table of figures may run on */
+  /* (blocks, not a grid: a browser keeps a block with the next and does not keep a grid's row) */
+  .amb-chart { display: block; }
+  .amb-chart > :not(.amb-chart__figures) { break-inside: avoid; }
+  .amb-chart > * + * { margin-top: var(--amb-space-3); break-before: avoid; }
+  /* on a sheet, what a table rests on stays under the table */
+  .amb-paper .amb-stack { display: block; }
+  .amb-paper .amb-stack > * + * { margin-top: var(--amb-space-4); }
+  .amb-paper .amb-stack > .amb-table + .amb-basis { margin-top: var(--amb-space-2); break-before: avoid; }
+  .amb-paper .amb-stack > .amb-basis + .amb-basis { margin-top: var(--amb-space-1); break-before: avoid; }
+  .amb-chart__figures > summary { break-after: avoid; }
+  .amb-slide .amb-chart__figures:not([open]) { display: none; }
+  /* a list is not cut from the sentence that leads to it, nor a line left alone */
+  .amb-prose { orphans: 3; widows: 3; }
+  .amb-prose ul, .amb-prose ol { break-inside: avoid; }
+  .amb-prose p:has(+ ul), .amb-prose p:has(+ ol) { break-after: avoid; }
+  .amb-sec--page { break-before: page; }
+  .amb-sec--page > .amb-section { padding-top: 0; border-top: 0; }
+  /* which section is on screen means nothing on paper */
+  .amb-contents__link[aria-current] { font-weight: 500; color: var(--amb-ink-2); }
+  .amb-contents__link[aria-current]::after { display: none; }
+  /* a sheet becomes a table for the printer's sake only: a header group is the one thing every
+     browser repeats at the top of each page. It is no longer a container, so its parts answer to
+     the page's own width, which the margins below keep at 720px or more on A4. */
+  .amb-paper { display: table; container-type: normal; width: 100%; min-height: 0; margin: 0; border: 0; box-shadow: none; page: amb-paper; }
+  .amb-paper__head { display: table-header-group; }
+  .amb-hero--cover + .amb-paper { margin-top: 0; }
+  .amb-hero--cover { width: 100%; min-height: 296mm; margin: 0; border: 0; box-shadow: none; page: amb-cover; break-after: page; }
+  /* a deck: one slide a page, each page the slide's own shape */
+  .amb-deck { display: block; padding: 0; }
+  .amb-slide { width: 100%; border: 0; border-radius: 0; box-shadow: none; page: amb-slide; break-inside: avoid; }
+  .amb-slide + .amb-slide { break-before: page; }
+  /* A slide on a screen grows when it holds too much; a printed page cannot. So in print the face is
+     as tall as its page and the space above, below and between its three parts gives way first, from
+     84px in all down to 32px: a face up to 52px over still prints on its one page. Only a fuller
+     one runs on to a second, and it is never cut. */
+  @supports (zoom: tan(atan2(1px, 1px))) {
+    .amb-slide { overflow: visible; }
+    .amb-slide__face:has(> .amb-slide__body) { height: 540px; padding-block: 0; row-gap: 0; grid-template-rows: minmax(var(--amb-space-2), var(--amb-space-7)) auto minmax(var(--amb-space-2), var(--amb-space-4)) 1fr minmax(var(--amb-space-2), var(--amb-space-4)) auto minmax(var(--amb-space-2), var(--amb-space-5)); }
+    .amb-slide__head { grid-row: 2; }
+    .amb-slide__body { grid-row: 4; }
+    .amb-slide__foot { grid-row: 6; }
+  }
+  /* the page is named from its first line, so no change of page can fall before the first slide or the cover and leave a blank one */
+  :root:has(.amb-deck) { page: amb-slide; }
+  :root:has(.amb-paper) { page: amb-paper; }
+  :root:has(.amb-hero--cover) { page: amb-cover; }
+}
+/* A4 with 9mm at the sides leaves 725px, so a table keeps its columns. The mark is the page's
+   number of all the printed pages, the cover counted, so it agrees with the number a PDF reader
+   shows; a browser that draws no margin boxes prints none. */
+@page amb-paper {
+  size: A4;
+  margin: 12mm 9mm 16mm;
+  @bottom-right { content: counter(page) " of " counter(pages); padding-right: var(--amb-space-4); font-family: var(--amb-font); font-size: var(--amb-text-caption); font-weight: 600; color: var(--amb-ink-2); }
+}
+@page amb-cover { size: A4; margin: 0; }
+@page amb-slide { size: 13.333in 7.5in; margin: 0; }
+
+/* ---- Work: where people decide, answer and keep a record (0.5) ---- */
+/* A task is a card that asks something of whoever reads it. An approval puts a decision with the
+   figures that decide it, the reasons it was flagged as chips, and two controls: the small pill
+   approves and the quiet pill refuses; once decided, a word replaces the controls. A to-do says
+   what to do, why, and how pressing it is, in a word and on a rule down its left edge. The figure
+   is the brightest thing on a task: no control is louder than the small pill. */
+.amb-task { position: relative; display: grid; gap: var(--amb-space-2); min-width: 0; padding: var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); }
+.amb-task--neg::before, .amb-task--warn::before, .amb-task--pos::before { content: ""; position: absolute; inset: var(--amb-space-4) auto var(--amb-space-4) 7px; width: 3px; border-radius: 2px; background: var(--amb-neg); }
+.amb-task--warn::before { background: var(--amb-warn); }
+.amb-task--pos::before { background: var(--amb-line-field); }
+.amb-task__head { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-2); min-width: 0; }
+.amb-task__kind { min-width: 0; font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: .05em; line-height: 1.3; text-transform: uppercase; color: var(--amb-ink-2); }
+.amb-task__head > .amb-chip { flex: none; }
+.amb-task__title { margin: 0; font-size: var(--amb-text-callout); font-weight: 600; line-height: 1.3; }
+.amb-task__text { margin: 0; font-size: var(--amb-text-subhead); line-height: 1.45; color: var(--amb-ink-2); }
+.amb-task__figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: var(--amb-space-2); margin-top: var(--amb-space-1); }
+.amb-task__figures > .amb-stat > .amb-stat__value { font-size: var(--amb-text-callout); }
+.amb-task__flags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
+.amb-task__flags .amb-chip { white-space: normal; }
+.amb-task__acts { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); margin-top: var(--amb-space-2); }
+.amb-task__acts > .amb-pill { flex: 1 1 7rem; max-width: 22rem; }
+/* on a working screen a stack holds its own headings and lists: each stands level with the stack's parts */
+.amb-stack > .amb-section { padding: var(--amb-space-3) 0 0; }
+.amb-stack > .amb-section:first-child { padding-top: 0; }
+.amb-stack > .amb-list { margin-inline: 0; }
+/* under 960px a split is one column, and its second stack keeps a gap from the first */
+@container amb (max-width: 959px) { .amb-split > .amb-stack + .amb-stack { margin-top: var(--amb-space-6); } }
+.amb-task__decided { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2); margin: var(--amb-space-2) 0 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+/* an item that waits (an inbox row): what it waits on, from whom, how long it has waited, and the
+   one thing a tap on the whole row does */
+.amb-row__trail--stack { flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.amb-row__age { font-size: var(--amb-text-caption); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); white-space: nowrap; }
+.amb-row__act { font-size: var(--amb-text-subhead); font-weight: 600; color: var(--amb-accent); white-space: nowrap; }
+/* the journal: what was done to a record, newest first, each entry dated, referenced and said once */
+.amb-journal { max-width: 36rem; margin: 0; padding: 0; list-style: none; }
+.amb-journal__entry { display: grid; gap: 2px; padding: var(--amb-space-3) 0; border-bottom: 1px solid var(--amb-line); }
+.amb-journal__entry:first-child { padding-top: 0; }
+.amb-journal__entry:last-child { padding-bottom: 0; border-bottom: 0; }
+.amb-journal__meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--amb-space-3); margin: 0; font-size: var(--amb-text-footnote); line-height: 1.4; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-journal__ref { font-family: var(--amb-font-mono); }
+.amb-journal__kind { font-weight: 700; color: var(--amb-ink); }
+.amb-journal__text { margin: 0; font-size: var(--amb-text-subhead); line-height: 1.45; }
+.amb-journal__by { font-size: var(--amb-text-caption); color: var(--amb-ink-2); }
+/* a thread: a conversation about one record. Theirs on the left in a well, mine on the right in
+   the accent; under each line who and when, and of mine where it is: sending, sent or not sent.
+   Never whether it was read. */
+.amb-thread { display: flex; flex-direction: column; gap: var(--amb-space-3); max-width: 36rem; margin: 0; padding: 0; list-style: none; }
+.amb-msg { display: grid; justify-items: start; gap: 4px; max-width: min(85%, 32rem); }
+.amb-msg--mine { align-self: flex-end; justify-items: end; }
+.amb-msg__text { margin: 0; padding: 10px 14px; border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg) var(--amb-radius-lg) var(--amb-radius-lg) var(--amb-radius-thumb); background: var(--amb-well); font-size: var(--amb-text-body); line-height: 1.4; overflow-wrap: anywhere; }
+.amb-msg--mine > .amb-msg__text { border-color: transparent; border-radius: var(--amb-radius-lg) var(--amb-radius-lg) var(--amb-radius-thumb) var(--amb-radius-lg); background: var(--amb-accent); color: var(--amb-on-accent); }
+.amb-msg__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--amb-space-2); margin: 0; font-size: var(--amb-text-caption); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-msg--mine > .amb-msg__meta { justify-content: flex-end; }
+.amb-msg__state { font-weight: 700; }
+.amb-msg.is-error .amb-msg__state { color: var(--amb-neg); }
+.amb-msg--mine.is-error > .amb-msg__text { border-color: var(--amb-neg); background: var(--amb-well); color: var(--amb-ink); }
+.amb-compose { display: flex; align-items: flex-end; gap: var(--amb-space-2); max-width: 36rem; }
+.amb-compose > .amb-input { flex: 1 1 auto; min-width: 0; min-height: var(--amb-pill-h); padding-block: 13px; border-radius: var(--amb-radius-lg); }
+/* a one-time code being entered: one field, the code alone in the mono face and spaced so its
+   symbols can be counted. A code pasted with its spaces or hyphens lands whole: ambient.js takes
+   them out. */
+.amb-input--code::placeholder { font-weight: 400; }
+.amb-input--code { min-height: 64px; padding-left: calc(14px + .3em); font-family: var(--amb-font-mono); font-size: var(--amb-text-title2); font-weight: 600; letter-spacing: .3em; text-align: center; font-variant-numeric: tabular-nums; }
+/* a quantity, a step at a time: one fewer and one more round the figure, which can also be typed */
+.amb-stepper { display: flex; align-items: center; gap: var(--amb-space-3); max-width: 22rem; }
+.amb-stepper > .amb-input { flex: 1 1 auto; min-width: 0; font-size: var(--amb-text-title2); font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.amb-stepper > .amb-input::-webkit-inner-spin-button, .amb-stepper > .amb-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.amb-stepper > .amb-circle[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; }
+/* a select: the native control and its native list, with the system's own chevron over its end */
+.amb-select { position: relative; display: block; max-width: 36rem; }
+.amb-select > .amb-input { -webkit-appearance: none; appearance: none; padding-right: 46px; text-overflow: ellipsis; }
+.amb-select > .amb-icon { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); color: var(--amb-ink-2); pointer-events: none; }
+/* counted filters: more choices than a segment holds, each with its count. They wrap onto a second
+   line and never slide sideways; the one pressed is the pill. */
+.amb-segment--wrap { flex-wrap: wrap; gap: var(--amb-space-2); padding: 0; border: 0; border-radius: 0; background: none; }
+.amb-segment--wrap > .amb-segment__opt { flex: 0 0 auto; padding: 2px 12px; border: 1px solid var(--amb-line-field); color: var(--amb-ink); }
+.amb-segment--wrap > .amb-segment__opt[aria-pressed="true"] { border-color: var(--amb-pill); color: var(--amb-on-pill); }
+.amb-segment--wrap > .amb-segment__opt:not([aria-pressed="true"]) > .amb-segment__count { color: var(--amb-ink-2); }
+/* a choice shown with its figure: real radios, each a tile. The one chosen is marked by its edge
+   and a filled mark, never by a fill, so its figure keeps its ground. */
+.amb-options { display: grid; gap: var(--amb-space-2); min-width: 0; max-width: 36rem; margin: 0; padding: 0; border: 0; }
+.amb-options > legend { padding: 0 0 6px; }
+.amb-option { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 2px var(--amb-space-3); min-height: 64px; padding: 10px var(--amb-space-4); border: 1px solid var(--amb-line-field); border-radius: var(--amb-radius-md); background: var(--amb-surface); cursor: pointer; touch-action: manipulation; transition: border-color var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-option__mark { grid-column: 1; grid-row: 1 / span 2; width: 22px; height: 22px; border: 2px solid var(--amb-line-field); border-radius: 50%; }
+.amb-option__title { grid-column: 2; font-size: var(--amb-text-callout); font-weight: 600; line-height: 1.3; }
+.amb-option__sub { grid-column: 2; font-size: var(--amb-text-footnote); line-height: 1.35; color: var(--amb-ink-2); }
+.amb-option__figure { grid-column: 3; grid-row: 1 / span 2; font-size: var(--amb-text-callout); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.amb-option:has(.amb-option__input:checked) { border-color: var(--amb-accent); box-shadow: inset 0 0 0 1px var(--amb-accent); }
+.amb-option:has(.amb-option__input:checked) > .amb-option__mark { border-color: var(--amb-accent); background: radial-gradient(circle, var(--amb-accent) 0 5px, transparent 5.5px); }
+.amb-option:has(.amb-option__input:focus-visible) { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
+.amb-option:has(.amb-option__input:disabled) { opacity: .45; cursor: not-allowed; }
+/* settings: a group of rows under a short head, one name and at most one control a row, and at
+   most one line under the group. An action row is in the accent, a row that cannot be undone in
+   the colour of a loss, and each says what it does in its own words. */
+.amb-settings { display: grid; gap: var(--amb-space-2); min-width: 0; max-width: 36rem; }
+/* 1: a group of settings in a stack stands apart from what comes before it, as a section does */
+.amb-stack > * + .amb-settings { margin-top: var(--amb-space-4); }
+.amb-settings__head { margin: 0; padding: 0 var(--amb-space-4); font-size: var(--amb-text-caption); font-weight: 600; letter-spacing: .05em; line-height: 1.3; text-transform: uppercase; color: var(--amb-ink-2); }
+.amb-settings__list { margin: 0; padding: 0 var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); list-style: none; }
+.amb-settings__foot { margin: 0; padding: 0 var(--amb-space-4); font-size: var(--amb-text-footnote); line-height: 1.4; color: var(--amb-ink-2); }
+.amb-setting { -webkit-appearance: none; appearance: none; display: flex; align-items: center; gap: var(--amb-space-3); width: 100%; min-height: 56px; margin: 0; padding: 6px 0; border: 0; border-bottom: 1px solid var(--amb-line); background: none; color: inherit; font: inherit; text-align: left; text-decoration: none; }
+.amb-settings__list > li:last-child > .amb-setting, .amb-settings__list > li:last-child > .amb-action { border-bottom: 0; }
+button.amb-setting, a.amb-setting, label.amb-setting { cursor: pointer; touch-action: manipulation; }
+.amb-setting__name { flex: 1 1 auto; min-width: 0; font-size: var(--amb-text-callout); line-height: 1.3; }
+.amb-setting__value { flex: 0 1 auto; min-width: 0; max-width: 55%; font-size: var(--amb-text-subhead); line-height: 1.3; text-align: right; color: var(--amb-ink-2); overflow-wrap: anywhere; }
+.amb-setting > .amb-icon { color: var(--amb-ink-2); }
+/* an action in a group of settings is the action list's own row, set to the group's rows: the
+   accent for what it does, the colour of a loss for what cannot be undone */
+.amb-settings__list .amb-action { min-height: 56px; padding: 6px 0; border-bottom: 1px solid var(--amb-line); border-radius: 0; font-weight: 600; color: var(--amb-accent); }
+.amb-settings__list .amb-action--danger { color: var(--amb-neg); }
+@container amb (max-width: 20rem) {
+  .amb-option { grid-template-columns: 22px minmax(0, 1fr); }
+  .amb-option__figure { grid-column: 2; grid-row: auto; text-align: left; }
+  .amb-setting { flex-wrap: wrap; }
+  .amb-setting__value { max-width: none; text-align: left; }
+}
+@media (forced-colors: active) {
+  .amb-task, .amb-settings__list, .amb-option, .amb-msg__text { border: 1px solid CanvasText; }
+  .amb-task--neg::before, .amb-task--warn::before, .amb-task--pos::before { background: CanvasText; }
+  .amb-option:has(.amb-option__input:checked) { outline: 2px solid Highlight; outline-offset: -2px; }
+  .amb-option:has(.amb-option__input:checked) > .amb-option__mark { border-color: Highlight; background: Highlight; }
+}
+
+/* ---- Places: a map drawn in the page, the key it is read against, a path of stops, a Wi-Fi card (0.6) ---- */
+/* A map is a chart's drawing of a place: an inline SVG on a fixed frame of 320 by 240 units, x from the
+   west edge and y from the north, north up. Every shape is a class over a token and never a colour of
+   its own: the land is the surface, water is solved against it, a road is the line that carries
+   meaning, the route is the accent. Land and water scale with the map; a road's line and a mark keep
+   their size. A mark is scaled back by the map's own width (320 units over its width in px), so it is
+   24px at any width and its number never falls under 12px. The map is never the only way in: each
+   mark is a row of the key beside it, in words, with how far it is. */
+.amb-chart:has(> .amb-map) { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--amb-space-3) var(--amb-space-5); }
+.amb-chart:has(> .amb-map) > * { flex: 1 1 100%; min-width: 0; }
+.amb-chart > .amb-map { flex: 3 1 18rem; }
+.amb-chart > .amb-list--keyed { flex: 2 1 17rem; }
+.amb-map { container-type: inline-size; overflow: clip; border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); }
+.amb-map__drawing { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; }
+.amb-map__water { fill: var(--amb-water); }
+polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.amb-map__road, .amb-map__street, .amb-map__route { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.amb-map__road { stroke: var(--amb-line-field); stroke-width: 4; }
+.amb-map__street { stroke: var(--amb-line-field); stroke-width: 2; }
+/* the route is a line of dots, so it is told from a road by its form as well as its colour */
+.amb-map__route { stroke: var(--amb-accent); stroke-width: 6; stroke-dasharray: 0.1 10; }
+.amb-map__mark { transform-box: fill-box; transform-origin: center; transform: scale(tan(atan2(320px, 100cqi))); }
+.amb-map__mark > circle { fill: var(--amb-surface); stroke: var(--amb-ink); stroke-width: 2; }
+.amb-map__mark > text { fill: var(--amb-ink); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-anchor: middle; dominant-baseline: central; }
+/* where you stay: the one solid mark, ringed in the land so it stands off a road under it */
+.amb-map__mark--stay > circle { fill: var(--amb-pill); stroke: var(--amb-surface); stroke-width: 3; }
+/* the key: the map's marks in words, one row a mark, in the order of their numbers. The stay leads and
+   the route closes. A row may be a link that opens the place in a maps app. */
+.amb-list--keyed { margin: 0; }
+.amb-list--keyed .amb-row { min-height: 56px; }
+.amb-list--keyed .amb-row::after { left: 40px; }
+.amb-key { flex: none; display: grid; place-items: center; box-sizing: border-box; width: 24px; height: 24px; margin-inline: 2px; border: 2px solid var(--amb-ink); border-radius: 50%; background: var(--amb-surface); font-size: var(--amb-text-footnote); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--amb-ink); }
+.amb-key--stay { border-color: var(--amb-pill); background: var(--amb-pill); }
+.amb-key--route { width: 30px; height: 6px; margin-inline: -1px; border: 0; border-radius: 0; background: radial-gradient(circle, var(--amb-accent) 2.6px, transparent 3.2px) 0 50% / 10px 6px repeat-x; }
+.amb-row__time { font-size: var(--amb-text-caption); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); white-space: nowrap; }
+/* a path of stops: the steps, numbered in the order they are reached, each with the time it is reached
+   and, under every stop but the last, the leg to the next (how long, how, how far). The line between
+   two stops is broken, as a way travelled is. */
+.amb-steps--path > .amb-step::after { background: repeating-linear-gradient(to bottom, var(--amb-line-field) 0 4px, transparent 4px 9px); }
+.amb-steps--path .amb-step__date + .amb-step__title { padding-top: 0; }
+.amb-steps--path > .amb-step:has(> .amb-step__leg) { padding-bottom: var(--amb-space-3); }
+.amb-step__leg { justify-self: start; margin-top: var(--amb-space-3); padding: 3px 10px; border-radius: var(--amb-radius-pill); background: var(--amb-well); font-size: var(--amb-text-footnote); font-weight: 600; line-height: 1.4; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+/* a Wi-Fi card: one network as a guest meets it. The values to type, each copied whole, beside the code
+   that joins it, one code a band. The page draws the code as an SVG of its modules; the frame keeps it
+   on the field that always scans. On a phone the copies are the way in: a code is for another screen. */
+.amb-wifi { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--amb-space-4); }
+/* under 37rem the plate takes a whole line and the codes share the next; from 37rem all stand on one */
+.amb-wifi > .amb-plate { flex: 2 1 max(17rem, calc((37rem - 100%) * 999)); min-width: 0; }
+.amb-wifi > .amb-codeframe { flex: 1 1 9rem; }
+.amb-wifi .amb-codeframe__field { width: min(100%, 13rem); }
+.amb-codeframe__code { fill: var(--amb-qr-ink); shape-rendering: crispEdges; }
+/* a map is a picture: in forced colours it keeps its own, and the key carries it in words */
+@media (forced-colors: active) {
+  .amb-map__drawing { forced-color-adjust: none; }
+  .amb-key { border-color: CanvasText; }
+  .amb-key--stay { background: CanvasText; }
+  .amb-key--route { forced-color-adjust: none; }
+}
+
+/* ---- Skeleton, empty, the live bars ---- */
+.amb-skeleton { border-radius: var(--amb-radius-sm); background: var(--amb-well); color: transparent; animation: amb-pulse calc(var(--amb-dur) * 4) ease-in-out infinite alternate; }
+.amb-skeleton--line { display: block; height: 14px; }
+.amb-skeleton--short { width: 45%; }
+.amb-empty { padding: var(--amb-space-8) var(--amb-space-4); font-size: var(--amb-text-subhead); color: var(--amb-ink-2); text-align: center; }
+.amb-eq { flex: none; display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.amb-eq > i { width: 3px; height: 100%; border-radius: 2px; background: var(--amb-accent); transform-origin: bottom; animation: amb-eq calc(var(--amb-dur) * 2.4) var(--amb-ease) infinite alternate; }
+.amb-eq > i:nth-child(2) { animation-delay: calc(var(--amb-dur) * -0.8); }
+.amb-eq > i:nth-child(3) { animation-delay: calc(var(--amb-dur) * -1.5); }
+@keyframes amb-pulse { to { opacity: .45; } }
+@keyframes amb-eq { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+
+/* ---- Dock: the mini bar over the tab bar, detached, with the peek gap between ---- */
+.amb-dock {
+  position: absolute;
+  z-index: 10;
+  inset: auto 0 calc(var(--amb-dock-inset) + var(--amb-safe-bottom)) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--amb-peek);
+  width: min(calc(100% - 2 * var(--amb-dock-inset)), 520px);
+  margin-inline: auto;
+  pointer-events: none;
+}
+.amb-dock > * { pointer-events: auto; }
+.amb-mini, .amb-tabbar, .amb-savebar, .amb-toast { border: 1px solid var(--amb-rim); box-shadow: inset 0 1px 0 var(--amb-sheen), var(--amb-shadow-float); }
+.amb-mini { display: flex; align-items: center; gap: 10px; min-height: var(--amb-mini-h); padding: 0 var(--amb-space-1) 0 9px; border-radius: var(--amb-radius-pill); background: var(--amb-solid-mini); }
+.amb-mini__text { flex: 1 1 auto; min-width: 0; display: grid; }
+.amb-mini__title { overflow: hidden; font-size: var(--amb-text-footnote); font-weight: 600; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.amb-mini__sub { overflow: hidden; font-size: var(--amb-text-caption); line-height: 1.3; color: var(--amb-ink-2); text-overflow: ellipsis; white-space: nowrap; }
+.amb-tabbar { display: flex; align-items: center; justify-content: space-around; min-height: var(--amb-tabbar-h); padding: 0 6px; border-radius: var(--amb-radius-pill); background: var(--amb-solid-capsule); }
+.amb-tab {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: var(--amb-tap);
+  min-height: var(--amb-tap);
+  padding: 0;
+  border: 0;
+  border-radius: var(--amb-radius-md);
+  background: none;
+  color: var(--amb-ink-2);
+  font-size: var(--amb-text-caption);
+  font-weight: 500;
+  line-height: 1.15;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+/* a label that will not fit is cut, never laid over its neighbour; keep a tab's label to ten letters */
+.amb-tab > span { max-width: 100%; overflow: hidden; letter-spacing: -0.01em; text-overflow: ellipsis; white-space: nowrap; }
+.amb-tab[aria-current="page"] { color: var(--amb-accent); font-weight: 600; }
+/* the dock holding one action: a status line and a pill (the admin list's Save) */
+.amb-savebar { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-3); min-height: var(--amb-tabbar-h); padding: 6px 7px 6px var(--amb-space-5); border-radius: var(--amb-radius-pill); background: var(--amb-solid-capsule); }
+.amb-savebar__text { min-width: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+
+/* ---- Toast: a capsule from the top. A popover where the browser has them, so it shows over an open sheet. ---- */
+.amb-toast {
+  position: absolute;
+  z-index: 30;
+  inset: calc(var(--amb-safe-top) + var(--amb-space-3)) 0 auto 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: min(420px, calc(100% - 2 * var(--amb-space-4)));
+  min-height: var(--amb-tap);
+  margin: 0 auto;
+  padding: var(--amb-space-2) 18px var(--amb-space-2) 14px;
+  overflow: visible;
+  border-radius: var(--amb-radius-pill);
+  background: var(--amb-solid-mini);
+  color: var(--amb-ink);
+  font-size: var(--amb-text-subhead);
+  font-weight: 500;
+  line-height: 1.25;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-12px);
+  transition: opacity var(--amb-dur-fast) var(--amb-ease-fast), transform var(--amb-dur) var(--amb-ease), visibility 0s linear var(--amb-dur);
+}
+.amb-toast[popover] { position: fixed; }
+.amb-toast.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity var(--amb-dur-fast) var(--amb-ease-fast), transform var(--amb-dur) var(--amb-ease), visibility 0s; }
+.amb-toast__text { min-width: 0; }
+.amb-toast__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--amb-accent); }
+
+/* ---- Sheet: a dialog. From the foot of a phone; a card in the middle of anything wider. ---- */
+.amb-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100dvh - var(--amb-safe-top) - var(--amb-space-6));
+  margin: 0 auto;
+  padding: var(--amb-space-5) var(--amb-space-5) calc(var(--amb-space-5) + var(--amb-safe-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-top: 1px solid var(--amb-rim);
+  border-radius: var(--amb-radius-xl) var(--amb-radius-xl) 0 0;
+  background: var(--amb-solid-sheet);
+  box-shadow: var(--amb-shadow-float);
+  color: var(--amb-ink);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--amb-dur) var(--amb-ease), transform var(--amb-dur) var(--amb-ease), overlay var(--amb-dur) allow-discrete, display var(--amb-dur) allow-discrete;
+}
+.amb-sheet[open] { opacity: 1; transform: none; }
+@starting-style { .amb-sheet[open] { opacity: 0; transform: translateY(24px); } }
+.amb-sheet::backdrop { background: var(--amb-scrim); }
+.amb-sheet--full { height: calc(100dvh - var(--amb-safe-top) - var(--amb-space-6)); }
+.amb-sheet__head { display: flex; align-items: center; gap: var(--amb-space-3); padding-bottom: var(--amb-space-3); margin-bottom: var(--amb-space-2); border-bottom: 1px solid var(--amb-line); }
+.amb-sheet__title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--amb-text-body); font-weight: 700; line-height: 1.25; }
+.amb-sheet__body { display: grid; gap: var(--amb-space-3); }
+.amb-action {
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--amb-space-3);
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 6px var(--amb-space-2);
+  border: 0;
+  border-radius: var(--amb-radius-md);
+  background: none;
+  font-size: var(--amb-text-callout);
+  text-align: left;
+  text-decoration: none;
+  color: var(--amb-ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.amb-action--danger { color: var(--amb-neg); }
+.amb-action__icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--amb-well); }
+.amb-action__hint { margin-left: auto; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+
+/* ---- Glass. Each material is solid first; it turns to glass only where the browser can blur
+   what is behind it, and goes back to solid for anyone who asks for less transparency. ---- */
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .amb-tabbar, .amb-savebar { background: var(--amb-glass-capsule); -webkit-backdrop-filter: blur(var(--amb-blur-capsule)) saturate(180%); backdrop-filter: blur(var(--amb-blur-capsule)) saturate(180%); }
+  .amb-mini, .amb-toast { background: var(--amb-glass-mini); -webkit-backdrop-filter: blur(var(--amb-blur-mini)) saturate(190%); backdrop-filter: blur(var(--amb-blur-mini)) saturate(190%); }
+  .amb-circle:not(.amb-circle--plain), .amb-chip--glass, .amb-glyph { background: var(--amb-glass-circle); -webkit-backdrop-filter: blur(var(--amb-blur-circle)); backdrop-filter: blur(var(--amb-blur-circle)); }
+  .amb-sheet { background: var(--amb-glass-sheet); -webkit-backdrop-filter: blur(var(--amb-blur-sheet)) saturate(160%); backdrop-filter: blur(var(--amb-blur-sheet)) saturate(160%); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .amb-tabbar, .amb-savebar { background: var(--amb-solid-capsule); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .amb-mini, .amb-toast { background: var(--amb-solid-mini); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .amb-circle:not(.amb-circle--plain), .amb-chip--glass, .amb-glyph { background: var(--amb-solid-circle); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .amb-sheet { background: var(--amb-solid-sheet); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ---- A pointer, where there is one ---- */
+@media (hover: hover) {
+  a.amb-row:hover .amb-row__title, button.amb-row:hover .amb-row__title, .amb-row__main:hover .amb-row__title, button.amb-plate__row:hover .amb-plate__value { color: var(--amb-accent); }
+  .amb-action:hover, .amb-tab:hover, .amb-contents__link:hover { background: var(--amb-hover); }
+  .amb-pill:hover:not(:disabled):not([aria-disabled="true"]) { opacity: .88; }
+}
+
+/* ---- Wider: from 720px a sheet is a card in the middle ---- */
+@container amb (min-width: 720px) {
+  .amb-sheet { inset: 0; height: fit-content; max-width: 480px; margin: auto; padding-top: var(--amb-space-5); border: 1px solid var(--amb-rim); border-radius: var(--amb-radius-xl); transform: translateY(12px) scale(.98); }
+  .amb-sheet--full { height: min(720px, calc(100dvh - 2 * var(--amb-space-8))); }
+  .amb-hero__title { font-size: var(--amb-text-large); }
+  /* a part keeps its phone proportions when the screen grows: a note beside its title, a switch
+     of a few choices no wider than it needs, a row whose amount stays near its name */
+  .amb-section { justify-content: flex-start; }
+  .amb-segment { max-width: 30rem; }
+  .amb-list { max-width: var(--amb-measure); }
+  .amb-drawer { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .amb-tiles { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+}
+/* ---- Wider still: from 960px a shell that asks for it stands its dock up as a rail, and a
+   split lays a list beside what it opens ---- */
+@container amb (min-width: 960px) {
+  .amb-shell--rail > .amb-dock { inset: calc(var(--amb-dock-inset) + var(--amb-safe-top)) auto calc(var(--amb-dock-inset) + var(--amb-safe-bottom)) calc(var(--amb-dock-inset) + var(--amb-safe-left)); justify-content: flex-start; width: var(--amb-rail-w); margin: 0; }
+  .amb-shell--rail > .amb-dock > .amb-tabbar { order: -1; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; padding: var(--amb-space-3) var(--amb-space-2); border-radius: var(--amb-radius-lg); }
+  .amb-shell--rail > .amb-dock > .amb-mini { margin-top: auto; border-radius: var(--amb-radius-lg); }
+  .amb-shell--rail > .amb-dock .amb-eq { display: none; }
+  .amb-shell--rail > .amb-dock .amb-tab { flex: none; flex-direction: row; justify-content: flex-start; gap: var(--amb-space-3); padding: 0 var(--amb-space-3); font-size: var(--amb-text-subhead); }
+  .amb-shell--rail > .amb-screen { --amb-inset-l: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset) + var(--amb-safe-left)); padding-bottom: calc(var(--amb-space-6) + var(--amb-safe-bottom)); scroll-padding-bottom: 0; }
+  .amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset)); }
+  .amb-split { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); align-items: start; gap: var(--amb-space-6); }
+}
+
+/* ---- Large text: a shell narrower than twenty of the reader's own ems (a phone from about 125%
+   text, or a 320px one) drops what trails a row under its text and lets the hero's cluster wrap ---- */
+@container amb (max-width: 20rem) {
+  .amb-row:not(.amb-row--meter) { flex-wrap: wrap; }
+  .amb-row > .amb-row__text, .amb-row > .amb-row__main { flex: 1 1 0; }
+  .amb-row:not(.amb-row--meter) > .amb-row__trail { flex: 1 1 100%; padding-left: var(--amb-hairline-inset); }
+  .amb-row--meter { grid-template-columns: auto minmax(0, 1fr); }
+  .amb-row--meter > .amb-thumb { grid-row: 1 / span 3; }
+  .amb-row--meter > .amb-row__trail, .amb-row--meter > .amb-meter { grid-column: 2; }
+  .amb-row__amount { white-space: normal; }
+  .amb-cluster { flex-wrap: wrap; gap: var(--amb-space-3); }
+  .amb-pill { min-width: 0; }
+  /* a switch of a few choices stacks them, and a tab keeps its glyph and its name but shows only the glyph */
+  .amb-segment { flex-wrap: wrap; border-radius: var(--amb-radius-lg); }
+  .amb-segment__opt { flex: 1 1 auto; border-radius: var(--amb-radius-md); }
+  .amb-tab > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* with its name out of sight, the tab one is on is marked by a bar as well as by its colour */
+  .amb-tab[aria-current="page"]::after { content: ""; width: 1.25rem; height: 3px; border-radius: 2px; background: currentColor; }
+}
+
+/* ---- Forced colours: the system's own palette, so edges carry what fills cannot ---- */
+@media (forced-colors: active) {
+  .amb-mesh, .amb-card, .amb-thumb { background-image: none; }
+  .amb-pill, .amb-circle, .amb-tabbar, .amb-mini, .amb-savebar, .amb-toast, .amb-sheet, .amb-pane, .amb-plate, .amb-tile, .amb-card, .amb-input, .amb-segment, .amb-thumb { border: 1px solid CanvasText; }
+  .amb-segment__opt[aria-pressed="true"], .amb-tab[aria-current="page"] { outline: 2px solid Highlight; outline-offset: -2px; }
+  /* a payment code keeps its own two colours, or it cannot be scanned */
+  .amb-codeframe__field { forced-color-adjust: none; }
+  .amb-switch::before { border: 1px solid CanvasText; background: Canvas; }
+  .amb-switch::after { background: CanvasText; }
+  .amb-switch:checked::before { background: Highlight; }
+  .amb-switch:checked::after { background: HighlightText; }
+  .amb-meter { border-color: CanvasText; }
+  /* a chart's marks: the text colour, so each stands off the canvas; the make of a line and the size of a mark still tell them apart */
+  .amb-series-1, .amb-series-2, .amb-series-3, .amb-series-4 { color: CanvasText; }
+  .amb-cal__mark--1::before, .amb-cal__mark--2::before, .amb-cal__mark--3::before { background: CanvasText; }
+  .amb-chart__share > rect { stroke: Canvas; }
+  .amb-prov, .amb-tiles--strip { border-color: CanvasText; }
+  .amb-slide, .amb-paper, .amb-hero--cover { border-color: CanvasText; }
+  .amb-slide--break > .amb-slide__face::before { background: CanvasText; }
+  .amb-meter::-webkit-progress-bar { background: Canvas; }
+  .amb-meter::-webkit-progress-value { background: Highlight; }
+  .amb-meter::-moz-progress-bar { background: Highlight; }
+}
