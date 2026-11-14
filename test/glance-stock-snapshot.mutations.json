@@ -3,7 +3,7 @@
  {"name": "free is the shelf", "file": "tools/book.mjs", "find": "free:two(currentStock-defUnits)", "replace": "free:two(currentStock)"},
  {"name": "no days of cover", "file": "tools/book.mjs", "find": "coverDays:rs&&!rs.empty&&rs.coverDays!=null?+rs.coverDays:null", "replace": "coverDays:null"},
  {"name": "commit left at nought", "file": "tools/book.mjs", "find": "commit:two(cu)", "replace": "commit:0"},
- {"name": "the desk left on the last book", "file": "tools/book.mjs", "find": "transit:two(t)};});}finally{PROD=keep;recompute();}", "replace": "transit:two(t)};});}finally{recompute();}"},
+ {"name": "the desk left on the last book", "file": "tools/book.mjs", "find": "heat:SNAPSHOT_ENGINE.marketHeat(C,p)};});}finally{PROD=keep;recompute();}", "replace": "heat:SNAPSHOT_ENGINE.marketHeat(C,p)};});}finally{recompute();}"},
  {"name": "a pending lot dropped", "file": "tools/book.mjs", "find": "return !x.cancelled&&!x.defaulted;}).reduce(", "replace": "return poLive(x);}).reduce("},
  {"name": "a cancelled lot counted", "file": "tools/book.mjs", "find": "return !x.cancelled&&!x.defaulted;}).reduce(", "replace": "return !x.defaulted;}).reduce("},
  {"name": "a written-off lot counted", "file": "tools/book.mjs", "find": "return !x.cancelled&&!x.defaulted;}).reduce(", "replace": "return !x.cancelled;}).reduce("},

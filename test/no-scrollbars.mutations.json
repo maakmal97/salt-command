@@ -20,20 +20,20 @@
  {
   "name": "B2.1 the Counter carries no width rule",
   "file": "stmt/statement-css.js",
-  "find": "* { scrollbar-width: none !important; }",
-  "replace": "* { }"
+  "find": "}\\n\\n* { scrollbar-width: none !important; }",
+  "replace": "}\\n\\n* { }"
  },
  {
   "name": "B2.1 the Counter keeps the width, not important",
   "file": "stmt/statement-css.js",
-  "find": "* { scrollbar-width: none !important; }",
-  "replace": "* { scrollbar-width: none; }"
+  "find": "}\\n\\n* { scrollbar-width: none !important; }",
+  "replace": "}\\n\\n* { scrollbar-width: none; }"
  },
  {
   "name": "B2.2 the Counter draws the WebKit bar",
   "file": "stmt/statement-css.js",
-  "find": "::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }",
-  "replace": "::-webkit-scrollbar { width: 0; }"
+  "find": "::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }\\n\\n.salt-aurora",
+  "replace": "::-webkit-scrollbar { width: 0; }\\n\\n.salt-aurora"
  },
  {
   "name": "B3.1 the Desk rail draws a thin bar",
