@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="00632a822acb55dc";
+var SALT_BUILD_ID="9b5c9971172b7ae4";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12420,7 +12420,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1516","d":"13 Nov 2026","t":"THE PRACTICE SURFACE'S CALENDAR","n":["<b>THE PRACTICE CALENDAR.</b> On Salt Admin's practice surface, Shop > Calendar now shows an invented calendar, and Add and Remove answer by the real rules against it. His own calendar is never written from the practice surface."]}];
+const evolution=[{"v":"v1517","d":"14 Nov 2026","t":"THE DESK'S OWN NEWS REACHES ITS DEVICES","n":["<b>THE SYSTEM'S NEWS WAKES THE DESK.</b> A stock light turning, the suite failing on the live build, and a fold live or refused now wake every Desk device, sent the way the morning round is. Sent under their own names since 19 Oct 2026, they reached none: each of the seven Desk devices asks for orders, approve and the morning round alone. The banner's words are unchanged, and no device has to turn alerts on again."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12573,7 +12573,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Nov 2026, 23:36 KL';
+const LAST_UPDATED='14 Nov 2026, 20:07 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
