@@ -231,4 +231,28 @@ export async function run({ ok }) {
       "the digest wakes for rows to approve until Salt Admin holds a device, then stays quiet: " + JSON.stringify([a.hit.length, b.hit.length, b.logs]));
     ok(c.hit.length === 1, "but a refund he holds still wakes it, with Admin on: " + JSON.stringify(c.hit.length));
   }
+
+  /* 11. 14 NOV 2026: A DEVICE SUBSCRIBED AS THE DESK SUBSCRIBES HEARS EVERY INFORM. sendPush drops a device whose topics lack the tag and the
+     Desk asks for ALERT_TOPICS, so from 19 Oct 2026 the four informs, sent under their own names, reached no device. An inform now wakes as
+     salt and its kind rides in inform:last. The topics are read off the master and filed through /push/subscribe, as the Desk files them. */
+  {
+    const mt = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8").match(/const ALERT_TOPICS=(\[[^\]]*\]);/);
+    const topics = mt ? JSON.parse(mt[1].replace(/'/g, "\"")) : null;
+    const kv = new KV(), env = Object.assign({ SALT_QUEUE: kv, SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, vapid);
+    const call = (path, body) => deskW.default.fetch(new Request("https://salt-command.example" + path, { method: "POST", body: JSON.stringify(body) }), env);
+    const sub = await (await call("/push/subscribe", { endpoint: "https://push.example/desk-phone", topics })).json();
+    const send = async (tag) => {
+      const realF = globalThis.fetch, hit = []; let r;
+      globalThis.fetch = async (u, init) => { hit.push({ u: String(u), topic: init && init.headers && init.headers.Topic }); return new Response("", { status: 201 }); };
+      try { r = await (await call("/push/send", { tag })).json(); } finally { globalThis.fetch = realF; }
+      return { sent: r.sent, hit: hit.filter((x) => x.u === "https://push.example/desk-phone").map((x) => x.topic), kept: ((await kv.get("inform:last", "json")) || {}).k };
+    };
+    const got = {};
+    for (const tag of ["folded", "fold-refused", "suite-red", "stock"]) got[tag] = await send(tag);
+    ok(Array.isArray(topics) && sub.ok && Object.values(got).every((g) => g.sent === 1 && g.hit.join() === "salt"),
+      "a device subscribed with the Desk's ALERT_TOPICS is woken by folded, fold-refused, suite-red and stock, each sent as salt: " + JSON.stringify({ topics, got }));
+    ok(Object.entries(got).every(([tag, g]) => g.kept === tag), "and each keeps its own kind in inform:last, which the banner names: " + JSON.stringify(got));
+    const plain = await send("orders");
+    ok(plain.hit.join() === "orders" && plain.kept === "stock", "a plain orders push still wakes under its own name and is kept as no inform: " + JSON.stringify(plain));
+  }
 }

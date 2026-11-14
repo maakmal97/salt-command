@@ -126,7 +126,11 @@ hues, and it is generated, so a new hue is added upstream and synced.
   the desk's name, a roster code's shape and a pricing word (`LEVEL_WORDS`, a guard), in English, and
   deliberately does not refuse a product's name; the desk has no word check, since it sends no line.
 - **Push topics.** `ALERT_TOPICS` is `orders`, `approve` and `salt`, where that last one names
-  the morning round, not the product. No topic is per-product.
+  the morning round and the system's own news, not the product. No topic is per-product. An
+  inform (`folded`, `fold-refused`, `suite-red`, `stock`) is kept as KV `inform:last` under its
+  own kind and wakes as `salt` (14 Nov 2026): sent under its own name it reached no Desk device
+  from 19 Oct 2026, since `sendPush` drops a device whose topics lack the tag. A new wake for the
+  Desk goes as one of the three, never a new topic.
 - **D1.** `product` is unconstrained `TEXT` on both `entry` and `draft`, and no `CHECK`
   anywhere names a product. **A new product needs no migration.**
 - **The roster and the geography.** Parties, places, constituencies and the whole Coverage map

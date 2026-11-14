@@ -3378,7 +3378,10 @@ export default {
       if (INFORM_TAGS.has(tag) && env.SALT_QUEUE) {
         try { await env.SALT_QUEUE.put("inform:last", JSON.stringify({ k: tag, at: new Date().toISOString() }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }
       }
-      return json(await sendPush(env, { tag, urgency: (b && b.urgency) || "normal" }));
+      /* 14 Nov 2026: AN INFORM WAKES AS salt. The Desk subscribes to orders, approve and salt (the master's ALERT_TOPICS), and sendPush
+         drops a device whose topics lack the tag, so from 19 Oct 2026 a wake sent under the inform's own name reached no device (all seven
+         live records read so on 14 Nov). The kind travels in inform:last, which the banner reads; the wake only has to arrive. */
+      return json(await sendPush(env, { tag: INFORM_TAGS.has(tag) ? "salt" : tag, urgency: (b && b.urgency) || "normal" }));
     }
     if (p === "/push/subscribers") {
       return json({ ok: true, count: (await listSubs(env)).length });
