@@ -52915,5 +52915,10 @@ await (async () => {
   await (await import("./backup-tools.mjs")).run({ ok });
 })();
 
+section("14 Nov 2026: the move to Ambient, part 1: Ambient carried whole and checked against its lock, and the heat read off the supply step");
+await (async () => {
+  await (await import("./ambient-carry.mjs")).run({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

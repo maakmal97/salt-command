@@ -1,0 +1,10 @@
+[
+ {"name": "the generator trims ambient.css", "file": "tools/stmt-style.mjs", "find": "css: read(\"ambient.css\"), js: read(\"ambient.js\")", "replace": "css: read(\"ambient.css\").replace(/\\/\\*[\\s\\S]*?\\*\\//g, \"\"), js: read(\"ambient.js\")"},
+ {"name": "the lock check ignores an edited carried file", "file": "tools/ambientsync.mjs", "find": "if (!existsSync(f) || sha(read(f)) !== l.files[name]) out.push(f + \" is not what was pulled\");", "replace": "if (!existsSync(f)) out.push(f + \" is not what was pulled\");"},
+ {"name": "the lock check ignores the token block", "file": "tools/ambientsync.mjs", "find": "if (mine == null || sha(mine) !== l.tokens)", "replace": "if (mine == null)"},
+ {"name": "the lock check lets a preview through", "file": "tools/ambientsync.mjs", "find": "if (l.preview) out.push(", "replace": "if (false) out.push("},
+ {"name": "Salt Admin's layer may name a colour", "file": "tools/stmt-style.mjs", "find": "throw new Error(\"stmt-style: design/admin.css names a colour; it reads --amb-* tokens only\");", "replace": "void 0;"},
+ {"name": "the heat reads the move, not the supply step", "file": "engine/snapshot.mjs", "find": "s=m&&typeof m.supply===\"number\"?m.supply:0;", "replace": "s=m&&typeof m.k===\"number\"?m.k:0;"},
+ {"name": "tight and soft swapped", "file": "engine/snapshot.mjs", "find": "return s>1e-9?\"tight\":s<-1e-9?\"soft\":\"neutral\";}", "replace": "return s>1e-9?\"soft\":s<-1e-9?\"tight\":\"neutral\";}"},
+ {"name": "the stock document carries no heat", "file": "tools/book.mjs", "find": ",heat:SNAPSHOT_ENGINE.marketHeat(C,p)};", "replace": "};"}
+]
