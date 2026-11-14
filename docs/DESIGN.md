@@ -269,6 +269,24 @@ on 2,922 table instances and 87,702 cells over both widths and every view button
 renderdiff shots read 0 pixels apart. The suite section "Tables: the system" proves it, and v567's sticky-fill checks now
 read the recipe.
 
+## 14 Nov 2026: the move to Ambient, part 1 (carried, nothing drawn)
+
+His answers of 14 Nov 2026 (`docs/plan-ambient-move.html`): each device's own light or dark, five book hues on marks only, Salt Admin
+first, a fresh Opus reviewer may gate the first version while Fable is rate-limited, and Selling fast drawn plain with its word.
+
+- **The carrier.** `tools/ambientsync.mjs` is Code/ambient-ds's `consumer/designsync.mjs` with this repo's paths: `--pull` writes
+  the token block between the DESIGN tokens markers in `design/ambient/app.css` and copies `ambient.css`, `ambient.js` and
+  `icons.svg` beside it, with `tools/ambient.lock.json` (the version, ambient-ds's commit, a SHA-256 of each); `--check` compares the
+  copies with the lock (CI has no ambient-ds) and, on a laptop with a clean ambient-ds main beside it, fails once that main has moved on.
+  A carried file is never edited here.
+- **To the Worker.** `tools/stmt-style.mjs` writes the four as JSON strings into `stmt/statement-css.js` (`AMB_TOKENS`, `AMB_CSS`,
+  `AMB_JS`, `AMB_ICONS`) with Salt Admin's own layer `design/admin.css` (`ADMIN_CSS`, tokens only; the generator refuses a colour).
+  The page interpolates them and never pastes them into a template literal, where a backslash in `ambient.js` would be eaten.
+- **The heat.** The snapshot engine's `marketHeat` reads the day's supply step of the salt market move: tight at 7 days of cover or
+  under, soft past 14, neutral between, and neutral switched off, before the rule's since and on a book with no market. The stock
+  document (`STOCK.books[p].heat`) carries it to Salt Admin, which polls it already. It prices nothing.
+- Checks: section "14 Nov 2026: the move to Ambient, part 1" (`test/ambient-carry.mjs`, 7 checks, 8 mutations, each red).
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

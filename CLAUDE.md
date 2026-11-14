@@ -162,7 +162,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      day's landed cost, handed over with that order or their next salt handover; Accept says `cross` and marks the row `rwdLoyal`. A customer sees
      the share of one alone (`card.products[].loyal.next`, `customerCard`); Salt Admin's This customer card pairs it with the suggested %, which
      stays his tap (Use it sends tier-set for Approve). An associate, a partner, a supplier and a bucket do not walk. Nothing prices from it.
-6. **The look is the Salt design system applied as a layer.** **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
+6. **The look is the Salt design system applied as a layer.** **THE MOVE TO AMBIENT** (`docs/plan-ambient-move.html`, his answers of 14 Nov
+   2026): the surfaces move one at a time onto `Code\ambient-ds`, Salt Admin first, then the Counter, then the Desk; a surface keeps salt-ds
+   until its own version. Ambient is carried in `design/ambient/` by `tools/ambientsync.mjs` (`--pull` from a clean, pushed ambient-ds main;
+   `--check` against `tools/ambient.lock.json`, in the gate and CI, and failing on this laptop once ambient-ds main moves on: pull, then
+   `node tools/stmt-style.mjs --sync`); a part Ambient lacks is added there, never drawn here. **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
    Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
    `npm run propagate` and its `CLAUDE.md`; `node tools/designsync.mjs --drift` says whether `design/` is
    still the salt-ds checkout's. Material, type and colour are
