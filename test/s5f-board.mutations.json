@@ -398,8 +398,8 @@
  {
   "name": "the way back is usable without the file",
   "file": "tools/flip-board.mjs",
-  "find": "snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: !!way };",
-  "replace": "snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: true };"
+  "find": "snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: !!way,",
+  "replace": "snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: true,"
  },
  {
   "name": "the way back's time is always the record's",
@@ -446,8 +446,62 @@
  {
   "name": "a failed export is healthy",
   "file": "tools/flip-board.mjs",
-  "find": "if (ex.at) return { ok: ex.conclusion === \"success\",",
-  "replace": "if (ex.at) return { ok: true,"
+  "find": "ok: ex.conclusion !== \"success\" ? false : ex.unread",
+  "replace": "ok: false ? false : ex.unread"
+ },
+ {
+  "name": "an unread newer run beside a success is healthy",
+  "file": "tools/flip-board.mjs",
+  "find": "ex.unread ? null : true, detail: (ex.conclusion",
+  "replace": "true, detail: (ex.conclusion"
+ },
+ {
+  "name": "a run in flight is not counted",
+  "file": "tools/flip-board.mjs",
+  "find": "    if (r.status !== \"completed\") { unread++; continue; }",
+  "replace": "    if (r.status !== \"completed\") continue;"
+ },
+ {
+  "name": "a list that ran out inside the window is not counted",
+  "file": "tools/flip-board.mjs",
+  "find": "unread: unread + (short ? 1 : 0),",
+  "replace": "unread,"
+ },
+ {
+  "name": "the board looks for a step the chain does not have",
+  "file": "tools/flip-board.mjs",
+  "find": "export const DAY_STEP = \"Export the Book to git (the day's record)\"",
+  "replace": "export const DAY_STEP = \"Export the Book to git (the day record)\""
+ },
+ {
+  "name": "a saved file is said to be read live",
+  "file": "tools/flip-board.mjs",
+  "find": "readFrom: opts.offline ? \"from the saved file\" : \"read live\"",
+  "replace": "readFrom: \"read live\""
+ },
+ {
+  "name": "the tool does not say it drew from --offline",
+  "file": "tools/flip-board.mjs",
+  "find": "{ flippedOn: val(\"--flipped-on\"), offline: !!val(\"--offline\") }",
+  "replace": "{ flippedOn: val(\"--flipped-on\") }"
+ },
+ {
+  "name": "--flipped-on leaves the days count",
+  "file": "tools/flip-board.mjs",
+  "find": "(over && over.date ? Date.parse(over.date + \"T00:00:00+08:00\") : Date.parse(at || RECORD.on + \"T00:00:00+08:00\"))",
+  "replace": "Date.parse(at || RECORD.on + \"T00:00:00+08:00\")"
+ },
+ {
+  "name": "the fallbacks reading says today",
+  "file": "tools/flip-board.mjs",
+  "find": "[\"fallbacks\", \"Fallbacks, 24 hours: 0\"]",
+  "replace": "[\"fallbacks\", \"Fallbacks today: 0\"]"
+ },
+ {
+  "name": "an unknown snapshot state reaches the trend",
+  "file": "tools/flip-board.mjs",
+  "find": "s: h.gates && Object.hasOwn(TONE, h.gates[l.id]) ? h.gates[l.id] : \"u\" }))",
+  "replace": "s: (h.gates && h.gates[l.id]) || \"u\" }))"
  },
  {
   "name": "a skipped day's step counts",

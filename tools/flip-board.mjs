@@ -126,7 +126,7 @@ export function viewOf(ev, judged, history = [], opts = {}) {
   };
   const hist = (Array.isArray(history) ? history : []).slice(-8);
   const gates = judged.lines.map((l) => ({ id: l.id, text: l.text, ok: l.ok, detail: scrub(l.detail), progress: prog[l.id] || [], moves: MOVES[l.id] || "",
-    trend: hist.map((h) => ({ at: h.at, s: (h.gates && h.gates[l.id]) || "u" })) }));
+    trend: hist.map((h) => ({ at: h.at, s: h.gates && Object.hasOwn(TONE, h.gates[l.id]) ? h.gates[l.id] : "u" })) }));
   const tally = (v) => judged.lines.filter((l) => l.ok === v).length;
   return { ok: judged.ok === true, met: tally(true), notMet: tally(false), unverified: tally(null), total: judged.lines.length,
     now, nowMyt: now ? myt(now) : "unknown", since, runs: (ev.runs || []).length, daysTo: now ? daysTo(now, GATE.earliest) : null,
@@ -383,25 +383,28 @@ export function collectExport(now, sh = run, limit = 60) {
   let rows = null; try { rows = list.code === 0 ? JSON.parse(list.out) : null; } catch (e) { rows = null; }
   if (!Array.isArray(rows)) return null;
   const from = Date.parse(now) - EXPORT_HOURS * 36e5, inWin = rows.filter((r) => Date.parse(r.createdAt) >= from).sort((x, y) => Date.parse(y.createdAt) - Date.parse(x.createdAt));
-  let unread = rows.length >= limit && inWin.length === rows.length ? 1 : 0;   /* the list ran out inside the window: an older run there was never seen */
-  for (const r of inWin.filter((x) => x.status === "completed")) {
+  const short = rows.length >= limit && inWin.length === rows.length;   /* the list ran out inside the window: an older run there was never seen */
+  /* `unread` counts the runs newer than any export found that could not be judged: one in flight (it may be the export; Fable, 14 Nov 2026) or one whose step list would not read */
+  let unread = 0;
+  for (const r of inWin) {
+    if (r.status !== "completed") { unread++; continue; }
     let steps; try { const v = sh("gh", ["run", "view", String(r.databaseId), "--json", "jobs"]); steps = JSON.parse(v.out).jobs.flatMap((j) => j.steps || []); } catch (e) { unread++; continue; }
     const s = steps.find((x) => x.name === DAY_STEP);
     if (s && s.conclusion && s.conclusion !== "skipped") return { at: r.createdAt, conclusion: s.conclusion, unread };
   }
   const last = sh("git", ["log", "origin/master", "--grep", "^Book export ", "-1", "--format=%cI"]), lt = Date.parse(String(last.out).trim());
-  return { at: null, conclusion: null, unread, lastCommit: last.code === 0 && Number.isFinite(lt) ? new Date(lt).toISOString() : null };
+  return { at: null, conclusion: null, unread: unread + (short ? 1 : 0), lastCommit: last.code === 0 && Number.isFinite(lt) ? new Date(lt).toISOString() : null };
 }
 
-/** the day's export, judged: true only when the newest that ran in the window succeeded; none in the window is false, unless a run there could not be read */
+/** the day's export, judged: true only when the newest that ran in the window succeeded and no newer run there went unread; none in the window is false, unless a run there could not be read */
 export function exportCheck(ex) {
   if (!ex) return { ok: null, detail: "Actions unread", last: null };
-  if (ex.at) return { ok: ex.conclusion === "success", detail: (ex.conclusion === "success" ? "" : ex.conclusion + " ") + myt(ex.at), last: null };
+  if (ex.at) return { ok: ex.conclusion !== "success" ? false : ex.unread ? null : true, detail: (ex.conclusion === "success" ? "" : ex.conclusion + " ") + myt(ex.at) + (ex.unread ? ", " + ex.unread + " newer unread" : ""), last: null };
   return { ok: ex.unread ? null : false, detail: "none in " + EXPORT_HOURS + " hours" + (ex.unread ? ", " + ex.unread + " unread" : ""), last: ex.lastCommit ? "the last in git " + myt(ex.lastCommit) : null };
 }
 
 export const HEALTH = [["source", "book_source book"], ["roster", "book_roster on"], ["tap", "book_tap on"], ["read", "book_read book"],
-  ["readcheck", "Readcheck, nothing stuck"], ["unbooked", "Approved, unbooked: 0"], ["fallbacks", "Fallbacks today: 0"], ["export", "Day's export, 30 hours"]];
+  ["readcheck", "Readcheck, nothing stuck"], ["unbooked", "Approved, unbooked: 0"], ["fallbacks", "Fallbacks, 24 hours: 0"], ["export", "Day's export, 30 hours"]];
 /** the readings from flip.mjs's health (null when it could not run) and the day's export: Healthy only when every reading is true, Not healthy when one is false, else Unverified */
 export function healthOf(h, ex) {
   const by = Object.fromEntries(((h && Array.isArray(h.checks)) ? h.checks : []).map((c) => [c.id, c]));
@@ -422,8 +425,8 @@ export function flippedView(ev, history = [], opts = {}) {
   const gates = judge({}).lines.map((l) => ({ id: l.id, text: l.text, s: snap ? (["m", "n", "u"].includes(snap.gates[l.id]) ? snap.gates[l.id] : "u") : null }));
   const h = healthOf(ev.health, ev.export);
   return { flipped: true, now, nowMyt: now ? myt(now) : "unknown", onShown, onFrom: over && over.date ? "your --flipped-on" : at ? "the way-back file" : "the record", flippedOnWhy: over && !over.date ? scrub(over.why) : null,
-    wayAt: at ? myt(at, true, true) : null, way, daysSince: now ? Math.max(0, Math.floor((Date.parse(now) - Date.parse(at || RECORD.on + "T00:00:00+08:00")) / DAY)) : null,
-    health: h, gates, snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: !!way };
+    wayAt: at ? myt(at, true, true) : null, way, daysSince: now ? Math.max(0, Math.floor((Date.parse(now) - (over && over.date ? Date.parse(over.date + "T00:00:00+08:00") : Date.parse(at || RECORD.on + "T00:00:00+08:00"))) / DAY)) : null,
+    health: h, gates, snap: snap ? { at: snap.at, ok: snap.ok === true } : null, backReady: !!way, readFrom: opts.offline ? "from the saved file" : "read live" };
 }
 
 const STEP_DONE = (id, title) => `<li class="salt-settings__row salt-settings__row--text" data-step="${esc(id)}"><span class="salt-settings__label">${esc(id)} ${esc(title)}</span><span class="salt-status salt-status--verdigris">Done</span></li>`;
@@ -436,7 +439,7 @@ export function renderFlipped(view, runbook = RUNBOOK, assets = loadAssets()) {
   const tile = (label, value, note) => `<div class="salt-glance__item"><span class="salt-glance__label">${esc(label)}</span><span class="salt-glance__value">${esc(value)}</span>${note ? `<span class="salt-glance__note">${esc(note)}</span>` : ""}</div>`;
   const said = h.ok === true ? "Every reading is healthy: the Book is the source and books the taps." : h.ok === false ? "A reading is not healthy: read it below, and the way back below that." : "Not every reading could be made, and none unread is taken as healthy.";
   const record = [ROW("Way back written", view.wayAt ? view.wayAt : RECORD.wayBack + " (the record)", ' data-rec="way"'), w && w.bookRev !== null ? ROW("Book revision at the way back", w.bookRev) : "", w && w.sha ? ROW("Checkout at the way back", w.sha) : "",
-    ROW("book_source", "book, read live"), ...RECORD.rows.map(([k, v]) => ROW(k, v))].filter(Boolean).join("\n");
+    ROW("book_source", "book, " + view.readFrom), ...RECORD.rows.map(([k, v]) => ROW(k, v))].filter(Boolean).join("\n");
   const pf = PLAN.filter((s) => s[0] !== "8").map(([n, t]) => STEP_DONE("S" + n, t)), last = PLAN.find(([n]) => n === "8");
   return `${pageTop(assets)}
 <section class="salt-band" aria-label="Verdict" data-verdict="flipped" data-health="${hs}">
@@ -447,7 +450,7 @@ export function renderFlipped(view, runbook = RUNBOOK, assets = loadAssets()) {
 </section>
 <div class="salt-glance">
 ${tile("Days since the flip", view.daysSince === null ? "unknown" : view.daysSince, "flipped " + view.onShown + ", from " + view.onFrom)}
-${tile("Book revision", h.rev === null || h.rev === undefined ? "unread" : h.rev, "the readcheck's, live")}
+${tile("Book revision", h.rev === null || h.rev === undefined ? "unread" : h.rev, "the readcheck's, " + view.readFrom)}
 ${tile("The day's export", exp.ok === true ? "ran" : exp.ok === false ? "not in 30 hours" : "unread", exp.last || exp.detail)}
 </div>
 ${view.flippedOnWhy ? `<p class="salt-settings__foot" data-flipped-why><span class="salt-status salt-status--ember">Not taken</span> --flipped-on ${esc(view.flippedOnWhy)}</p>` : ""}
@@ -519,7 +522,7 @@ if (isMain) {
     if (!ev) { const now = new Date().toISOString(); let h = null; try { h = await health(boardIo(), { steady: true }); } catch (e) { h = null; } ev = { now, pre, health: h, export: collectExport(now) }; }
     if (!("wayBack" in ev)) ev.wayBack = readWayBack(WAY_BACK);
     /* the gate's history is read for the pre-flip record and never written once flipped: the gate is not judged again */
-    const view = flippedView(ev, readHistory(val("--history") || (val("--offline") ? "" : HISTORY)), { flippedOn: val("--flipped-on") });
+    const view = flippedView(ev, readHistory(val("--history") || (val("--offline") ? "" : HISTORY)), { flippedOn: val("--flipped-on"), offline: !!val("--offline") });
     const out = resolve(val("--out") || OUT);
     if (!existsSync(dirname(out))) mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, renderFlipped(view));
