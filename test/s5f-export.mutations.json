@@ -140,8 +140,8 @@
  {
   "name": "the day is never the day",
   "file": ".github/workflows/cloud-commit.yml",
-  "find": "[ \"$(TZ=Asia/Kuala_Lumpur date +%H)\" -lt 6 ]",
-  "replace": "[ \"$(TZ=Asia/Kuala_Lumpur date +%H)\" -lt 0 ]"
+  "find": "node tools/day-export.mjs --due; then export=1; fi",
+  "replace": "node tools/day-export.mjs --due; then export=0; fi"
  },
  {
   "name": "the publish export also runs on the day",

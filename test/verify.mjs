@@ -53301,5 +53301,10 @@ await (async () => {
   await (await import("./admin-door.mjs")).run({ ok, pageWork });
 })();
 
+section("14 Nov 2026: the day's export of the Book to git is asked for by the Desk from 00:05, due on the clock by the evidence, and missed only aloud");
+await (async () => {
+  await (await import("./day-export.mjs")).run({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

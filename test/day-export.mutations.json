@@ -1,0 +1,254 @@
+[
+ {
+  "name": "the Kuala Lumpur offset is seven hours",
+  "file": "src/day-export.js",
+  "find": "const KL_MS = 8 * 3600000, DAY_MS",
+  "replace": "const KL_MS = 7 * 3600000, DAY_MS"
+ },
+ {
+  "name": "an export step of any conclusion has landed",
+  "file": "src/day-export.js",
+  "find": "step.conclusion !== \"success\" || ",
+  "replace": ""
+ },
+ {
+  "name": "an export step of any day has landed",
+  "file": "src/day-export.js",
+  "find": " || klDay(step.completed_at) !== day) continue;",
+  "replace": ") continue;"
+ },
+ {
+  "name": "a step of any job counts",
+  "file": "src/day-export.js",
+  "find": "if (!job || job.name !== CHAIN_JOB) continue;",
+  "replace": "if (!job) continue;"
+ },
+ {
+  "name": "a run is busy while any job of it runs",
+  "file": "src/day-export.js",
+  "find": "chain.some((j) => OPEN.has(j.status))",
+  "replace": "true"
+ },
+ {
+  "name": "a run with no jobs yet is never busy",
+  "file": "src/day-export.js",
+  "find": "!chain.length ? OPEN.has(run.status)",
+  "replace": "!chain.length ? false"
+ },
+ {
+  "name": "the run asking counts itself busy",
+  "file": "src/day-export.js",
+  "find": " || String(run.id) === String(except)) continue;",
+  "replace": ") continue;"
+ },
+ {
+  "name": "the run asking counts itself in hand",
+  "file": "src/day-export.js",
+  "find": " && String(run.id) !== String(except) && run.display_title",
+  "replace": " && run.display_title"
+ },
+ {
+  "name": "a finished run named for today is in hand",
+  "file": "src/day-export.js",
+  "find": "if (run && run.status !== \"completed\" && String(run.id)",
+  "replace": "if (run && String(run.id)"
+ },
+ {
+  "name": "the reads start at the day itself",
+  "file": "src/day-export.js",
+  "find": "export const LOOKBACK_MS = 6 * 3600000;",
+  "replace": "export const LOOKBACK_MS = 0;"
+ },
+ {
+  "name": "the reads stop after the first page",
+  "file": "src/day-export.js",
+  "find": "if (j.workflow_runs.length < perPage) break;",
+  "replace": "break;"
+ },
+ {
+  "name": "the jobs read the latest attempt only",
+  "file": "src/day-export.js",
+  "find": "\"/jobs?filter=all&per_page=100\"",
+  "replace": "\"/jobs?per_page=100\""
+ },
+ {
+  "name": "a finished push run's jobs are read",
+  "file": "src/day-export.js",
+  "find": "    if (!mayExport(run) && run.status === \"completed\") continue;\n",
+  "replace": ""
+ },
+ {
+  "name": "an answer with no run list reads as no runs",
+  "file": "src/day-export.js",
+  "find": "if (!j || !Array.isArray(j.workflow_runs)) throw new Error(\"GitHub's run list had no workflow_runs\");",
+  "replace": "if (!j || !Array.isArray(j.workflow_runs)) break;"
+ },
+ {
+  "name": "the Worker reads from midnight",
+  "file": "src/day-export.js",
+  "find": "fromMin: 5,",
+  "replace": "fromMin: 0,"
+ },
+ {
+  "name": "the Worker reads until 07:00",
+  "file": "src/day-export.js",
+  "find": "untilMin: 360,",
+  "replace": "untilMin: 420,"
+ },
+ {
+  "name": "the Worker reads every minute",
+  "file": "src/day-export.js",
+  "find": "readEveryMin: 10,",
+  "replace": "readEveryMin: 0,"
+ },
+ {
+  "name": "the Worker tries every 20 minutes",
+  "file": "src/day-export.js",
+  "find": "tryEveryMin: 30,",
+  "replace": "tryEveryMin: 20,"
+ },
+ {
+  "name": "the Worker tries five times",
+  "file": "src/day-export.js",
+  "find": "tries: 4 };",
+  "replace": "tries: 5 };"
+ },
+ {
+  "name": "a busy chain is dispatched over",
+  "file": "src/day-export.js",
+  "find": "  if (busy) return { act: \"busy\", run: busy };\n",
+  "replace": ""
+ },
+ {
+  "name": "the clock exports beside a run in hand",
+  "file": "src/day-export.js",
+  "find": "  if (hand) return { due: false, why: \"run \" + hand + \" is exporting today\" };\n",
+  "replace": ""
+ },
+ {
+  "name": "the minute cron never asks",
+  "file": "src/worker.js",
+  "find": "const xa = await exportAsk(env, new Date(event.scheduledTime || Date.now()));",
+  "replace": "const xa = {};"
+ },
+ {
+  "name": "a try leaves the day's publish to send a second run",
+  "file": "src/worker.js",
+  "find": "  await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify({ at: now.toISOString(), for: now.toISOString(), reason: \"covered by \" + reason }));\n",
+  "replace": ""
+ },
+ {
+  "name": "the Worker asks with git as the source",
+  "file": "src/worker.js",
+  "find": "  if (await sourceMode(env.SALT_LEDGER) !== \"book\") { await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m)); return { git: true }; }\n",
+  "replace": ""
+ },
+ {
+  "name": "a landed night is not marked done",
+  "file": "src/worker.js",
+  "find": "    m.done = true;\n",
+  "replace": ""
+ },
+ {
+  "name": "the dispatch asks for no export",
+  "file": "src/worker.js",
+  "find": "inputs: { stage_only: \"true\", export: \"true\", reason }",
+  "replace": "inputs: { stage_only: \"true\", reason }"
+ },
+ {
+  "name": "a try is not counted",
+  "file": "src/worker.js",
+  "find": "  m.tries = (m.tries || 0) + 1; m.tried = now.toISOString();",
+  "replace": "  m.tried = now.toISOString();"
+ },
+ {
+  "name": "a refused try reads as sent",
+  "file": "src/worker.js",
+  "find": "  if (!r.ok) return { refused: await ghRefusal(r, \"export dispatch:\"), tries: m.tries, day: pace.day };\n",
+  "replace": ""
+ },
+ {
+  "name": "the digest hears the warning and sends nothing",
+  "file": "src/worker.js",
+  "find": "if (gx) { worth = true; console.log(\"git export alarm: \" + gx); }",
+  "replace": "if (gx) { console.log(\"git export alarm: \" + gx); }"
+ },
+ {
+  "name": "the warning's kind is not kept for its words",
+  "file": "src/worker.js",
+  "find": "  try { await env.SALT_QUEUE.put(\"inform:last\", JSON.stringify({ k: kind, at: now.toISOString() }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }\n",
+  "replace": ""
+ },
+ {
+  "name": "an unreadable GitHub is silent at 09:00",
+  "file": "src/worker.js",
+  "find": "    kind = \"export-unchecked\"; line = \"the day's export could not be checked: \" + String((e && e.message) || e);",
+  "replace": "    return null;"
+ },
+ {
+  "name": "a landed export still rings",
+  "file": "src/worker.js",
+  "find": "    if (landed.done) return null;\n",
+  "replace": ""
+ },
+ {
+  "name": "the digest warns with git as the source",
+  "file": "src/worker.js",
+  "find": " || !dispatchArmed(env) || await sourceMode(env.SALT_LEDGER) !== \"book\") return null;",
+  "replace": " || !dispatchArmed(env)) return null;"
+ },
+ {
+  "name": "the clock never exports",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "\n            elif [ \"${{ github.event_name }}\" = \"schedule\" ] && node tools/day-export.mjs --due; then export=1; fi",
+  "replace": "\n            fi"
+ },
+ {
+  "name": "the clock exports whatever the verdict",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "&& node tools/day-export.mjs --due; then export=1; fi",
+  "replace": "&& { node tools/day-export.mjs --due || true; }; then export=1; fi"
+ },
+ {
+  "name": "the plan step has no token",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "(permissions: actions: read)\n        env:\n          GH_TOKEN: ${{ github.token }}\n",
+  "replace": "(permissions: actions: read)\n        env:\n          GH_NOTHING: x\n"
+ },
+ {
+  "name": "the export step is renamed",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Export the Book to git (the day's record)\n",
+  "replace": "      - name: Export the Book to git (the record)\n"
+ },
+ {
+  "name": "the plan asks with git as the source",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "          if [ \"${{ steps.source.outputs.mode }}\" = \"book\" ]; then\n            if [ \"${{ inputs.export }}\"",
+  "replace": "          if true; then\n            if [ \"${{ inputs.export }}\""
+ },
+ {
+  "name": "the reader's exit codes swap",
+  "file": "tools/day-export.mjs",
+  "find": "say(v.due ? 0 : 1,",
+  "replace": "say(v.due ? 1 : 0,"
+ },
+ {
+  "name": "cannot tell reads as due",
+  "file": "tools/day-export.mjs",
+  "find": "  say(2, \"cannot tell: \" + String((e && e.message) || e));",
+  "replace": "  say(0, \"cannot tell: \" + String((e && e.message) || e));"
+ },
+ {
+  "name": "the run asking is not left out",
+  "file": "tools/day-export.mjs",
+  "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null)",
+  "replace": "dueVerdict(runs, jobsOf, day, null)"
+ },
+ {
+  "name": "the phone has no words for the warning",
+  "file": "public/sw.js",
+  "find": "  export: [\"No export of the Book to git today\",",
+  "replace": "  exportx: [\"No export of the Book to git today\","
+ }
+]
