@@ -259,13 +259,14 @@ export function supplySnapshot(w) {
    since only folded rows move these figures and they move the collections too. Supply's window: set, read, put back.
    22 Oct 2026 (his word, the restock light made plain): `light` is the engine's restockLight over the same shelf and commitments, the
    rule the Counter's sealed `supply` reads, so Salt Admin's Stock by book works nothing out. 04 Nov 2026: asked with the book's
-   coverDays and median order too, as supplySnapshot asks it. */
+   coverDays and median order too, as supplySnapshot asks it. 14 Nov 2026 (the move to Ambient): `heat` is the snapshot engine's marketHeat,
+   tight, soft or neutral off the day's supply step, the colour Salt Admin's screens take; it prices nothing. */
 export function stockSnapshot(w) {
-  const r = reader(w)("(function(){var o={},keep=PROD,two=function(n){return +(+n||0).toFixed(2);};try{PROD_IDS.forEach(function(p){PROD=p;recompute();var rs=restockFor(p),"
+  const r = reader(w)("(function(){var o={},keep=PROD,two=function(n){return +(+n||0).toFixed(2);},C=snapCtx();try{PROD_IDS.forEach(function(p){PROD=p;recompute();var rs=restockFor(p),"
     + "t=pPurch(p).filter(function(x){return !x.cancelled&&!x.defaulted;}).reduce(function(a,x){return a+Math.max(0,(+x.qty||0)-poRecvUnits(x));},0);"
     + "var cm=POSITION_ENGINE.commitments(pSales(p),currentStock),cu=cm.commitUnits;"
     + "o[p]={shelf:two(currentStock),free:two(currentStock-defUnits),commit:two(cu),light:POSITION_ENGINE.restockLight(currentStock,cu,{agreed:cm.promUnits,coverDays:rs&&!rs.empty?rs.coverDays:null,usual:rs&&!rs.empty&&rs.buy?rs.buy.median:null}),"
-    + "coverDays:rs&&!rs.empty&&rs.coverDays!=null?+rs.coverDays:null,transit:two(t)};});}finally{PROD=keep;recompute();}"
+    + "coverDays:rs&&!rs.empty&&rs.coverDays!=null?+rs.coverDays:null,transit:two(t),heat:SNAPSHOT_ENGINE.marketHeat(C,p)};});}finally{PROD=keep;recompute();}"
     + "return JSON.stringify({today:TODAY.toISOString().slice(0,10),books:o});})()");
   if (!r.ok || typeof r.value !== "string") throw new Error("the stock did not read: " + (r.why || "no value"));
   return JSON.parse(r.value);
