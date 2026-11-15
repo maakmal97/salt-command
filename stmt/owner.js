@@ -146,6 +146,7 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('.aparts button[data-part]'), function(b){
       var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;
       b.setAttribute('aria-selected', on?'true':'false');
+      if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected'); }   /* 16 Nov 2026 (Ambient): Record's and Shop's parts are a Segment, pressed not selected */
       if(b.classList.contains('nktab')) b.classList.toggle('salt-nav__link--active', on);
       /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
       var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
@@ -1618,7 +1619,7 @@ export const OWNER_JS = `
     gate.textContent='';
     var line=el('p','msg',makerVault?'Names and places are open on this phone.':'Locked'); line.setAttribute('role','status'); gate.appendChild(line);
     if(!makerVault){
-      var ask=actOn(el('button','salt-ghost','Unlock'),'vault.unlock'); ask.type='button'; ask.onclick=function(){ vaultAsk(ask); }; gate.appendChild(ask);
+      var ask=actOn(el('button','amb-pill amb-pill--quiet amb-pill--sm','Unlock'),'vault.unlock'); ask.type='button'; ask.onclick=function(){ vaultAsk(ask); }; gate.appendChild(ask);
     }
     if(gate.extra) gate.extra(gate);
   }
@@ -1631,7 +1632,7 @@ export const OWNER_JS = `
     if(state) state.textContent=makerVault?'Open on this phone':'Locked';
     if(on) on.hidden=!!makerVault;
     if(off) off.hidden=!makerVault;
-    var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.setAttribute('aria-checked',String(!!makerVault));
+    var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.checked=!!makerVault;
     makerVaultPaint();
     if(makerVault&&joinWant) joinOpenNow();
     if(joinTried&&Object.keys(joinTried).length) drawNeeds();
@@ -1683,7 +1684,7 @@ export const OWNER_JS = `
     /* Shop > This device holds the control that is always in reach: Unlock while shut, Lock while open */
     /* 26 Oct 2026, his word: Show names is a Switch; on asks for the password in the one Sheet, off locks */
     var vaultSw=document.getElementById('vaultSwitch');
-    if(vaultSw) vaultSw.addEventListener('click',function(){ if(makerVault) makerVaultLock(); else vaultAsk(vaultSw); });
+    if(vaultSw) vaultSw.addEventListener('click',function(){ vaultSw.checked=!!makerVault; if(makerVault) makerVaultLock(); else vaultAsk(vaultSw); });
   }
   function makerClaimButton(parent,label,action,primary){
     var L=labOf(label), button=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
@@ -2319,7 +2320,7 @@ export const OWNER_JS = `
     list=list||[];
     var cur=document.getElementById('makerBulletinCurrent'), none=document.getElementById('makerBulletinNone'), clr=document.querySelector('[data-act="notice.clear"]'), foot=document.getElementById('makerBulletinFoot');
     if(!cur) return;
-    cur.textContent=''; list.forEach(function(l){ var r=el('div','salt-settings__row salt-settings__row--text'); r.setAttribute('role','listitem'); r.appendChild(el('span','salt-settings__label',l)); cur.appendChild(r); });
+    cur.textContent=''; list.forEach(function(l){ var r=el('div','amb-setting'); r.appendChild(el('span','amb-setting__name',l)); cur.appendChild(sLi(r)); });
     if(none) none.hidden=!!list.length; if(clr) clr.hidden=!list.length; if(foot) foot.textContent=list.length?'Shown one at a time on every account.':'';
   }
   async function loadMakerBulletin(){
@@ -2330,24 +2331,20 @@ export const OWNER_JS = `
       /* 26 Oct 2026, his word (Notice "based on the same design language" as This device, iPad and Mac included): UP NOW, a list of the lines
          customers read, None while nothing is up, and Clear the notice in ember, asking first; NEW NOTICE, the box filling its cell and one grey
          line, then Set the notice, the one pill. Read it again stands only when a send left the notice unknown. */
-      root.appendChild(el('h3','salt-settings__head','Up now'));
-      var upList=el('div','salt-settings anotice-up');
-      var current=el('div','anotice-lines');current.id='makerBulletinCurrent';current.setAttribute('role','list');current.setAttribute('aria-label','Every line');upList.appendChild(current);
-      var none=el('div','salt-settings__row salt-settings__row--muted'); none.id='makerBulletinNone'; none.appendChild(el('span','salt-settings__label','None')); upList.appendChild(none);
-      var refresh=el('button','salt-settings__row salt-settings__row--action anotice-again'); refresh.appendChild(el('span','salt-settings__label','Read it again')); refresh.hidden=true; upList.appendChild(refresh);
-      var clear=el('button','salt-settings__row salt-settings__row--action salt-settings__row--danger'); clear.appendChild(el('span','salt-settings__label','Clear the notice')); clear.hidden=true;
-      upList.appendChild(clear); root.appendChild(upList);
-      var upFoot=el('p','salt-settings__foot'); upFoot.id='makerBulletinFoot'; root.appendChild(upFoot);
-      root.appendChild(el('h3','salt-settings__head','New notice'));
-      var box=el('div','salt-settings'), cell=el('label','salt-settings__cell');
-      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;text.placeholder='One line each';text.setAttribute('aria-label','New notice, one line each');
-      cell.appendChild(text); box.appendChild(cell); root.appendChild(box);
-      root.appendChild(el('p','salt-settings__foot','Every customer is notified.'));
+      var upG=sGroup('Up now','anotice-up'), current=upG.list;current.classList.add('anotice-lines');current.id='makerBulletinCurrent';current.setAttribute('role','list');current.setAttribute('aria-label','Every line');
+      var none=sFoot('None'); none.id='makerBulletinNone'; upG.appendChild(none);
+      var actG=sGroup(null,'anotice-acts'), refresh=sAction('Read it again'), clear=sAction('Clear the notice',null,null,true); refresh.classList.add('anotice-again'); refresh.hidden=true; clear.hidden=true;
+      actG.list.appendChild(sLi(refresh)); actG.list.appendChild(sLi(clear));
+      var upFoot=sFoot(''); upFoot.id='makerBulletinFoot'; actG.appendChild(upFoot);
+      root.appendChild(upG); root.appendChild(actG);
+      root.appendChild(el('h3','amb-section','New notice'));
+      text=actOn(el('textarea','amb-input'),'notice.text');text.rows=4;text.placeholder='One line each';text.setAttribute('aria-label','New notice, one line each');
+      root.appendChild(sField('Notice',text,'Every customer is notified.'));
       var retained=el('div','');retained.hidden=true;root.appendChild(retained);
-      var set=el('button','btn salt-pill salt-pill--md anotice-set','Set the notice'), busy=false, needsRead=false, intended=null;
+      var set=el('button','amb-pill amb-pill--block anotice-set','Set the notice'), busy=false, needsRead=false, intended=null;
       [set,clear,refresh].forEach(function(button){button.type='button';});
       /* 5 Nov 2026 (the pane): Set the notice is the part's foot, pinned at the screen's foot */
-      var setFoot=el('div','salt-pane__foot anotice-foot'); setFoot.appendChild(set); root.appendChild(setFoot);
+      var setFoot=el('div','amb-foot anotice-foot'); setFoot.appendChild(set); root.appendChild(setFoot);
       actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;refresh.hidden=!needsRead;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
@@ -2473,8 +2470,10 @@ export const OWNER_JS = `
     }
   }
   function makerButton(parent, label, action, primary, onSuccess){
-    var L=labOf(label), b=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
-    var busy=false, pending=null, cancel=el('button','salt-ghost','Discard');
+    /* 16 Nov 2026 (Ambient, place I): in Record's forms and Shop's feet a main action is the pill, any other a quiet small one */
+    var amb2=!!(parent.matches&&(parent.matches('section.maker-input,#makerInputs,.amb-foot,[data-amb]')||parent.closest('section.maker-input')));
+    var L=labOf(label), b=actOn(el('button',amb2?(primary?'amb-pill':'amb-pill amb-pill--quiet amb-pill--sm'):primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
+    var busy=false, pending=null, cancel=el('button',amb2?'amb-pill amb-pill--quiet amb-pill--sm':'salt-ghost','Discard');
     cancel.type='button';cancel.hidden=true;if(L[1]) actOn(cancel,L[1]+'.cancel-retained',L[2]);
     ynTag(cancel,'retained:'+(L[1]||'input')+':'+(L[2]||''));
     cancel.onclick=function(){
@@ -2556,7 +2555,8 @@ export const OWNER_JS = `
     /* 5 Nov 2026 (the pane): a form's one filled pill, and its Discard while an entry is half sent, are the form's foot, pinned at the foot of
        the open form; every other button stands where it was drawn */
     var host=parent;
-    if(primary&&parent.matches&&parent.matches('section.maker-input')){ host=el('div','salt-pane__foot mfoot'); parent.appendChild(host); }
+    if(primary&&parent.matches&&parent.matches('section.maker-input,#makerInputs')){ host=el('div','amb-foot mfoot'); parent.appendChild(host); b.classList.add('amb-pill--block'); }
+    else if(amb2&&parent.classList.contains('amb-foot')) b.classList.add('amb-pill--block');
     host.appendChild(b);host.appendChild(cancel);return b;
   }
       /* a locality is public when the official list carries it or this phone verified it (placeFromText) and kept the word */
@@ -2698,9 +2698,37 @@ export const OWNER_JS = `
           });
         });
       }
+  /* 16 Nov 2026, the move to Ambient (place I): Record's and Shop's rows are Ambient's settings. A group is div.amb-settings (an optional head, one ul.amb-settings__list,
+     an optional foot); a row is an li holding one .amb-setting (a name and one control or value) or one .amb-action. Switches are input.amb-switch, checked is the state. */
+  function sUl(cls){ return el('ul','amb-settings__list'+(cls?' '+cls:'')); }
+  function sGroup(head,cls){
+    var box=el('div','amb-settings'+(cls?' '+cls:'')); if(head) box.appendChild(el('h3','amb-settings__head',head));
+    box.list=sUl(); box.appendChild(box.list); return box;
+  }
+  function sFoot(text,cls){ return el('p','amb-settings__foot'+(cls?' '+cls:''),text); }
+  function sLi(node,cls){ var li=el('li',cls||null); li.appendChild(node); return li; }
+  function sRead(name,value,cls){ var d=el('div','amb-setting'+(cls?' '+cls:'')); d.appendChild(el('span','amb-setting__name',name)); if(value!=null) d.appendChild(el('span','amb-setting__value',value)); return d; }
+  function sSwitch(act,key,on,label){
+    var sw=actOn(el('input','amb-switch'),act,key); sw.type='checkbox'; sw.setAttribute('role','switch'); sw.checked=!!on; sw.setAttribute('aria-label',label); return sw;
+  }
+  function sSwitchRow(label,act,key,on){ var row=el('label','amb-setting'), sw=sSwitch(act,key,on,label); row.appendChild(el('span','amb-setting__name',label)); row.appendChild(sw); row.sw=sw; return row; }
+  function sAction(label,act,key,danger){
+    var b=actOn(el('button','amb-action'+(danger?' amb-action--danger':''),label),act,key); b.type='button'; return b;
+  }
+  function sOpen(name,value,act,key){
+    var b=actOn(el('button','amb-setting'),act,key); b.type='button'; b.appendChild(el('span','amb-setting__name',name)); if(value!=null) b.appendChild(el('span','amb-setting__value',value));
+    b.appendChild(amb.node(amb.glyph('next','sm'))); return b;
+  }
+  /* a field of a Shop form: label above, the native control in the Ambient input */
+  function sField(label,control,hint){
+    var f=el('label','amb-field'); f.appendChild(el('span','amb-field__label',label)); f.appendChild(control); if(hint) f.appendChild(el('span','amb-field__hint',hint)); return f;
+  }
+  function sSelect(select){
+    select.classList.add('amb-input'); var w=el('span','amb-select'); w.appendChild(select); w.appendChild(amb.node(amb.glyph('chevron','sm'))); return w;
+  }
   /* 11 Oct 2026: a Record form is a section that shows in one part of Record, Entry, Customers or Pricing (data-in); a retained input
      shows in the part its route belongs to */
-  function makerForm(part){ var section=el('section','maker-input'); section.setAttribute('data-in','record.'+part); return section; }
+  function makerForm(part){ var section=el('section','maker-input amb-stack'); section.setAttribute('data-in','record.'+part); return section; }
   function retainedPart(path){
     var k=path.split('/').pop();
     return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','partner'].indexOf(k)>=0?'pricing':'entry';
@@ -2711,56 +2739,60 @@ export const OWNER_JS = `
      and fill(items) draws the tiles again, keeping the choice while it is still offered, else the first tile (or none, when none is true). Each radio keeps the
      select's act, keyed by its value ('none' for the empty one) and, for a group drawn once for each book, by that book first. What a form sends is the value. */
   var tileSeq=0, menuOffers=null;
+  /* 16 Nov 2026, the move to Ambient (place I): INSIDE RECORD A FIELD IS AMBIENT'S FIELD (its label above, the control in the Ambient input), a choice of two or three
+     plain words is a Segment, a choice of more, or with a note under each, is a Choice (fieldset.amb-options, a real radio each, the one chosen marked by its edge and
+     its filled mark), a figure walked in sizes is the stepper over values, and the lists of settings are for what is read or done. The group answers where the select
+     it replaces did: .value is the choice made ('' when none is), .disabled shuts every one, the radios' change bubbles to it, and fill(items) draws the choices again,
+     keeping the one chosen while it is still offered, else the first (or none, when none is true). Each radio keeps the select's act, keyed by its value ('none' for the
+     empty one) and, for a group drawn once for each book, by that book first. What a form sends is the value. A book is a chip with its dot in the book's hue, its name in ink. */
+  function makerAmb(parent){ return !!(parent&&parent.closest&&parent.closest('section.maker-input,#makerInputs')); }
+  function bookChip(product){ var k=String(product||''); return amb.node(amb.kindChip(k,k.charAt(0).toUpperCase()+k.slice(1))); }
   function makerTiles(label,items,none){
-    var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq), legend=el('legend','salt-options__legend salt-options__legend--label lbl',L[0]);
-    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(productTag(L[3])); }   /* a legend about a book ends in its typed tag: [words, act, key, book] (25 Oct 2026) */
-    set.appendChild(legend); set.appendChild(grid);
+    var L=labOf(label), set=el('fieldset','amb-options maker-tiles'), name='tiles'+(++tileSeq), legend=el('legend','amb-field__label',L[0]);
+    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(bookChip(L[3])); }   /* a legend about a book ends in its chip: [words, act, key, book] (25 Oct 2026) */
+    set.appendChild(legend);
     Object.defineProperty(set,'value',{
       get:function(){ var on=set.querySelector('input:checked'); return on?on.value:''; },
       set:function(v){ [].forEach.call(set.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }
     });
     set.fill=function(list){
       var on=set.querySelector('input:checked'), kept=on?on.value:null, offered=list.some(function(item){ return String(item.value)===kept; });
-      grid.textContent='';
-      /* tiles that are marks alone (the books) sit compact and centred, never a wide box with a mark in its corner */
-      /* 25 Oct 2026 (Record redesign P3): two or three short choices lie on one row, as the canvas draws them; the books, typed tags, four up */
-      var brief=list.every(function(item){ return String(item.label).length<=14; });
-      grid.className='salt-options__grid'+(list.length&&list.every(function(item){ return item.mark; })?' maker-marks'
-        :list.length===3&&brief?' maker-row maker-row--3':list.length!==3&&brief?' salt-options__grid--2':'');
+      [].slice.call(set.querySelectorAll('label.amb-option')).forEach(function(n){ n.remove(); });
       list.forEach(function(item,i){
-        var lab=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');
+        var lab=el('label','amb-option'), radio=el('input','amb-vh amb-option__input'), mark=el('span','amb-option__mark'), title=el('span','amb-option__title');
         radio.type='radio'; radio.name=name; radio.value=String(item.value); if(item.aria) radio.setAttribute('aria-label',item.aria);
         actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
         radio.checked=offered?String(item.value)===kept:(!none&&i===0);
-        if(item.mark) face.appendChild(productTag(item.mark));
-        else if(item.detail){ var said=el('span','salt-option__text'); said.appendChild(el('span','salt-option__label',item.label)); said.appendChild(el('span','salt-option__detail',item.detail)); face.appendChild(said); }   /* a tile with its note under its words (25 Oct 2026) */
-        else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
-        lab.appendChild(radio); lab.appendChild(face); grid.appendChild(lab);
+        mark.setAttribute('aria-hidden','true');
+        if(item.mark) title.appendChild(bookChip(item.mark)); else title.textContent=item.label;   /* a book's tile is its chip on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
+        lab.appendChild(radio); lab.appendChild(mark); lab.appendChild(title);
+        if(item.detail) lab.appendChild(el('span','amb-option__sub',item.detail));   /* a tile with its note under its words (25 Oct 2026) */
+        set.appendChild(lab);
       });
     };
     set.fill(items); return set;
   }
   /* 27 Oct 2026 (his answers: Record's forms in the language of Shop's This device): INSIDE ONE OF RECORD'S FORMS, A CHOICE OF TWO OR THREE PLAIN WORDS
-     (Sale or Purchase, Goods or Cash, the handover) IS A SEGMENT IN ITS ROW, as Hours' Hold as is; it answers as the tiles did (.value, .disabled, .hidden,
-     fill, a change that bubbles), each option keeping the tile's act and key. Books keep their typed tags as tiles (his word of 22 Oct 2026), and so do
-     choices with a note under them, more than three, or none chosen at first; a choice of tiles ends the list above it. */
+     (Sale or Purchase, Goods or Cash, the handover) IS A SEGMENT, as Hours' Hold as is; it answers as the tiles did (.value, .disabled, .hidden,
+     fill, a change that bubbles), each option keeping the tile's act and key. Books keep their chips as a Choice, and so do
+     choices with a note under them, more than three, or none chosen at first; a choice ends the list above it. */
   function makerSegFits(items,none){ return !none&&items.length>=2&&items.length<=3&&items.every(function(item){ return !item.mark&&!item.detail&&String(item.label).length<=11; }); }
   var segSeq=0;
   function makerSegRow(root,label,items){
-    var L=labOf(label), row=el('div','salt-settings__row mrow'), name=el('span','salt-settings__label',L[0]), s=el('div','salt-segment salt-segment--tight mseg'), cur='', dis=false;
-    name.id='mseg'+(++segSeq); row.appendChild(name); row.appendChild(s); makerList(root).appendChild(row);
-    s.setAttribute('role','radiogroup'); s.setAttribute('aria-labelledby',name.id);
-    var pick=function(v){ cur=''; [].forEach.call(s.children,function(b,i){ var on=b.getAttribute('data-value')===v; b.setAttribute('aria-checked',String(on)); if(on){ cur=v; s.style.setProperty('--i',String(i)); } }); };
+    var L=labOf(label), row=el('div','amb-field mrow'), name=el('span','amb-field__label',L[0]), s=el('div','amb-segment mseg'), cur='', dis=false;
+    name.id='mseg'+(++segSeq); row.appendChild(name); row.appendChild(s); root.appendChild(row);
+    s.setAttribute('role','group'); s.setAttribute('aria-labelledby',name.id);
+    var pick=function(v){ cur=''; [].forEach.call(s.children,function(b){ var on=b.getAttribute('data-value')===v; b.setAttribute('aria-pressed',String(on)); if(on) cur=v; }); };
     Object.defineProperty(s,'value',{ get:function(){ return cur; }, set:function(v){ pick(String(v)); } });
     Object.defineProperty(s,'disabled',{ get:function(){ return dis; }, set:function(v){ dis=!!v; [].forEach.call(s.children,function(b){ b.disabled=dis; }); } });
     Object.defineProperty(s,'hidden',{ get:function(){ return row.hidden; }, set:function(v){ row.hidden=!!v; } });
     s.fill=function(list){
       /* the choice kept is the option shown chosen, never the empty value before any is (For good is the empty value: the first fill falls to 7 days, as the tiles did) */
-      var on=s.querySelector('[aria-checked="true"]'), kept=on?on.getAttribute('data-value'):null, offered=list.some(function(item){ return String(item.value)===kept; });
-      s.textContent=''; s.style.setProperty('--n',String(Math.max(list.length,1)));
+      var on=s.querySelector('[aria-pressed="true"]'), kept=on?on.getAttribute('data-value'):null, offered=list.some(function(item){ return String(item.value)===kept; });
+      s.textContent='';
       list.forEach(function(item){
-        var b=actOn(el('button','salt-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
-        b.type='button'; b.setAttribute('role','radio'); b.setAttribute('data-value',String(item.value)); b.disabled=dis; if(item.aria) b.setAttribute('aria-label',item.aria);
+        var b=actOn(el('button','amb-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        b.type='button'; b.setAttribute('data-value',String(item.value)); b.setAttribute('aria-pressed','false'); b.disabled=dis; if(item.aria) b.setAttribute('aria-label',item.aria);
         b.addEventListener('click',function(){ if(dis) return; pick(String(item.value)); s.dispatchEvent(new Event('change',{bubbles:true})); });
         s.appendChild(b);
       });
@@ -2768,13 +2800,66 @@ export const OWNER_JS = `
     };
     s.fill(items); return s;
   }
+  /* 16 Nov 2026: an order's card and the group order (builders G's places) keep the older tiles and Segment until they are redrawn */
+  function makerTilesOld(label,items,none){
+    var L=labOf(label), setO=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq), legend=el('legend','salt-options__legend salt-options__legend--label lbl',L[0]);
+    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(productTag(L[3])); }   /* a legend about a book ends in its typed tag: [words, act, key, book] (25 Oct 2026) */
+    setO.appendChild(legend); setO.appendChild(grid);
+    Object.defineProperty(setO,'value',{
+      get:function(){ var on=setO.querySelector('input:checked'); return on?on.value:''; },
+      set:function(v){ [].forEach.call(setO.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }
+    });
+    setO.fill=function(list){
+      var on=setO.querySelector('input:checked'), keptO=on?on.value:null, offeredO=list.some(function(item){ return String(item.value)===keptO; });
+      grid.textContent='';
+      /* tiles that are marks alone (the books) sit compact and centred, never a wide box with a mark in its corner */
+      /* 25 Oct 2026 (Record redesign P3): two or three short choices lie on one row, as the canvas draws them; the books, typed tags, four up */
+      var brief=list.every(function(item){ return String(item.label).length<=14; });
+      grid.className='salt-options__grid'+(list.length&&list.every(function(item){ return item.mark; })?' maker-marks'
+        :list.length===3&&brief?' maker-row maker-row--3':list.length!==3&&brief?' salt-options__grid--2':'');
+      list.forEach(function(item,i){
+        var lab=el('label','salt-option'), rad=el('input','salt-option__input'), face=el('span','salt-option__face');
+        rad.type='radio'; rad.name=name; rad.value=String(item.value); if(item.aria) rad.setAttribute('aria-label',item.aria);
+        actOn(rad,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        rad.checked=offeredO?String(item.value)===keptO:(!none&&i===0);
+        if(item.mark) face.appendChild(productTag(item.mark));
+        else if(item.detail){ var said=el('span','salt-option__text'); said.appendChild(el('span','salt-option__label',item.label)); said.appendChild(el('span','salt-option__detail',item.detail)); face.appendChild(said); }   /* a tile with its note under its words (25 Oct 2026) */
+        else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
+        lab.appendChild(rad); lab.appendChild(face); grid.appendChild(lab);
+      });
+    };
+    setO.fill(items); return setO;
+  }
+  var segSeqOld=0;
+  function makerSegRowOld(root,label,items){
+    var L=labOf(label), row=el('div','salt-settings__row mrow'), name=el('span','salt-settings__label',L[0]), s=el('div','salt-segment salt-segment--tight mseg'), curO='', dis=false;
+    name.id='mseg'+(++segSeqOld); row.appendChild(name); row.appendChild(s); makerList(root).appendChild(row);
+    s.setAttribute('role','radiogroup'); s.setAttribute('aria-labelledby',name.id);
+    var pickO=function(v){ curO=''; [].forEach.call(s.children,function(b,i){ var on=b.getAttribute('data-value')===v; b.setAttribute('aria-checked',String(on)); if(on){ curO=v; s.style.setProperty('--i',String(i)); } }); };
+    Object.defineProperty(s,'value',{ get:function(){ return curO; }, set:function(v){ pickO(String(v)); } });
+    Object.defineProperty(s,'disabled',{ get:function(){ return dis; }, set:function(v){ dis=!!v; [].forEach.call(s.children,function(b){ b.disabled=dis; }); } });
+    Object.defineProperty(s,'hidden',{ get:function(){ return row.hidden; }, set:function(v){ row.hidden=!!v; } });
+    s.fill=function(list){
+      /* the choice kept is the option shown chosen, never the empty value before any is (For good is the empty value: the first fill falls to 7 days, as the tiles did) */
+      var on=s.querySelector('[aria-checked="true"]'), keptO=on?on.getAttribute('data-value'):null, offeredO=list.some(function(item){ return String(item.value)===keptO; });
+      s.textContent=''; s.style.setProperty('--n',String(Math.max(list.length,1)));
+      list.forEach(function(item){
+        var b=actOn(el('button','salt-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        b.type='button'; b.setAttribute('role','radio'); b.setAttribute('data-value',String(item.value)); b.disabled=dis; if(item.aria) b.setAttribute('aria-label',item.aria);
+        b.addEventListener('click',function(){ if(dis) return; pickO(String(item.value)); s.dispatchEvent(new Event('change',{bubbles:true})); });
+        s.appendChild(b);
+      });
+      pickO(offeredO?keptO:(list.length?String(list[0].value):''));
+    };
+    s.fill(items); return s;
+  }
   function makerTilesIn(root,label,items,none){
-    if(makerRowMode(root)&&makerSegFits(items,none)) return makerSegRow(root,label,items);
+    if(!makerAmb(root)){ if(makerRowMode(root)&&makerSegFits(items,none)) return makerSegRowOld(root,label,items); var old=makerTilesOld(label,items,none); root.appendChild(old); return old; }
+    if(makerSegFits(items,none)) return makerSegRow(root,label,items);
     var set=makerTiles(label,items,none); root.appendChild(set); return set;
   }
-  /* 27 Oct 2026 (his answers: Record's forms in the language of Shop's This device): INSIDE ONE OF RECORD'S FORMS A FIELD OR A DROPDOWN IS A ROW OF A
-     SETTINGS LIST, its name at the left and the control at the right; the rows that follow one another share one list, and anything else between them
-     (a choice of tiles, a line, a card) ends it. Elsewhere (an order's card, an account's) a field keeps its label above it. */
+  /* 27 Oct 2026 (his answers: Record's forms in the language of Shop's This device): AN ORDER'S CARD (.odecide) KEEPS A FIELD OR A DROPDOWN AS A ROW OF A SETTINGS LIST, its name at the left and the
+     control at the right; the rows that follow one another share one list, and anything else between them ends it. Record's forms draw Ambient's field (makerAmb). */
   function makerRowMode(parent){ return !!(parent&&parent.closest&&parent.closest('section.maker-input,#makerInputs,.odecide')); }   /* Stock count's are drawn in the box, then moved into its form */
   function makerList(parent){
     var last=parent.lastElementChild;
@@ -2782,23 +2867,37 @@ export const OWNER_JS = `
     var list=el('div','salt-settings maker-list'); parent.appendChild(list); return list;
   }
   function makerRow(parent,words,control){
+    if(makerAmb(parent)){
+      var wrap=el(control&&(control.tagName==='SELECT'||control.tagName==='INPUT')?'label':'div','amb-field mrow');
+      wrap.appendChild(el('span','amb-field__label',words));
+      if(control) wrap.appendChild(control.tagName==='SELECT'?sSelect(control):control);
+      parent.appendChild(wrap); return wrap;
+    }
     var row=el('label','salt-settings__row mrow'), name=el('span','salt-settings__label',words);
     row.appendChild(name); if(control) row.appendChild(control); makerList(parent).appendChild(row); return row;
   }
   function makerField(parent, label, type, value, step){
-    var L=labOf(label), rowed=makerRowMode(parent), wrap=el('label',rowed?'salt-settings__row mrow':'maker-field'), title=el('span',rowed?'salt-settings__label':'lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
+    var L=labOf(label);
+    if(makerAmb(parent)){
+      var af=el('label','amb-field'), at=el('span','amb-field__label',L[0]), ai=actOn(el('input','amb-input'),L[1],L[2]);
+      if(L[3]){ at.appendChild(document.createTextNode(' ')); at.appendChild(bookChip(L[3])); }   /* a field about a book ends in its chip: [words, act, key, book] */
+      ai.type=type; ai.value=value==null?'':String(value);
+      if(type==='number'){ ai.step=step||'0.01'; ai.min='0'; ai.inputMode='decimal'; }
+      af.appendChild(at); af.appendChild(ai); parent.appendChild(af); return ai;
+    }
+    var rowed=makerRowMode(parent), wrap=el('label',rowed?'salt-settings__row mrow':'maker-field'), title=el('span',rowed?'salt-settings__label':'lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
     if(L[3]){ title.appendChild(document.createTextNode(' ')); title.appendChild(productTag(L[3])); }   /* a field about a book ends in its typed tag: [words, act, key, book] */
     input.type=type; input.value=value==null?'':String(value);
     if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; input.classList.add('salt-field__input--mono'); }   /* a figure in mono, set right (25 Oct 2026) */
     if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');   /* a short field lies beside another on a portrait tablet (the page's CSS, 768 to 859px) */
     wrap.appendChild(title); wrap.appendChild(input); (rowed?makerList(parent):parent).appendChild(wrap); return input;
   }
-  /* 27 Oct 2026, his word: units turn on a wheel of the sizes (a select, which an iPhone draws as a wheel), from a quarter of a unit to 25 in quarters, then whole
-     units to 200; a figure off the wheel (an older row's) is put on it when set. On a laptop the mouse wheel steps a wheel or a date while the pointer is over it */
+  /* 27 Oct 2026, his word: units turn on a wheel of the sizes, from a quarter of a unit to 25 in quarters, then whole units to 200; a figure off the wheel (an older
+     row's) is put on it when set. 16 Nov 2026 (Ambient 0.7.2): the wheel is the stepper over values, the sizes its list (data-amb-values), the minus and plus walking it. */
   function makerUnitSteps(from){ var a=[], q; if(from===0) a.push(0); for(q=1;q<=100;q++) a.push(q/4); for(q=26;q<=200;q++) a.push(q); return a; }
   function makerWheelSet(s,v){
     var t=v===''||v==null||!(+v>=0)?'':String(+v);
-    if(t&&!Array.from(s.options).some(function(o){ return o.value===t; })){ var o=el('option',null,t); o.value=t; s.insertBefore(o,Array.from(s.options).find(function(x){ return +x.value>+t; })||null); }
+    if(t){ var list=String(s.getAttribute('data-amb-values')||'').split(' ').filter(Boolean); if(list.indexOf(t)<0){ list.push(t); list.sort(function(a,b){ return +a-+b; }); s.setAttribute('data-amb-values',list.join(' ')); s.max=String(Math.max(+s.max||0,+t)); } }
     s.value=t;
   }
   function makerHoverStep(ctl,step){
@@ -2808,10 +2907,12 @@ export const OWNER_JS = `
     },{passive:false});
   }
   function makerWheel(parent,label,value,from){
-    var L=labOf(label), s=actOn(el('select','fld salt-field__input salt-field__select salt-field__input--mono mwheel'),L[1],L[2]);
-    makerUnitSteps(from).forEach(function(q){ var o=el('option',null,String(q)); o.value=String(q); s.appendChild(o); });
-    makerWheelSet(s,value); makerRow(parent,L[0],s);
-    makerHoverStep(s,function(d){ var i=s.selectedIndex+d; if(i>=0&&i<s.options.length) s.selectedIndex=i; });
+    var L=labOf(label), vals=makerUnitSteps(from), s=actOn(el('input','amb-input'),L[1],L[2]), id='mwheel'+(++tileSeq), wrap=el('div','amb-field mrow'), lab=el('label','amb-field__label',L[0]), st=el('div','amb-stepper');
+    lab.setAttribute('for',id); s.id=id; s.type='number'; s.setAttribute('inputmode','decimal'); s.step='any'; s.min=String(vals[0]); s.max=String(vals[vals.length-1]); s.setAttribute('data-amb-values',vals.join(' '));
+    st.appendChild(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="-1" aria-label="'+esch(L[0])+', one size smaller">'+amb.glyph('minus')+'</button>'));
+    st.appendChild(s);
+    st.appendChild(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="1" aria-label="'+esch(L[0])+', one size larger">'+amb.glyph('plus')+'</button>'));
+    wrap.appendChild(lab); wrap.appendChild(st); makerWheelSet(s,value); parent.appendChild(wrap);
     return s;
   }
   function makerDayStep(input){
@@ -2970,7 +3071,7 @@ export const OWNER_JS = `
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
-      var L=labOf(label), select=actOn(el('select','fld salt-field__input salt-field__select'),L[1],L[2]);
+      var L=labOf(label), select=actOn(el('select'),L[1],L[2]);
       items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
       if(makerRowMode(root)){ makerRow(root,L[0],select); return select; }
       var wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]);
@@ -2988,16 +3089,17 @@ export const OWNER_JS = `
     /* 25 Oct 2026 (Record redesign P6): a reward held or an offset offered is Needs you's card, its kind, the code, one short pill (its full words spoken)
        and its figure; a refusal stands under the code and the card grows to hold it */
     var listCard=function(cls,kind,code,fig){
-      var c=el('article','salt-action salt-action--soon ncard '+cls), body=el('div','salt-action__body'), go=el('div','salt-action__go');
-      c.appendChild(el('span','salt-action__kind nkind',kind));
-      var who=el('span','salt-action__title'); who.appendChild(whoTag(el('span','need-who need-who--code',code),code)); body.appendChild(who);
-      c.appendChild(body); c.appendChild(go); c.appendChild(el('span','salt-action__money salt-action__money--lg nfig',fig));
+      /* 16 Nov 2026 (Ambient): the card is a task, its kind, the code, the figure and its one small pill */
+      var c=el('article','amb-task ncard '+cls), head=el('div','amb-task__head'), title=el('h3','amb-task__title'), body=el('div','amb-task__text'), figs=el('div','amb-task__figures'), go=el('div','amb-task__acts');
+      head.appendChild(el('span','amb-task__kind nkind',kind)); title.appendChild(whoTag(el('span','need-who need-who--code',code),code));
+      figs.appendChild(amb.node(amb.stat(cls==='maker-reward'?'Held':'Offset',fig))); figs.firstChild.classList.add('nfig'); go.setAttribute('data-amb','');
+      c.appendChild(head); c.appendChild(title); c.appendChild(body); c.appendChild(figs); c.appendChild(go);
       c._body=body; c._go=go; return c;
     };
-    var cardPill=function(b,said){ b.classList.remove('btn','salt-pill--md'); b.classList.add('salt-pill--sm','nbtn'); if(said) b.setAttribute('aria-label',said); return b; };
+    var cardPill=function(b,said){ b.classList.add('amb-pill--sm','nbtn'); if(said) b.setAttribute('aria-label',said); return b; };
     var partyItems=parties.map(function(code){return {value:code,label:code};});
     var productItems=books.map(function(item){return bookItem(item.product);});
-    var loan=makerForm('entry');loan.appendChild(el('h3',null,'Loan'));
+    var loan=makerForm('entry');loan.appendChild(el('h3','amb-section','Loan'));
     loan.appendChild(el('p','msg','Cash or goods lent or borrowed.'));
     parent.appendChild(loan);
     var loanForm=makerTilesIn(loan,['Loan of','record.loan.form'],[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]);
@@ -3015,7 +3117,7 @@ export const OWNER_JS = `
       try{await makerSecond(send,'/all/maker/inputs/loan',body,'loan');loanStatus.textContent='Sent. It waits under Approve.';loadMaker();}
       catch(error){refusal(loanStatus,error);}
     },true);
-    var gift=makerForm('entry');gift.appendChild(el('h3',null,'Gift'));
+    var gift=makerForm('entry');gift.appendChild(el('h3','amb-section','Gift'));
     gift.appendChild(el('p','msg','A gift leaves stock at cost.'));
     parent.appendChild(gift);
     var giftParty=addSelect(gift,['Who','record.gift.party'],partyItems), giftProduct=makerTilesIn(gift,['Book','record.gift.book'],productItems);
@@ -3029,7 +3131,7 @@ export const OWNER_JS = `
       try{await makerSecond(send,'/all/maker/inputs/gift',body,'gift');giftStatus.textContent='Sent. It waits under Approve.';loadMaker();}
       catch(error){refusal(giftStatus,error);}
     },true);
-    var repay=makerForm('entry');repay.appendChild(el('h3',null,'Repayment'));
+    var repay=makerForm('entry');repay.appendChild(el('h3','amb-section','Repayment'));
     repay.appendChild(el('p','msg','Part or all of a loan, paid back.'));
     parent.appendChild(repay);
     var loanItems=(catalog.loans||[]).map(function(item){
@@ -3038,10 +3140,10 @@ export const OWNER_JS = `
     var repayLoan=addSelect(repay,['Which loan','record.repay.loan'],loanItems), repayDate=makerField(repay,['Date','record.repay.date'],'date',today),
       repayAmount=makerField(repay,['Amount','record.repay.amount'],'number','1'), repayStatus=makerStatus(repay);
     /* 25 Oct 2026 (Record redesign P6): what is left on the loan chosen, under the choice; 27 Oct 2026: a row of the form's list, its figure the row's value */
-    var repayLeft=el('div','salt-settings__row repay-left'); repayLoan.closest('label').after(repayLeft);
+    var repayLeft=el('p','amb-field__hint repay-left'); repayLoan.closest('label').after(repayLeft);
     var drawLeft=function(){ repayLeft.textContent=''; var item=(catalog.loans||[]).find(function(x){return x.rid===repayLoan.value;}); repayLeft.hidden=!item; if(!item) return;
-      repayLeft.appendChild(el('span','salt-settings__label','Left to repay'));
-      repayLeft.appendChild(el('span','salt-settings__value',item.form==='cash'?rm(item.remaining):units(item.remaining))); };
+      repayLeft.appendChild(el('span','repay-left__label','Left to repay '));
+      repayLeft.appendChild(el('strong','repay-left__value',item.form==='cash'?rm(item.remaining):units(item.remaining))); };
     repayLoan.addEventListener('change',drawLeft); drawLeft();
     makerButton(repay,['Send the repayment','record.repay.send'],async function(send){
       repayStatus.textContent='Sending.';
@@ -3050,7 +3152,7 @@ export const OWNER_JS = `
         repayStatus.textContent='Sent. It waits under Approve.';loadMaker();}
       catch(error){refusal(repayStatus,error);}
     },true);
-    var redeem=makerForm('entry');redeem.appendChild(el('h3',null,'Rewards'));
+    var redeem=makerForm('entry');redeem.appendChild(el('h3','amb-section','Rewards'));
     redeem.appendChild(el('p','msg','A reward settles what they owe first; if nothing is owed it is given as goods.'));
     parent.appendChild(redeem);
     var redeemDate=makerField(redeem,['Date','record.redeem.date'],'date',today), redeemStatus=makerStatus(redeem),
@@ -3082,7 +3184,7 @@ export const OWNER_JS = `
       try{var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);redeemStatus.textContent='Read.';}
       catch(error){refusal(redeemStatus,error);}
     },false);
-    var offsets=makerForm('entry');offsets.appendChild(el('h3',null,'Offsets'));
+    var offsets=makerForm('entry');offsets.appendChild(el('h3','amb-section','Offsets'));
     parent.appendChild(offsets);
     var offerDate=makerField(offsets,['Date','record.offset.date'],'date',today), offerStatus=makerStatus(offsets),
       /* two lists, never one: a customer's offset and an associate's reward offset. The Counter's answer names no kind; it offers only an associate's reward
@@ -3115,14 +3217,14 @@ export const OWNER_JS = `
       }catch(error){refusal(offerStatus,error);}
     };
     offerLoad();
-    var editor=makerForm('entry');editor.appendChild(el('h3',null,'Correct a row'));
+    var editor=makerForm('entry');editor.appendChild(el('h3','amb-section','Correct a row'));
     parent.appendChild(editor);
     /* 25 Oct 2026 (Record redesign P5, his Ask F): the row is named by its reference, who and when; the card under the choice carries its book, its units and its total */
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
       label:row.rid+' · '+row.party+' · '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
     /* no row is chosen until he picks one, so a movement never goes out against the book's first row by default */
     var editRow=addSelect(editor,['Which row','record.amend.row'],[{value:'',label:rows.length?'Choose a row':'No row to correct'}].concat(rowItems)),
-      rowCard=el('div','salt-glass-card salt-glass-card--radius-md rowcard'),
+      rowCard=el('div','amb-pane rowcard'),
       editKind=makerTilesIn(editor,['What to do','record.amend.kind'],[{value:'Correction',label:KINDW.Correction},
         {value:'Fulfilment',label:KINDW.Fulfilment},{value:'Cancellation',label:KINDW.Cancellation}]),
       editDate=makerField(editor,['On','record.amend.date'],'date',today);
@@ -3130,8 +3232,8 @@ export const OWNER_JS = `
     var drawRowCard=function(){
       rowCard.textContent=''; var row=rows.find(function(item){return item.rid===editRow.value;}); rowCard.hidden=!row; if(!row) return;
       var kind=el('span','rowcard__kind'); kind.appendChild(el('span','rowcard__rid',row.rid)); kind.appendChild(document.createTextNode(' · '+units(row.qty)+(row.direction==='BUY'?' bought':'')+' · '+(fmtWhen(row.date)||'undated')+(row.defaulted?' · defaulted':'')));
-      var who=el('span','rowcard__who'); if(row.product) who.appendChild(productTag(row.product)); who.appendChild(whoTag(el('span','rowcard__code',row.party),row.party));
-      rowCard.appendChild(kind); rowCard.appendChild(who); rowCard.appendChild(el('span','rowcard__fig',rmShort(row.total)));
+      var who=el('span','rowcard__who'); if(row.product) who.appendChild(bookChip(row.product)); who.appendChild(whoTag(el('span','rowcard__code',row.party),row.party));
+      rowCard.appendChild(kind); rowCard.appendChild(who); rowCard.appendChild(el('strong','rowcard__fig',rmShort(row.total)));
     };
     var movement=el('div','maker-fields');editor.appendChild(movement);
     var editCash=makerField(movement,['RM','record.amend.cash'],'number','0'), editUnits=makerField(movement,['Units','record.amend.units'],'number','0');
@@ -3143,12 +3245,9 @@ export const OWNER_JS = `
     /* the changes made ready, a ledger of the field and its new value (25 Oct 2026); none, and nothing is drawn */
     var drawChanges=function(){
       patchList.textContent=''; var keys=Object.keys(changes); if(!keys.length) return;
-      patchList.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Ready to send'));
-      var list=el('div','salt-ledger');
-      keys.forEach(function(k){ var v=changes[k], row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line'); row.setAttribute('data-change',k);
-        line.appendChild(el('span','salt-ledger__label',fieldWord(k))); line.appendChild(el('span','salt-ledger__value',v===null?'Cleared':v===true?'Yes':v===false?'No':String(v)));
-        row.appendChild(line); list.appendChild(row); });
-      patchList.appendChild(list);
+      var sg=sGroup('Ready to send');
+      keys.forEach(function(k){ var v=changes[k], row=sRead(fieldWord(k),v===null?'Cleared':v===true?'Yes':v===false?'No':String(v)); row.setAttribute('data-change',k); sg.list.appendChild(sLi(row)); });
+      patchList.appendChild(sg);
     };
     var editStatus=makerStatus(editor);
     var cancelPreview=el('div','maker-cancellation');cancelPreview.setAttribute('aria-live','polite');editor.appendChild(cancelPreview);
@@ -3233,19 +3332,19 @@ export const OWNER_JS = `
     var editorReady=function(){editorButton.disabled=!rows.length||!editRow.value;};
     editRow.addEventListener('change',editorReady);editorReady();
     if(!rows.length)editStatus.textContent='No row to correct.';
-    var revive=makerForm('entry');revive.appendChild(el('h3',null,'Reopen a cancelled order'));
+    var revive=makerForm('entry');revive.appendChild(el('h3','amb-section','Reopen a cancelled order'));
     revive.appendChild(el('p','msg','Reopens an order you cancelled, if nothing was paid or handed over.'));
     parent.appendChild(revive);
     var revivable=(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);});
     /* 25 Oct 2026 (Record redesign P5): the order named by its reference, who and when it was cancelled, and its card under the choice */
     var reviveRow=addSelect(revive,['Which order','record.revive.row'],revivable.map(function(row){return {value:row.rid,
       label:row.rid+' · '+row.party+' · '+(row.cancelledOn?'cancelled '+fmtWhen(row.cancelledOn):fmtWhen(row.date)||'undated')};}));
-    var reviveCard=el('div','salt-glass-card salt-glass-card--radius-md rowcard'); reviveCard.setAttribute('aria-label','The order chosen'); revive.appendChild(reviveCard);
+    var reviveCard=el('div','amb-pane rowcard'); reviveCard.setAttribute('aria-label','The order chosen'); revive.appendChild(reviveCard);
     var drawReviveCard=function(){
       reviveCard.textContent=''; var row=revivable.find(function(item){return item.rid===reviveRow.value;}); reviveCard.hidden=!row; if(!row) return;
       var kind=el('span','rowcard__kind'); kind.appendChild(el('span','rowcard__rid',row.rid)); kind.appendChild(document.createTextNode(' · '+units(row.qty)+' · '+(fmtWhen(row.date)||'undated')));
-      var who=el('span','rowcard__who'); if(row.product) who.appendChild(productTag(row.product)); who.appendChild(whoTag(el('span','rowcard__code',row.party),row.party));
-      reviveCard.appendChild(kind); reviveCard.appendChild(who); reviveCard.appendChild(el('span','rowcard__fig',rmShort(row.total)));
+      var who=el('span','rowcard__who'); if(row.product) who.appendChild(bookChip(row.product)); who.appendChild(whoTag(el('span','rowcard__code',row.party),row.party));
+      reviveCard.appendChild(kind); reviveCard.appendChild(who); reviveCard.appendChild(el('strong','rowcard__fig',rmShort(row.total)));
     };
     reviveRow.addEventListener('change',drawReviveCard); drawReviveCard();
     var reviveDate=makerField(revive,['On','record.revive.date'],'date',today), reviveStatus=makerStatus(revive);
@@ -3258,7 +3357,7 @@ export const OWNER_JS = `
     },true);
     reviveButton.disabled=!revivable.length;
     if(!revivable.length)reviveStatus.textContent='No cancelled order can be reopened.';
-    var id=makerForm('customers');id.appendChild(el('h3',null,'New customer'));
+    var id=makerForm('customers');id.appendChild(el('h3','amb-section','New customer'));
     id.appendChild(el('p','msg','The name and place are locked on this phone before anything is sent; only a short code travels.'));
     parent.appendChild(id);
     var idKind=makerTilesIn(id,['Role','record.add-id.role'],[{value:'customer',label:'Customer'},{value:'supplier',label:'Supplier'},
@@ -3283,13 +3382,13 @@ export const OWNER_JS = `
       typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder=tlo+' to '+thi;typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       /* 11 Nov 2026, his word (always start a stranger at +30%): salt's starting % is +30% unless he chooses another; the Median Price and every other preset stay his to pick */
-      if(item.product==='salt'&&presets.some(function(p){ return String(p.value)==='0.3'; })){ select.value='0.3'; id.appendChild(el('p','salt-settings__foot ostart30','Starts at +30%.')); }
+      if(item.product==='salt'&&presets.some(function(p){ return String(p.value)==='0.3'; })){ select.value='0.3'; id.appendChild(el('p','amb-field__hint ostart30','Starts at +30%.')); }
       return {product:item.product,select:select,typed:typed,lo:tlo,hi:thi};
     });
     /* 25 Oct 2026 (Record redesign P7, his Ask J): the code they will get, worked out as Add the customer works it out, shown as the name and place are typed;
        nothing is shown until there is a code to show */
-    var codeLine=function(form,label){ var box=el('div','salt-ledger codeline'), row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line'), v=el('span','salt-ledger__value codeline__code');
-      line.appendChild(el('span','salt-ledger__label',label)); line.appendChild(v); row.appendChild(line); box.appendChild(row); box.hidden=true; form.appendChild(box);
+    var codeLine=function(form,label){ var box=sGroup(null,'codeline'), v=el('span','amb-setting__value codeline__code'), row=el('div','amb-setting');
+      row.appendChild(el('span','amb-setting__name',label)); row.appendChild(v); box.list.appendChild(sLi(row)); box.hidden=true; form.appendChild(box);
       return function(text){ v.textContent=text||''; box.hidden=!text; }; };
     var idCode=codeLine(id,'Their code');
     var drawIdCode=function(){ var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
@@ -3373,7 +3472,7 @@ export const OWNER_JS = `
       }catch(error){refusal(idStatus,error);}
       idBusy=false;
     },true);
-    var appointment=makerForm('customers');appointment.appendChild(el('h3',null,'Make an associate'));
+    var appointment=makerForm('customers');appointment.appendChild(el('h3','amb-section','Make an associate'));
     appointment.appendChild(el('p','msg','Their name and place stay as they are.'));
     parent.appendChild(appointment);
     var appointmentCustomers=(catalog.appointmentCustomers||[]).filter(function(code){return typeof code==='string';});
@@ -3395,7 +3494,7 @@ export const OWNER_JS = `
       appointmentStatus.textContent='Sent. They become an associate once you approve it.';
       loadMaker();
     },true);
-    var amend=makerForm('customers');amend.appendChild(el('h3',null,'Change a name or place'));
+    var amend=makerForm('customers');amend.appendChild(el('h3','amb-section','Change a name or place'));
     amend.appendChild(el('p','msg','The name and place are locked on this phone first. Only the short code and the rounded place travel.'));
     parent.appendChild(amend);
     var amendParty=addSelect(amend,['Who','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name','record.amend-id.name'],'text',''),
@@ -3435,7 +3534,7 @@ export const OWNER_JS = `
       }catch(error){refusal(amendStatus,error);}
       amendBusy=false;
     },true);
-    var placement=makerForm('customers');placement.appendChild(el('h3',null,'Place on the map'));
+    var placement=makerForm('customers');placement.appendChild(el('h3','amb-section','Place on the map'));
     placement.appendChild(el('p','msg','Keep the filed point, or choose a place and paste a new map link.'));
     parent.appendChild(placement);
     var placeParty=addSelect(placement,['Who','record.place.party'],partyItems),
@@ -4040,7 +4139,7 @@ export const OWNER_JS = `
   }
   function recordMenu(box,note,catalog){
     fOpen=null;
-    var back=backOrb('form','All forms'); back.id='makerFormBack'; back.setAttribute('data-formback','');
+    var back=amb.node(amb.circle('All forms','back',{'data-back':'form'})); back.id='makerFormBack'; back.setAttribute('data-formback','');
     back.setAttribute('data-in','record.entry record.customers record.pricing'); actOn(back,'record.form-back');
     box.insertBefore(back,note.nextSibling);
     var menu=el('div','formmenu'), lists={}, anchor=back, entryRows={};
@@ -4056,36 +4155,30 @@ export const OWNER_JS = `
       form.setAttribute('data-form',slug);
       /* 27 Oct 2026: A FORM'S ROW IS A SETTINGS ROW, as Shop's This device draws one: its name, the count where its read holds one, the chevron. The line saying
          what it is for moves into the form, under its heading, where a form had none of its own. */
-      var row=el('button','salt-settings__row salt-settings__row--action formrow'), mark=el('span','salt-settings__mark');
-      row.type='button'; actOn(row,'record.form',slug);
-      row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));
-      row.appendChild(el('span','salt-settings__value mfig'));
-      var go=document.createElementNS('http://www.w3.org/2000/svg','svg'); go.setAttribute('class','mgo'); go.setAttribute('viewBox','0 0 24 24'); go.setAttribute('aria-hidden','true');
-      go.setAttribute('width','16'); go.setAttribute('height','16');
-      go.setAttribute('fill','none'); go.setAttribute('stroke','currentColor'); go.setAttribute('stroke-width','2'); go.setAttribute('stroke-linecap','round'); go.setAttribute('stroke-linejoin','round');
-      var path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d','M9 6 L15 12 L9 18'); go.appendChild(path); mark.appendChild(go); row.appendChild(mark);
+      var row=sOpen(MENU_NAME[slug]||name,'','record.form',slug), li=sLi(row);
+      row.classList.add('formrow'); row.querySelector('.amb-setting__value').classList.add('mfig');
       var head=form.querySelector('h3'), said=head.nextElementSibling;
       if(FORM_WHAT[slug]&&!(said&&said.matches('p.msg'))) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);
       row.addEventListener('click', function(){ openForm(slug); });
-      if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild||lists[part].appendChild(el('div','salt-settings'))).appendChild(row);
+      if(part==='entry') entryRows[slug]=li; else (lists[part].firstChild||lists[part].appendChild(sGroup(null))).list.appendChild(li);
     });
     /* 18 Oct 2026, CLARITY PART 4: Entry's forms are grouped by how often he uses them, each group under a small eyebrow. A form not listed goes at the end of Fixing. */
     var seen={};
     ENTRY_GROUPS.forEach(function(g){
       var have=g[1].filter(function(s){ return entryRows[s]; }); if(!have.length) return;
       /* 27 Oct 2026: each group a settings list under its head */
-      var head=el('h2','salt-settings__head',g[0]), group=el('div','salt-settings'); head.setAttribute('data-group',formSlug(g[0])); lists.entry.appendChild(head); lists.entry.appendChild(group);
-      have.forEach(function(s){ seen[s]=1; group.appendChild(entryRows[s]); });
+      var group=sGroup(g[0]); group.querySelector('.amb-settings__head').setAttribute('data-group',formSlug(g[0])); lists.entry.appendChild(group);
+      have.forEach(function(s){ seen[s]=1; group.list.appendChild(entryRows[s]); });
     });
     /* 27 Oct 2026, his word: Correct a row and Reopen are no rows of the menu (the sale form's Other fields and a cancelled row's Reopen reach them); any other form not listed goes at the end */
     var OFF_MENU={'correct-a-row':1,'reopen-a-cancelled-order':1};
-    Object.keys(entryRows).forEach(function(s){ if(OFF_MENU[s]){ entryRows[s].remove(); return; } if(!seen[s]) (lists.entry.lastElementChild||lists.entry.appendChild(el('div','salt-settings'))).appendChild(entryRows[s]); });
+    Object.keys(entryRows).forEach(function(s){ if(OFF_MENU[s]){ entryRows[s].remove(); return; } if(!seen[s]) (lists.entry.lastElementChild||lists.entry.appendChild(sGroup(null))).list.appendChild(entryRows[s]); });
     /* 25 Oct 2026 (Record redesign P8, his Ask G): Pricing in his order, Printed sizes then Desk reminders since Their % and Partner left (26 Oct); a form not named keeps its place after them */
-    PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row) row.parentNode.insertBefore(row,row.parentNode.firstChild); });
+    PRICING_ORDER.slice().reverse().forEach(function(s){ var row=lists.pricing.querySelector('[data-key="'+s+'"]'); if(row){ var li=row.closest('li'); li.parentNode.insertBefore(li,li.parentNode.firstChild); } });
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
        them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
-    var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane salt-pane');
-    grid.id='makerFormGrid'; pane.appendChild(el('p','rnone recnone','Choose a form to open it here.'));
+    var grid=el('div','amb-split amb-split--panes recgrid'), list=el('div','amb-stack reclist'), pane=el('div','amb-stack recpane');
+    grid.id='makerFormGrid'; pane.appendChild(el('p','amb-prose rnone recnone','Choose a form to open it here.'));
     grid.appendChild(list); grid.appendChild(pane); box.insertBefore(grid,back.nextSibling);
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
@@ -4104,7 +4197,7 @@ export const OWNER_JS = `
     var n={};
     try{ unsentList().forEach(function(u){ var p=retainedPart(u.path); n[p]=(n[p]||0)+1; }); }catch(e){}
     [].forEach.call(document.querySelectorAll('.aparts[data-place="record"] [data-part]'),function(b){
-      var c=b.querySelector('.nktab__n'); if(c) c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):''; });
+      var c=b.querySelector('.nktab__n,.amb-segment__count'); if(c){ c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):''; if(c.classList.contains('amb-segment__count')) c.hidden=!c.textContent; } });
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -4145,20 +4238,20 @@ export const OWNER_JS = `
         pending=false; button.disabled=false;
       },true,function(){ at=null; signature=''; });
       /* the count's controls, moved into a form of their own so that Entry's menu can name it (Phase 1c) */
-      var countForm=makerForm('entry'); countForm.appendChild(el('h3',null,'Stock count'));
+      var countForm=makerForm('entry'); countForm.appendChild(el('h3','amb-section','Stock count'));
       [].slice.call(box.children,countFrom).forEach(function(n){ countForm.appendChild(n); });
       box.appendChild(countForm);
       var catalog=context.catalog||{}, tradeSection=makerForm('entry');
-      tradeSection.appendChild(el('h3',null,'Sale or purchase'));
+      tradeSection.appendChild(el('h3','amb-section','Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and delivery are entered separately.'));
       /* plan version 4, part 4b (his answer of 03 Nov 2026, "Remove it now"): A NEW SALE IS PLACED ON THEIR OWN PAGE, Order for them with Handed over and
          paid now, so with no row chosen this form records a purchase alone; a sale's row still changes here. The server's road stays, unreached, as
          recovery, as the raw queue does */
-      var newSaleNote=el('p','salt-settings__foot','A new sale is placed on their own page: open their account under Customers, then Order for them.');
+      var newSaleNote=el('p','amb-field__hint','A new sale is placed on their own page: open their account under Customers, then Order for them.');
       newSaleNote.setAttribute('data-new-sale',''); tradeSection.appendChild(newSaleNote);
       box.appendChild(tradeSection);
       var direction=makerTilesIn(tradeSection,['Type','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
-      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('input','fld salt-field__input mwho'),'record.trade.party'), whoList=el('datalist');
+      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('input','amb-input mwho'),'record.trade.party'), whoList=el('datalist');
       /* 27 Oct 2026, his word: Who is typed, the codes suggested as he types (a list the browser draws), and must be one of them */
       tradeParty.type='text'; whoList.id='makerWhoList'; tradeParty.setAttribute('list',whoList.id); tradeParty.autocomplete='off'; tradeParty.spellcheck=false;
       tradeParty.setAttribute('autocapitalize','characters'); tradeParty.placeholder='Type a code'; tradeSection.appendChild(whoList);
@@ -4171,11 +4264,11 @@ export const OWNER_JS = `
       var carriage=makerField(tradeSection,['Delivery','record.trade.delivery'],'number','0','0.01');
       var attribution=el('div','maker-trade-attribution'); tradeSection.appendChild(attribution);   /* 27 Oct 2026: in the form first, so its rows are the form's; moved before Who below */
       var tradeStream=makerTilesIn(attribution,['Associate','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'},{value:'R3',label:'Referred',aria:'They introduced the buyer'}]);
-      var tradeAssoc=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.end-customer');
+      var tradeAssoc=actOn(el('select'),'record.trade.associate'), tradeDown=actOn(el('select'),'record.trade.end-customer');
       var assocLabel=makerRow(attribution,'Which associate',tradeAssoc), downLabel=makerRow(attribution,'Their customer',tradeDown);   /* 27 Oct 2026: rows; Not named says it is optional */
       var attributionNote=el('p','msg'); attribution.appendChild(attributionNote);
       /* 25 Oct 2026 (Record redesign P4, his Ask D): the resale choice stands before Who, since it says what Who is (hidden for a resale, Buyer for an introduction) */
-      tradeSection.insertBefore(attribution,partyLabel.parentNode);
+      tradeSection.insertBefore(attribution,partyLabel);
       function fillAttribution(){
         var isSale=direction.value==='sale', stream=isSale?tradeStream.value:'', r2=stream==='R2', kept=tradeAssoc.value;
         attribution.hidden=!isSale; assocLabel.hidden=!stream; downLabel.hidden=!r2;
@@ -4201,11 +4294,11 @@ export const OWNER_JS = `
         /* 11 Oct 2026: a read never collapses a box it has shown (a tap on Send after typing blurs the field, the change
            re-reads, and a box that hid moved Send up before the finger lifted: no click). Only an answer of no cover hides it;
            a failed read keeps it, dead, with its note and a Read cover again beside it. */
-        var row=el('div','maker-cover-row'), wrap=el('label','maker-cover'), check=actOn(el('input'),acts[0]), words=el('span','maker-cover__words'), fig=el('span','maker-cover__fig'), held=el('span','maker-cover__held'),
-          retry=actOn(el('button','salt-ghost','Read again'),acts[1]), note=el('p','msg'), revision=0;
-        check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;retry.type='button';retry.hidden=true;
-        var said=el('span','maker-cover__said'); said.appendChild(words); said.appendChild(held);
-        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(said);wrap.appendChild(fig);row.appendChild(wrap);row.appendChild(retry);
+        var row=sGroup(null,'maker-cover-row'), wrap=el('label','amb-setting maker-cover'), check=actOn(el('input','amb-switch'),acts[0]), words=el('span','maker-cover__words'), fig=el('span','amb-setting__value maker-cover__fig'), held=el('span','maker-cover__held'),
+          retry=actOn(el('button','amb-pill amb-pill--quiet amb-pill--sm','Read again'),acts[1]), note=el('p','msg'), revision=0;
+        check.type='checkbox';check.setAttribute('role','switch');check.setAttribute('aria-label','Use their reward');check.setAttribute('data-reward-cover','');check.disabled=true;retry.type='button';retry.hidden=true;
+        var said=el('span','amb-setting__name maker-cover__said'); said.appendChild(words); said.appendChild(held);
+        wrap.hidden=true;wrap.appendChild(said);wrap.appendChild(fig);wrap.appendChild(check);row.list.appendChild(sLi(wrap));row.appendChild(retry);
         root.appendChild(row);root.appendChild(note);
         async function readCoverChoice(){
           var ticket=++revision;check.checked=false;check.disabled=true;retry.hidden=true;note.textContent='';fig.textContent='';held.textContent='';
@@ -4243,11 +4336,10 @@ export const OWNER_JS = `
          as the sentences were, and a loss in ember */
       var readingRows=null;
       function readingRow(label,value,flag,bad){
-        if(!readingRows||!readingRows.isConnected){ readingBox.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper reading-head','Reading')); readingRows=el('div','salt-ledger reading-rows'); readingBox.appendChild(readingRows); }
-        var row=el('div','salt-ledger__row'), line=el('div','salt-ledger__line');
+        if(!readingRows||!readingRows.isConnected){ var rg=sGroup('Reading','reading-rows'); readingBox.appendChild(rg); readingRows=rg.list; }
+        var row=sRead(label,value,bad?'reading-bad':'');
         row.setAttribute('data-reading',label);
-        line.appendChild(el('span','salt-ledger__label',label)); line.appendChild(el('span','salt-ledger__value'+(bad?' reading-bad':''),value));
-        row.appendChild(line); if(flag) row.appendChild(el('span','salt-ledger__flag',flag)); readingRows.appendChild(row); return row;
+        if(flag) row.appendChild(el('span','amb-field__hint reading-flag',flag)); readingRows.appendChild(sLi(row)); return row;
       }
       function knownParty(v){ return (catalog.parties||[]).indexOf(v)>=0; }
       /* 27 Oct 2026, his word: the price is there once who and the units are chosen: their price at that size, read off the Desk (the engine's cardAt
@@ -4313,17 +4405,17 @@ export const OWNER_JS = `
       });
       var extraBooks=el('div','maker-extra-books'), extraTrades=[], extraSeq=0;
       tradeSection.appendChild(extraBooks);
-      var tripList=el('div','salt-settings maker-trip'), tripNote=el('p','salt-settings__foot','Same buyer, same day; delivery charged once; approved in one tap.');
-      tradeSection.appendChild(tripList); tradeSection.appendChild(tripNote);
+      var tripGroup=sGroup(null,'maker-trip'), tripList=tripGroup.list, tripNote=el('p','amb-field__hint','Same buyer, same day; delivery charged once; approved in one tap.');
+      tradeSection.appendChild(tripGroup); tradeSection.appendChild(tripNote);
       /* 27 Oct 2026: a ghost in a form is a row of its list (Shop's Add point, Remove this date), its words three or four */
-      var asRow=function(b,words,list,danger){ b.className='salt-settings__row salt-settings__row--action'+(danger?' salt-settings__row--danger':''); b.textContent=''; b.appendChild(el('span','salt-settings__label',words)); list.appendChild(b); return b; };
+      var asRow=function(b,words,list,danger){ var ul=list.tagName==='UL'?list:(list._ul&&list.contains(list._ul)?list._ul:(list._ul=list.appendChild(sGroup(null)).list)); b.className='amb-action'+(danger?' amb-action--danger':''); b.textContent=words; ul.appendChild(sLi(b)); return b; };
       function extraChoices(tiles){
         tiles.fill((catalog.products||[]).filter(function(item){
           return item.product!==tradeProduct.value&&(direction.value==='sale'?item.saleReady:item.purchaseReady);
         }).map(function(item){ return bookItem(item.product); }));
       }
       asRow(makerButton(tradeSection,['Add a book','record.trade.add-book'],function(){
-        var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Another book')); extraBooks.appendChild(row);
+        var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4','amb-section','Another book')); extraBooks.appendChild(row);
         var select=makerTilesIn(row,['Book','record.trade.extra-book'],[]); extraChoices(select);
         var extra={row:row,product:select,qty:makerWheel(row,['Units','record.trade.extra-units'],1),
           total:makerField(row,['Price','record.trade.extra-total'],'number','','0.01'),
@@ -4333,11 +4425,11 @@ export const OWNER_JS = `
         extra.cover=coverChoice(row,select,extra.qty,extra.total,['record.trade.extra-cover','record.trade.extra-cover-retry']);
         asRow(makerButton(row,['Remove this book','record.trade.remove-book'],function(){
           extraTrades.splice(extraTrades.indexOf(extra),1);coverChoices.splice(coverChoices.indexOf(extra.cover),1);row.remove();
-        },false),'Remove this book',makerList(row),true);
+        },false),'Remove this book',row.appendChild(sGroup(null,'maker-remove')).list,true);
       },false),'Add a book',tripList);
       /* 27 Oct 2026, his word: the handover and its cost come after every book, then what was handed over and paid, just above the pill */
-      var tradeTail=el('div','salt-settings maker-list maker-trade-tail');   /* not maker-tail, which is the hours chart's bar */ tradeSection.appendChild(tradeTail);
-      [handover,carriage,tradeMoved,tradeCash].forEach(function(c){ var r=c.closest('.salt-settings__row'); if(r) tradeTail.appendChild(r); });
+      var tradeTail=el('div','maker-trade-tail');   /* not maker-tail, which is the hours chart's bar */ tradeSection.appendChild(tradeTail);
+      [handover,carriage,tradeMoved,tradeCash].forEach(function(c){ var r=c.closest('.amb-field')||c; tradeTail.appendChild(r); });
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
@@ -4345,7 +4437,7 @@ export const OWNER_JS = `
         tradeProduct.fill((catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return bookItem(item.product); }));
         whoList.textContent='';
         (catalog.parties||[]).forEach(function(code){ var option=el('option'); option.value=code; whoList.appendChild(option); });
-        carriage.parentNode.querySelector('.lbl,.salt-settings__label').textContent=isSale?'Delivery':'Freight';
+        carriage.parentNode.querySelector('.amb-field__label').textContent=isSale?'Delivery':'Freight';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         if(editPick) fillEditPick();   /* the row list is drawn once its picker stands */
@@ -4422,9 +4514,9 @@ export const OWNER_JS = `
          on Orders > Ledger, or an owed card on Needs you, fills the form; Record the change sends what differs as one Correction and what was handed over
          or paid since as one Fulfilment, the two kinds Correct a row sent; Cancel this sale and Reopen are its own rows; History and Undo sit under it.
          A customer's site order still changes through its order (restate), as Correct a row's did. Nothing here prices or books: the drafter does. */
-      var tradeEditing=null, editAfter=null, editPick=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.edit'), editHolder=el('div','maker-edit');
-      makerRow(editHolder,'Row',editPick); tradeSection.insertBefore(editHolder,direction.closest('.salt-settings'));
-      var editMore=el('div','salt-settings maker-list maker-edit-more'), editHist=el('div','maker-fields maker-edit-hist');
+      var tradeEditing=null, editAfter=null, editPick=actOn(el('select'),'record.trade.edit'), editHolder=el('div','maker-edit');
+      tradeSection.appendChild(editHolder); makerRow(editHolder,'Row',editPick); tradeSection.insertBefore(editHolder,direction.closest('.amb-field')||direction);
+      var editMore=el('div','maker-edit-more'), editHist=el('div','maker-fields maker-edit-hist');
       tradeSection.appendChild(editMore); tradeSection.appendChild(editHist);
       function editRows(){
         return (catalog.rows||[]).concat((catalog.revivable||[]).map(function(r){ return Object.assign({cancelledRow:true},r); }))
@@ -4449,7 +4541,7 @@ export const OWNER_JS = `
         editMore.textContent=''; editHist.textContent='';
         if(!r) return;
         if(r.cancelledRow){
-          if(r.paid>0.009||r.movedUnits>0.009) editMore.appendChild(el('p','salt-settings__foot','Cancelled after money or goods moved, so it cannot be reopened.'));
+          if(r.paid>0.009||r.movedUnits>0.009) editMore.appendChild(el('p','amb-field__hint','Cancelled after money or goods moved, so it cannot be reopened.'));
           return;
         }
         asRow(makerButton(tradeSection,['Other fields','record.trade.other'],function(){
@@ -4542,23 +4634,21 @@ export const OWNER_JS = `
       /* 26 Oct 2026 (Salt Admin Customers, P3; his yes to Ask A): Their % and Make partner left Record for the customer's own card on Customers */
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');
-      houseSection.appendChild(el('h3',null,'Printed sizes'));
+      houseSection.appendChild(el('h3','amb-section','Printed sizes'));
       houseSection.appendChild(el('p','msg','Choose the sizes on the printed price list. Prices do not change.'));
       var houseBooks=(catalog.products||[]).filter(function(item){ return catalog.houseBoards&&catalog.houseBoards[item.product]&&catalog.houseBoards[item.product].sizes.length>1; });
       if(!houseBooks.length){
         houseSection.appendChild(el('p','msg','No book has sizes to choose between.'));
       }else{
-        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return bookItem(item.product); })), houseBoxes=el('fieldset','salt-options maker-sizes'), houseGrid=el('div','salt-options__grid');
+        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return bookItem(item.product); })), houseBoxes=sGroup('Sizes to print','maker-sizes'), houseGrid=houseBoxes.list;
         /* 12 Oct 2026 (PHASE 4a): the sizes are a grid of the system's Option tiles, a size a tile, ticked while it is printed; the same ticks, acts and body as the list was */
-        houseBoxes.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);
         houseSection.appendChild(houseBoxes);
         var houseTicks=[];
         function fillHouse(){
           var board=catalog.houseBoards[houseProduct.value]; houseGrid.textContent=''; houseTicks=[];
           board.sizes.forEach(function(size){
-            var tile=el('label','salt-option'), tick=actOn(el('input','salt-option__input'),'record.house.size',size), face=el('span','salt-option__face'); tick.type='checkbox';
-            tick.checked=board.hidden.every(function(h){ return Math.abs(h-size)>=0.009; }); tick.value=String(size);
-            face.appendChild(el('span','salt-option__label',units(size))); tile.appendChild(tick); tile.appendChild(face); houseGrid.appendChild(tile); houseTicks.push(tick);
+            var trow=sSwitchRow(units(size),'record.house.size',size,board.hidden.every(function(h){ return Math.abs(h-size)>=0.009; })), tick=trow.sw;
+            tick.value=String(size); houseGrid.appendChild(sLi(trow)); houseTicks.push(tick);
           });
         }
         houseProduct.addEventListener('change',fillHouse); fillHouse();
@@ -4577,14 +4667,14 @@ export const OWNER_JS = `
       box.appendChild(houseSection);
       /* A5: the Desk's Whiteboard hush. The tips are the ones the Desk is showing; a hush moves no figure. */
       var tipSection=makerForm('pricing');
-      tipSection.appendChild(el('h3',null,'Desk reminders'));
+      tipSection.appendChild(el('h3','amb-section','Desk reminders'));
       tipSection.appendChild(el('p','msg','Hide a reminder for a while.'));
       tradeSection.parentNode.insertBefore(tipSection,tradeSection.nextSibling);
       var tips=catalog.tips||[];
       if(!tips.length){
         tipSection.appendChild(el('p','msg','The Desk is showing no reminder to hide.'));
       }else{
-        var tipId=actOn(el('select','fld salt-field__input salt-field__select'),'record.tip.tip');
+        var tipId=actOn(el('select'),'record.tip.tip');
         tips.forEach(function(tip){ var option=el('option',null,tip.title+(tip.hush===null?' (hidden for good)':tip.hush?' (hidden until '+fmtWhen(tip.hush)+')':'')); option.value=tip.id; tipId.appendChild(option); });
         makerRow(tipSection,'Reminder',tipId);   /* 27 Oct 2026: a row of a settings list */
         var tipFor=makerTilesIn(tipSection,['Hide for','record.tip.for'],[{value:'7',label:'7 days'},{value:'30',label:'30 days'},{value:'',label:'For good'}]);
@@ -6634,7 +6724,7 @@ export const OWNER_JS = `
   function hrsGroup(i){ return (i===0||i===6?[6,0]:[1,2,3,4,5]).filter(function(k){ return k!==i; }); }
   /* a quarter-hour picker, a close also offering 24:00; a time filed off the quarter hour stays a choice of its own, so Done never moves it unseen */
   function hrsPick(act,key,value,label,close){
-    var s=actOn(el('select','fld salt-field__input'),act,key), v=hrsMin(value), list=[];
+    var s=actOn(el('select'),act,key), v=hrsMin(value), list=[];
     for(var m=0;m<1440;m+=15) list.push(m);
     if(close) list.push(1440);
     if(v!==null&&v%15) list.push(v);
@@ -6642,71 +6732,64 @@ export const OWNER_JS = `
     s.value=value; s.setAttribute('aria-label',label);
     return s;
   }
-  /* a row: the name, the track (the day before's tails hatched from 00, a bar for each span to its close or to 24) and its hours */
+  /* a row: the name, a bar of the day's 24 hours (a rect a span, in hours; the day before's tail a strip from 00) and its hours in words, as Ambient's week of spans draws them */
   function hrsRow(key){
-    var a=hrsDayOf(key), prev=hrsBefore(key), tails=(prev||[]).filter(hrsLate);
-    var b=actOn(el('button','maker-day'),hrsIsDate(key)?'hours.date':'hours.day',hrsIsDate(key)?key:HRS_NAMES[key]); b.type='button';
-    b.setAttribute('aria-expanded',String(hrsEditing===key));
-    var said=hrsSaid(a);
-    if(tails.length) said+=a?', and '+hrsShort(hrsIsDate(key)?hrsShift(key,-1):(key+6)%7)+' until '+tails[tails.length-1].close:' (open from '+hrsShort(hrsIsDate(key)?hrsShift(key,-1):(key+6)%7)+' until '+tails[tails.length-1].close+')';
+    var a=hrsDayOf(key), prev=hrsBefore(key), tails=(prev||[]).filter(hrsLate), dated=hrsIsDate(key), li=el('li'), b=actOn(el('button','amb-week__day'),dated?'hours.date':'hours.day',dated?key:HRS_NAMES[key]); b.type='button';
+    b.setAttribute('aria-expanded',String(hrsEditing===key)); if(hrsEditing===key) b.setAttribute('aria-current','true');
+    var said=hrsSaid(a), from=tails.length?hrsShort(dated?hrsShift(key,-1):(key+6)%7):'', own=!a?'Closed':hrsAllDay(a)?'All day':a.map(function(s){ return s.open+' to '+s.close; }).join(', ');
+    if(tails.length) said+=a?', and '+from+' until '+tails[tails.length-1].close:' (open from '+from+' until '+tails[tails.length-1].close+')';
     b.setAttribute('aria-label',hrsShort(key)+': '+said+'. Change');
-    b.appendChild(el('span','maker-day-name',hrsShort(key)));
-    var track=el('span','maker-track'); track.setAttribute('aria-hidden','true');
-    tails.forEach(function(s){ var t=el('span','maker-tail'); t.style.left='0%'; t.style.width=hrsPct(hrsMin(s.close)); track.appendChild(t); });
-    (a||[]).forEach(function(s){ var o=hrsMin(s.open), bar=el('span','maker-bar'); bar.style.left=hrsPct(o); bar.style.width=hrsPct((hrsLate(s)?1440:hrsMin(s.close))-o); track.appendChild(bar); });
-    b.appendChild(track);
-    var times=el('span','maker-day-times'+(a?'':' off'),!a?'Closed':hrsAllDay(a)?'Open all day':a.length===1?a[0].open+' to '+a[0].close:a.length+' spans');
-    if(hrsAnyLate(a)) times.appendChild(el('sup',null,'+1'));
-    b.appendChild(times);
+    b.appendChild(el('span','amb-week__name',hrsShort(key)));
+    var bar=svgEl('svg',{'class':'amb-week__bar',viewBox:'0 0 24 1',preserveAspectRatio:'none','aria-hidden':'true'});
+    tails.forEach(function(s){ bar.appendChild(svgEl('rect',{x:'0',y:'0.3',width:String(hrsMin(s.close)/60),height:'0.4'})); });
+    (a||[]).forEach(function(s){ var o=hrsMin(s.open); bar.appendChild(svgEl('rect',{x:String(o/60),y:'0',width:String(((hrsLate(s)?1440:hrsMin(s.close))-o)/60),height:'1'})); });
+    b.appendChild(bar);
+    b.appendChild(el('span','amb-week__said'+(a?'':' off'),tails.length?'Until '+tails[tails.length-1].close+' from '+from+', then '+(a?own:'closed'):own));
     b.addEventListener('click',function(){ hrsEditing=hrsEditing===key?null:key; hrsCopy=null; hrsDraw(); hrsFocus(b.getAttribute('data-act'),b.getAttribute('data-key')); });
-    return b;
+    li.appendChild(b); return li;
   }
   /* a redraw keeps the control in hand */
   function hrsFocus(act,key){ /* a key of null finds a control with none */ var root=document.getElementById('oShop')||document.getElementById('makerSchedule'), n=root&&[].filter.call(root.querySelectorAll('[data-act]'),function(x){ return x.getAttribute('data-act')===act&&x.getAttribute('data-key')===key; })[0]; if(n&&n.focus) n.focus(); }
   function hrsDraw(){ drawMakerHours(); hrsPreview(); }
-  try{ var hrsMq=window.matchMedia&&window.matchMedia('(min-width:860px)'); if(hrsMq&&hrsMq.addEventListener) hrsMq.addEventListener('change',function(){ if(makerHours&&placeNow==='shop') hrsDraw(); }); }catch(e){}
+  /* from 960px the open day stands in the pane beside the week (Ambient's panes; his 860 became 960 on 16 Nov 2026) */
+  function hrsWide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }
+  try{ var hrsMq=window.matchMedia&&window.matchMedia('(min-width:960px)'); if(hrsMq&&hrsMq.addEventListener) hrsMq.addEventListener('change',function(){ if(makerHours&&placeNow==='shop') hrsDraw(); }); }catch(e){}
   /* 26 Oct 2026, his word (Hours "the same change" as Notice and Practice): THE OPEN DAY IS A LIST OF SETTINGS. Its name heads it; Open and Open all
      day are switches; each span is an Opens row and a Closes row, a quarter-hour picker each; then a list of what can be done to the day, Add hours,
      Same as the day before, Copy to other days (a row a day, ticked), Remove this date and Discard changes in ember; what customers would see in
-     one grey line; and Done, the one pill. Nothing is sent until Done, as before. */
+     one grey line; and Done, the one pill. Nothing is sent until Done, as before. 16 Nov 2026 (Ambient): the groups are amb-settings, the switches
+     input.amb-switch, Done the pane's amb-foot. */
   function hrsSwitch(label,act,key,on,fn){
-    var row=el('div','salt-settings__row'), lab=el('span','salt-settings__label',label), id='hrs'+(++hrsSeq);
-    lab.id=id; row.appendChild(lab);
-    var sw=actOn(el('button','salt-switch'),act,key); sw.type='button'; sw.setAttribute('role','switch'); sw.setAttribute('aria-checked',String(!!on)); sw.setAttribute('aria-labelledby',id);
-    sw.addEventListener('click',function(){ fn(); hrsDraw(); hrsFocus(act,key); }); row.appendChild(sw);
-    return row;
+    var row=sSwitchRow(label,act,key,on), sw=row.sw;
+    sw.addEventListener('click',function(){ fn(); hrsDraw(); hrsFocus(act,key); });
+    return sLi(row);
   }
   function hrsAction(list,label,act,key,fn,dis,danger){
-    var b=actOn(el('button','salt-settings__row salt-settings__row--action'+(danger?' salt-settings__row--danger':'')),act,key); b.type='button';
-    b.appendChild(el('span','salt-settings__label',label)); b.disabled=!!dis;
-    b.addEventListener('click',function(){ if(b.disabled) return; fn(); hrsDraw(); hrsFocus(act,key); }); list.appendChild(b); return b;
+    var b=sAction(label,act,key,danger); b.disabled=!!dis;
+    b.addEventListener('click',function(){ if(b.disabled) return; fn(); hrsDraw(); hrsFocus(act,key); }); list.appendChild(sLi(b)); return b;
   }
   var hrsSeq=0;
+  function hrsTimeRow(label,select){ var row=el('label','amb-setting'); row.appendChild(el('span','amb-setting__name',label)); row.appendChild(sSelect(select)); return sLi(row); }
   function hrsEdit(key){
-    var a=hrsDayOf(key), name=hrsIsDate(key)?key:HRS_NAMES[key], late=hrsAnyLate(a), box=el('div','maker-dayedit');
-    box.setAttribute('role','group'); box.setAttribute('aria-label',hrsName(key)+' hours');
-    box.appendChild(el('h3','salt-settings__head maker-dayedit-head',hrsName(key)));
-    var list=el('div','salt-settings maker-dayedit-list');
+    var a=hrsDayOf(key), name=hrsIsDate(key)?key:HRS_NAMES[key], late=hrsAnyLate(a), box=document.createDocumentFragment();
+    var g=sGroup(hrsName(key),'maker-dayedit'), list=g.list; g.setAttribute('role','group'); g.setAttribute('aria-label',hrsName(key)+' hours');
     list.appendChild(hrsSwitch('Open','hours.day-closed',name,!!a,function(){ hrsSet(key,a?null:[{open:'09:00',close:'17:00'}]); }));
     if(a){
       list.appendChild(hrsSwitch('Open all day','hours.day-allday',name,hrsAllDay(a),function(){ hrsSet(key,hrsAllDay(a)?[{open:'09:00',close:'17:00'}]:[{open:'00:00',close:'24:00'}]); }));
       if(!hrsAllDay(a)) a.forEach(function(s,j){
         var k=j?name+' '+(j+1):name, sl=hrsLate(s), n=j?' ('+(j+1)+')':'';
         var from=hrsPick('hours.day-from',k,s.open,hrsName(key)+' opens'+n,false), to=hrsPick('hours.day-to',k,s.close,hrsName(key)+' closes'+n+(sl?', next day':''),true);
-        [['Opens'+n,from,false],['Closes'+n,to,sl]].forEach(function(f){
-          var row=el('label','salt-settings__row maker-dayedit-times'); row.appendChild(el('span','salt-settings__label',f[0]));
-          if(f[2]) row.appendChild(el('span','maker-plus1','+1')); row.appendChild(f[1]); list.appendChild(row);
-        });
+        list.appendChild(hrsTimeRow('Opens'+n,from)); list.appendChild(hrsTimeRow('Closes'+n+(sl?', next day':''),to));
         [from,to].forEach(function(p){ p.addEventListener('change',function(){ var m=hrsArr(hrsDayOf(key)); m[j]={open:from.value,close:to.value}; hrsSet(key,m); hrsDraw(); hrsFocus(p.getAttribute('data-act'),k); }); });
         if(a.length>1){ var rm=hrsAction(list,'Remove these hours','hours.day-remove',k,function(){ var m=hrsArr(hrsDayOf(key)); m.splice(j,1); hrsSet(key,m); },false,true);
           rm.setAttribute('aria-label','Remove '+s.open+' to '+s.close); }
       });
     }
-    box.appendChild(list);
+    box.appendChild(g);
     /* a stretch past midnight that reaches the next day's first opening runs on as one (openParts merges it): said, never refused */
     var next=hrsAfter(key), runs=late&&next&&a.filter(hrsLate).some(function(s){ return next.some(function(n){ return hrsMin(n.open)<=hrsMin(s.close); }); });
-    if(late) box.appendChild(el('p','salt-settings__foot',runs?'Runs on into the next day’s hours: one stretch.':'Closes the next day.'));
-    var acts=el('div','salt-settings maker-dayedit-acts');
+    if(late) g.appendChild(sFoot(runs?'Runs on into the next day’s hours: one stretch.':'Closes the next day.'));
+    var ag=sGroup(null,'maker-dayedit-acts'), acts=ag.list;
     var last=a&&a[a.length-1], room=last&&!hrsLate(last)&&hrsMin(last.close)<=1380&&a.length<6;
     if(a&&!hrsAllDay(a)) hrsAction(acts,'Add hours','hours.day-add',name,function(){ var o=hrsMin(last.close)+60, m=hrsArr(a); m.push({open:hrsHm(Math.min(o,1425)),close:o+240>=1440?'24:00':hrsHm(o+240)}); hrsSet(key,m); },!room);
     if(!hrsIsDate(key)){
@@ -6715,21 +6798,17 @@ export const OWNER_JS = `
       hrsAction(acts,'Copy to other days','hours.day-copy',name,function(){ hrsCopy=hrsCopy?null:hrsGroup(key); }).setAttribute('aria-expanded',String(!!hrsCopy));
     } else hrsAction(acts,'Remove this date','hours.date-remove',name,function(){ delete hrsDraft.dates[key]; hrsEditing=null; },false,true);
     if(hrsDirty()) hrsAction(acts,'Discard changes','hours.discard',null,function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; },false,true);
-    box.appendChild(acts);
+    box.appendChild(ag);
     /* Copy to (his answer): a row a day, its group ticked at first, then Copy */
     if(hrsCopy&&!hrsIsDate(key)){
-      box.appendChild(el('h3','salt-settings__head','Copy to'));
-      var chips=el('div','salt-settings maker-copy'); chips.setAttribute('role','group'); chips.setAttribute('aria-label','Copy '+HRS_NAMES[key]+' to');
-      HRS_ORDER.forEach(function(i){ if(i===key) return; var on=hrsCopy.indexOf(i)>=0, c=actOn(el('button','salt-settings__row salt-settings__row--action maker-copy-day'),'hours.copy-day',HRS_NAMES[i]); c.type='button';
-        c.appendChild(el('span','salt-settings__label',HRS_NAMES[i])); c.setAttribute('aria-pressed',String(on));
-        var tick=el('span','salt-settings__mark'); if(on) tick.innerHTML='<svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 L10 17.5 L19 7.5"></path></svg>';
-        c.appendChild(tick);
-        c.addEventListener('click',function(){ var at=hrsCopy.indexOf(i); if(at>=0) hrsCopy.splice(at,1); else hrsCopy.push(i); drawMakerHours(); hrsFocus('hours.copy-day',HRS_NAMES[i]); }); chips.appendChild(c); });
+      var cg=sGroup('Copy to','maker-copy'), chips=cg.list; cg.setAttribute('role','group'); cg.setAttribute('aria-label','Copy '+HRS_NAMES[key]+' to');
+      HRS_ORDER.forEach(function(i){ if(i===key) return; var on=hrsCopy.indexOf(i)>=0, row=sSwitchRow(HRS_NAMES[i],'hours.copy-day',HRS_NAMES[i],on), c=row.sw;
+        c.addEventListener('click',function(){ var at=hrsCopy.indexOf(i); if(at>=0) hrsCopy.splice(at,1); else hrsCopy.push(i); drawMakerHours(); hrsFocus('hours.copy-day',HRS_NAMES[i]); }); chips.appendChild(sLi(row)); });
       hrsAction(chips,hrsCopy.length?'Copy to '+hrsCopy.length+(hrsCopy.length===1?' day':' days'):'Copy','hours.copy-apply',name,function(){ hrsCopy.forEach(function(i){ hrsDraft.days[i]=hrsArr(a); }); hrsCopy=null; },!hrsCopy.length);
-      box.appendChild(chips);
+      box.appendChild(cg);
     }
-    var pv=el('p','salt-settings__foot maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); box.appendChild(pv);
-    var done=el('div','maker-done salt-pane__foot');
+    var pv=sFoot('','maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); box.appendChild(pv);
+    var done=el('div','amb-foot');
     makerButton(done,['Done','hours.save',name],function(){
       var before=hrsSaved;
       return refs('/all/maker/hours',{schedule:hrsWeekOut()})
@@ -6766,57 +6845,54 @@ export const OWNER_JS = `
     root.textContent='';
     drawMakerNow();
     drawConfirm();
-    /* 20 Oct 2026 (his word, canvas V63, and his eight answers to Fable's design): THE WEEK CHART. A row a day, Monday first, a brass bar
-       a span on a 00 to 24 track; a close earlier than the open is the next day's (stmt/hours.js openParts), said "+1", its tail hatched at
-       the start of the next day's row. A tap opens the day. 26 Oct 2026 (his word): the week and the dates are lists of settings, a row a day,
-       the open day after its list (beside it from 860px), and Discard changes and Undo rows of their own. */
+    /* 20 Oct 2026 (his word, canvas V63, and his eight answers to Fable's design): THE WEEK CHART. A row a day, Monday first; a close earlier than the
+       open is the next day's (stmt/hours.js openParts), its tail a strip at the start of the next day's bar. A tap opens the day. 16 Nov 2026 (the move
+       to Ambient): the week is Ambient's week of spans, the dated days after Sunday in the same list, the open day a pane beside it from 960px. */
     if(!hrsDraft){ hrsDraft=hrsFromConfig(); hrsSaved=JSON.stringify(hrsWeekOut()); }
-    var pane=document.getElementById('makerDayPane'), side=wide()&&!!pane, after=[], put=function(key){ var box=hrsEdit(key); if(side) pane.appendChild(box); else after.push(box); };
+    var pane=document.getElementById('makerDayPane'), side=hrsWide()&&!!pane, after=[], put=function(key){ var box=hrsEdit(key); if(side) pane.appendChild(box); else after.push(box); };
     var flush=function(){ after.forEach(function(b){ root.appendChild(b); }); after=[]; };
     if(pane){ pane.textContent=''; }
-    root.appendChild(el('h3','salt-settings__head','Weekly hours'));
-    var week=el('div','salt-settings maker-week'), scale=el('div','maker-week-scale'), ticks=el('span');
-    week.setAttribute('role','group'); week.setAttribute('aria-label','Weekly hours'); scale.setAttribute('aria-hidden','true');
-    ['00','06','12','18','24'].forEach(function(t){ ticks.appendChild(el('span',null,t)); });
-    scale.appendChild(el('span')); scale.appendChild(ticks); scale.appendChild(el('span')); week.appendChild(scale);
-    HRS_ORDER.forEach(function(i){ week.appendChild(hrsRow(i)); if(hrsEditing===i) put(i); });
-    root.appendChild(week);
-    root.appendChild(el('p','salt-settings__foot','Tap a day to change it.'));
+    var fig=el('figure','amb-chart'), cap=el('figcaption','amb-chart__title','Weekly hours'), week=el('ol','amb-week maker-week'), keys=Object.keys(hrsDraft.dates).sort(), carry=false;
+    cap.appendChild(el('span','amb-chart__note','Tap a day to change it.')); fig.appendChild(cap);
+    week.setAttribute('aria-label','Weekly hours');
+    HRS_ORDER.forEach(function(i){ var li=hrsRow(i); week.appendChild(li); if(hrsEditing===i) put(i); if((hrsBefore(i)||[]).some(hrsLate)) carry=true; });
+    keys.forEach(function(k,n){ var li=hrsRow(k); li.classList.add('maker-date'); if(!n) li.classList.add('amb-week__dated'); week.appendChild(li); if(hrsEditing===k) put(k); if((hrsBefore(k)||[]).some(hrsLate)) carry=true; });
+    fig.appendChild(week);
+    var axis=el('ol','amb-week__axis'); axis.setAttribute('aria-hidden','true'); ['00','06','12','18','24'].forEach(function(t){ axis.appendChild(el('li',null,t)); }); fig.appendChild(axis);
+    var key=el('ul','amb-legend');
+    [['amb-week__key','Open']].concat(carry?[['amb-week__key amb-week__key--carry','Open past midnight, from the day before']]:[]).forEach(function(k){
+      var li=el('li'); li.appendChild(el('span',k[0])); li.appendChild(el('span','amb-legend__name',k[1])); key.appendChild(li); });
+    fig.appendChild(key);
+    root.appendChild(fig);
     flush();
     var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
-    var keep=el('div','salt-settings maker-keep');
+    var kg=sGroup(null,'maker-keep'), keep=kg.list;
     if(hrsDirty()&&hrsEditing===null) hrsAction(keep,'Discard changes','hours.discard',null,function(){ hrsDraft=null; hrsEditing=null; hrsCopy=null; },false,true);
-    if(hrsUndo&&Date.now()<hrsUndo.until){ var un=actOn(el('button','salt-settings__row salt-settings__row--action'),'hours.undo'); un.type='button'; un.appendChild(el('span','salt-settings__label','Undo'));
+    if(hrsUndo&&Date.now()<hrsUndo.until){ var un=sAction('Undo','hours.undo'); keep.appendChild(sLi(un));
       un.addEventListener('click',function(){ if(un.disabled) return; un.disabled=true; var back=hrsUndo.week;
         refs('/all/maker/hours',{schedule:back}).then(function(value){ makerHours=value; hrsDraft=null; hrsEditing=null; hrsUndo=null; drawMakerHours(); hoursSaid('week','Back to the hours before.'); })
           .catch(function(error){ un.disabled=false; hoursSaid('week',null,error); }); });
-      keep.appendChild(un); setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
-    if(keep.children.length) root.appendChild(keep);
+      setTimeout(function(){ if(hrsUndo&&Date.now()>=hrsUndo.until){ hrsUndo=null; drawMakerHours(); } },Math.max(0,hrsUndo.until-Date.now())+50); }
+    if(keep.children.length) root.appendChild(kg);
     hrsPreviewDraw();
-    /* the dated days (his answer): a holiday closed or a special day's hours, today to 90 days ahead, standing in for their weekday whole */
-    root.appendChild(el('h3','salt-settings__head','Dates'));
-    var dated=el('div','salt-settings maker-week maker-dates'), keys=Object.keys(hrsDraft.dates).sort();
-    dated.setAttribute('role','group'); dated.setAttribute('aria-label','Dates');
-    if(!keys.length){ var none=el('div','salt-settings__row salt-settings__row--muted'); none.appendChild(el('span','salt-settings__label','None')); dated.appendChild(none); }
-    keys.forEach(function(k){ dated.appendChild(hrsRow(k)); if(hrsEditing===k) put(k); });
-    var add=actOn(el('button','salt-settings__row salt-settings__row--action'),'hours.date-add'); add.type='button'; add.appendChild(el('span','salt-settings__label',hrsAdding?'Not now':'Add a date'));
+    /* the dated days (his answer): a holiday closed or a special day's hours, today to 90 days ahead, standing in for their weekday whole; they stand in the week above */
+    var dg=sGroup('Dates','maker-dates'), dated=dg.list;
+    if(!keys.length) dated.appendChild(sLi(sRead('None')));
+    var add=sAction(hrsAdding?'Not now':'Add a date','hours.date-add'); dated.appendChild(sLi(add));
     add.setAttribute('aria-expanded',String(hrsAdding));
     add.addEventListener('click',function(){ hrsAdding=!hrsAdding; drawMakerHours(); hrsFocus(hrsAdding?'hours.date-pick':'hours.date-add',null); });
-    dated.appendChild(add);
     if(hrsAdding){
-      var today=new Date(Date.now()+8*3600000).toISOString().slice(0,10), prow=el('label','salt-settings__row'), pick=actOn(el('input','fld salt-field__input'),'hours.date-pick');
+      var today=new Date(Date.now()+8*3600000).toISOString().slice(0,10), prow=el('label','amb-setting'), pick=actOn(el('input','amb-input'),'hours.date-pick');
       pick.type='date'; pick.min=today; pick.max=hrsShift(today,90); pick.value=hrsShift(today,1); pick.setAttribute('aria-label','The date');
-      prow.appendChild(el('span','salt-settings__label','Date')); prow.appendChild(pick); dated.appendChild(prow);
-      var put2=actOn(el('button','salt-settings__row salt-settings__row--action'),'hours.date-new'); put2.type='button'; put2.appendChild(el('span','salt-settings__label','Add this date'));
+      prow.appendChild(el('span','amb-setting__name','Date')); prow.appendChild(pick); dated.appendChild(sLi(prow));
+      var put2=sAction('Add this date','hours.date-new'); dated.appendChild(sLi(put2));
       put2.addEventListener('click',function(){ var v=pick.value; if(!v||v<today||v>hrsShift(today,90)){ hoursSaid('week','Choose a date from today to 90 days ahead.'); return; }
         if(!Object.prototype.hasOwnProperty.call(hrsDraft.dates,v)) hrsDraft.dates[v]=null; hrsEditing=v; hrsAdding=false; hrsDraw(); hrsFocus('hours.date',v); });
-      dated.appendChild(put2);
     }
-    root.appendChild(dated);
-    root.appendChild(el('p','salt-settings__foot','A date stands in for its weekday.'));
+    dg.appendChild(sFoot('A date stands in for its weekday.'));
+    root.appendChild(dg);
     flush();
-    if(pane&&!pane.children.length){ pane.appendChild(el('h3','salt-settings__head','No day open'));
-      var nr=el('div','salt-settings'), nrow=el('div','salt-settings__row salt-settings__row--muted'); nrow.appendChild(el('span','salt-settings__label','Tap a day or a date.')); nr.appendChild(nrow); pane.appendChild(nr); }
+    if(pane&&!pane.children.length){ var ng=sGroup('No day open'); ng.list.appendChild(sLi(sRead('Tap a day or a date.'))); pane.appendChild(ng); }
   }
   /* 25 Oct 2026 (canvas Salt Admin Shop, his yes): FOR NOW, first on Hours, where the bar's hours chip lands. The state is the title (Open until 22:00,
      Paused until 14:00, Closed, opens 09:00), one line under it, and one pill, Hold the shop (Change while his override stands), beside a Weekly hours
@@ -6827,9 +6903,9 @@ export const OWNER_JS = `
      the weekly hours at once, as Weekly hours did. Bodies as before. */
   var hrsHold=false;
   function hrsSeg(act,items,value,label){
-    var s=el('div','salt-segment salt-segment--tight ahold-seg'); s.setAttribute('role','radiogroup'); s.setAttribute('aria-label',label); s.style.setProperty('--n',String(items.length));
-    var pick=function(v){ s.value=v; [].forEach.call(s.children,function(b,i){ var on=b.getAttribute('data-key')===v; b.setAttribute('aria-checked',String(on)); if(on) s.style.setProperty('--i',String(i)); }); };
-    items.forEach(function(it){ var b=actOn(el('button','salt-segment__opt',it.label),act,it.value); b.type='button'; b.setAttribute('role','radio');
+    var s=el('div','amb-segment ahold-seg'); s.setAttribute('role','group'); s.setAttribute('aria-label',label);
+    var pick=function(v){ s.value=v; [].forEach.call(s.children,function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-key')===v)); }); };
+    items.forEach(function(it){ var b=actOn(el('button','amb-segment__opt',it.label),act,it.value); b.type='button'; b.value=it.value;
       b.addEventListener('click',function(){ pick(it.value); s.dispatchEvent(new Event('change')); }); s.appendChild(b); });
     pick(value); return s;
   }
@@ -6838,39 +6914,37 @@ export const OWNER_JS = `
     var st=makerHours.status||{}, man=makerHours.config&&makerHours.config.manual, held=!!man&&st.source==='manual';
     var at=st.open?st.nextChange:st.nextOpen, w=at&&!(Date.parse(at)<=Date.now())?barWhen(at):'';
     box.textContent='';
-    box.appendChild(el('h3','salt-settings__head','Now'));
-    var list=el('div','salt-settings anow-list'), first=el('div','salt-settings__row');
-    var title=el('span','salt-settings__label anow-title', st.open?'Open'+(w?' until '+w:''):held?'Paused'+(w?' until '+w:''):'Closed'+(w?', opens '+w:''));
+    var g=sGroup('Now','anow-list'), list=g.list;
+    var first=el('div','amb-setting');
+    var title=el('span','amb-setting__name anow-title', st.open?'Open'+(w?' until '+w:''):held?'Paused'+(w?' until '+w:''):'Closed'+(w?', opens '+w:''));
     title.setAttribute('data-now', st.open?'open':held?'paused':'closed'); first.appendChild(title);
-    first.appendChild(el('span','salt-settings__value anow-src', held?'Held by you':st.source==='default'?'No weekly hours':'Weekly hours'));
-    list.appendChild(first);
-    var conf=el('div','salt-settings__row'); conf.id='makerConfirm'; list.appendChild(conf);
-    var on=held||hrsHold, hr=el('div','salt-settings__row'), hl=el('span','salt-settings__label','Hold the shop'); hl.id='makerHoldH'; hr.appendChild(hl);
-    var sw=actOn(el('button','salt-switch'),'hours.hold'); sw.type='button'; sw.setAttribute('role','switch'); sw.setAttribute('aria-checked',String(on));
-    sw.setAttribute('aria-labelledby','makerHoldH'); sw.setAttribute('aria-controls','makerHold'); hr.appendChild(sw); list.appendChild(hr);
+    first.appendChild(el('span','amb-setting__value anow-src', held?'Held by you':st.source==='default'?'No weekly hours':'Weekly hours'));
+    list.appendChild(sLi(first));
+    var conf=el('div','amb-setting'); conf.id='makerConfirm'; list.appendChild(sLi(conf));
+    var on=held||hrsHold, hrow=sSwitchRow('Hold the shop','hours.hold',null,on), sw=hrow.sw; sw.id='makerHoldSw';
+    if(on) sw.setAttribute('aria-controls','makerHold'); list.appendChild(sLi(hrow));
     sw.addEventListener('click',function(){
       if(sw.disabled) return;
-      if(!on){ hrsHold=true; drawMakerNow(); drawConfirm(); var f=document.querySelector('[data-act="hours.override-state"][aria-checked="true"]'); if(f&&f.focus) f.focus(); return; }
-      if(!held){ hrsHold=false; drawMakerNow(); drawConfirm(); var g=document.querySelector('[data-act="hours.hold"]'); if(g&&g.focus) g.focus(); return; }
+      if(!on){ hrsHold=true; drawMakerNow(); drawConfirm(); var f=document.querySelector('[data-act="hours.override-state"][aria-pressed="true"]'); if(f&&f.focus) f.focus(); return; }
+      if(!held){ hrsHold=false; drawMakerNow(); drawConfirm(); var g2=document.querySelector('[data-act="hours.hold"]'); if(g2&&g2.focus) g2.focus(); return; }
       sw.disabled=true;
       refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; hrsHold=false; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
-        .catch(function(error){ sw.disabled=false; hoursSaid('now',null,error); });
+        .catch(function(error){ sw.disabled=false; sw.checked=on; hoursSaid('now',null,error); });
     });
-    var form=el('div','anow-hold'); form.id='makerHold'; form.hidden=!on;
+    var until=null, kind=null;
     if(on){
-      var kind=hrsSeg('hours.override-state',[{value:'false',label:'Closed'},{value:'true',label:'Open'}],man?String(!!man.open):'false','Hold the shop as');
-      var kr=el('div','salt-settings__row'); kr.appendChild(el('span','salt-settings__label','Hold as')); kr.appendChild(kind); form.appendChild(kr);
-      var ur=el('label','salt-settings__row'), uw=el('span','salt-settings__label',kind.value==='true'?'Open until':'Closed until'), until=actOn(el('input','fld salt-field__input'),'hours.override-until');
-      until.type='datetime-local'; until.value=klInputValue(man&&man.until); ur.appendChild(uw); ur.appendChild(until); form.appendChild(ur);
+      kind=hrsSeg('hours.override-state',[{value:'false',label:'Closed'},{value:'true',label:'Open'}],man?String(!!man.open):'false','Hold the shop as');
+      var kr=el('div','amb-setting'); kr.id='makerHold'; kr.appendChild(el('span','amb-setting__name','Hold as')); kr.appendChild(kind); list.appendChild(sLi(kr));
+      var ur=el('label','amb-setting'), uw=el('span','amb-setting__name',kind.value==='true'?'Open until':'Closed until'); until=actOn(el('input','amb-input'),'hours.override-until');
+      until.type='datetime-local'; until.value=klInputValue(man&&man.until); ur.appendChild(uw); ur.appendChild(until); list.appendChild(sLi(ur));
       kind.addEventListener('change',function(){ uw.textContent=kind.value==='true'?'Open until':'Closed until'; });
     }
-    list.appendChild(form);
-    box.appendChild(list);
-    var sub=el('p','salt-settings__foot', on&&!held?'Kuala Lumpur time; customers can still order.':held?'Your weekly hours take over'+(w?' at '+w:'')+'.':st.open?'Customers can order and you answer now.'
+    box.appendChild(g);
+    var sub=sFoot(on&&!held?'Kuala Lumpur time; customers can still order.':held?'Your weekly hours take over'+(w?' at '+w:'')+'.':st.open?'Customers can order and you answer now.'
       :st.source==='default'?'No weekly hours set; customers can still order.':'Customers can still order; you answer when you open.');
-    sub.id='makerHoursStatus'; box.appendChild(sub);
+    sub.id='makerHoursStatus'; g.appendChild(sub);
     if(on){
-      var go=el('div','anow-set salt-pane__foot');
+      var go=el('div','anow-set'); go.setAttribute('data-amb','');
       makerButton(go,['Set it','hours.override-set'],function(){
         var when=Date.parse(until.value+'+08:00');
         if(!Number.isFinite(when)){ hoursSaid('now','Choose an end time.'); return; }
@@ -6883,18 +6957,15 @@ export const OWNER_JS = `
   }
   /* Salt Admin A to C (20 Oct 2026), P3: THE CONFIRM TIME, as the hourly cron filed it: the figure and what customers read, or how far it is
      from the ten it needs, or that none is filed yet. Old (over three hours) is said, since customers then see nothing. */
-  /* 25 Oct 2026 (canvas Salt Admin Shop): the band became the glance, the system's one-line KPI tiles, Points, Dates and Confirm time, and the
-     confirm time's state in one line under them; the figure keeps data-confirm */
-  /* 26 Oct 2026 (his word): the glance's tiles went; the confirm time is a row of Now, its figure and, for a reader, what it means */
   function drawConfirm(){
     var row=document.getElementById('makerConfirm'); if(!row) return;
     row.textContent='';
     var c=makerHours&&makerHours.confirm, u=confirmUsual(), at=c&&Date.parse(c.at), stale=u==null&&c&&at>0&&Date.now()-at>3*3600e3;
-    row.appendChild(el('span','salt-settings__label','Confirm time'));
-    var fig=el('span','salt-settings__value shconfirm',u!=null?u+' min':stale?'Old':c&&at>0?'Not yet':'None');
+    row.appendChild(el('span','amb-setting__name','Confirm time'));
+    var fig=el('span','amb-setting__value shconfirm',u!=null?u+' min':stale?'Old':c&&at>0?'Not yet':'None');
     fig.setAttribute('data-glance','confirm'); if(u!=null) fig.setAttribute('data-confirm',String(u));
     row.appendChild(fig);
-    row.appendChild(el('span','sr', u!=null?c.n+' measured; customers read it while you are open.'
+    row.appendChild(el('span','amb-vh', u!=null?c.n+' measured; customers read it while you are open.'
       :stale?'Filed '+fmtWhen(c.at)+'; customers see none until it runs again.'
       :c&&at>0?(c.n!=null?c.n+' measured; ':'')+'customers see a figure from 10.'
       :'Not measured yet; the hourly measure files it.'));
@@ -6947,44 +7018,42 @@ export const OWNER_JS = `
     if(!root||!makerPoints) return;
     root.textContent='';
     var list=makerPointsDraft||((makerPoints.points&&makerPoints.points.list)||[]).slice();
-    var box=el('div','salt-settings apoints');
-    if(!list.length){ var none=el('div','salt-settings__row salt-settings__row--muted'); none.appendChild(el('span','salt-settings__label','None')); box.appendChild(none); }
+    var pg=sGroup(null,'apoints'), box=pg.list;
+    if(!list.length) box.appendChild(sLi(sRead('None')));
     list.forEach(function(p,i){
-      var row=el('div','salt-settings__row'), code=el('span','salt-settings__label apoints-code',p.code); code.setAttribute('data-point',p.code); row.appendChild(code);
-      row.appendChild(el('span','salt-settings__value apoints-place',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
-      var x=actOn(el('button','apoints-x'),'points.remove',p.code); x.type='button'; x.setAttribute('aria-label','Remove point '+p.code);
-      x.innerHTML='<svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6 L18 18 M18 6 L6 18"></path></svg>';
+      var row=el('div','amb-setting'), code=el('span','amb-setting__name apoints-code',p.code); code.setAttribute('data-point',p.code); row.appendChild(code);
+      row.appendChild(el('span','amb-setting__value apoints-place',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
+      var x=actOn(amb.node(amb.circle('Remove point '+p.code,'close')),'points.remove',p.code); x.classList.add('amb-circle--plain','apoints-x');
       x.addEventListener('click',function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); });
-      row.appendChild(x); box.appendChild(row);
+      row.appendChild(x); box.appendChild(sLi(row));
     });
-    root.appendChild(box);
-    if(status){ status.className='salt-settings__foot'; status.textContent=list.length?'Ready to collect asks which one.':'Ready to collect needs one.'; root.appendChild(status); }
-    root.appendChild(el('h3','salt-settings__head','New point'));
-    var add=el('div','salt-settings apoints-add');
-    var field=function(label,act,ph){ var r=el('label','salt-settings__row'), i=actOn(el('input','fld salt-field__input'),act); i.type='text'; i.placeholder=ph; r.appendChild(el('span','salt-settings__label',label)); r.appendChild(i); add.appendChild(r); return i; };
-    var code=field('Code','points.code','A3'), where=field('Place','points.place','Search, or paste a link');
+    root.appendChild(pg);
+    if(status){ status.className='amb-settings__foot'; status.textContent=list.length?'Ready to collect asks which one.':'Ready to collect needs one.'; root.appendChild(status); }
+    root.appendChild(el('h3','amb-section','New point'));
+    var field=function(label,act,ph){ var i=actOn(el('input','amb-input'),act); i.type='text'; i.placeholder=ph; root.appendChild(sField(label,i)); return i; };
+    var code=field('Code','points.code','A3'), where=field('Place','points.place','');
     code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false');
     /* 26 Oct 2026, his word ("type it and the relevant recommended place from OpenStreetMap appears"): three letters or more, a moment's pause,
        and up to five places stand as rows under Place, each its name and where it is; a tap (or the arrows and Enter) puts its point in
        Place and names it in the line under the list. A link or two figures are read as before. Escape or a fresh word closes the list. */
     var picked=placeAssist(where,{id:'makerPoints',act:'points',keep:true});
-    var put=actOn(el('button','salt-settings__row salt-settings__row--action'),'points.add'); put.type='button'; put.appendChild(el('span','salt-settings__label','Add point')); add.appendChild(put);
-    put.addEventListener('click',async function(){
-      if(put.disabled) return;
+    var put=el('div','apoints-act'); put.setAttribute('data-amb','');
+    var add=actOn(el('button','amb-pill amb-pill--quiet','Add point'),'points.add'); add.type='button'; put.appendChild(add); root.appendChild(put);
+    add.addEventListener('click',async function(){
+      if(add.disabled) return;
       var c=String(code.value||'').trim().toUpperCase(), place=null;
-      put.disabled=true;
-      try{ place=await pointPlace(where.value); }catch(e){ put.disabled=false; pointsSaid(null,e); return; }
-      put.disabled=false;
+      add.disabled=true;
+      try{ place=await pointPlace(where.value); }catch(e){ add.disabled=false; pointsSaid(null,e); return; }
+      add.disabled=false;
       if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
       if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
       if(list.some(function(p){ return p.code===c; })){ pointsSaid('Point '+c+' is on the list already.'); return; }
       if(list.length>=20){ pointsSaid('Twenty points at most.'); return; }
       list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
     });
-    root.appendChild(add);
     root.appendChild(picked);
-    root.appendChild(el('p','salt-settings__foot','Type a place, or paste a Google Maps, Waze or Apple Maps link.'));
-    var saveRow=el('div','apoints-save salt-pane__foot'); root.appendChild(saveRow);
+    root.appendChild(el('p','amb-settings__foot','Type a place, or paste a Google Maps, Waze or Apple Maps link.'));
+    var saveRow=el('div','apoints-act apoints-save'); saveRow.setAttribute('data-amb',''); root.appendChild(saveRow);
     makerButton(saveRow,['Save the points','points.save'],function(){
       return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
         .catch(function(error){ pointsSaid(null,error); });
@@ -6996,26 +7065,26 @@ export const OWNER_JS = `
      under the list; Escape or a fresh word closes the list. A pasted map link or two figures are read as before, by the one reader. Use my location
      puts this phone's point there the same way. Add ID, Amend ID and a filed place take it too, and the customer's spot is the same field */
   function placeAssist(where,o){
-    var found=el('div','apoints-found'); found.id=o.id+'Found'; found.setAttribute('role','listbox'); found.setAttribute('aria-label','Places found');
+    var found=el('ul','amb-settings__list apoints-found'); found.id=o.id+'Found'; found.setAttribute('role','listbox'); found.setAttribute('aria-label','Places found');
     where.setAttribute('role','combobox'); where.setAttribute('aria-autocomplete','list'); where.setAttribute('aria-expanded','false'); where.setAttribute('aria-controls',o.id+'Found');
     where.setAttribute('autocomplete','off'); where.setAttribute('spellcheck','false'); where.placeholder='Search, or paste a link';
     where.closest('label').after(found);
-    var here=actOn(el('button','salt-settings__row salt-settings__row--action apoints-here'),o.act+'.here'); here.type='button'; here.appendChild(el('span','salt-settings__label','Use my location'));
+    var here=actOn(el('button','amb-pill amb-pill--quiet amb-pill--sm apoints-here','Use my location'),o.act+'.here'); here.type='button';
     found.after(here);
-    var picked=el(o.keep?'p':'div',o.keep?'salt-settings__foot apoints-picked':'salt-settings__row salt-settings__row--muted apoints-picked'); picked.setAttribute('role','status');
+    var picked=el('p','amb-field__hint apoints-picked'); picked.setAttribute('role','status');
     if(!o.keep) here.after(picked);
     var seq=0, timer=null, hits=[], at=-1;
     var shut=function(){ found.textContent=''; hits=[]; at=-1; where.setAttribute('aria-expanded','false'); where.removeAttribute('aria-activedescendant'); };
     var choose=function(i){ var h=hits[i]; if(!h) return; where.value=h.lat.toFixed(5)+', '+h.lng.toFixed(5); picked.textContent=h.name+(h.where?', '+h.where:''); shut(); where.focus(); };
-    var mark=function(i){ at=i; [].forEach.call(found.children,function(r,j){ r.setAttribute('aria-selected',String(j===i)); }); if(i>=0&&found.children[i]) where.setAttribute('aria-activedescendant',found.children[i].id); };
+    var mark=function(i){ at=i; [].forEach.call(found.querySelectorAll('button'),function(r,j){ r.setAttribute('aria-selected',String(j===i)); }); if(i>=0&&found.querySelectorAll('button')[i]) where.setAttribute('aria-activedescendant',found.querySelectorAll('button')[i].id); };
     var draw=function(list,note){
       found.textContent=''; hits=list||[]; at=-1;
       hits.forEach(function(h,i){
-        var r=actOn(el('button','salt-settings__row salt-settings__row--action apoints-hit'),o.act+'.found',String(i)); r.type='button'; r.tabIndex=-1; r.id=o.id+'Hit'+i; r.setAttribute('role','option'); r.setAttribute('aria-selected','false');
-        r.appendChild(el('span','salt-settings__label',h.name)); if(h.where) r.appendChild(el('span','salt-settings__value',h.where));
-        r.addEventListener('mousedown',function(e){ e.preventDefault(); }); r.addEventListener('click',function(){ choose(i); }); found.appendChild(r);
+        var li=el('li'), r=actOn(el('button','amb-setting apoints-hit'),o.act+'.found',String(i)); r.type='button'; r.tabIndex=-1; r.id=o.id+'Hit'+i; r.setAttribute('role','option'); r.setAttribute('aria-selected','false'); li.setAttribute('role','presentation');
+        r.appendChild(el('span','amb-setting__name',h.name)); if(h.where) r.appendChild(el('span','amb-setting__value',h.where));
+        r.addEventListener('mousedown',function(e){ e.preventDefault(); }); r.addEventListener('click',function(){ choose(i); }); li.appendChild(r); found.appendChild(li);
       });
-      if(note){ var n=el('div','salt-settings__row salt-settings__row--muted'); n.appendChild(el('span','salt-settings__label',note)); found.appendChild(n); }
+      if(note){ var n=el('li'); n.setAttribute('role','presentation'); n.appendChild(sRead(note)); found.appendChild(n); }
       where.setAttribute('aria-expanded',String(!!hits.length));
     };
     where.addEventListener('input',function(){
@@ -8451,26 +8520,25 @@ export const OWNER_JS = `
   function drawMarket(){
     var box=document.getElementById('makerMarket'); if(!box) return;
     box.textContent='';
-    if(!mkt){ box.appendChild(el('p','salt-settings__foot',mktSaid||'Reading.')); return; }
+    if(!mkt){ box.appendChild(sFoot(mktSaid||'Reading.')); return; }
     var m=mkt.market, waits=mkt.marketWaiting||[];
-    if(!m){ box.appendChild(el('p','salt-settings__foot','Salt has no market move to set.')); return; }
+    if(!m){ box.appendChild(sFoot('Salt has no market move to set.')); return; }
     var swWait=waits.some(function(k){ return k.kind!=='anchor'; }), ptWait=waits.filter(function(k){ return k.kind==='anchor'; });
-    var list=el('div','salt-settings'), row=el('div','salt-settings__row'), lab=el('span','salt-settings__label','Market move'); lab.id='mktH';
-    var sw=actOn(el('button','salt-switch'),'market.switch'); sw.type='button'; sw.setAttribute('role','switch'); sw.setAttribute('aria-checked',String(!!m.on)); sw.setAttribute('aria-labelledby','mktH'); sw.disabled=swWait;
-    row.appendChild(lab); row.appendChild(sw); list.appendChild(row);
-    var today=el('div','salt-settings__row salt-settings__row--text'); today.appendChild(el('span','salt-settings__label',swWait?'Waiting under Approve.':m.why||(m.on?'On.':'Off: salt is at the plain Median Price.')));
-    today.setAttribute('data-market-today',''); list.appendChild(today);
+    var g=sGroup(null), list=g.list, srow=sSwitchRow('Market move','market.switch',null,!!m.on), sw=srow.sw; sw.disabled=swWait;
+    list.appendChild(sLi(srow));
+    var today=el('div','amb-setting'); today.appendChild(el('span','amb-setting__name',swWait?'Waiting under Approve.':m.why||(m.on?'On.':'Off: salt is at the plain Median Price.')));
+    today.setAttribute('data-market-today',''); list.appendChild(sLi(today));
     /* 13 Nov 2026 (version 3): on the days the price test runs it is said under the move, so the move is never unseen */
     var pt=mkt.test;
     if(pt&&+pt.q>0&&isFinite(+pt.rm)){
-      var tr0=el('div','salt-settings__row salt-settings__row--text'); tr0.setAttribute('data-market-test','');
-      tr0.appendChild(el('span','salt-settings__label','Price test: '+rmShort(Math.abs(+pt.rm))+(+pt.rm>=0?' up':' down')+' at '+units(pt.q)+', week '+(+pt.week)+' of '+(+pt.weeks)));
-      list.appendChild(tr0);
+      var tr0=el('div','amb-setting'); tr0.setAttribute('data-market-test','');
+      tr0.appendChild(el('span','amb-setting__name','Price test: '+rmShort(Math.abs(+pt.rm))+(+pt.rm>=0?' up':' down')+' at '+units(pt.q)+', week '+(+pt.week)+' of '+(+pt.weeks)));
+      list.appendChild(sLi(tr0));
     }
-    box.appendChild(list);
-    box.appendChild(el('p','salt-settings__foot','Salt moves within 15 points under and 20 over the Median Price, 5 a day, by what stock says.'));
+    g.appendChild(sFoot('Salt moves within 15 points under and 20 over the Median Price, 5 a day, by what stock says.'));
+    box.appendChild(g);
     sw.addEventListener('click',function(){
-      var on=!!m.on;
+      var on=!!m.on; sw.checked=on;
       ownerAsk(sw,'market:switch',{title:on?'Switch the market move off?':'Switch the market move on?', plain:true,
         say:[on?'Salt goes back to the plain Median Price at the next publish.':'It climbs from nought, 5 points a day at most.','You approve it next, under Approve.'], go:on?'Switch off':'Switch on', keep:'Not now'}).then(function(yes){
         if(!yes) return;
@@ -8478,16 +8546,17 @@ export const OWNER_JS = `
       });
     });
     /* the re-anchor form */
-    box.appendChild(el('h3','salt-settings__head','Re-anchor the Median'));
-    var form=el('div','salt-settings amform'), sizes=(mkt.marketSizes||[]).slice();
+    box.appendChild(el('h3','amb-section','Re-anchor the Median'));
+    var sizes=(mkt.marketSizes||[]).slice();
     if(mktForm.q&&sizes.indexOf(+mktForm.q)<0) sizes.push(+mktForm.q);
-    var sel=actOn(el('select','salt-field__input'),'market.size'), price=actOn(el('input','salt-field__input salt-field__input--mono'),'market.price');
+    var sel=actOn(el('select'),'market.size'), price=actOn(el('input','amb-input'),'market.price');
     sizes.forEach(function(q){ var o=el('option',null,units(q)); o.value=String(q); sel.appendChild(o); });
     sel.value=mktForm.q&&sizes.indexOf(+mktForm.q)>=0?String(+mktForm.q):(sizes.length?String(sizes[0]):'');
     price.type='number'; price.step='5'; price.min='5'; price.inputMode='numeric'; price.value=mktForm.price||'';
-    [['Size',sel],['Price (RM)',price]].forEach(function(p){ var r=el('label','salt-settings__row mrow'); r.appendChild(el('span','salt-settings__label',p[0])); r.appendChild(p[1]); form.appendChild(r); });
-    var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
-    var send=actOn(el('button','salt-pill salt-pill--md','Send'),'market.send'); send.type='button'; send.disabled=ptWait.length>0;
+    var form=el('div','amform');
+    form.appendChild(sField('Size',sSelect(sel))); form.appendChild(sField('Price (RM)',price));
+    var answer=el('p','msg anote aanswer'); answer.setAttribute('role','status');
+    var send=actOn(el('button','amb-pill','Send'),'market.send'); send.type='button'; send.disabled=ptWait.length>0;
     var keep=function(){ mktForm={q:sel.value,price:price.value}; if(mktOut){ mktOut=null; mktWhy=''; drawMarket(); } };
     sel.addEventListener('change',keep); price.addEventListener('input',keep);
     send.addEventListener('click',function(){
@@ -8498,27 +8567,25 @@ export const OWNER_JS = `
     });
     box.appendChild(form);
     if(mktOut){
-      var out=el('div','salt-settings'), why=actOn(el('input','salt-field__input'),'market.why'); why.type='text'; why.maxLength=120; why.value=mktWhy; why.setAttribute('data-one-off','');
-      out.appendChild(el('p','salt-insight',mktOut.say));
-      var wr=el('label','salt-settings__row mrow'); wr.appendChild(el('span','salt-settings__label',ONE_OFF_WORDS.reason)); wr.appendChild(why); out.appendChild(wr);
-      var go=actOn(el('button','salt-pill salt-pill--md',ONE_OFF_WORDS.go),'market.stand'); go.type='button'; go.disabled=!oneOffOk(why.value);
+      var out=el('div','amout'), why=actOn(el('input','amb-input'),'market.why'); why.type='text'; why.maxLength=120; why.value=mktWhy; why.setAttribute('data-one-off','');
+      out.appendChild(amb.node(amb.notice(mktOut.say,true)));
+      out.appendChild(sField(ONE_OFF_WORDS.reason,why));
+      var go=actOn(el('button','amb-pill',ONE_OFF_WORDS.go),'market.stand'); go.type='button'; go.disabled=!oneOffOk(why.value);
       why.addEventListener('input',function(){ mktWhy=why.value; go.disabled=!oneOffOk(why.value); });
       go.addEventListener('click',function(){ if(!oneOffOk(why.value)) return; marketSend({at:new Date().toISOString(), kind:'anchor', product:'salt', q:+sel.value, price:Number(price.value), why:why.value.trim()}, answer); });
-      box.appendChild(out); box.appendChild(go);
-    } else box.appendChild(send);
+      out.appendChild(el('div','apoints-act')).appendChild(go); box.appendChild(out);
+    } else box.appendChild(el('div','apoints-act')).appendChild(send);
     box.appendChild(answer);
     if(mktSaid) answer.textContent=mktSaid;
-    if(ptWait.length) box.appendChild(el('p','salt-settings__foot','A point waits under Approve; send another once it is decided.'));
+    if(ptWait.length) box.appendChild(sFoot('A point waits under Approve; send another once it is decided.'));
     var pts=mkt.marketPoints||[];
     if(pts.length){
-      box.appendChild(el('h3','salt-settings__head','Points you have set'));
-      var pl=el('div','salt-settings');
+      var pg=sGroup('Points you have set');
       pts.forEach(function(p){
-        var r=el('div','salt-settings__row salt-settings__row--text'); r.setAttribute('data-market-point',String(p.q));
-        r.appendChild(el('span','salt-settings__label',units(p.q)+', '+rm(p.price)+', from '+p.from+(p.outside?'. Outside the band: '+p.outside.why:'')));
-        pl.appendChild(r);
+        var r=sRead(units(p.q)+', '+rm(p.price)+', from '+p.from+(p.outside?'. Outside the band: '+p.outside.why:'')); r.setAttribute('data-market-point',String(p.q));
+        pg.list.appendChild(sLi(r));
       });
-      box.appendChild(pl);
+      box.appendChild(pg);
     }
   }
   /* ---- 13 NOV 2026, THE PRICE BAND'S VERSION 3: SHOP > CALENDAR. His marks, a name and the days it runs (Hari Raya, a school holiday), which the Desk measures against the 28 days before each. Add and Remove stand at once,
@@ -8543,38 +8610,36 @@ export const OWNER_JS = `
   function drawCalendar(){
     var box=document.getElementById('makerCalendar'); if(!box) return;
     box.textContent='';
-    if(!cal){ box.appendChild(el('p','salt-settings__foot',calSaid||'Reading.')); return; }
-    var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
-    box.appendChild(el('h3','salt-settings__head','Marks'));
-    if(!cal.length) box.appendChild(el('p','salt-settings__foot','No marks yet.'));
+    if(!cal){ box.appendChild(sFoot(calSaid||'Reading.')); return; }
+    var answer=el('p','msg anote aanswer'); answer.setAttribute('role','status');
+    if(!cal.length){ box.appendChild(el('h3','amb-section','Marks')); box.appendChild(sFoot('No marks yet.')); }
     else {
-      var list=el('div','salt-settings');
+      var g=sGroup('Marks'), list=g.list;
       cal.slice().sort(function(a,b){ return a.from<b.from?-1:a.from>b.from?1:0; }).forEach(function(m){
-        var r=el('div','salt-settings__row'), tx=el('div','salt-settings__text');
-        r.setAttribute('data-cal-mark',m.id); tx.appendChild(el('span','salt-settings__label',m.name)); tx.appendChild(el('span','salt-settings__sub',dayMon(m.from+'T04:00:00Z')+(m.to!==m.from?' to '+dayMon(m.to+'T04:00:00Z'):'')));
-        r.appendChild(tx);
-        var rm0=actOn(el('button','salt-ghost','Remove'),'calendar.remove',m.id); rm0.type='button';
+        var r=el('div','amb-setting');
+        r.setAttribute('data-cal-mark',m.id); r.appendChild(el('span','amb-setting__name',m.name)); r.appendChild(el('span','amb-setting__value',dayMon(m.from+'T04:00:00Z')+(m.to!==m.from?' to '+dayMon(m.to+'T04:00:00Z'):'')));
+        var rm0=actOn(amb.node(amb.circle('Remove '+m.name,'close')),'calendar.remove',m.id); rm0.classList.add('amb-circle--plain');
         rm0.addEventListener('click',function(){ rm0.disabled=true; calendarSend({remove:m.id},answer); });
-        r.appendChild(rm0); list.appendChild(r);
+        r.appendChild(rm0); list.appendChild(sLi(r));
       });
-      box.appendChild(list);
+      box.appendChild(g);
     }
-    box.appendChild(el('h3','salt-settings__head','Add a mark'));
-    var form=el('div','salt-settings amform');
-    var name=actOn(el('input','salt-field__input'),'calendar.name'), from=actOn(el('input','salt-field__input'),'calendar.from'), to=actOn(el('input','salt-field__input'),'calendar.to');
+    box.appendChild(el('h3','amb-section','Add a mark'));
+    var form=el('div','amform');
+    var name=actOn(el('input','amb-input'),'calendar.name'), from=actOn(el('input','amb-input'),'calendar.from'), to=actOn(el('input','amb-input'),'calendar.to');
     name.type='text'; name.maxLength=30; name.value=calForm.name; from.type='date'; from.value=calForm.from; to.type='date'; to.value=calForm.to;
-    [['Name',name],['From',from],['To',to]].forEach(function(p){ var r=el('label','salt-settings__row mrow'); r.appendChild(el('span','salt-settings__label',p[0])); r.appendChild(p[1]); form.appendChild(r); });
+    [['Name',name],['From',from],['To',to]].forEach(function(p){ form.appendChild(sField(p[0],p[1])); });
     var keep=function(){ calForm={name:name.value,from:from.value,to:to.value}; };
     [name,from,to].forEach(function(n){ n.addEventListener('input',keep); n.addEventListener('change',keep); });
-    var add=actOn(el('button','salt-pill salt-pill--md','Add'),'calendar.add'); add.type='button';
+    var add=actOn(el('button','amb-pill','Add'),'calendar.add'); add.type='button';
     add.addEventListener('click',function(){
       keep(); var f=calFault(calForm);
       if(f){ answer.textContent=f; return; }
       calendarSend({add:{name:calForm.name.trim(),from:calForm.from,to:calForm.to}},answer);
     });
-    box.appendChild(form); box.appendChild(add); box.appendChild(answer);
+    box.appendChild(form); box.appendChild(el('div','apoints-act')).appendChild(add); box.appendChild(answer);
     if(calSaid) answer.textContent=calSaid;
-    box.appendChild(el('p','salt-settings__foot','A mark stands at once. The Desk measures how much each ran above the 28 days before it.'));
+    box.appendChild(sFoot('A mark stands at once. The Desk measures how much each ran above the 28 days before it.'));
   }
   var TEST_SHOWS=['Every case','Locked, to pay','Fresh, to order'];
   function drawTest(){
@@ -8585,38 +8650,34 @@ export const OWNER_JS = `
     box.textContent='';
     /* 26 Oct 2026, his word (Practice "based on the same design language" as This device, iPad and Mac included): one Switch, Practice accounts,
        on while all three exist; turned on it makes the missing, turned off it asks once and removes all three. While any exists, a plain list:
-       each username and what it shows, the password (a tap copies it) and Open the test page while all three are open. No chips, no counts. */
-    box.appendChild(el('h2','sr','Practice accounts'));
-    var list=el('div','salt-settings'), row=el('div','salt-settings__row'), lab=el('span','salt-settings__label','Practice accounts'); lab.id='testH';
-    var b=actOn(el('button','salt-switch'),'more.test-accounts'); b.type='button'; b.setAttribute('role','switch'); b.setAttribute('aria-checked',String(on)); b.setAttribute('aria-labelledby','testH');
+       each username and what it shows, the password (a tap copies it) and Open the test page while all three are open. No chips, no counts.
+       16 Nov 2026 (Ambient): the groups are amb-settings, the switch input.amb-switch. */
+    var g=sGroup(null), srow=sSwitchRow('Practice accounts','more.test-accounts',null,on), b=srow.sw;
+    g.list.appendChild(sLi(srow)); box.appendChild(g);
     b.setAttribute('data-test-state',String(have.length)); if(on) ynTag(b,'test:remove');
-    row.appendChild(lab); row.appendChild(b); list.appendChild(row); box.appendChild(list);
-    box.appendChild(el('p','salt-settings__foot', on?'Nothing they do is recorded.'
+    g.appendChild(sFoot(on?'Nothing they do is recorded.'
       : have.length?have.length+' of '+TEST_ALL.length+' made; turn on to make '+need.join(' and ')+'.':'Three accounts to try the customer’s page; nothing they do is recorded.'));
     if(have.length){
-      box.appendChild(el('h3','salt-settings__head','Accounts'));
-      var accts=el('div','salt-settings atest-list');
+      var ag=sGroup('Accounts','atest-list'), accts=ag.list;
       TEST_ALL.forEach(function(u,i){
         if(have.indexOf(u)<0) return;
-        var r=el('div','salt-settings__row'), n=el('span','salt-settings__label atest-u',u); n.setAttribute('data-test',u); r.appendChild(n);
-        r.appendChild(el('span','salt-settings__value atest-shows',TEST_SHOWS[i]||'')); accts.appendChild(r);
+        var r=el('div','amb-setting'), n=el('span','amb-setting__name atest-u',u); n.setAttribute('data-test',u); r.appendChild(n);
+        r.appendChild(el('span','amb-setting__value atest-shows',TEST_SHOWS[i]||'')); accts.appendChild(sLi(r));
       });
-      var pw=actOn(el('button','salt-settings__row salt-settings__row--action atest-pw'),'more.test-password'); pw.type='button';
-      pw.appendChild(el('span','salt-settings__label','Password')); pw.appendChild(el('span','salt-settings__value atest-pwv','0000-0000-0000-0000'));
-      var cm=el('span','salt-settings__mark'); cm.innerHTML='<svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8 V5.5 A1.5 1.5 0 0 0 14.5 4 H5.5 A1.5 1.5 0 0 0 4 5.5 V14.5 A1.5 1.5 0 0 0 5.5 16 H8"></path></svg>';
-      pw.appendChild(cm); pw.setAttribute('aria-label','Copy the password');
+      var pw=actOn(el('button','amb-setting atest-pw'),'more.test-password'); pw.type='button';
+      pw.appendChild(el('span','amb-setting__name','Password')); pw.appendChild(el('span','amb-setting__value atest-pwv','0000-0000-0000-0000'));
+      pw.appendChild(amb.node(amb.glyph('copy','sm'))); pw.setAttribute('aria-label','Copy the password');
       pw.addEventListener('click',function(){ try{ navigator.clipboard.writeText('0000-0000-0000-0000').then(function(){ say('Password copied.'); },function(){ say('Copy it by hand: 0000-0000-0000-0000.'); }); }catch(e){ say('Copy it by hand: 0000-0000-0000-0000.'); } });
-      accts.appendChild(pw);
+      accts.appendChild(sLi(pw));
       if(on){
-        var go=actOn(el('a','salt-settings__row salt-settings__row--action'),'more.test-page'); go.href='/all/test';
-        go.appendChild(el('span','salt-settings__label','Open the test page'));
-        var ch=el('span','salt-settings__mark'); ch.innerHTML='<svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 L15 12 L9 18"></path></svg>';
-        go.appendChild(ch); accts.appendChild(go);
+        var go=actOn(el('a','amb-setting'),'more.test-page'); go.href='/all/test';
+        go.appendChild(el('span','amb-setting__name','Open the test page')); go.appendChild(amb.node(amb.glyph('next','sm'))); accts.appendChild(sLi(go));
       }
-      box.appendChild(accts);
+      box.appendChild(ag);
     }
     b.addEventListener('click', async function(){
       if(b.disabled) return;
+      b.checked=on;
       if(on&&!(await ownerAsk(b,'test:remove',{title:'Remove all three?', say:['Everything they wrote goes with them.'], go:'Remove', keep:'Keep them'}))) return;
       b.disabled=true; say(on?'Removing...':'Making...','wait');
       try{
@@ -8673,7 +8734,7 @@ export const OWNER_JS = `
     if(!st||!a||!b) return;
     st.textContent=on?'On':'Off'; a.hidden=true; b.hidden=true; a.disabled=false; b.disabled=false;
     /* 26 Oct 2026, his word: the Switch shows it, coloured when on, and is free again once the answer is in */
-    var sw=document.getElementById('alertSwitch'); if(sw){ sw.setAttribute('aria-checked',String(!!on)); sw.disabled=false; }
+    var sw=document.getElementById('alertSwitch'); if(sw){ sw.checked=!!on; sw.disabled=false; }
     if(note&&n) n.textContent=note;
   }
   function alertKey(k){ var raw=atob(k.replace(/-/g,'+').replace(/_/g,'/')), out=new Uint8Array(raw.length); for(var i=0;i<raw.length;i++) out[i]=raw.charCodeAt(i); return out; }
@@ -8726,7 +8787,7 @@ export const OWNER_JS = `
     document.getElementById('alertOn').addEventListener('click', alertTurnOn);
     document.getElementById('alertOff').addEventListener('click', alertTurnOff);
     var alertSw=document.getElementById('alertSwitch');
-    if(alertSw) alertSw.addEventListener('click', function(){ if(alertSw.disabled) return; alertSw.disabled=true; (alertSw.getAttribute('aria-checked')==='true'?alertTurnOff:alertTurnOn)(); });
+    if(alertSw) alertSw.addEventListener('click', function(){ if(alertSw.disabled) return; var was=!alertSw.checked; alertSw.disabled=true; alertSw.checked=was; (was?alertTurnOff:alertTurnOn)(); });
     alertRead();
     try{
       if('serviceWorker' in navigator&&navigator.serviceWorker.addEventListener) navigator.serviceWorker.addEventListener('message', function(ev){

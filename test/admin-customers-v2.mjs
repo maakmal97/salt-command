@@ -103,8 +103,8 @@ export async function run({ ok, pageWork }) {
     enter(d, "record", "entry"); await p.work.quiet();
     await p.click(byAct(d, "record.form", "sale-or-purchase"));
     const fb = d.getElementById("makerFormBack");
-    ok(!!fb && fb.classList.contains("salt-orb") && fb.getAttribute("aria-label") === "All forms" && fb.getAttribute("data-back") === "form" && fb.getAttribute("data-act") === "record.form-back" && t(fb) === "" && !!fb.querySelector("svg path"),
-      "Record's open form has the same Orb, named All forms");
+    ok(!!fb && fb.classList.contains("amb-circle") && fb.getAttribute("aria-label") === "All forms" && fb.getAttribute("data-back") === "form" && fb.getAttribute("data-act") === "record.form-back" && t(fb) === "" && !!fb.querySelector('svg use[href="#amb-back"]'),   /* 16 Nov 2026, the move to Ambient (place I): the way back is Ambient's circle */
+      "Record's open form has the way back, a circle named All forms");
     await p.click(fb);
     ok(d.querySelector('#makerInputs [data-form="sale-or-purchase"]').hidden, "and it returns to the menu");
     ok(!d.querySelector("#makerReview [data-back]") && !byAct(d, "order.back"), "the open order draws no way back of its own, the rail's Orders closes it");

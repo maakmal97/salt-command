@@ -26,12 +26,12 @@ export async function run({ ok, pageWork }) {
     const opts = [...pick.options].map((o) => o.textContent);
     const hiddenFirst = card.hidden;
     await choose(pick, "row-1");
-    const read = [t(card.querySelector(".rowcard__kind")), t(card.querySelector(".rowcard__rid")), card.querySelector(".rowcard__who .salt-producttag--salt") ? "salt" : "", t(card.querySelector(".rowcard__code")), t(card.querySelector(".rowcard__fig"))];
+    const read = [t(card.querySelector(".rowcard__kind")), t(card.querySelector(".rowcard__rid")), card.querySelector(".rowcard__who .amb-chip.amb-kind-1") ? "salt" : "", t(card.querySelector(".rowcard__code")), t(card.querySelector(".rowcard__fig"))];
     ok(J(opts) === J(["Choose a row", "row-1 · CX1-ZED · 01 Sep 2026", "row-2 · SX1-ZED · 02 Sep 2026"]) && hiddenFirst && !card.hidden
       && J(read) === J(["row-1 · 2 units · 01 Sep 2026", "row-1", "salt", "CX1-ZED", "RM 200"]) && card.nextElementSibling === tileGroup(ed, "What to do"),
       "the row is chosen by its reference, who and when, and stands as a card under the choice, none drawn before: " + J([opts, read]));
     /* 2 */
-    const tiles = () => [...tileGroup(ed, "What to do").querySelectorAll("input")].map((r) => [r.value, t(r.nextElementSibling.querySelector(".salt-option__label")), t(r.nextElementSibling.querySelector(".salt-option__detail"))]);
+    const tiles = () => [...tileGroup(ed, "What to do").querySelectorAll("input")].map((r) => [r.value, t(r.closest("label").querySelector(".amb-option__title")), t(r.closest("label").querySelector(".amb-option__sub"))]);
     const sale = tiles();
     await choose(pick, "row-2");
     const buy = tiles();
@@ -44,18 +44,17 @@ export async function run({ ok, pageWork }) {
     const field = byAct(ed, "record.amend.field"), value = () => byAct(ed, "record.amend.value");
     await choose(field, "qty"); value().value = "3"; byAct(ed, "record.amend.add-change").click(); await quiet();
     const ready = ed.querySelector(".maker-changes");
-    ok(t(ready.querySelector(".salt-eyebrow")) === "Ready to send" && J([...ready.querySelectorAll(".salt-ledger__row")].map((r) => [r.getAttribute("data-change"), t(r.querySelector(".salt-ledger__label")), t(r.querySelector(".salt-ledger__value"))])) === J([["qty", "Units", "3"]]),
-      "the changes made ready are a ledger of the field and its new value under Ready to send: " + t(ready));
+    ok(t(ready.querySelector(".amb-settings__head")) === "Ready to send" && J([...ready.querySelectorAll(".amb-setting[data-change]")].map((r) => [r.getAttribute("data-change"), t(r.querySelector(".amb-setting__name")), t(r.querySelector(".amb-setting__value"))])) === J([["qty", "Units", "3"]]),
+      "the changes made ready are a settings group of the field and its new value under Ready to send: " + t(ready));
     /* 4 */
     const rv = d.querySelector('#makerInputs section.maker-input[data-form="reopen-a-cancelled-order"]'), rcard = rv.querySelector(".rowcard");
     ok(J([...byAct(rv, "record.revive.row").options].map((o) => o.textContent)) === J(["row-3 · CX1-ZED · cancelled 03 Sep 2026"]) && !rcard.hidden
-      && t(rcard.querySelector(".rowcard__kind")) === "row-3 · 1 unit · 02 Sep 2026" && t(rcard.querySelector(".rowcard__fig")) === "RM 100" && !!rcard.querySelector(".salt-producttag--salt"),
+      && t(rcard.querySelector(".rowcard__kind")) === "row-3 · 1 unit · 02 Sep 2026" && t(rcard.querySelector(".rowcard__fig")) === "RM 100" && !!rcard.querySelector(".amb-chip.amb-kind-1"),
       "Reopen names the order by its reference, who and when it was cancelled, and stands its card under the choice: " + t(rcard));
     /* 5 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.rowcard\{display:grid;grid-template-columns:minmax\(0,1fr\) auto;[^}]*height:76px;/.test(css) && /\.adm \.rowcard__kind\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis/.test(css)
-      && /\.adm \.rowcard__fig\{grid-column:2;grid-row:1\/3;white-space:nowrap/.test(css)
+    ok(/\.rowcard \{ display: grid; gap: var\(--amb-space-1\); \}/.test(css) && !/\.adm \.rowcard/.test(css)
       && /\.adm \[data-form="correct-a-row"\] \.undomove>\.maker-facts\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css),
-      "the card is one height, 76px, its lines one line each, and a move of History one line with its Undo at the right");
+      "the card is an Ambient pane laid out by one token rule, and a move of History one line with its Undo at the right");
   } finally { p.w.close(); }
 }
