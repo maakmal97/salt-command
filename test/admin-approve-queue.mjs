@@ -92,7 +92,7 @@ export async function run({ ok, pageWork }) {
       && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("amb-task")),
     "each Desk row to approve is an article on Ambient's Approval (amb-task), in place of the glass card and the Approve recipe");
     const head = c.querySelector(":scope > .amb-task__head");
-    ok(!!head && head.querySelector(".apparty").textContent === "CX1-ZED" && !head.querySelector("svg.psym") && !head.querySelector(".apentry") && c.querySelector(".rdet--row .apentry").textContent === "from phone, 10 Oct 2026",
+    ok(!!head && head.querySelector(".apparty").textContent === "CX1-ZED Salt" && !head.querySelector("svg.psym") && !head.querySelector(".apentry") && c.querySelector(".rdet--row .apentry").textContent === "from phone, 10 Oct 2026",
       "its head is the task's: the party's code and its state, and where the entry came from and when sits in Details: " + (head && head.textContent));
     /* 12 Oct 2026 (Phase 5): a new row's cost and margin are the system's Metric row, a label over its figure, and not a line of the card's own */
     /* the cost and his margin stay on the card (the hard rule), as Ambient's stats: what the card is worth, then what it earns */
@@ -116,7 +116,7 @@ export async function run({ ok, pageWork }) {
     ok(afterBody && afterMore && panel.hidden && p.posts.length === gone, "a tap on the card opens nothing, Details opens the row's detail and a second tap shuts it, and nothing is sent: " + [afterBody, afterMore]);
     const cells2 = [...d.querySelectorAll("#makerDrafts .apfigs")];
     ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("amb-task__figures")), "every new row's cost and margin stand in one figures row of Ambient's class, so the page can align them as columns");
-    const acts = c.querySelector(":scope > .apticks"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
+    const acts = c.querySelector(":scope > .amb-task__acts.apticks"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
     ok(!!acts && acts.contains(approve) && acts.contains(reject) && head.contains(more) && !acts.contains(more) && approve.textContent === "Approve the sale" && reject.textContent === "Reject"
       && [...acts.children][0] === approve && approve.getAttribute("aria-pressed") === "false" && reject.getAttribute("aria-pressed") === "false" && approve.classList.contains("amb-pill--quiet") && approve.classList.contains("amb-pill--sm"),
     "its two choices stand in the task's actions, small pills, Approve first and Reject, neither chosen to begin with, and Details has moved up into the head: " + (acts && acts.textContent));

@@ -42,10 +42,10 @@
   "replace": "        [g.lead].forEach(function(d){\n          if(tierSets(d).length)"
  },
  {
-  "name": "the page restates the recipe's padding",
+  "name": "the page restates the task's padding",
   "file": "stmt/page.js",
-  "find": ".adm .salt-approve>.maker-say:empty{display:none}",
-  "replace": ".adm .salt-approve>.maker-say:empty{display:none}\n.adm .salt-approve{padding:16px}"
+  "find": ".adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}",
+  "replace": ".adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}\n.adm .apcard{padding:16px}"
  },
  {
   "name": "the queue is open on arrival",
@@ -75,13 +75,13 @@
   "name": "a redraw of the entries shuts the fold",
   "file": "stmt/owner.js",
   "find": "      queueRoot.textContent='';\n      var held=",
-  "replace": "      queueRoot.textContent=''; if(queueRoot.parentNode&&queueRoot.parentNode.parentNode) queueRoot.parentNode.parentNode.open=false;\n      var held="
+  "replace": "      queueRoot.textContent=''; if(queueRoot.parentNode&&queueRoot.parentNode) queueRoot.parentNode.open=false;\n      var held="
  },
  {
   "name": "an empty queue opens its fold",
   "file": "stmt/owner.js",
   "find": "if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));",
-  "replace": "if(!held.length&&!bad.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.parentNode.open=true; }"
+  "replace": "if(!held.length&&!bad.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.open=true; }"
  },
  {
   "name": "Approve is a danger action",

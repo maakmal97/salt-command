@@ -78,22 +78,22 @@
   "replace": "if(false) L.push(item('now'"
  },
  {
-  "name": "a card is not the Action recipe",
+  "name": "a card is not Ambient's To-do",
   "file": "stmt/owner.js",
-  "find": "c=el('article','salt-action salt-action--'+o.sev+' need ncard')",
-  "replace": "c=el('article','salt-approve need ncard')"
+  "find": "c=el('article','amb-task'+(st[0]?' amb-task--'+st[0]:'')+' ntask')",
+  "replace": "c=el('article','amb-card'+(st[0]?' amb-task--'+st[0]:'')+' ntask')"
  },
  {
-  "name": "a card is not coloured by its severity",
+  "name": "a card is not coloured by its state",
   "file": "stmt/owner.js",
-  "find": "c=el('article','salt-action salt-action--'+o.sev+' need ncard')",
-  "replace": "c=el('article','salt-action need ncard')"
+  "find": "c=el('article','amb-task'+(st[0]?' amb-task--'+st[0]:'')+' ntask')",
+  "replace": "c=el('article','amb-task ntask')"
  },
  {
   "name": "a card has no kind word",
   "file": "stmt/owner.js",
-  "find": "var kd=el('span','salt-action__kind nkind',o.word);",
-  "replace": "var kd=el('span','x nkind',o.word);"
+  "find": "kd=el('span','amb-task__kind nkind',o.word)",
+  "replace": "kd=el('span','x nkind',o.word)"
  },
  {
   "name": "an age is counted in minutes",
@@ -190,12 +190,6 @@
   "file": "stmt/owner.js",
   "find": "shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });",
   "replace": "shown=items;"
- },
- {
-  "name": "the chip tapped is not marked",
-  "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-pressed', on?'true':'false');",
-  "replace": "x.setAttribute('aria-pressed', 'false');"
  },
  {
   "name": "a chip reads",
@@ -356,20 +350,14 @@
  {
   "name": "a card's action is not the small pill",
   "file": "stmt/owner.js",
-  "find": "      if(b.classList.contains('salt-pill')) b.classList.add('salt-pill--sm');\n      go.appendChild(b);",
-  "replace": "      go.appendChild(b);"
+  "find": "b.classList.add('amb-pill','amb-pill--sm');",
+  "replace": "b.classList.add('amb-pill');"
  },
  {
   "name": "a card carries the old need--act class",
   "file": "stmt/owner.js",
-  "find": "if(o.practice) c.setAttribute('data-practice','');\n    var kd=el('span','salt-action__kind nkind',o.word);",
-  "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');\n    var kd=el('span','salt-action__kind nkind',o.word);"
- },
- {
-  "name": "the kind tapped is not drawn as the chosen filter",
-  "file": "stmt/owner.js",
-  "find": "x.setAttribute('aria-pressed', on?'true':'false');",
-  "replace": "x.removeAttribute('aria-pressed');"
+  "find": "if(o.practice) c.setAttribute('data-practice','');\n    if(age){ kd.appendChild(document.createTextNode(' \\u00b7 '))",
+  "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');\n    if(age){ kd.appendChild(document.createTextNode(' \\u00b7 '))"
  },
  {
   "name": "the kinds are not a group",
@@ -408,16 +396,16 @@
   "replace": "function orderWhat(o){ return units(o.qty)+' '+o.product+' · '+rm(o.total); }"
  },
  {
-  "name": "an order card loses its book's tag",
+  "name": "an order card loses its book's chip",
   "file": "stmt/owner.js",
-  "find": "if(o.mark) title.appendChild(productTag(o.mark));",
+  "find": "if(o.mark) tp.appendChild(nBook(o.mark));",
   "replace": ""
  },
  {
   "name": "a card's title is not its tap",
   "file": "stmt/owner.js",
-  "find": "var title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')), age=",
-  "replace": "var title=el('div','salt-action__title'), age="
+  "find": "title=el('h3','amb-task__title'), tp=el(tap?'button':'span','need-title'+(tap?' need-tap':''))",
+  "replace": "title=el('h3','amb-task__title'), tp=el('span','need-title')"
  },
  {
   "name": "a group heading carries a count",
@@ -752,8 +740,8 @@
  {
   "name": "a card draws a why line",
   "file": "stmt/owner.js",
-  "find": "body.appendChild(title); c.appendChild(body); c.appendChild(go);",
-  "replace": "body.appendChild(title); if(o.why) body.appendChild(el('p','salt-action__why',o.why)); c.appendChild(body); c.appendChild(go);"
+  "find": "title.appendChild(tp); c.appendChild(title);",
+  "replace": "title.appendChild(tp); c.appendChild(title); c.appendChild(el('p','amb-task__text',o.why||'why'));"
  },
  {
   "name": "a resting card carries every way of its row",
@@ -770,8 +758,8 @@
  {
   "name": "a card draws no figure",
   "file": "stmt/owner.js",
-  "find": "+o.rm>0.004?rmShort(o.rm):''",
-  "replace": "''"
+  "find": "if(+o.rm>0.004){ var f=el('div','amb-task__figures')",
+  "replace": "if(false){ var f=el('div','amb-task__figures')"
  },
  {
   "name": "a practice item is counted on the rail",

@@ -139,7 +139,7 @@ export async function run({ ok, pageWork }) {
     ok(p.cards().every((c) => { const w = c.querySelector(".amb-task__head > .amb-chip").textContent, k = STATE[w]; const kids = [...c.children].map((x) => x.classList[0]);
       return c.classList.contains("amb-task") && c.classList.contains("ntask") && k !== undefined && (k === "" ? !/amb-task--(neg|warn)/.test(c.className) : c.classList.contains(k))
         && kids[0] === "amb-task__head" && kids[1] === "amb-task__title" && kids.every((x) => ["amb-task__head", "amb-task__title", "amb-task__figures", "nbody", "amb-task__acts"].includes(x))
-        && c.querySelector(".nkind") && c.querySelector(".need-who") && !c.querySelector(".amb-task__text, .need-what, .need-clock") && !/salt-/.test(c.outerHTML); }),
+        && c.querySelector(".amb-task__kind.nkind") && c.querySelector(".need-who") && !c.querySelector(".amb-task__text, .need-what, .need-clock") && !/salt-/.test(c.outerHTML); }),
     "every card is Ambient's To-do of one shape: head with kind and age and its state word, the title, the figure, the way, the rule agreeing with the word (Due while it waits on his tap, Overdue when late, Open after), no why line, no what line, no clock and no salt class");
     const order = p.words(p.card("o:ord-p3")), pay = p.words(p.card("p:ord-a1")), claim = p.words(p.card("c:" + U1 + ":c-1")), msg = p.words(p.card("m:" + U1)), lock = p.words(p.card("k:" + U3));
     ok(order.kind === "Order" && order.who === "CX1-ZED" && order.said === "Order: Agree CX1-ZED's order, 1 unit · RM 100.00" && order.tag === "Salt" && order.fig === "RM 100" && order.age === "26 h",
