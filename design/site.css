@@ -138,3 +138,5 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .amb-segment--wrap { max-width: none; }
 /* the links' and the associates' lists stand in their place's stack, the way the accounts' do */
 #glist, #jlist, #clist { display: contents; }
+/* a book's chip inside a pressed choice takes the choice's own ground and ink, its dot left as the chip draws it */
+.apct__books .amb-segment__opt > .amb-chip { background: transparent; color: inherit; border-color: transparent; padding-inline: 0; }
