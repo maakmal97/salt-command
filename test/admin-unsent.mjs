@@ -18,7 +18,7 @@ import { richOwnerPage, byAct, slipFixture, answerSheets } from "./maker-act.mjs
 const AT_LOAN = "2026-10-10T08:00:00.000Z", AT_PLACE = "2026-10-08T03:30:00.000Z", AT_COUNT = "2026-10-09T05:00:00.000Z";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
-const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
+const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*960px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
 /* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
@@ -47,17 +47,21 @@ export async function run({ ok, pageWork }) {
     return p;
   };
 
+  /* the banner's words: its title less how long the oldest has waited, and its sentence after the title */
+  const what = (card) => card.querySelector(".amb-notice__title").textContent.replace(/ on this phone.*$/, "");
+  const why = (card) => card.querySelector(".amb-notice__title").nextSibling.textContent;
   /* A. ONE ENTRY: the banner */
   let p = await open();
   try {
-    const d = p.d, bar = p.bar(), card = bar && bar.querySelector(".salt-action");
+    const d = p.d, bar = p.bar(), card = bar && bar.querySelector(".amb-notice");
     const kept = p.kept(), store = kept.map((k) => p.w.localStorage.getItem(k));
-    ok(!!bar && shown(bar) && !!card && card.classList.contains("salt-action--soon") && card.querySelector(".salt-action__kind").textContent === "Unsent"
-      && card.querySelector(".need-who").textContent === "1 unsent entry" && /^A loan you sent on 10 Oct 2026, 16:00 was not confirmed[.] /.test(card.querySelector(".salt-action__why").textContent),
-    "one entry waiting on the phone is a banner on the Action recipe at Soon: the kind Unsent, '1 unsent entry', and the plan's sentence with its day: " + (card && card.textContent));
+    /* 16 Nov 2026, the move to Ambient (place F) (place F): the banner is Ambient's Notice, its title the count (and how long the oldest has waited), its sentence the plan's, its one quiet pill Open */
+    ok(!!bar && shown(bar) && !!card && card.getAttribute("data-sev") === "soon" && /^1 unsent entry on this phone/.test(card.querySelector(".amb-notice__title").textContent)
+      && what(card) === "1 unsent entry" && /^A loan you sent on 10 Oct 2026, 16:00 was not confirmed[.] /.test(why(card)),
+    "one entry waiting on the phone is a banner on Ambient's Notice: the title '1 unsent entry', and the plan's sentence with its day: " + (card && card.textContent));
     const open1 = byAct(bar, "unsent.open");
-    ok(bar.querySelectorAll("button").length === 1 && !!open1 && open1.textContent === "Open" && open1.classList.contains("salt-ghost"),
-      "with one control, Open, the system's quiet button, named by its act: " + bar.querySelectorAll("button").length);
+    ok(bar.querySelectorAll("button").length === 1 && !!open1 && open1.textContent === "Open" && open1.classList.contains("amb-pill--quiet") && !/salt-/.test(bar.innerHTML),
+      "with one control, Open, Ambient's quiet pill, named by its act: " + bar.querySelectorAll("button").length);
     const seen = [];
     for (const place of ["needs", "orders", "customers", "record", "shop"]) { await p.tap("nav." + place); seen.push(shown(p.bar()) && !p.bar().hidden); }
     ok(seen.length === 5 && seen.every(Boolean), "it stands on every place: Needs you, Orders, Customers, Record and Shop: " + seen.join());
@@ -74,8 +78,8 @@ export async function run({ ok, pageWork }) {
   const broken = [KEEP + "/all/maker/inputs/gift", "{not a record"];
   p = await open(more.concat([broken]));
   try {
-    const d = p.d, bar = p.bar(), card = bar.querySelector(".salt-action");
-    ok(shown(bar) && card.querySelector(".need-who").textContent === "4 unsent entries" && /^They were sent from this phone and not confirmed[.]/.test(card.querySelector(".salt-action__why").textContent),
+    const d = p.d, bar = p.bar(), card = bar.querySelector(".amb-notice");
+    ok(shown(bar) && what(card) === "4 unsent entries" && /^They were sent from this phone and not confirmed[.]/.test(why(card)),
       "four kept on the phone (a record that will not read among them) are '4 unsent entries': " + (card && card.textContent));
     await p.tap("unsent.open");
     ok(p.where() === "record/customers" && same(p.sections(), ["place"]),
@@ -92,7 +96,7 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d, asked = [];
     answerSheets(p.w, asked, () => true);
-    const text = () => (p.bar().hidden ? "" : p.bar().querySelector(".need-who").textContent);
+    const text = () => (p.bar().hidden ? "" : what(p.bar().querySelector(".amb-notice")));
     ok(text() === "3 unsent entries", "three kept: " + text());
     await p.tap("nav.record"); await p.tap("part.record.customers");
     byAct(d.querySelector('#makerInputs section[data-key="place"]'), "record.retained.cancel").click(); await p.work.quiet();
@@ -117,7 +121,7 @@ export async function run({ ok, pageWork }) {
       "each kept entry is a To do card, the oldest first (the placement, the count, the loan), in the order of the day it was sent: " + JSON.stringify(keys));
     const words = (c) => ({ sev: c.getAttribute("data-sev"), kind: c.getAttribute("data-kind"), group: (c.closest("section.ngroup") || { getAttribute: () => "" }).getAttribute("data-sev"),
       word: c.querySelector(".nkind").firstChild.textContent, who: t(c.querySelector(".need-who")), code: c.querySelector(".need-who").classList.contains("need-who--code"),
-      said: (c.querySelector(".need-tap") || { getAttribute: () => "" }).getAttribute("aria-label"), go: [...c.querySelectorAll(".salt-action__go button")].map(t).join(), why: !!c.querySelector(".salt-action__why, .need-what") });
+      said: (c.querySelector(".need-tap") || { getAttribute: () => "" }).getAttribute("aria-label"), go: [...c.querySelectorAll(".amb-task__acts button")].map(t).join(), why: !!c.querySelector(".amb-task__text, .need-what") });
     const w = p.cards().map(words);
     ok(w.every((x) => x.sev === "now" && x.group === "now" && x.kind === "rows" && x.word === "Unsent" && x.go === "Open" && !x.why)
       && w[0].who === "This phone" && !w[0].code && w[0].said === "Unsent: This phone, Map placement"
@@ -144,7 +148,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("need.open", "u:" + place.path);
     const head = d.querySelector("#nopen .npane");
     ok(!!head && /^A map placement you sent on 08 Oct 2026, 11:30 was not confirmed[.] Open it to send it again, update it or discard it[.]$/.test(t(head.querySelector(".npane__why")))
-      && t(head.querySelector(".npane__title")) === "This phone" && !!byAct(head, "need.unsent", "u:" + place.path) && p.where() !== "record/customers" && p.posts.length === 0,
+      && t(head.querySelector(".npane__title")) === "This phone" && !!byAct(d.querySelector("#nrecord"), "need.unsent", "u:" + place.path) && p.where() !== "record/customers" && p.posts.length === 0,
     "from 860px a tap opens the card beside the list with the plan's sentence and its Open, going nowhere and sending nothing: " + t(head));
     await p.tap("need.open", "u:" + count.path);
     ok(/^A stock count you sent on 09 Oct 2026, 13:00 was not confirmed[.]/.test(t(d.querySelector("#nopen .npane__why"))), "each card's own sentence: " + t(d.querySelector("#nopen .npane__why")));

@@ -15,8 +15,8 @@
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { AMB_CSS } from "../stmt/statement-css.js";
 
 const U = "abcd-efgh";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -28,7 +28,7 @@ const MANY = "/all/maker/drafts/decide-many";
 /* the page's own stylesheet as rules, the recipes carried ahead of it cut away */
 function pageRules() {
   const html = landingPage("", "approve-nonce", { master: "fixture-master", accounts: [] });
-  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice(SITE_STYLE.length);
   const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
   const out = [];
   const walk = (rules) => { for (const r of rules) { if (r.selectorText) out.push([r.selectorText, r.style]); if (r.cssRules) walk(r.cssRules); } };
@@ -87,21 +87,21 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await enterRecord(p);
     const c = p.row("d-1");
-    ok(!!c && c.tagName === "ARTICLE" && c.classList.contains("salt-approve") && c.classList.contains("maker-card") && !c.classList.contains("salt-glass-card")
-      && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("salt-approve")),
-    "each Desk row to approve is an article on the system's Approve recipe (salt-approve), beside the page's own card class and in place of the glass card");
-    const head = c.querySelector(":scope > .salt-approve__head");
-    const partyText = head && head.querySelector(".salt-approve__party").cloneNode(true);
-    if (partyText) partyText.querySelectorAll(".salt-producttag").forEach((x) => x.replaceWith("[tag]"));
-    ok(!!head && partyText.textContent === "CX1-ZED [tag]" && !head.querySelector("svg.psym") && !head.querySelector(".salt-approve__entry") && c.querySelector(".rdet--row .salt-approve__entry").textContent === "from phone, 10 Oct 2026",
-      "its head is the recipe's: the party's code and the book's typed tag, and where the entry came from and when sits in Details: " + (head && head.textContent));
+    /* 16 Nov 2026, the move to Ambient (place F) (place F): a row to approve is Ambient's Approval, an article of the task, its figures first, its two small pills last */
+    ok(!!c && c.tagName === "ARTICLE" && c.classList.contains("amb-task") && c.classList.contains("apcard") && !/salt-|maker-card/.test(c.className)
+      && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("amb-task")),
+    "each Desk row to approve is an article on Ambient's Approval (amb-task), in place of the glass card and the Approve recipe");
+    const head = c.querySelector(":scope > .amb-task__head");
+    ok(!!head && head.querySelector(".apparty").textContent === "CX1-ZED" && !head.querySelector("svg.psym") && !head.querySelector(".apentry") && c.querySelector(".rdet--row .apentry").textContent === "from phone, 10 Oct 2026",
+      "its head is the task's: the party's code and its state, and where the entry came from and when sits in Details: " + (head && head.textContent));
     /* 12 Oct 2026 (Phase 5): a new row's cost and margin are the system's Metric row, a label over its figure, and not a line of the card's own */
-    const facts = [...c.querySelectorAll(":scope > .maker-facts")], reason = c.querySelector(".salt-approve__reason");
-    const figures = c.querySelector(":scope > .salt-metrics.salt-metrics--sm"), cells = figures ? [...figures.children].map((x) => [x.querySelector(".salt-metrics__label").textContent, x.querySelector(".salt-metrics__value").textContent]) : [];
-    ok(!!figures && JSON.stringify(cells) === JSON.stringify([["Cost", "RM 56.00"], ["Your margin", "RM 44.00 · 44%"]]) && figures.textContent.replace(/\s+/g, " ") === "Cost RM 56.00 Your margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent) && !facts.some((x) => /Cost RM/.test(x.textContent)),
-      "a new row's figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin as the system's Metric row: " + facts.map((x) => x.textContent).join(" | ") + " / " + JSON.stringify(cells));
+    /* the cost and his margin stay on the card (the hard rule), as Ambient's stats: what the card is worth, then what it earns */
+    const facts = [...c.querySelectorAll(":scope > .apline")], reason = c.querySelector(".apreason");
+    const figures = c.querySelector(":scope > .amb-task__figures"), cells = figures ? [...figures.children].map((x) => [x.querySelector(".amb-stat__label").textContent, x.querySelector(".amb-stat__value").textContent]) : [];
+    ok(!!figures && JSON.stringify(cells) === JSON.stringify([["Cost", "RM 56.00"], ["Your margin", "RM 44.00 · 44%"]]) && /RM 100\.00/.test(facts[0].textContent) && !facts.some((x) => /Cost RM/.test(x.textContent)),
+      "a new row's figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin as Ambient's stats: " + facts.map((x) => x.textContent).join(" | ") + " / " + JSON.stringify(cells));
     const panel = c.querySelector(":scope > .rdet--row");
-    ok(!c.querySelector(":scope > .salt-approve__flags") && !!panel && panel.hidden && panel.contains(reason) && reason.textContent === "Priced under their usual."
+    ok(!c.querySelector(":scope > .amb-task__flags") && !!panel && panel.hidden && panel.contains(reason) && reason.textContent === "Priced under their usual."
       && [...panel.querySelectorAll(".apnote")].map((x) => x.textContent).join("|") === "Check before deciding",
     "a flag that asks no decision is no chip on the card: it and the drafter's note stand in Details, shut");
     /* Details is its own control at the card's foot; the head is no longer a control, and a tap on the card opens nothing */
@@ -115,18 +115,18 @@ export async function run({ ok, pageWork }) {
     more.click(); await p.work.quiet();
     ok(afterBody && afterMore && panel.hidden && p.posts.length === gone, "a tap on the card opens nothing, Details opens the row's detail and a second tap shuts it, and nothing is sent: " + [afterBody, afterMore]);
     const cells2 = [...d.querySelectorAll("#makerDrafts .apfigs")];
-    ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("salt-metrics")), "every new row's cost and margin stand in one figures row of their own class, so the page can align them as columns");
-    const acts = c.querySelector(":scope > .salt-approve__actions"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
+    ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("amb-task__figures")), "every new row's cost and margin stand in one figures row of Ambient's class, so the page can align them as columns");
+    const acts = c.querySelector(":scope > .apticks"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
     ok(!!acts && acts.contains(approve) && acts.contains(reject) && head.contains(more) && !acts.contains(more) && approve.textContent === "Approve the sale" && reject.textContent === "Reject"
-      && [...acts.children][0] === approve && approve.getAttribute("aria-pressed") === "false" && reject.getAttribute("aria-pressed") === "false" && !approve.classList.contains("salt-pill"),
-    "its two choices stand in the recipe's actions, Approve first and Reject, neither chosen to begin with, and Details has moved up into the head: " + (acts && acts.textContent));
+      && [...acts.children][0] === approve && approve.getAttribute("aria-pressed") === "false" && reject.getAttribute("aria-pressed") === "false" && approve.classList.contains("amb-pill--quiet") && approve.classList.contains("amb-pill--sm"),
+    "its two choices stand in the task's actions, small pills, Approve first and Reject, neither chosen to begin with, and Details has moved up into the head: " + (acts && acts.textContent));
     ok(!approve.disabled && !reject.disabled, "and neither is shut on a row that is not a claim's");
     /* 22 Oct 2026: a tap CHOOSES; nothing opens and nothing is sent */
     const bar0 = d.getElementById("apBar"), sentNone = () => p.posts.filter((x) => /\/drafts\//.test(x.route)).length === 0;
     ok(bar0.hidden, "the bar is hidden until a card is chosen");
     approve.click(); await p.work.quiet();
     const ca = p.row("d-1"), pa = byAct(ca, "draft.approve");
-    ok(pa.getAttribute("aria-pressed") === "true" && pa.classList.contains("salt-pill") && ca.classList.contains("ap--a") && byAct(ca, "draft.reject").getAttribute("aria-pressed") === "false"
+    ok(pa.getAttribute("aria-pressed") === "true" && !pa.classList.contains("amb-pill--quiet") && ca.classList.contains("ap--a") && byAct(ca, "draft.reject").getAttribute("aria-pressed") === "false"
       && !bar0.hidden && bar0.querySelector(".apbar__line").textContent === "1 to approve" && !p.sheet() && sentNone() && p.confirms.length === 0,
     "a tap on Approve chooses it: pressed, the filled pill, the card lit, the bar says 1 to approve, no Sheet opens and nothing is sent: " + bar0.textContent);
     byAct(ca, "draft.reject").click(); await p.work.quiet();
@@ -142,16 +142,16 @@ export async function run({ ok, pageWork }) {
       && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
     /* 25 Oct 2026 (canvas Salt Admin Orders): a row's book is its typed Product tag, "1 unit [tag], RM 100.00", its name in its hue and no mark */
-    const factsOf = (card) => [...card.querySelectorAll(".maker-facts")].map((f) => { const g = f.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((x) => x.replaceWith("[tag]")); return g.textContent; });
-    const tagsOf = (card) => [...card.querySelectorAll(".maker-facts .salt-producttag")].map((x) => [!!x.querySelector("svg.psym"), x.textContent.trim()]);
+    const factsOf = (card) => [...card.querySelectorAll(".apline")].map((f) => { const g = f.cloneNode(true); g.querySelectorAll(".amb-chip").forEach((x) => x.replaceWith("[tag]")); return g.textContent; });
+    const tagsOf = (card) => [...card.querySelectorAll(".apline .amb-chip")].map((x) => [!!x.querySelector("svg.psym"), x.textContent.trim()]);
     ok(factsOf(t2).includes("1 unit [tag], RM 100.00") && tagsOf(t2).length === 2 && tagsOf(t2).every(([mark, said]) => !mark && /^(Salt|Oil|Candy|Rice)$/.test(said)) && new Set(tagsOf(t2).map((x) => x[1])).size === 2,
       "a trip's two rows each say 1 unit then their book's typed tag, and no mark: " + JSON.stringify([factsOf(t2), tagsOf(t2)]));
     /* the page's own rules for the recipe's classes restate none of what the recipe draws: no surface, edge, padding, shadow, gap or type */
     const taken = ["background", "background-color", "border", "border-radius", "padding", "box-shadow", "display", "flex-direction", "gap", "font-family", "font-size", "color", "margin"];
-    const mine = pageRules().filter(([sel]) => /salt-approve/.test(sel.replace(/:not\([^)]*\)/g, "")));   /* a rule that names it only to leave it out is not a rule for it */
+    const mine = pageRules().filter(([sel]) => /apcard/.test(sel.replace(/:not\([^)]*\)/g, "")));   /* a rule that names it only to leave it out is not a rule for it */
     const restated = mine.flatMap(([sel, style]) => taken.filter((k) => style.getPropertyValue(k) !== "" && !(k === "display" && style.getPropertyValue(k) === "none")).map((k) => sel + " " + k));
-    ok(SITE_RECIPES.includes(".salt-approve {") && SITE_RECIPES.includes(".salt-approve__head") && restated.length === 0,
-      "the page carries the recipe whole and restates none of it: its own rules naming it (" + mine.map((r) => r[0]).join(", ") + ") set " + (restated.length ? restated.join(", ") : "no property the recipe sets"));
+    ok(AMB_CSS.includes(".amb-task__head {") && AMB_CSS.includes(".amb-task__acts {") && restated.length === 0,
+      "the page carries Ambient's task whole and restates none of it: its own rules naming it (" + mine.map((r) => r[0]).join(", ") + ") set " + (restated.length ? restated.join(", ") : "no property the recipe sets"));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   /* 18 Oct 2026 (clarity part 4): every status line has a verb and says what to do; where no verb can be built the reason's own words follow Not taken: */
   const WHYS = [["a movement with no date", "Not taken: add the date"], ["the date is not a date in YYYY-MM-DD: 5/10", "Not taken: fix the date"], ["a loss needs a reason. Without one it is shrinkage", "Not taken: add the reason"],
@@ -159,7 +159,7 @@ export async function run({ ok, pageWork }) {
   p = await open({ review: (j) => ({ ...j, refused: WHYS.map(([why]) => ({ why })) }) });
   try {
     await enterRecord(p);
-    const lines = [...p.d.querySelectorAll("#makerDrafts p.salt-insight")].map((x) => x.textContent).filter((x) => /^Not taken/.test(x));
+    const lines = [...p.d.querySelectorAll("#makerDrafts .aprefusedrow .amb-task__text")].map((x) => x.textContent).filter((x) => /^Not taken/.test(x));
     ok(J(lines) === J(WHYS.map((x) => x[1])) && !/Entry not taken/.test(p.d.getElementById("makerDrafts").textContent),
       "a refused entry says Not taken and what to do, from its reason, or the reason's own words: " + J(lines));
     ok(!/Sent, not yet drafted/.test(p.d.getElementById("makerQueue").textContent) && /sent, waiting for the drafter/.test(p.d.getElementById("makerQueue").textContent) && !/Entry the Desk refused/.test(p.d.getElementById("makerQueueReview").textContent),
@@ -172,9 +172,9 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await enterRecord(p);
     const fold = d.getElementById("makerQueue"), sum = fold && fold.querySelector(":scope > summary"), count = d.getElementById("makerQueueCount"), body = d.getElementById("makerQueueReview");
-    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("salt-plan") && fold.open === false && !!sum && sum.getAttribute("data-act") === "record.queue-toggle",
-      "the server-held queue is the system's Plan fold, shut until he taps it, its summary a control with its own act");
-    ok(!!count && count.classList.contains("salt-plan__id") && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "sent, waiting for the drafter"
+    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("nfold") && fold.open === false && !!sum && sum.getAttribute("data-act") === "record.queue-toggle",
+      "the server-held queue is a fold, shut until he taps it, its summary a control with its own act");
+    ok(!!count && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "sent, waiting for the drafter"
       && sum.contains(count) && sum.contains(d.getElementById("makerQueueTitle")) && !!body && fold.contains(body),
     "it is titled and counted, though shut, the count read off the entries the server holds: " + (sum && sum.textContent));
     ok(byAct(body, "queue.withdraw", "q-1") && byAct(body, "queue.withdraw", "q-2") && fold.open === false,
@@ -320,7 +320,7 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     const tile = d.querySelector('[data-glance="approve"]');
     ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]'), "Needs you lists no row to approve and has no Approve pill");
-    ok(!!tile && tile.querySelector(".salt-kpi__label").textContent === "To approve" && tile.querySelector(".salt-kpi__value").textContent === "2" && !tile.querySelector(".salt-kpi__note")
+    ok(!!tile && tile.querySelector(".amb-tile__label").textContent === "To approve" && tile.querySelector(".amb-tile__figure").textContent === "2" && !tile.querySelector(".amb-tile__delta")
       && tile.getAttribute("href") === "#orders/approve" && tile.previousElementSibling.getAttribute("data-glance") === "ready" && tile.nextElementSibling.getAttribute("data-glance") === "owed",
     "the glance's second tile (between Ready and Receivables) reads To approve with the number of cards waiting, and opens Orders > Approve: " + (tile && tile.textContent));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }

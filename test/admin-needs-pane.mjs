@@ -15,7 +15,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const J = JSON.stringify;
-const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
+const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*960px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 
 export async function run({ ok, pageWork }) {
   /* 1 */
@@ -41,10 +41,10 @@ export async function run({ ok, pageWork }) {
     ok(pane().hidden && !d.querySelector("#nlist [aria-current]"), "from 860px nothing opens by itself");
     await click(card("o:ord-p1").querySelector(".need-tap"));
     const head = pane().querySelector(".npane"), kind = head && head.querySelector(".npane__kind");
-    ok(!pane().hidden && !!head && !!kind && kind.classList.contains("salt-eyebrow--copper") && /^Order · \d+ d$/.test(t(kind)) && t(head.querySelector(".npane__title")) === "Agree CX1-ZED's order"
-      && t(head.querySelector(".npane__what .salt-producttag")) === "Salt" && t(head.querySelector(".npane__what")) === "Salt2 units · RM 200.00"
+    ok(!pane().hidden && !!head && !!kind && kind.classList.contains("amb-task__kind") && t(head.querySelector(".amb-task__head > .amb-chip")) === "Due" && /^Order · \d+ d$/.test(t(kind)) && t(head.querySelector(".npane__title")) === "Agree CX1-ZED's order"
+      && t(head.querySelector(".npane__what .amb-chip")) === "Salt" && t(head.querySelector(".npane__what")) === "Salt 2 units · RM 200.00"
       && J([...d.querySelectorAll("#nlist [aria-current]")].map((c) => c.getAttribute("data-need"))) === J(["o:ord-p1"]),
-      "a tap opens that card beside the list, alone marked current: its kind and age in To do's copper, the title in words, what it is with its typed tag: " + t(head));
+      "a tap opens that card beside the list, alone marked current: its kind and age with the state's word, the title in words, what it is with its book's chip: " + t(head));
     /* 3 */
     const low = pane().querySelector(".npane-x"), oc = low && low.querySelector(".maker-card");
     /* 2 Nov 2026 (his Orders canvas, page 2): Goods, Delivery and When are rows of one settings list (label at the left, input at the right), then the foot line */
@@ -54,11 +54,13 @@ export async function run({ ok, pageWork }) {
       && !!fee && fee.value === "" && t(fee.options[fee.selectedIndex]) === "Choose" && !!head && !head.querySelector(".npane__go") && !!byAct(oc, "order.decline"),
       "the order's own card stands under it, its terms in view, Goods and Delivery then When, Delivery at Choose, and its ways are the order card's: " + J(fields));
     /* 4 */
-    const goOf = async (k) => { await click(card(k).querySelector(".need-tap")); return [...pane().querySelectorAll(".npane__go button")].map((b) => [t(b), b.classList.contains("salt-pill") ? "pill" : b.classList.contains("salt-ghost") ? "ghost" : "?"]); };
+    /* 16 Nov 2026, the move to Ambient (place F): the first filled way is the record's one main action, the foot of its column; every other way a quiet pill in the card; read main first */
+    const ways = () => [...d.querySelectorAll("#nrecord > .npane__go button, #nopen .npane__acts button")];
+    const goOf = async (k) => { await click(card(k).querySelector(".need-tap")); return ways().map((b) => [t(b), b.classList.contains("amb-pill--quiet") ? "ghost" : "pill"]).sort((a, b) => (a[1] === "pill" ? 0 : 1) - (b[1] === "pill" ? 0 : 1)); };
     const link = await goOf("l:w1"), lock = await goOf("k:tvwx-yz23"), claim = await goOf("c:abcd-efgh:c-1");
     ok(J(link) === J([["Approve", "pill"], ["Decline", "ghost"]]) && J(lock.map((x) => x[0])) === J(["Send", "Show a code"]) && J(claim) === J([["Received", "pill"], ["Open the claim", "ghost"]])
       && !!pane().querySelector(".npane-x .oacct") === false,
-      "any other card carries every way of its row, the first filled and the second choice a ghost: " + J([link, lock, claim]));
+      "any other card carries every way of its row, the first the foot's one main action and the second choice a quiet pill: " + J([link, lock, claim]));
     await click(card("k:tvwx-yz23").querySelector(".need-tap"));
     ok(!!pane().querySelector(".npane-x .oacct"), "an account's card stands under a card about that account");
     /* 5 */
@@ -79,14 +81,14 @@ export async function run({ ok, pageWork }) {
     ok(!!line && t(line) === "Answered here.", "an answer to the order's card lands on its own line beside Needs you: " + (line && t(line)));
     const tapOn = async (k) => { const c = card(k); if (c) await click(c.querySelector(".need-tap")); };
     await tapOn("f:ord-p4");
-    const wd = pane().querySelector('.npane__go [data-act="need.withdraw"]');
+    const wd = d.querySelector('#nrecord [data-act="need.withdraw"]');
     await click(wd);
-    ok(!!wd && !!pane().querySelector(".npane .nask") && J([...pane().querySelectorAll(".npane__go button")].map(t)) === J(["Yes", "Cancel"]),
+    ok(!!wd && !!pane().querySelector(".npane .nask") && J(ways().map(t).sort()) === J(["Cancel", "Yes"]),
       "the Offer card keeps its ask-once Withdraw beside the list, Yes and Cancel under its question");
-    await click(pane().querySelector('.npane__go [data-act="need.ask-no"]'));
+    await click(d.querySelector('#nrecord [data-act="need.ask-no"]'));
     await tapOn("p:ord-a1");
     const pc = card("p:ord-a1"); if (pc) await click(byAct(pc, "need.review") || byAct(pc, "need.received"));
-    ok(!!pc && !pane().querySelector(".npane .nask, .npane .npane__go"), "an order's head asks nothing of its own; its card under it holds the ways");
+    ok(!!pc && !pane().querySelector(".npane .nask") && ways().length === 0, "an order's head asks nothing of its own; its card under it holds the ways");
     await tapOn("o:ord-p1");
     p.w.__owner("makerSay('ord-p1','Agreed and sent to the Desk.')"); st = "acknowledged"; await tick();
     const said = pane().querySelector(".npane__said");
@@ -102,12 +104,15 @@ export async function run({ ok, pageWork }) {
     q.d.querySelector('#nlist [data-need="m:abcd-efgh"] .need-tap').click(); await q.work.quiet();
     const was = !q.d.getElementById("nopen").hidden;
     threads = []; q.intervals.filter((i) => i.ms === 5000 && !i.off).forEach((i) => i.f()); await q.work.quiet();
-    ok(was && q.d.getElementById("nopen").hidden && !q.d.querySelector("#nopen .npane"), "a card gone from the list closes the pane");
+    ok(was && q.d.getElementById("nopen").hidden && !q.d.querySelector("#nopen .npane") && !q.d.querySelector("#nrecord > .npane__go"), "a card gone from the list closes the pane, and its foot");
   } finally { q.w.close(); }
 
   /* 6 */
-  const css = (await import("../stmt/page.js")).landingPage("", "pane-nonce", { master: "", accounts: [] }).match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
-  ok(/\.adm \.nsplit\{grid-template-columns:minmax\(0,1fr\) 360px\}/.test(css) && /@media \(min-width:1440px\)\{\.adm \.nsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(css)
-    && /\.adm #nopen\{margin-top:calc\(0\.75rem \* 1\.4 \+ 10px\)/.test(css) && /\.adm \.ngroup\{display:flex;flex-direction:column;gap:10px\}/.test(css) && /\.adm #mHome \.nlist \.nsev\{margin:0;line-height:1\.4\}/.test(css),
-    "the pane is 360px beside the list and 420px from 1440px, the shell at salt-ds's one page width, and starts level with the first card, under its group's 1.4-line heading and the 10px gap");
+  /* 16 Nov 2026, the move to Ambient (place F): the columns are Ambient's split (two from 960px); the page says the list's stack and the record's, the record empty until a tap with its words, its one main action its foot */
+  const page = (await import("../stmt/page.js")).landingPage("", "pane-nonce", { master: "", accounts: [] });
+  const css = page.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
+  ok(/<div class="amb-split nsplit"><div class="amb-stack"><div id="nlist" class="nlist"><\/div><\/div><div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden><\/div><p class="rnone panenone">Choose a card to see it in full\.<\/p><\/div><\/div>/.test(page)
+    && /\.panenone \{ display: none; margin: 0; color: var\(--amb-ink-2\); \}/.test(css) && /@media \(min-width: 960px\) \{ \.panenone \{ display: block; \} #nopen:not\(\[hidden\]\) ~ \.panenone \{ display: none; \} \}/.test(css)
+    && /\.ntask \.need-tap/.test(css),
+    "the open card stands in the record's column of Ambient's split from 960px, the column saying Choose a card to see it in full until a tap");
 }
