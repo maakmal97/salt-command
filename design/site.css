@@ -171,7 +171,10 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
   #acct { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; column-gap: var(--amb-space-6); }
   #acct > #aGlance, #acct > #aThread, #acct > .acct__main { grid-column: 1; }
   #acct > #thisDevice, #acct > #aHelp { grid-column: 2; }
+  #acct { grid-template-rows: auto auto 1fr auto; }
   #acct > #thisDevice { grid-row: 1 / span 3; }
+  #acct > #aHelp { grid-row: 4; }
+  #acct > .acct__main { align-self: start; }
 }
 /* the door: one form in the stack; the password's Show stands beside its field, the field's own hint under both */
 #doorBox, #doorBox .amb-form { max-width: 28rem; width: 100%; margin-inline: auto; }
@@ -217,3 +220,8 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .salt-settings__value { font-variant-numeric: tabular-nums; font-weight: 600; }
 .salt-settings__row--muted, .salt-settings__row--text { color: var(--amb-ink-2); }
 .amb-sheet .amb-stack { padding-inline: 0; }
+.stm-cell .amb-table__sub { color: var(--amb-ink-2); font-weight: 400; }
+#devSlot { display: grid; gap: var(--amb-space-3); }
+#devSlot:empty { display: none; }
+.keeppage { padding-inline: var(--amb-space-4); }
+.keeppage > .amb-section { margin: 0; padding: 0; }
