@@ -1114,15 +1114,28 @@ textarea.amb-input { min-height: 96px; padding-block: 12px; resize: none; }
    and a filled mark, never by a fill, so its figure keeps its ground. */
 .amb-options { display: grid; gap: var(--amb-space-2); min-width: 0; max-width: 36rem; margin: 0; padding: 0; border: 0; }
 .amb-options > legend { padding: 0 0 6px; }
+/* a decision is the same choice in a document: its state stands under it in one line. A record is
+   a decision the page cannot change: every radio is disabled and nothing dims, because what was
+   not chosen is still read. */
+.amb-options > .amb-field__hint, .amb-options > .amb-field__error { margin: var(--amb-space-2) 0 0; }
+.amb-options > .amb-field__hint > strong { font-weight: 600; color: var(--amb-ink); }
+/* in a document, and in any record, the legend is the question, so it leads the options */
+.amb-sec .amb-options > legend, .amb-options--record > legend { font-size: var(--amb-text-callout); color: var(--amb-ink); }
 .amb-option { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 2px var(--amb-space-3); min-height: 64px; padding: 10px var(--amb-space-4); border: 1px solid var(--amb-line-field); border-radius: var(--amb-radius-md); background: var(--amb-surface); cursor: pointer; touch-action: manipulation; transition: border-color var(--amb-dur-fast) var(--amb-ease-fast); }
 .amb-option__mark { grid-column: 1; grid-row: 1 / span 2; width: 22px; height: 22px; border: 2px solid var(--amb-line-field); border-radius: 50%; }
 .amb-option__title { grid-column: 2; font-size: var(--amb-text-callout); font-weight: 600; line-height: 1.3; }
-.amb-option__sub { grid-column: 2; font-size: var(--amb-text-footnote); line-height: 1.35; color: var(--amb-ink-2); }
+.amb-option__sub { grid-column: 2; font-size: var(--amb-text-footnote); line-height: 1.35; color: var(--amb-ink-2); text-wrap: pretty; }
 .amb-option__figure { grid-column: 3; grid-row: 1 / span 2; font-size: var(--amb-text-callout); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .amb-option:has(.amb-option__input:checked) { border-color: var(--amb-accent); box-shadow: inset 0 0 0 1px var(--amb-accent); }
 .amb-option:has(.amb-option__input:checked) > .amb-option__mark { border-color: var(--amb-accent); background: radial-gradient(circle, var(--amb-accent) 0 5px, transparent 5.5px); }
 .amb-option:has(.amb-option__input:focus-visible) { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
 .amb-option:has(.amb-option__input:disabled) { opacity: .45; cursor: not-allowed; }
+.amb-options--record .amb-option, .amb-options--record .amb-option:has(.amb-option__input:disabled) { opacity: 1; cursor: default; }
+/* a record is read, not pressed: only the option in force keeps its mark and a field's edge */
+.amb-options--record .amb-option:not(:has(.amb-option__input:checked)) { border-color: var(--amb-line); }
+.amb-options--record .amb-option:not(:has(.amb-option__input:checked)) > .amb-option__mark { visibility: hidden; }
+/* the one chosen is told by an edge and a filled mark, which are painted: keep them on paper */
+.amb-option:has(.amb-option__input:checked), .amb-option:has(.amb-option__input:checked) > .amb-option__mark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 /* settings: a group of rows under a short head, one name and at most one control a row, and at
    most one line under the group. An action row is in the accent, a row that cannot be undone in
    the colour of a loss, and each says what it does in its own words. */
