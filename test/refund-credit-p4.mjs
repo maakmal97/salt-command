@@ -28,8 +28,8 @@ export async function run({ ok, pageWork }) {
   const pane = (p, i) => p.d.querySelectorAll("#pPrices .pgrid > .pane")[i];
   /* plan version 9: a line is the book's stepper set to the amount, then Add */
   const put = async (p, i, q) => { stepTo(p, ["salt", "oil"][i], q); pane(p, i).querySelector('[data-st="add"]').click(); await p.settle(); };
-  const note = (p) => txt(p.d.querySelector("#bkBar .salt-kpi__note"));
-  const firstPrice = (p) => txt(pane(p, 0).querySelector(".salt-ledger__value"));
+  const note = (p) => txt([...p.d.querySelectorAll("#bkBar .amb-stat__label")][1])   /* 16 Nov 2026, the move to Ambient: the bar's words under its figure are the Stat's second label */;
+  const firstPrice = (p) => txt(pane(p, 0).querySelector(".szrow .amb-row__amount"));
   try {
     /* 2 */
     const A = await page({ list: withCredit(25) }), N = await page({});
@@ -45,7 +45,7 @@ export async function run({ ok, pageWork }) {
     A.d.getElementById("bkGo").click(); await A.settle();
     /* 11 Nov 2026 (his answer "Always ask"): the sheet waits for its way, so I will collect is answered, then Review */
     const way0 = A.d.querySelector('#osheet [data-k="mode:0"]'); if (way0) { way0.click(); await A.settle(); A.d.getElementById("oGo").click(); await A.settle(); }
-    const rows =[...A.d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => txt(r));
+    const rows =[...A.d.querySelectorAll("#osheet .amb-setting")].map((r) => txt(r));
     ok(rows.some((r) => /^Your credit\s*- RM 25\.00/.test(r)) && rows.some((r) => /^You pay\s*RM 75\.00/.test(r)), "the check reads Your credit, then You pay: " + J(rows));
     /* 5 */
     const acked = ord("20261027000000-cr1", "acknowledged", ago(2), { credit: 25, rowOn: kl(0) });

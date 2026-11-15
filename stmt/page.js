@@ -58,15 +58,6 @@ export const TEST_POLL_MS = 2000;
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
-/* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
-/* Counter Batch A: the Today card, and the notice in it */
-.today{display:flex;flex-direction:column;gap:12px}
-.today__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap);margin:-8px 0 -4px}
-.today__clock{margin-left:auto;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-mist-bright)}
-.today__line{margin:0;font-size:var(--salt-text-md);line-height:1.45;color:var(--salt-salt)}
-.today__when{color:var(--salt-brass)}
-.today .salt-notice{border-top:1px solid var(--salt-line-faint);padding-top:12px}
-.today .salt-notice__head{min-height:20px}
 /* The gate, in the same material as the document behind it. One filled control, the
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
@@ -112,14 +103,6 @@ const PAGE_CSS = `
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
-h3.pmark,.pmark{margin:0 0 4px;line-height:1}
-/* F4: the light is a coloured border round the mark; the three colours are the system's own tokens (yellow is --salt-amber, the warning; brass is the mark's own colour and the focus ring) */
-/* 22 Oct 2026 (his word, the outline alone was missed): the light in words is the system's status, in the light's own token */
-.hsup{min-height:44px;align-items:center}
-/* plan version 10 (03 Nov 2026): a book's head is its coin with the light beside it, a dot and its word (salt-light), never a border */
-.pane>.pmark{display:inline-block;vertical-align:middle;margin:0}
-.pane>.supline{display:inline-flex;vertical-align:middle;margin:0 0 0 12px}
-.hsup .pmark{margin:0}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS CAPTION UNDER IT. The pressed ghost's edge and glass, the mark at
    28px, the caption in the mono face: the size in words, "2.5 units" (12 Oct 2026, his word: the mark stands alone, so no shape word
@@ -127,14 +110,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .mtile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;
   min-width:64px;padding:10px 10px 8px;border:1px solid var(--salt-edge-field);border-radius:var(--salt-radius-sm);
   background:var(--salt-glass);color:var(--salt-brass);line-height:1;vertical-align:middle}
-.mtile .psym,.mstack .psym{display:block}
+.mtile .psym{display:block}
+
 .mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
   color:var(--salt-text);white-space:nowrap;line-height:1.2}
-.mhero{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
 .salt-inbox-row>.mtile{align-self:center}
 .mlab{display:inline-flex;align-items:center;gap:12px}
-.mstack{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
-.htile{justify-content:center}
 .salt-lines__row--cancelled .mq{color:var(--salt-prose);text-decoration:line-through;text-decoration-thickness:1px}
 .tot .mtiles{display:inline-flex;flex-wrap:wrap;gap:8px;vertical-align:middle;margin-left:6px}
 .owed .mtiles{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
@@ -155,38 +136,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* S4, 24 SEP 2026: ORDERING, IN TODAY'S PLACES (stage 4 of the Counter's redesign). The look is the system's: the
    Sheet, Option tiles, pressed ghosts, the plain ledger, the insight and the glass card. What is here is where those
    pieces sit inside the osh; no colour of its own. */
-.osheet .salt-sheet__title{flex:1 1 auto}
-.osheet .salt-sheet__close{margin-left:auto}
-.osheet .salt-sheet__body > * + *{margin-top:18px}
-.osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
 /* New order stands where the order form's pane stood, and keeps the pane's gap to what follows it */
 #oNew{margin-bottom:14px}
-.ototal{flex:1 1 0;min-width:0}
-.ototal .salt-kpi__value{margin-top:0}
-.ototal .sub2{display:block;margin-top:2px}
-.osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
-/* 11 Oct 2026: a yes or no in a Sheet. The look is the system's; here is where its pieces sit: the answers run the width, the danger
-   one first and in the alarm (the system's danger ghost), the ghost that keeps below it */
-/* at the limit it lies over the order sheet, so its scrim covers that sheet and its body is above the scrim (the system's own Sheet is 70 and 71) */
-#ynScrim{z-index:72}
-.ynsheet{z-index:73}
-.ynsheet .salt-sheet__title{flex:1 1 auto}
-.ynsheet .salt-sheet__close{margin-left:auto}
-.ynsheet .salt-sheet__body > * + *{margin-top:14px}
-.ynsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
 .ynsheet .salt-sheet__foot .salt-ghost{width:100%}
 .thsheet .salt-sheet__foot{display:block}
 .thsheet .salt-sheet__foot .msg{margin:8px 0 0}
 .thempty{margin:0}
-.szrow{display:block;width:100%;min-height:52px;padding-left:0;padding-right:0;background:none;border-style:none none solid;
-  font:inherit;color:inherit;text-align:left;cursor:pointer}
-.szrow:last-child{border-bottom-style:none}
-.szrow:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-.ochev{flex:0 0 auto;color:var(--salt-prose)}
-.osent{text-align:center}
-.otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
-.olim{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:6px}
-.olim .salt-ghost{flex:0 0 auto}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
@@ -226,12 +181,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 15 Nov 2026, the move to Ambient: the bar of lines (#barw), the header (.chead, .cbar), the rail and the App bar went: the shell's hero names the place, his read-only
    line and a lapse are notices under it, and the places are one dock, which Ambient stands up as the rail from 960px */
 /* a username is a credential, so the rail's capitals never reach it */
-.home{max-width:620px;margin:0 auto}
-.home .hcol>div{margin:0 0 24px}
-.home .hcol>:empty{display:none}
-.hfill{width:100%;margin-top:14px}
-.hlab{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px}
-.home .salt-inbox-row{margin:0 0 8px}
 /* 28 SEP 2026 (his instruction, with pay terms V2's C2): ON A PHONE THE SCREEN'S MARGINS ARE EQUAL AND THE PAGE USES ALL
    OF IT. The body kept the statement's 44px above, 20px beside and 60px below, and the shell 24px over the App bar
    besides, so a page began under a saved app's status bar and ended 84px above the bar. Under 1080px: 16px on every side,
@@ -240,54 +189,18 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    shorthands, as the rules they undo are. */
 @media (max-width:1079.98px){
   .gate{padding:0}
-  .home .hcol{display:flex;flex-direction:column;gap:24px}
-  .home .hcol>div{margin:0}
-  .home .hcol+.hcol{margin-top:24px}
-  .home .salt-inbox-row:last-child,.olist .salt-inbox-row:last-child{margin:0}
+.olist .salt-inbox-row:last-child{margin:0}
+
   .olist>:last-child{margin-bottom:0}
 }
-/* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
-   Home its money and what needs them beside what is coming, Account the statement beside This device (S7 7.3's .acct,
-   below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
-   the right. */
+
 @media (min-width:1080px){
-  .home,.panel{max-width:none}
-  .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
-  .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
+.panel{max-width:none}
 }
+
 .panel{max-width:620px;margin:0 auto}
 .panel h2:not(.salt-settings__head),.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
-/* Counter Batch B: the basket's + beside each size, its minus and its count once tallied, and the pane's line of what is in it */
-/* plan version 9 (03 Nov 2026): a book's stepper (salt-stepper), its figure and Add on one row, the sizes one fold under it */
-.pane .salt-stepper{margin-top:8px}
-.strow{display:flex;align-items:center;gap:12px;margin-top:12px}
-.stfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);color:var(--salt-salt);font-variant-numeric:tabular-nums}
-.strow .salt-status[hidden]{display:none}
-.stadd{margin-left:auto}
-.sfold{margin-top:8px}
-.sfold>summary{min-height:var(--salt-tap);display:flex;align-items:center;cursor:pointer;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--salt-brass)}
-.sfold>summary::-webkit-details-marker{display:none}
-.sfold>summary:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-.szrow[aria-pressed="true"] .salt-ledger__value{color:var(--salt-brass)}
-.bkline[hidden]{display:none}
-.bkline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
-.bkline__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
-.bkrm{margin-top:6px}
-/* the bar: the pay foot's pattern under 1080px, sticking above the App bar on the bar's own slate; from 1080px, where the bar is the rail,
-   a card that sticks to the foot of the list's column */
-.bkbar[hidden]{display:none}
-.bkbar{z-index:10;position:sticky;margin-top:24px;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);
-  display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
-.bkbar .salt-kpi{flex:1 1 8.5rem;padding:9px 14px 8px 18px}
-.bkbar .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px;min-height:var(--salt-tap)}
-@media (min-width:1080px){
-  .bkbar{bottom:0;padding:12px 16px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-lg)}
-}
-/* Counter Batch B: the way on Prices, its words and Change on one line while they fit */
-.pway[hidden]{display:none}
-.pway{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:-6px 0 18px}
-.pway__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
    inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
@@ -307,7 +220,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
 #aThread:empty{display:none}
 #aGlance:empty{display:none}
-.aglance .salt-glance__value{overflow-wrap:anywhere}
 
 .devcard{margin:0}
 .devcard .devlist{margin-top:8px}
@@ -319,15 +231,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
 .devcard .salt-ledger__label{flex:1 1 auto}
 .devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
-.ospots{display:flex;flex-direction:column;gap:var(--salt-space-2)}
-.ospot{display:flex;align-items:stretch;gap:var(--salt-space-2)}
-.ospot .salt-option{flex:1 1 auto;min-width:0}
-.ospot__edit{flex:0 0 auto;min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.ospot__add{align-self:flex-start;min-height:var(--salt-tap)}
-.spsave{flex-direction:row;align-items:flex-start;gap:12px;min-height:var(--salt-tap)}
-.spsave input{width:22px;height:22px;margin:11px 0 0;flex:0 0 auto;accent-color:var(--salt-brass)}
-.spsave__t{display:flex;flex-direction:column;gap:2px}
-.spremove{min-height:var(--salt-tap);margin-top:var(--salt-space-2)}
 .ahelp{margin:0}
 .ahelp__q{border-top:1px solid var(--salt-line-faint)}
 .ahelp__q:first-of-type{margin-top:6px}
@@ -345,10 +248,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .devcard{grid-column:2;grid-row:2 / span 2}
   .ahelp{grid-column:2}
 }
-/* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
-.payhead[hidden]{display:none}
-.payhead .btn{margin-top:12px}
-.payhead .salt-insight{margin:12px 0 0}
 .salt-ledger--plain .salt-ledger__value{white-space:nowrap}
 /* V2 (28 Sep 2026): To pay now is an invoice, a line a thing due, on the plain Ledger list; on the pay sheet each line's goods,
    delivery and what is paid stand beneath it, then the totals and the Total */
@@ -389,55 +288,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .payslip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:16px}
 .payslip p{flex-basis:100%;margin:0}
 .slipthumb{border-radius:6px;border:1px solid var(--salt-line)}
-.payhead .msg{margin:10px 0 0}
-/* PHASE 7A (his yes of 11 Oct 2026): HOME LEADS WITH THE ONE ACTION. To pay now's tile and its one filled Pay stand in a foot that
-   sticks above the App bar, the way the order sheet's foot holds its one action: last in Home, so it stays down the whole way,
-   on the bar's own slate so what scrolls under it is covered, its bottom edge the bar's height plus the safe area clear of the
-   screen (less the bar's own 1px edge, which it slides under, so no sliver of the page shows between them). The bar is fixed,
-   4rem (--salt-bar-h) above the safe area, so the pill is never under it. The tile and the pill share a row while the figure
-   fits, and the pill takes a row of its own, the width of the foot, when it does not. The Plan recipe's fold carries the lines
-   past the third. The look is the recipes' (KPI tile, Pill, Plan); this lays them out. */
-.payfoot[hidden]{display:none}
-.payfoot{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);z-index:10;margin-top:24px;
-  display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
-.payfoot .salt-kpi{flex:1 1 8.5rem;padding:9px 14px 8px 18px}
-.payfoot .salt-kpi__value{margin-top:2px}
-.payfoot .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px}
-/* from 1080px the bar is the rail, so there is nothing to clear: the foot heads the first column in the flow, above the notice
-   (the second column spans both rows beside it), where a column that runs long can never push it below the fold */
-/* Counter Batch A: their latest open order. Under 1080px a pill sticking above the App bar and the pay foot (--hfoot, the foot's own height,
-   set by the script); from 1080px a banner in the first column under To pay now. One element, so never both */
-#hLive:empty{display:none}
-.hlive{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) + var(--hfoot,0px) + 8px);z-index:11;
-  display:flex;align-items:center;gap:4px;margin:16px 0 0;padding:0 4px 0 0;border-radius:999px}
-.hlive__go{flex:1 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;min-height:var(--salt-tap);padding:0 14px;
-  border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;justify-content:center}
-.hlive__h{display:none}
-.hlive__row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.hlive__when{font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.hlive__point{font-size:var(--salt-text-sm);color:var(--salt-salt)}
-.hreward{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;color:inherit;font:inherit}
-.hreward__top{display:flex;align-items:center;gap:12px}
-.hreward__left{font-size:var(--salt-text-md);line-height:1.45}
-.hreward .salt-meter__track{display:block}
-.hreward__see{font-size:var(--salt-text-sm);color:var(--salt-brass)}
-.hyear{display:flex;flex-direction:column;gap:16px}
-.hyear__top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-.hyear__n{font-family:var(--salt-font-display);font-size:var(--salt-text-xl)}
-.hyear__units{display:flex;flex-wrap:wrap;gap:12px}
-.hyear__bars{display:flex;align-items:flex-end;gap:6px;height:88px}
-.hyear__col{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%}
-.hyear__bar{width:100%;max-width:22px;min-height:2px;height:calc(var(--h,0) * 0.64px);border-radius:3px 3px 0 0;background:var(--salt-brass)}
-.hyear__mon{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-@media (min-width:1080px){
-  .home{grid-template-rows:auto auto 1fr;row-gap:0}
-  .home>.hcol{grid-column:1;grid-row:3}
-  .home>.hcol+.hcol{grid-column:2;grid-row:1 / span 3}
-  .payfoot{position:static;grid-column:1;grid-row:1;margin:0 0 28px}
-  .hlive{position:static;grid-column:1;grid-row:2;margin:0 0 28px;padding:6px 8px 6px 4px;border-radius:var(--salt-radius-lg)}
-  .hlive__go{padding:10px 14px}
-  .hlive__h{display:block}
-}
 .invmore{margin:8px 0 0}
 .invmore>summary .salt-plan__title{grid-column:1 / -1}
 .invmore .inv{margin-top:0}
@@ -448,8 +298,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    the osh the customer opens and the osh he was sent were different documents. */
 #out{max-width:620px;margin:0 auto}
 /* a pane is the system's glass card (12 Oct 2026, Phase 5: salt-glass-card beside pane in the markup); here is its padding and its gap */
-.pane{padding:16px 18px;margin:0 0 14px}
-.pane h3,.pane .pmark{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
@@ -1204,18 +1052,10 @@ body.ended>*:not(#aEnded){display:none}
 .adm .acard .aled .salt-ledger__line{padding:4px 0}
 .adm .acard .acell{display:flex;flex-direction:column;justify-content:space-between;gap:4px}
 .adm .acard .aled .salt-ledger__value{text-align:right;white-space:nowrap}
-/* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
-   has done, and the system's ghosts; the Meter is the reward's bar */
-.rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.rlcount{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;color:var(--salt-text-muted)}
-.rlinks .gtop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 12px}
 .rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
 .rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
-.racts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.racts .salt-ghost{flex:1 1 auto}
 .rlinks .msg:empty{display:none}
 .rlinks .rlnext{margin:16px 0 10px}
-.rmeter{margin:10px 0 14px}
 .adm .grow{display:flex;gap:8px;margin-top:12px}
 .adm .grow .salt-ghost{flex:1}
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
@@ -1820,15 +1660,13 @@ function guestPage(inner, nonce, title) {
    that changes is never read out unasked. Drawn at first paint with the notice's lines; the open or closed line waits for /hours. */
 function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  return '<section id="today" class="today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm"' + wl("today.aria") + ">"
-    + '<div class="today__head"><span id="todayOpen" class="today__open" hidden></span><span class="today__clock" data-clock></span></div>'
-    + '<p id="todayLine" class="today__line" hidden></p>'
-    + '<div id="bull" class="salt-notice hnote"' + (lines.length ? "" : " hidden") + ">"
-    + '<div class="salt-notice__head">' + wt("span", 'class="salt-eyebrow salt-eyebrow--copper"', "bull.h")
-    + '<span class="salt-notice__tools"><span class="salt-notice__dots" aria-hidden="true"></span>'
-    + '<button type="button" class="salt-notice__pause" aria-pressed="false" hidden' + wl("bull.pause") + ">" + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M9 6 V18 M15 6 V18\"></path></svg>" + "</button></span></div>"
-    + '<div class="salt-notice__lines">' + lines.map((l, i) => '<p class="salt-notice__line' + (i ? "" : " salt-notice__line--on") + '">' + esc(l) + "</p>").join("") + "</div></div>"
-    + "</section>";
+  /* 16 Nov 2026, THE MOVE TO AMBIENT: the card is one notice. Whether the Counter is open is its title and the line under it follows, then his
+     notice, a line at a time, with Pause. The clock is the hero's own time line now, so the card does not say the time twice. */
+  return '<div id="today" class="amb-notice"' + (lines.length ? "" : " hidden") + wl("today.aria") + ">" + AMB.glyph("info")
+    + '<span><span id="todayOpen" class="amb-notice__title" hidden></span><span id="todayLine" class="hblock" hidden></span>'
+    + '<span id="bull" class="hnote hblock"' + (lines.length ? "" : " hidden") + ">" + wt("span", 'class="amb-notice__title"', "bull.h")
+    + '<span class="hlines">' + lines.map((l, i) => '<span class="hline"' + (i ? " hidden" : "") + ">" + esc(l) + "</span>").join("") + "</span>"
+    + '<button type="button" class="amb-pill amb-pill--quiet amb-pill--sm hpause" aria-pressed="false" hidden' + wl("bull.pause") + ">" + wd("bull.pause") + "</button></span></span></div>";
 }
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
@@ -1900,7 +1738,7 @@ const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.sli
    count is Ambient's (0.7.2, amb-tab__count, data-n: the orders that need them): drawn from 1, hidden from the reader, the tab's own name
    saying it (placeCounts writes "Orders, 3 waiting"). */
 function placesDock() {
-  return '<div class="amb-dock"><nav class="amb-tabbar"' + wl("place.bar") + ">" + PLACES.map(([t]) => '<button type="button" class="amb-tab"' + placeAttrs(t, true)
+  return '<div class="amb-dock"><div id="hLive" hidden></div><nav class="amb-tabbar"' + wl("place.bar") + ">" + PLACES.map(([t]) => '<button type="button" class="amb-tab"' + placeAttrs(t, true)
     + ' aria-label="' + esc(EN["place." + t]) + '" data-word="' + esc(EN["place." + t]) + '">'
     + AMB.glyph(PLACE_GLYPH[t]) + wt("span", "", "place." + t) + '<span class="amb-tab__count" data-n="' + t + '" aria-hidden="true" hidden></span></button>').join("") + "</nav></div>";
 }
@@ -2143,14 +1981,14 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "</div>"
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
-    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
-    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div></div>'
-    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div>'
-    /* Counter Batch A: their latest open order, a pill over the App bar and the pay foot on a phone and a banner under To pay now from
-       1080px: one element, so the two are never both shown */
-    + '<div id="hLive"></div>'
-    /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
-    + '<div id="homeFoot" class="payfoot" hidden></div></div>'
+    /* 16 Nov 2026, THE MOVE TO AMBIENT: Home is a split of two stacks (two columns from 960px). Each part stands in its own box, drawn afresh
+       and put on the page only where it reads differently, and the box takes no place of its own (display: contents in the site layer). The
+       foot is the one Pay, the last thing in the first stack, where Ambient keeps it above the dock; their latest open order is the dock's
+       mini bar (hLive, in placesDock). */
+    + '<div id="pHome" class="amb-split"><div class="amb-stack">' + noticeCard(bulletin)
+    + '<div id="payHead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div>'
+    + '<div id="homeFoot" class="amb-foot" hidden></div></div>'
+    + '<div class="amb-stack"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
        statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
@@ -2161,10 +1999,10 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<div id="out"></div>'
     + '</div>'
     + "</div></div>"
-    + '<div id="pPrices" class="panel" hidden></div>'
+    + '<div id="pPrices" class="amb-stack" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
-    + '<div id="pCard" class="panel" hidden></div>'
+    + '<div id="pCard" class="amb-stack" hidden></div>'
     + "</main>" + placesDock() + "</div>"
     + ambScript(nonce)
     + '<script nonce="' + nonce + '">'
@@ -2297,38 +2135,39 @@ const CLIENT_JS = `
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
   /* THE NOTICE (20 Sep 2026): drawn from what the page was served with, read again every sixth poll. Counter Batch A (his decision of
-     18 Oct 2026): one line at a time, the next every BULL_MS, a dot a line and Pause to hold it; under reduced motion every line stands
-     and neither the dots, Pause nor a timer is drawn. The card is never a live region. */
-  var BULL=__BULL__, bullN=0, BULL_MS=6000, bullAt=0, bullHeld=false, bullTimer=null;
+     18 Oct 2026): one line at a time, the next every BULL_MS, and Pause to hold it; under reduced motion every line stands and neither
+     Pause nor a timer is drawn. 16 Nov 2026, the move to Ambient: the lines are spans of the one notice, the others hidden while it turns,
+     and the dots are gone (Ambient has no part for them). The card is never a live region. */
+  var BULL=__BULL__, bullN=0, BULL_MS=6000, bullAt=0, bullHeld=false, bullTimer=null, bullAll=true;
   function bullStill(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   function bullShow(){
     var box=document.getElementById('bull'); if(!box) return;
-    [].forEach.call(box.querySelectorAll('.salt-notice__line'),function(p,i){ p.classList.toggle('salt-notice__line--on',i===bullAt); });
-    [].forEach.call(box.querySelectorAll('.salt-notice__dot'),function(d,i){ d.classList.toggle('salt-notice__dot--on',i===bullAt); });
+    [].forEach.call(box.querySelectorAll('.hline'),function(p,i){ p.hidden=!bullAll&&i!==bullAt; });
   }
+  /* the card stands only while it has something to say: the hours read, or a notice */
+  function todayShow(){ var t=document.getElementById('today'), o=document.getElementById('todayOpen'), b=document.getElementById('bull'); if(t&&o&&b) t.hidden=o.hidden&&b.hidden; }
   function bullTurn(){ var n=(BULL.lines||[]).length; if(bullHeld||n<2) return; bullAt=(bullAt+1)%n; bullShow(); }
   function bullDraw(b){
     BULL=b||{lines:[]};
     var box=document.getElementById('bull'); if(!box) return;
     var lines=BULL.lines||[], still=bullStill(), turns=lines.length>1&&!still;
-    box.hidden=!lines.length;
-    var ls=box.querySelector('.salt-notice__lines'), dots=box.querySelector('.salt-notice__dots'), pz=box.querySelector('.salt-notice__pause');
-    ls.textContent=''; dots.textContent='';
+    box.hidden=!lines.length; todayShow();
+    var ls=box.querySelector('.hlines'), pz=box.querySelector('.hpause');
+    ls.textContent='';
     if(bullAt>=lines.length) bullAt=0;
-    lines.forEach(function(l,i){
-      var p=document.createElement('p'); p.className='salt-notice__line'; p.textContent=l; ls.appendChild(p);
-      if(turns){ var d=document.createElement('span'); d.className='salt-notice__dot'; dots.appendChild(d); }
-    });
-    dots.hidden=!turns; pz.hidden=!turns;
+    bullAll=!turns;
+    lines.forEach(function(l){ var p=document.createElement('span'); p.className='hline'; p.textContent=l; ls.appendChild(p); });
+    pz.hidden=!turns;
     bullShow();
     if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
     if(turns) bullTimer=setInterval(bullTurn,BULL_MS);
   }
   (function(){
-    var bx=document.getElementById('bull'), pz=bx&&bx.querySelector('.salt-notice__pause'); if(!pz) return;
+    var bx=document.getElementById('bull'), pz=bx&&bx.querySelector('.hpause'); if(!pz) return;
     pz.addEventListener('click',function(){
       bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');
       pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause')); pz.setAttribute('data-wl',bullHeld?'bull.play':'bull.pause');
+      pz.textContent=tw(bullHeld?'bull.play':'bull.pause');
     });
   })();
   /* the open or closed line, off /hours: Open until the next change, or Closed and when it opens; nothing while the hours are not read */
@@ -2337,11 +2176,11 @@ const CLIENT_JS = `
   function todayDraw(){
     var chip=document.getElementById('todayOpen'), line=document.getElementById('todayLine'); if(!chip||!line) return;
     var h=counterHours, known=!!h&&!hoursError&&typeof h.open==='boolean';
-    chip.hidden=!known; line.hidden=!known;
+    chip.hidden=!known; line.hidden=!known; todayShow();
     if(!known){ chip.textContent=''; line.textContent=''; return; }
-    chip.className='today__open salt-status salt-status--'+(h.open?'verdigris':'mist'); chip.textContent=tw(h.open?'today.open':'today.closed');
+    chip.textContent=tw(h.open?'today.open':'today.closed');
     line.textContent='';
-    var at=h.open?h.nextChange:h.nextOpen, lead=el('span','today__when');
+    var at=h.open?h.nextChange:h.nextOpen, lead=el('span');
     if(at) lead.textContent=h.open?tw(sameDay(at)?'today.until':'today.untilOn',{t:hhmm(at), d:stamp(at)}):tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)});
     if(lead.textContent){ line.appendChild(lead); line.appendChild(document.createTextNode(' ')); }
     line.appendChild(document.createTextNode(tw(h.open?'today.openB':'today.closedB')));
@@ -2530,30 +2369,12 @@ const CLIENT_JS = `
     }
     return svg;
   }
-  /* PLAN VERSION 10: the coin (coinSvg's twin): the ring in the book's hue by its index, the shape, his letter under it; hidden from a reader */
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: a book's mark standing alone is the mark thumb (markThumb, below): the ring in the book's hue by its index here, the
+     app's own drawing and his letter, never a product word. The coin of plan version 10 (the salt- ring and its stylesheet rules) is gone from the page. */
   var COINB=Object.keys(PSYM).filter(function(k){ return k!=='_'; });
-  function coin(product,size){
-    var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k);
-    var L=b>=0&&Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k].l:'';
-    var w=el('span','salt-coin salt-coin--'+(size||'md')); if(b>=0) w.setAttribute('data-b',String(b)); w.setAttribute('aria-hidden','true');
-    var svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 48 48'); svg.setAttribute('aria-hidden','true'); svg.setAttribute('focusable','false');
-    var c=document.createElementNS(NS,'circle'); c.setAttribute('class','salt-coin__ring'); c.setAttribute('cx','24'); c.setAttribute('cy','24'); c.setAttribute('r','22.5'); svg.appendChild(c);
-    var g=document.createElementNS(NS,'g'); g.setAttribute('transform','translate(13.8,6.3)scale(0.85)');
-    var d=document.createElementNS(NS,'path'); d.setAttribute('class','salt-coin__shape'); d.setAttribute('d',b>=0?PSYM[k]:PSYM._); g.appendChild(d); svg.appendChild(g);
-    if(L){ var t=document.createElementNS(NS,'text'); t.setAttribute('class','salt-coin__let'); t.setAttribute('x','24'); t.setAttribute('y','39.5'); t.setAttribute('text-anchor','middle');
-      t.setAttribute('font-size',String(L.length<=1?13:L.length<=3?12:11)); t.textContent=L; svg.appendChild(t); }
-    w.appendChild(svg); return w;
-  }
-  /* a size and its mark, as one phrase: "2.5 unit" then the cube; outside a card alone (his note of 28 Sep 2026) */
-  function withMark(product,text,px){
-    var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
-    w.appendChild(psym(product,px||20));
-    w.appendChild(el('span','sr',pshape(product)));
-    return w;
-  }
   /* a book's heading: its mark alone, named by the shape (and by its light, where it has one); no shape word is drawn (his word of 12 Oct 2026) */
   function pmarkHead(tag,product){
-    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md'));
+    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));
     return h;
   }
   /* a mark leading a note: the lines of a sheet that several products share; a reader is told the shape and nothing but the mark is drawn */
@@ -2565,7 +2386,7 @@ const CLIENT_JS = `
      once (mtileSvg's twin). The shape word is never drawn (his word of 12 Oct 2026). */
   function mtile(product,q,u,px){
     var w=el('span','mtile'), words=unitsOf(q,u); w.appendChild(el('span','sr',pshape(product)+' '+words));
-    w.appendChild(px&&px<28?psym(product,px):coin(product,'sm'));
+    w.appendChild(px&&px<28?psym(product,px):markThumb(product,'md'));
     var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);
     return w;
   }
@@ -3352,6 +3173,7 @@ const CLIENT_JS = `
     tab=t; tabs.setAttribute('data-place',t);
     [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
+    liveShow();
     placeTitle();
     if(tapped&&(!location.hash||placeOf(location.hash))){
       var p=PLACES.filter(function(x){ return x[0]===t; })[0];
@@ -3390,17 +3212,20 @@ const CLIENT_JS = `
     var then=klBits(new Date(readAt).toISOString()), now=klBits(new Date().toISOString());
     return then.day===now.day&&then.month===now.month&&then.year===now.year?then.hour+':'+then.minute:then.day+' '+mon3()[+then.month-1];
   }
+  /* 16 Nov 2026, the move to Ambient: what could not be read is a notice that needs care, its Try again a quiet pill beside it */
   function staleNode(){
-    var box=el('div','panel unread'); box.setAttribute('data-stale','');
-    var p=el('p','lead',tw('read.since',{t:readSince()})); p.setAttribute('role','status'); box.appendChild(p);
+    var box=el('div','amb-notice amb-notice--warn'); box.setAttribute('data-stale','');
+    box.appendChild(ambIcon('info'));
+    var p=el('span',null,tw('read.since',{t:readSince()})); p.setAttribute('role','status'); box.appendChild(p);
     return box;
   }
   function liveBad(){ var s=bundle&&bundle.statements.filter(function(x){ return x.live&&x.bad; })[0]; return s?s.bad:''; }
   function unreadNode(key,go){
-    var box=el('div','panel unread'); box.setAttribute('data-unread',key);
-    var p=el('p','lead',tw(key)); p.setAttribute('role','status'); box.appendChild(p);
+    var box=el('div','amb-notice amb-notice--warn'); box.setAttribute('data-unread',key);
+    box.appendChild(ambIcon('info'));
+    var p=el('span',null,tw(key)); p.setAttribute('role','status'); box.appendChild(p);
     if(go&&session&&!view&&!OWNER){
-      var b=el('button','btn salt-ghost',tw('door.again')); b.type='button';
+      var b=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('door.again')); b.type='button';
       b.addEventListener('click',async function(){ b.disabled=true; try{ await go(); }finally{ b.disabled=false; } });
       box.appendChild(b);
     }
@@ -3705,67 +3530,54 @@ const CLIENT_JS = `
     var box=rewardsEl;
     box.textContent='';
     drawMyLinks(box);
-    if(!card||!card.products||!card.products.length){ box.appendChild(el('p','lead',tw('rew.later'))); return; }
-    box.appendChild(el('h2',null,tw('rew.h')));
-    box.appendChild(el('p','lead',tw('rew.lead')));
+    if(!card||!card.products||!card.products.length){ box.appendChild(hSay(tw('rew.later'))); return; }
+    box.appendChild(hHead(tw('rew.h')));
+    box.appendChild(hSay(tw('rew.lead')));
     card.products.forEach(function(p){
-      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
-      var h3=pmarkHead('h3',p.product);
-      pane.appendChild(h3);
-      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane. No ringgit of margin anywhere near it. The bar is
-         the system's Meter, its fill set from this nonce'd script, which the page's style policy allows. */
-      if(p.reward){
-        var rw=p.reward;
+      var pane=el('div','hprod');
+      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane: a meter row, the book's mark its thumb. No ringgit of margin anywhere
+         near it. A book with no reward is headed by its mark alone, named by the shape. 16 Nov 2026: in Ambient's parts. */
+      var rw=p.reward, led=false;
+      if(rw){
         /* S8 8.3: and how to take it, which the line never said; only where there is some to take. S13: a sentence a case */
-        pane.appendChild(el('p','sub2',tw('rew.'+(rw.held?'held':rw.left>0?'ask':'none')+(rw.earned!==rw.left?'P':''),
-          {left:Uq(rw.left,p.unit), earned:Uq(rw.earned,p.unit), taken:Uq(rw.taken,p.unit)})));
-        if(rw.next!=null){
-          var pc=Math.round(rw.next*100), mtr=el('div','salt-meter rmeter'), ln=el('div','salt-meter__line');
-          ln.appendChild(el('span',null,tw('rew.next'))); ln.appendChild(el('b',null,pc+'%'));
-          var tr=el('div','salt-meter__track'), fill=el('div','salt-meter__fill');
-          mtr.style.setProperty('--salt-fill',String(pc));
-          tr.appendChild(fill); mtr.appendChild(ln); mtr.appendChild(tr);
-          tr.setAttribute('role','img'); tr.setAttribute('aria-label',tw('rew.nextAria',{p:pc}));
-          pane.appendChild(mtr);
-        }
+        var said=tw('rew.'+(rw.held?'held':rw.left>0?'ask':'none')+(rw.earned!==rw.left?'P':''),
+          {left:Uq(rw.left,p.unit), earned:Uq(rw.earned,p.unit), taken:Uq(rw.taken,p.unit)});
+        var pc=rw.next!=null?Math.round(rw.next*100):null;
+        var rr=hRow({tag:'li', meter:pc!=null, attrs:{'data-reward-book':p.product}, thumb:markThumb(p.product), title:pc!=null?tw('rew.next'):said, sub:pc!=null?said:'', amount:pc!=null?pc+'%':''});
+        if(pc!=null) rr.appendChild(hMeter(pc));
+        var ru=el('ul','amb-list amb-list--ruled'); ru.appendChild(rr); pane.appendChild(ru); led=true;
         /* R3 (plan version 6): the first-week orders of people they brought in that counted toward it, a count and nothing else */
-        if(+rw.r3>0) pane.appendChild(el('p','sub2',tw(+rw.r3===1?'rew.r3One':'rew.r3',{n:String(rw.r3)})));
+        if(+rw.r3>0) pane.appendChild(hSay(tw(+rw.r3===1?'rew.r3One':'rew.r3',{n:String(rw.r3)})));
       }
-      var sm=p.summary||{};
-      var ul=el('ul','conf');
+      if(!led){ var h3=el('h3','hbook'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(markThumb(p.product,'lg')); pane.insertBefore(h3,pane.firstChild); }
+      var sm=p.summary||{}, st=el('div','amb-settings'), sl=el('ul','amb-settings__list');
       [[tw('rew.bought'),rm(sm.bought||0)],
        [tw('rew.sold'),rm(sm.soldFor||0)],
        [tw('rew.onward'),String(sm.onward||0)],
        [tw('rew.brought'),rm(sm.introduced||0)],
        [tw('rew.people'),String(sm.referred||0)]].forEach(function(r){
-        var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li);
+        var li=el('li'), d=el('div','amb-setting'); d.appendChild(el('span','amb-setting__name',r[0])); d.appendChild(el('span','amb-setting__value',r[1])); li.appendChild(d); sl.appendChild(li);
       });
-      pane.appendChild(ul);
-      /* the lines, with their own month strip */
+      st.appendChild(sl); pane.appendChild(st);
+      /* the lines, with their own month select (more than five months, a list that grows: a Select) */
       var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
-        var strip=el('div','salt-tabs mos mfil');
-        months.concat(['']).forEach(function(m){
-          var b=el('button','salt-tabs__pill'+(m===pick?' salt-tabs__pill--active':'')); b.type='button'; b.setAttribute('aria-pressed',m===pick?'true':'false');
-          b.textContent=m?monthLabel(m):tw('acct.allPill');
-          b.addEventListener('click',function(){ cardMonth=m; drawCard(); });
-          strip.appendChild(b);
-        });
-        pane.appendChild(strip);
+        var fl=el('label','amb-field mos'), sw=el('span','amb-select'), sel=el('select','amb-input');
+        fl.appendChild(el('span','amb-field__label',tw('acct.month')));
+        months.concat(['']).forEach(function(m){ var o=el('option',null,m?monthLabel(m):tw('acct.allPill')); o.value=m; o.selected=m===pick; sel.appendChild(o); });
+        sel.addEventListener('change',function(){ cardMonth=sel.value; drawCard(); });
+        sw.appendChild(sel); sw.appendChild(ambIcon('chevron','amb-icon--sm')); fl.appendChild(sw); pane.appendChild(fl);
       }
       var shown=(p.lines||[]).filter(function(l){ return !pick||(l.date||'').slice(0,7)===pick; });
-      if(!shown.length) pane.appendChild(el('p','sub2',tw('rew.noMonth')));
+      if(!shown.length) pane.appendChild(hSay(tw('rew.noMonth')));
       else {
-        var t=el('table'), th=el('thead'), tr=el('tr');
-        [[tw('rew.date'),'l'],[tw('rew.what'),'l'],[tw('sh.size'),''],['RM','']].forEach(function(c){ tr.appendChild(el('th',c[1]||null,c[0])); });
+        var t=el('table','amb-table amb-table--stack'), th=el('thead'), tr=el('tr');
+        [[tw('rew.date'),''],[tw('rew.what'),''],[tw('sh.size'),'is-num'],['RM','is-num']].forEach(function(c){ tr.appendChild(el('th',c[1]||null,c[0])); });
         th.appendChild(tr); t.appendChild(th);
         var tb=el('tbody');
         shown.forEach(function(l){
-          var row=el('tr');
-          row.appendChild(el('td','l',l.date||''));
-          row.appendChild(el('td','l',tw(l.kind==='own'?'rew.bought':'rew.through')));
-          row.appendChild(el('td',null,unitsOf(l.qty,p.unit)));
-          row.appendChild(el('td',null,rm(l.rm)));
+          var row=el('tr'), cells=[[tw('rew.date'),l.date||'',''],[tw('rew.what'),tw(l.kind==='own'?'rew.bought':'rew.through'),''],[tw('sh.size'),unitsOf(l.qty,p.unit),'is-num'],['RM',rm(l.rm),'is-num']];
+          cells.forEach(function(c){ var td=el('td',c[2]||null,c[1]); td.setAttribute('data-label',c[0]); row.appendChild(td); });
           tb.appendChild(row);
         });
         t.appendChild(tb); pane.appendChild(t);
@@ -3801,32 +3613,37 @@ const CLIENT_JS = `
     if(r.state==='withdrawn') return tw('lnk.lineWithdrawn');
     return r.opens?tw('lnk.opened'+(r.opens===1?'1':'N')+(r.last?'Last':''),{n:r.opens, d:Dd(linkDay,r.last)}):tw('lnk.notOpened');
   }
+  /* 16 Nov 2026, the move to Ambient: a link is a row (its state a word of the second line), the address a plate that copies, the QR in a code
+     frame, its controls quiet pills; a join link is the same. */
+  function hIconThumb(name){ var t=el('span','amb-thumb'); t.setAttribute('aria-hidden','true'); t.appendChild(ambIcon(name)); return t; }
+  function hLinkPlate(url){
+    var pl=el('div','amb-plate'), b=el('button','amb-plate__row'); b.type='button'; b.setAttribute('data-amb-copy',url);
+    var tx=el('span','amb-plate__text'); tx.appendChild(el('span','amb-plate__label',tw('lnk.yours'))); tx.appendChild(el('span','amb-plate__value gu',url));
+    b.appendChild(tx); b.appendChild(el('span','amb-plate__act',tw('lnk.copy'))); pl.appendChild(b); return pl;
+  }
+  function hLinkSub(stateWordText,tone,line){ var s=el('span'); s.appendChild(el('span',tone,stateWordText)); if(line) s.appendChild(document.createTextNode(', '+lcFirst(line))); return s; }
   function drawMyLinks(into){
-    var box=el('div','pane rlinks salt-glass-card salt-glass-card--radius-md');
-    var head=el('div','rlhead'); head.appendChild(el('h3',null,tw('lnk.h')));
+    var box=el('div','rlinks');
     var live=(myLinks||[]).filter(function(r){ return r.state!=='withdrawn'; }).length;
-    if(myLinks&&myMax) head.appendChild(el('span','rlcount',tw('lnk.count',{n:live, m:myMax})));
-    box.appendChild(head);
-    if(myLinks===null){ box.appendChild(el('p','sub2',tw('lnk.reading'))); into.appendChild(box); if(!view) loadMyLinks(); return; }
-    if(!myLinks.length) box.appendChild(el('p','sub2',tw('lnk.none')));
+    box.appendChild(hHead(tw('lnk.h'),myLinks&&myMax?tw('lnk.count',{n:live, m:myMax}):''));
+    if(myLinks===null){ box.appendChild(hSay(tw('lnk.reading'))); into.appendChild(box); if(!view) loadMyLinks(); return; }
+    if(!myLinks.length) box.appendChild(hSay(tw('lnk.none')));
     myLinks.forEach(function(r){
-      var row=el('div','glink salt-glass-card salt-glass-card--radius-md');
-      var top=el('div','gtop'), st=LINK_STATE[r.state]||LINK_STATE.open;
-      top.appendChild(el('p','gh',r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours')));
-      /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
-      top.appendChild(el('span','gstate salt-status salt-status--'+st[1],tw(st[0])));
-      row.appendChild(top);
-      row.appendChild(el('p','gs',linkLine(r)));
+      var row=el('div','glink');
+      row.appendChild(hList([hRow({tag:'li', thumb:hIconThumb('share'), title:r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours'),
+        /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
+        sub:hLinkSub(tw((LINK_STATE[r.state]||LINK_STATE.open)[0]),r.state==='open'?'amb-pos':null,linkLine(r))})]));
       if(r.state==='open'){
-        row.appendChild(el('code','gu',r.url));
-        var img=document.createElement('img');
+        row.appendChild(hLinkPlate(r.url));
+        var fig=el('figure','amb-codeframe'), fld=el('div','amb-codeframe__field'), img=document.createElement('img');
         img.src=r.qr; img.alt=tw('lnk.qrAlt'); img.width=160; img.height=160;
-        img.hidden=!qrShown[r.id]; row.appendChild(img);
+        fld.appendChild(img); fig.appendChild(fld); fig.appendChild(el('figcaption','amb-codeframe__caption',tw('lnk.qrAlt')));
+        fig.hidden=!qrShown[r.id]; row.appendChild(fig); img.hidden=false;
       }
-      var acts=el('div','racts'), said=el('p','msg'); said.setAttribute('role','status');
+      var acts=el('div','amb-cluster'), said=el('p','msg'); said.setAttribute('role','status');
       if(r.state==='open'){
         if(navigator.share){
-          var sh=el('button','salt-ghost',tw('lnk.share')); sh.type='button';
+          var sh=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.share')); sh.type='button';
           sh.addEventListener('click', function(){
             /* the tap's first act: the address is already here, so nothing waits between the tap and the sheet */
             var done; try{ done=navigator.share({url:r.url}); }catch(e){ done=Promise.reject(e); }
@@ -3834,23 +3651,15 @@ const CLIENT_JS = `
               function(e){ said.textContent=e&&e.name==='AbortError'?'':tw('lnk.notShared'); });
           });
           acts.appendChild(sh);
-        } else {
-          var cp=el('button','salt-ghost',tw('lnk.copy')); cp.type='button';
-          /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
-          cp.addEventListener('click', async function(){
-            try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }
-            setTimeout(function(){ cp.textContent=tw('lnk.copy'); },1500);
-          });
-          acts.appendChild(cp);
         }
-        var qb=el('button','salt-ghost',tw(qrShown[r.id]?'lnk.qrHide':'lnk.qrShow')); qb.type='button';
+        var qb=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw(qrShown[r.id]?'lnk.qrHide':'lnk.qrShow')); qb.type='button';
         qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false');
-        qb.addEventListener('click', function(){ qrShown[r.id]=!qrShown[r.id]; img.hidden=!qrShown[r.id];
+        qb.addEventListener('click', function(){ qrShown[r.id]=!qrShown[r.id]; fig.hidden=!qrShown[r.id];
           qb.textContent=tw(qrShown[r.id]?'lnk.qrHide':'lnk.qrShow'); qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false'); });
         acts.appendChild(qb);
       }
       if(r.state!=='withdrawn'&&!view){
-        var wd=el('button','salt-ghost',tw('lnk.withdraw')); wd.type='button';
+        var wd=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.withdraw')); wd.type='button';
         wd.setAttribute('data-yn','link:'+r.id);
         wd.addEventListener('click', function(){
           /* 11 Oct 2026: asked in a Sheet that says what the link is, not by the browser's confirm; a yes sends what it always sent */
@@ -3869,10 +3678,10 @@ const CLIENT_JS = `
       box.appendChild(row);
     });
     if(view){ /* his read-only view makes nothing */ }
-    else if(live>=myMax) box.appendChild(el('p','sub2',tw('lnk.max',{n:live})));
+    else if(live>=myMax) box.appendChild(hSay(tw('lnk.max',{n:live})));
     else {
-      box.appendChild(el('p','sub2 rlnext',tw('lnk.next')));
-      var mk=el('button','btn salt-pill salt-pill--md',tw('lnk.make')); mk.type='button';
+      box.appendChild(hSay(tw('lnk.next'),'','rlnext'));
+      var mk=el('button','amb-pill',tw('lnk.make')); mk.type='button';
       mk.addEventListener('click', async function(){
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
@@ -3882,16 +3691,16 @@ const CLIENT_JS = `
       });
       box.appendChild(mk);
     }
-    if(myNote) box.appendChild(el('p','msg',myNote));
+    if(myNote) box.appendChild(hSay(myNote,'','','live'));
     if(!view&&myJoins!==null) drawMyJoins(box);
     into.appendChild(box);
   }
   /* a join link is for one person: ask for one, and see where each stands; an open one is copied to send, and nothing else is shown of who it is for */
   function drawMyJoins(box){
     var sec=el('div'); sec.setAttribute('data-joins','');
-    sec.appendChild(el('h3',null,tw('jn.h')));
-    sec.appendChild(el('p','sub2',tw('jn.note')));
-    var ask=el('button','salt-ghost',tw('jn.ask')); ask.type='button';
+    sec.appendChild(hHead(tw('jn.h')));
+    sec.appendChild(hSay(tw('jn.note')));
+    var ask=el('button','amb-pill amb-pill--quiet',tw('jn.ask')); ask.type='button';
     ask.addEventListener('click', async function(){
       ask.disabled=true; var mine=ticket;
       var r=await api('/my/joins',{});
@@ -3901,13 +3710,12 @@ const CLIENT_JS = `
     });
     sec.appendChild(ask);
     myJoins.forEach(function(r){
-      var row=el('div','glink salt-glass-card salt-glass-card--radius-md'), top=el('div','gtop');
+      var row=el('div','glink');
       row.setAttribute('data-join', r.id);
-      top.appendChild(el('p','gh',r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours')));
-      top.appendChild(el('span','gstate salt-status salt-status--'+(r.state==='open'?'verdigris':r.state==='waiting'?'steel salt-status--dashed':'mist'),tw(JOIN_STATE[r.state]||'jn.used')));
-      row.appendChild(top);
+      row.appendChild(hList([hRow({tag:'li', thumb:hIconThumb('person'), title:r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours'),
+        sub:hLinkSub(tw(JOIN_STATE[r.state]||'jn.used'),r.state==='open'?'amb-pos':null,'')})]));
       if(r.state==='open'){
-        var acts=el('div','racts'), cp=el('button','salt-ghost',tw('lnk.copy')); cp.type='button';
+        var acts=el('div','amb-cluster'), cp=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.copy')); cp.type='button';
         cp.addEventListener('click', async function(){
           try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }
           setTimeout(function(){ cp.textContent=tw('lnk.copy'); },1500);
@@ -3916,7 +3724,7 @@ const CLIENT_JS = `
       }
       sec.appendChild(row);
     });
-    if(myJoinNote) sec.appendChild(el('p','msg',myJoinNote));
+    if(myJoinNote) sec.appendChild(hSay(myJoinNote,'','','live'));
     box.appendChild(sec);
   }
   async function loadMyLinks(){
@@ -3955,39 +3763,44 @@ const CLIENT_JS = `
      set, "More by DD Mon" under it (04 Nov 2026, his four steps: Available, Selling fast, Low on stock, Out of stock). Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
   function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
   function supLit(p){ var s=p&&p.supply; return s&&(s.light==='green'||s.light==='yellow'||s.light==='amber'||s.light==='red')?s:null; }
-  function supWord(l){ return el('span','salt-light'+(l==='green'?'':' salt-light--'+l),tw('sup.'+l)); }
-  /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands under the mark too, the status in the light's colour */
+  /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands with the mark too, the status in the light's colour.
+     16 Nov 2026, THE MOVE TO AMBIENT: the light is Home's chip (hLight: its dot and its word), the one function both places call; beside the book's
+     mark in the heading, which says it once, so the chip itself is hidden from a reader */
   function supplyMark(h,pane,p){
     var s=supLit(p); if(!s) return;
     h.setAttribute('aria-label',pshape(p.product)+', '+tw('sup.'+s.light));
-    var ln=pane.appendChild(el('p','supline')); ln.setAttribute('aria-hidden','true'); ln.appendChild(supWord(s.light));   /* the heading says it once */
-    if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
+    var c=hLight(s.light); c.setAttribute('aria-hidden','true'); h.appendChild(c);
+    if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','amb-muted sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
   }
+  /* a plain line of words under the place's title, and a notice (the system's Notice: its icon, then the words) */
+  function pLine(t){ return el('p','amb-muted',t); }
+  function pNote(t,id,warn){ var n=el('div','amb-notice'+(warn?' amb-notice--warn':'')); if(id) n.id=id; n.appendChild(ambIcon('info')); n.appendChild(el('span',null,t)); return n; }
+  var stN=0, szN=0;
   function drawPrices(){
     pPrices.textContent='';
     /* V5: from pay.hide after the handover the prices are hidden until the overdue amount is paid */
-    if(hidePrices){ pPrices.appendChild(el('p','lead',tw('pr.hidden',{rm:rm(odLeft())}))); return; }
+    if(hidePrices){ pPrices.appendChild(pNote(tw('pr.hidden',{rm:rm(odLeft())}),'',true)); return; }
     var soon=((prices&&prices.soon)||[]).concat(((prices&&prices.products)||[]).filter(function(x){ return !(x.sizes&&x.sizes.length); }));
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
-      pPrices.appendChild(el('p','lead',tw('pr.none')));
+      pPrices.appendChild(pLine(tw('pr.none')));
       return;
     }
     /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
        of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
     var tapTo=!ro()&&!hold;
     bsPanes=[]; supPanes={}; stPanes={};
-    pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
+    pPrices.appendChild(pLine(tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
-    pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
+    pPrices.appendChild(pLine(tw('pr.goods',{deliv:Wk('deliv')})));
     /* 27 Oct 2026: the prices stay as they are, and their credit is said once, here */
-    var crl=el('p','salt-insight'); crl.id='prCredit'; crl.hidden=true; pPrices.appendChild(crl); creditDraw();
+    var crl=pNote('','prCredit'); crl.hidden=true; pPrices.appendChild(crl); creditDraw();
     var pw=el('div','pway'); pw.id='pWay'; pPrices.appendChild(pw); wayDraw();
-    if(tapTo){ var bl=el('p','salt-insight salt-insight--copper',limitLine()); bl.id='bkLim'; bl.hidden=true; pPrices.appendChild(bl); }
-    if(prices.since) pPrices.appendChild(el('p','sub2',tw('pr.since',{m:Dd(monthOf,prices.since)})));
-    /* S7 7.2: the books stand in a grid, two across from 1080px */
+    if(tapTo){ var bl=pNote(limitLine(),'bkLim',true); bl.hidden=true; pPrices.appendChild(bl); }
+    if(prices.since) pPrices.appendChild(pLine(tw('pr.since',{m:Dd(monthOf,prices.since)})));
+    /* S7 7.2: the books stand in a grid, two across from 960px (the system's own width for two columns) */
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
-      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
+      var pane=el('div','pane amb-pane');
       /* C21: a board's mark is an h2 under the place's h1, never an h3 with nothing between */
       var h3=pmarkHead('h2',p.product);
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
@@ -3995,26 +3808,25 @@ const CLIENT_JS = `
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
       pane.appendChild(h3); supplyMark(h3,pane,p); supPanes[p.product]=pane;
       /* PLAN VERSION 9: the units are chosen here, on the book's stepper; its sizes stand one fold under it, each a tap that sets the stepper.
-         Where nothing is ordered from here (his read-only view, the overdue gate) the sizes are the plain ledger, as before */
+         Where nothing is ordered from here (his read-only view, the overdue gate) the sizes are the plain list, as before */
       if(tapTo) stepBox(p,pane);
-      var L=el('div','salt-ledger salt-ledger--plain');
-      p.sizes.forEach(function(r){
-        var row=el(tapTo?'button':'div','salt-ledger__row szrow'), line=el('span','salt-ledger__line');
-        line.appendChild(el('span','salt-ledger__label',unitsOf(r.q,p.unit)));
-        line.appendChild(el('span','salt-ledger__value',rm(r.price))); row.appendChild(line);
-        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); row.setAttribute('aria-pressed','false');
-          row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); }); }
-        L.appendChild(row);
-      });
-      if(tapTo&&stPanes[p.product]){ var fd=el('details','sfold'); fd.appendChild(el('summary',null,tw('st.sizes'))); fd.appendChild(L); pane.appendChild(fd); stepPatch(p.product,false); }
-      else pane.appendChild(L);
+      var L=hList(p.sizes.map(function(r){
+        var row=hRow({tag:tapTo?'button':'div', attrs:tapTo?{'data-q':String(r.q),'aria-pressed':'false'}:null, title:unitsOf(r.q,p.unit), amount:rm(r.price)});
+        row.classList.add('szrow');
+        if(tapTo) row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); });
+        return row;
+      }));
+      if(tapTo&&stPanes[p.product]){
+        var id='sz'+(szN++), mo=el('button','amb-more',tw('st.sizes')); mo.type='button'; mo.setAttribute('aria-controls',id); mo.setAttribute('aria-expanded','false');
+        var fd=el('div','sfold'); fd.id=id; fd.hidden=true; fd.appendChild(L); pane.appendChild(mo); pane.appendChild(fd); stepPatch(p.product,false);
+      } else pane.appendChild(L);
       grid.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
-      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
-      var sh=pmarkHead('h2',p.product); pane.appendChild(sh);
-      pane.appendChild(el('p','sub2',tw('pr.soon')));
+      var pane=el('div','pane amb-pane');
+      pane.appendChild(pmarkHead('h2',p.product));
+      pane.appendChild(el('p','amb-muted sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
     bsPatch();
@@ -4022,18 +3834,21 @@ const CLIENT_JS = `
 
   /* COUNTER BATCH B: THE WAY ON PRICES, "Delivering to {place}" or "Collecting", with Change opening the sheet at How it reaches you. Patched
      in place (a sheet closed, the orders read again), never by drawing the list again. None with no way yet, and no Change where nothing is
-     ordered from here (his read-only view, the overdue gate) */
+     ordered from here (his read-only view, the overdue gate). 16 Nov 2026: one setting row of the system's Settings, opening the sheet where it is tapped */
   function wayDraw(){
     var pw=document.getElementById('pWay'); if(!pw) return;
     var w=wayNow(), tapTo=!ro()&&!hold;
     pw.textContent=''; pw.hidden=!w; if(!w) return;
-    var pl=w.place.trim();
-    pw.appendChild(el('span','pway__t',w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl')));
-    if(!tapTo) return;
-    var ch=el('button','salt-ghost pway__go',tw('pr.wayChange')); ch.type='button'; ch.id='pWayGo';
-    ch.addEventListener('click',function(){ pickBasket(); sheetOpen(null,null,ch);
-      var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
-    pw.appendChild(ch);
+    var pl=w.place.trim(), words=w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl');
+    var st=el('div','amb-settings'), ul=el('ul','amb-settings__list'), li=el('li'), row=el(tapTo?'button':'div','amb-setting');
+    if(tapTo){ row.type='button'; row.id='pWayGo'; }
+    row.appendChild(el('span','amb-setting__name pway__t',words));
+    if(tapTo){
+      row.appendChild(el('span','amb-setting__value',tw('pr.wayChange'))); row.appendChild(ambIcon('next','amb-icon--sm'));
+      row.addEventListener('click',function(){ pickBasket(); sheetOpen(null,null,row);
+        var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
+    }
+    li.appendChild(row); ul.appendChild(li); st.appendChild(ul); pw.appendChild(st);
   }
   /* COUNTER BATCH B (his answers of 18 Oct 2026): THE BASKET. A + beside each size adds it to what they will order of that mark, and taps
      on one mark SUM into one line, priced at the summed amount's own figure off the list: two taps on 5 units are 10 units at the 10-unit
@@ -4054,8 +3869,8 @@ const CLIENT_JS = `
       var p=B.P.product, a=bsOf(p), t=bsTapsOf(p), N=B.node; N.textContent=''; N.hidden=!(a>0)||!bsOn(); if(N.hidden) return;
       var parts=t?Object.keys(t).sort(function(x,y){ return +y-(+x); }).reduce(function(s,q){ for(var i=0;i<t[q];i++) s.push(String(+q)); return s; },[]):[];
       N.appendChild(el('span','bkline__t',parts.length>1?tw('bk.inTaps',{q:unitsOf(a,B.P.unit), t:parts.join(' + ')}):tw('bk.in',{q:unitsOf(a,B.P.unit)})));
-      if(priceAt(B.P,a)==null&&!overMax(B.P,a)){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
-      var rb=el('button','salt-ghost bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
+      if(priceAt(B.P,a)==null&&!overMax(B.P,a)){ var g=gridOf(B.P); N.appendChild(el('span','amb-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
+      var rb=el('button','amb-pill amb-pill--quiet amb-pill--sm bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
       rb.appendChild(el('span','sr',' '+pshape(p)));
       rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var S=stPanes[p]; if(S) try{ S.val.focus({preventScroll:true}); }catch(e){} });
       N.appendChild(rb);
@@ -4075,10 +3890,12 @@ const CLIENT_JS = `
     var sum=0, open=ls.some(function(x){ return x.t==null&&!x.over; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });
     var w=wayNow();
     var bco=creditOff(+sum.toFixed(2));
-    bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
-    var go=el('button','salt-pill salt-pill--md',tw('bk.go')); go.type='button'; go.id='bkGo'; go.disabled=open;
+    var st=hStat(tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)));
+    st.appendChild(el('span','amb-stat__label',bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
+    bar.appendChild(st);
+    var ft=el('div','amb-foot'), go=el('button','amb-pill amb-pill--block',tw('bk.go')); go.type='button'; go.id='bkGo'; go.disabled=open;
     go.addEventListener('click',function(){ bsReview(go); });
-    bar.appendChild(go);
+    ft.appendChild(go); bar.appendChild(ft);
     if(had) try{ go.focus({preventScroll:true}); }catch(e){}
   }
   function bsReview(go){
@@ -4115,32 +3932,39 @@ const CLIENT_JS = `
   function stepBox(P,pane){
     var W=stepWalk(P), k=P.product; if(!W.length) return;
     draft.stq=draft.stq||{}; if(!stepOk(P,+draft.stq[k])) draft.stq[k]=stepStart(P,W);
-    var S={P:P, W:W, pane:pane, typing:false}, w=pshape(k);
-    var g=el('div','salt-stepper'); g.setAttribute('role','group'); g.setAttribute('aria-label',tw('st.how',{w:w}));
-    S.less=el('button','salt-orb'); S.less.type='button'; S.less.setAttribute('data-st','less'); S.less.setAttribute('aria-label',tw('st.less',{w:w})); S.less.appendChild(oGlyph('minus'));
-    S.more=el('button','salt-orb'); S.more.type='button'; S.more.setAttribute('data-st','more'); S.more.setAttribute('aria-label',tw('st.more',{w:w})); S.more.appendChild(oGlyph('plus'));
-    S.val=el(stepTyped(P)?'button':'output','salt-stepper__value'); if(S.val.tagName==='BUTTON') S.val.type='button'; else S.val.tabIndex=-1; S.val.setAttribute('data-st','val');
-    S.q=el('span','salt-stepper__q'); S.val.appendChild(S.q);
-    g.appendChild(S.less); g.appendChild(S.val); g.appendChild(S.more); pane.appendChild(g);
-    S.why=el('p','salt-stepper__why'); S.why.setAttribute('role','alert'); S.why.hidden=true; pane.appendChild(S.why);
-    S.say=el('p','sr'); S.say.setAttribute('aria-live','polite'); pane.appendChild(S.say);
-    var row=el('div','strow'); S.fig=el('span','stfig'); S.usual=el('span','salt-status salt-status--brass',tw('sh.usual'));
-    S.add=el('button','salt-ghost salt-ghost--lit stadd'); S.add.type='button'; S.add.setAttribute('data-st','add');
+    var S={P:P, W:W, pane:pane}, w=pshape(k), typed=stepTyped(P), id='stv'+(stN++), g0=gridOf(P);
+    /* 16 Nov 2026, THE MOVE TO AMBIENT: the system's Stepper over values (data-amb-values): its script walks the list the page supplies and fires change; a typed size
+       (a grid walked freely) is typed into the same field and read on change, and a grid with only or multiples is walked and never typed (the field is read only) */
+    var f=el('div','amb-field'), lb=el('label','amb-field__label amb-vh',tw(typed?'st.typeIn':'st.how',{w:w})); lb.htmlFor=id; f.appendChild(lb);
+    var g=el('div','amb-stepper');
+    S.less=el('button','amb-circle amb-circle--lg'); S.less.type='button'; S.less.setAttribute('data-st','less'); S.less.setAttribute('data-amb-step','-1');
+    S.less.setAttribute('aria-label',tw('st.less',{w:w})); S.less.appendChild(ambIcon('minus'));
+    S.more=el('button','amb-circle amb-circle--lg'); S.more.type='button'; S.more.setAttribute('data-st','more'); S.more.setAttribute('data-amb-step','1');
+    S.more.setAttribute('aria-label',tw('st.more',{w:w})); S.more.appendChild(ambIcon('plus'));
+    S.val=el('input','amb-input'); S.val.id=id; S.val.type='number'; S.val.step='any'; S.val.min=String(W[0]); S.val.setAttribute('data-st','val');
+    S.val.setAttribute('data-amb-values',W.join(' ')); S.val.autocomplete='off'; S.val.readOnly=!typed;
+    S.val.setAttribute('inputmode',g0&&g0.step%1===0&&g0.min%1===0?'numeric':'decimal');
+    g.appendChild(S.less); g.appendChild(S.val); g.appendChild(S.more); f.appendChild(g);
+    S.q=el('span','amb-field__hint'); S.q.setAttribute('data-st','q'); f.appendChild(S.q); pane.appendChild(f);
+    S.why=el('p','amb-field__error'); S.why.setAttribute('role','alert'); S.why.hidden=true; pane.appendChild(S.why);
+    S.say=el('p','amb-vh'); S.say.setAttribute('aria-live','polite'); pane.appendChild(S.say);
+    var row=el('div','strow'); S.fig=el('span','stfig'); S.usual=el('span','amb-chip',tw('sh.usual'));
+    S.add=el('button','amb-pill amb-pill--sm stadd'); S.add.type='button'; S.add.setAttribute('data-st','add');
     row.appendChild(S.fig); row.appendChild(S.usual); row.appendChild(S.add); pane.appendChild(row);
-    S.less.addEventListener('click',function(){ stepBy(k,-1); });
-    S.more.addEventListener('click',function(){ stepBy(k,1); });
-    if(S.val.tagName==='BUTTON') S.val.addEventListener('click',function(){ stepType(k); });
+    S.val.addEventListener('change',function(){ stepFrom(k); });
     S.add.addEventListener('click',function(){ stepAdd(k); });
     var bkl=el('div','bkline'); bkl.hidden=true; pane.appendChild(bkl); bsPanes.push({P:P, node:bkl});
     stPanes[k]=S;
   }
-  function stepBy(k,d){
+  /* a size the field now holds, from the script's step or from typing: one the walk takes is set; one it does not is refused with why, in one sentence, and the field goes back */
+  function stepFrom(k){
     var S=stPanes[k]; if(!S||!bsOn()) return;
-    var q=+draft.stq[k], i=stepIx(S,q), n=-1;
-    if(i>=0) n=i+d;
-    else for(var j=0;j<S.W.length;j++){ if(d>0&&S.W[j]>q){ n=j; break; } if(d<0&&S.W[j]<q) n=j; }
-    if(n<0||n>=S.W.length) return;
-    stepTo(k,S.W[n],false);
+    var P=S.P, g=gridOf(P), v=String(S.val.value||'').trim(), q=+v, was=+draft.stq[k];
+    if(v===''){ S.val.value=String(was); return; }
+    if(Math.abs(q-was)<1e-9) return;
+    if(q>0&&stepOk(P,q)){ stepTo(k,+q.toFixed(6),false); return; }
+    S.val.value=String(was);
+    S.why.textContent=!(q>0)?tw('bk.noPrice'):q>ASK_CAP?tw('st.cap',{m:ASK_CAP}):g?sentence(offWhy(g,q)):tw('bk.noPrice'); S.why.hidden=false;
   }
   function stepTo(k,q,focus){
     var S=stPanes[k]; if(!S) return;
@@ -4154,7 +3978,8 @@ const CLIENT_JS = `
     if(!(draft.stTouch&&draft.stTouch[k])) draft.stq[k]=stepStart(S.P,S.W);
     var P=S.P, q=+draft.stq[k], i=stepIx(S,q), t=priceAt(P,q), over=t==null&&overMax(P,q), b=bsOf(k), u=unitsOf(q,P.unit);
     S.q.textContent=u;
-    if(S.val.tagName==='BUTTON') S.val.setAttribute('aria-label',tw('st.type',{q:u}));
+    if(document.activeElement!==S.val||+S.val.value!==q) S.val.value=String(q);
+    S.val.disabled=!bsOn();
     S.less.disabled=!bsOn()||i===0||(i<0&&!S.W.some(function(x){ return x<q; }));
     S.more.disabled=!bsOn()||i<0&&!S.W.some(function(x){ return x>q; })||i===S.W.length-1;
     S.fig.textContent=t!=null?rm(t):over?tw('st.ask'):'';
@@ -4162,7 +3987,7 @@ const CLIENT_JS = `
     var inB=b>0, same=inB&&Math.abs(b-q)<1e-6;
     S.add.textContent=tw(!inB?'st.add':same?'st.in':'st.update');
     S.add.disabled=same||!bsOn()||(t==null&&!over);
-    [].forEach.call(S.pane.querySelectorAll('.szrow[data-q]'),function(r){ r.setAttribute('aria-pressed',String(Math.abs(+r.getAttribute('data-q')-q)<1e-6)); });
+    [].forEach.call(S.pane.querySelectorAll('.szrow[data-q]'),function(r){ var on=Math.abs(+r.getAttribute('data-q')-q)<1e-6; r.setAttribute('aria-pressed',String(on)); if(on) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
     if(say) S.say.textContent=u+', '+(t!=null?rm(t):tw('st.ask'));
   }
   function stepAdd(k){
@@ -4175,27 +4000,6 @@ const CLIENT_JS = `
     S.say.textContent=tw('bk.in',{q:unitsOf(q,S.P.unit)});
     try{ S.val.focus({preventScroll:true}); }catch(e){}
   }
-  /* a typed size: Return or leaving the field sets it, Escape keeps the last; a size the walk does not take is refused with why, in one sentence */
-  function stepType(k){
-    var S=stPanes[k]; if(!S||S.typing||!bsOn()) return;
-    var P=S.P, g=gridOf(P); S.typing=true;
-    var inp=el('input','salt-stepper__input'); inp.type='text'; inp.autocomplete='off'; inp.setAttribute('data-st','input');
-    inp.inputMode=g&&g.step%1===0&&g.min%1===0?'numeric':'decimal'; inp.setAttribute('enterkeyhint','done');
-    inp.setAttribute('aria-label',tw('st.typeIn',{w:pshape(k)})); inp.value=String(+draft.stq[k]);
-    S.val.hidden=true; S.val.parentNode.insertBefore(inp,S.val);
-    var done=false;
-    var end=function(keep){
-      if(done) return; done=true;
-      var v=keep?'':String(inp.value||'').trim(), q=+v;
-      inp.remove(); S.val.hidden=false; S.typing=false;
-      if(v!==''&&stepOk(P,q)) stepTo(k,+q.toFixed(6),false);
-      else if(v!==''){ S.why.textContent=!(q>0)?tw('bk.noPrice'):q>ASK_CAP?tw('st.cap',{m:ASK_CAP}):sentence(offWhy(g,q)); S.why.hidden=false; }
-      try{ S.val.focus({preventScroll:true}); }catch(e){}
-    };
-    inp.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); end(false); } else if(ev.key==='Escape'){ ev.stopPropagation(); end(true); } });
-    inp.addEventListener('blur',function(){ end(false); });
-    try{ inp.focus(); inp.select(); }catch(e){}
-  }
   /* the basket's priced lines as the sheet's, or none: the sheet never holds a size the page did not choose */
   function pickBasket(){
     var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null||x.over; }):[];
@@ -4206,13 +4010,11 @@ const CLIENT_JS = `
      and the units change on Order. With no line it sets the way alone */
   function sheetLines(B){
     var qs=quotes();
-    if(!qs.length){ B.appendChild(el('p','lead',tw('sh.wayOnly'))); return; }
-    var L=el('div','salt-settings'); L.setAttribute('data-sheet-lines','');
-    qs.forEach(function(x){ var r=el('div','salt-settings__row'), lb=el('span','salt-settings__label');
-      lb.appendChild(withMark(x.p.product,unitsOf(x.q,x.p.unit),22)); r.appendChild(lb);
-      r.appendChild(el('span','salt-settings__value',x.over?'':rm(x.total))); L.appendChild(r); });
+    if(!qs.length){ B.appendChild(el('p','amb-muted',tw('sh.wayOnly'))); return; }
+    var L=hList(qs.map(function(x){ return hRow({tag:'div', thumb:markThumb(x.p.product,'md'), title:unitsOf(x.q,x.p.unit), amount:x.over?'':rm(x.total)}); }));
+    L.setAttribute('data-sheet-lines','');
     B.appendChild(L);
-    B.appendChild(el('p','salt-field__hint',tw('sh.unitsOn')));
+    B.appendChild(el('p','amb-field__hint',tw('sh.unitsOn')));
   }
   /* the sheet opened from the basket writes what changes in it back, so the two never differ; a tally that no longer adds up is dropped */
   function bsFromPick(){
@@ -4297,7 +4099,7 @@ const CLIENT_JS = `
     return Math.max(0,+c.toFixed(2));
   }
   /* the line on Prices, drawn again when the orders are read, since an order's credit may not be in the sealed figure yet */
-  function creditDraw(){ var e=document.getElementById('prCredit'); if(!e) return; var c=creditNow(); e.hidden=!(c>0.004); e.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):''; }
+  function creditDraw(){ var e=document.getElementById('prCredit'); if(!e) return; var c=creditNow(); e.hidden=!(c>0.004); var sp=e.querySelector('span'); if(sp) sp.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):''; }
   function creditOff(sum){ var c=creditNow(); return {c:Math.min(c,sum), pay:Math.max(0,+(sum-c).toFixed(2)), any:c>0.004}; }
   /* an agreed order is on the statement once a sealed part is its row: to pay now by its day, side and whole (as nowOf
      matches), coming up by its day, side and product. Accepted and not yet published, it is counted from the order */
@@ -4329,15 +4131,6 @@ const CLIENT_JS = `
   function oLive(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   /* V4b: a sheet counts once, as the Worker counts it (stmt/orders.js, openCount) */
   function openN(){ var k={}; oLive().forEach(function(o){ k[o.sheet||o.id]=1; }); return Object.keys(k).length; }
-  var GLYPH={plus:'M8 3 V13 M3 8 H13', minus:'M3 8 H13', close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
-  function oGlyph(k,cls,px){
-    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
-    s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('width',px||16); s.setAttribute('height',px||16);
-    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false'); if(cls) s.setAttribute('class',cls);
-    var d=document.createElementNS(NS,'path'); d.setAttribute('d',GLYPH[k]); d.setAttribute('fill','none'); d.setAttribute('stroke','currentColor');
-    d.setAttribute('stroke-width','1.5'); d.setAttribute('stroke-linecap','round'); d.setAttribute('stroke-linejoin','round');
-    s.appendChild(d); return s;
-  }
   /* the size they order most, read off their own orders on this page; the later order breaks a tie */
   function oUsual(){
     var n={}, best=null;
@@ -4359,6 +4152,23 @@ const CLIENT_JS = `
     return !!P&&(q==null||priceAt(P,q)!=null); }
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
+  /* a sheet of the system: a native dialog carrying the Counter's mood, named by its title; shown modal, or open where the browser has no modal. A tap on the
+     scrim (the dialog's own box, outside what it holds) and Escape are the page's own dismissal, never the script's close, so a sheet that must wait can */
+  function sheetNode(id,cls,titleId){
+    var d=el('dialog','amb-sheet'+(cls?' '+cls:'')); d.id=id; d.setAttribute('data-mood','lagoon'); d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true');
+    d.setAttribute('aria-labelledby',titleId); d.tabIndex=-1; return d;
+  }
+  function sheetShow(d,dismiss){
+    d.addEventListener('click',function(ev){
+      if(ev.target!==d) return;
+      ev.stopPropagation();
+      var r=d.getBoundingClientRect();
+      if(ev.clientX<r.left||ev.clientX>r.right||ev.clientY<r.top||ev.clientY>r.bottom) dismiss();
+    });
+    d.addEventListener('cancel',function(ev){ ev.preventDefault(); dismiss(); });
+    document.body.appendChild(d);
+    try{ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }catch(e){ d.setAttribute('open',''); }
+  }
   function sheetOpen(product,q,opener,amend,pool,againOf){
     var sp=startPlace; startPlace='';   /* 3 Nov 2026 (Fable): spent before any early return, so a tap the lapse sheet stopped carries no place into a later sheet */
     draft.now=false; draft.on=''; draft.buyer='';   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet; version 4: its day and their customer too */
@@ -4395,19 +4205,17 @@ const CLIENT_JS = `
     if(draft.place==null){ draft.place=''; draft.placeWas=''; }
     draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null; draft.qSheet=''; draft.qSig='';
     if(!osh){
-      var wrap=el('div'); wrap.id='osheet';
-      var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
-      var box=el('div','salt-sheet osheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
-      box.setAttribute('aria-labelledby','oshT'); box.tabIndex=-1;
-      var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
-      var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
-      box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
+      /* 16 Nov 2026, THE MOVE TO AMBIENT: the sheet is the system's native dialog (head, body, and the foot as a second body under it), opened modal; its own
+         scrim, Escape and tap outside go through the page's dismissal, which waits while Place is on its way */
+      var box=sheetNode('osheet','osheet','oshT');
+      var head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body'), foot=el('div','amb-sheet__body osheet__foot');
+      box.appendChild(head); box.appendChild(body); box.appendChild(foot);
       box.addEventListener('keydown',sheetKeys);
-      wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
-      osh={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      sheetShow(box,sheetDismiss);
+      osh={wrap:box, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
       behind();
       bkOpen('o',sheetDismiss);
-      try{ box.focus({preventScroll:true}); }catch(e){}
+      try{ osh.box.focus({preventScroll:true}); }catch(e){}
     }
     sheetDraw();
   }
@@ -4440,7 +4248,7 @@ const CLIENT_JS = `
   function sheetDismiss(){ if(draft.busy) return false; sheetClose(); }
   /* the sheet keeps focus while it is open: Escape closes it, and Tab wraps at its own first and last controls */
   function sheetKeys(ev){
-    if(ev.key==='Escape'){ ev.stopPropagation(); sheetDismiss(); return; }
+    if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); sheetDismiss(); return; }
     if(ev.key!=='Tab'||!osh) return;
     var all=[].filter.call(osh.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
       if(x.type==='radio'&&x.name){ var g=[].filter.call(osh.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
@@ -4572,22 +4380,20 @@ const CLIENT_JS = `
      focus back to), again (finds it afresh if a redraw took it away) and shut (told when the Sheet comes down, however) */
   function ynOpen(q){
     ynShut(true);
-    var wrap=el('div'); wrap.id='ynWrap';
-    var scrim=el('div','salt-sheet-scrim'); scrim.id='ynScrim'; scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',function(){ ynShut(); });
-    var box=el('div','salt-sheet ynsheet'); box.id='ynSheet'; if(sheetOwn) sheetOwn(box); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
-    box.setAttribute('aria-labelledby','ynT'); box.tabIndex=-1;
-    var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
-    var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
-    var h=el('h2','salt-sheet__title',q.title); h.id='ynT'; head.appendChild(h);
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.id='ynX'; x.setAttribute('aria-label',tw('x.close'));
-    x.appendChild(oGlyph('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
+    /* 16 Nov 2026: a yes or no is the system's dialog too (it lies over the order sheet, both in the top layer, the later on top): the title and its close, the
+       restated lines, the danger action first and the answer that keeps last */
+    var box=sheetNode('ynSheet','ynsheet','ynT'); if(sheetOwn) sheetOwn(box); var wrap=box;
+    var head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body');
+    var h=el('h2','amb-sheet__title',q.title); h.id='ynT'; head.appendChild(h);
+    var x=el('button','amb-circle'); x.type='button'; x.id='ynX'; x.setAttribute('aria-label',tw('x.close'));
+    x.appendChild(ambIcon('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
     q.body.forEach(function(n){ body.appendChild(n); });
-    var go=el('button','salt-ghost salt-ghost--danger',q.go); go.type='button'; go.id='ynGo';
+    var go=el('button','amb-action amb-action--danger',q.go); go.type='button'; go.id='ynGo';
     go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });
-    var keep=el('button','salt-ghost',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
-    foot.appendChild(go); foot.appendChild(keep);
-    box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
-    wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
+    var keep=el('button','amb-pill amb-pill--block',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
+    body.appendChild(go); body.appendChild(keep);
+    box.appendChild(head); box.appendChild(body);
+    sheetShow(box,function(){ ynShut(); });
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
     yn.shut=q.shut||null;
     bkOpen('yn',function(){ ynShut(); });
@@ -4599,11 +4405,7 @@ const CLIENT_JS = `
   function ynFind(key){ return function(){ return [].filter.call(document.querySelectorAll('[data-yn]'),function(x){ return x.getAttribute('data-yn')===key; })[0]||null; }; }
   /* the order as the limit list draws it: its mark with the size under it, its word, its figure and the day it was placed */
   function ynOrderRow(o){
-    var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
-    lab.appendChild(mtile(o.product,o.qty,oUnit(o))); lab.appendChild(el('span',null,stateWord(o)));
-    l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm((+o.total||0)+(+o.delivery||0)))); r.appendChild(l);
-    r.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
-    L.appendChild(r); return L;
+    return hList([hRow({tag:'div', thumb:markThumb(o.product,'md'), title:unitsOf(o.qty,oUnit(o)), sub:stateWord(o)+DOT+tw('sh.placed',{t:Dd(stamp,o.at)}), amount:rm((+o.total||0)+(+o.delivery||0))})]);
   }
   /* the link by what it is: the day it was made, its state, and what it has done; its address is never repeated */
   function ynLinkRow(r){
@@ -4639,28 +4441,29 @@ const CLIENT_JS = `
     if(inside&&!osh.box.contains(document.activeElement)) try{ osh.box.focus({preventScroll:true}); }catch(e){}
   }
   function sheetHead(title,back){
-    if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label',tw('sh.change')); b.setAttribute('data-k','back'); b.disabled=!!draft.busy;
-      b.appendChild(oGlyph('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
-    if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label',tw('x.close')); x.setAttribute('data-k','close'); x.disabled=!!draft.busy;
-    x.appendChild(oGlyph('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
+    if(back){ var b=el('button','amb-circle'); b.type='button'; b.setAttribute('aria-label',tw('sh.change')); b.setAttribute('data-k','back'); b.disabled=!!draft.busy;
+      b.appendChild(ambIcon('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
+    if(title!=null){ var h=el('h2','amb-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
+    var x=el('button','amb-circle'); x.type='button'; x.setAttribute('aria-label',tw('x.close')); x.setAttribute('data-k','close'); x.disabled=!!draft.busy;
+    x.appendChild(ambIcon('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
   }
-  /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
-  /* 5 Nov 2026 (his report: two grey answers read as nothing to do): a question with no answer yet carries Choose one beside it */
+  /* a question answered by the system's Segment (two to four short answers) or, past four (a delivery's windows), its wrapping Segment, as a row of filters is: the chosen
+     one is pressed, and a question with no answer yet carries Choose one beside it (5 Nov 2026, his report: two grey answers read as nothing to do). data-k by position:
+     a product's word never reaches the page */
   function oChoice(legend,opts,cur,key,pick,need){
-    var fs=el('fieldset','salt-options');
-    if(legend){ var lg=el('legend','salt-options__legend',legend);
-      if(need){ lg.appendChild(document.createTextNode(' ')); lg.appendChild(el('span','salt-status salt-status--brass',tw('sh.choose'))); }
+    var fs=el('fieldset','amb-field');
+    if(legend){ var lg=el('legend','amb-field__label',legend);
+      if(need){ lg.appendChild(document.createTextNode(' ')); lg.appendChild(el('span','amb-chip amb-chip--warn',tw('sh.choose'))); }
       fs.appendChild(lg); }
-    var g=el('div','salt-options__grid salt-options__grid--2');
-    /* data-k by position: a product's word never reaches the page, an attribute included */
+    var g=el('div','amb-segment'+(opts.length>4?' amb-segment--wrap':'')); g.setAttribute('role','group');
     opts.forEach(function(o,i){
-      var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('data-k',key+':'+i); b.setAttribute('aria-pressed',o[0]===cur?'true':'false');
+      var b=el('button','amb-segment__opt'); b.type='button'; b.setAttribute('data-k',key+':'+i); b.setAttribute('aria-pressed',o[0]===cur?'true':'false');
       if(typeof o[1]==='string') b.textContent=o[1]; else { b.appendChild(o[1]); b.setAttribute('aria-label',o[2]); }
       b.addEventListener('click',function(){ pick(o[0]); });
       g.appendChild(b);
     });
-    fs.appendChild(g); return fs;
+    fs.appendChild(g);
+    return fs;
   }
   /* what the sheet still needs, and the control that asks it (5 Nov 2026: Review's tap takes them there) */
   function formMiss(){
@@ -4755,55 +4558,58 @@ const CLIENT_JS = `
     draft.spotEdit={id:s?s.id:'', label:s?s.label:'', addr:s?s.addr||'':'', once:!!(s&&s.once)};
     draft.pin=s&&s.pt||null; draft.pinMsg=''; draft.step='spot'; sheetDraw();
   }
+  /* a field of the system: its label, the native control carrying the system's class, and its hint */
+  function ambField(label,id,input,hint){
+    var f=el('div','amb-field'), l=el('label','amb-field__label',label); l.htmlFor=id; f.appendChild(l); f.appendChild(input); if(hint) f.appendChild(hint); return f;
+  }
   function spotList(L){
-    var fs=el('fieldset','salt-options ospots'); fs.appendChild(el('legend','salt-options__legend',tw('sh.whereTo')));
+    var fs=el('fieldset','amb-options ospots'); fs.appendChild(el('legend','amb-field__label',tw('sh.whereTo')));
     var cur=draft.spot&&draft.spot.id, rows=L.slice();
     if(draft.spot&&draft.spot.once) rows.push(draft.spot);
     rows.forEach(function(s,i){
-      var row=el('div','ospot'), lab=el('label','salt-option'), r=el('input','salt-option__input');
+      var row=el('div','ospot'), lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input');
       r.type='radio'; r.name='ospot'; r.value=s.id; r.checked=cur===s.id; r.setAttribute('data-k','spot:'+i);
       r.addEventListener('change',function(){ spotPick(s); sheetDraw(); });
-      var face=el('span','salt-option__face salt-option__face--tap'), tx=el('span','salt-option__text');
-      tx.appendChild(el('span','salt-option__label',s.label)); tx.appendChild(el('span','salt-option__detail',s.once&&!act?spotDetail(s)+DOT+tw('sp.once'):spotDetail(s)));
-      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); row.appendChild(lab);
-      var ed=el('button','salt-ghost ospot__edit',tw('sp.edit')); ed.type='button'; ed.setAttribute('aria-label',tw('sp.editOf',{n:s.label})); ed.setAttribute('data-k','spotedit:'+i);
+      var mk=el('span','amb-option__mark'); mk.setAttribute('aria-hidden','true');
+      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',s.label));
+      lab.appendChild(el('span','amb-option__sub',s.once&&!act?spotDetail(s)+DOT+tw('sp.once'):spotDetail(s))); row.appendChild(lab);
+      var ed=el('button','amb-pill amb-pill--quiet amb-pill--sm ospot__edit',tw('sp.edit')); ed.type='button'; ed.setAttribute('aria-label',tw('sp.editOf',{n:s.label})); ed.setAttribute('data-k','spotedit:'+i);
       ed.addEventListener('click',function(){ spotOpen(s); }); row.appendChild(ed); fs.appendChild(row);
     });
-    if(rows.length<SPOT_MAX||act){ if(!(act&&draft.spot)){ var add=el('button','salt-ghost ospot__add',tw('sp.add')); add.type='button'; add.id='spAdd'; add.setAttribute('data-k','spotadd');
+    if(rows.length<SPOT_MAX||act){ if(!(act&&draft.spot)){ var add=el('button','amb-pill amb-pill--quiet ospot__add',tw('sp.add')); add.type='button'; add.id='spAdd'; add.setAttribute('data-k','spotadd');
       add.addEventListener('click',function(){ spotOpen(null); }); fs.appendChild(add); } }
-    else { var full=el('p','salt-field__hint',tw('sp.full')); full.id='spFull'; fs.appendChild(full); }
+    else { var full=el('p','amb-field__hint',tw('sp.full')); full.id='spFull'; fs.appendChild(full); }
     return fs;
   }
   function spotWhy(E){ return spotCut(E.label,24).length<2?tw('sp.whyName'):!draft.pin&&spotCut(E.addr,200).length<5?tw('sp.whyAddr'):''; }
   function drawSpot(){
     var E=draft.spotEdit, B=osh.body;
     sheetHead(tw(E.id?'sp.editH':'sp.addH'),function(){ draft.step='form'; draft.pin=draft.spot?draft.spot.pt:null; draft.spotEdit=null; sheetDraw(); });
-    var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sp.name')); nl.htmlFor='spName';
-    var ni=el('input','salt-field__input'); ni.id='spName'; ni.type='text'; ni.maxLength=24; ni.value=E.label; ni.autocomplete='off'; ni.placeholder=tw('sp.namePh'); ni.setAttribute('data-k','spname');
+    var ni=el('input','amb-input'); ni.id='spName'; ni.type='text'; ni.maxLength=24; ni.value=E.label; ni.autocomplete='off'; ni.placeholder=tw('sp.namePh'); ni.setAttribute('data-k','spname');
     ni.addEventListener('input',function(){ E.label=ni.value; spotFoot(); });
-    nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+    B.appendChild(ambField(tw('sp.name'),'spName',ni));
     slipKeyLoad();
-    var af=el('div','salt-field opin'), al=el('label','salt-field__label',tw('sp.addr')); al.htmlFor='spAddr'; af.appendChild(al);
+    var af=el('div','amb-field opin'), al=el('label','amb-field__label',tw('sp.addr')); al.htmlFor='spAddr'; af.appendChild(al);
     if(draft.pin){
       /* either-or: a point taken stands in the address's place, with Remove to type one instead */
-      af.appendChild(el('span','salt-field__hint',tw(draft.pin.src==='gps'?'sh.pinOk':draft.pin.src==='pin'?'sh.pinOkFigures':'sh.pinOkLink')));
-      var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
+      af.appendChild(el('span','amb-field__hint',tw(draft.pin.src==='gps'?'sh.pinOk':draft.pin.src==='pin'?'sh.pinOkFigures':'sh.pinOkLink')));
+      var off=el('button','amb-pill amb-pill--quiet',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
       off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; sheetDraw(); });
       af.appendChild(off);
     } else {
-      var ai=el('textarea','salt-field__input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=200; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
+      var ai=el('textarea','amb-input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=200; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
       ai.addEventListener('input',function(){
         var p=pinRead(ai.value);
         if(p){ draft.pin=p; draft.pinMsg=''; E.addr=''; sheetDraw(); return; }
         E.addr=ai.value; spotFoot(); });
       ai.addEventListener('change',function(){ var v=String(ai.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); var h=document.getElementById('spHint'); if(h) h.textContent=draft.pinMsg; } });
       af.appendChild(ai);
-      var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
+      var here=el('button','amb-pill amb-pill--quiet',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
       here.addEventListener('click',pinHere); af.appendChild(here);
     }
-    var hint=el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint')); hint.id='spHint'; af.appendChild(hint);
+    var hint=el('span','amb-field__hint',draft.pinMsg||tw('sh.pinHint')); hint.id='spHint'; af.appendChild(hint);
     B.appendChild(af);
-    if(E.id&&!E.once){ var rm=el('button','salt-ghost spremove',tw('sp.remove')); rm.type='button'; rm.id='spRemove'; rm.setAttribute('data-k','spremove');
+    if(E.id&&!E.once){ var rm=el('button','amb-action amb-action--danger spremove',tw('sp.remove')); rm.type='button'; rm.id='spRemove'; rm.setAttribute('data-k','spremove');
       rm.addEventListener('click',function(){ var L=spotsRead()||[]; spotsWrite(L.filter(function(s){ return s.id!==E.id; }));
         if(draft.spot&&draft.spot.id===E.id){ draft.spot=null; draft.place=''; }
         draft.pin=draft.spot?draft.spot.pt:null; draft.spotEdit=null; draft.step='form'; sheetDraw(); });
@@ -4812,8 +4618,8 @@ const CLIENT_JS = `
   }
   function spotFoot(){
     var E=draft.spotEdit, F=osh.foot; F.textContent='';
-    var why=spotWhy(E), t=el('div','ototal'); t.appendChild(el('span','sub2',why||tw('sh.pinHint'))); F.appendChild(t);
-    var go=el('button','salt-pill salt-pill--md',tw('sp.use')); go.type='button'; go.id='spUse'; go.disabled=!!why; go.setAttribute('data-k','spuse');
+    var why=spotWhy(E); F.appendChild(el('p','amb-field__hint ototal',why||tw('sh.pinHint')));
+    var go=el('button','amb-pill amb-pill--block',tw('sp.use')); go.type='button'; go.id='spUse'; go.disabled=!!why; go.setAttribute('data-k','spuse');
     go.addEventListener('click',function(){
       if(spotWhy(E)) return;
       var pt=draft.pin&&spotPt(draft.pin)?draft.pin:null;
@@ -4858,13 +4664,13 @@ const CLIENT_JS = `
        or Not named; never on their own page, which knows no code */
     if(act&&assoc&&draft.forFriend&&!draft.amend&&!draft.pool){
       if(actBuyers===null&&typeof actParties==='function'){ actBuyers=[]; actParties().then(function(l){ actBuyers=l||[]; if(draft.step==='form') sheetDraw(); }); }
-      var bf=el('div','salt-field'), bl=el('label','salt-field__label',tw('sh.buyer')); bl.htmlFor='oBuyer';
-      var bs=el('select','salt-field__input salt-field__select'); bs.id='oBuyer'; bs.setAttribute('data-k','buyer');
+      var bs=el('select','amb-input'); bs.id='oBuyer'; bs.setAttribute('data-k','buyer');
       var bn=el('option',null,tw('sh.buyerNone')); bn.value=''; bs.appendChild(bn);
       (actBuyers||[]).forEach(function(code){ var op=el('option',null,code); op.value=code; bs.appendChild(op); });
       bs.value=(actBuyers||[]).indexOf(draft.buyer)>=0?draft.buyer:'';
       bs.addEventListener('change',function(){ draft.buyer=bs.value; });
-      bf.appendChild(bl); bf.appendChild(bs); B.appendChild(bf);
+      var bw=el('span','amb-select'); bw.appendChild(bs); bw.appendChild(ambIcon('chevron','amb-icon--sm'));
+      var bf=el('label','amb-field'); bf.appendChild(el('span','amb-field__label',tw('sh.buyer'))); bf.appendChild(bw); B.appendChild(bf);
     }
     /* a group order asks nothing more: its size and its way are fixed, and Review follows the answer an associate gives */
     if(draft.pool){ formFoot(); return; }
@@ -4873,46 +4679,43 @@ const CLIENT_JS = `
     var U=oUsual();
     if(!draft.amend) sheetLines(B);
     else S.forEach(function(P,i){
-      var fs=el('fieldset','salt-options'), lg=el('legend','salt-options__legend'), cur=draft.pick[P.product];
-      lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg);
-      var grid=el('div','salt-options__grid salt-options__grid--2');
+      var fs=el('fieldset','amb-options'), lg=el('legend','amb-field__label'), cur=draft.pick[P.product];
+      lg.appendChild(markThumb(P.product,'sm')); lg.appendChild(el('span','amb-vh',pshape(P.product))); fs.appendChild(lg);
       P.sizes.forEach(function(x){
-        var lab=el('label','salt-option'), r=el('input','salt-option__input'), on=cur!=null&&String(x.q)===String(cur);
+        var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), on=cur!=null&&String(x.q)===String(cur);
         /* by position: a product's word never reaches the page, an attribute included */
         r.type='radio'; r.name=i?'osize'+i:'osize'; r.value=String(x.q); r.checked=on;
         r.setAttribute('data-k',(i?'size'+i:'size')+':'+x.q);
         r.addEventListener('change',function(){ draft.pick[P.product]=String(x.q); sheetDraw(); });
         /* a tap on the size already chosen takes the line off; one product on the list always keeps its size */
         r.addEventListener('click',function(){ if(on&&S.length>1){ delete draft.pick[P.product]; sheetDraw(); } });
-        var face=el('span','salt-option__face'), tx=el('span','salt-option__text'), lb=el('span','salt-option__label',unitsOf(x.q,P.unit));
-        if(U&&U.product===P.product&&String(U.q)===String(x.q)) lb.appendChild(el('span','salt-status salt-status--brass',tw('sh.usual')));
-        tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
-        face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
+        var mk=el('span','amb-option__mark'); mk.setAttribute('aria-hidden','true'); var ti=el('span','amb-option__title',unitsOf(x.q,P.unit));
+        lab.appendChild(r); lab.appendChild(mk); lab.appendChild(ti);
+        if(U&&U.product===P.product&&String(U.q)===String(x.q)) lab.appendChild(el('span','amb-option__sub',tw('sh.usual')));
+        lab.appendChild(el('span','amb-option__figure',rm(x.price))); fs.appendChild(lab);
       });
-      fs.appendChild(grid);
       if(gridOf(P)&&!draft.amend) fs.appendChild(anyField(P,i,cur));
       B.appendChild(fs);
     });
     /* V5b2: the sheet picked so far, one verdict, said once under the sizes */
-    var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ var lk=el('p','salt-insight',tw('sh.prepay',{c:rm(ceilingRM())})); lk.id='advLikely'; B.appendChild(lk); }
+    var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ B.appendChild(pNote(tw('sh.prepay',{c:rm(ceilingRM())}),'advLikely')); }
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); },!draft.mode));
     /* plan version 3: HANDED OVER AND PAID NOW, his alone on Order as them, for a collected order: a settings row with its switch, as This device's */
     if(act&&draft.mode==='collect'&&!draft.amend&&!draft.pool){
-      var nl=el('div','salt-settings'), nr=el('div','salt-settings__row'), nh=el('span','salt-settings__label',tw('sh.actNow')); nh.id='oNowH';
-      var nw=el('button','salt-switch'); nw.type='button'; nw.id='oNow'; nw.setAttribute('role','switch'); nw.setAttribute('aria-checked',String(!!draft.now));
+      var nl=el('div','amb-settings'), nu=el('ul','amb-settings__list'), ni0=el('li'), nr=el('label','amb-setting'), nh=el('span','amb-setting__name',tw('sh.actNow')); nh.id='oNowH';
+      var nw=el('input','amb-switch'); nw.type='checkbox'; nw.id='oNow'; nw.setAttribute('role','switch'); nw.checked=!!draft.now; nw.setAttribute('aria-checked',String(!!draft.now));
       nw.setAttribute('aria-labelledby','oNowH'); nw.setAttribute('data-k','now');
       nw.addEventListener('click',function(){ draft.now=!draft.now; sheetDraw(); });
-      nr.appendChild(nh); nr.appendChild(nw); nl.appendChild(nr); B.appendChild(nl);
+      nr.appendChild(nh); nr.appendChild(nw); ni0.appendChild(nr); nu.appendChild(ni0); nl.appendChild(nu); B.appendChild(nl);
       /* plan version 4, part 3c (Fable's F2): THE DAY OF THE SALE, only with it on, so its handover and payment take the same day: today, or a day
          back to 30 days and 21 Oct 2026 at the earliest; the Desk holds it to the book's newest lot too */
       if(draft.now){
-        var of=el('div','salt-field'), ol=el('label','salt-field__label',tw('sh.actOn')); ol.htmlFor='oOn';
-        var oi=el('input','salt-field__input'); oi.id='oOn'; oi.type='date'; oi.max=todayKL(); oi.min=klPlus(-30)>'2026-10-21'?klPlus(-30):'2026-10-21';
+        var oi=el('input','amb-input'); oi.id='oOn'; oi.type='date'; oi.max=todayKL(); oi.min=klPlus(-30)>'2026-10-21'?klPlus(-30):'2026-10-21';
         oi.value=draft.on||todayKL(); oi.setAttribute('data-k','on');
         var onSet=function(){ draft.on=oi.value; };
         oi.addEventListener('input',onSet); oi.addEventListener('change',onSet);
-        of.appendChild(ol); of.appendChild(oi); of.appendChild(el('span','salt-field__hint',tw('sh.actOnHint'))); B.appendChild(of);
+        B.appendChild(ambField(tw('sh.actOn'),'oOn',oi,el('span','amb-field__hint',tw('sh.actOnHint'))));
       }
     }
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
@@ -4925,14 +4728,13 @@ const CLIENT_JS = `
     if(SL&&draft.startPlace){ var hit=!draft.spot?SL.filter(function(s){ return s.label===draft.startPlace; }):[]; if(hit.length===1) spotPick(hit[0]); draft.startPlace=''; }
     if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a spot's address or point is sealed at Place, so the key is asked for here too */
     else if(draft.mode==='deliver'){
-      var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sh.whereTo')); wl.htmlFor='oWhere';
-      var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
+      var wi=el('input','amb-input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
       wi.placeholder=tw('sh.wherePh'); wi.setAttribute('data-k','where');
-      var wh=el('span','salt-field__hint',whereHint());
+      var wh=el('span','amb-field__hint',whereHint());
       wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
-      wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
+      B.appendChild(ambField(tw('sh.whereTo'),'oWhere',wi,wh));
       /* an amendment keeps the spot the order was placed with */
-      if(draft.amend&&draft.pinKept) B.appendChild(el('p','salt-field__hint',tw('sh.pinKept')));
+      if(draft.amend&&draft.pinKept) B.appendChild(el('p','amb-field__hint',tw('sh.pinKept')));
     }
     /* 10 Oct 2026: A DELIVERY asks for a time: as soon as it can, or one of the windows open now, each its next occurrence;
        a window no longer open (the clock moved, or the hours) leaves the choice at as soon as it can */
@@ -4945,29 +4747,27 @@ const CLIENT_JS = `
       WO.forEach(function(n){ var w=+n.slot.slice(11,13); opts.push([n.slot,tw('sh.winAt',{d:ymdDay(winDay(n.slot)), a:winHm(w), b:winHm(w+4)})]); });
       B.appendChild(oChoice(tw('sh.when'),opts,draft.slot||'','win',function(v){ draft.slot=v; sheetDraw(); }));
       var cho=WO.filter(function(n){ return n.slot===draft.slot; })[0];
-      B.appendChild(el('p','salt-field__hint',cho?tw('sh.winSpan',{a:winPart(cho.span,0), b:winPart(cho.span,1), d:ymdDay(winDay(cho.slot))}):tw('sh.winHint')));
+      B.appendChild(el('p','amb-field__hint',cho?tw('sh.winSpan',{a:winPart(cho.span,0), b:winPart(cho.span,1), d:ymdDay(winDay(cho.slot))}):tw('sh.winHint')));
     } else
     /* 29 Sep 2026: when they want it, as soon as it can come unless they pick a day */
     B.appendChild(oChoice(tw('sh.when'),[['soon',tw('sh.soon')],['day',tw('sh.onDay')]],draft.when==='day'?'day':'soon','when',
       function(v){ draft.when=v; sheetDraw(); }));
     if(draft.mode!=='deliver'&&draft.when==='day'){
-      var df=el('div','salt-field'), dl=el('label','salt-field__label',tw('sh.wantBy')); dl.htmlFor='oWant';
-      var di=el('input','salt-field__input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
+      var di=el('input','amb-input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
       di.setAttribute('data-k','want');
       di.addEventListener('input',function(){ draft.wantBy=di.value; formFoot(); });
       di.addEventListener('change',function(){ draft.wantBy=di.value; formFoot(); });
-      df.appendChild(dl); df.appendChild(di); df.appendChild(el('span','salt-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))); B.appendChild(df);
+      B.appendChild(ambField(tw('sh.wantBy'),'oWant',di,el('span','amb-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))));
     }
     /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
     if(act){ /* his words reach them on the order's thread, which the Desk checks */ }
     else if(!draft.amend&&(draft.noteOpen||String(draft.say||'').trim())){
-      var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sh.note')); nl.htmlFor='oSay';
-      var ni=el('input','salt-field__input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
+      var ni=el('input','amb-input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
       ni.placeholder=tw('sh.notePh'); ni.setAttribute('data-k','say');
       ni.addEventListener('input',function(){ draft.say=ni.value; });
-      nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+      B.appendChild(ambField(tw('sh.note'),'oSay',ni));
     } else if(!draft.amend) {
-      var an=el('button','salt-ghost ofull',tw('sh.addNote')); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
+      var an=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('sh.addNote')); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
       an.addEventListener('click',function(){ draft.noteOpen=true; sheetDraw(); var f=document.getElementById('oSay'); if(f) try{ f.focus(); }catch(e){} });
       B.appendChild(an);
     }
@@ -4984,31 +4784,31 @@ const CLIENT_JS = `
     return offWhy(g,q); }
   function anyField(P,i,cur){
     var onB=cur!=null&&(P.sizes||[]).some(function(x){ return String(x.q)===String(cur); }), g=gridOf(P);
-    var af=el('div','salt-field oany'), al=el('label','salt-field__label',tw('sh.any')); al.htmlFor='oAny'+i;
-    var ai=el('input','salt-field__input salt-field__input--mono'); ai.id='oAny'+i; ai.type='number'; ai.inputMode='decimal';
+    var ai=el('input','amb-input'); ai.id='oAny'+i; ai.type='number'; ai.inputMode='decimal';
     ai.min=String(g.min); ai.step=String(g.step); ai.autocomplete='off'; ai.setAttribute('data-k','any:'+i);
     ai.value=cur!=null&&!onB?String(cur):'';
-    var ah=el('span','salt-field__hint',anyHint(P,ai.value));
+    var ah=el('span','amb-field__hint',anyHint(P,ai.value));
     ai.addEventListener('input',function(){ var v=String(ai.value||'').trim(), q=+v;
       if(v!==''&&q>0&&(priceAt(P,q)!=null||overMax(P,q))) draft.pick[P.product]=String(+q.toFixed(6));
       else if(draft.pick[P.product]!=null&&!(P.sizes||[]).some(function(x){ return String(x.q)===String(draft.pick[P.product]); })) delete draft.pick[P.product];
       ah.textContent=anyHint(P,v); formFoot(); });
     ai.addEventListener('change',function(){ sheetDraw(); });
-    af.appendChild(al); af.appendChild(ai); af.appendChild(ah); return af;
+    var af=ambField(tw('sh.any'),'oAny'+i,ai,ah); af.className+=' oany'; return af;
   }
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
     bsFromPick();
     var F=osh.foot; F.textContent='';
-    if(!draft.amend&&!draft.pool&&!quotes().length){ var dn=el('button','salt-ghost',tw('sh.done')); dn.type='button'; dn.id='oDone'; dn.setAttribute('data-k','done');
+    if(!draft.amend&&!draft.pool&&!quotes().length){ var dn=el('button','amb-pill amb-pill--block',tw('sh.done')); dn.type='button'; dn.id='oDone'; dn.setAttribute('data-k','done');
       dn.addEventListener('click',sheetDismiss); F.appendChild(dn); F.hidden=false; return; }
     var qs=quotes(), why=formWhy(), t=el('div','ototal'), sum=0;
     qs.forEach(function(x){ sum+=x.total; });
-    t.appendChild(el('b','salt-kpi__value',qs.length?rm(+sum.toFixed(2)):''));
     var fco=creditOff(+sum.toFixed(2));
-    t.appendChild(el('span','sub2',why||(fco.any&&qs.length?tw('sh.creditOff',{c:rm(fco.c), p:rm(fco.pay)}):tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect'))));
+    var st=hStat(why||(fco.any&&qs.length?tw('sh.creditOff',{c:rm(fco.c), p:rm(fco.pay)}):tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')),qs.length?rm(+sum.toFixed(2)):'');
+    /* the figure leads, the words under it (the stat's label stands above its value, so the two swap places) */
+    st.insertBefore(st.lastChild,st.firstChild); t.appendChild(st);
     F.appendChild(t);
-    var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='oGo'; go.setAttribute('data-k','review');
+    var go=el('button','amb-pill amb-pill--block',tw('sh.review')); go.type='button'; go.id='oGo'; go.setAttribute('data-k','review');
     /* 5 Nov 2026: never greyed; not ready, it says so to a reader and a tap goes to what is missing */
     if(why) go.setAttribute('aria-disabled','true');
     go.addEventListener('click',function(){ if(formWhy()) formShow(); else reviewSheet(); });
@@ -5093,26 +4893,23 @@ const CLIENT_JS = `
   function drawLimit(){
     sheetHead(tw('sh.new'));
     var B=osh.body, open=oLive();
-    var say=el('p','salt-insight salt-insight--copper',limitLine()); say.setAttribute('role','status'); B.appendChild(say);
-    var L=el('div','salt-ledger salt-ledger--plain');
-    open.forEach(function(o){
-      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
-      /* the order as a card: its mark a button, its caption under it (his notes of 28 Sep and 11 Oct 2026) */
-      lab.appendChild(mtile(o.product,o.qty,oUnit(o)));
-      /* the order's own word, stage 5's (stateWord, over oWord), as its row under Your orders says it; goods handed over in
-         part keep an order open at ready, so they read as the banner's part word, never Ready over "part of it is with you" */
+    var say=pNote(limitLine(),'',true); say.setAttribute('role','status'); B.appendChild(say);
+    var rows=open.map(function(o){
+      /* the order as a row: its mark, its size, its own word (stage 5's stateWord over oWord) and its figure; goods handed over in part keep an order open at
+         ready, so they read as the banner's part word, never Ready over "part of it is with you" */
       var mv=+o.moved||0, part=mv>0&&!movedAll(o), dl=o.mode==='deliver';
-      lab.appendChild(el('span',null,part?tw(dl?'st.partDelivered':'st.partCollected'):stateWord(o)));
-      l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
+      var sub=el('span'); sub.appendChild(document.createTextNode((part?tw(dl?'st.partDelivered':'st.partCollected'):stateWord(o))+DOT));
+      sub.appendChild(document.createTextNode(+o.moved>0?tw(!part?'sh.withYou':(+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?'sh.partOwed':'sh.part'):tw('sh.placed',{t:Dd(stamp,o.at)})));
+      var r=hRow({tag:'li', thumb:markThumb(o.product,'md'), title:unitsOf(o.qty,oUnit(o)), sub:sub, amount:rm(o.total+(+o.delivery||0))});
       if(!(+o.moved>0)){
-        var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
-        var cb=el('button','salt-ghost',tw('ord.cancel')); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id); cb.setAttribute('data-yn','limit:'+o.id);
-        cb.addEventListener('click',function(){ limitCancel(o,cb); }); row.appendChild(cb); r.appendChild(row);
-      } else r.appendChild(el('span','salt-ledger__flag',tw(!part?'sh.withYou'
-        :(+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?'sh.partOwed':'sh.part')));
-      if(draft.limTap&&draft.limTap.id===o.id) r.appendChild(statusLine(draft.limTap.t));
-      L.appendChild(r);
+        var tr=r.querySelector('.amb-row__trail')||r.appendChild(el('span','amb-row__trail'));
+        var cb=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('ord.cancel')); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id); cb.setAttribute('data-yn','limit:'+o.id);
+        cb.addEventListener('click',function(){ limitCancel(o,cb); }); tr.appendChild(cb);
+      }
+      return r;
     });
+    var L=hUl(rows);
+    open.forEach(function(o,i){ if(draft.limTap&&draft.limTap.id===o.id) L.children[i].appendChild(statusLine(draft.limTap.t)); });
     B.appendChild(L);
   }
   /* 11 Oct 2026: each Cancel here asks in a Sheet over the list, restating that order; its yes is the request it always sent */
@@ -5141,34 +4938,35 @@ const CLIENT_JS = `
     /* V5b2: one forecast for the sheet, every line still on the list counted at its goods */
     var lk=advanceLikely(c.lines.filter(function(l){ return !l.gone; }).map(function(l){ return l.total; }));
     sheetHead(tw(c.pool?'hp.h':c.amend?'ord.amendReview':'sh.check'),c.pool&&!assoc?sheetDismiss:toForm);
-    if(c.amend) B.appendChild(el('p','salt-insight',tw('ord.amendAsk')));
-    if(c.pool) B.appendChild(el('p','salt-insight',tw('hp.ask',{q:unitsOf(a.q,a.unit)})));
+    if(c.amend) B.appendChild(pNote(tw('ord.amendAsk')));
+    if(c.pool) B.appendChild(pNote(tw('hp.ask',{q:unitsOf(a.q,a.unit)})));
     if(c.amend&&(hoursError||counterHours&&!counterHours.open))
-      B.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
-    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and its caption under it, in
-       place of a What line that set the mark beside its size; V4b: a card a line */
-    var H=el('div','mhero'); c.lines.forEach(function(l){ H.appendChild(mtile(l.product,l.q,l.unit)); }); B.appendChild(H);
-    var L=el('div','salt-ledger salt-ledger--plain');
-    function row(k,v,flag){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label'), val=el('span','salt-ledger__value');
-      if(typeof k==='string') lab.textContent=k; else lab.appendChild(k);
-      l.appendChild(lab); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
-      l.appendChild(val); r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag)); L.appendChild(r); }
+      B.appendChild(pNote(tw(hoursError?'hours.unavailable':'hours.closed')));
+    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check, each line its mark and size; V4b: a row a line. 16 Nov 2026: the system's Row and Settings; a line
+       placed says so, a price in advance says so, and a basket's line can come off */
+    var rmOk=!one&&draft.src==='basket'&&!c.amend&&!c.pool&&!draft.busy&&!c.lines.some(function(l){ return l.placed; });
+    var LR=hUl(c.lines.map(function(l){
+      var r=hRow({tag:'li', thumb:markThumb(l.product,'md'), title:unitsOf(l.q,l.unit), sub:one?'':l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):'', amount:one?'':rm(l.total)});
+      if(rmOk){ var tr=r.querySelector('.amb-row__trail')||r.appendChild(el('span','amb-row__trail'));
+        var rb=el('button','amb-pill amb-pill--quiet amb-pill--sm bkrm',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-k','rm:'+c.lines.indexOf(l));
+        rb.appendChild(el('span','amb-vh',' '+pshape(l.product)+' '+unitsOf(l.q,l.unit)));
+        rb.addEventListener('click',function(){ if(draft.busy||c.lines.some(function(x){ return x.placed; })) return;
+          if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();
+          if(picked()&&!formWhy()) reviewSheet(); else toForm(); });
+        tr.appendChild(rb); }
+      return r; }));
+    B.appendChild(LR);
+    var SL=el('ul','amb-settings__list');
+    function row(k,v,flag){ var li=el('li'), r=el('div','amb-setting'), val=el('span','amb-setting__value');
+      r.appendChild(el('span','amb-setting__name',k));
+      if(typeof v==='string') val.textContent=v; else val.appendChild(v);
+      if(flag) val.appendChild(el('span','ofl',flag));
+      r.appendChild(val); li.appendChild(r); SL.appendChild(li); }
     if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
     if(c.buyer) row(tw('sh.buyer'),c.buyer);   /* plan version 4: his alone */
     if(c.on) row(tw('sh.actOn'),ymdDay(c.on));
     if(one) row(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
-    else {
-      /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
-      var rmOk=draft.src==='basket'&&!c.amend&&!c.pool&&!draft.busy&&!c.lines.some(function(l){ return l.placed; });
-      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):'');
-        if(rmOk){ var rb=el('button','salt-ghost bkrm',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-k','rm:'+c.lines.indexOf(l));
-          rb.appendChild(el('span','sr',' '+pshape(l.product)+' '+unitsOf(l.q,l.unit)));
-          rb.addEventListener('click',function(){ if(draft.busy||c.lines.some(function(x){ return x.placed; })) return;
-            if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();
-            if(picked()&&!formWhy()) reviewSheet(); else toForm(); });
-          L.lastChild.appendChild(rb); } });
-      row(tw('sh.total'),rm(sheetSum(c)));
-    }
+    else row(tw('sh.total'),rm(sheetSum(c)));
     /* 27 Oct 2026: the goods, then their credit, then what they pay, never under RM 0; a delivery set at confirmation comes off it too */
     var cco=c.pool?{any:false}:creditOff(sheetSum(c));
     if(cco.any){ row(tw('sh.credit'),'- '+rm(cco.c)); row(tw('sh.youPay'),rm(cco.pay),c.mode==='deliver'?tw('sh.youPayDeliv'):''); }
@@ -5179,34 +4977,34 @@ const CLIENT_JS = `
     else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
     if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
-    B.appendChild(L);
+    var SG=el('div','amb-settings'); SG.appendChild(SL); B.appendChild(SG);
     /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure;
        V4b: a line at a time, its mark leading when there are several */
     c.lines.forEach(function(l){
-      if(l.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
-        setW(mv,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.insertBefore(markLead(l.product,20),mv.firstChild); B.appendChild(mv); }
-      if(l.gone){ var gn=el('p','salt-insight salt-insight--copper',tw(one?'sh.gone':'sh.goneLine'));
-        gn.setAttribute('role','status'); if(!one) gn.insertBefore(markLead(l.product,20),gn.firstChild); B.appendChild(gn); }
+      if(l.was!=null){ var mv=pNote('','',true); mv.setAttribute('role','status');
+        setW(mv.lastChild,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.lastChild.insertBefore(markLead(l.product,20),mv.lastChild.firstChild); B.appendChild(mv); }
+      if(l.gone){ var gn=pNote(tw(one?'sh.gone':'sh.goneLine'),'',true);
+        gn.setAttribute('role','status'); if(!one) gn.lastChild.insertBefore(markLead(l.product,20),gn.lastChild.firstChild); B.appendChild(gn); }
     });
     /* V5b2: a sheet likely paid in advance is checked beside what that means, and that the desk confirms it */
-    if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
+    if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(pNote(tw('sh.prepayP')));
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
-    if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
+    if(c.mode==='deliver') B.appendChild(pNote(tw('deliv')));
     /* NEGOTIATE (05 Oct 2026): one line, for themselves, asks for a price instead of placing at the list's. The check holds
        nothing to type into, so the figure of their own, optional, is its own step (drawAsk) */
-    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(el('p','salt-insight',tw('sh.actNowCheck')));   /* plan version 3: said before Place */
+    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(pNote(tw('sh.actNowCheck')));   /* plan version 3: said before Place */
     var canAsk=one&&!act&&!c.amend&&!c.pool&&!c.forFriend&&!a.placed&&!c.sheet;
-    if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(el('p','salt-insight salt-insight--copper',tw('sh.askOne')));
+    if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(pNote(tw('sh.askOne'),'',true));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
-    var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
-    bk.addEventListener('click',c.pool&&!assoc?sheetDismiss:toForm); F.appendChild(bk);
-    var pl=el('button','salt-pill salt-pill--md',c.pool?tw('hp.join'):c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
     var over=c.lines.some(function(l){ return l.over; });
+    var pl=el('button','amb-pill amb-pill--block',c.pool?tw('hp.join'):c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
     pl.disabled=!!draft.busy||gone||!!c.shut||over; pl.setAttribute('data-k','place');
     pl.addEventListener('click',function(){ oPlaceIt(false); }); if(!over) F.appendChild(pl);
-    if(canAsk){ var ng=el('button',over?'salt-pill salt-pill--md':'salt-ghost',tw('sh.ask')); ng.type='button'; ng.id='oAskGo';
+    if(canAsk){ var ng=el('button','amb-pill amb-pill--block'+(over?'':' amb-pill--quiet'),tw('sh.ask')); ng.type='button'; ng.id='oAskGo';
       ng.disabled=!!draft.busy||gone||!!c.shut; ng.setAttribute('data-k','askgo');
       ng.addEventListener('click',function(){ draft.step='ask'; draft.snote=''; sheetDraw(); }); F.appendChild(ng); }
+    var bk=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
+    bk.addEventListener('click',c.pool&&!assoc?sheetDismiss:toForm); F.appendChild(bk);
     /* the answer is drawn beside Place, which is what was tapped */
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
@@ -5217,17 +5015,17 @@ const CLIENT_JS = `
     var c=draft.check, B=osh.body, a=c&&c.lines[0];
     if(!a){ toForm(); return; }
     sheetHead(tw('sh.askT'),toCheck);
-    var H=el('div','mhero'); H.appendChild(mtile(a.product,a.q,a.unit)); B.appendChild(H);
-    B.appendChild(el('p','salt-insight',tw('sh.askHint')));
-    var kf=el('div','salt-field'), kl=el('label','salt-field__label',tw('sh.askFig')); kl.htmlFor='oAsk';
-    var ki=el('input','salt-field__input salt-field__input--mono'); ki.id='oAsk'; ki.type='number'; ki.inputMode='decimal'; ki.min='0'; ki.step='0.01';
-    ki.value=c.propose||''; ki.autocomplete='off'; ki.setAttribute('data-k','ask');
+    B.appendChild(hList([hRow({tag:'div', thumb:markThumb(a.product,'md'), title:unitsOf(a.q,a.unit)})]));
+    B.appendChild(pNote(tw('sh.askHint')));
+    var ki=el('input','amb-input amb-input--amount'); ki.id='oAsk'; ki.type='number'; ki.inputMode='decimal'; ki.min='0'; ki.step='0.01';
+    ki.value=c.propose||''; ki.placeholder='0.00'; ki.autocomplete='off'; ki.setAttribute('data-k','ask');
     ki.addEventListener('input',function(){ c.propose=ki.value; });
-    kf.appendChild(kl); kf.appendChild(ki); B.appendChild(kf);
-    var F=osh.foot, bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oAskBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','askback');
-    bk.addEventListener('click',toCheck); F.appendChild(bk);
-    var go=el('button','salt-pill salt-pill--md',tw('sh.askSend')); go.type='button'; go.id='oAskSend'; go.disabled=!!draft.busy; go.setAttribute('data-k','asksend');
+    B.appendChild(ambField(tw('sh.askFig'),'oAsk',ki));
+    var F=osh.foot;
+    var go=el('button','amb-pill amb-pill--block',tw('sh.askSend')); go.type='button'; go.id='oAskSend'; go.disabled=!!draft.busy; go.setAttribute('data-k','asksend');
     go.addEventListener('click',function(){ oPlaceIt(true); }); F.appendChild(go);
+    var bk=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('sh.change')); bk.type='button'; bk.id='oAskBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','askback');
+    bk.addEventListener('click',toCheck); F.appendChild(bk);
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
   /* V4b: PLACE SENDS ONE ORDER A LINE, in order, each under its own request id and the sheet's; a line placed stays placed,
@@ -5314,13 +5112,13 @@ const CLIENT_JS = `
   function drawSent(){
     sheetHead(null);
     var B=osh.body, top=el('div','osent');
-    top.appendChild(oGlyph('tick','otick',40));
-    var h=el('h2','salt-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
-    top.appendChild(el('p',null,tw(draft.asked?'sh.askedP':'sh.sentP')));
-    if(act&&draft.actSaid){ var as=el('p','salt-insight',draft.actSaid); as.id='oActSaid'; top.appendChild(as); }
+    top.appendChild(ambIcon('check','otick'));
+    var h=el('h2','amb-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
+    top.appendChild(el('p','amb-muted',tw(draft.asked?'sh.askedP':'sh.sentP')));
+    if(act&&draft.actSaid) top.appendChild(pNote(draft.actSaid,'oActSaid'));
     B.appendChild(top);
     /* Step 1b: Sent's ask retired; the bell in the saved app's header asks, on every view, until notifications are on */
-    var see=el('button','salt-ghost ofull',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
+    var see=el('button','amb-pill amb-pill--block',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
     /* stage 5's own screen for it; an order the list has not brought back yet opens on the next draw that has it */
     see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); placeShow('order');
       if(id&&oFind(id)) oOpen(id); else { wantOrder=id||''; drawOrder(); } });
@@ -6632,8 +6430,36 @@ const CLIENT_JS = `
      page only where it reads differently, so a poll never takes a tap's focus from its Pay. V2: the figure is the
      invoice's Total, its lines beneath it and the one Pay for it; each line says its own day, so the note under the
      figure and the Overdue list under it went. */
+  function hStat(label,value){ var d=el('div','amb-stat'); d.appendChild(el('span','amb-stat__label',label)); d.appendChild(el('span','amb-stat__value',value)); return d; }
+  function hSay(t,id,cls,live){ var d=el('div','amb-prose'), q=el('p',cls||null,t); if(id) q.id=id; if(live) q.setAttribute('role','status'); d.appendChild(q); return d; }
+  function hNote(t,id){ var n=el('div','amb-notice amb-notice--warn'); if(id) n.id=id; n.appendChild(ambIcon('info')); n.appendChild(el('span',null,t)); return n; }
+  /* the invoice's lines on Home, a row each: its mark and size, when it is due (a word of the second line, overdue in the neg tone), its
+     figure; Less sent where something was sent, a row of its own; the lines past the third fold behind "N more", a quiet pill that opens
+     them and stays as it was across a poll (16 Nov 2026: was the Plan recipe's details) */
+  function invHome(lines){
+    var rows=[], rest=[], sent=0, wait=lines.some(function(x){ return x.o&&oClaimed(x.o)>0.004&&x.own>0.004; })||(acctWaiting()>0.004&&lines.some(function(x){ return x.acct>0.004; }));
+    lines.forEach(function(x,i){
+      var d=invOf(x), late=!!x.p&&lateNow(x.p), when=invWhen(x,false), sub=el('span');
+      if(when) sub.appendChild(el('span',late?'amb-neg':null,when));
+      if(x.p&&x.p.cover){ if(when) sub.appendChild(document.createTextNode('. ')); sub.appendChild(setW(el('span'),'part.cover')); }
+      var u=unitsOf(d.q,unitFor(d.product)), r=hRow({tag:'li', attrs:{'data-inv':String(i)}, thumb:markThumb(d.product), title:d.friend?tw('part.BareF',{mark:'', u:u}).trim():u, sub:sub, amount:rm(x.fig)});
+      if(i>=HOME_LINES){ r.hidden=!invMoreOpen; r.classList.add('invrest'); rest.push(r); }
+      rows.push(r); sent+=x.own+x.acct;
+    });
+    sent=+sent.toFixed(2);
+    if(sent>0.004){ var ic=el('span','amb-thumb'); ic.setAttribute('aria-hidden','true'); ic.appendChild(ambIcon('send'));
+      rows.push(hRow({tag:'li', attrs:{'data-inv':'sent'}, thumb:ic, title:tw('inv.lessSent'), sub:wait?tw('om.waiting'):'', amount:rm(sent)})); }
+    var ul=el('ul','amb-list amb-list--ruled'); rows.forEach(function(r){ if(r.tagName==='LI') ul.appendChild(r); else { var li=el('li'); li.appendChild(r); ul.appendChild(li); } });
+    var box=el('div','hinv'); box.appendChild(ul);
+    if(rest.length){
+      var mb=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('inv.more',{n:rest.length})); mb.type='button'; mb.id='invMore'; mb.setAttribute('aria-expanded',String(invMoreOpen));
+      mb.addEventListener('click',function(){ invMoreOpen=!invMoreOpen; mb.setAttribute('aria-expanded',String(invMoreOpen)); rest.forEach(function(r){ r.hidden=!invMoreOpen; }); });
+      box.appendChild(mb);
+    } else invMoreOpen=false;
+    return box;
+  }
   function payHeadNode(){
-    var box=el('div','payhead'); box.id='payHead';
+    var box=el('div'); box.id='payHead';
     var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
     var bad=liveBad(), old=staleNow();
     box.hidden=!bundle||!(old||bad||fr||payDue||lines.length||said.length);
@@ -6643,19 +6469,18 @@ const CLIENT_JS = `
     /* C15: an account that could not be read leads with that, never with nothing to pay */
     if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
-      /* PHASE 7A: with something to pay, the tile and the one Pay stand in the foot above the bar (payFootNode), so the
-         pill is never under it; the head keeps the lines and what is said about them */
-      if(!payFootOn(lines,tot)) box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
-      box.appendChild(invNode(lines,false));
-      if(hold) box.appendChild(el('p','salt-insight salt-insight--copper',tw('pay.hold',{rm:rm(odLeft())})));
+      /* 16 Nov 2026: the foot holds the one Pay and nothing else, so To pay now's figure always stands here, over the lines it adds up */
+      var st=hStat(tw('pay.now'),rm(tot)); st.setAttribute('data-now',tot>0.004?'owing':'clear'); box.appendChild(st);
+      box.appendChild(invHome(lines));
+      if(hold) box.appendChild(hNote(tw('pay.hold',{rm:rm(odLeft())})));
       /* V5c (his answer of 29 Sep 2026): what paying late costs, in few words, while something is to pay */
-      var lk=lateKeep(); if(lk&&tot>0.004){ var kp=el('p','sub2',lk); kp.id='lateKeep'; box.appendChild(kp); }
-      var sn=stageNote(); if(sn){ var sp=el('p','salt-insight salt-insight--copper'); sp.id='stageNote'; sp.textContent=sn; box.appendChild(sp); }
+      var lk=lateKeep(); if(lk&&tot>0.004) box.appendChild(hSay(lk,'lateKeep'));
+      var sn=stageNote(); if(sn) box.appendChild(hSay(sn,'stageNote'));
     }
-    else if(fr) box.appendChild(kpiTile('verdigris',tw('pay.toPay'),rm(0),el('span',null,tw('acct.nothing'))));
+    else if(fr){ var f0=hStat(tw('pay.toPay'),rm(0)); f0.setAttribute('data-now','clear'); box.appendChild(f0); box.appendChild(hSay(tw('acct.nothing'),'','',true)); }
     /* C18: nothing to pay is said once, never over RM 0 */
-    else if(payDue&&!bad) box.appendChild(el('p','lead pnil',tw('pay.nothing')));
-    said.forEach(function(t){ box.appendChild(statusLine(t)); });
+    else if(payDue&&!bad) box.appendChild(hSay(tw('pay.nothing'),'','pnil',true));
+    said.forEach(function(t){ box.appendChild(hSay(t,'','',true)); });
     return box;
   }
   /* V5c: the terms of paying late, off the sealed term, lock and window; nothing where the statement predates them */
@@ -6668,12 +6493,11 @@ const CLIENT_JS = `
      With nothing to pay now no foot is drawn: the tile stays in the head, as it was. */
   function payFootOn(lines,tot){ return !view&&tot>0.004&&lines.length>0; }
   function payFootNode(){
-    var f=el('div','payfoot'); f.id='homeFoot';
+    var f=el('div','amb-foot'); f.id='homeFoot';
     var lines=nowOf(), tot=invTotal(lines);
     f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);
     if(f.hidden) return f;
-    f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));
-    var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
+    var pb=el('button','amb-pill amb-pill--block',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
     pb.setAttribute('data-back','pay:now');
     pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });
     f.appendChild(pb);
@@ -6683,11 +6507,8 @@ const CLIENT_JS = `
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     cBar();
-    footSet(); glanceDraw();
+    glanceDraw();
   }
-  /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
-  function footSet(){ var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(f&&h) h.style.setProperty('--hfoot',(f.hidden?0:Math.ceil(f.offsetHeight||0))+'px'); }
-  window.addEventListener('resize',footSet);
   /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
      its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
@@ -7201,6 +7022,7 @@ const CLIENT_JS = `
     var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hSupply:homeSupply(), hStart:homeStart(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
       hReward:homeReward(), hYear:homeYear(), hLive:homeLive()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    liveShow();
     thDraw();
     wayDraw();
     bsPatch();
@@ -7208,11 +7030,56 @@ const CLIENT_JS = `
     placeCounts();
     placeTitle();
   }
-  function hHead(t,n){ var h=el('h2','salt-eyebrow salt-eyebrow--copper hlab',t); if(n) h.appendChild(el('span','hn',String(n))); return h; }
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: Home is drawn in Ambient's parts only. A part's heading is a section heading with its count in the note;
+     an order, a group order, a size to order again, a book's light and the reward are rows of a list (a thumb, a title, a second line, what
+     trails); the book's mark is the mark thumb ringed in its hue (amb-kind-N, N from PSYM's order less its blank), carrying the app's own
+     drawing and his letter, never a product word; a state is a word of the second line, never a chip inside a row, except a book's light, which
+     is a chip as the plan has it. A part draws nothing it has no words for, and the boxes take no place of their own (design/site.css). */
+  function ambIcon(name,cls){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), u=document.createElementNS(NS,'use');
+    s.setAttribute('class','amb-icon'+(cls?' '+cls:'')); s.setAttribute('aria-hidden','true'); u.setAttribute('href','#amb-'+name); s.appendChild(u); return s;
+  }
+  function markThumb(product,size){
+    var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k), L=Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
+    var t=el('span','amb-thumb amb-thumb--ring amb-thumb--mark'+(size?' amb-thumb--'+size:'')+(b>=0&&b<6?' amb-kind-'+(b+1):'')); t.setAttribute('aria-hidden','true'); t.setAttribute('data-shape',pshape(product));
+    var svg=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
+    svg.setAttribute('class','amb-thumb__shape'); svg.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._)); svg.appendChild(d); t.appendChild(svg);
+    if(L&&L.l) t.appendChild(el('span','amb-thumb__word',L.l));
+    return t;
+  }
+  /* a row's second line or title: words, or a node */
+  function hSlot(cls,x){ var s=el('span',cls); if(x!=null&&typeof x==='object') s.appendChild(x); else if(x!=null) s.textContent=String(x); return s; }
+  /* a row: whole a button; or static, an li carrying controls of its own. attrs is {name:value} */
+  function hRow(p){
+    var b=el(p.tag||'button','amb-row'+(p.meter?' amb-row--meter':'')); if(b.tagName==='BUTTON') b.type='button';
+    Object.keys(p.attrs||{}).forEach(function(k){ b.setAttribute(k,p.attrs[k]); });
+    if(p.thumb) b.appendChild(p.thumb);
+    var tx=el('span','amb-row__text'); if(p.thumb&&p.thumb.getAttribute('data-shape')) tx.appendChild(el('span','amb-vh',p.thumb.getAttribute('data-shape'))); tx.appendChild(hSlot('amb-row__title',p.title)); if(p.sub!=null&&p.sub!=='') tx.appendChild(hSlot('amb-row__sub',p.sub)); b.appendChild(tx);
+    if(p.age||p.amount||p.act){
+      var tr=el('span','amb-row__trail'+(p.age&&(p.amount||p.act)?' amb-row__trail--stack':''));
+      if(p.age) tr.appendChild(el('span','amb-row__age',p.age));
+      if(p.amount) tr.appendChild(el('span','amb-row__amount',p.amount));
+      if(p.act) tr.appendChild(el('span','amb-row__act',p.act));
+      b.appendChild(tr);
+    }
+    return b;
+  }
+  function hList(rows){ var ul=el('ul','amb-list amb-list--ruled'); rows.forEach(function(r){ var li=el('li'); li.appendChild(r); ul.appendChild(li); }); return ul; }
+  /* a list whose rows are already li (a row with controls of its own) */
+  function hUl(lis){ var ul=el('ul','amb-list amb-list--ruled'); lis.forEach(function(r){ ul.appendChild(r); }); return ul; }
+  function hHead(t,n){ var h=el('h2','amb-section',t); if(n) h.appendChild(el('span','amb-section__note',' '+String(n))); return h; }
+  function lcFirst(t){ t=String(t||''); return /^[A-Z][a-z]/.test(t)?t.charAt(0).toLowerCase()+t.slice(1):t; }
+  /* the second line of an order's row: its state as a word, then why it is here */
+  function hSub(o,what){
+    var s=el('span'), st=el('span',(o.status==='acknowledged'||o.status==='done'||oPayable(o))&&!(o.status==='ready'&&!movedAll(o))?'amb-pos':null,stateWord(o));
+    s.appendChild(st); if(what) s.appendChild(document.createTextNode(', '+lcFirst(what))); return s;
+  }
   /* the Orders row, with Home's own sentence for why it is here */
-  function homeRow(o,what){ var r=oRow(o,''), w=r.querySelector('.salt-inbox-row__what');
-    if(!w){ w=el('span','salt-inbox-row__what'); r.querySelector('.salt-inbox-row__main').appendChild(w); }
-    w.textContent=what; return r; }
+  function homeRow(o,what){
+    return hRow({attrs:{'data-row':o.id}, thumb:markThumb(o.product), title:unitsOf(o.qty,oUnit(o)), sub:hSub(o,what),
+      age:oDay(o.at), amount:rm(o.total+(+o.delivery||0))});
+  }
+  function homeRowGo(o,what){ var r=homeRow(o,what); r.addEventListener('click',function(){ oOpen(o.id); }); return r; }
   function toCollect(o){ return o.status==='ready'&&o.mode!=='deliver'&&!movedAll(o); }
   /* handed over in full and still owing: counted on Orders from the handover, so Home says it too (S7-R6 and S7R-4) */
   function withYouOwing(o){ return movedAll(o)&&oOwes(o); }
@@ -7221,11 +7088,11 @@ const CLIENT_JS = `
     if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
     if(!list.length) return box;
     box.appendChild(hHead(tw('x.needs'),list.length));
-    list.forEach(function(o){
+    box.appendChild(hList(list.map(function(o){
       var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }).pop(), t=m?String(m.text||''):'';
-      box.appendChild(homeRow(o,replyWaiting(o)?tw('hn.reply',{t:t.length>120?t.slice(0,117)+'...':t})
-        :withYouOwing(o)?tw('hn.owing',{rm:rm(oToPay(o))}):tw('hn.ready',{d:Dd(oDay,firstAt(o,'ready'))})));
-    });
+      return homeRowGo(o,replyWaiting(o)?tw('hn.reply',{t:t.length>120?t.slice(0,117)+'...':t})
+        :withYouOwing(o)?tw('hn.owing',{rm:rm(oToPay(o))}):tw('hn.ready',{d:Dd(oDay,firstAt(o,'ready'))}));
+    })));
     return box;
   }
   /* F10: an order to rate, from two days after its last handover for two weeks, each with its stars under it */
@@ -7234,7 +7101,7 @@ const CLIENT_JS = `
     if(!list.length) return box;
     box.appendChild(hHead(tw('rt.ask'),list.length>1?list.length:0));
     list.forEach(function(o){
-      box.appendChild(homeRow(o,tw('rt.row',{d:ymdDay(o.movedOn)})));
+      box.appendChild(hList([homeRowGo(o,tw('rt.row',{d:ymdDay(o.movedOn)}))]));
       box.appendChild(rateStrip(o));
       var tp=oTap(o); if(tp.k==='rate'&&tp.t) box.appendChild(statusLine(tp.t));
     });
@@ -7246,24 +7113,20 @@ const CLIENT_JS = `
   function homePool(){
     var box=el('div'); if(!session||view||!pools.length) return box;
     box.appendChild(hHead(tw('hp.h'),pools.length>1?pools.length:0));
-    pools.forEach(function(p){
-      var inn=!!p.joined, shut=p.state!=='open', sold1=oSoldHas(p.product,p.q);
-      var r=el(inn?'button':'div','salt-inbox-row hpool'); if(inn) r.type='button';
-      r.setAttribute('data-pool',p.id);
-      r.appendChild(mtile(p.product,p.q,unitFor(p.product)));
-      var main=el('span','salt-inbox-row__main');
-      main.appendChild(el('span','salt-inbox-row__what',shut?tw('hp.closed'):inn?tw('hp.joined',{q:unitsOf(p.q,unitFor(p.product))}):tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,unitFor(p.product))})));
-      if(inn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,unitFor(p.product))})));
-      if(p.closesOn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.closes',{d:Dd(ymdDay,p.closesOn)})));
-      r.appendChild(main);
+    box.appendChild(hList(pools.map(function(p){
+      var inn=!!p.joined, shut=p.state!=='open', sold1=oSoldHas(p.product,p.q), u=unitFor(p.product), said=[];
+      said.push(shut?tw('hp.closed'):inn?tw('hp.joined',{q:unitsOf(p.q,u)}):tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,u)}));
+      if(inn&&!shut) said.push(tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,u)}));
+      if(p.closesOn&&!shut) said.push(tw('hp.closes',{d:Dd(ymdDay,p.closesOn)}));
+      var r=hRow({tag:inn?'button':'li', attrs:{'data-pool':p.id}, thumb:markThumb(p.product), title:unitsOf(p.q,u), sub:said.join(' ')});
       if(inn) r.addEventListener('click',function(){ if(oFind(p.joined)) oOpen(p.joined); else placeShow('order'); });
       else if(!shut&&sold1){
-        var side=el('span','salt-inbox-row__side'), j=el('button','salt-pill salt-pill--md',tw('hp.join')); j.type='button'; j.setAttribute('data-pool-join',p.id);
+        var tr=el('span','amb-row__trail'), j=el('button','amb-pill amb-pill--sm',tw('hp.join')); j.type='button'; j.setAttribute('data-pool-join',p.id);
         j.addEventListener('click',function(){ poolOpen(p,j); });
-        side.appendChild(j); r.appendChild(side);
+        tr.appendChild(j); r.appendChild(tr);
       }
-      box.appendChild(r);
-    });
+      return r;
+    })));
     return box;
   }
   function homeComing(){
@@ -7271,33 +7134,25 @@ const CLIENT_JS = `
     var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o)&&!readyDue(o); }), more=comingParts();
     if(!list.length&&!more.length) return box;
     box.appendChild(hHead(tw('hc.h')));
-    list.forEach(function(o){
+    var rows=list.map(function(o){
       var c=oClaimed(o), t=o.status==='placed'?tw('hc.placed'):oToPay(o)>0.004?tw('hc.still'+payWhenKey(o),{rm:rm(oToPay(o))}):tw('hc.paid');
-      box.appendChild(homeRow(o,t+(c>0?'. '+tw('hc.sent',{rm:rm(c)}):'')));
+      return homeRowGo(o,t+(c>0?'. '+tw('hc.sent',{rm:rm(c)}):''));
     });
-    more.forEach(function(p){ box.appendChild(partRow(p)); });
+    more.forEach(function(p){ rows.push(partRow(p)); });
+    box.appendChild(hList(rows));
     return box;
   }
-  /* S7 polish: ONE LIST, ONE ROW. A part no order of theirs accounts for (a row he entered on the desk) is a row of the
-     same Coming up, the system's Inbox row as every order above it is: its mark and size, then (S6 fix) its due day and
-     never an offer to pay now, which Home has no control for; the day and the figure at the side. There is no order to
-     open, so a tap opens Account, whose statement carries the row. It was stage 6's plain Ledger line under the orders. */
+  /* S7 polish: ONE LIST, ONE ROW. A part no order of theirs accounts for (a row he entered on the desk) is a row of the same Coming up, as every
+     order above it is: its mark and size, then (S6 fix) its due day and never an offer to pay now, which Home has no control for; the day and
+     the figure at the side. There is no order to open, so a tap opens Account, whose statement carries the row. */
   function partRow(p){
-    var b=el('button','salt-inbox-row hpart'); b.type='button';
-    /* the part as a card: its mark a button and its caption under it, its due day beside (his notes of 28 Sep and 11 Oct 2026) */
-    b.appendChild(mtile(p.product,p.qty,unitFor(p.product)));
-    var main=el('span','salt-inbox-row__main');
-    main.appendChild(el('span','salt-inbox-row__what',tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt')));
-    coverTo(main,p);
-    b.appendChild(main);
-    var side=el('span','salt-inbox-row__side');
-    side.appendChild(el('span','salt-inbox-row__age',p.date?oDay(p.date):''));
-    side.appendChild(el('span','salt-inbox-row__action',rm(p.rm)));
-    b.appendChild(side);
+    var sub=el('span'); sub.appendChild(document.createTextNode(unitsOf(p.qty,unitFor(p.product)))); coverTo(sub,p);
+    var b=hRow({attrs:{'data-part':'1'}, thumb:markThumb(p.product), title:tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt'), sub:sub,
+      age:p.date?oDay(p.date):'', amount:rm(p.rm)});
     b.addEventListener('click',function(){ placeShow('stmt',true); });
     return b;
   }
-  /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
+  /* S7 7.4: ORDER AGAIN. A row for each thing they have ordered (a size, a way and a place), newest first, while that size
      is still on their list, at TODAY'S price, read off the list: a tap opens the check with the same size, way and place,
      so the second tap places it. The note is not carried: it was about that order. A declined or cancelled order is not
      offered again. A new account, or one whose orders are all off the list, is offered the list's first sizes, which open
@@ -7321,36 +7176,39 @@ const CLIENT_JS = `
     sheetOpen(a.product,a.q,tile,null,null,a);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
   }
-  /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two tiles, I will collect and Deliver to me,
+  /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two settings, I will collect and Deliver to me,
      each opening the sheet with that way chosen (at the limit, the limit step, as every sheet does). Nothing is drawn where nothing can be
      ordered from here: his read-only view, the overdue gate, a list with nothing priced */
   function homeStart(){
     var box=el('div'); if(!bundle||ro()||hold||!sold().length) return box;
     box.appendChild(hHead(tw('sh.new')));
-    var g=el('div','salt-options__grid salt-options__grid--2'), LD=oLatest(function(o){ return o.mode==='deliver'&&!!o.place; }), w=LD?{place:String(LD.place)}:null;
+    var ul=el('ul','amb-settings__list'), LD=oLatest(function(o){ return o.mode==='deliver'&&!!o.place; }), w=LD?{place:String(LD.place)}:null;
     [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
-      var b=el('button','salt-option__face salt-option__face--tap hstart'), t=el('span','salt-option__text'); b.type='button'; b.setAttribute('data-start',x[0]);
-      t.appendChild(el('span','salt-option__label',tw(x[1]))); t.appendChild(el('span','salt-option__detail',tw(x[2]))); b.appendChild(t);
+      var li=el('li'), b=el('button','amb-setting'); b.type='button'; b.setAttribute('data-start',x[0]);
+      b.appendChild(el('span','amb-setting__name',tw(x[1]))); b.appendChild(el('span','amb-setting__value',tw(x[2]))); b.appendChild(ambIcon('next','amb-icon--sm'));
       b.addEventListener('click',function(){ draft.mode=x[0]; startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; goOrder(); });
-      g.appendChild(b);
+      li.appendChild(b); ul.appendChild(li);
     });
-    box.appendChild(g); return box;
+    var st=el('div','amb-settings'); st.appendChild(ul); box.appendChild(st); return box;
   }
-  /* 22 OCT 2026 (his word, the restock light made plain): AVAILABILITY, one row a book on their list, its mark in the light's border and
-     the light in words (Available, Selling fast, Low on stock, Out of stock; 04 Nov 2026), More by DD Mon under any but green with his day; no figure. A row opens Prices at
-     that book. Sealed with the list, so it is as fresh as the last publish, and nothing here refuses an order. */
+  /* 22 OCT 2026 (his word, the restock light made plain): AVAILABILITY, one row a book on their list, its mark ringed in its hue and the light
+     in words (Available, Selling fast, Low on stock, Out of stock; 04 Nov 2026), More by DD Mon under any but green with his day; no figure.
+     16 Nov 2026: the light is a chip with its dot and word (Out of stock and Low on stock coloured, Available coloured, Selling fast plain
+     with its word), the row's title, since a book is named by no word here. A row opens Prices at that book. Sealed with the list, so it is
+     as fresh as the last publish, and nothing here refuses an order. */
+  function hLight(l){
+    var c=el('span','amb-chip'+(l==='green'?' amb-chip--pos':l==='amber'?' amb-chip--warn':l==='red'?' amb-chip--neg':'')); c.setAttribute('data-light',l);
+    c.appendChild(el('span','amb-chip__dot')); c.appendChild(document.createTextNode(tw('sup.'+l))); return c;
+  }
   function homeSupply(){
     var box=el('div'), list=sold().filter(supLit); if(!bundle||!list.length) return box;
     box.appendChild(hHead(tw('av.h')));
-    list.forEach(function(p){
-      var s=supLit(p), b=el('button','salt-inbox-row hsup'); b.type='button';
-      var m=el('span','pmark'); m.appendChild(coin(p.product,'sm')); m.appendChild(el('span','sr',pshape(p.product))); b.appendChild(m);
-      var main=el('span','salt-inbox-row__main'); main.appendChild(supWord(s.light));
-      if(s.light!=='green'&&dmShort(s.by,'en')) main.appendChild(el('span','salt-inbox-row__what',tw('sup.by',{d:Dd(dmShort,s.by)})));
-      b.appendChild(main);
+    box.appendChild(hList(list.map(function(p){
+      var s=supLit(p), sub=s.light!=='green'&&dmShort(s.by,'en')?tw('sup.by',{d:Dd(dmShort,s.by)}):'';
+      var b=hRow({attrs:{'data-sup':p.product}, thumb:markThumb(p.product), title:hLight(s.light), sub:sub});
       b.addEventListener('click',function(){ placeShow('prices',true); var pn=supPanes[p.product]; if(pn&&pn.scrollIntoView) pn.scrollIntoView({block:'start'}); });
-      box.appendChild(b);
-    });
+      return b;
+    })));
     return box;
   }
   function homeAgain(){
@@ -7358,56 +7216,45 @@ const CLIENT_JS = `
     var list=againList(), start=!list.length;
     if(start) sold().forEach(function(P){ P.sizes.slice(0,2).forEach(function(z){ list.push({product:P.product, q:z.q, start:true}); }); });
     box.appendChild(hHead(tw(!start?'ha.again':fresh()?'ha.first':'ha.start')));
-    /* S7 7.4: the system's Option grid, two across, and its face as a tap (salt-option__face--tap): the tile opens the
-       check, so nothing here is a radio, and no rule of the page's own restates the recipe (S7-R3 of the review) */
-    var g=el('div','salt-options__grid salt-options__grid--2');
-    list.slice(0,4).forEach(function(a){
+    /* S7 7.4: a row opens the check, so nothing here is a radio; nothing of the book in an attribute: the tap reads the row from its own
+       closure (S7R-2 of the stage 7 review). The size under the mark is said in its unit and the price a figure (C19, 29 Sep 2026) */
+    box.appendChild(hList(list.slice(0,4).map(function(a){
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z={price:priceAt(P,a.q)};
-      var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text mstack'), l=el('span','salt-option__label mstack');
-      /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
-      b.type='button';
-      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and its caption under it, the size in words ("1 unit", no shape
-         word drawn, 12 Oct 2026); a reader hears the shape and the size in words, once */
-      /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
-      var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
-      l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(coin(a.product,'lg')); l.appendChild(fq);
-      t.appendChild(l);
-      t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
-      b.appendChild(t);
+      var b=hRow({attrs:{'data-hagain':'1'}, thumb:markThumb(a.product), title:unitsOf(a.q,P.unit),
+        sub:a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})});
       b.addEventListener('click',function(){ if(a.start) goOrder(a.product,a.q); else againOpen(a,b); });
-      g.appendChild(b);
-    });
-    box.appendChild(g);
+      return b;
+    })));
     /* a new account's one filled control, under the sizes it can start from: the whole list (S7-R5, as the plan's first
        Home has it; it stood above them, under To pay) */
-    if(fresh()){ var sp=el('button','salt-pill salt-pill--md hfill',tw('ha.all')); sp.type='button'; sp.id='hPrices';
+    if(fresh()){ var sp=el('button','amb-pill amb-pill--block',tw('ha.all')); sp.type='button'; sp.id='hPrices';
       sp.addEventListener('click',function(){ placeShow('prices',true); }); box.appendChild(sp); }
     return box;
   }
   /* COUNTER BATCH A (his decisions of 18 Oct 2026): THEIR LATEST OPEN ORDER, its state, the moment it last moved, and while it waits at one
-     of his points the point and its pin. Under 1080px a pill that sticks above the App bar and above the pay foot, which sets --hfoot to
-     its own height (drawPayHead); from 1080px a banner under To pay now. A tap opens the order; the pin is its own link beside it. */
+     of his points the point and its pin. 16 Nov 2026: the dock's mini bar, which Ambient keeps over the tabs on a phone and at the foot of the
+     rail from 960px, so it needs no place or height of its own. A tap opens the order; the pin is its own link beside it. Home's only. */
   function lastMoved(o){ var h=o.history||[]; return h.length&&h[h.length-1].at?h[h.length-1].at:o.at; }
+  function liveShow(){ var n=document.getElementById('hLive'); if(n) n.hidden=!(tab==='home'&&n.hasAttribute('data-live')); }
   function homeLive(){
-    var box=el('div'); if(!session||view||!orders.length) return box;
+    var box=el('div'); box.hidden=true; if(!session||view||!orders.length) return box;
     var o=orders.filter(function(x){ return !oClosed(x); }).sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); })[0];
     if(!o) return box;
-    box.className='hlive salt-glass-card salt-glass-card--radius-lg'; box.setAttribute('data-live',o.id);
-    var go=el('button','hlive__go'); go.type='button';
-    go.appendChild(el('span','salt-eyebrow salt-eyebrow--copper hlive__h',tw('hl.h')));
-    var row=el('span','hlive__row');
-    row.appendChild(stateChip(o,'hlive__state'));
-    row.appendChild(el('span','hlive__when mono',stepWhen(lastMoved(o))));
-    var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
-    if(waits) row.appendChild(el('span','hlive__point',tw('pt.at',{c:o.point})));
-    go.appendChild(row);
-    go.addEventListener('click',function(){ oOpen(o.id); });
+    box.className='amb-mini'; box.setAttribute('data-live',o.id); box.hidden=tab!=='home';
+    var th=markThumb(o.product,'sm'); box.appendChild(th);
+    var tx=el('span','amb-mini__text'), waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
+    tx.appendChild(el('span','amb-vh',pshape(o.product))); tx.appendChild(el('span','amb-mini__title',stateWord(o)));
+    tx.appendChild(el('span','amb-mini__sub',stepWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));
+    box.appendChild(tx);
+    var go=el('button','amb-circle amb-circle--plain hlivego'); go.type='button'; go.setAttribute('aria-label',tw('hl.h')); go.appendChild(ambIcon('next'));
     box.appendChild(go);
+    box.addEventListener('click',function(ev){ if(ev.target.closest('a')) return; oOpen(o.id); });
     if(waits&&o.pointAt&&isFinite(o.pointAt.lat)&&isFinite(o.pointAt.lng)) box.appendChild(pinLink(o));
     return box;
   }
   /* THE NEAREST REWARD, an associate's alone, across the books that carry one: its mark, the meter to the next unit and what is theirs to
      take, in the card's own words. Never a level; never the units to go, which is a margin figure the card does not carry. A tap is Rewards. */
+  function hMeter(pc,key){ var m=el('progress','amb-meter'); m.max=100; m.value=pc; m.setAttribute('aria-label',tw(key||'rew.nextAria',{p:pc})); return m; }
   function homeReward(){
     var box=el('div'); if(view||!card||!Array.isArray(card.products)) return box;
     /* 21 Oct 2026: a customer's card carries the share of their next loyalty unit, and nothing else; it opens nothing */
@@ -7416,32 +7263,20 @@ const CLIENT_JS = `
       if(!lp) return box;
       var lpc=Math.max(0,Math.min(100,Math.round(lp.loyal.next*100)));
       box.appendChild(hHead(tw('hr.hLoyal')));
-      var lc=el('div','hreward hloyal salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm');
-      var lt=el('span','hreward__top'); lt.appendChild(el('span','sr',pshape(lp.product))); lt.appendChild(coin(lp.product,'sm'));
-      lt.appendChild(el('span','hreward__left',tw('rew.nextAria',{p:lpc}))); lc.appendChild(lt);
-      var lm=el('span','salt-meter rmeter'), ll=el('span','salt-meter__line');
-      ll.appendChild(el('span',null,tw('rew.next'))); ll.appendChild(el('b',null,lpc+'%'));
-      var lr=el('span','salt-meter__track'); lr.appendChild(el('span','salt-meter__fill'));
-      lm.style.setProperty('--salt-fill',String(lpc)); lm.appendChild(ll); lm.appendChild(lr); lc.appendChild(lm);
-      box.appendChild(lc);
+      var lr=hRow({tag:'li', meter:true, attrs:{'data-reward':'loyal'}, thumb:markThumb(lp.product), title:tw('rew.next'), sub:tw('rew.nextAria',{p:lpc}), amount:lpc+'%'});
+      lr.appendChild(hMeter(lpc));
+      var lu=el('ul','amb-list amb-list--ruled'); lu.appendChild(lr); box.appendChild(lu);
       return box;
     }
     var list=card.products.filter(function(p){ return p.reward&&p.reward.next!=null; }).sort(function(a,b){ return b.reward.next-a.reward.next; }), p=list[0];
     if(!p) return box;
     var rw=p.reward, pc=Math.round(rw.next*100);
     box.appendChild(hHead(tw('hr.h')));
-    var b=el('button','hreward salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm salt-glass-card--link'); b.type='button';
-    var top=el('span','hreward__top'), sr=el('span','sr',pshape(p.product)); top.appendChild(sr); top.appendChild(coin(p.product,'sm'));
-    top.appendChild(el('span','hreward__left',tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})));
-    b.appendChild(top);
-    var mtr=el('span','salt-meter rmeter'), ln=el('span','salt-meter__line');
-    ln.appendChild(el('span',null,tw('rew.next'))); ln.appendChild(el('b',null,pc+'%'));
-    var tr=el('span','salt-meter__track'); tr.appendChild(el('span','salt-meter__fill'));
-    mtr.style.setProperty('--salt-fill',String(pc)); mtr.appendChild(ln); mtr.appendChild(tr);
-    b.appendChild(mtr);
-    b.appendChild(el('span','hreward__see',tw('hr.see')));
+    var b=hRow({meter:true, attrs:{'data-reward':'assoc'}, thumb:markThumb(p.product), title:tw('rew.next'),
+      sub:tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc}), amount:pc+'%', act:tw('hr.see')});
+    b.appendChild(hMeter(pc));
     b.addEventListener('click',function(){ placeShow('card',true); });
-    box.appendChild(b);
+    box.appendChild(hList([b]));
     return box;
   }
   /* THIS YEAR, off the live statement's own lines: the orders this year in Kuala Lumpur and the units of each mark, a cancelled line not
@@ -7466,22 +7301,41 @@ const CLIENT_JS = `
     });
     return out;
   }
+  /* the top of a bar chart's scale: a round number at or above the most, four equal steps from nought */
+  function niceTop(m){ var st=[1,2,5,10,20,50,100,200,500,1000,2000,5000], i=0, q=Math.max(1,m)/4; while(i<st.length-1&&st[i]<q) i++; return st[i]*4; }
   function homeYear(){
     var box=el('div'); if(!bundle||view) return box;
     var rows=yearRows(); if(!rows||!rows.length) return box;
     box.appendChild(hHead(tw('hy.h')));
-    var c=el('div','hyear salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm'), top=el('div','hyear__top');
-    top.appendChild(el('span','hyear__n',tw(rows.length===1?'hy.order1':'hy.orderN',{n:rows.length})));
     var by={}, ps=[]; rows.forEach(function(r){ if(!(r.p in by)){ by[r.p]=0; ps.push(r.p); } by[r.p]+=r.q; });
-    var ts=el('span','hyear__units'); ps.forEach(function(p){ ts.appendChild(mtile(p,+by[p].toFixed(2),'unit',24)); }); top.appendChild(ts);
-    c.appendChild(top);
     var now=+klBits(new Date().toISOString()).month, y=String(klBits(new Date().toISOString()).year), n=[], max=0, said=[], ms=mon3();
     for(var i=1;i<=now;i++){ var k=y+'-'+('0'+i).slice(-2), v=rows.filter(function(r){ return r.m===k; }).length; n.push(v); if(v>max) max=v; said.push(ms[i-1]+' '+v); }
-    var bars=el('div','hyear__bars'); bars.setAttribute('role','img'); bars.setAttribute('aria-label',tw('hy.bars',{list:said.join(', ')}));
-    n.forEach(function(v,i){ var col=el('span','hyear__col'), bar=el('span','hyear__bar'); bar.style.setProperty('--h',String(max?Math.round(v/max*100):0));
-      bar.setAttribute('data-n',String(v)); col.appendChild(bar); col.appendChild(el('span','hyear__mon',ms[i].charAt(0))); bars.appendChild(col); });
-    c.appendChild(bars);
-    box.appendChild(c);
+    var NS='http://www.w3.org/2000/svg', top=niceTop(max), fig=el('figure','amb-chart hyear');
+    fig.setAttribute('aria-label',tw('hy.bars',{list:said.join(', ')}));
+    fig.appendChild(el('figcaption','amb-chart__title',tw(rows.length===1?'hy.order1':'hy.orderN',{n:rows.length})));
+    var plot=el('div','amb-chart__plot'), sc=el('ol','amb-chart__scale'); sc.setAttribute('aria-hidden','true');
+    for(var t=4;t>=0;t--) sc.appendChild(el('li',null,String(top/4*t)));
+    plot.appendChild(sc);
+    var svg=document.createElementNS(NS,'svg'), g=document.createElementNS(NS,'g');
+    svg.setAttribute('class','amb-chart__marks'); svg.setAttribute('viewBox','0 0 '+n.length+' '+top); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('aria-hidden','true');
+    g.setAttribute('transform','translate(0 '+top+') scale(1 -1)');
+    n.forEach(function(v,i){ var r=document.createElementNS(NS,'rect'); r.setAttribute('class','amb-series-1'); r.setAttribute('x',String(i+0.2)); r.setAttribute('y','0');
+      r.setAttribute('width','0.6'); r.setAttribute('height',String(v)); r.setAttribute('data-n',String(v)); g.appendChild(r); });
+    svg.appendChild(g); plot.appendChild(svg);
+    var ax=el('ol','amb-chart__axis'); ax.setAttribute('aria-hidden','true'); n.forEach(function(v,i){ ax.appendChild(el('li',null,ms[i])); }); plot.appendChild(ax);
+    fig.appendChild(plot);
+    var det=el('details','amb-chart__figures'), tb=el('table','amb-table'), hd=el('tr');
+    det.appendChild(el('summary',null,tw('hy.figures')));
+    hd.appendChild(el('th',null,tw('acct.month'))); hd.appendChild(el('th','is-num',tw('hy.col'))); hd.firstChild.scope='col'; hd.lastChild.scope='col';
+    var th=el('thead'); th.appendChild(hd); tb.appendChild(th);
+    var tbd=el('tbody'); n.forEach(function(v,i){ var r=el('tr'), c=el('th',null,ms[i]); c.scope='row'; r.appendChild(c); r.appendChild(el('td','is-num',String(v))); tbd.appendChild(r); });
+    tb.appendChild(tbd); det.appendChild(tb); fig.appendChild(det);
+    box.appendChild(fig);
+    /* the units of each mark, a row each: two books' units are never summed */
+    box.appendChild(hList(ps.map(function(p){
+      var b=hRow({tag:'li', attrs:{'data-year':p}, thumb:markThumb(p,'md'), title:unitsOf(+by[p].toFixed(2),'unit')});
+      return b;
+    })));
     return box;
   }
   /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */
@@ -7607,46 +7461,46 @@ const CLIENT_JS = `
   function thLanded(){ for(var i=thOut.length-1;i>=0;i--) if(thSame(thOut[i].w)>thOut[i].n) thOut.splice(i,1); return thOut; }
   /* the row that opens it, on Home under its heading and on Account: the last line, theirs or ours, and New on a reply */
   function thRow(){
-    var b=el('button','salt-inbox-row throw'); b.type='button';
-    var main=el('span','salt-inbox-row__main'), l=thread.msgs[thread.msgs.length-1], t=el('span','salt-inbox-row__title',tw('th.row'));
-    if(thWaiting()){ t.appendChild(document.createTextNode(' ')); t.appendChild(chipEl('verdigris',tw('msg.new'))); }
-    main.appendChild(t);
-    var x=l?String(l.text||''):'', cut=x.length>120?x.slice(0,117)+'...':x;
-    main.appendChild(el('span','salt-inbox-row__what',!l?tw('th.start'):l.by==='desk'?tw('hn.reply',{t:cut}):tw('th.you',{t:cut})));
-    b.appendChild(main);
-    if(l){ var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__age',oDay(l.at))); b.appendChild(side); }
+    var l=thread.msgs[thread.msgs.length-1], x=l?String(l.text||''):'', cutx=x.length>120?x.slice(0,117)+'...':x;
+    var said=!l?tw('th.start'):l.by==='desk'?tw('hn.reply',{t:cutx}):tw('th.you',{t:cutx}), sub=el('span');
+    if(thWaiting()){ sub.appendChild(el('span','amb-pos',tw('msg.new'))); sub.appendChild(document.createTextNode(', '+lcFirst(said))); } else sub.textContent=said;
+    var th=el('span','amb-thumb'); th.setAttribute('aria-hidden','true'); th.appendChild(ambIcon('people'));
+    var b=hRow({attrs:{'data-thread':'1'}, thumb:th, title:tw('th.row'), sub:sub, age:l?oDay(l.at):''});
     b.addEventListener('click',function(){ thOpen(b); });
     return b;
   }
-  function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
+  function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(hList([thRow()])); return box; }
   /* Home's card and Account's row alone, as drawHome draws them, for a change to the thread and nothing else */
   function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); cBar(); }
   /* COUNTER BATCH A (his decision of 18 Oct 2026): THE GLANCE at the head of Account. To pay now, the same figure Home's tile shows, with when
      it is due and a link to the order it is for; the thread, with a reply waiting said; the statement, up to date as at its moment. Nothing in it
      names a code: the account is theirs by its username alone. Drawn with Home and with To pay now, replaced only when it reads differently. */
   function glanceItem(href,cls,label,value,note,go){
-    var a=el(href?'a':'div','salt-glance__item'+(cls?' '+cls:''));
+    var a=el(href?'a':'div','amb-setting');
     if(href){ a.href=href; a.addEventListener('click',function(ev){ ev.preventDefault(); go(a); }); }
-    a.appendChild(el('span','salt-glance__label',label)); a.appendChild(el('span','salt-glance__value',value));
-    if(note) a.appendChild(el('span','salt-glance__note',note));
+    a.appendChild(el('span','amb-setting__name',label));
+    var v=el('span','amb-setting__value'+(cls?' amb-neg':''),value);
+    if(note){ v.appendChild(document.createTextNode(' ')); v.appendChild(el('span','amb-muted',note)); }
+    a.appendChild(v); if(href) a.appendChild(ambIcon('next','amb-icon--sm'));
     return a;
   }
   function acctGlance(){
     var box=el('div'); if(!session||view||!bundle) return box;
-    box.className='salt-glance aglance';
+    box.className='amb-settings aglance'; var gl=el('ul','amb-settings__list'); box.appendChild(gl);
+    function gadd(n){ var li=el('li'); li.appendChild(n); gl.appendChild(li); }
     if(!staleNow()&&!liveBad()){
       var L=nowOf(), tot=invTotal(L), due=tot>0.004, first=L.filter(function(x){ return x.o; })[0];
       var it=glanceItem(due&&first?'#o='+encodeURIComponent(first.o.id):'',due?'salt-glance__item--due':'',tw('pay.now'),rm(tot),
         due?invWhen(first||L[0],false):tw('pay.nothing'),function(){ oOpen(first.o.id); });
-      it.setAttribute('data-glance','owed'); box.appendChild(it);
+      it.setAttribute('data-glance','owed'); gadd(it);
     }
     var n=thread.msgs.length, th=glanceItem('#thread','',tw('th.row'),thWaiting()?tw('gl.reply'):n?tw(n===1?'gl.line1':'gl.lineN',{n:n}):tw('gl.noLine'),'',function(a){ thOpen(a); });
-    th.setAttribute('data-glance','thread'); box.appendChild(th);
+    th.setAttribute('data-glance','thread'); gadd(th);
     var bad=liveBad(), lv=bundle.statements.filter(function(s){ return s.live; })[0];
     if(lv||bad){
       var st=glanceItem(bad?'':'#account','',tw('gl.stmt'),tw(bad?'gl.unread':'gl.upToDate'),!bad&&liveAt?tw('gl.asAt',{d:Dd(stamp,liveAt)}):'',
         function(){ var o=document.getElementById('out'); if(o) try{ o.scrollIntoView({block:'start'}); }catch(e){} });
-      st.setAttribute('data-glance','stmt'); box.appendChild(st);
+      st.setAttribute('data-glance','stmt'); gadd(st);
     }
     return box;
   }
@@ -7655,7 +7509,7 @@ const CLIENT_JS = `
   function thDraw(){
     glanceDraw();
     var a=document.getElementById('aThread'); if(!a) return;
-    var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(thRow());
+    var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(hList([thRow()]));
     if(a.outerHTML!==n.outerHTML) a.replaceWith(n);
   }
   function thEnd(){ if(thBody) thBody.scrollTop=thBody.scrollHeight; }

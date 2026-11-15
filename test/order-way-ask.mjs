@@ -15,7 +15,7 @@ export async function run({ ok, pageWork }) {
   const pages = [];
   const page = async (o) => { const p = await open(Object.assign({ pageWork }, o)); pages.push(p); return p; };
   const pressed = (p) => { const b = p.d.querySelector('#osheet [data-k^="mode:"][aria-pressed="true"]'); return b ? b.getAttribute("data-k") : ""; };
-  const foot = (p) => txt(p.d.querySelector("#osheet .salt-sheet__foot .ototal"));
+  const foot = (p) => txt(p.d.querySelector("#osheet .osheet__foot .ototal"));
   const close = async (p) => { const c = p.d.querySelector('#osheet [data-k="close"]'); if (c) { c.click(); await p.settle(); } };
   try {
     const A = await page({ orders: [ord("s1", "done", ago(300), { mode: "deliver", place: "Home" })] });
@@ -35,7 +35,8 @@ export async function run({ ok, pageWork }) {
     A.d.querySelector('button[data-t="order"]').click(); await A.settle();
     const nw = A.d.querySelector("[data-new]") || [...A.d.querySelectorAll("#pOrder button, button")].filter((b) => txt(b) === "New order")[0];
     if (nw) { nw.click(); await A.settle(); }
-    const onShop = A.d.querySelector(".cshell") ? A.d.querySelector(".cshell").getAttribute("data-place") : "";
+    /* 16 Nov 2026, the move to Ambient: the shell is #tabs, which names the place it shows */
+    const onShop = A.d.getElementById("tabs").getAttribute("data-place") || "";
     const bar = A.d.getElementById("bkGo");
     if (bar && !bar.hidden && !bar.disabled) { bar.click(); await A.settle(); }
     ok(!!nw && onShop === "prices" && pressed(A) === "" && /Choose collect or deliver\./.test(foot(A)),
@@ -46,7 +47,7 @@ export async function run({ ok, pageWork }) {
     A.d.getElementById("oGo").click(); await A.settle();
     const place = A.d.getElementById("oPlace") || A.d.querySelector('#osheet [data-k="place"]');
     if (place) { place.click(); await A.settle(); await A.settle(); }
-    const sent = A.d.querySelector("#osheet") ? txt(A.d.querySelector("#osheet .salt-sheet__head")) : "";
+    const sent = A.d.querySelector("#osheet") ? txt(A.d.querySelector("#osheet .amb-sheet__head")) : "";
     await close(A);
     A.d.querySelector('button[data-t="prices"]').click(); await A.settle();
     await basketAdd(A, SHAPE.salt, 1); await toSheet(A);

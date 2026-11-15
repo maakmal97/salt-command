@@ -217,7 +217,7 @@ export async function run({ ok, pageWork }) {
     try {
       await p.settle();
       const prices = p.d.getElementById("pPrices"), pane = [...p.d.querySelectorAll("#pPrices .pane")][0], val = pane && pane.querySelector('[data-st="val"]');
-      return { order: !!prices && !prices.hidden, hash: p.w.location.hash, val: val ? val.textContent.trim() : "" };
+      return { order: !!prices && !prices.hidden, hash: p.w.location.hash, val: val ? String(val.value || "").trim() : "" };
     } finally { p.close(); }
   };
   const a = await seen({ hash: "#again" }), b = await seen({}), c = await seen({ hash: "#again", late: 5 });

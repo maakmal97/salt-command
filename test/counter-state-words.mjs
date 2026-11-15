@@ -112,15 +112,16 @@ export async function run({ ok }) {
   /* what is DRAWN: every text node a person can see, which leaves out what the reader alone is told (.sr), a mark's own letter (it is in the svg)
      and the page's script and style */
   const drawnText = (root) => { const out = [], tw = root.ownerDocument.createTreeWalker(root, 4);
-    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, svg")) out.push(n.nodeValue); }
+    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, .amb-vh, .amb-thumb__word, svg")) out.push(n.nodeValue); }
     return out.join(" ").replace(/\s+/g, " "); };
   /* the shape words drawn under root, each as many times as it stands (a mark whose shape word is drawn is a mark that is not alone) */
   const shapesDrawn = (root) => { const s = drawnText(root); return SHAPES.flatMap((w) => s.match(new RegExp("\\b" + w + "\\b", "g")) || []); };
   /* a mark with no name: the reader is told its shape by the heading's own label, by the .sr that follows it, or by its tile's .sr. A nameless mark is a hole. */
   /* plan version 10 (03 Nov 2026): a mark that stands alone is a coin (span.salt-coin), a mark under 28px keeps svg.psym; both are marks and both are named by their shape */
-  const MARKS = "svg.psym:not(.glyph), .salt-coin";
+  /* 16 Nov 2026, the move to Ambient: Home's and Rewards' marks are the mark thumb, named by a visually hidden shape word in its row (.amb-vh), never drawn */
+  const MARKS = "svg.psym:not(.glyph), .salt-coin, .amb-thumb--mark";
   const nameless = (d) => [...d.querySelectorAll(MARKS)].filter((s) => {
-    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack"), tsr = tile && tile.querySelector(".sr");
+    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack, .amb-row, .amb-mini"), tsr = tile && tile.querySelector(".sr, .amb-vh");
     return !((host && SHAPES.some((x) => host.getAttribute("aria-label").startsWith(x)))
       || (nx && nx.classList.contains("sr") && SHAPES.includes(t(nx))) || (tsr && SHAPES.some((x) => t(tsr).startsWith(x))));
   });
@@ -167,7 +168,8 @@ export async function run({ ok }) {
     const whyA = t(R0[A.id].querySelector(".ocard__what"));
     tab(S, "home");
     await until(() => /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))));
-    ok(whyA === "Waiting for us to confirm" && /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))),
+    /* 16 Nov 2026, the move to Ambient: Coming up names the state, then its words in lower case ("Placed, waiting for us to confirm"), so the row is read whole and the old family looked for in any case */
+    ok(whyA === "Waiting for us to confirm" && /Placed, waiting for us to confirm/.test(t(S.d.getElementById("hComing"))) && !/sent, waiting(?! for us to confirm)/i.test(t(S.d.getElementById("hComing"))),
       "a placed order is waiting on the same words in the list's reason and on Home's Coming up: " + JSON.stringify([whyA, t(S.d.getElementById("hComing")).slice(0, 80)]));
 
     /* ---- 3: no word of the family in any text the page renders; Place and the order sheet driven too */
@@ -188,8 +190,8 @@ export async function run({ ok }) {
     L.d.getElementById("spUse").click();
     const formText = t(L.d.getElementById("osheet"));
     L.d.getElementById("oGo").click();
-    const checkText = t(L.d.getElementById("osheet")), delRow = [...L.d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => t(r.querySelector(".salt-ledger__label")) === "Delivery");
-    ok(!FAMILY.test(formText + checkText) && /confirm your order, before you pay/.test(checkText) && t(delRow.querySelector(".salt-ledger__value")) === "Set when we confirm it" && /set when we confirm it/.test(formText),
+    const checkText = t(L.d.getElementById("osheet")), delRow = [...L.d.querySelectorAll("#osheet .amb-setting")].find((r) => t(r.querySelector(".amb-setting__name")) === "Delivery");   /* 16 Nov 2026, the move to Ambient: the check's rows are the system's settings */
+    ok(!FAMILY.test(formText + checkText) && /confirm your order, before you pay/.test(checkText) && t(delRow.querySelector(".amb-setting__value")) === "Set when we confirm it" && /set when we confirm it/.test(formText),
       "the order sheet and its check say confirm where they said acknowledge: the delivery sentence, the line and the form: " + JSON.stringify(t(delRow)));
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
@@ -249,7 +251,9 @@ export async function run({ ok }) {
 
     /* ---- 7: a mark stands alone (his word of 12 Oct 2026): no shape word is drawn, and the reader is still told the shape */
     const nameP = marks(S.d), nameL = marks(L.d);
-    const heads = [...S.d.querySelectorAll("#pPrices h2.pmark")].map((h) => [h.getAttribute("aria-label").split(",")[0], drawnText(h).trim()]);
+    /* 16 Nov 2026, the move to Ambient: a heading is its mark thumb and its light's chip, the light being words of the light and no shape word */
+    const headText = (h) => { const c = h.cloneNode(true); c.querySelectorAll(".amb-chip").forEach((x) => x.remove()); return drawnText(c).trim(); };
+    const heads = [...S.d.querySelectorAll("#pPrices h2.pmark")].map((h) => [h.getAttribute("aria-label").split(",")[0], headText(h)]);
     ok(seen.marks >= 25 && shapesDrawn(S.d.body).length === 0 && shapesDrawn(L.d.body).length === 0 && nameP.length === 0 && nameL.length === 0
       && heads.length === 4 && heads.every(([a, b]) => SHAPES.includes(a) && b === ""),
       "no shape word is drawn across Prices, Home, Your orders, each order's screen and the order sheet, every mark is still named by its shape for the reader, and a heading is its mark alone: " + JSON.stringify({ marks: seen.marks, drawn: shapesDrawn(S.d.body).concat(shapesDrawn(L.d.body)), nameless: nameP.length + nameL.length, heads }));
@@ -257,8 +261,8 @@ export async function run({ ok }) {
     tab(checkL, "order"); await until(() => checkL.d.getElementById("oNew"));
     /* plan version 8: the sheet lists the lines Order made, each its mark and its size; the form holds the line of one tap, the check one a book of the basket */
     await startAt(checkL.d);
-    const legsAll = [...checkL.d.querySelectorAll("#osheet [data-sheet-lines] .pwith")].filter((f) => f.querySelector("svg.psym"));
-    const legs = legsAll.map((f) => [t(f.querySelector(".sr")), drawnText(f).trim()]);
+    const legsAll = [...checkL.d.querySelectorAll("#osheet [data-sheet-lines] .amb-row")].filter((f) => f.querySelector(".amb-thumb--mark"));
+    const legs = legsAll.map((f) => [t(f.querySelector(".amb-vh")), drawnText(f.querySelector(".amb-row__title")).trim()]);
     checkL.d.querySelector('#osheet [data-k="close"]').click();
     /* plan version 9: the size started is the basket's line; it is taken out before the basket is built */
     for (const x of [...checkL.d.querySelectorAll("#pPrices [data-bkout]")]) x.click();
@@ -267,10 +271,10 @@ export async function run({ ok }) {
       await basketAdd(checkL, sh, pn.querySelector(".szrow").getAttribute("data-q"));
     }
     await toSheet(checkL);
-    const lines = [...checkL.d.querySelectorAll("#osheet .pwith")].map((x) => [t(x.querySelector(".sr")), drawnText(x).trim()]);
+    const lines = [...checkL.d.querySelectorAll("#osheet .amb-list .amb-row")].map((x) => [t(x.querySelector(".amb-vh")), drawnText(x.querySelector(".amb-row__title")).trim()]);
     ok(legs.length === 1 && legs.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn)) && lines.length >= 4 && lines.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn))
       && marks(checkL.d).length === 0 && shapesDrawn(checkL.d.body).length === 0,
-      "the order sheet names each book by its shape for the reader only, in the line of the form and in each line of the check, drawn as the size then the mark: " + JSON.stringify({ legs, lines }));
+      "the order sheet names each book by its shape for the reader only, in the line of the form and in each line of the check, drawn as the size beside the mark thumb: " + JSON.stringify({ legs, lines }));
 
     /* 7b: a sheet of two books whose list moved at Place: each line that moved leads with its mark, named by its shape for the reader only */
     const list2 = (digest, oil10) => ({ at: new Date().toISOString(), digest, week: { monday: "2026-10-05", label: "5 to 11 Oct 2026" }, soon: [],
@@ -286,8 +290,8 @@ export async function run({ ok }) {
     const way0 = M.d.querySelector('#osheet [data-k="mode:0"]'); if (way0) way0.click();
     if (M.d.getElementById("oGo")) M.d.getElementById("oGo").click();
     M.d.getElementById("oPlace").click();
-    await until(() => M.d.querySelector("#osheet .salt-insight--copper"));
-    const mv = M.d.querySelector("#osheet .salt-insight--copper"), mvKid = mv && mv.firstElementChild, mvNext = mvKid && mvKid.nextElementSibling;
+    await until(() => M.d.querySelector("#osheet .amb-notice--warn"));
+    const mv = M.d.querySelector("#osheet .amb-notice--warn"), mvBody = mv && mv.lastElementChild, mvKid = mvBody && mvBody.firstElementChild, mvNext = mvKid && mvKid.nextElementSibling;
     ok(!!mv && /Now RM 99\.00 \(was RM 95\.00\)/.test(t(mv)) && !!mvKid && mvKid.classList.contains("psym") && !!mvNext && mvNext.classList.contains("sr") && t(mvNext) === "Droplet"
       && shapesDrawn(mv).length === 0 && marks(M.d).length === 0,
       "a line of the check whose price moved at Place leads with its mark, named by its shape for the reader and drawn with no shape word: " + JSON.stringify(mv && drawnText(mv)));

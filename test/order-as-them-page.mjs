@@ -82,7 +82,7 @@ export async function run({ ok, pageWork }) {
     await startAt(p.d); await p.work.quiet();
     /* B12 (4 Nov 2026, his report that the order of taps seemed to matter): a browser puts an emptied body back at its top, which jsdom does not,
        so the body here is given a scroll position that emptying resets; a choice keeps the sheet where it was, and a new step starts at its top */
-    const sb = p.d.querySelector("#osheet .salt-sheet__body"), tc = Object.getOwnPropertyDescriptor(p.w.Node.prototype, "textContent");
+    const sb = p.d.querySelector("#osheet .amb-sheet__body"), tc = Object.getOwnPropertyDescriptor(p.w.Node.prototype, "textContent");
     let y = 0;
     Object.defineProperty(sb, "scrollTop", { configurable: true, get: () => y, set: (v) => { y = Math.max(0, +v || 0); } });
     Object.defineProperty(sb, "textContent", { configurable: true, get() { return tc.get.call(this); }, set(v) { y = 0; tc.set.call(this, v); } });

@@ -170,7 +170,13 @@
  {
   "name": "the order sheet's two ways are one column",
   "file": "stmt/page.js",
-  "find": "    var g=el('div','salt-options__grid salt-options__grid--2');\n    /* data-k by position",
-  "replace": "    var g=el('div','salt-options__grid');\n    /* data-k by position"
+  "find": "var g=el('div','amb-segment'+(opts.length>4?' amb-segment--wrap':''));",
+  "replace": "var g=el('div','omodes'+(opts.length>4?' amb-segment--wrap':''));"
+ },
+ {
+  "name": "the order sheet is not the system's dialog",
+  "file": "stmt/page.js",
+  "find": "var box=sheetNode('osheet','osheet','oshT');",
+  "replace": "var box=el('div','osheet'); box.id='osheet';"
  }
 ]
