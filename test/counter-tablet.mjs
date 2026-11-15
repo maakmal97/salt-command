@@ -40,7 +40,7 @@ export async function run({ ok }) {
   const SCRIPT = [
     ["the script asks for the system's 960px to put an order beside the list", /function oWide\(\)\{ try\{ return !!\(window\.matchMedia&&window\.matchMedia\('\(min-width: 960px\)'\)\.matches\)/],
     ["and draws again when the width crosses it", /var oMq=window\.matchMedia&&window\.matchMedia\('\(min-width: 960px\)'\);/],
-    ["the place holds the system's split of panes, the list then the record", /id="oSplit" class="amb-split amb-split--panes"/],
+    ["the place holds the system's split of panes, the list then the record", /id="oPanes" class="amb-split amb-split--panes"/],
     ["the shell names the place it shows", /tab=t; tabs\.setAttribute\('data-place',t\);/]
   ];
   missing.push(...SCRIPT.filter(([, re]) => !re.test(html)).map((s) => s[0]));

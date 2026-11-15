@@ -40994,7 +40994,7 @@ await (async () => {
   } });
   const W = dom.window, D = W.document;
   const shape = () => {
-    const P = D.getElementById("pOrder"), place = D.getElementById("oSplit"), col = place && place.querySelector(".olistcol"), scr = place && place.querySelector(".oscreen");
+    const P = D.getElementById("pOrder"), place = D.getElementById("oPanes"), col = place && place.querySelector(".olistcol"), scr = place && place.querySelector(".oscreen");
     const head = col && col.firstElementChild, nw = D.getElementById("oNew"), yours = col && [...col.children].find((x) => x.tagName === "H2" && x.textContent === "Your orders");
     return { first: P.firstElementChild === place, headFirst: !!head && head.id === "oTop" && head.contains(nw) && !!yours && head.compareDocumentPosition(yours) === W.Node.DOCUMENT_POSITION_FOLLOWING,
       beside: !!scr && scr.parentNode === place && col.parentNode === place, open: scr ? scr.getAttribute("data-order") : "",

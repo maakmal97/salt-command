@@ -17,7 +17,7 @@
  {"name":"no orders and no way on","file":"stmt/page.js","find":"||document.getElementById('oNew'); if(nb){","replace":"||document.getElementById('oNew'); if(false){"},
  {"name":"the empty view loses its second sentence","file":"stmt/page.js","find":"tw('ord.empty.'+k+'.t')+'. '+tw('ord.empty.'+k+'.b')));","replace":"tw('ord.empty.'+k+'.t')));"},
  {"name":"Done's way on is every order","file":"stmt/page.js","find":"var to=k==='done'?'open':'all';","replace":"var to='all';"},
- {"name":"the place is not the system's panes","file":"stmt/page.js","find":"<div id=\"oSplit\" class=\"amb-split amb-split--panes\"></div>","replace":"<div id=\"oSplit\" class=\"amb-split\"></div>"},
+ {"name":"the place is not the system's panes","file":"stmt/page.js","find":"<div id=\"oPanes\" class=\"amb-split amb-split--panes\"></div>","replace":"<div id=\"oPanes\" class=\"amb-split\"></div>"},
  {"name":"the list says nothing of what is to pay","file":"stmt/page.js","find":"    if(owing>0.004) box.appendChild(el('p','onote ocol__pay',tw('ord.col.toPay',{rm:rm(owing)})));\n","replace":""},
  {"name":"the earlier orders are not folded","file":"stmt/page.js","find":"      if(B.past.length) oFold(box,B.past,shown);\n      var ep=","replace":"      if(B.past.length) box.appendChild(oUl(B.past,shown));\n      var ep="},
  {"name":"an order opens by itself on a desk","file":"stmt/page.js","find":"    return draft.oOpen||'';\n  }","replace":"    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; }\n    return draft.oOpen||'';\n  }"},
