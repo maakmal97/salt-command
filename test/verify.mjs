@@ -17242,7 +17242,7 @@ await (async () => {
     ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
       "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
-    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".salt-bubble__new") && /After six is fine/.test(scr.textContent)
+    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".amb-msg__meta .amb-chip") && /After six is fine/.test(scr.textContent)
       && !/reply for you/i.test(pOrder.querySelector("[data-row]").textContent),
       "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
@@ -22233,10 +22233,10 @@ await (async () => {
     D.querySelector('#pOrder [data-row="' + oid + '"]').click();
     const scr = D.querySelector("#pOrder .oscreen"), box = scr && scr.querySelector("input[aria-label='Write about this order']");
     if (box) { box.value = "is it ready"; box.form.requestSubmit(); }
-    await wait(() => scr && scr.querySelector(".salt-bubble--failed"));
-    const send = btn("Send"), failed = scr && scr.querySelector(".salt-bubble--failed");
+    await wait(() => scr && scr.querySelector(".amb-msg.is-error"));
+    const send = btn("Send"), failed = scr && scr.querySelector(".amb-msg.is-error");
     ok(!!send && !send.disabled && !!failed && /Not sent/.test(failed.textContent) && /Check your connection/.test(failed.textContent)
-      && !!failed.querySelector("button.salt-bubble__retry") && failed.closest(".oscreen") === send.closest(".oscreen"),
+      && !!failed.querySelector(".amb-msg__meta button.amb-pill") && failed.closest(".oscreen") === send.closest(".oscreen"),
       "Send on an order is given back too, and Not sent is said on the line itself, in that order's own thread: "
       + JSON.stringify({ send: send && send.disabled, failed: failed && failed.textContent }));
     ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
@@ -22384,7 +22384,7 @@ await (async () => {
     await until(() => underBox().length);
     const sent = said();
     ok(underBox().length === 1 && lapsedLine(underBox()[0]) && sent.filter(lapsedLine).length === 1 && !!box && box.value === "is it ready"
-      && !D.querySelector("#pOrder .salt-bubble--failed") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      && !D.querySelector("#pOrder .amb-msg.is-error") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
       "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
@@ -30280,7 +30280,7 @@ await (async () => {
       /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
       for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
-      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+      const pay = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       /* S6 6.8: the ways are the pay sheet's tiles; cash withheld is shown, dashed and off, with the reason as its line */
       for (let i = 0; i < 150 && !d.querySelector('#payBody input[name="payHow"]'); i++) await new Promise((r) => setTimeout(r, 20));
       return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.nextSibling.querySelector(".salt-option__detail").textContent : ""));
@@ -30522,7 +30522,7 @@ await (async () => {
     /* S5: the order's own screen, and its ways to pay behind its one Pay */
     await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
-    const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
+    const payNow = () => [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent));
     await until(payNow); if (payNow()) payNow().click();
     /* S6 6.8: the rail a customer chooses on the site is cash, in the pay sheet; its id is carried as Confirm's was */
     await until(() => d.querySelector('#payBody input[name="payHow"][value="cod"]'));
@@ -31680,7 +31680,8 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const list = () => d.querySelector("#pOrder [data-olist]");
-  const seq = () => [...list().children].filter((x) => !x.classList.contains("otabs")).map((x) => x.getAttribute("data-row") || x.textContent);
+  /* 16 Nov 2026, the move to Ambient: the list is the Filters, a line of what is to pay, then each part's heading over its list of Rows; the sequence reads the headings, the rows by id and the fold */
+  const seq = () => [...list().children].filter((x) => !x.classList.contains("otabs") && !x.classList.contains("ocol__pay")).flatMap((x) => x.tagName === "UL" ? [...x.children].map((li) => (li.querySelector("[data-row]") || li).getAttribute("data-row")) : [x.getAttribute("data-row") || x.textContent]);
   const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
@@ -31689,7 +31690,7 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
     const s0 = seq();
     ok(s0[0] === "Needs you" && s0[1] === OWES && s0[2] === SAID && s0[3] === "Open" && s0[4] === OPEN
-      && /RM 90.00 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
+      && /RM 90.00 to pay/.test(row(OWES).textContent) && /a reply for you/i.test(row(SAID).textContent),
       "Needs you comes first, with the order that has money to pay and the one with a reply not yet read, then Open: " + JSON.stringify(s0));
     const fold = list().querySelector("button.olater");
     ok(!!fold && fold.textContent === "2 earlier orders" && fold.getAttribute("aria-expanded") === "false"
@@ -31701,17 +31702,17 @@ await (async () => {
       "opening the fold draws them under it: " + JSON.stringify(seq()));
     const r = row(OWES);
     /* Counter Batch A P5: an order is a card, the day and time on top with the state, then the mark and size, the why and the figure */
-    ok(r.tagName === "BUTTON" && r.classList.contains("ocard") && !!r.querySelector(".salt-coin") && /1 unit/.test(r.textContent)
-      && !!r.querySelector(".ocard__top .salt-status") && /23 Sep 2026, 09:00/.test((r.querySelector(".ocard__when") || {}).textContent)
-      && /RM 90.00 to pay/.test((r.querySelector(".ocard__what") || {}).textContent)
-      && (r.querySelector(".ocard__total") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+    ok(r.tagName === "BUTTON" && r.classList.contains("amb-row") && !!r.querySelector(".amb-thumb--mark") && /1 unit/.test(r.textContent)
+      && /^Confirmed/.test((r.querySelector(".amb-row__sub") || {}).textContent) && /23 Sep 2026/.test((r.querySelector(".amb-row__age") || {}).textContent)
+      && /RM 90.00 to pay/.test((r.querySelector(".amb-row__sub") || {}).textContent)
+      && (r.querySelector(".amb-row__amount") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .amb-thread, .amb-journal"),
       "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
     r.click();
     const scr = d.querySelector("#pOrder .oscreen");
-    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oArea").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
+    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("pOrder").classList.contains("o-open"),
       "a tap opens that order's own screen, and on a phone the place says it is open, so the list and the form stand aside");
     const back = d.querySelector("#pOrder .oback"); if (back) back.click();
-    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oArea").classList.contains("o-open") && !!row(OWES),
+    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("pOrder").classList.contains("o-open") && !!row(OWES),
       "the way back is the list again");
   } finally { w.close(); }
 })();
@@ -31756,9 +31757,10 @@ await (async () => {
     return scr() && scr().getAttribute("data-order") === id;
   };
   /* 2 Nov 2026 (his Orders canvas, page 2): the money is the shared Bill, a settings list; a line's flag is its row's second line */
-  const lines = () => [...scr().querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [r.querySelector(".salt-settings__label").textContent,
-    r.querySelector(".salt-settings__value").textContent, (r.querySelector(".salt-settings__sub") || {}).textContent || ""]);
-  const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
+  /* 16 Nov 2026, the move to Ambient: the Bill is the system's read-only Settings (name, its second line, value); the one filled pill is Pay, the record's foot */
+  const lines = () => [...scr().querySelectorAll('[data-part="money"] .amb-setting')].map((r) => [r.querySelector(".obill__k").textContent,
+    r.querySelector(".amb-setting__value").textContent, (r.querySelector(".obill__sub") || {}).textContent || ""]);
+  const pills = () => [...scr().querySelectorAll(".amb-pill:not(.amb-pill--quiet)")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
@@ -31766,16 +31768,16 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
 
     ok(open(ADV), "the delivered, unpaid order opens");
-    const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
+    const steps = [...scr().querySelectorAll("ol.amb-steps > li")];
     /* 20 Oct 2026 (his answer, reversing "nothing about money on the track"): Paid is the fourth step, not done while unpaid */
-    ok(steps.map((s) => s.querySelector(".salt-steps__name").textContent).join("|") === "Placed|Confirmed|Ready|Paid|Delivered"
-      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[4].getAttribute("aria-current") === "step"
-      && !steps[3].classList.contains("salt-steps__step--done"),
+    ok(steps.map((s) => s.querySelector(".amb-step__title").textContent).join("|") === "Placed|Confirmed|Ready|Paid|Delivered"
+      && steps.slice(0, 3).every((s) => s.classList.contains("is-done")) && steps[4].getAttribute("aria-current") === "step"
+      && !steps[3].classList.contains("is-done"),
       "the goods' track stands at Delivered, its Paid step not done while unpaid: " + JSON.stringify(steps.map((s) => s.className)));
     const L1 = lines();
     ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90.00", ""], ["Delivery", "RM 10.00", "To Taman Contoh"], ["Still to pay", "RM 100.00", "The goods are with you"]]),
       "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
-    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100.00"]) && !scr().querySelector(".oact input"),
+    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100.00"]) && !scr().querySelector("[data-part=act] input"),
       "one next action, the filled Pay for what is still to pay, and no pay controls until it is tapped: " + JSON.stringify(pills()));
     ok(!scr().querySelector('[data-part="foot"] button') && /can no longer be cancelled/.test(part("foot").textContent),
       "with the goods already with them, the foot offers no Cancel and says why");
@@ -31784,17 +31786,17 @@ await (async () => {
     ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390.00", ""], ["Paid", "RM 200.00", ""], ["Still to pay", "RM 190.00", "Now, or when you collect"]]),
       "what is paid is a line of its own and what is left is the rest: " + JSON.stringify(lines()));
     const foot = part("foot"), cancel = foot && [...foot.querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
-    ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
+    ok(!!cancel && cancel.classList.contains("amb-action--danger") && foot.nextElementSibling === part("act") && scr().lastElementChild === part("act"), "Cancel this order stands last in the record's settings, before Pay's foot, while nothing has moved");
     const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190.00");
     if (pay) pay.click();
     /* S6 6.4: Pay opens the pay sheet for this order, where the one filled control is the sheet's */
     const shP = d.getElementById("paySheet");
-    ok(!!pay && !scr().querySelector(".oact .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190.00"
+    ok(!!pay && !scr().querySelector("[data-part=act] .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190.00"
       && shP.querySelectorAll(".salt-pill").length === 1,
       "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
     if (shP) d.getElementById("payX").click();
-    const hist = part("hist").querySelector("details.salt-plan");
-    ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
+    const hist = part("hist").querySelector("button.amb-more");
+    ok(!!hist && hist.getAttribute("aria-expanded") === "false" && /What happened, step by step/.test(hist.textContent),
       "what happened is folded under its own line");
 
     ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0.00", "Paid in full"]),
@@ -31803,7 +31805,7 @@ await (async () => {
       && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40.00"]),
       "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
     ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
-      && [...scr().querySelectorAll("ol.salt-steps > li")].every((s) => s.classList.contains("salt-steps__step--done")),
+      && [...scr().querySelectorAll("ol.amb-steps > li")].every((s) => s.classList.contains("is-done")),
       "a complete order has every step done, nothing filled and nothing to cancel");
   } finally { w.close(); }
 })();
@@ -31850,7 +31852,8 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
-  const chip = (id) => { const r = row(id), c = r && r.querySelector(".salt-status"); return c ? c.textContent : null; };
+  /* 16 Nov 2026, the move to Ambient: a row says its state as the first word of its second line */
+  const chip = (id) => { const r = row(id), c = r && r.querySelector(".amb-row__sub > span > span"); return c ? c.textContent : null; };
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
@@ -31865,13 +31868,14 @@ await (async () => {
     ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
       "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
     row("20260924000000-a6").click();
-    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    /* the history is the system's Journal, the newest first: read oldest first as before */
+    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
     ok(JSON.stringify(hist) === JSON.stringify(["Placed", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70.00 by cash on handover",
       "We recorded a payment of RM 20.00", "1 unit collected", "Complete"]),
       "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
     d.querySelector("#pOrder .oback").click();
     row("20260923000000-a7").click();
-    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
     ok(h7[1] === "Declined: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
   } finally { w.close(); }
 
@@ -31926,11 +31930,12 @@ await (async () => {
   const w = dom.window, d = w.document;
   const scr = () => d.querySelector("#pOrder .oscreen");
   const open = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click(); d.querySelector('#pOrder [data-row="' + id + '"]').click(); };
-  const bubbles = () => [...scr().querySelectorAll(".salt-thread__lines .salt-bubble")].map((b) => ({
-    side: b.classList.contains("salt-bubble--mine") ? "mine" : b.classList.contains("salt-bubble--theirs") ? "theirs" : "?",
-    text: b.querySelector(".salt-bubble__text").textContent, state: (b.querySelector(".salt-bubble__state") || {}).textContent || "",
-    isNew: !!b.querySelector(".salt-bubble__new"), failed: b.classList.contains("salt-bubble--failed"),
-    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("salt-ghost")).length }));
+  /* 16 Nov 2026, the move to Ambient: a line of the thread is the system's Message (li.amb-msg, mine as amb-msg--mine), its state in the meta, New a chip there, a failed one is-error with its retry pill in the meta */
+  const bubbles = () => [...scr().querySelectorAll(".amb-thread .amb-msg")].map((b) => ({
+    side: b.classList.contains("amb-msg--mine") ? "mine" : "theirs",
+    text: b.querySelector(".amb-msg__text").textContent, state: (b.querySelector(".amb-msg__state") || {}).textContent || "",
+    isNew: !!b.querySelector(".amb-msg__meta .amb-chip"), failed: b.classList.contains("is-error"),
+    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("amb-pill")).length }));
   const box = () => scr().querySelector('input[aria-label="Write about this order"]');
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
   const send = (t) => { box().value = t; box().dispatchEvent(new w.Event("input", { bubbles: true })); if (box().form) box().form.requestSubmit(); };
@@ -31943,12 +31948,12 @@ await (async () => {
     const b0 = bubbles();
     ok(JSON.stringify(b0) === JSON.stringify([{ side: "mine", text: "Before noon please", state: "Sent", isNew: false, failed: false, retry: 0 },
       { side: "theirs", text: "Noted, Thursday morning.", state: "", isNew: true, failed: false, retry: 0 }])
-      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".salt-thread").textContent),
+      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".amb-thread").textContent),
       "their line stands right and says Sent, his stands left marked New, and nothing says read: " + JSON.stringify(b0));
     open(B); open(A);
     ok(bubbles()[1].isNew === false, "once shown, his line is no longer New when the order is opened again: " + JSON.stringify(bubbles()[1]));
 
-    ok(!!box().form && box().form.classList.contains("salt-composer") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
+    ok(!!box().form && box().form.classList.contains("amb-compose") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
       "the composer is a form, so Return sends it, and the key says so");
     send("Thursday is fine");
     await until(() => said.length === 1);
@@ -32027,8 +32032,8 @@ await (async () => {
     box.focus(); box.value = "Could it"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.setSelectionRange(5, 5);
     phase = 1;
     await until(() => /It goes out Thursday/.test(scr().textContent));
-    const line = [...d.querySelectorAll("#pOrder .oscreen .salt-bubble--theirs")].pop();
-    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".salt-bubble__new") && /Ready to collect/.test(row(B).textContent),
+    const line = [...d.querySelectorAll("#pOrder .oscreen .amb-msg:not(.amb-msg--mine)")].pop();
+    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".amb-msg__meta .amb-chip") && /Ready to collect/.test(row(B).textContent),
       "the poll brought his answer into the open order's thread, marked New, and the other order's new state onto its row");
     ok(d.contains(box) && d.activeElement === box && box.value === "Could it" && box.selectionStart === 5,
       "the box being typed in is the same box, with its words and its caret where they were");
@@ -32039,7 +32044,7 @@ await (async () => {
        an order whose payment moved */
     d.querySelector("#pOrder .oback").click();
     row(D).click();
-    const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+    const pay = [...scr().querySelectorAll("[data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
     const part = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (part) part.click();
     const amt = d.getElementById("payAmt");
     if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
@@ -32386,7 +32391,7 @@ await (async () => {
     ok(shownOf(d) === null && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
       "on a desk nothing opens by itself, so nothing is marked seen and the row still says a reply is waiting: " + JSON.stringify({ shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
-    ok(shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
+    ok(shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .amb-msg__meta .amb-chip"),
       "a tap on its row opens it beside the list, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
   });
   /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
@@ -32579,7 +32584,7 @@ await (async () => {
     } finally { w.close(); }
   };
   const scr = (d) => d.querySelector("#pOrder .oscreen");
-  const lines = (d) => [...scr(d).querySelectorAll(".salt-bubble")].map((b) => b.querySelector(".salt-bubble__text").textContent + " | " + ((b.querySelector(".salt-bubble__state") || {}).textContent || "")
+  const lines = (d) => [...scr(d).querySelectorAll(".amb-msg")].map((b) => b.querySelector(".amb-msg__text").textContent + " | " + ((b.querySelector(".amb-msg__state") || {}).textContent || "")
     + ([...b.querySelectorAll("button")].some((x) => x.textContent === "Tap to try again") ? " | retry" : ""));
   const send = (w, d, t) => { const b = scr(d).querySelector("input[data-say]"); b.value = t; b.dispatchEvent(new w.Event("input", { bubbles: true })); b.form.requestSubmit(); };
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -32644,7 +32649,7 @@ await (async () => {
       await go(w, d);
     } finally { w.close(); }
   };
-  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part="act"] button')].find((b) => /^Pay RM/.test(b.textContent));
+  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part=act] button')].find((b) => /^Pay RM/.test(b.textContent));
   const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
   /* Counter Batch A P5: nothing opens by itself on a desk, so the order is tapped open first */
   await drive(true, async (w, d) => {
@@ -33992,10 +33997,19 @@ await (async () => {
       if (!D.querySelector('#pOrder [data-row="' + id + '"]') && later && later.getAttribute("aria-expanded") !== "true") later.click();
       D.querySelector('#pOrder [data-row="' + id + '"]').click(); return D.querySelector('.oscreen [data-part="rate"]') || D.createElement("div"); };
     const onOld = part(OLD), oldStars = onOld.querySelectorAll("[data-star]").length, onT = part(T), tStars = onT.querySelectorAll("[data-star]").length;
-    const onQ = part(Q), qText = onQ.textContent, qFilled = [...onQ.querySelectorAll("path")].filter((x) => x.getAttribute("fill") === "currentColor").length;
+    const onQ = part(Q), qText = onQ.textContent, qFilled = onQ.querySelectorAll(".amb-rating--shown .amb-icon.is-on").length;   /* 16 Nov 2026, the move to Ambient: a rating given is the system's Rating, its marks the star icons, the given ones is-on */
     ok(oldStars === 5 && tStars === 0 && /Rated 3 of 5/.test(qText) && qFilled === 3 && onQ.querySelectorAll("[data-star]").length === 0,
       "the order itself asks for good once the two days are past, not before, and a rating given is five marks, three filled, with no star to tap: "
       + JSON.stringify({ oldStars, tStars, qText, qFilled }));
+    /* 16 Nov 2026, the move to Ambient: the rating is the system's Rating wherever it is drawn, on Home and on the order: a fieldset of five radios, each star a label whose
+       carried rule is the 44px tap target (it was a 32px button), the question its legend (seen on the order, read aloud under Home's own heading) */
+    const rateCss = ((await import("../stmt/page.js")).SITE_STYLE.match(/\.amb-rating__star \{[^}]*\}/) || [""])[0];
+    const hStars = home.querySelector("fieldset.amb-rating"), oStars = part(OLD).querySelector("fieldset.amb-rating");
+    ok(!!hStars && !!oStars && [hStars, oStars].every((g) => g.querySelectorAll("label.amb-rating__star > input.amb-rating__input[type=radio]").length === 5
+        && [...g.querySelectorAll("input[data-star]")].map((x) => x.value).join("") === "12345" && g.querySelectorAll("label.amb-rating__star > .amb-vh").length === 5 && !g.querySelector("button"))
+      && oStars.querySelector("legend").classList.contains("amb-field__label") && hStars.querySelector("legend").classList.contains("amb-vh")
+      && /width: var\(--amb-tap\)/.test(rateCss) && /height: var\(--amb-tap\)/.test(rateCss),
+      "Home's stars and the order's are the system's Rating, five radios in labels the carried rule makes 44px, the question the legend: " + JSON.stringify({ home: !!hStars, order: !!oStars, rateCss }));
     part(OLD).querySelector('[data-star="2"]').click();
     for (let i = 0; i < 200 && !/rated once/.test(part(OLD).textContent); i++) await new Promise((r) => setTimeout(r, 25));
     await work.quiet();
@@ -41224,7 +41238,7 @@ await (async () => {
     const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
     return scr() || d; };
   const claim = () => {
-    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const pay = scr() && [...scr().querySelectorAll("[data-part=act] button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (s) { s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const g = d.getElementById("payGo"); if (g) g.click();
@@ -41258,18 +41272,18 @@ await (async () => {
     ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
       "Cancel refused: the words sit beside Cancel on that order, and the earlier answer has gone");
 
-    const box = scr().querySelector("form.salt-composer input"); box.value = "Is it ready?";
+    const box = scr().querySelector("form.amb-compose input"); box.value = "Is it ready?";
     [...scr().querySelectorAll("button")].find((b) => b.textContent === "Send").click();
     await until(() => said(d, "Refused by the fixture: say"));
     const sayLine = said(scr(), "Refused by the fixture: say");
-    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
+    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".amb-msg.is-error"),
       "Send refused: the words are back in that order's box, and the answer stands under it");
 
     st.payOk = true;
     openO("oA"); claim();
     await until(() => said(d, "Sent, waiting for us to confirm."));
     const rec = said(scr(), "Sent, waiting for us to confirm.");
-    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector(".oact button:not(.omsg)") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
+    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector("[data-part=act] button") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
       && !/Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
       "sent in full, Pay is gone, nothing says paid, and the answer stands under the order's state instead of vanishing with it");
 
@@ -41330,7 +41344,7 @@ await (async () => {
     const byHold = !!hp && !sh.hidden;
     d.getElementById("payX").click();
     d.querySelector('#pOrder [data-row="oA"]').click();
-    const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const pay = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
     [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it").click();
@@ -41383,7 +41397,7 @@ await (async () => {
     /* S5 5.2: the pay row is in the order's own screen, behind its one Pay */
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
-    const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
+    const payA = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
     /* S6 6.4: the pay row is the pay sheet's, under Part of it */
     const partA = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (partA) partA.click();
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
@@ -41983,7 +41997,7 @@ await (async () => {
     const scr = d.querySelector("#pOrder .oscreen");
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
     const money = [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(r.querySelector(q))).join("|"));
-    scr.querySelector(".oact .salt-pill").click();
+    scr.querySelector("[data-part=act] .amb-pill").click();
     const oWays = [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join();
     const oInv = !!d.querySelector("#payBody .inv"), oTitle = t(d.getElementById("payT"));
     d.getElementById("payX").click();
@@ -41995,7 +42009,7 @@ await (async () => {
     d.querySelector("#pOrder .oback").click();
     await until(() => d.querySelector('#pOrder [data-row="20260927010000-v2kk"]'));
     d.querySelector('#pOrder [data-row="20260927010000-v2kk"]').click();
-    d.querySelector("#pOrder .oscreen .oact .salt-pill").click();
+    d.querySelector("#pOrder .oscreen [data-part=act] .amb-pill").click();
     const kWays = [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join();
     d.getElementById("payX").click();
     ok(kWays === "transfer,qr,cod", "an order not yet Ready keeps cash as its third way: " + kWays);
@@ -42126,10 +42140,10 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
-    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b)));
+    const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b)));
     if (payO) payO.click();
     ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200.00" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
-      && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder .oact .pay"),
+      && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder [data-part=act] .pay"),
       "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, Transfer chosen and no account, and nothing drawn in the order itself");
   } finally { w.close(); }
 })();
@@ -42198,7 +42212,7 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
-    [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    [...scr().querySelectorAll("[data-part=act] button")].find((b) => /^Pay RM/.test(t(b))).click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
     await until(() => d.querySelector('#payBody input[name="payInto"][value="maybank"]'));
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
@@ -42267,7 +42281,7 @@ await (async () => {
     const lost = [...scrB.querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => t(x.querySelector(".salt-settings__label")) + "|" + t(x.querySelector(".salt-settings__value")));
     const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map(t);
     ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50.00") && histB.some((x) => x.endsWith(" We have not found RM 50.00 yet"))
-      && !!scrB.querySelector(".oact .salt-pill"),
+      && !!scrB.querySelector("[data-part=act] .amb-pill"),
       "his Not found on an order shows on its row, on its money and in its history, and Pay is back: " + JSON.stringify({ why, lost, histB }));
     dB.querySelector('#tabs button[data-t="stmt"]').click();
     dB.getElementById("payNow").click();
@@ -42402,7 +42416,7 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
-    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
     const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .salt-option__label")].pop());
     const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
@@ -42591,14 +42605,14 @@ await (async () => {
     const money = t(d.querySelector('#pOrder .oscreen [data-part="money"]'));
     ok(/Before we hand it over/.test(money) && /Due now/.test(ready) && !/Before we hand it over/.test(ready),
       "the order says when: before we hand it over, and due now once it is ready: " + JSON.stringify([money, ready]));
-    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
     const cod = d.querySelector('#payBody input[name="payHow"][value="cod"]');
     const why = cod ? t(cod.closest(".salt-option").querySelector(".salt-option__detail")) : "";
     ok(!!payO && !!cod && cod.disabled && why === "Not offered: this order is paid in advance.",
       "its pay sheet offers no cash, the tile dashed with the reason: " + JSON.stringify([!!payO, cod && cod.disabled, why]));
     d.getElementById("payX").click();
     d.querySelector('#pOrder [data-row="oN"]').click();
-    const payN = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payN) payN.click();
+    const payN = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payN) payN.click();
     const codN = d.querySelector('#payBody input[name="payHow"][value="cod"]');
     ok(!!codN && !codN.disabled, "and an order not paid in advance still offers it");
   } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
@@ -43029,7 +43043,7 @@ await (async () => {
       d.querySelector('#pOrder [data-row="oX"]').click();
       await until(() => d.querySelector("#pOrder .oscreen"));
       const scr = d.querySelector("#pOrder .oscreen");
-      out.orderPay = [...scr.querySelectorAll(".oact button:not(.omsg)")].map(t).join();
+      out.orderPay = [...scr.querySelectorAll("[data-part=act] button")].map(t).join();
       /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; read as label, value, then the second line, as the ledger row read */
       out.lines = [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(r.querySelector(q))).join(" ").trim());
       return out;
@@ -43235,7 +43249,7 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="oR"]'));
     d.querySelector('#pOrder [data-row="oR"]').click();
-    [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))).click();
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
     before = !!w.localStorage.getItem("salt-stmt-payq");
     d.getElementById("payGo").click();

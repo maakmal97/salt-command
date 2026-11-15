@@ -31,7 +31,7 @@
  {"name":"his page sets a bold of its own again","file":"stmt/page.js","find":".adm .apbang{font-weight:500}","replace":".adm .apbang{font-weight:700}"},
  {"name":"the door heading goes back to 24px","file":"stmt/page.js","find":".gate h1{font-size:1.75rem;","replace":".gate h1{font-size:var(--salt-text-xl);"},
  {"name":"the open list is the well again","file":"stmt/statement-css.js","find":".salt-field__select option { background: var(--salt-slate);","replace":".salt-field__select option { background: var(--salt-well);"},
- {"name":"the list keeps half the width with nothing open","file":"stmt/page.js","find":"  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}\n","replace":""},
+ {"name":"a rule for the open order comes back","file":"stmt/page.js","find":".pcover{display:block;margin-top:2px}","replace":".pcover{display:block;margin-top:2px}\n.oscreen{position:sticky}"},
  {"name":"the Pin recipe is left out of the recipes the page carries","file":"tools/stmt-style.mjs","find":"\"/* ---- Glass card, link:\", \"/* ---- Pin:\",","replace":"\"/* ---- Glass card, link:\","},
  {"name":"a carried rule of the Pin differs from the system's","file":"stmt/statement-css.js","find":".salt-pin:hover { border-color: var(--salt-brass); }","replace":".salt-pin:hover { border-color: var(--salt-copper); }"},
  {"name":"the notice's reduced-motion rule is not carried","file":"stmt/statement-css.js","find":".salt-notice__dots, .salt-notice__pause { display: none; }","replace":""},

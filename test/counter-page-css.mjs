@@ -111,8 +111,8 @@ export async function run({ ok, pageWork }) {
       "the customer's place is named by its hero's title, which names no app, and no rail carries a name over it");
     ok(cd.querySelectorAll("#tabs [data-whoas]").length === 1 && !!cd.querySelector("#tabs > main > header.amb-hero > .amb-hero__sub[data-wholine] [data-whoas]") && !cd.querySelector("[data-whorail]"),
       "whose account it is stands once, the line under the place's title, at every width");
-    ok(own.some(([s, b, m]) => /min-width:\s*860px/.test(m) && s === ".oplace.oplace--one" && decl(b, "grid-template-columns") === "minmax(0,1fr)"),
-      "and from 860px Orders' list takes the width while no order stands open beside it");
+    ok(!own.some(([s]) => /\.oplace|\.olistcol|\.oscreen/.test(s)) && landingPage("abcd-efgh", "nct", null).includes('id="pOrder" class="amb-split" hidden'),
+      "and Orders is the system's split of panes, the page writing no rule for the list or the open order (16 Nov 2026, the move to Ambient: the second pane holds New order while none is open)");
   }
 
   /* ---- 2. what PAGE_CSS keeps is placement: no rule under .adm sets a recipe's material, nor one of the page's classes that wear a recipe ---- */

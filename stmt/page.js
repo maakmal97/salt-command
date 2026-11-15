@@ -309,7 +309,7 @@ const PAGE_CSS = `
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
 /* 16 NOV 2026, THE MOVE TO AMBIENT: the Orders place is drawn in the system's parts and laid out in design/site.css (the orders' own section); what is left here is
-   Salt Admin's, which reads a settled figure in the book's colour, and the note under a part that their reward paid (coverTo) */
+   his page's, which reads a settled figure in the book's colour, and the note under a part that their reward paid (coverTo) */
 .adm .osettled{color:var(--salt-verdigris)}
 .pcover{display:block;margin-top:2px}
 /* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px, so on a tablet
@@ -5332,8 +5332,10 @@ const CLIENT_JS = `
      why it is here, then the day and the figure; the whole row opens the order, and its name says all of it in one sentence. An order that can be
      ordered again is a row with a control of its own: the row opens it and Order again stands beside it, never inside it. */
   function oRow(o,shown){
-    var why=oCardWhy(o);
-    var b=hRow({attrs:{'data-row':o.id}, thumb:markThumb(o.product), title:unitsOf(o.qty,oUnit(o)), sub:hSub(o,why),
+    var why=oCardWhy(o), sub=hSub(o,why);
+    /* a state and its words in one (Placed for you) is said once, not as Placed, placed for you */
+    if(why&&why.indexOf(stateWord(o))===0){ sub=el('span'); sub.appendChild(el('span',null,why)); }
+    var b=hRow({attrs:{'data-row':o.id}, thumb:markThumb(o.product), title:unitsOf(o.qty,oUnit(o)), sub:sub,
       age:oDay(o.at), amount:rm(o.total+(+o.delivery||0))});
     b.setAttribute('aria-label',tw(why?'ord.cardAriaWhy':'ord.cardAria',{d:oDay(o.at), a:Uq(o.qty,oUnit(o)), s:stateWord(o), w:why}));
     b.addEventListener('click',function(){ oOpen(o.id); });
@@ -5458,7 +5460,7 @@ const CLIENT_JS = `
     var by={}, months=[], groups=[];
     left.forEach(function(r){ var m=r.getAttribute('data-m')||''; if(!(m in by)){ by[m]=[]; if(m) months.push(m); } by[m].push(r); });
     months.sort().reverse(); if('' in by) months.push('');
-    function apply(pick){ groups.forEach(function(g){ g.node.hidden=!!pick&&g.m!==pick; }); }
+    function apply(pick){ groups.forEach(function(g){ g.node.hidden=!!pick&&g.m!==''&&g.m!==pick; }); }
     var pick=months.indexOf(draft.oMonth)>=0?draft.oMonth:null, slot=el('div','mfil'); slot.hidden=true; box.appendChild(slot);
     months.forEach(function(m){
       var g=el('div','omonth amb-stack'), ul=el('ul','amb-list amb-list--ruled'); ul.setAttribute('aria-label',m?monthLabel(m):tw('ord.yours'));
@@ -5644,7 +5646,7 @@ const CLIENT_JS = `
   function oComposerOf(ph,send){
     var f=el('form','amb-compose'), si=el('input','amb-input'), sg=el('button','amb-circle amb-circle--lg');
     si.type='text'; si.maxLength=200; si.autocomplete='off'; si.setAttribute('enterkeyhint','send'); si.placeholder=ph; si.setAttribute('aria-label',ph);
-    sg.type='submit'; sg.setAttribute('aria-label',send); sg.appendChild(ambIcon('send'));
+    sg.type='submit'; sg.setAttribute('aria-label',send); sg.appendChild(ambIcon('send')); sg.appendChild(el('span','amb-vh',send));
     f.appendChild(si); f.appendChild(sg); f.field=si; f.sendButton=sg;
     return f;
   }

@@ -8,7 +8,7 @@
  * (test/counter-c-counter-slider.mutations.json, tools/section.mjs).
  *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
- *   3  the Orders tabs are a slider of four with their counts, and a tap moves the thumb and aria-selected together
+ *   3  the Orders tabs are the system's four counted Filters (16 Nov 2026), and a tap presses the chosen one and lets the others go
  *   4  Salt Admin's Record strip is the Nav bar's tabs, never the slider, the part entered selected; Customers' is the tight slider, its thumb following each part entered, a hidden option taking no column\n *   5  the strips that do not fit stay pills: the stages' arrows, Orders' second strip, the months; the kinds, Shop's and Orders' parts are the Nav bar's text tabs\n *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
@@ -45,13 +45,13 @@ export async function run({ ok, pageWork }) {
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
       "This device is a list of settings, Notifications (Tide theme gone, 15 Nov 2026, the move to Ambient); with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
     const row = () => A.d.querySelector("#pOrder .otabs");
-    const r1 = seg(row());
-    ok(row() && row().classList.contains("salt-segment") && r1.n === "4" && r1.i === "0" && r1.on === "1000" && row().querySelectorAll(".salt-segment__count").length === 4
-      && [...row().querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
-      "the Orders tabs are a slider of four, each with its count, the thumb on All: " + J(r1));
+    /* 16 Nov 2026, the move to Ambient: the Orders tabs are the system's counted Filters (amb-segment--wrap, aria-pressed), no slider and no thumb */
+    const on = () => [...row().querySelectorAll("button")].map((b) => (b.getAttribute("aria-pressed") === "true" ? 1 : 0)).join("");
+    ok(row() && row().classList.contains("amb-segment") && row().classList.contains("amb-segment--wrap") && !row().classList.contains("salt-segment") && on() === "1000"
+      && row().querySelectorAll(".amb-segment__count").length === 4 && [...row().querySelectorAll("button")].every((b) => b.classList.contains("amb-segment__opt")),
+      "the Orders tabs are the system's four Filters, each with its count, All pressed: " + on());
     row().querySelector('[data-otab="pay"]').click(); await A.settle();
-    const r2 = seg(row()), sel = [...row().querySelectorAll("button")].map((b) => b.getAttribute("aria-selected") === "true" ? 1 : 0).join("");
-    ok(r2.i === "2" && r2.on === "0010" && sel === "0010", "a tap on To pay moves the thumb, the active mark and aria-selected together: " + J([r2, sel]));
+    ok(on() === "0010", "a tap on To pay presses it and lets go of All: " + on());
     const mf = A.d.getElementById("mfil");
     ok(mf && mf.classList.contains("salt-settings") && !mf.classList.contains("salt-segment") && !mf.classList.contains("salt-tabs"), "the months are a select in a settings row (28 Oct 2026), never a strip of pills");
 
@@ -89,7 +89,7 @@ export async function run({ ok, pageWork }) {
     firstPart.hidden = true;
     await go("#customers/links");
     const g3 = seg(cu), shown = [...cu.querySelectorAll("button")].filter((b) => !b.hidden).length;
-    ok(g3.n === String(shown) && g3.i === "1", "an option hidden leaves the columns: the thumb on Links, the second shown: " + J(g3));
+    ok(g3.n === String(shown) && g3.i === "1" && g3.on.split("1").length === 2, "an option hidden leaves the columns: the thumb on Links, the second shown, and its option the one marked active: " + J(g3));   /* 16 Nov 2026: the Orders tabs no longer drive segSync, so the active mark is read here */
     firstPart.hidden = false;
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
     /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */

@@ -95,3 +95,5 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .orecord > .otop > .amb-pill { justify-self: start; }
 /* the rating under Home's row: the row's own inset, since Home's boxes take no place of their own */
 #hRate .amb-rating { margin-inline: var(--amb-space-4); }
+/* a tile and a list stand the width of the part, not the width of their words */
+.oprice > .amb-tiles, .ohold > .amb-tiles, .ohold > .amb-settings { justify-self: stretch; }

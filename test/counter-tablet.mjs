@@ -31,22 +31,17 @@ export async function run({ ok }) {
     ["the dialog draws no grabber", DIALOG, SHEET + " .salt-sheet__grab", [/display: none/]],
     ["from 860px a sheet is the 460px drawer on the right", DRAWER, SHEET, [/top: 0/, /left: auto/, /width: min\(460px, ?100%\)/, /max-height: none/, /animation-name: salt-sheet-slide/]],
     ["the drawer draws no grabber", DRAWER, SHEET + " .salt-sheet__grab", [/display: none/]],
-    ["the drawer's head is spaced as the system's own drawer is", DRAWER, SHEET + " .salt-sheet__head", [/padding-top: var\(--salt-space-5\)/]],
-    /* Orders: the list beside the open order from 860px, as on his page, and not from the rail's 1080px */
-    ["from 860px the list and the open order are two columns", FROM, ".oplace", [/display: grid/, /grid-template-columns: minmax\(0, ?5fr\) minmax\(0, ?6fr\)/]],
-    ["the open order is sticky and scrolls inside itself from 860px", FROM, ".oscreen", [/position: sticky/, /top: 24px/, /overflow-y: auto/, /max-height: calc\(100vh - 48px\)/]],
-    ["its way back is not drawn from 860px", FROM, ".oback", [/display: none/]],
-    ["below 860px the open order is the whole tab and takes the list's place", BELOW, "#pOrder.o-open>:not(.oplace)", [/display: none/]],
-    ["and the list is not drawn beside it", BELOW, ".oplace.o-open>.olistcol", [/display: none/]],
-    ["between 860 and 1080px, where the App bar is still fixed, the order's height gives up the bar's", DRAWER, ".oscreen", [/max-height: calc\(100vh - 48px - var\(--salt-bar-h\)/, /env\(safe-area-inset-bottom/]],
-    /* 15 Nov 2026, the move to Ambient: the place's heading is the shell's hero, which no rule of the page sizes */
-    ["and Orders alone takes the page's width there", DRAWER, "#pOrder", [/max-width: none/]]
+    ["the drawer's head is spaced as the system's own drawer is", DRAWER, SHEET + " .salt-sheet__head", [/padding-top: var\(--salt-space-5\)/]]
+    /* 16 Nov 2026, the move to Ambient: Orders' list beside the open order is the system's split of panes, from the shell's 960px, and the page writes no rule for it (the
+       rows that pinned .oplace, .oscreen, .oback and the 860px grid were the page's old layout; the checks below say the place is the system's and the script follows 960px) */
   ];
   const missing = WANT.filter(([, q, s, res]) => { const css = at(q, s); return !css || !res.every((re) => re.test(css)); }).map((w) => w[0]);
   /* the page's own script follows the style: the list is beside an order from 860px, so one is open by itself from there (it was 1080px), and the shell says which place it shows */
   const SCRIPT = [
-    ["the script asks for 860px to open an order beside the list", /function oWide\(\)\{ try\{ return !!\(window\.matchMedia&&window\.matchMedia\('\(min-width: 860px\)'\)\.matches\)/],
-    ["and drops it when the width falls below 860px", /var oMq=window\.matchMedia&&window\.matchMedia\('\(min-width: 860px\)'\);/],
+    ["the script asks for the system's 960px to put an order beside the list", /function oWide\(\)\{ try\{ return !!\(window\.matchMedia&&window\.matchMedia\('\(min-width: 960px\)'\)\.matches\)/],
+    ["and draws again when the width crosses it", /var oMq=window\.matchMedia&&window\.matchMedia\('\(min-width: 960px\)'\);/],
+    ["the place is the system's split, panes while Orders is on show", /id="pOrder" class="amb-split" hidden/],
+    ["and the script gives it its panes for the place alone", /pOrder\.classList\.toggle\('amb-split--panes',t==='order'\);/],
     ["the shell names the place it shows", /tab=t; tabs\.setAttribute\('data-place',t\);/]
   ];
   missing.push(...SCRIPT.filter(([, re]) => !re.test(html)).map((s) => s[0]));
@@ -57,7 +52,7 @@ export async function run({ ok }) {
   const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859)[.]98px/.test(m.q)).flatMap((m) => m.rules.map((r) => r.sel));
   const ours = fam.flatMap((s) => s.split(",")).filter((s) => OURS.test(s) && !/\.adm\.asheet/.test(s));
   const under = ours.filter((s) => /\.adm\b/.test(s.replace(/:not\(\.adm\)/g, "")));
-  ok(!missing.length && !rail.length && ours.length >= 12 && !under.length,
+  ok(!missing.length && !rail.length && ours.length >= 5 && !under.length,
     "the customer's tablet rules are there, a centred 560px dialog from 768 to 859px, the 460px drawer and the list beside the open order from 860px, and none is under .adm (" + ours.length
       + " rules; missing: " + (missing.join(" | ") || "none") + "; waiting for the rail: " + (rail.join(" | ") || "none") + "; under .adm: " + (under.join(" | ") || "none") + ")");
 

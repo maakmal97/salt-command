@@ -1,4 +1,8 @@
-/* test/counter-orders-cards.mjs: YOUR ORDERS AS CARDS, FILTERED ON A PHONE, IN TWO COLUMNS ON A DESK (Counter Batch A, P5, his decisions of
+/* 16 Nov 2026, the move to Ambient: the filters are the system's counted Filters (aria-pressed, no tablist), an order is the system's Row (hRow, as Home's),
+ * an empty view is one sentence and one way on, and from 960px the list and the open order are the shell's two panes: the list is the same list at any
+ * width, the lead and New order stand in the second pane until an order is tapped. Each re-aimed check says what it now holds; none was dropped.
+ *
+ * test/counter-orders-cards.mjs: YOUR ORDERS AS CARDS, FILTERED ON A PHONE, IN TWO COLUMNS ON A DESK (Counter Batch A, P5, his decisions of
  * 18 Oct 2026).
  *
  * An order is one card, the whole card one control whose name says the day, the size, the state and what it waits on. On a phone one row of
@@ -44,7 +48,7 @@ export async function run({ ok }) {
     const dom = new JSDOM(P.landingPage(u, "np5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
-      if (wide) win.matchMedia = (q) => ({ matches: /min-width: 860px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+      if (wide) win.matchMedia = (q) => ({ matches: /min-width: 960px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
       win.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         if (p === "/open" || p === "/account") return answer(200, opened);
@@ -64,19 +68,19 @@ export async function run({ ok }) {
   const ids = (root) => [...root.querySelectorAll("[data-row]")].map((r) => r.getAttribute("data-row")).sort();
   const want = (list) => list.map((o) => o.id).sort();
   const tabOf = (pg, k) => pg.d.querySelector('#pOrder [data-otab="' + k + '"]');
-  const pick = async (pg, k) => { tabOf(pg, k).click(); await until(() => tabOf(pg, k) && tabOf(pg, k).getAttribute("aria-selected") === "true"); };
+  const pick = async (pg, k) => { tabOf(pg, k).click(); await until(() => tabOf(pg, k) && tabOf(pg, k).getAttribute("aria-pressed") === "true"); };
   const list = (pg) => pg.d.querySelector("#pOrder [data-olist]");
 
   try {
     /* ---- 1 and 2: the counts, and each tab its own orders ---- */
     const S = await open({ orders: ALL });
-    const counts = Object.fromEntries(["all", "open", "pay", "done"].map((k) => [k, tabOf(S, k) ? t(tabOf(S, k).querySelector(".salt-segment__count")) : null]));
+    const counts = Object.fromEntries(["all", "open", "pay", "done"].map((k) => [k, tabOf(S, k) ? t(tabOf(S, k).querySelector(".amb-segment__count")) : null]));
     ok(JSON.stringify(counts) === JSON.stringify({ all: "6", open: "3", pay: "2", done: "3" }),
       "All counts every order, Open the three not done, To pay the two owing, Done the complete, declined and cancelled: " + JSON.stringify(counts));
-    const row = S.d.querySelector("#pOrder .otabs"), tabs = row ? [...row.querySelectorAll('[role="tab"]')] : [];
-    ok(!!row && row.getAttribute("role") === "tablist" && tabs.length === 4 && tabs.filter((b) => b.getAttribute("aria-selected") === "true").length === 1
-      && tabs.map((b) => b.firstChild.nodeValue).join("|") === "All|Open|To pay|Done",
-      "the filter row is one tablist of four, All, Open, To pay and Done, one selected: " + tabs.map((b) => t(b) + (b.getAttribute("aria-selected") === "true" ? "*" : "")).join(", "));
+    const row = S.d.querySelector("#pOrder .otabs"), tabs = row ? [...row.querySelectorAll(".amb-segment__opt")] : [];
+    ok(!!row && row.classList.contains("amb-segment--wrap") && tabs.length === 4 && tabs.filter((b) => b.getAttribute("aria-pressed") === "true").length === 1
+      && tabs.map((b) => b.firstChild.nodeValue.trim()).join("|") === "All|Open|To pay|Done",
+      "the filter row is the system's four counted Filters, All, Open, To pay and Done, one pressed: " + tabs.map((b) => t(b) + (b.getAttribute("aria-pressed") === "true" ? "*" : "")).join(", "));
     await pick(S, "pay"); const pay = ids(list(S));
     await pick(S, "done"); const done = ids(list(S));
     await pick(S, "open"); const opn = ids(list(S));
@@ -95,13 +99,13 @@ export async function run({ ok }) {
     S.d.querySelector("#pOrder .olater").click(); await until(() => ids(list(S)).length === 6);
     const card = (o) => list(S).querySelector('[data-row="' + o.id + '"]');
     const cR = card(R);
-    ok(!!cR && cR.tagName === "BUTTON" && cR.classList.contains("salt-glass-card--link") && !cR.querySelector("button, a, input")
+    ok(!!cR && cR.tagName === "BUTTON" && cR.classList.contains("amb-row") && !cR.querySelector("button, a, input")
       && /^Order of \d\d \w{3} \d{4}, 2\.5 units, Ready to collect, RM 55\.00 to pay$/.test(cR.getAttribute("aria-label") || ""),
-      "an order is one card, the whole card one control named by its day, size, state and what it waits on: " + (cR && cR.getAttribute("aria-label")));
-    ok(!!cR && cR.querySelector(".ocard__what").classList.contains("odue") && t(cR.querySelector(".ocard__total")) === "RM 95.00"
-      && /^\d\d \w{3} \d{4}, \d\d:\d\d$/.test(t(cR.querySelector(".ocard__when"))) && cR.querySelector(".ocard__top .salt-status") !== null,
-      "its day and time stand over it with its state, what is owed is in ember and the figure is the whole order: " + t(cR));
-    ok(t(card(D).querySelector(".ocard__what")) === "Paid in full" && t(card(E).querySelector(".ocard__what")) === "Nothing was paid" && card(F).classList.contains("ocard--ended"),
+      "an order is one Row, the whole row one control named by its day, size, state and what it waits on: " + (cR && cR.getAttribute("aria-label")));
+    ok(!!cR && /^Ready to collect, RM 55\.00 to pay$/.test(t(cR.querySelector(".amb-row__sub"))) && t(cR.querySelector(".amb-row__amount")) === "RM 95.00"
+      && /^\d\d \w{3} \d{4}$/.test(t(cR.querySelector(".amb-row__age"))) && !cR.querySelector(".salt-status, .amb-chip"),
+      "its day stands at its side, its state is a word of the second line with what it waits on, never a chip, and the figure is the whole order: " + t(cR));
+    ok(/paid in full$/i.test(t(card(D).querySelector(".amb-row__sub"))) && /nothing was paid$/i.test(t(card(E).querySelector(".amb-row__sub"))) && /^Cancelled by you/.test(t(card(F).querySelector(".amb-row__sub"))),
       "a finished order says it was paid in full, an ended one that nothing was paid: " + JSON.stringify([t(card(D)), t(card(E))]));
     const drawn = ALL.map((o) => t(card(o)).toLowerCase()).join(" ");
     const said = SO.PRODUCT_WORDS.filter((w) => new RegExp("\\b" + w + "\\b").test(drawn));
@@ -111,30 +115,30 @@ export async function run({ ok }) {
 
     /* ---- 4: the empty views ---- */
     const N = await open({ orders: [] });
-    const eN = N.d.querySelector("#pOrder .salt-empty"), gN = eN ? [...eN.querySelectorAll("button, a")] : [];
-    ok(!!eN && t(eN.querySelector(".salt-empty__title")) === "No orders yet" && gN.length === 1 && t(gN[0]) === "Place an order" && !!eN.querySelector(".salt-empty__mark svg")
+    const eN = N.d.querySelector("#pOrder .oempty"), gN = eN ? [...eN.querySelectorAll("button, a")] : [];
+    ok(!!eN && t(eN.querySelector(".amb-empty")) === "No orders yet. Your orders show here once you place one." && gN.length === 1 && t(gN[0]) === "Place an order"
       && !N.d.querySelector("#pOrder .otabs"),
-      "with no orders the page draws one empty view, its mark, No orders yet and one way on, and no filter row: " + t(eN));
+      "with no orders the page draws one empty view, one sentence (No orders yet) and one way on, and no filter row: " + t(eN));
     const Dn = await open({ orders: [D, E] });
     await pick(Dn, "pay");
-    const eP = list(Dn).querySelector(".salt-empty"), gP = eP ? [...eP.querySelectorAll("button, a")] : [];
-    ok(!!eP && t(eP.querySelector(".salt-empty__title")) === "Nothing to pay" && gP.length === 1 && t(gP[0]) === "See all orders", "To pay with nothing owing says so, with one way on: " + t(eP));
+    const eP = list(Dn).querySelector(".oempty"), gP = eP ? [...eP.querySelectorAll("button, a")] : [];
+    ok(!!eP && /^Nothing to pay\./.test(t(eP.querySelector(".amb-empty"))) && gP.length === 1 && t(gP[0]) === "See all orders", "To pay with nothing owing says so, with one way on: " + t(eP));
     const Op = await open({ orders: [A, B] });
     await pick(Op, "done");
-    const eD = list(Op).querySelector(".salt-empty"), gD = eD ? [...eD.querySelectorAll("button, a")] : [];
-    ok(!!eD && t(eD.querySelector(".salt-empty__title")) === "No completed orders yet" && gD.length === 1 && t(gD[0]) === "See open orders", "Done with nothing done says so: " + t(eD));
-    gD[0].click(); await until(() => tabOf(Op, "open") && tabOf(Op, "open").getAttribute("aria-selected") === "true");
-    ok(tabOf(Op, "open").getAttribute("aria-selected") === "true" && JSON.stringify(ids(list(Op))) === JSON.stringify(want([A, B])), "and its one way on is the open orders");
+    const eD = list(Op).querySelector(".oempty"), gD = eD ? [...eD.querySelectorAll("button, a")] : [];
+    ok(!!eD && /^No completed orders yet\./.test(t(eD.querySelector(".amb-empty"))) && gD.length === 1 && t(gD[0]) === "See open orders", "Done with nothing done says so: " + t(eD));
+    gD[0].click(); await until(() => tabOf(Op, "open") && tabOf(Op, "open").getAttribute("aria-pressed") === "true");
+    ok(tabOf(Op, "open").getAttribute("aria-pressed") === "true" && JSON.stringify(ids(list(Op))) === JSON.stringify(want([A, B])), "and its one way on is the open orders");
 
-    /* ---- 5: from 860px ---- */
+    /* ---- 5: from 960px, the shell's two panes: the same list at any width, and nothing opens by itself ---- */
     const W = await open({ orders: ALL, wide: true });
-    const cols = W.d.querySelectorAll("#pOrder .ocols > .ocol"), oc = W.d.querySelector("#pOrder .ocol--open"), dc = W.d.querySelector("#pOrder .ocol--done");
-    ok(!W.d.querySelector("#pOrder .otabs") && cols.length === 2 && !!oc && !!dc && JSON.stringify(ids(oc)) === JSON.stringify(want([A, B, R]))
-      && JSON.stringify(ids(dc)) === JSON.stringify(want([D, E, F])),
-      "from 860px there is no filter row, and Open and Done stand as two columns of their own orders: " + JSON.stringify({ open: oc && ids(oc), done: dc && ids(dc) }));
-    ok(!!oc && t(oc.querySelector(".ocol__pay")) === "RM 95.00 to pay" && t(oc.querySelector(".ocol__n")) === "3" && t(dc.querySelector(".ocol__n")) === "3" && !dc.querySelector(".ocol__pay"),
-      "Open says what is to pay across it, and each column its count: " + JSON.stringify([oc && t(oc.querySelector(".ocol__head")), dc && t(dc.querySelector(".ocol__head"))]));
-    ok(!W.d.querySelector("#pOrder .oscreen"), "and no order opens by itself: the desk opens on the columns");
+    const po = W.d.getElementById("pOrder");
+    ok(po.classList.contains("amb-split") && po.classList.contains("amb-split--panes") && !!W.d.querySelector("#pOrder > .olistcol.amb-stack") && !W.d.querySelector("#pOrder .ocols"),
+      "from 960px the place is the system's split of panes with the list as its first stack, and no columns of its own");
+    ok(!!W.d.querySelector("#pOrder .otabs") && !!W.d.querySelector("#pOrder .ocol__pay") && t(W.d.querySelector("#pOrder .ocol__pay")) === "RM 95.00 to pay"
+      && JSON.stringify(ids(list(W))) === JSON.stringify(want([A, B, R])),
+      "the filters stand there too and say what is to pay across the orders, the list holding the open orders under the folded earlier ones: " + JSON.stringify({ pay: t(W.d.querySelector("#pOrder .ocol__pay")), ids: ids(list(W)) }));
+    ok(!W.d.querySelector("#pOrder .oscreen") && !!W.d.querySelector("#pOrder > .orecord #oNew"), "and no order opens by itself: the second pane holds New order until one is tapped");
   } catch (e) { ok(false, "counter-orders-cards stopped on an error: " + (e && e.stack)); }
   finally { wins.forEach((w) => w.close()); }
 }

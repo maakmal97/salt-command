@@ -136,25 +136,28 @@ export async function run({ ok }) {
     S.d.querySelector("#pOrder .olater").click();
     await until(() => S.d.querySelector('#pOrder [data-row="' + G.id + '"]'));
     const R0 = rows(S);
-    const chip = (id) => t(R0[id].querySelector(".salt-status"));
+    /* 16 Nov 2026, the move to Ambient: a row's state is a word, the first of its second line, never a chip (hSub); the band's is the system's Chip */
+    const chip = (id) => t(R0[id].querySelector(".amb-row__sub span > span"));
     const want = { [A.id]: "Placed", [B.id]: "Confirmed", [H.id]: "Confirmed", [R.id]: "Ready to deliver", [D1.id]: "Collected", [D2.id]: "Delivered",
       [N.id]: "Complete", [E.id]: "Declined", [F.id]: "Cancelled by us", [G.id]: "Cancelled by you" };
     const got = Object.fromEntries(ALL.map((o) => [o.id, R0[o.id] ? chip(o.id) : null]));
     ok(JSON.stringify(got) === JSON.stringify(want),
       "each state is one word on its row under Your orders: Placed, Confirmed, Ready to deliver, Collected, Delivered, Complete, Declined and the two cancellations: " + JSON.stringify(got));
-    /* Counter Batch A (18 Oct 2026): one glyph before each word, aria-hidden, so the word above is still all the chip says */
-    const glyph = (id) => { const c = R0[id] && R0[id].querySelector(".salt-status"), g = c ? [...c.querySelectorAll("svg")] : [];
-      return g.length === 1 && c.firstChild === g[0] && g[0].getAttribute("aria-hidden") === "true" && g[0].classList.contains("salt-status__glyph") ? g[0].getAttribute("data-g") : null; };
-    const wantG = { [A.id]: "dot", [B.id]: "tick", [H.id]: "tick", [R.id]: "tick", [D1.id]: "ticks", [D2.id]: "ticks", [N.id]: "ticks", [E.id]: "cross", [F.id]: "cross", [G.id]: "cross" };
-    const gotG = Object.fromEntries(ALL.map((o) => [o.id, glyph(o.id)]));
+    /* Counter Batch A (18 Oct 2026) put a glyph before each word; the system's Row says the state in colour as well as words (hSub), and its Chip its dot: plain while it
+       waits on us, ready to collect or deliver or ended, positive once it is confirmed, with them or complete */
+    const tone = (id) => { const c = R0[id] && R0[id].querySelector(".amb-row__sub span > span"); return c ? (c.classList.contains("amb-pos") ? "pos" : "plain") : null; };
+    const wantG = { [A.id]: "plain", [B.id]: "pos", [H.id]: "pos", [R.id]: "plain", [D1.id]: "pos", [D2.id]: "pos", [N.id]: "pos", [E.id]: "plain", [F.id]: "plain", [G.id]: "plain" };
+    const gotG = Object.fromEntries(ALL.map((o) => [o.id, tone(o.id)]));
     ok(JSON.stringify(gotG) === JSON.stringify(wantG),
-      "each chip leads with one aria-hidden glyph: a dot while placed, a tick once confirmed or ready, a double tick once handed over or complete, a cross once ended: " + JSON.stringify(gotG));
+      "each row's state word is plain while placed, ready or ended and positive once confirmed, with them or complete: " + JSON.stringify(gotG));
 
     const screen = async (o) => { R0[o.id].click(); await until(() => S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]')); return S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]'); };
     /* 2 Nov 2026 (his Orders canvas, page 2): the state word is the band's chip, the heading that repeated it gone */
-    const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .salt-band__head .salt-status')), when: t(s.querySelector('[data-part="when"]')),
-      steps: [...s.querySelectorAll('[data-part="steps"] li .salt-steps__name')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
+    const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)')), tone: [...s.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)').classList].filter((c) => /^amb-chip--/.test(c)).join(), when: t(s.querySelector('[data-part="when"]')),
+      steps: [...s.querySelectorAll('[data-part="steps"] li .amb-step__title')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
     const sA = parts(await screen(A)), sB = parts(await screen(B)), sH = parts(await screen(H)), sD2 = parts(await screen(D2)), sE = parts(await screen(E)), sN = parts(await screen(N));
+    ok(sA.tone === "" && sB.tone === "amb-chip--pos" && sD2.tone === "amb-chip--pos" && sE.tone === "" && sN.tone === "amb-chip--pos",
+      "the band's chip is plain while placed or ended and positive once confirmed, with them or complete: " + JSON.stringify([sA.tone, sB.tone, sD2.tone, sE.tone, sN.tone]));
     ok(sA.head === "Placed" && /^Waiting for us to confirm\. You will see it change here\./.test(sA.when) && sA.steps === "Placed|Confirmed|Ready|Paid|Collected",
       "a placed order's own screen reads Placed, Waiting for us to confirm, and its steps run Placed, Confirmed, Ready, Paid, Collected: " + JSON.stringify(sA));
     ok(sB.head === "Confirmed" && /^Confirmed on \d\d \w{3} \d{4}, and being prepared\./.test(sB.when) && sB.steps === "Placed|Confirmed|Ready|Paid|Collected",
@@ -165,11 +168,11 @@ export async function run({ ok }) {
       "a declined order reads Declined, then his reason, and its history says Declined: " + JSON.stringify([sE.head, sE.when, sE.hist]));
     ok(/Sent by you/.test(sH.money) && /Waiting for us to confirm/.test(sH.money) && !/Sent, waiting/.test(sH.money.replace(/Sent, waiting for us to confirm/, "")),
       "a claim of theirs waiting is Waiting for us to confirm beside what they sent: " + JSON.stringify(sH.money));
-    const whyA = t(R0[A.id].querySelector(".ocard__what"));
+    const whyA = t(R0[A.id].querySelector(".amb-row__sub"));
     tab(S, "home");
     await until(() => /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))));
     /* 16 Nov 2026, the move to Ambient: Coming up names the state, then its words in lower case ("Placed, waiting for us to confirm"), so the row is read whole and the old family looked for in any case */
-    ok(whyA === "Waiting for us to confirm" && /Placed, waiting for us to confirm/.test(t(S.d.getElementById("hComing"))) && !/sent, waiting(?! for us to confirm)/i.test(t(S.d.getElementById("hComing"))),
+    ok(whyA === "Placed, waiting for us to confirm" && /Placed, waiting for us to confirm/.test(t(S.d.getElementById("hComing"))) && !/sent, waiting(?! for us to confirm)/i.test(t(S.d.getElementById("hComing"))),
       "a placed order is waiting on the same words in the list's reason and on Home's Coming up: " + JSON.stringify([whyA, t(S.d.getElementById("hComing")).slice(0, 80)]));
 
     /* ---- 3: no word of the family in any text the page renders; Place and the order sheet driven too */
@@ -297,11 +300,13 @@ export async function run({ ok }) {
       "a line of the check whose price moved at Place leads with its mark, named by its shape for the reader and drawn with no shape word: " + JSON.stringify(mv && drawnText(mv)));
 
     /* ---- 8: the tile's caption is the size alone */
-    const tile = S.d.querySelector('#pOrder [data-row="' + A.id + '"] .mtile');
+    /* 16 Nov 2026: the list's rows are the system's Row (no tile); the size under the mark stands in the open order's band */
+    await screen(A);
+    const tile = S.d.querySelector('#pOrder .oscreen[data-order="' + A.id + '"] [data-part="head"] .mtile');
     const capOf = (tl) => t(tl.querySelector(".mq")), srOf = (tl) => t(tl.querySelector(".sr"));
     const tiles = [...S.d.querySelectorAll(".mtile")];
     ok(!!tile && capOf(tile) === "2.5 units" && srOf(tile) === "Cube 2.5 units" && tile.querySelector(".mq").getAttribute("aria-hidden") === "true" && !tile.querySelector(".mq .nb")
-      && tiles.length > 10 && tiles.every((tl) => srOf(tl) === SHAPES.find((s) => srOf(tl).startsWith(s + " ")) + " " + capOf(tl)),
+      && tiles.length >= 1 && tiles.every((tl) => srOf(tl) === SHAPES.find((s) => srOf(tl).startsWith(s + " ")) + " " + capOf(tl)),
       "a tile's caption is the size in words, 2.5 units, with no shape word, and a reader hears the shape and the size once; on every tile the reader's name is the shape, then the caption: " + JSON.stringify([capOf(tile), srOf(tile)]));
     const sv = new JSDOM("<body>" + P.mtileSvg("salt", "2.5 units") + P.mtileSvg("tin", "1 unit") + "</body>").window.document;
     const [t1, t2] = [...sv.querySelectorAll(".mtile")];
@@ -342,7 +347,7 @@ export async function run({ ok }) {
     const all = TF.buildAll(new Date()), fixOrders = Object.values(all).flatMap((f) => f.orders);
     const FX = await open({ orders: fixOrders.slice(0, 40) });
     tab(FX, "order");
-    const fxChips = [...FX.d.querySelectorAll("#pOrder [data-row] .salt-status")].map(t);
+    const fxChips = [...FX.d.querySelectorAll("#pOrder [data-row] .amb-row__sub")].map((s) => t(s.querySelector(":scope > span > span")));
     const fxStates = new Set(fixOrders.map((o) => o.status));
     const KNOWN = new Set(["Placed", "Confirmed", "Ready to collect", "Ready to deliver", "Collected", "Delivered", "Part collected", "Part delivered", "Complete", "Declined", "Cancelled by us", "Cancelled by you"]);
     ok(["placed", "acknowledged", "ready", "done", "declined", "cancelled"].every((s) => fxStates.has(s)) && fxChips.length > 5 && fxChips.every((c) => KNOWN.has(c)) && fxChips.includes("Placed") && fxChips.includes("Confirmed")

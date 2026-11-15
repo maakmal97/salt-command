@@ -33,7 +33,7 @@ export async function run({ ok, pageWork }) {
     byAct(p.d.getElementById("aopen"), act).click(); await p.work.quiet();
     const tab = p.d.querySelector('[data-t="order"]'); if (tab) { tab.click(); await p.work.quiet(); }
   };
-  const lead = (p) => [...p.d.querySelectorAll("#pOrder .lead")].map((n) => n.textContent).join(" | ");
+  const lead = (p) => [...p.d.querySelectorAll("#pOrder .otop .onote")].map((n) => n.textContent).join(" | ");
 
   /* B1 to B4: Order for them */
   let p = await richOwnerPage({ pageWork, extra });

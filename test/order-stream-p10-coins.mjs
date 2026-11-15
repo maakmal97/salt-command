@@ -48,8 +48,8 @@ export async function run({ ok, pageWork }) {
     const sup = p.d.querySelector("#pHome [data-sup]");
     ok(!!sup && !!sup.querySelector(".amb-thumb--mark.amb-thumb--ring[class*='amb-kind-']") && !!sup.querySelector(".amb-chip[data-light] .amb-chip__dot") && !sup.querySelector(".pmark.sup"),
       "10b Home's Availability rows carry the book's mark thumb and the light's chip, a dot and its word");
-    const card = p.d.querySelector("#pOrder .mtile");
-    ok(!!card && !!card.querySelector(".amb-thumb--mark.amb-thumb--ring.amb-thumb--md") && !card.querySelector("svg.psym"), "10b an order card's mark is the medium mark thumb");
+    const card = p.d.querySelector("#pOrder [data-row]");   /* 16 Nov 2026: an order is the system's Row, its thumb the Row's own size */
+    ok(!!card && !!card.querySelector(".amb-thumb--mark.amb-thumb--ring[class*='amb-kind-']") && !card.querySelector("svg.psym"), "10b an order row's mark is the ringed mark thumb in its book's hue");
     const fresh = await K.open({ ok, pageWork }); pages.push(fresh);
     const tile = fresh.d.querySelector("#pHome [data-hagain]");
     ok(!!tile && !!tile.querySelector(".amb-thumb--mark.amb-thumb--ring") && !tile.querySelector("svg.psym"), "10b Home's order-again rows carry the book's mark thumb");
