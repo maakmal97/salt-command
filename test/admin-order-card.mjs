@@ -134,7 +134,7 @@ export async function run({ ok, pageWork }) {
       "a placed order's chip on Salt Admin leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
     /* 25 Oct 2026 (canvas Salt Admin Orders): the band names the book by its typed tag beside the code and draws no mark; the reply's fold says Answer */
     /* 2 Nov 2026 (his Orders canvas, page 2): the band's foot holds the typed tag and the code; the Answer fold is gone, its composer stands in view under Messages */
-    const bandP1 = p.cardOf("ord-p1").querySelector(".ohead"), footP1 = bandP1.querySelector(".salt-band__foot"), compP1 = p.cardOf("ord-p1").querySelector('.omsgs form.salt-composer [data-act="order.reply-text"]');
+    const bandP1 = p.cardOf("ord-p1").querySelector(".ohead"), footP1 = bandP1.querySelector(".oband__foot")   /* 16 Nov 2026, the move to Ambient: the shared band, steps, Bill and thread are the system's parts (place C) */, compP1 = p.cardOf("ord-p1").querySelector('.omsgs form.amb-compose [data-act="order.reply-text"]');
     ok(!!footP1.querySelector(".salt-producttag--salt") && !bandP1.querySelector(".ogoods__tile, svg.psym") && /CX1-ZED/.test(footP1.textContent)
       && !!compP1 && !compP1.closest("details") && !p.cardOf("ord-p1").querySelector('details[data-fold="answer"]') && !byAct(d, "order.answer"),
       "the band names the book by its typed tag beside the code, no mark, and the reply's box stands in view under Messages, no Answer fold: " + (compP1 ? "composer" : "none"));
@@ -158,15 +158,15 @@ export async function run({ ok, pageWork }) {
     const oDec = terms.closest(".odecide");
     /* 5 Nov 2026 (the pane, his answer B): Agree is no longer drawn under the terms but pinned in the card's foot, its last child, so the terms stand under the head and the track and the lead is the foot's */
     ok(leadOf("ord-p1").parentElement === p.cardOf("ord-p1").lastElementChild && leadOf("ord-p1").parentElement.matches(".salt-pane__foot.ofoot") && !!terms.closest(".oagreesec") && !terms.closest(".oagreesec").contains(leadOf("ord-p1"))
-      && oDec.previousElementSibling.classList.contains("salt-steps") && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead") && oDec.nextElementSibling.classList.contains("obill"),
+      && oDec.previousElementSibling.classList.contains("amb-steps") && p.cardOf("ord-p1").querySelector(".amb-steps").previousElementSibling.classList.contains("ohead") && oDec.nextElementSibling.classList.contains("obill"),
       "and the terms stand under the card's head and its track, Agree under them, ahead of the Bill");
     /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
-    const trackP1 = p.cardOf("ord-p1").querySelector("ol.salt-steps"), stepsP1 = trackP1 ? [...trackP1.children] : [];
+    const trackP1 = p.cardOf("ord-p1").querySelector("ol.amb-steps"), stepsP1 = trackP1 ? [...trackP1.children] : [];
     /* 20 Oct 2026 (canvas V17, V30): his five, Paid fourth */
-    ok(!!trackP1 && trackP1.classList.contains("salt-steps--marks") && trackP1.getAttribute("aria-label") === "Where the goods are" && stepsP1.length === 5
-      && stepsP1.every((s) => s.querySelector(".salt-steps__mark svg path[d]") && s.querySelector(".salt-steps__name"))
-      && JSON.stringify(stepsP1.map((s) => s.querySelector(".salt-steps__name").textContent)) === JSON.stringify(["Placed", "Agreed", "Ready", "Paid", "Collected"])
-      && stepsP1[0].classList.contains("salt-steps__step--now") && stepsP1[1].classList.contains("salt-steps__step--next") && /Next/.test(stepsP1[1].querySelector(".salt-steps__time").textContent),
+    ok(!!trackP1 && trackP1.getAttribute("aria-label") === "Where the goods are" && stepsP1.length === 5
+      && stepsP1.every((s) => s.querySelector(".amb-step__title"))
+      && JSON.stringify(stepsP1.map((s) => s.querySelector(".amb-step__title").textContent)) === JSON.stringify(["Placed", "Agreed", "Ready", "Paid", "Collected"])
+      && stepsP1[0].classList.contains("is-now") && /Now/.test(stepsP1[0].querySelector(".amb-chip").textContent) && /Next/.test(stepsP1[1].querySelector(".amb-chip").textContent),
       "the card's track is the marked steps, five with Paid fourth, Placed now and Next on Agreed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
     ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
       && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".oagree")) & 2),
@@ -179,7 +179,7 @@ export async function run({ ok, pageWork }) {
     ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && !!leadOf("ord-p2").closest(".ofoot") && p.cardOf("ord-p2").contains(leadOf("ord-p2")),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
     const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
-    const compP2 = p.cardOf("ord-p2").querySelector('.omsgs form.salt-composer [data-act="order.reply-text"]');
+    const compP2 = p.cardOf("ord-p2").querySelector('.omsgs form.amb-compose [data-act="order.reply-text"]');
     ok(!fold("ord-p2", "terms") && !fold("ord-p2", "answer") && !!compP2 && !compP2.closest("details"), "the reply's box stands in view with no Answer fold (2 Nov 2026), and the terms are in view, never folded");
     const postsBefore = p.posts.length; wait().click(); await p.work.quiet();
     ok(d.activeElement === byAct(d, "order.fee", "ord-p2") && p.posts.length === postsBefore, "and the stand-in takes him to the charge, and sends nothing");
@@ -399,7 +399,7 @@ export async function run({ ok, pageWork }) {
     const typed = (el, v) => { el.value = v; el.dispatchEvent(new w.Event("input", { bubbles: true })); };
     /* 18 Oct 2026: the head's money is the customer's lines, a label and its figure a row */
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill is a settings list, a row a label (its second line apart) and its figure at the right; Money received's head is an h2 */
-    const head = (id) => [...cardOf(id).querySelectorAll(".ordmoney > .salt-settings__row")].map((l) => [l.querySelector(".salt-settings__label"), l.querySelector(".salt-settings__value")].map((c) => (c ? c.textContent : "")).join(" ")).join(" ");
+    const head = (id) => [...cardOf(id).querySelectorAll(".ordmoney .amb-setting")].map((l) => [l.querySelector(".obill__k"), l.querySelector(".amb-setting__value")].map((c) => (c ? c.textContent : "")).join(" ")).join(" ");
     const money = (c) => c.querySelector('h2.salt-settings__head[data-sect="money"]');
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await tapRow("ord-p1");
@@ -409,7 +409,7 @@ export async function run({ ok, pageWork }) {
     const r1 = cardOf("ord-r1");
     ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && /^Goods RM 100\.00 /.test(head("ord-r1")),
       "a ready order's head is its goods, what is paid, what they say they sent, what it owes and what is handed over: " + head("ord-r1"));
-    ok(!r1.querySelector(".rdet") && r1.querySelectorAll(".salt-steps__step--done").length === 2 && /Ready/.test(r1.querySelector(".salt-steps__step--now").textContent),
+    ok(!r1.querySelector(".rdet") && r1.querySelectorAll(".amb-step.is-done").length === 2 && /Ready/.test(r1.querySelector(".amb-step.is-now").textContent),
       "so no Details repeats them, and the track stands at Ready, Paid not yet done while something is owed");
     await part("open"); await tapRow("ord-r2");
     ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
@@ -423,8 +423,8 @@ export async function run({ ok, pageWork }) {
     typed(cashIn, "");
     ok(byAct(r2, "order.pay").textContent === "Record payment", "a figure cleared takes the figure off the button");
     /* 2 Nov 2026: their last line is a bubble of the Messages thread (theirs on the left), no longer a facts line above the Answer fold */
-    ok(!r2.querySelector(".omsgs .salt-bubble--theirs"), "an order with no message of theirs draws no line of theirs");
-    const said = r1.querySelector(".omsgs .salt-bubble--theirs");
+    ok(!r2.querySelector(".omsgs .amb-msg:not(.amb-msg--mine)"), "an order with no message of theirs draws no line of theirs");
+    const said = r1.querySelector(".omsgs .amb-msg:not(.amb-msg--mine)");
     ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.pay-amount"), said) && before(said, byAct(r1, "order.reply-text")),
       "their last line stands above the reply, below the money: " + (said && said.textContent));
     typed(cashIn, "50");

@@ -89,3 +89,47 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .osent { display: grid; justify-items: center; gap: var(--amb-space-2); text-align: center; }
 .otick { width: 40px; height: 40px; color: var(--amb-pos); }
 .ofl { display: block; font-size: var(--amb-text-caption); color: var(--amb-ink-2); }
+
+/* ---- Counter: Orders and the order card, both readers' (the band, Steps, Bill, thread) ---- */
+/* the place is the shell's two panes (#pOrder is the split): a stack never insets a stack of its own; a list or a part stands level with its heading */
+.amb-stack .amb-stack { padding-inline: 0; }
+.olistcol .amb-more, .oscreen .amb-more, .oearlier .amb-more { margin: 0; }
+.oscreen .amb-tiles { padding-inline: 0; }
+.orecord .onote { max-width: 36rem; }
+.oback { justify-self: start; }
+.oempty { display: grid; justify-items: center; gap: var(--amb-space-3); }
+.onote { margin: 0; font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
+.odue { color: var(--amb-neg); }
+.mfil .amb-select { max-width: none; }
+.omonth { display: grid; gap: var(--amb-space-2); }
+.ofold { display: grid; gap: var(--amb-space-2); }
+.ohold, .oprice, .oagain, .orate { display: grid; gap: var(--amb-space-3); justify-items: start; }
+.oact { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }
+.ofoot { display: grid; gap: var(--amb-space-2); }
+/* the band: the state and the reference, when and how in a line, then what it is */
+.oband { display: grid; gap: var(--amb-space-3); }
+.oband__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2); margin: 0; }
+.oref { font-family: var(--amb-font-mono); }
+.oband__when { margin: 0; font-size: var(--amb-text-subhead); }
+.oband__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-3); }
+.oband__what { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.oband__point { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.oband__sum { margin-inline-start: auto; font-size: var(--amb-text-title3); }
+.oband__foot .mtile { display: inline-grid; justify-items: center; gap: var(--amb-space-1); }
+.oband__foot .mq { font-size: var(--amb-text-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* the Bill: a row's name and, under it, what it says; the total heavier, what is owed in the stop colour */
+.obill { max-width: none; }
+.obill__sub { display: block; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.obill__total .amb-setting__name, .obill__total .amb-setting__value { font-weight: 700; color: var(--amb-ink); }
+.obill__due { color: var(--amb-neg); font-weight: 700; }
+/* the thread: his and their lines keep their line breaks */
+.omsgs .amb-msg__text { white-space: pre-wrap; }
+.omsgs { max-width: 36rem; }
+.amb-more > .amb-section__note { margin-inline-start: var(--amb-space-2); }
+.oscreen .amb-tiles { grid-template-columns: minmax(0, 1fr); }
+.obill .amb-setting__value { max-width: none; white-space: nowrap; }
+.orecord > .otop > .amb-pill { justify-self: start; }
+/* the rating under Home's row: the row's own inset, since Home's boxes take no place of their own */
+#hRate .amb-rating { margin-inline: var(--amb-space-4); }
+/* a tile and a list stand the width of the part, not the width of their words */
+.oprice > .amb-tiles, .ohold > .amb-tiles, .ohold > .amb-settings { justify-self: stretch; }

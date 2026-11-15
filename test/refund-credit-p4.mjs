@@ -55,8 +55,8 @@ export async function run({ ok, pageWork }) {
     /* 6 */
     const row = D.d.querySelector('[data-row="20261027000000-cr1"]');
     if (row) { row.click(); await D.settle(); }
-    /* 2 Nov 2026 (his Orders canvas, page 2): the order screen's Bill is settings rows, label, value, then the second line */
-    const money = [...D.d.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => txt(r.querySelector(q))).join(" ").trim());
+    /* 2 Nov 2026 (his Orders canvas, page 2): the order screen's Bill is settings rows, label, value, then the second line; 16 Nov 2026, the move to Ambient: the system's read-only Settings (name, its second line, value) */
+    const money = [...D.d.querySelectorAll('[data-part="money"] .amb-setting')].map((r) => [".obill__k", ".amb-setting__value", ".obill__sub"].map((q) => txt(r.querySelector(q))).join(" ").trim());
     ok(money.some((r) => /^Paid by your credit\s*RM 25\.00/.test(r)) && money.some((r) => /^Still to pay\s*RM 75\.00/.test(r)),
       "the order card says what their credit paid, and RM 75.00 still to pay: " + J(money.filter((r) => /credit|Still/.test(r))));
   } finally { for (const p of pages) p.close(); }
