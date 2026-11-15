@@ -43175,7 +43175,7 @@ await (async () => {
         d.querySelector('#pOrder [data-row="oN"]').click();
         await until(() => d.querySelector("#pOrder .oscreen"));
         /* 2 Nov 2026: a Bill row read as before, its name, its figure, then its second line (the flag it was) */
-        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .salt-settings__row')].map((x) => t(x.querySelector(".obill__k")) + t(x.querySelector(".amb-setting__value")) + t(x.querySelector(".salt-settings__sub")));
+        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .amb-setting')].map((x) => t(x.querySelector(".obill__k")) + t(x.querySelector(".amb-setting__value")) + t(x.querySelector(".obill__sub")));
       }
       return out;
     } finally { dom.window.close(); }
