@@ -1552,7 +1552,7 @@ export const OWNER_JS = `
      and places, every slip picture (its blob: URL revoked) and the Sheet with whatever was typed in it, on a page hidden, on ended(), on a lapse (lapseHooks, in
      the customer's view) and on an explicit Lock; the page then shows codes again. An unlock still being read when the lock comes lands on nothing. */
   var makerVault=null, makerVaultTurn=0, vaultBusy=false, vaultBack=null,
-      vaultSheetEl=document.getElementById('vaultSheet'), vaultScrim=document.getElementById('vaultScrim'), vaultPass=document.getElementById('vaultPass'),
+      vaultSheetEl=document.getElementById('vaultSheet'), vaultPass=document.getElementById('vaultPass'),
       vaultSay=document.getElementById('vaultSay'), vaultGo=document.getElementById('vaultGo');
   /* PHASE 4c (Fable's note on #146): the three forms that prepare a pair of sealed maps (Add ID, Amend ID, Place on the map) each keep the last one prepared as a draft, and a
      draft carries the places map in plain text until it is stripped. Each form lists how its draft is read and let go here, and the lock lets every one go with the keys. */
@@ -1652,13 +1652,13 @@ export const OWNER_JS = `
   /* THE SHEET: the one field. It closes on the ghost, the close control, the scrim and Escape, sending nothing; Tab stays inside. */
   function vaultShut(quiet){
     if(!vaultSheetEl||vaultSheetEl.hidden) return;
-    vaultSheetEl.hidden=true; vaultScrim.hidden=true; vaultPass.value=''; vaultSay.textContent=''; joinWant=null;
+    sheetDown(vaultSheetEl); vaultPass.value=''; vaultSay.textContent=''; joinWant=null;
     if(!quiet){ try{ if(vaultBack&&vaultBack.isConnected&&vaultBack.focus) vaultBack.focus({preventScroll:true}); }catch(x){} }
   }
   function vaultAsk(opener){
     if(makerVault||!vaultSheetEl) return;
     vaultBack=opener||document.activeElement; vaultSay.textContent=''; vaultPass.value='';
-    vaultScrim.hidden=false; vaultSheetEl.hidden=false;
+    sheetUp(vaultSheetEl);
     try{ vaultPass.focus({preventScroll:true}); }catch(x){}
   }
   async function vaultSubmit(){
@@ -1673,7 +1673,8 @@ export const OWNER_JS = `
   if(vaultSheetEl){
     vaultGo.addEventListener('click',vaultSubmit);
     vaultPass.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); vaultSubmit(); } });
-    [document.getElementById('vaultX'),document.getElementById('vaultKeep'),vaultScrim].forEach(function(n){ n.addEventListener('click',function(){ vaultShut(false); }); });
+    [document.getElementById('vaultX'),document.getElementById('vaultKeep')].forEach(function(n){ n.addEventListener('click',function(){ vaultShut(false); }); });
+    sheetWire(vaultSheetEl,function(){ vaultShut(false); });
     document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') vaultShut(false); });
     vaultSheetEl.addEventListener('keydown',function(ev){
       if(ev.key!=='Tab') return;
