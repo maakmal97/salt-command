@@ -19,11 +19,16 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 /* a read that failed: the Notice's words, its Retry at the end */
 .nfail[hidden], .apbar[hidden], .nstock[hidden], .nopen[hidden], #unsentBar[hidden] { display: none; }
 .nfail > span { flex: 1 1 auto; min-width: 0; }
+/* the banner stands under the hero with the stack's gutter, and the kinds use the page's width */
+#unsentBar:not([hidden]) { margin-block: var(--amb-space-4); }
+.nchips { max-width: none; }
+.apparty .amb-chip { text-transform: none; }
 .nfail > .amb-pill, .unsent-note > .amb-pill { margin-inline-start: auto; flex: none; }
 .unsent-note > span { flex: 1 1 auto; min-width: 0; }
 /* the list: a group a word, a card a task; the whole card is its title's tap, the ways above it */
 .nlist { display: grid; gap: var(--amb-space-5); }
-.nlist > .ngroup, .nlist > .nfold, .apstack, .nopen, #nrecord { display: grid; gap: var(--amb-space-3); }
+.nlist > .ngroup, .nlist > .nfold, .nopen, #nrecord { display: grid; gap: var(--amb-space-3); }
+.apstack { display: grid; gap: var(--amb-space-3); }
 .nlist > .nfold > summary { display: flex; align-items: center; min-height: var(--amb-tap); cursor: pointer; }
 .ntask { position: relative; }
 .ntask .need-tap { appearance: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--amb-space-2); width: 100%; min-height: var(--amb-tap); margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }

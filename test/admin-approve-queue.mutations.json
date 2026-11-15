@@ -1,9 +1,9 @@
 [
  {
-  "name": "a Desk row is a glass card again, not the Approve recipe",
+  "name": "a Desk row is a glass card again, not Ambient's approval",
   "file": "stmt/owner.js",
-  "find": "makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard')",
-  "replace": "makerCard(draftRoot,'draft:'+draft.id)"
+  "find": "el('article','amb-task apcard'+(pick==='r'",
+  "replace": "el('article','salt-glass-card apcard'+(pick==='r'"
  },
  {
   "name": "the party leaves the card's head",
@@ -26,14 +26,14 @@
  {
   "name": "the drafter's reasoning leaves the card",
   "file": "stmt/owner.js",
-  "find": "      if(d.reasoning) panel.appendChild(el('p','salt-approve__reason',noBook(d.reasoning)));\n",
+  "find": "      if(d.reasoning) panel.appendChild(el('p','amb-task__text apreason',noBook(d.reasoning)));\n",
   "replace": ""
  },
  {
   "name": "the proposed row is open on the card",
   "file": "stmt/owner.js",
-  "find": "var panel=el('div','rdet rdet--row'); panel.hidden=true;",
-  "replace": "var panel=el('div','rdet rdet--row'); panel.hidden=false;"
+  "find": "var panel=el('div','rdet rdet--row apdet'); panel.hidden=true;",
+  "replace": "var panel=el('div','rdet rdet--row apdet'); panel.hidden=false;"
  },
  {
   "name": "a trip's card lists none of the other rows",
@@ -50,13 +50,13 @@
  {
   "name": "the queue is open on arrival",
   "file": "stmt/page.js",
-  "find": "<details id=\"makerQueue\" class=\"salt-plan\">",
-  "replace": "<details id=\"makerQueue\" class=\"salt-plan\" open>"
+  "find": "<details id=\"makerQueue\" class=\"nfold\">",
+  "replace": "<details id=\"makerQueue\" class=\"nfold\" open>"
  },
  {
-  "name": "the queue is not the Plan fold",
+  "name": "the queue is not a fold",
   "file": "stmt/page.js",
-  "find": "<details id=\"makerQueue\" class=\"salt-plan\">",
+  "find": "<details id=\"makerQueue\" class=\"nfold\">",
   "replace": "<details id=\"makerQueue\" class=\"maker-card\">"
  },
  {
@@ -68,8 +68,8 @@
  {
   "name": "the queue's summary has no act of its own",
   "file": "stmt/page.js",
-  "find": "<summary data-act=\"record.queue-toggle\">",
-  "replace": "<summary>"
+  "find": "<summary class=\"amb-section\" data-act=\"record.queue-toggle\">",
+  "replace": "<summary class=\"amb-section\">"
  },
  {
   "name": "a redraw of the entries shuts the fold",
@@ -230,8 +230,8 @@
  {
   "name": "the head is a control again",
   "file": "stmt/owner.js",
-  "find": "head=el('div','salt-approve__head apphead');",
-  "replace": "head=el('button','salt-approve__head apphead');"
+  "find": "head=el('div','amb-task__head apphead');",
+  "replace": "head=el('button','amb-task__head apphead');"
  },
  {
   "name": "a committed or approved copy is listed as waiting for the Desk",
@@ -252,16 +252,16 @@
   "replace": ">Sent, not yet drafted</span>"
  },
  {
-  "name": "Approve is a ghost when chosen, not the filled pill",
+  "name": "Approve is quiet when chosen, not the filled pill",
   "file": "stmt/owner.js",
-  "find": "el('button',pick==='a'?'salt-pill salt-pill--sm':'salt-ghost',approveLabel(g))",
-  "replace": "el('button','salt-ghost',approveLabel(g))"
+  "find": "el('button','amb-pill amb-pill--sm'+(pick==='a'?'':' amb-pill--quiet'),approveLabel(g))",
+  "replace": "el('button','amb-pill amb-pill--sm amb-pill--quiet',approveLabel(g))"
  },
  {
   "name": "a chosen Reject lights no card",
   "file": "stmt/owner.js",
-  "find": "if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r');",
-  "replace": "if(pick) card.classList.add('ap--a');"
+  "find": "(pick==='r'?' ap--r':pick==='a'?' ap--a':gone?' ap--r':'')",
+  "replace": "(pick==='r'||gone?' ap--a':pick==='a'?' ap--a':'')"
  },
  {
   "name": "Approve is not pressed when chosen",
@@ -270,10 +270,10 @@
   "replace": "approve.setAttribute('aria-pressed','false');"
  },
  {
-  "name": "the choices stand outside the recipe's actions",
+  "name": "the choices stand outside the task's actions",
   "file": "stmt/owner.js",
-  "find": "acts=el('div','salt-approve__actions apticks')",
-  "replace": "acts=el('div','apticks')"
+  "find": "var acts=el('div','amb-task__acts apticks');",
+  "replace": "var acts=el('div','apticks');"
  },
  {
   "name": "Details leaves the head",

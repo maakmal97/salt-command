@@ -498,12 +498,6 @@
     "replace": "  .adm #oRecord{max-width:760px}"
   },
   {
-    "name": "the rows to approve widen with the forms",
-    "file": "stmt/page.js",
-    "find": "  .adm #oOrders>.abody>#oApprove{max-width:600px}\n",
-    "replace": ""
-  },
-  {
     "name": "the pane does not scroll inside itself",
     "file": "stmt/page.js",
     "find": "  .adm .recpane{overflow-y:auto}",

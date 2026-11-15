@@ -615,7 +615,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-foot .maker-say{margin:0}
 @media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
 @media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
-.adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
+.adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 /* 22 Oct 2026 (canvas Needs you): the Agree inputs two by two, Goods and Delivery, then When and Other across both */
 /* 2 Nov 2026 (his Orders canvas, page 2, "The open order, both sides"): the open order on Shop's grid, no card around it: its parts 24px apart, every glass
@@ -851,9 +851,6 @@ body.ended>*:not(#aEnded){display:none}
   .adm .asplit{grid-template-columns:minmax(0,1fr)}
   .adm #aopen{overflow-y:auto}
   .adm #aopen [data-back]{display:none}
-  .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
-  .adm #nopen[hidden]{display:none}
-  .adm #nopen:not([hidden])~.panenone{display:none}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
@@ -983,7 +980,6 @@ body.ended>*:not(#aEnded){display:none}
    the meter of what is agreed of the shelf, ember once promised past it; Next lot alone on its line. From 860px a plain table on one glass, the columns
    in proportion and no sideways scroll. Nothing wraps. */
 .adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
-.adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
 .adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
 /* 22 OCT 2026 (canvas Needs you): THE CARD IS ONE SHAPE ON FIXED COLUMNS, the kind and age over the title in the first, the one pill in the second, the figure
@@ -1965,8 +1961,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="amb-stack">'
         + '<div id="nFail" class="amb-notice amb-notice--warn nfail" role="alert" hidden></div>'
         + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section>'
-        + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nktab" data-chip="' + k
-          + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nktab__n"></span></button>').join("") + "</div>"
+        + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nkopt" data-chip="' + k
+          + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nkopt__n"></span></button>').join("") + "</div>"
         + "</div>"
         + '<div class="amb-split nsplit"><div class="amb-stack"><div id="nlist" class="nlist"></div></div>'
         + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div></div>'

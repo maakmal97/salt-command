@@ -316,10 +316,10 @@ export async function run({ ok, pageWork }) {
   p = await open(state());
   try {
     const d = p.d, chips = [...d.querySelectorAll(".nchips button")];
-    ok(chips.map((b) => b.firstChild.textContent.trim()).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("amb-segment__opt") && b.classList.contains("nktab") && b.hasAttribute("aria-pressed"))
+    ok(chips.map((b) => b.firstChild.textContent.trim()).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("amb-segment__opt") && b.classList.contains("nkopt") && b.hasAttribute("aria-pressed"))
       && chips[0].getAttribute("aria-pressed") === "true" && d.querySelector("div.amb-segment.amb-segment--wrap.nchips").getAttribute("role") === "group" && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
     "the kinds are All, Orders, Payments, Messages, Rows and Accounts, Ambient's counted filters (a wrapped Segment), each with its act, All pressed, and no Jump to beside them");
-    ok(same(chips.map((b) => b.querySelector(".nktab__n").textContent), ["21", "7", "4", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
+    ok(same(chips.map((b) => b.querySelector(".nkopt__n").textContent), ["21", "7", "4", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
       "each kind carries its count of cards, practice apart (21 in all: 17 To do, 2 Pending, 2 FYI): " + chips.map((b) => b.textContent).join());
     p.reads.length = 0;
     const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip"));

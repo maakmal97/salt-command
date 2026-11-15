@@ -110,8 +110,8 @@
  {
   "name": "the Desk's rows show under Entry",
   "file": "stmt/page.js",
-  "find": "<section id=\"oApprove\" data-in=\"orders.approve\" aria-label=\"Rows to approve\">",
-  "replace": "<section id=\"oApprove\" data-in=\"record.entry\" aria-label=\"Rows to approve\">"
+  "find": "<section id=\"oApprove\" class=\"amb-stack\" data-in=\"orders.approve\" aria-label=\"Rows to approve\">",
+  "replace": "<section id=\"oApprove\" class=\"amb-stack\" data-in=\"record.entry\" aria-label=\"Rows to approve\">"
  },
  {
   "name": "the Their % form moves to Entry",

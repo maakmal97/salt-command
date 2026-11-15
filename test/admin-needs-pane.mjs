@@ -41,7 +41,7 @@ export async function run({ ok, pageWork }) {
     ok(pane().hidden && !d.querySelector("#nlist [aria-current]"), "from 860px nothing opens by itself");
     await click(card("o:ord-p1").querySelector(".need-tap"));
     const head = pane().querySelector(".npane"), kind = head && head.querySelector(".npane__kind");
-    ok(!pane().hidden && !!head && !!kind && kind.classList.contains("amb-task__kind") && t(head.querySelector(".amb-task__head > .amb-chip")) === "Due" && /^Order · \d+ d$/.test(t(kind)) && t(head.querySelector(".npane__title")) === "Agree CX1-ZED's order"
+    ok(!pane().hidden && !!head && !!kind && kind.classList.contains("amb-task__kind") && t(head.querySelector(".amb-task__head > .amb-chip")) === "Due" && head.classList.contains("amb-task--warn") && /^Order · \d+ d$/.test(t(kind)) && t(head.querySelector(".npane__title")) === "Agree CX1-ZED's order"
       && t(head.querySelector(".npane__what .amb-chip")) === "Salt" && t(head.querySelector(".npane__what")) === "Salt 2 units · RM 200.00"
       && J([...d.querySelectorAll("#nlist [aria-current]")].map((c) => c.getAttribute("data-need"))) === J(["o:ord-p1"]),
       "a tap opens that card beside the list, alone marked current: its kind and age with the state's word, the title in words, what it is with its book's chip: " + t(head));

@@ -19,10 +19,13 @@ async function page(pageWork, answers) {
   const p = await richOwnerPage({ pageWork, extra: (route) => (route === "/all/maker/stock" ? answers[Math.min(n++, answers.length - 1)] : undefined) });
   await p.work.quiet();
   byAct(p.d, "nav.needs").click(); await p.work.quiet();
+  /* 16 Nov 2026, the move to Ambient (place F): one table, a row a book (tr[data-book]); the light a chip, the meter a progress, the figures cells with their labels */
   const read = () => { const s = p.d.getElementById("nStock");
-    return { s, rows: s ? [...s.querySelectorAll(".nstock__row")].map((r) => ({ book: r.getAttribute("data-book"), tag: t(r.querySelector(".salt-producttag")), st: (r.querySelector(".nstock__who .salt-status") || {}).className || "",
-      word: t(r.querySelector(".nstock__who .salt-status")), cover: t(r.querySelector(".nstock__cover")), line: [...r.querySelectorAll(".salt-meter__line > span")].map(t).join(" | "), meter: r.querySelector(".salt-meter").className,
-      fill: r.querySelector(".salt-meter__fill").style.getPropertyValue("--salt-fill"), lot: t(r.querySelector(".nstock__lot")), alone: r.lastElementChild === r.querySelector(".nstock__lot") && !r.querySelector(".nstock__top .nstock__lot") })) : [] }; };
+    const none = { textContent: "", classList: { contains: () => false }, querySelector: () => null, getAttribute: () => "", value: -1 };
+    const cell = (r, l) => r.querySelector('td[data-label="' + l + '"]') || none;
+    return { s, rows: s ? [...s.querySelectorAll("tbody tr[data-book]")].map((r) => ({ book: r.getAttribute("data-book"), tag: t(cell(r, "Book")), st: (cell(r, "Light").querySelector(".amb-chip") || {}).className || "",
+      word: t(cell(r, "Light")), cover: t(cell(r, "Cover")), agreed: t(cell(r, "Agreed")), free: t(cell(r, "Free")), shelf: t(cell(r, "Shelf")), meter: (r.querySelector("progress.amb-meter") || none).getAttribute("aria-label"),
+      fill: (r.querySelector("progress.amb-meter") || none).value, lot: t(cell(r, "Next lot")), ember: cell(r, "Agreed").classList.contains("amb-neg"), negfree: cell(r, "Free").classList.contains("amb-neg") })) : [] }; };
   const tick = async () => { p.intervals.filter((i) => i.ms === 5000 && !i.off).forEach((i) => i.f()); await p.work.quiet(); };
   return { p, read, tick };
 }
@@ -35,34 +38,33 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     const r = A.read();
     const before = r.s && r.s.previousElementSibling;
-    ok(!!r.s && !r.s.hidden && !!before && before.classList.contains("nsplit") && t(r.s.querySelector(".nstock__head h2")) === "Stock by book" && t(r.s.querySelector(".nstock__head .salt-status")) === "Units · measured 22 Oct"
+    ok(!!r.s && !r.s.hidden && !!before && before.classList.contains("nsplit") && r.s.querySelector("h2.amb-section").firstChild.textContent === "Stock by book" && t(r.s.querySelector("h2 .amb-section__note")) === "Units · measured 22 Oct"
       && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "gas"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Gas"])
       && r.rows.map((x) => x.word).join("|") === "Out of stock|Selling fast|Available|Available|"
-      && ["salt-status--ember", "salt-status--amber", "salt-status--verdigris", "salt-status--verdigris"].every((c, i) => r.rows[i].st.includes(c)) && r.rows[4].st === ""
+      && ["amb-chip--neg", "amb-chip", "amb-chip--pos", "amb-chip--pos"].every((c, i) => r.rows[i].st.split(" ").includes(c)) && !/amb-chip--(pos|neg|warn)/.test(r.rows[1].st) && r.rows[4].st === "" && r.rows.every((x) => x.st === "" || /amb-chip__dot/.test(x.st) === false)
+      && [...r.s.querySelectorAll("td[data-label=Light] .amb-chip")].every((c) => !!c.querySelector(".amb-chip__dot"))
       && !r.s.querySelector("svg.psym"),
-    "under the cards, every book, the worst light first then the least cover, its typed tag and the light in the Counter's words and tone, none for a book with no light: " + J(r.rows.map((x) => [x.book, x.word])));
+    "under the cards, every book, the worst light first then the least cover, its book's chip and the light in the Counter's words and tone (Selling fast plain), none for a book with no light: " + J(r.rows.map((x) => [x.book, x.word])));
     /* 2 */
-    ok(J(r.rows.map((x) => [x.cover, x.line, x.lot])) === J([
-      ["Cover 0 d", "Agreed 2 of 0 | Free 0", "Next lot 20 units · 28 Oct"],
-      ["Cover 0 d", "Agreed 16 of 14.89 | Free −1.11", "Next lot 8 units · 25 Oct"],
-      ["Cover 4 d", "Agreed 0 of 9 | Free 9", "Next lot None yet · 30 Oct"],
-      ["Cover 15.1 d", "Agreed 3 of 45 | Free 42", "Next lot None"],
-      ["Cover 4 wk+", "Agreed 0 of 5 | Free 5", "Next lot None"]])
-      && r.rows.every((x) => x.alone) && J(r.rows.map((x) => [x.fill, /salt-meter--ember/.test(x.meter)])) === J([["100", true], ["100", true], ["0", false], ["7", false], ["0", false]]),
-    "on a phone each row says its cover, what is agreed of the shelf and what is free over the meter (full and ember once promised past it), and its next lot alone: " + J(r.rows.map((x) => [x.cover, x.line, x.lot, x.fill])));
+    ok(J(r.rows.map((x) => [x.cover, x.meter, x.free, x.lot])) === J([
+      ["0 d", "Agreed 2 of 0", "0", "20 units · 28 Oct"],
+      ["0 d", "Agreed 16 of 14.89", "−1.11", "8 units · 25 Oct"],
+      ["4 d", "Agreed 0 of 9", "9", "None yet · 30 Oct"],
+      ["15.1 d", "Agreed 3 of 45", "42", "None"],
+      ["4 wk+", "Agreed 0 of 5", "5", "None"]])
+      && J(r.rows.map((x) => [x.fill, x.ember])) === J([[100, true], [100, true], [0, false], [7, false], [0, false]]),
+    "each row says its cover, what is agreed of the shelf (the meter, full and negative once promised past it), what is free and its next lot: " + J(r.rows.map((x) => [x.cover, x.meter, x.free, x.lot, x.fill])));
     /* 3 */
-    const tb = r.s.querySelector(".nstock__table table");
-    const heads = tb ? [...tb.querySelectorAll("thead th")].map((h) => [t(h), h.classList.contains("salt-table__left")]) : [];
+    const tb = r.s.querySelector("table");
+    const heads = tb ? [...tb.querySelectorAll("thead th")].map((h) => [t(h), h.classList.contains("is-num")]) : [];
     const cells = tb ? [...tb.querySelectorAll("tbody tr")].map((tr) => [...tr.children].map(t)) : [];
-    const widths = tb ? [...tb.querySelectorAll("col")].map((c) => parseFloat(c.style.getPropertyValue("width"))) : [];
-    ok(!!tb && tb.className === "salt-table salt-table--plain" && J(heads) === J([["Book", true], ["Light", true], ["Shelf", false], ["Agreed", false], ["Free", false], ["Of shelf", true], ["Cover", false], ["Next lot", true]])
-      && J(cells[1]) === J(["Salt", "Selling fast", "14.89", "16", "−1.11", "", "0 d", "8 units · 25 Oct"]) && widths.length === 8 && widths.reduce((a, b) => a + b, 0) === 100
-      && tb.querySelectorAll("tbody .salt-meter").length === 5 && tb.querySelector("tbody tr:nth-child(2) td:nth-child(5)").classList.contains("nfree--neg") && !tb.querySelector("tbody tr:nth-child(3) td:nth-child(5)").classList.contains("nfree--neg"),
-      "from 860px a plain table: its eight columns in proportion, a book a row, the meter in its own column, a free figure under nought in ember: " + J([heads.map((h) => h[0]), cells[1], widths]));
+    ok(!!tb && tb.className === "amb-table amb-table--stack" && J(heads) === J([["Book", false], ["Light", false], ["Shelf", true], ["Agreed", true], ["Free", true], ["Of shelf", false], ["Cover", true], ["Next lot", false]])
+      && J(cells[1]) === J(["Salt", "Selling fast", "14.89", "16", "−1.11", "", "0 d", "8 units · 25 Oct"]) && [...tb.querySelectorAll("tbody td")].every((td) => td.hasAttribute("data-label"))
+      && tb.querySelectorAll("tbody progress.amb-meter").length === 5 && tb.querySelector("tbody tr:nth-child(2) td:nth-child(5)").classList.contains("amb-neg") && !tb.querySelector("tbody tr:nth-child(3) td:nth-child(5)").classList.contains("amb-neg"),
+      "one table, Ambient's stack table: its eight columns, a book a row, every cell labelled for the phone's stack, the meter in its own column, a free figure under nought in the negative tone: " + J([heads.map((h) => h[0]), cells[1]]));
     const css = [...A.p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/@media \(min-width:860px\)\{\.adm \.nstock__list\{display:none\}\.adm \.nstock__table\{display:block\}\}/.test(css) && /\.adm \.nstock__table\{display:none;/.test(css)
-      && /\.adm \.nstock__top\{[^}]*white-space:nowrap\}/.test(css) && /\.adm \.nstock__cover,\.adm \.nstock__lot\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css),
-      "the rows on a phone and the table from 860px, one at a time, and nothing in them wraps");
+    ok(/\.amb-table--stack thead \{ position: absolute;/.test(css) && !/\.adm \.nstock/.test(css) && /\.nstock \.amb-meter \{ min-width: 4rem; \}/.test(css),
+      "the rows stand as labelled lines on a phone and in columns wide by Ambient's own rule, and no rule of the old rows and table is left");
     /* 4 */
     const n0 = A.p.wire.filter((x) => x.startsWith("/all/maker/stock")).length;
     await A.tick();

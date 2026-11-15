@@ -21,5 +21,5 @@
  {"name":"F9.1 a form's pill is not its foot","file":"stmt/owner.js","find":"if(primary&&parent.matches&&parent.matches('section.maker-input'))","replace":"if(false)"},
  {"name":"F9.1 Record's form pane is not a pane","file":"stmt/owner.js","find":"pane=el('div','recpane salt-pane');","replace":"pane=el('div','recpane');"},
  {"name":"F10.1 Set the notice is not a foot","file":"stmt/owner.js","find":"var setFoot=el('div','salt-pane__foot anotice-foot');","replace":"var setFoot=el('div','anotice-foot');"},
- {"name":"F10.2 Needs you's ways are not a foot","file":"stmt/owner.js","find":"go=el('div','npane__go salt-pane__foot')","replace":"go=el('div','npane__go')"}
+ {"name":"F10.2 Needs you's ways are not a foot","file":"stmt/owner.js","find":"go=el('div','amb-foot npane__go')","replace":"go=el('div','npane__go')"}
 ]

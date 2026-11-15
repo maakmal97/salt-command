@@ -67,7 +67,7 @@ export async function run({ ok, pageWork }) {
     const counts = {}, shown = {};
     for (const b of pills) {
       const k = b.getAttribute("data-chip");
-      counts[k] = t(b.querySelector(".nktab__n"));
+      counts[k] = t(b.querySelector(".nkopt__n"));
       await click(b);
       shown[k] = String([...d.querySelectorAll("#nlist [data-need]")].filter((c) => !c.closest('details[data-sev="practice"]')).length);
     }
@@ -78,7 +78,7 @@ export async function run({ ok, pageWork }) {
     /* 3 */
     const strip = d.querySelector(".nchips"), tabs = strip ? [...strip.children] : [];
     ok(!!strip && strip.classList.contains("amb-segment") && strip.classList.contains("amb-segment--wrap") && strip.getAttribute("role") === "group" && strip.tagName === "DIV"
-      && tabs.length === 6 && tabs.every((b) => b.classList.contains("amb-segment__opt") && b.classList.contains("nktab") && b.lastElementChild.className === "amb-segment__count nktab__n" && b.firstChild.nodeType === 3)
+      && tabs.length === 6 && tabs.every((b) => b.classList.contains("amb-segment__opt") && b.classList.contains("nkopt") && b.lastElementChild.className === "amb-segment__count nkopt__n" && b.firstChild.nodeType === 3)
       && !d.getElementById("nJump") && !d.querySelector(".salt-jump, .salt-tabs--track, nav.nkinds .nchips"),
       "the kinds are Ambient's counted filters, six options in a wrapped Segment, each its word with the count beside it, and no Jump to: " + tabs.map(t).join(" | "));
     ok(/\.amb-segment--wrap \{ flex-wrap: wrap;/.test(AMB_CSS) && !/\.adm \.nkinds \.nchips/.test(css) && !/\.adm \.nktab\{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:48px;[^}]*\}\s*\.adm \.nktab\[aria-selected/.test(css),
@@ -102,7 +102,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.needs").click(); await q.work.quiet();
     const m = d.querySelector('.nchips button[data-chip="messages"]'), o = d.querySelector('.nchips button[data-chip="orders"]');
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(!!m && m.disabled && !m.hidden && t(m.querySelector(".nktab__n")) === "0" && !o.disabled && /\.nchips > \.amb-segment__opt:disabled \{ opacity: 0\.5; cursor: default; \}/.test(css),
+    ok(!!m && m.disabled && !m.hidden && t(m.querySelector(".nkopt__n")) === "0" && !o.disabled && /\.nchips > \.amb-segment__opt:disabled \{ opacity: 0\.5; cursor: default; \}/.test(css),
       "with no message waiting the Messages tab stays in its place at 0, dimmed, and cannot be chosen, while Orders can");
   } finally { q.w.close(); }
 }

@@ -6486,7 +6486,7 @@ export const OWNER_JS = `
       /* 16 Nov 2026 (the move to Ambient, place F): AN APPROVAL IS AMBIENT'S, the figures that decide first (the cost and his margin stay, the hard rule), then why it
          was flagged, then the two small pills: Approve and Reject choose, and the card says which in its chip */
       var draft=g.lead, pick=apPick[draft.id], gone=apGone(g), claim=g.drafts.some(draftClaim);
-      var card=el('article','amb-task apcard'+(pick==='r'||gone?' ap--r':pick==='a'?' ap--a':'')), head=el('div','amb-task__head apphead');
+      var card=el('article','amb-task apcard'+(pick==='r'?' ap--r':pick==='a'?' ap--a':gone?' ap--r':'')), head=el('div','amb-task__head apphead');
       card.setAttribute('data-maker-card','draft:'+draft.id); draftRoot.appendChild(card);
       var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','amb-task__kind apparty');
       /* the head: the customer's code, and the state of the card */
@@ -8152,8 +8152,8 @@ export const OWNER_JS = `
     var n={all:0}, have={all:1}, ready=needsReady();
     items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
     [].forEach.call(document.querySelectorAll('.nchips button'), function(b){
-      var k=b.getAttribute('data-chip'), c=b.querySelector('.nktab__n');
-      if(!c){ c=el('span','amb-segment__count nktab__n'); b.appendChild(c); }
+      var k=b.getAttribute('data-chip'), c=b.querySelector('.nkopt__n');
+      if(!c){ c=el('span','amb-segment__count nkopt__n'); b.appendChild(c); }
       var said=ready?String(n[k]||0):'';
       if(c.textContent!==said) c.textContent=said;
       var none=ready&&!have[k];

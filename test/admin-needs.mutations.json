@@ -110,8 +110,8 @@
  {
   "name": "the practice fold is not labelled",
   "file": "stmt/owner.js",
-  "find": "var ph=el('summary','salt-eyebrow salt-eyebrow--mist nsev','Practice: '+practiceList.length);",
-  "replace": "var ph=el('summary','salt-eyebrow salt-eyebrow--mist nsev','Other: '+practiceList.length);"
+  "find": "var ph=el('summary','amb-section nsev','Practice: '+practiceList.length);",
+  "replace": "var ph=el('summary','amb-section nsev','Other: '+practiceList.length);"
  },
  {
   "name": "a practice item is counted in Needs you",
@@ -194,8 +194,8 @@
  {
   "name": "the chip tapped is not marked",
   "file": "stmt/owner.js",
-  "find": "var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false');",
-  "replace": "var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', 'false');"
+  "find": "x.setAttribute('aria-pressed', on?'true':'false');",
+  "replace": "x.setAttribute('aria-pressed', 'false');"
  },
  {
   "name": "a chip reads",
@@ -206,8 +206,8 @@
  {
   "name": "a chip has no act",
   "file": "stmt/page.js",
-  "find": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"'",
-  "replace": "'\" aria-selected=\"'"
+  "find": "'\" data-act=\"need.kind.' + k + '\" aria-pressed=\"'",
+  "replace": "'\" aria-pressed=\"'"
  },
  {
   "name": "a failed read does not lead the page",
@@ -366,28 +366,28 @@
   "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');\n    var kd=el('span','salt-action__kind nkind',o.word);"
  },
  {
-  "name": "the kind tapped is not drawn as the Nav's chosen link",
+  "name": "the kind tapped is not drawn as the chosen filter",
   "file": "stmt/owner.js",
-  "find": "x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on);",
-  "replace": "x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', false);"
+  "find": "x.setAttribute('aria-pressed', on?'true':'false');",
+  "replace": "x.removeAttribute('aria-pressed');"
  },
  {
-  "name": "the chips are not a tablist",
+  "name": "the kinds are not a group",
   "file": "stmt/page.js",
-  "find": "class=\"salt-nav__links nchips\" role=\"tablist\"",
-  "replace": "class=\"salt-nav__links nchips\" role=\"group\""
+  "find": "<div class=\"amb-segment amb-segment--wrap nchips\" role=\"group\"",
+  "replace": "<div class=\"amb-segment amb-segment--wrap nchips\" role=\"list\""
  },
  {
-  "name": "a chip is not a tab",
+  "name": "a chip is not an option of the Segment",
   "file": "stmt/page.js",
-  "find": "role=\"tab\" data-chip=\"",
-  "replace": "data-chip=\""
+  "find": "class=\"amb-segment__opt nkopt\" data-chip=\"",
+  "replace": "class=\"nkopt\" data-chip=\""
  },
  {
   "name": "All is not selected at first",
   "file": "stmt/page.js",
-  "find": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"' + (i ? \"false\" : \"true\")",
-  "replace": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"' + \"false\""
+  "find": "'\" aria-pressed=\"' + (i ? \"false\" : \"true\")",
+  "replace": "'\" aria-pressed=\"' + \"false\""
  },
  {
   "name": "a lapse leaves the 30-second read running",
@@ -422,8 +422,8 @@
  {
   "name": "a group heading carries a count",
   "file": "stmt/owner.js",
-  "find": "var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);",
-  "replace": "var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+': '+group.length);"
+  "find": "var h=el('h2','amb-section nsev', s[1]);",
+  "replace": "var h=el('h2','amb-section nsev', s[1]+': '+group.length);"
  },
  {
   "name": "the practice fold he opened shuts on a redraw",
@@ -464,8 +464,8 @@
  {
   "name": "something stands between the title and the banner",
   "file": "stmt/page.js",
-  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'",
-  "replace": "        + '<p class=\"nfirst\">A line before the banner.</p><div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
+  "find": "        + '<div id=\"nFail\" class=\"amb-notice amb-notice--warn nfail\" role=\"alert\" hidden></div>'",
+  "replace": "        + '<p class=\"nfirst\">A line before the banner.</p><div id=\"nFail\" class=\"amb-notice amb-notice--warn nfail\" role=\"alert\" hidden></div>'"
  },
  {
   "name": "one bad key blanks the review",
@@ -758,8 +758,8 @@
  {
   "name": "a resting card carries every way of its row",
   "file": "stmt/owner.js",
-  "find": "      if(go.children.length&&!grown) return;\n",
-  "replace": ""
+  "find": "var grown=c.classList.contains('need--grow');\n      if(go.children.length&&!grown) return;\n      var filled",
+  "replace": "var grown=c.classList.contains('need--grow');\n      var filled"
  },
  {
   "name": "Withdraw sends without asking",

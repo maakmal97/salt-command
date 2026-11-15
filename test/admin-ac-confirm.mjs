@@ -38,7 +38,7 @@ export async function run({ ok, pageWork }) {
     await click("nav.needs");
     /* 22 Oct 2026 (canvas Needs you): the card marks its age in ember once late; the minutes and his usual stand in the open card beside the list from 860px */
     const ageOf = (k) => d.querySelector('#nlist [data-need="' + k + '"] .nage');
-    p.w.matchMedia = (q) => ({ matches: /min-width:s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} });
+    p.w.matchMedia = (q) => ({ matches: /min-width:s*960px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} });
     const clockIn = async (k) => { d.querySelector('#nlist [data-need="' + k + '"] .need-tap').click(); await p.work.quiet(); return d.querySelector("#nopen .npane [data-clock]"); };
     const nl = await clockIn("o:ord-late"), ns = await clockIn("o:ord-soon");
     delete p.w.matchMedia;

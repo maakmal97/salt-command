@@ -18,10 +18,10 @@
     "replace": "if(it) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });"
   },
   {
-    "name": "the pane's kind takes no tone",
+    "name": "the pane takes no state tone",
     "file": "stmt/owner.js",
-    "find": "var k=el('span','salt-eyebrow salt-eyebrow--'+SEVC[o.sev]+' npane__kind', o.word);",
-    "replace": "var k=el('span','salt-eyebrow npane__kind', o.word);"
+    "find": "c=el('article','amb-task npane'+(st[0]?' amb-task--'+st[0]:''))",
+    "replace": "c=el('article','amb-task npane')"
   },
   {
     "name": "the pane's title is the code alone",
@@ -32,7 +32,7 @@
   {
     "name": "the pane draws the mark",
     "file": "stmt/owner.js",
-    "find": "if(o.mark) w.appendChild(productTag(o.mark)); if(o.what)",
+    "find": "if(o.mark) w.appendChild(nBook(o.mark)); if(o.what)",
     "replace": "if(o.mark) w.appendChild(bookMark(o.mark)); if(o.what)"
   },
   {
@@ -56,8 +56,8 @@
   {
     "name": "the pane shows the first way alone",
     "file": "stmt/owner.js",
-    "find": "c._add=function(b){ if(!own) return;",
-    "replace": "c._add=function(b){ if(!own||go.children.length) return;"
+    "find": "      if(!own) return;\n      var filled",
+    "replace": "      if(!own||go.children.length) return;\n      var filled"
   },
   {
     "name": "a claim has no second way",
@@ -80,26 +80,20 @@
   {
     "name": "a gone card leaves the pane open",
     "file": "stmt/owner.js",
-    "find": "    if(!it){\n      /* Fable",
-    "replace": "    if(!it){ return;\n      /* Fable"
+    "find": "    if(!it){\n      nFoot(null);",
+    "replace": "    if(!it){ return;\n      nFoot(null);"
   },
   {
-    "name": "the pane is the old 440px",
+    "name": "the open card has no column of its own",
     "file": "stmt/page.js",
-    "find": "  .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}",
-    "replace": "  .adm .nsplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}"
+    "find": "<div class=\"amb-stack\" id=\"nrecord\">",
+    "replace": "<div class=\"amb-stack\" id=\"nrecord2\">"
   },
   {
-    "name": "the pane stays 360px at 1440",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}",
-    "replace": "@media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}}"
-  },
-  {
-    "name": "the pane starts at the top",
-    "file": "stmt/page.js",
-    "find": "  .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);",
-    "replace": "  .adm #nopen{margin-top:0;"
+    "name": "the column says nothing until a tap, it never shows",
+    "file": "stmt/statement-css.js",
+    "find": ".panenone { display: none; margin: 0;",
+    "replace": ".panenone { display: block; margin: 0;"
   },
   {
     "name": "an answer misses the card beside Needs you",
@@ -116,14 +110,14 @@
   {
     "name": "the Offer loses its Withdraw beside the list",
     "file": "stmt/owner.js",
-    "find": "var own=!o.order||!!o.ways;",
-    "replace": "var own=!o.order;"
+    "find": "var own=!o.order||!!o.ways, go=el('div','amb-foot npane__go')",
+    "replace": "var own=!o.order, go=el('div','amb-foot npane__go')"
   },
   {
     "name": "an order head asks of its own",
     "file": "stmt/owner.js",
-    "find": "var own=!o.order||!!o.ways;",
-    "replace": "var own=true;"
+    "find": "var own=!o.order||!!o.ways, go=el('div','amb-foot npane__go')",
+    "replace": "var own=true, go=el('div','amb-foot npane__go')"
   },
   {
     "name": "a moved order takes its answer away",

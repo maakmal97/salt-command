@@ -359,9 +359,8 @@ export async function run({ ok, pageWork }) {
     ok(/overflow-y: auto/.test(pane) && /position: sticky/.test(band) && /top: 24px/.test(band) && /salt-bar-h/.test(band),
       "the pane is sticky and scrolls inside itself, and between 860 and 1080px its height gives up the App bar's: " + pane + " | " + band);
     const back = at("(min-width:860px)", ".adm #makerFormBack")[0] || "", wide = at("(min-width:860px)", ".adm #oRecord")[0] || "";
-    const approve = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove")[0] || "";
-    ok(/display: none/.test(back) && /max-width: none/.test(wide) && /max-width: 600px/.test(approve),
-      "from 860px the way back is not drawn (the menu is beside the form), Record widens for its forms and the rows to approve keep their column: " + [back, wide, approve].join(" | "));
+    ok(/display: none/.test(back) && /max-width: none/.test(wide),
+      "from 860px the way back is not drawn (the menu is beside the form), Record widens for its forms (the rows to approve are Ambient's stack, 16 Nov 2026): " + [back, wide].join(" | "));
     const d = new JSDOM(html).window.document;
     ok(!!d.querySelector("#makerInputs") && d.querySelector("#makerInputs").getAttribute("data-in") === "record.entry record.customers record.pricing",
       "the forms stand in Record's one section, which Entry, Customers and Pricing show");

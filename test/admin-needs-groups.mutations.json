@@ -8,8 +8,8 @@
  {
   "name": "a group heading carries its count",
   "file": "stmt/owner.js",
-  "find": "var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]);",
-  "replace": "var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+' · '+group.length);"
+  "find": "var h=el('h2','amb-section nsev', s[1]);",
+  "replace": "var h=el('h2','amb-section nsev', s[1]+' · '+group.length);"
  },
  {
   "name": "Pending folds again",
