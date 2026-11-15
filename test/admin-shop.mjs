@@ -19,10 +19,10 @@
  *   P5.1  Practice is one Practice accounts switch, on only while all three exist, a grey line saying what is made
  *   P5.2  a row an account made, the password row copying it, Open the test page a row to /all/test only while all three are open
  *   P5.3  turning it off asks once on the Sheet: Keep them sends nothing, Remove sends the one removal
- *   P6.1  This device is one list of settings, each row a name and one switch: Tide theme (greyed while off), Show names, Notifications
+ *   P6.1  This device is one list of settings, each row a name and one switch: Show names, Notifications (Tide theme gone, 15 Nov 2026)
  *   P6.2  turning Show names on asks for the password in the one Sheet, and stays off until it is given
  *   P6.3  the Notifications switch takes the old road to turn them on; refused, it stays off and free, the line saying why
- *   P6.4  the customer's own Look row is drawn as it was
+ *   P6.4  the customer's page draws no Look row either (15 Nov 2026, the move to Ambient)
  *   P7.1  from 860px the open day stands in the pane beside the week, "No day open" until a tap, and none under its row
  *   P7.2  from 860px Shop takes the whole column, Now, the points and Help in one 640px column, the open day's pane beside the week
  *   P7.3  from 860px Notice, Practice and This device stand in one 640px column, as a Mac's settings
@@ -241,7 +241,7 @@ export async function run({ ok, pageWork }) {
     ok(!pane.querySelector(".maker-dayedit") && t(pane.querySelector("h3")) === "No day open", "a second tap closes it again");
     /* P7.2 */
     const css = [...wd.d.querySelectorAll("style")].map((s) => s.textContent).join("\n"), at860 = css.slice(css.indexOf("/* 25 Oct 2026 (his Shop canvas): WIDE."));
-    ok(/@media \(min-width:860px\)\{[^@]*\.adm \.amain>#oShop\{max-width:none\}[^@]*\.adm \.hsplit\{display:grid;grid-template-columns:minmax\(0,1fr\) 380px/.test(at860)
+    ok(/@media \(min-width:860px\)\{[^@]*\.adm #oShop\{max-width:none\}[^@]*\.adm \.hsplit\{display:grid;grid-template-columns:minmax\(0,1fr\) 380px/.test(at860)
       && /@media \(min-width:860px\)\{\n  \.adm #makerNowCard,\.adm \.apoints-sec,\.adm #mHelp\{max-width:640px\}\n  \.adm \.hsplit\{grid-template-columns:minmax\(0,640px\) minmax\(300px,380px\)\}/.test(css)
       && /@media \(min-width:1440px\)\{\.adm \.hsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(at860) && /\.adm \.hpane\{display:none\}/.test(at860),
       "from 860px Shop takes the whole column, Now, the points and Help one 640px column, the open day's pane beside the week; below it no pane");
