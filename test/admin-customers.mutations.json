@@ -1,50 +1,50 @@
 [
- {
-  "name": "a locked account's way is Open, not Send",
-  "file": "stmt/owner.js",
-  "find": "word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'send'}",
-  "replace": "word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'open'}"
- },
- {
-  "name": "an owing account loses its Owed kind",
-  "file": "stmt/owner.js",
-  "find": "return {sev:late?'now':'soon', word:'Owed',",
-  "replace": "return {sev:late?'now':'soon', word:'Debt',"
- },
- {
-  "name": "a filter with no account is still offered",
-  "file": "stmt/owner.js",
-  "find": "x.disabled=k!=='all'&&!n; });",
-  "replace": "x.disabled=false; });"
- },
- {
-  "name": "a link row is a card again",
-  "file": "stmt/owner.js",
-  "find": "var c=needCard({sev:sev, kind:'links', word:word,",
-  "replace": "var c=el('div','glink'); void ({sev:sev, kind:'links', word:word,"
- },
- {
-  "name": "a withdrawn link has no pill",
-  "file": "stmt/owner.js",
-  "find": "r.revoked?'Withdrawn':r.standing?'Standing'",
-  "replace": "r.revoked?'Standing':r.standing?'Standing'"
- },
- {
-  "name": "the counts are not a ledger",
-  "file": "stmt/owner.js",
-  "find": "    if(led.childElementCount) c.appendChild(led);",
-  "replace": "    if(0) c.appendChild(led);"
- },
- {
-  "name": "the card lists every party's loans",
-  "file": "stmt/owner.js",
-  "find": "return item.party===a.code; });",
-  "replace": "return true; });"
- },
- {
-  "name": "Repayment does not choose the loan",
-  "file": "stmt/owner.js",
-  "find": "if(pick){ pick.value=repayWant;",
-  "replace": "if(pick){"
- }
+  {
+    "name": "a locked account's way is Open, not Send",
+    "file": "stmt/owner.js",
+    "find": "word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'send'}",
+    "replace": "word:'Locked', age:a.locked.until?'to '+hm(a.locked.until):'', act:'open'}"
+  },
+  {
+    "name": "an owing account loses its Owed kind",
+    "file": "stmt/owner.js",
+    "find": "return {sev:late?'now':'soon', word:'Owed',",
+    "replace": "return {sev:late?'now':'soon', word:'Debt',"
+  },
+  {
+    "name": "a filter with no account is still offered",
+    "file": "stmt/owner.js",
+    "find": "x.disabled=k!=='all'&&!n; });",
+    "replace": "x.disabled=false; });"
+  },
+  {
+    "name": "a link has no panel",
+    "file": "stmt/owner.js",
+    "find": "var card=el('li','glpanel');",
+    "replace": "var card=el('li','glinkx');"
+  },
+  {
+    "name": "a withdrawn link has no pill",
+    "file": "stmt/owner.js",
+    "find": "r.revoked?'Withdrawn':r.standing?'Standing'",
+    "replace": "r.revoked?'Standing':r.standing?'Standing'"
+  },
+  {
+    "name": "the resales count is not drawn",
+    "file": "stmt/owner.js",
+    "find": "r.onward?String(r.onward):''",
+    "replace": "''"
+  },
+  {
+    "name": "the card lists every party's loans",
+    "file": "stmt/owner.js",
+    "find": "return item.party===a.code; });",
+    "replace": "return true; });"
+  },
+  {
+    "name": "Repayment does not choose the loan",
+    "file": "stmt/owner.js",
+    "find": "if(pick){ pick.value=repayWant;",
+    "replace": "if(pick){"
+  }
 ]

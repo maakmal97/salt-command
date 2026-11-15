@@ -18,20 +18,21 @@ export async function run({ ok, pageWork }) {
     enter(d, "customers", "accounts"); await p.work.quiet();
     /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its state the second line of its text, its way a lit ghost, its sum the row's value */
     const row = (u) => d.querySelector('#rlist [data-u="' + u + '"]');
-    const cards = () => [...d.querySelectorAll("#rlist .arow[data-u]")], kindOf = (r) => ((r.querySelector(".salt-settings__sub") || {}).textContent || "");
+    const cards = () => [...d.querySelectorAll("#rlist .arow[data-u]")], /* 16 Nov 2026, the move to Ambient (place H): an account is Ambient's row, its state the second line, its way a small pill in the trail */
+    kindOf = (r) => ((r.querySelector(".amb-row__sub") || {}).textContent || "");
     const locked = cards().filter((r) => /^Locked/.test(kindOf(r)))[0];
-    ok(!!locked && locked.tagName === "DIV" && locked.classList.contains("salt-settings__row") && locked.getAttribute("data-u") === locked.querySelector('[data-act="acct.open"]').getAttribute("data-key").slice(2)
-      && locked.querySelectorAll(".salt-ghost--lit").length === 1 && /Send/.test(locked.querySelector(".salt-ghost--lit").textContent)
+    ok(!!locked && locked.tagName === "LI" && locked.classList.contains("amb-row") && locked.getAttribute("data-u") === locked.querySelector('[data-act="acct.open"]').getAttribute("data-key").slice(2)
+      && locked.querySelectorAll(".amb-row__trail .amb-pill").length === 1 && /Send/.test(locked.querySelector(".amb-row__trail .amb-pill").textContent)
       && !locked.querySelector(".salt-pill") && !locked.querySelector('[data-act="acct.open-card"]') && !locked.classList.contains("salt-inbox-row"),
-      "an account row is a settings row with its one Send ghost and no Open: " + (locked && locked.textContent));
+      "an account row is Ambient's row with its one Send pill and no Open: " + (locked && locked.textContent));
     const owes = cards().find((r) => /^Owed/.test(kindOf(r)));
-    ok(!!owes && /^RM [0-9]/.test((owes.querySelector(".salt-settings__value") || {}).textContent || "") && owes.querySelectorAll(".salt-ghost--lit").length === 1,
+    ok(!!owes && /RM [0-9]/.test((owes.querySelector(".amb-row__sub") || {}).textContent || "") && owes.querySelectorAll(".amb-row__trail .amb-pill").length === 1,
       "the owing account has Owed as its state and its sum as its value: " + (owes && owes.textContent));
     ok([...d.querySelectorAll('#afil button[data-f]')].find((b) => b.getAttribute("data-f") === "refund") === undefined, "no filter is offered for a state the filter list does not name");
     const quiet = cards().find((r) => /CX4-ZED/.test(r.textContent));
-    ok(!!quiet && quiet.querySelectorAll(".salt-status").length === 0 && quiet.querySelectorAll(".salt-pill").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
+    ok(!!quiet && quiet.querySelectorAll(".amb-chip").length === 0 && quiet.querySelectorAll(".salt-pill").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
     const none = d.querySelector('#afil button[data-f="none"]'), locks = d.querySelector('#afil button[data-f="locked"]');
-    ok(!!none && !none.disabled && !!locks && !locks.disabled && none.getAttribute("role") === "tab", "a filter can be chosen while an account is in its state");
+    ok(!!none && !none.disabled && !!locks && !locks.disabled && none.classList.contains("amb-segment__opt"), "a filter can be chosen while an account is in its state");
 
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();
@@ -40,18 +41,18 @@ export async function run({ ok, pageWork }) {
     finally { q.w.close(); }
 
     enter(d, "customers", "links"); await p.work.quiet();
-    const g = d.querySelector('#glist .glink[data-link="s1"]'), off = d.querySelector('#glist .glink[data-link="r1"]');
+    const g = d.querySelector('#glist .glpanel[data-link="s1"]'), off = d.querySelector('#glist .glpanel[data-link="r1"]');
     const gc = d.querySelector('#glist [data-glink="s1"]'), oc = d.querySelector('#glist [data-glink="r1"]');
-    ok(!!g && !!gc && g.hidden && !g.open && gc.getAttribute("aria-expanded") === "false" && !!g.querySelector("img") && !!byAct(g, "link.copy"),
-      "a guest link is Needs you's card with its panel, holding the QR and moves, hidden until the card is tapped");
-    ok(!!off && !!oc && oc.classList.contains("off") && /Withdrawn/.test(oc.querySelector(".nkind").textContent) && !/Withdrawn/.test(gc.querySelector(".nkind").textContent),
-      "only a withdrawn link's card says Withdrawn in its kind line and is dimmed");
-    ok(d.querySelectorAll('#glist .glink:not([hidden])').length === 0, "no link panel is open until its card is tapped");
+    ok(!!g && !!gc && g.hidden && !g.open && gc.querySelector(".amb-row__main").getAttribute("aria-expanded") === "false" && !!g.querySelector(".amb-codeframe img") && !!byAct(g, "link.copy"),
+      "a guest link is Ambient's row with its panel, holding the QR in the code frame and the moves, hidden until the row is tapped");
+    ok(!!off && !!oc && oc.classList.contains("off") && /Withdrawn/.test(oc.querySelector(".amb-row__sub").textContent) && !/Withdrawn/.test(gc.querySelector(".amb-row__sub").textContent),
+      "only a withdrawn link's row says Withdrawn in its second line and is dimmed");
+    ok(d.querySelectorAll('#glist .glpanel:not([hidden])').length === 0, "no link panel is open until its row is tapped");
 
     enter(d, "customers", "associates"); await p.work.quiet();
-    const card = d.querySelector("#clist .acard");
-    ok(!!card && !!card.querySelector(".srow > b.acode") && !!card.querySelector(".srow > .un") && card.querySelectorAll(".aled .salt-ledger__row").length === 3
-      && /Resales/.test(card.querySelector(".aled").textContent), "an associate's code stands beside its marks and its counts are a ledger");
+    const card = d.querySelector("#clist table.amb-table tbody tr");
+    ok(!!card && !!card.querySelector("td > .acode") && /founder/.test(card.textContent) && [...card.querySelectorAll("td")].find((c) => c.getAttribute("data-label") === "Resales").textContent === "3"
+      && [...card.querySelectorAll("td")].find((c) => c.getAttribute("data-label") === "Referred").textContent === "2", "an associate's code stands beside its marks and its counts are columns of the table");
 
     enter(d, "customers", "accounts"); await p.work.quiet();
     const u = [...d.querySelectorAll("#rlist [data-u]")].find((r) => /CX1-ZED/.test(r.textContent));
@@ -59,10 +60,10 @@ export async function run({ ok, pageWork }) {
     /* 3 Nov 2026 (the account on Shop's grid): a loan is a row that opens Repayment: what was lent, the day under it, what is left at the right
        (what was repaid follows from the two, so the line fits one line at 390) */
     const box = d.querySelector(".oacct .abooks"), loanRows = box ? [...box.querySelectorAll(".aloan")] : [];
-    ok(loanRows.length === 1 && loanRows[0].getAttribute("data-loan") === "loan-1" && /^Lent RM 500\.00/.test(loanRows[0].textContent) && loanRows[0].querySelector(".salt-settings__sub").textContent === "15 Sep 2026"
-      && loanRows[0].querySelector(".salt-settings__value").textContent === "RM 300.00 left",
+    ok(loanRows.length === 1 && loanRows[0].getAttribute("data-loan") === "loan-1" && /^Lent RM 500\.00/.test(loanRows[0].textContent) && /15 Sep 2026$/.test(loanRows[0].querySelector(".amb-setting__name").textContent)
+      && loanRows[0].querySelector(".amb-setting__value").textContent === "RM 300.00 left",
     "the card lists this customer's loan only, with its date, what was lent, repaid and left: " + (box && box.textContent));
-    ok(!!box && !!box.querySelector('[data-reward="CX1-ZED"]') && /^Reward1 unit free2 units held$/.test(box.querySelector('[data-reward="CX1-ZED"]').textContent), "their reward standing is on the card: " + (box && box.textContent));
+    ok(!!box && !!box.querySelector('[data-reward="CX1-ZED"]') && /^Reward2 units held, 1 unit free$/.test(box.querySelector('[data-reward="CX1-ZED"]').textContent), "their reward standing is on the card: " + (box && box.textContent));
     const go = loanRows[0].getAttribute("data-act") === "acct.repay" && loanRows[0].getAttribute("data-key") === "loan-1" ? loanRows[0] : null;
     go.click(); await p.work.quiet(); await p.work.quiet();
     const form = d.querySelector('#makerInputs [data-form="repayment"]'), pick = form && form.querySelector('[data-act="record.repay.loan"]');
