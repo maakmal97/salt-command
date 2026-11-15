@@ -111,7 +111,7 @@ export async function run({ ok, pageWork }) {
       "the customer's place is named by its hero's title, which names no app, and no rail carries a name over it");
     ok(cd.querySelectorAll("#tabs [data-whoas]").length === 1 && !!cd.querySelector("#tabs > main > header.amb-hero > .amb-hero__sub[data-wholine] [data-whoas]") && !cd.querySelector("[data-whorail]"),
       "whose account it is stands once, the line under the place's title, at every width");
-    ok(!own.some(([s]) => /\.oplace|\.olistcol|\.oscreen/.test(s)) && landingPage("abcd-efgh", "nct", null).includes('id="pOrder" class="amb-split" hidden'),
+    ok(!own.some(([s]) => /\.oplace|\.olistcol|\.oscreen/.test(s)) && landingPage("abcd-efgh", "nct", null).includes('id="oSplit" class="amb-split amb-split--panes"'),
       "and Orders is the system's split of panes, the page writing no rule for the list or the open order (16 Nov 2026, the move to Ambient: the second pane holds New order while none is open)");
   }
 

@@ -132,13 +132,13 @@ export async function run({ ok }) {
 
     /* ---- 5: from 960px, the shell's two panes: the same list at any width, and nothing opens by itself ---- */
     const W = await open({ orders: ALL, wide: true });
-    const po = W.d.getElementById("pOrder");
-    ok(po.classList.contains("amb-split") && po.classList.contains("amb-split--panes") && !!W.d.querySelector("#pOrder > .olistcol.amb-stack") && !W.d.querySelector("#pOrder .ocols"),
-      "from 960px the place is the system's split of panes with the list as its first stack, and no columns of its own");
+    const po = W.d.getElementById("oSplit");
+    ok(po.classList.contains("amb-split") && po.classList.contains("amb-split--panes") && !!W.d.querySelector("#oSplit > .olistcol.amb-stack") && !W.d.querySelector("#pOrder .ocols"),
+      "from 960px the place holds the system's split of panes with the list as its first stack, and no columns of its own");
     ok(!!W.d.querySelector("#pOrder .otabs") && !!W.d.querySelector("#pOrder .ocol__pay") && t(W.d.querySelector("#pOrder .ocol__pay")) === "RM 95.00 to pay"
       && JSON.stringify(ids(list(W))) === JSON.stringify(want([A, B, R])),
       "the filters stand there too and say what is to pay across the orders, the list holding the open orders under the folded earlier ones: " + JSON.stringify({ pay: t(W.d.querySelector("#pOrder .ocol__pay")), ids: ids(list(W)) }));
-    ok(!W.d.querySelector("#pOrder .oscreen") && !!W.d.querySelector("#pOrder > .orecord #oNew"), "and no order opens by itself: the second pane holds New order until one is tapped");
+    ok(!W.d.querySelector("#pOrder .oscreen") && !!W.d.querySelector("#oSplit > .orecord #oNew"), "and no order opens by itself: the second pane holds New order until one is tapped");
   } catch (e) { ok(false, "counter-orders-cards stopped on an error: " + (e && e.stack)); }
   finally { wins.forEach((w) => w.close()); }
 }

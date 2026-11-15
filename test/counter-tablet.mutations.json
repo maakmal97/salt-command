@@ -19,6 +19,5 @@
  {"name":"the order sheet is not the system's dialog","file":"stmt/page.js","find":"var box=sheetNode('osheet','osheet','oshT');","replace":"var box=el('div','osheet'); box.id='osheet';"},
  {"name":"the script puts an order beside the list from 860px","file":"stmt/page.js","find":"window.matchMedia('(min-width: 960px)').matches); }catch(e)","replace":"window.matchMedia('(min-width: 860px)').matches); }catch(e)"},
  {"name":"the script draws again only at 860px","file":"stmt/page.js","find":"var oMq=window.matchMedia&&window.matchMedia('(min-width: 960px)');","replace":"var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');"},
- {"name":"the place is not the system split","file":"stmt/page.js","find":"<div id=\"pOrder\" class=\"amb-split\" hidden></div>","replace":"<div id=\"pOrder\" class=\"panel\" hidden></div>"},
- {"name":"the panes are never given","file":"stmt/page.js","find":"    pOrder.classList.toggle('amb-split--panes',t==='order');\n","replace":""}
+ {"name":"the place is not the system split","file":"stmt/page.js","find":"<div id=\"oSplit\" class=\"amb-split amb-split--panes\"></div>","replace":"<div id=\"oSplit\" class=\"panel\"></div>"}
 ]

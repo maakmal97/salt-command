@@ -1877,7 +1877,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '</div>'
     + "</div></div>"
     + '<div id="pPrices" class="amb-stack" hidden></div>'
-    + '<div id="pOrder" class="amb-split" hidden></div>'
+    + '<div id="pOrder" hidden><div id="oSplit" class="amb-split amb-split--panes"></div></div>'
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
     + '<div id="pCard" class="amb-stack" hidden></div>'
     + "</main>" + placesDock() + "</div>"
@@ -2175,7 +2175,7 @@ const CLIENT_JS = `
       acctEl=document.getElementById('acct'), mfil=document.getElementById('mfil'), mfnote=document.getElementById('mfnote'),
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
-      pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
+      pOrder=document.getElementById('pOrder'), oSplit=document.getElementById('oSplit'), pCard=document.getElementById('pCard'),
       pHome=document.getElementById('pHome');
   /* S7 7.1: THE PLACES. Each is a button on the rail and one on the App bar, both carrying data-t; tCard is the rail's
      Rewards, whose hidden says whether this account has the place (stmt/owner.js reads it) */
@@ -2914,7 +2914,7 @@ const CLIENT_JS = `
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; AMF.pick=null; mfnote.textContent='';
-    pPrices.textContent=''; pOrder.textContent=''; drawHome();
+    pPrices.textContent=''; oSplit.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
     keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
@@ -3050,8 +3050,6 @@ const CLIENT_JS = `
     tab=t; tabs.setAttribute('data-place',t);
     [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
-    /* the shell holds still for two panes only while the Orders place is the one on show (the system's split reads from the screen) */
-    pOrder.classList.toggle('amb-split--panes',t==='order');
     liveShow();
     placeTitle();
     if(tapped&&(!location.hash||placeOf(location.hash))){
@@ -5016,7 +5014,7 @@ const CLIENT_JS = `
        mid-sentence; the line is kept per order in draft.says, and the box that had the caret gets it back */
     var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
         sel=keep?[fo.selectionStart,fo.selectionEnd]:null;
-    pOrder.textContent='';
+    oSplit.textContent='';
     /* S7-R3 of the review: all of this is the head of the list's column (oPlace puts it there), so on a desk the open
        order beside it starts at the top of the place, its money, Pay and messages in view */
     var top=el('div','otop amb-stack'); top.id='oTop'; oTopEl=top;
@@ -6012,11 +6010,11 @@ const CLIENT_JS = `
     if(open&&!wide) col.hidden=true;
     /* the record's foot is the one main action beside an open order: New order then stands quiet */
     var nbq=oTopEl&&oTopEl.querySelector('#oNew'); if(nbq) nbq.classList.toggle('amb-pill--quiet',wide&&!!o);
-    pOrder.appendChild(col);
-    if(o) pOrder.appendChild(oScreen(o));
-    else if(none){ var rec=el('div','amb-stack orecord'); if(oTopEl) rec.appendChild(oTopEl); pOrder.appendChild(rec); }
+    oSplit.appendChild(col);
+    if(o) oSplit.appendChild(oScreen(o));
+    else if(none){ var rec=el('div','amb-stack orecord'); if(oTopEl) rec.appendChild(oTopEl); oSplit.appendChild(rec); }
   }
-  function oDraw(){ if(!pOrder.querySelector('.olistcol')) return; pOrder.textContent=''; oPlace(); }
+  function oDraw(){ if(!pOrder.querySelector('.olistcol')) return; oSplit.textContent=''; oPlace(); }
   /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change; a row
      that did is drawn again and keeps the focus, holding nothing typed. The open order keeps any part holding the
      focus, and draft.oStale has the next poll draw it once the focus has left; a part that reads the same is left
