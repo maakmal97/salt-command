@@ -32,7 +32,9 @@
 /* The GENERATED stylesheet, not tools/stmt-style.mjs. That module reads design/salt-ds.css
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
-import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
+/* 15 Nov 2026, the move to Ambient: the page wears Ambient whole (its tokens, ambient.css, ambient.js and the icon sprite) and the site's own
+   layer, design/site.css; the salt-ds stylesheet, its recipes and the faces are no longer served on any page of the site */
+import { AMB_TOKENS, AMB_CSS, AMB_JS, AMB_ICONS, AMB_THEME, SITE_CSS } from "./statement-css.js";
 import { PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
@@ -59,8 +61,6 @@ const PAGE_CSS = `
 /* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
 /* Counter Batch A: the Today card, and the notice in it */
 .today{display:flex;flex-direction:column;gap:12px}
-/* Home's Today card holds the clock, so the header does not say the time twice there */
-.cshell[data-place=home] .chead .cclock{display:none}
 .today__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap);margin:-8px 0 -4px}
 .today__clock{margin-left:auto;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-mist-bright)}
 .today__line{margin:0;font-size:var(--salt-text-md);line-height:1.45;color:var(--salt-salt)}
@@ -107,17 +107,7 @@ const PAGE_CSS = `
 /* S3 fix: the code screen, carried into the signed-out Sheet, under the Sheet's own title */
 #outForm #codeBox{margin:0}
 #outForm .appmark{display:none}
-/* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
-   draws a white list of black words under a dark field, which is the colour he called bizarre.
-   color-scheme tells the system the page is dark and the list follows it; option is named too, for
-   the platforms that take the colour rather than the scheme: the system's own .salt-field__select option, slate under salt
-   ink as on the Desk (18 Oct 2026; this page had set the well, black at 28%, which a native list draws near-black), so every
-   select carries salt-field__select. The chevron is drawn out of two
-   gradients because appearance:none took the system's away and left nothing to say it opens. */
-select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme:dark;cursor:pointer;
-  padding-right:42px;background-repeat:no-repeat;background-size:6px 6px,6px 6px;
-  background-image:linear-gradient(45deg,transparent 50%,var(--salt-brass) 50%),linear-gradient(135deg,var(--salt-brass) 50%,transparent 50%);
-  background-position:calc(100% - 22px) calc(50% - 2px),calc(100% - 17px) calc(50% - 2px)}
+/* 15 Nov 2026, the move to Ambient: a select is the device's own list in light and dark alike, so its forced dark colour scheme and chevron went (Ambient's Select draws one) */
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
@@ -210,14 +200,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .keeppage b{color:var(--salt-text);font-weight:500}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
 .keepsteps .glyph,.keeppage .glyph{vertical-align:-0.3em;margin:0 3px}
-/* THE BELL (Step 1b), at the head of every view of the saved app: marked, with its call beside it, until notifications
-   are on; both 44px taps */
-.chead{display:flow-root}
-.cbell{float:right;display:flex;align-items:center;gap:8px;margin:0 0 6px 10px}
-.cbell__orb{position:relative}
-.cbell__dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--salt-brass);display:none}
-.cbell--off .cbell__dot{display:block}
-.cbell--off .cbell__orb{border-color:var(--salt-brass)}
+/* 15 Nov 2026, the move to Ambient: the bell is a circle in the shell's app bar, its call a glass chip; Ambient places both */
 /* S9 9.9: in This device (S7 7.3, below), its phones and computers with this one marked, and the two quiet ways, each
    answered on the line under them */
 .devcard .dacts{margin-top:10px}
@@ -240,52 +223,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .rdet .salt-ledger{margin:8px 0 0}
 .adm .rdet .salt-ledger__value{white-space:normal;overflow-wrap:anywhere;text-align:right}
 .adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
-/* a veil is obsidian 86%, decision 4 */
-/* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
-   had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines.
-   UX2: IT STICKS UNDER THE STATUS BAR. The page draws under it (viewport-fit=cover, black-translucent), so at
-   top:0 a saved iPhone app held Log out behind the clock, as the desk's bar was until v392 */
-#barw{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
-  gap:12px;margin:0 auto;max-width:620px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);
-  font-family:var(--salt-font-mono)}
-/* S7 7.1: the veil is drawn by what the bar holds, his view line or a lapse, so a customer's bar, whose Log out is This
-   device's now, takes no room until it has something to say */
-.vbar,.lapse{padding:0 16px;margin-bottom:14px;background:var(--salt-veil);border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-sm);backdrop-filter:blur(10px)}
-.vbar .lapse{padding:0;margin:0;background:none;border:0;backdrop-filter:none}
-/* 04 OCT 2026: HIS VIEW LINE SHARES ITS ROW WITH BACK TO ACCOUNTS. On a phone the line took the row's width, so the
-   button fell to a second row and the line sat a pixel under the veil's top edge; the line now wraps beside the button,
-   centred on its 44px, and a lapse still takes the next row */
-.vbar>span{flex:1 1 0;min-width:0;padding:10px 0;line-height:1.5}
-.vbar b{white-space:nowrap}
-.bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
-.lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.lapse[hidden]{display:none}
-/* UX4, 24 Sep 2026: Log out and Continue are taps like any other, 44px both ways (they were 55 and 62 by 21,
-   and Continue is the one way back after a lapse); the bar gives up its own padding, so it is no taller */
-.bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
-  padding:0;text-decoration:underline;min-height:var(--salt-tap);min-width:var(--salt-tap);
-  display:inline-flex;align-items:center;justify-content:center;flex:none}
-/* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, which were three tabs and a fourth. The system's App bar at the foot of a
-   phone and its rail from 1080px draw them, and the recipe decides which shows; this page keeps the bar's height clear
-   at the foot, names the place in the header and lays Home out. */
-.cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
-.chead{max-width:620px;margin:0 auto 18px}
-.chead h1{margin:0;font-size:1.75rem;line-height:1.15}
-/* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
-.cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
-.cclock:empty{display:none}
-.cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-/* 21 Oct 2026, his word: THE HEADER IS THE BAR, on every place, in the Desk's glass: the time, the place and whose account on the left, what
-   waits on them (cBarChips) and the bell beside; under 820px of bar what waits takes its own row, as the Desk's does */
-.cbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0;align-items:center;top:calc(env(safe-area-inset-top) + 8px)}
-.cbar>.cclock,.cbar>h1,.cbar>.cwho{grid-column:1}
-.cbar>h1{font-size:1.375rem}
-.cbar>.cbell{grid-column:3;grid-row:1/span 3;float:none;margin:0 0 0 12px}
-.cbar>.salt-deskbar__live{grid-column:1/-1;grid-row:4}
-.cbar>.salt-deskbar__live:not(:has(.salt-deskbar__chip)){display:none}
-@container salt-deskbar (min-width:820px){.cbar>.salt-deskbar__live{grid-column:2;grid-row:1/span 3;margin-left:14px}}
+/* 15 Nov 2026, the move to Ambient: the bar of lines (#barw), the header (.chead, .cbar), the rail and the App bar went: the shell's hero names the place, his read-only
+   line and a lapse are notices under it, and the places are one dock, which Ambient stands up as the rail from 960px */
 /* a username is a credential, so the rail's capitals never reach it */
 .home{max-width:620px;margin:0 auto}
 .home .hcol>div{margin:0 0 24px}
@@ -300,14 +239,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    a list's last row included (its 8px stood inside Coming up, so the gap after it read 32px). The rows' resets are
    shorthands, as the rules they undo are. */
 @media (max-width:1079.98px){
-  body{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
-  /* 12 OCT 2026 (HIS IPHONE): IN THE SAVED APP A FIXED BAR STANDS AT THE FOOT OF THE DOCUMENT WHEN THE DOCUMENT IS SHORTER THAN THE SCREEN. Measured on his phone,
-     393x852, each page at its top: Orders (long) had the bar on the screen's foot, Record (one short card) 20pt above it and Needs you ("Nothing here.") 55pt above it,
-     the page ground showing under it; Safari never did. So the document is the whole screen tall at least in the saved app: the head script marks the root data-app and
-     sets --app-h to the screen's height (the viewport units are not trusted there, none being known to reach the screen's foot), and the body's min-height is that.
-     The body's box is border-box, so its padding adds no scroll. Only the saved app, and under 1080px, where the bar shows. */
-  html[data-app] body{min-height:100vh;min-height:var(--app-h,100vh)}
-  .cshell{padding-bottom:var(--salt-bar-h)}
   .gate{padding:0}
   .home .hcol{display:flex;flex-direction:column;gap:24px}
   .home .hcol>div{margin:0}
@@ -320,16 +251,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
    the right. */
 @media (min-width:1080px){
-  /* 15 Nov 2026, his word: the shell is salt-ds's one page width (--salt-page-max), as every surface stands (it was 1240px) */
-  .cshell{display:flex;gap:28px;align-items:flex-start;max-width:var(--salt-page-max);margin:0 auto;padding-bottom:48px}
-  .cmain{flex:1 1 auto;min-width:0}
-  .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
-  .chead .cclock{display:none}
-  /* Counter Batch A: the rail says whose account it is, so the header does not say it twice */
-  .chead [data-whoas]{display:none}
-  .crtitle{display:block;margin:0 12px 16px;font-size:1.375rem;line-height:1;letter-spacing:0.04em;white-space:nowrap}
-  .crbrand{flex-direction:column;align-items:flex-start;gap:2px}
-  .crbrand .mono{font-size:var(--salt-text-sm);color:var(--salt-salt);text-transform:none;letter-spacing:0}
+  .home,.panel{max-width:none}
   .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
 }
@@ -628,7 +550,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 }
 @media (min-width:860px) and (max-width:1079.98px){
   .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  #pOrder,.cshell[data-place=order] .chead{max-width:none}
+  #pOrder{max-width:none}
 }
 /* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px, so on a tablet
    a sheet ran edge to edge (a 1000px window drew a 1000px sheet). Here it is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px, the width the lists
@@ -645,14 +567,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}
 }
 
-@media print{.bar,.mos,.salt-appbar,.salt-rail{display:none}}
+@media print{.mos,.amb-dock,.amb-appbar{display:none}}
 /* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S, AND SITS UNDER .adm, THE ROOT OF HIS PAGE (#roster).
    This stylesheet is the customer's and a guest board's too, so a rule of his with no .adm in front of it is a rule the customer's
    page is handed and the suite refuses it (the Counter's own stylesheet check). What stays outside .adm is what his page shares
    with the customer's: the system's recipes, the rail's name and place, the ring, the guest link's card, and the bar over an
    account he views as them, which stands in the customer's shell and not in his roster. */
 .adm .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
-.adm .amain h1{margin-top:0}
 /* FIVE PLACES (his decision of 11 Oct 2026): Needs you, Orders, Customers, Record, Shop. A place is a head (the eyebrow, its name,
    a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
    a part has hidden leaves no gap behind it. */
@@ -663,7 +584,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 2 Nov 2026 (his Orders canvas): the Segment of four stands 16px over the lead, the lead 24px over the list and the list 24px over More, Shop's grid */
 .adm .aparts[data-place="orders"],.adm .aparts[data-place="customers"]{margin:0 0 16px}
-.adm .olead{margin:0 0 24px}
 .adm #oOrders>.abody{gap:24px}
 .adm .ordlead{display:flex;flex-direction:column;gap:12px;margin-top:16px}
 .adm .ordlead:empty{display:none}
@@ -814,7 +734,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
 .adm .hpane{display:none}
 @media (min-width:860px){
-  .adm .amain>#oShop{max-width:none}
+  .adm #oShop{max-width:none}
   .adm #makerConfirm .shconfirm{grid-column:auto}
   .adm .hsplit{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
   .adm .hpane{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px;padding:20px;box-sizing:border-box;margin-top:calc(0.75rem * 1.4 + 10px)}
@@ -895,33 +815,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-name{margin-left:8px;font-weight:400;color:var(--salt-text-muted)}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}
-/* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
-   system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
-   open account stands: beside the list on a desk, in its place on a phone, with a way back. */
-.gate.adm{max-width:600px;margin-top:32px;padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}
-.adm .amain .salt-eyebrow{margin:0 0 6px}
-.adm .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
-  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
-.adm .aring svg{width:22px;height:22px}
-/* 18 Oct 2026: no rail of his carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
-.adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
-/* 22 Oct 2026 (canvas Needs you, his words "a status with colour at the top end", "more vibrant glowing"): THE HOURS ARE A GLOWING STATUS CHIP at the
-   bar's top right, a 44px button to Shop hours: verdigris Open, ember Closed, brass Paused (an override for now). Its dot breathes, and stands still
-   under reduced motion. The bar is 12px all round, and under 820px what waits takes its row inside that padding. */
-.adm .abar{padding:12px}
-.adm .abar .salt-deskbar__brand{flex-wrap:nowrap;min-width:0}
-.adm .abar .salt-deskbar__name{white-space:nowrap}
-@container salt-deskbar (max-width:820px){.adm .abar .salt-deskbar__live{margin:0;padding:12px 0 0}}
-.adm .ashop{--salt-status-tone:var(--salt-verdigris);flex:none;align-self:flex-start;margin:0 0 0 auto;display:inline-flex;align-items:center;min-height:var(--salt-tap);padding:0 12px;white-space:nowrap;cursor:pointer;
-  background:color-mix(in srgb,var(--salt-status-tone) 16%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--salt-status-tone) 50%,transparent),inset 0 0 8px color-mix(in srgb,var(--salt-status-tone) 22%,transparent)}
-.adm .ashop[hidden]{display:none}
-.adm .ashop--closed{--salt-status-tone:var(--salt-ember)}
-.adm .ashop--paused{--salt-status-tone:var(--salt-brass)}
-.adm .ashop svg{fill:currentColor;filter:drop-shadow(0 0 4px var(--salt-status-tone));animation:ashopglow 2.4s ease-in-out infinite}
-@keyframes ashopglow{50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){.adm .ashop svg{animation:none}}
-.salt-rail__tab .salt-appbar__place{color:inherit}
-.adm #mFoot:empty{display:none}
+/* 15 Nov 2026, the move to Ambient: his shell is Ambient's (the app bar, the screen, the dock that stands up as the rail from 960px); the salt-ds frame, the Desk bar
+   and the rail went, with their rules */
+/* 15 Nov 2026, the move to Ambient: the hours are a glass chip in Needs you's hero, said in its word (barDraw) */
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
 /* 25 Oct 2026 (the Customers canvas, P1): the filters are Needs you's tab row, three across on a phone and six wide; the accounts are Needs you's
    cards under To do, Pending and FYI, the username quiet beside the code, a sum he owes back in ember */
@@ -937,25 +833,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
-  /* 5 Nov 2026, his word ("like Mail or Messages on a Mac"): THE FRAME (salt-frame). The bar and the rail never move and the column right of the
-     rail is the one box that scrolls, so the page itself never does: the frame is the screen less the body's 22px top and a 24px margin under it, and it
-     takes back 36px of the body's 60px foot, so the page is exactly the screen tall (22 + frame + 24 = the screen) */
-  /* 15 Nov 2026, his word: one page width everywhere, salt-ds's --salt-page-max (1376px), at every screen from 1080px (it was 1180px, and
-     1376px from 1440px) */
-  .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-36px;--salt-frame-h:calc(100dvh - 46px)}
-  .adm .amain{padding-bottom:24px}
-  /* a pane holds to the column's very top (the frame's own scroll), not 24px under the screen's */
-  .adm .salt-frame__main .salt-pane{top:0}
-  .adm .abar{grid-column:1/-1;margin-bottom:0}
-  .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
 }
 @media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}
-@media (max-width:1079.98px){
-  /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
-     after the shell's own rule, or that rule would win */
-  .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h);--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}
-}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
    (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
    column says Choose a card to see it in full (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
@@ -1015,15 +895,12 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
-  .adm #nopen,.adm #aopen,.adm #makerReview,.adm .recpane{--salt-pane-foot-at:0px}
-  .gate.adm{max-width:none}
-  .adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm #oShop,.adm #unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
    short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
    columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
 @media (min-width:768px) and (max-width:859.98px){
-  .gate.adm{max-width:620px}
   .adm #unsentBar{max-width:none}
   .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
   .adm .maker-input>*{grid-column:1/-1}
@@ -1064,24 +941,14 @@ body.ended>*:not(#aEnded){display:none}
   .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
   .adm #makerChatList{display:flex;flex-direction:column;gap:24px}
 }
-/* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
-   the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
-   orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
-.adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
-@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
-/* 5 Nov 2026 (the frame and the pane): under 1080px the page scrolls, so a record's one main action, its foot, rides the screen's foot over the
-   bar of places (--salt-pane-foot-at, set on the shell above); while one shows the + orb stands down, as it would stand on the foot (data-footed,
-   set by the page's script) */
-@media (max-width:1079.98px){.adm[data-footed] #oAdd{display:none}.adm .salt-pane__head{position:static}}
+/* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, so the orb's corner, the room kept for it and its
+   stand-down under a foot went with the frame */
 /* the order's stage pill in its foot: no gap above it, and an empty foot is not drawn; across two columns it keeps the decision's width */
 .adm .ofoot>.ordlead{margin:0}
 .adm .ofoot:has(>.ordlead:empty){display:none}
 @media (min-width:1180px){.adm .ordcols--2~.ofoot>.ordlead{width:calc(50% - 12px)}}
 /* a form's foot: its pill, Discard beside it while an entry is half sent */
 .adm .mfoot{flex-direction:row;flex-wrap:wrap;align-items:center}
-/* 21 Oct 2026 (P10): from 1080px the + is the rail's own button under his places, and no orb floats over the page */
-@media (min-width:1080px){.adm #oAdd{display:none}}
-.adm .arailadd{margin-top:8px;padding-top:8px;border-top:1px solid var(--salt-line)}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 /* 25 Oct 2026 (Record redesign P1): the parts a text tab row of three, and a form's row one shape and one height: its name and one line in the display face, a count of
    what it holds at the right where its read has one, then the way in; nothing on it wraps */
@@ -1147,7 +1014,6 @@ body.ended>*:not(#aEnded){display:none}
 /* 22 Oct 2026 (canvas Needs you, his "some of these cards are using unnecessary space"): THE GLANCE IS SINGLE-LINE KPI TILES, the label at the left and the
    figure at the right, no note, the value with no top margin so the row centres: Ready and To approve side by side, Receivables under them with the
    meter of what is paid of what is agreed between its label and its figure; from 860px one row of three, 56px tall. The Insight leads them. */
-.adm .nlead{margin:0 0 12px}
 .adm .nglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
 .adm .nglance[hidden]{display:none}
 /* the tile is the system's one-line KPI tile (salt-kpi--line, 1.14.0); the page sets only that it is a link and where Receivables and its meter stand */
@@ -1245,16 +1111,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .adm div.oask{flex:1 1 100%;padding-bottom:8px}
 .adm .oask__q{flex:1 1 100%}
-/* 14 Oct 2026: the live clock beside his page's name */
-.adm .clk{font-variant-numeric:tabular-nums}
-.adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
-/* 19 Oct 2026, his word: THE BAR SAYS WHERE THINGS STAND, as the Desk's line does: a dot and Live or Offline, then Open or Closed off /hours, then the clock; a gap after the dot, as on the Desk */
-.adm .abarlive{display:inline-flex;align-items:center;gap:6px;margin-right:12px}
-.adm .abarlive i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
-.adm .abarlive.on{color:var(--salt-verdigris)}
-.adm .abarlive.off{color:var(--salt-brass)}
-/* 22 Oct 2026 (canvas Needs you): the quiet line keeps Live and the clock on a phone too */
-@media (max-width:560px){.adm .abarlive{margin-right:8px}.adm .clk:not(:empty)::before{margin:0 6px}}
+/* 15 Nov 2026, the move to Ambient: the live line and the clock are the hero's time line, a word and the digits in the ink, the mesh carrying no other */
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
@@ -1404,7 +1261,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
-.adm .amain .salt-orb[data-back]{margin:0 0 16px}
+#roster .salt-orb[data-back]{margin:0 0 16px}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
 /* #glist as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is more specific than .glink alone */
@@ -1452,16 +1309,6 @@ body.ended>*:not(#aEnded){display:none}
 .rmeter{margin:10px 0 14px}
 .adm .grow{display:flex;gap:8px;margin-top:12px}
 .adm .grow .salt-ghost{flex:1}
-/* 11 Oct 2026: THE LOOK, Night or Tide, chosen on each device. The sheet's two tiles are the system's Option face as a tap, each with a
-   swatch of ITS OWN ground and accent, so a tile reads true under the other theme: these are the system's four swatch tokens (--salt-swatch-*, its
-   obsidian and brass at Night and at Tide, the same under either theme and held equal to them by its contrast check), so this page writes no colour.
-   The setting under Account is two of the system's ghosts, 44px both ways. */
-.look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px}
-.look-swatch{display:block;height:56px;border-radius:var(--salt-radius-sm);border:1px solid var(--salt-edge-field)}
-.look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-night-accent) 0 13px,transparent 14px),var(--salt-swatch-night-ground)}
-.look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-tide-accent) 0 13px,transparent 14px),var(--salt-swatch-tide-ground)}
-.look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.lookset{width:min(100%,15rem)}
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
 .adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
 .adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
@@ -1719,30 +1566,13 @@ function helpCard(owner) {
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
-    + '<div class="salt-settings devlist"><div id="devRows" class="devrows"></div>' + lookRow()
+    + '<div class="salt-settings devlist"><div id="devRows" class="devrows"></div>'
     /* 28 Oct 2026 (his yes): Sign out is the list's last row, in ember, still a tap and a tap again on the one control */
     + '<button type="button" class="salt-settings__row salt-settings__row--action salt-settings__row--danger" id="lock" aria-live="polite">'
     + wt("span", 'class="salt-settings__label" id="lockT"', "dev.out") + "</button></div>"
     + '<p class="msg devnote" id="devNote" role="status"></p>'
     + '<div id="devSlot"></div>' + keepPage()
     + "</section>";
-}
-/* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
-   held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
-function lookRow(owner) {
-  /* 26 Oct 2026, his word on This device ("like settings on an iPhone"), on his page and then the customer's: the look is one Switch, Tide on
-     or off, greyed while Tide is off; the acts on his page alone */
-  return '<div id="lookRow" class="salt-settings__row">' + wt("span", 'class="salt-settings__label" id="lookH"', "look.switch")
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="lookH" data-look="tide" disabled' + (owner ? ' data-act="look.tide"' : "") + "></button></div>";
-  /* 11 Oct 2026: Salt Admin draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
-     control by (docs/STATEMENTS.md); the customer's row is drawn as it was, with none */
-  const act = (a) => (owner ? ' data-act="' + a + '"' : "");
-  return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
-    + wt("span", 'class="salt-ledger__label" id="lookH"', "look.h")
-    + '<span class="salt-ledger__value lookset salt-segment" role="group" aria-labelledby="lookH">'
-    + wt("button", 'type="button" class="salt-segment__opt salt-segment__opt--active" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
-    + wt("button", 'type="button" class="salt-segment__opt" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
-    + "</span></div>" + (owner ? '<span class="salt-ledger__flag adev-line"><b>Night.</b> Tide is off for now.</span>' : "") + "</div></div>";
 }
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
@@ -1777,29 +1607,15 @@ function vaultSheet() {
     + '<div class="salt-sheet__foot"><button type="button" class="btn salt-pill salt-pill--md" id="vaultGo" data-act="vault.open">Unlock</button>'
     + '<button type="button" class="salt-ghost" id="vaultKeep" data-act="vault.cancel">Not now</button></div></div>';
 }
-/* The choice Sheet, over a signed-in page on a device that has chosen nothing: the system's Sheet, its two tiles the Option face as a
-   tap, each with a swatch of its own ground and accent, and one line saying where to change it. The script opens it (lookAsk). */
-function lookSheet(owner) {
-  const act = (a) => (owner ? ' data-act="' + a + '"' : "");
-  const tile = (k) => '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="' + k + '"' + act("look.sheet-" + k) + ">"
-    + '<span class="look-swatch look-swatch--' + k + '" aria-hidden="true"></span><span class="salt-option__text">'
-    + wt("span", 'class="salt-option__label"', "look." + k) + "</span></button></div>";
-  return '<div id="lookScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="lookSheet" class="salt-sheet' + (owner ? " adm asheet" : "") + '" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="lookT"', "look.sheetH")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + act("look.sheet-close") + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body"><div class="salt-options__grid salt-options__grid--2">' + tile("night") + tile("tide") + "</div>"
-    + (owner ? '<p class="look-note">You can change this later under Shop, in This device.</p>' : wt("p", 'class="look-note"', "look.note")) + "</div></div>";
-}
 /* Step 1b (his Q3, his sentences 3.1 and 3.3): THE BELL, in the saved app's header on every view. Until notifications
    are on it is marked and its call sits beside it; a tap on either asks (the ask is still a tap: iOS requires one).
    Once on, the call goes and the bell stays, plain, opening This device's notifications row */
+/* 15 Nov 2026, the move to Ambient: the bell is a circle in the shell's app bar and its call a glass chip beside it, the app bar's only
+   two parts; Ambient has no bell glyph yet, so the circle draws its info glyph until one is added (asked of Ambient). The ids and the words are kept. */
 function bellBox() {
-  return '<div id="bellBox" class="cbell" hidden>'
-    + wt("button", 'type="button" class="salt-pill salt-pill--sm" id="bellCall"', "bell.call")
-    + '<button type="button" class="salt-orb cbell__orb" id="bell"' + wl("bell.off") + ">" + glyphSvg("bell", 22)
-    + '<span class="cbell__dot" aria-hidden="true"></span></button></div>';
+  return '<div id="bellBox" class="amb-appbar__group" hidden>'
+    + wt("button", 'type="button" class="amb-chip amb-chip--glass" id="bellCall"', "bell.call")
+    + '<button type="button" class="amb-circle" id="bell"' + wl("bell.off") + ">" + AMB.glyph("info") + "</button></div>";
 }
 /* refused on this phone: its own Settings steps, and the bell to tap again once they are on */
 function bellSheet() {
@@ -1994,33 +1810,82 @@ export function joinPage(nonce, id) {
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
    the customer's, a guest board, a shut link and Salt Admin. */
-/* 11 OCT 2026, HIS WORD: TWO THEMES, NIGHT AND TIDE, ON EVERY SURFACE, KEPT ON EACH DEVICE, TIDE UNTIL ONE IS CHOSEN. Night is
-   the design system's :root and Tide its :root[data-theme="tide"], both carried in the page's stylesheet (tools/stmt-style.mjs).
-   Every page opens Tide: data-theme="tide" is on the root as served and the browser bar starts at Tide's ground. A page that
-   runs script then reads localStorage salt-look before its stylesheet and first paint (LOOK_HEAD, a nonce'd script at the top of
-   the head, every read in a try), and a page that cannot run one (a guest board, the shut page) stays Tide, since no device's
-   choice can be read there. The two grounds are the system's obsidian at each theme; the suite holds them equal to it. */
-const GROUND = { night: "#05080a", tide: "#03141a" };
-export const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
-  + "document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'" + GROUND.night + "':'" + GROUND.tide + "');return t;}"
-  + "(function(){saltLook('night');})();"   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
-  /* the iPhone's saved app marks the root before first paint (navigator.standalone is that app's alone; Android's installed pages have a viewport the screen is not) and
-     gives it the screen's height, the longer side of the screen upright and the shorter lying down; --app-h feeds the body's min-height under 1080px */
-  + "(function(){try{if(navigator.standalone===true){var r=document.documentElement,f=function(){var a=Math.max(screen.width,screen.height),b=Math.min(screen.width,screen.height);"
-  + "r.style.setProperty('--app-h',(window.innerWidth>window.innerHeight?b:a)+'px');};r.setAttribute('data-app','1');f();window.addEventListener('resize',f);}}catch(e){}})();";
-/* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Admin. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
-const AURORA = '<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div>'
-  + '<div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>';
-export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="night"><head><meta charset="utf-8">'
+/* 15 NOV 2026, THE MOVE TO AMBIENT: THE KIT'S HELPERS, one source for both faces. Each returns Ambient markup as a string, its words escaped
+   (a value given as {html} is put in as it is), so every place builder draws a part the same way. The page's server uses AMB; his page's
+   script is handed the same function (spliced as its source beside OWNER_JS, as `amb`), with esch and the books in PSYM's order, and adds
+   amb.node(html) to make an element of one. Written without arrows or template literals, since it travels as source. The guide:
+   kit.md in the notes of the move. */
+export function ambKit(esc, books) {
+  var kH = function (x) { return x && typeof x === "object" && x.html != null ? String(x.html) : esc(x == null ? "" : x); };
+  var kAt = function (a) { var o = ""; if (typeof a === "string") return a ? " " + a : ""; for (var k in a || {}) { if (a[k] === false || a[k] == null) continue; o += " " + k + (a[k] === true ? "" : '="' + esc(a[k]) + '"'); } return o; };
+  var kGlyph = function (name, size) { return '<svg class="amb-icon' + (size ? " amb-icon--" + size : "") + '" aria-hidden="true"><use href="#amb-' + name + '"/></svg>'; };
+  var kChip = function (word, tone) { return '<span class="amb-chip' + (tone ? " amb-chip--" + tone : "") + '">' + kH(word) + "</span>"; };
+  var kStat = function (label, value) { return '<div class="amb-stat"><span class="amb-stat__label">' + kH(label) + '</span><span class="amb-stat__value">' + kH(value) + "</span></div>"; };
+  return {
+    glyph: kGlyph, chip: kChip, stat: kStat,
+    kindChip: function (book, word) { var n = books.filter(function (b) { return b !== "_"; }).indexOf(book) + 1; return '<span class="amb-chip' + (n > 0 && n <= 6 ? " amb-kind-" + n : "") + '"><span class="amb-chip__dot"></span>' + kH(word) + "</span>"; },
+    pill: function (word, attrs, o) { o = o || {}; return '<button type="button" class="amb-pill' + (o.sm ? " amb-pill--sm" : "") + (o.quiet ? " amb-pill--quiet" : "") + (o.block ? " amb-pill--block" : "") + '"' + kAt(attrs) + ">" + kH(word) + "</button>"; },
+    circle: function (label, name, attrs) { return '<button type="button" class="amb-circle" aria-label="' + esc(label) + '"' + kAt(attrs) + ">" + kGlyph(name) + "</button>"; },
+    setting: function (name, value, attrs) {
+      if (value && value.control) return '<label class="amb-setting"' + kAt(attrs) + '><span class="amb-setting__name">' + kH(name) + "</span>" + value.control + "</label>";
+      if (attrs) return '<button type="button" class="amb-setting"' + kAt(attrs) + '><span class="amb-setting__name">' + kH(name) + '</span><span class="amb-setting__value">' + kH(value) + "</span>" + kGlyph("next", "sm") + "</button>";
+      return '<div class="amb-setting"><span class="amb-setting__name">' + kH(name) + '</span><span class="amb-setting__value">' + kH(value) + "</span></div>";
+    },
+    settings: function (head, rows, foot) { return '<div class="amb-settings">' + (head ? '<h3 class="amb-settings__head">' + kH(head) + "</h3>" : "") + '<ul class="amb-settings__list">' + (rows || []).map(function (r) { return "<li>" + r + "</li>"; }).join("") + "</ul>" + (foot ? '<p class="amb-settings__foot">' + kH(foot) + "</p>" : "") + "</div>"; },
+    task: function (t) {
+      return '<article class="amb-task' + (t.tone ? " amb-task--" + t.tone : "") + '"><div class="amb-task__head"><span class="amb-task__kind">' + kH(t.kind) + "</span>" + (t.state ? kChip(t.state, t.tone) : "") + "</div>"
+        + '<h3 class="amb-task__title">' + kH(t.title) + "</h3>"
+        + (t.figures && t.figures.length ? '<div class="amb-task__figures">' + t.figures.map(function (f) { return kStat(f[0], f[1]); }).join("") + "</div>" : "")
+        + (t.text ? '<p class="amb-task__text">' + kH(t.text) + "</p>" : "")
+        + (t.flags && t.flags.length ? '<ul class="amb-task__flags">' + t.flags.map(function (f) { return "<li>" + kChip(f[0], f[1]) + "</li>"; }).join("") + "</ul>" : "")
+        + (t.acts && t.acts.length ? '<div class="amb-task__acts">' + t.acts.join("") + "</div>" : "") + "</article>";
+    },
+    row: function (r) {
+      return '<button type="button" class="amb-row"' + kAt(r.attrs) + ">" + (r.thumb != null ? '<span class="amb-thumb" aria-hidden="true">' + kH(r.thumb) + "</span>" : "")
+        + '<span class="amb-row__text"><span class="amb-row__title">' + kH(r.title) + "</span>" + (r.sub != null ? '<span class="amb-row__sub">' + kH(r.sub) + "</span>" : "") + "</span>"
+        + (r.age != null || r.act != null ? '<span class="amb-row__trail amb-row__trail--stack">' + (r.age != null ? '<span class="amb-row__age">' + kH(r.age) + "</span>" : "") + (r.act != null ? '<span class="amb-row__act">' + kH(r.act) + "</span>" : "") + "</span>" : "") + "</button>";
+    },
+    notice: function (text, warn, title) { return '<div class="amb-notice' + (warn ? " amb-notice--warn" : "") + '">' + kGlyph("info") + "<span>" + (title ? '<span class="amb-notice__title">' + kH(title) + "</span>" : "") + kH(text) + "</span></div>"; },
+    section: function (word) { return '<h2 class="amb-section">' + kH(word) + "</h2>"; },
+    node: function (html) { var t = document.createElement("template"); t.innerHTML = html; return t.content.firstElementChild; }
+  };
+}
+export const AMB = ambKit(esc, Object.keys(PSYM));
+/* Salt Admin's place opens with this hero: its name the title, its lead line under it, then the time and the live line (barDraw). heat draws the
+   mood's chip, hidden until salt's supply is tight (moodSet); hours the bar's hours chip, Needs you's alone; approve Orders' Approve. */
+function aHero(title, sub, o) {
+  o = o || {};
+  return '<header class="amb-hero amb-hero--compact amb-mesh">'
+    + (o.heat ? '<span class="amb-chip amb-chip--glass" data-heat hidden>Supply tight</span>' : "")
+    + '<h1 class="amb-hero__title">' + esc(title) + "</h1>" + (sub || "")
+    + '<p class="amb-hero__time"><span class="abarlive" data-barlive' + (o.live ? ' id="aBarLive"' : "") + '></span><span class="clk" data-clock></span></p>'
+    + (o.hours ? '<button type="button" class="amb-chip amb-chip--glass" id="aBarHours" data-act="bar.hours" hidden></button>' : "")
+    /* Orders' one main action: Approve, the rows that wait (barLive names it with their count); its act is the bar's of 21 Oct 2026 */
+    + (o.approve ? '<div class="amb-cluster"><button type="button" class="amb-pill" id="aApprove" data-act="bar.approve">Approve</button></div>' : "")
+    + "</header>";
+}
+/* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026: light and dark follow each device). ONE HEAD FOR EVERY PAGE THE SITE SERVES:
+   no data-theme on the root, so Ambient follows the device; the page says it is drawn for both schemes, and the browser bar takes Lagoon's
+   base in each (AMB_THEME, read out of the carried tokens by tools/stmt-style.mjs, never typed). The Night and Tide head script, its store
+   (salt-look), the iPhone saved app's height script and the Aurora are gone: Ambient's shell is the screen's height by itself (100dvh).
+   DOC_OPEN is the head's first half; SITE_STYLE the stylesheet every page carries under its nonce (Ambient's tokens and parts, the site's
+   layer, then the page's own older layer, which shrinks as each place is redrawn); BODY_OPEN the body with the icon sprite first. A page
+   that runs script carries AMB_JS under its nonce before its own script; a guest page runs none. */
+export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">'
-  + '<meta name="theme-color" content="' + GROUND.night + '">';
+  + '<meta name="color-scheme" content="light dark">'
+  + '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + AMB_THEME.light + '">'
+  + '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + AMB_THEME.dark + '">';
+export const SITE_STYLE = AMB_TOKENS + AMB_CSS + SITE_CSS;
+export const BODY_OPEN = '<body class="amb">' + AMB_ICONS;
+export const ambScript = (nonce) => '<script nonce="' + nonce + '">' + AMB_JS + "</script>";
 function guestPage(inner, nonce, title) {
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>" + title + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" 
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + PAGE_CSS + COIN_CSS + "</style></head>" + BODY_OPEN
     + '<div class="panel">' + inner + "</div></body></html>";
 }
 
@@ -2061,7 +1926,7 @@ const TEST_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["orders", "P
 const TEST_PARTS = { orders: ["todo", "open", "done", "ended", "payments"], customers: ["messages"] };
 /* a place's rail button: data-p names the part a test place opens */
 const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
-  + ' data-act="nav.' + (p || m) + '">' + inner(m, w, p) + "</button>";
+  + ' data-act="nav.' + (p || m) + '" aria-label="' + w + '" data-word="' + w + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
@@ -2103,49 +1968,26 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account"]];
-const ADMIN_ICONS = {
-  needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
-  orders: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
-  customers: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
-  record: '<path d="M4.6 19.4 L5.4 15.4 L15.4 5.4 A1.6 1.6 0 0 1 17.7 5.4 L18.6 6.3 A1.6 1.6 0 0 1 18.6 8.6 L8.6 18.6 Z M13.4 7.4 L16.6 10.6"/>',
-  shop: '<path d="M4 9.6 L5.6 4.6 H18.4 L20 9.6 M4 9.6 A2.67 2.67 0 0 0 9.33 9.6 A2.67 2.67 0 0 0 14.67 9.6 A2.67 2.67 0 0 0 20 9.6 M5.6 12.4 V19.4 H18.4 V12.4 M10 19.4 V15 H14 V19.4"/>',
-  add: '<path d="M12 5.5 V18.5 M5.5 12 H18.5"/>',
-  key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
-};
-const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
-  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (ADMIN_ICONS[n] || PLACE_ICONS[n]) + "</svg>";
+/* 15 Nov 2026, the move to Ambient (0.7.2): each place is an Ambient glyph and its word on the tab bar */
+const ADMIN_GLYPH = { needs: "inbox", orders: "doc", customers: "people", record: "edit", shop: "store" };
 /* S7 7.1 (his D11 of 24 Sep 2026): THE CUSTOMER'S PLACES, in the order the bar draws them. Each is [the id its panel and
    its buttons carry, its word, its address]: Home opens first, and Rewards is an associate's alone. The ids are the
    tabs' own (stmt, order, card), so every road that named a tab still names its place. */
 export const PLACES = [["home", EN["place.home"], "home"], ["prices", EN["place.prices"], "prices"], ["order", EN["place.order"], "orders"],
   ["stmt", EN["place.stmt"], "account"], ["card", EN["place.card"], "rewards"]];
-const PLACE_ICONS = {
-  home: '<path d="M4 11.2 L12 4.6 L20 11.2 M6.2 9.4 V19.4 H10 V14.4 H14 V19.4 H17.8 V9.4"/>',
-  prices: '<path d="M12.6 3.8 H19.4 A0.8 0.8 0 0 1 20.2 4.6 V11.4 L11.4 20.2 L3.8 12.6 Z"/><circle cx="16.2" cy="7.8" r="1.4"/>',
-  order: '<path d="M6 3.8 H18 V20.2 L15.6 18.8 L13.2 20.2 L10.8 18.8 L8.4 20.2 L6 18.8 Z M9 8.4 H15 M9 11.8 H15 M9 15.2 H12.6"/>',
-  stmt: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20 C5.6 16.2 8.4 14.2 12 14.2 C15.6 14.2 18.4 16.2 19.2 20"/>',
-  card: '<circle cx="12" cy="9.2" r="5.2"/><path d="M9 13.6 L7.6 20.2 L12 18 L16.4 20.2 L15 13.6"/>'
-};
-/* a place as a button, on the rail or on the bar; both carry data-t, and Rewards starts hidden. The rail's keeps the tab's
-   old id (tPrices, tOrder, tCard), so what found a tab by its id finds its place */
+/* Home, Shop, Orders, Account and Rewards, each its Ambient glyph (0.7.2) */
+const PLACE_GLYPH = { home: "home", prices: "tag", order: "doc", stmt: "person", card: "star" };
+/* a place as a button on the tab bar, data-t; Rewards starts hidden. It keeps the rail's old id (tPrices, tOrder, tCard), so what found a
+   tab by its id finds its place */
 const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
-/* COUNTER BATCH A (his decisions of 18 Oct 2026): FROM 1080PX THE APP'S NAME STANDS OVER THE RAIL, the one brand on the page, and the rail's
-   brand slot says whose account it is: Signed in as, then the username (never a roster code), which the header then leaves to the rail. The
-   Desk bar that stood across the top from 18 Oct 2026 went with it, and came back on 21 Oct 2026 (his word) as the header itself, the place
-   and what waits on them (cBar); the name stays over the rail. */
-function placesRail() {
-  return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
-    + '<p class="salt-title crtitle" aria-hidden="true">Salt Counter</p>'
-    + '<div class="salt-rail__brand crbrand" data-wholine>' + wt("span", 'class="salt-eyebrow salt-eyebrow--mist"', "who.rail") + '<span class="mono" data-whorail></span></div>'
-    + '<div class="salt-rail__group">' + PLACES.map(([t, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo"' + placeAttrs(t, true) + ">"
-      + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", "", "place." + t) + "</span>"
-      + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div></nav>";
-}
-function placesBar() {
-  /* C22 (29 Sep 2026): the bar is Places, so two landmarks never share one name */
-  return '<nav class="salt-appbar"' + wl("place.bar") + '>' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
-    + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
-    + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
+/* 15 Nov 2026, THE MOVE TO AMBIENT: ONE DOCK. The rail (Batch A's, with the app's name over it and whose account it is) and the App bar at a
+   phone's foot were two sets of the same buttons; Ambient's dock is one tab bar, which the shell stands up as the rail from 960px. A tab's
+   count is Ambient's (0.7.2, amb-tab__count, data-n: the orders that need them): drawn from 1, hidden from the reader, the tab's own name
+   saying it (placeCounts writes "Orders, 3 waiting"). */
+function placesDock() {
+  return '<div class="amb-dock"><nav class="amb-tabbar"' + wl("place.bar") + ">" + PLACES.map(([t]) => '<button type="button" class="amb-tab"' + placeAttrs(t, true)
+    + ' aria-label="' + esc(EN["place." + t]) + '" data-word="' + esc(EN["place." + t]) + '">'
+    + AMB.glyph(PLACE_GLYPH[t]) + wt("span", "", "place." + t) + '<span class="amb-tab__count" data-n="' + t + '" aria-hidden="true" hidden></span></button>').join("") + "</nav></div>";
 }
 /* THE TEST SURFACE (his answers of 18 Oct 2026). `test` is null on every real page, which is then the page it always was; under /all/test
    it is {base, u}: the page's every request goes under the base, its storage under salt-test:, and it registers no service worker, manifest,
@@ -2154,7 +1996,6 @@ function placesBar() {
 export function landingPage(user, nonce, owner, bulletin, test) {
   const u = esc(user || "");
   return DOC_OPEN
-    + '<script nonce="' + nonce + '">' + LOOK_HEAD + "</script>"
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
@@ -2178,45 +2019,28 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
     + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" + AURORA
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + PAGE_CSS + COIN_CSS + "</style></head>" + BODY_OPEN
     + (owner
-      ? '<div id="roster" class="gate adm salt-frame">'
-        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
-        + '<header class="salt-deskbar salt-frame__bar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="clk" data-clock></span></div></div>'
-        /* 22 Oct 2026 (canvas Needs you): the hours are a glowing status chip at the bar's top right, a 44px button to Shop hours (barDraw in stmt/owner.js) */
-        + '<button type="button" class="salt-status ashop" id="aBarHours" data-act="bar.hours" hidden></button></div>'
-        /* 21 Oct 2026, his word: the bar was bare. What waits, as the Desk's bar: each a chip to its place, Approve brass with its rows (barLive in
-           stmt/owner.js). 22 Oct 2026, his comment: no where-you-are on Salt Admin, "not required"; the rail and the App bar say it */
-        + '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
-        /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
-           system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
-           place is what waits there. */
-        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Admin">'
-        + '<div class="salt-rail__group">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-rail__tab salt-rail__tab--solo", (m, w, p) =>
-          '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + "</span><span>" + w + "</span></span>"
-          + (p ? "" : '<span class="salt-rail__count" data-count="' + m + '"></span>'))).join("") + "</div>"
-        /* 21 Oct 2026 (P10): the + as a rail button, which the orb gives way to from 1080px; none on the test surface */
-        + (test ? "" : '<div class="salt-rail__group arailadd"><button type="button" class="salt-rail__tab salt-rail__tab--solo" id="oAddRail" data-act="rail.add">'
-          + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico("add") + "</span><span>New entry</span></span></button></div>")
-        + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
-        + '<div class="amain salt-frame__main">'
-        /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
-           under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
+      /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026): HIS PAGE IS ONE AMBIENT SHELL. The app bar holds the New entry circle
+         (the + orb's id and act, shown where it was shown); the screen holds each place as before, each opening with its compact hero, the
+         place's name its title, its lead line under it and the time and the live line (barDraw) under that; one dock of the five places,
+         which Ambient stands up as the rail from 960px. The mood is the market's heat off STOCK (moodSet in stmt/owner.js): Flare and Supply
+         tight while salt's supply is tight, Lagoon otherwise, Slate on Shop. .adm stays on the root, where every older rule of his page is
+         scoped until its place is redrawn. */
+      ? '<div id="roster" class="amb-shell amb-shell--rail adm" data-mood="lagoon">'
+        + '<div class="amb-appbar"><span></span><div class="amb-appbar__group">'
+        + (test ? "" : '<button type="button" class="amb-circle" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + AMB.glyph("plus") + "</button>")
+        + "</div></div>"
+        + '<main class="amb-screen amb-screen--docked">'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
            ("orders" is every part of Orders, "orders.group" that part alone). The owner's script hides the rest (stmt/owner.js, go),
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
-        + '<div id="mHome" data-in="needs">'
+        + '<div id="mHome" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
-        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar
-           names it, and the heading stays for a reader */
-        + '<h1 class="sr">Needs you</h1>'
-        /* 22 Oct 2026 (canvas Needs you): the lead is one Insight, what waits on his tap in money and the books that need stock (stmt/owner.js drawLead) */
-        + '<p class="salt-insight salt-insight--copper nlead" id="nCount">Reading what needs you.</p>'
         /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */
         + '<section id="nGlance" class="nglance" aria-label="At a glance" hidden></section>'
         /* 22 Oct 2026 (canvas Needs you, his "something else that is not just pill styles"): the kinds are a text tab row on the system's Nav bar, the count
@@ -2235,11 +2059,10 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + '<h1 class="sr">Orders</h1>'
+        + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, approve: !test })
         + adminParts("orders", test)
         + '<div class="abody">'
         + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
-        + '<p class="salt-insight salt-insight--copper olead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen salt-pane"></div></div></section>'
         + ordMore(test)
         + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
@@ -2264,7 +2087,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + '<h1 class="sr">Customers</h1>'
+        + aHero("Customers", "", { heat: true })
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'
@@ -2307,7 +2130,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + '<h1 class="sr">Record</h1>'
+        + aHero("Record", "")
         + '<p class="sr">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
@@ -2315,7 +2138,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + '<h1 class="sr">Shop</h1>'
+        + aHero("Shop", "")
         + '<p class="sr">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
@@ -2335,26 +2158,22 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
-        /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
-           shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
+        /* 15 Nov 2026: This device holds the one unlock and his notifications; light and dark follow the device (his answer of 14 Nov 2026) */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
-        + '<div class="salt-settings adevice">' + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</div>"
+        + '<div class="salt-settings adevice">' + vaultRow() + (test ? "" : alertRow()) + "</div>"
         + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
         + "</div></div>"
-        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
-        + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
-          '<span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + '</span><span class="salt-appbar__label">' + w + "</span>"
-          + (p ? "" : '<span class="salt-appbar__count" data-count="' + m + '"></span>'))).join("") + "</nav>"
-        /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script); none on the test surface */
-        + (test ? "" : '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>")
+        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
+        + '<div class="amb-dock"><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
+          AMB.glyph(ADMIN_GLYPH[p === "messages" ? "customers" : m]) + "<span>" + w + "</span>"
+          + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("") + "</nav></div>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
-        + '<div id="aEnded" class="gate" hidden><h1>Your sign-in has ended</h1>'
-        + '<p class="lead">Sign in again to carry on.</p>'
-        + '<a class="salt-pill salt-pill--md btn" href="/all" data-act="ended.sign-in">Sign in again</a></div>'
-        /* the first-open choice Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded
-           alone (body.ended), and the owner's script takes this down first (stmt/owner.js, ended) */
-        + lookSheet(true) + vaultSheet()
+        + '<div id="aEnded" class="amb-shell" data-mood="slate" hidden><main class="amb-screen"><header class="amb-hero amb-mesh">'
+        + '<h1 class="amb-hero__title">Your sign-in has ended</h1><p class="amb-hero__sub">Sign in again to carry on.</p>'
+        + '<div class="amb-cluster"><a class="amb-pill" href="/all" data-act="ended.sign-in">Sign in again</a></div></header></main></div>'
+        /* the names Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded alone (body.ended) */
+        + vaultSheet()
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Admin and carries none */
@@ -2389,28 +2208,27 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="pkGo" type="button" hidden', "door.pk"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet() + lookSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
     /* plan version 7 (Fable's review): Full statement on his View as them and Order as them too, the owner page being theirs read in his hands */
     + fullSheet()
-    /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
-       the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
-       and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
-    + '<div id="tabs" class="cshell" hidden>' + placesRail() + '<div class="cmain">'
-    + '<div id="barw" hidden><div class="bar' + (owner ? " vbar" : "") + '">'
-    /* S9 9.5: on his page an account is viewed, never signed into, so the bar says whose it is and that it is
-       read only, and its one control takes him back to that account on Accounts. A customer's Log out is This
-       device's, on Account (S7 7.1), so their bar holds nothing until it has a lapse to say */
-    + (owner ? '<span><b id="whoacct"></b><span id="cd"></span><span id="vas">Viewing as <b id="vasU"></b>, read only</span></span>'
-      + '<button type="button" id="lock" data-act="view.back">Back to accounts</button>' : "")
-    /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
-    + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span>' + wt("button", 'type="button" id="lapseGo"', "link.go") + "</div>"
-    + "</div></div>"
-    /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
-       sits in it, on every view of the saved app */
-    + '<header class="chead' + (owner ? "" : " salt-deskbar cbar") + '">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
-    + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p>'
-    /* 21 Oct 2026, his word: the Counter's header is the bar again, on every place: where they are, then what waits on them (cBar) */
-    + (owner ? "" : '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="cBarChips" role="group"' + wl("place.bar") + '></div></div>') + '</header>'
+    /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, Home first. 15 Nov 2026, THE MOVE TO AMBIENT: one Ambient shell, always Lagoon for now (the
+       heat reaches the Counter only after Fable's review, and a customer sees the mood alone, never told); the app bar holds the bell; the
+       screen opens on the place's hero, its name the title, whose account it is under it and the time under that; then his read-only line
+       on View as them and Order as them, or a lapsed session's, each a notice with its one quiet pill; then the places; then one dock. */
+    + '<div id="tabs" class="amb-shell amb-shell--rail" data-mood="lagoon" hidden>'
+    + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
+    + '<main class="amb-screen amb-screen--docked">'
+    + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")
+    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p><p class="amb-hero__time" data-clock></p></header>'
+    + '<div id="barw" class="amb-stack" hidden>'
+    /* S9 9.5: on his page an account is viewed, never signed into, so the line says whose it is and that it is read only, and its one
+       control takes him back to that account on Accounts. A customer's Log out is This device's, on Account (S7 7.1) */
+    + (owner ? '<div class="amb-notice">' + AMB.glyph("info") + '<span><b class="amb-notice__title" id="whoacct"></b><span id="cd"></span><span id="vas">Viewing as <b id="vasU"></b>, read only</span></span>'
+      + '<button type="button" class="amb-pill amb-pill--quiet amb-pill--sm" id="lock" data-act="view.back">Back to accounts</button></div>' : "")
+    /* S1 1.5: a lapsed session says so where the reader is, with the one way back */
+    + '<div id="lapse" class="amb-notice amb-notice--warn" role="alert" hidden>' + AMB.glyph("info") + '<span id="lapseT"></span>'
+    + wt("button", 'type="button" class="amb-pill amb-pill--quiet amb-pill--sm" id="lapseGo"', "link.go") + "</div>"
+    + "</div>"
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
@@ -2435,7 +2253,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<div id="pOrder" class="panel" hidden></div>'
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
     + '<div id="pCard" class="panel" hidden></div>'
-    + "</div>" + placesBar() + "</div>"
+    + "</main>" + placesDock() + "</div>"
+    + ambScript(nonce)
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(test ? TEST_POLL_MS : POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
       /* Speed Wave 2 L2: the live socket is the real site's; the test surface keeps its two-second poll and opens none */
@@ -2472,7 +2291,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
       /* 20 Oct 2026: and with it the one distance (stmt/geo.js, engine/geo.mjs), carried as it is, so no customer's page carries it (Fable) */
-      .replace("/*__OWNER_JS__*/", () => (owner ? String(GEO_ENGINE.haversineKm) + "\n" + OWNER_JS : ""))
+      /* 15 Nov 2026: and the kit's helpers, the server's own function as its source (amb, stmt/page.js ambKit) */
+      .replace("/*__OWNER_JS__*/", () => (owner ? String(GEO_ENGINE.haversineKm) + "\nvar amb=(" + String(ambKit) + ")(esch,Object.keys(PSYM));\n" + OWNER_JS : ""))
       /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Salt Admin's practice mode;
          on a real page each marker is taken out, leaving the script it always was */
       .replace("/*__TS__*/", () => (test ? TEST_SHIM.replace("__TCFG__", JSON.stringify({ base: String(test.base || ""), owner: !!owner, u: test.u || "", pw: TEST_PASS })) : ""))
@@ -2514,7 +2334,7 @@ const TEST_SHIM = `
       var s=null; try{ s=window[name]; }catch(e){ s=null; }
       function keys(){ var out=[]; for(var i=0;i<s.length;i++){ var k=s.key(i); if(k&&k.indexOf(P)===0) out.push(k.slice(P.length)); } return out; }
       var api={
-        getItem:function(k){ var v=s.getItem(P+k); if(v==null&&k==='salt-look') v=s.getItem(k); return v; },
+        getItem:function(k){ return s.getItem(P+k); },
         setItem:function(k,v){ s.setItem(P+k,String(v)); },
         removeItem:function(k){ s.removeItem(P+k); },
         key:function(i){ var a=keys(); return i<a.length?a[i]:null; },
@@ -3488,7 +3308,7 @@ const CLIENT_JS = `
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
     keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
-    closeDevSheet(); fsClose(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
+    closeDevSheet(); fsClose(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(history.state,'',location.pathname); }catch(e){}
@@ -3626,6 +3446,8 @@ const CLIENT_JS = `
       try{ history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
     }
     window.scrollTo(0,0);
+    /* 15 Nov 2026: the shell's screen is what scrolls now, so a place opens at its top */
+    var scr=tabs.querySelector('.amb-screen'); if(scr) scr.scrollTop=0;
     /* S5: an order drawn open while the place was elsewhere is seen when they turn to the place themselves. Only a tap:
        a road aimed at another order (a row on Home, a banner, See the order, Pay) passes here before drawing it, and
        the order left open would be marked seen without ever being shown */
@@ -3922,59 +3744,8 @@ const CLIENT_JS = `
     drawDevice(); drawOrder();
   }
 
-  /* ---- THE LOOK (11 Oct 2026, his word: Night or Tide, kept on each device, Tide until one is chosen) ---------------------
-     The head script set data-theme before the first paint. lookSet is the change: saltLook writes the attribute and the browser
-     bar's colour, the choice is kept in localStorage salt-look, and the setting under Account is marked; nothing reloads. The
-     first time a signed-in page opens on a device that has kept nothing, a Sheet asks (lookAsk, from enter): choosing keeps it and
-     closes the Sheet, and closing it any other way keeps Tide and stores nothing, so the next open asks again. A store that cannot
-     be read is never asked, because the answer could not be kept. His page asks once when it opens, on the same terms (stmt/owner.js
-     calls lookAsk with own set; landingPage draws its Sheet and its row in Shop > This device, and its choice is kept in the Counter
-     origin's store, shared with the customer's pages on that device), and a read-only view of an account on it asks nothing. A test account's sealed bundle says look:'asked', so it
-     asks at every sign-in and the Sheet can be tried again whatever the device holds. Every read and write of the store is guarded. */
-  var LOOK_KEY='salt-look', lookAsked=false, lookBack=null,
-      lookSheetEl=document.getElementById('lookSheet'), lookScrim=document.getElementById('lookScrim'), lookRow=document.getElementById('lookRow');
-  function lookNow(){ return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide'; }
-  function lookStore(){ try{ var v=localStorage.getItem(LOOK_KEY); return v==='night'||v==='tide'?v:''; }catch(e){ return null; } }   /* '' nothing chosen, null unreadable */
-  function lookMark(){
-    if(!lookRow) return;
-    [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ if(b.getAttribute('role')==='switch'){ b.setAttribute('aria-checked',String(lookNow()==='tide')); return; } b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
-    segSync(lookRow.querySelector('.lookset'));
-  }
-  function lookSet(t){
-    if(t!=='night') return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
-    if(typeof saltLook==='function') saltLook(t); else document.documentElement.setAttribute('data-theme',t);
-    try{ localStorage.setItem(LOOK_KEY,t); }catch(e){ /* for this visit only */ }
-    lookMark();
-  }
-  function lookShut(){
-    if(!lookSheetEl||lookSheetEl.hidden) return;
-    lookSheetEl.hidden=true; lookScrim.hidden=true; behind(); bkDrop('look');
-    focusBack(lookBack);
-  }
-  function lookAsk(b, own){
-    return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
-    if((OWNER&&!own)||view||lookAsked||!lookSheetEl) return;
-    var kept=lookStore();
-    if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;
-    lookAsked=true; lookBack=document.activeElement; bkOpen('look',lookShut);
-    lookScrim.hidden=false; lookSheetEl.hidden=false; behind();
-    try{ lookSheetEl.focus(); }catch(e){}
-  }
-  if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('role')==='switch'?(t.getAttribute('aria-checked')==='true'?'night':'tide'):t.getAttribute('data-look')); });
-  if(lookSheetEl){
-    lookSheetEl.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t){ lookSet(t.getAttribute('data-look')); lookShut(); } });
-    document.getElementById('lookX').addEventListener('click',lookShut);
-    lookScrim.addEventListener('click',lookShut);
-    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') lookShut(); });
-    /* Tab stays inside the Sheet: the last control wraps to the first, and Shift+Tab from the first to the last */
-    lookSheetEl.addEventListener('keydown',function(ev){
-      if(ev.key!=='Tab') return;
-      var f=[].slice.call(lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);
-      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }
-      else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
-    });
-  }
-  lookMark();
+  /* 15 Nov 2026, THE MOVE TO AMBIENT (his answer of 14 Nov 2026): light and dark follow each device. The look's store on the device, its row under
+     This device and the first-open Sheet are gone, on this page and on his; nothing here reads or writes a theme. */
 
   /* the statements a customer has: the first opens, the rest are at the foot */
   function show(b){
@@ -3983,7 +3754,6 @@ const CLIENT_JS = `
     barw.hidden=false; tabs.hidden=false; drawKeep(); drawBell();
     /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
     [].forEach.call(tabs.querySelectorAll('[data-whoas]'),function(x){ setW(x,'who.as',{u:'<span class="mono" data-who>'+esch(user)+'</span>'}); });
-    [].forEach.call(tabs.querySelectorAll('[data-whorail]'),function(x){ x.textContent=user; });
     [].forEach.call(tabs.querySelectorAll('[data-wholine]'),function(x){ x.hidden=view; });
     /* v706: Rewards (the card, until S7) is an associate's alone, and nobody else is shown the place at all. It waited on
        a sealed card as well, so an associate the publish had not yet written one for had no way to
@@ -7803,28 +7573,20 @@ const CLIENT_JS = `
     return box;
   }
   /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */
+  /* 15 Nov 2026 (Ambient 0.7.2): a tab's count, drawn from 1 to 99 and 99+ past it, hidden at nought; the reader hears it in the tab's name */
+  function tabCount(c,n){
+    var t=n>99?'99+':n?String(n):'', tab=c.closest('.amb-tab');
+    if(c.textContent!==t) c.textContent=t; if(c.hidden!==!n) c.hidden=!n;
+    if(tab){ var w=tab.getAttribute('data-word')||'', l=n?w+', '+n+' waiting':w; if(tab.getAttribute('aria-label')!==l) tab.setAttribute('aria-label',l); }
+  }
   function placeCounts(){
     var n=orders.filter(oNeeds).length;
-    [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
+    [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ tabCount(c,c.getAttribute('data-n')==='order'?n:0); });
     cBar();
   }
-  /* 21 OCT 2026, HIS WORD: THE BAR SAYS WHAT WAITS ON THEM, on every place: To pay now and its figure, the orders that need them (the
-     rail's own count) and their messages when ours is unread; each a chip to where it is. Only what waits is drawn. Written only when it differs. */
-  function cBar(){
-    var box=document.getElementById('cBarChips'); if(!box||OWNER) return;
-    var lines=bundle?nowOf():[], tot=invTotal(lines), n=orders.filter(oNeeds).length, th=thWaiting(), parts=[];
-    if(tot>0.004) parts.push(['pay','now',tw('pay.now'),rm(tot)]);
-    if(n) parts.push(['order','wait',tw('place.order'),String(n)]);
-    if(th) parts.push(['thread','wait',tw('th.title'),'']);
-    var key=JSON.stringify(parts); if(box.getAttribute('data-k')===key) return;
-    box.setAttribute('data-k',key); box.textContent='';
-    parts.forEach(function(x){
-      var b=el('button','salt-deskbar__chip salt-deskbar__chip--'+x[1]); b.type='button'; b.setAttribute('data-act','bar.'+x[0]); b.setAttribute('data-go',x[0]);
-      b.appendChild(document.createTextNode(x[2])); if(x[3]){ b.appendChild(document.createTextNode(' ')); b.appendChild(el('span','salt-deskbar__n',x[3])); }
-      b.addEventListener('click',function(){ if(x[0]==='thread') thOpen(b); else placeShow(x[0]==='pay'?'home':'order',true); });
-      box.appendChild(b);
-    });
-  }
+  /* 21 Oct 2026 (his word, the bar says what waits on them) to 15 Nov 2026: the bar's chips went with the bar, as on his page; what waits is
+     the tab counts (placeCounts). Its callers are kept, so it stays, drawing nothing. */
+  function cBar(){}
   /* v1377: their orders read again after a Place: their own read on a session, his route on Order as them */
   async function ordersAgain(){ if(act) return loadView(user); return loadOrders(); }
   async function loadOrders(){
@@ -8357,7 +8119,6 @@ const CLIENT_JS = `
        unless that place has gone (Rewards, for an account no longer an associate) */
     if(!same){ var w=wantPlace; wantPlace=''; placeShow(w||'home'); }
     else if(placeBtns(t)[0].hidden) placeShow(t);
-    lookAsk(b);   /* 11 Oct 2026: a device that has chosen no look is asked, once a visit */
     if(same){
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ AMF.pick=mf; applyMonths(); }
       window.scrollTo(0,sy);

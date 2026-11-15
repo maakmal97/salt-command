@@ -7,10 +7,14 @@
  *   W2  the Desk's frame (.shell) stands at most the token wide and its wrap no longer caps it, at every width from 1080px
  *   W3  Salt Admin's frame (.gate.adm) stands at most the token wide at every width from 1080px, 1440 included
  *   W4  the Counter's shell (.cshell) stands at most the token wide at every width from 1080px
+ * 15 Nov 2026, THE MOVE TO AMBIENT: the Counter and Salt Admin no longer wear salt-ds, so they carry no --salt-page-max. Each is one Ambient shell,
+ * which lays itself out by its own width (container queries) and is never sized by the page; so W1 holds the token on the Desk alone, and W3 and
+ * W4 hold that the page's own layer sizes neither shell. Ambient has no page width of its own for an app's shell yet: said in the kit's notes.
  * Every assertion is red under its own mutation (test/page-width.mutations.json). */
 import { readFileSync } from "node:fs";
 import { JSDOM, VirtualConsole } from "jsdom";
-import { landingPage } from "../stmt/page.js";
+import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { SITE_CSS } from "../stmt/statement-css.js";
 
 const J = JSON.stringify;
 const WIDTHS = [1080, 1180, 1366, 1440, 1920];
@@ -37,17 +41,22 @@ export async function run({ ok }) {
   const counter = flat(sheetsOf(landingPage("0000-0000", "pw-nonce")));
   const admin = flat(sheetsOf(landingPage("", "pw-nonce", { master: "fixture-master", accounts: [] })));
   const PAGE = "var(--salt-page-max)";
+  /* the page's own layers (the site's layer and the page's older one), read as served after Ambient, which is the shell's own */
+  const own = (html) => { const st = (/<style[^>]*>([\s\S]*?)<\/style>/.exec(html) || [, ""])[1]; return flat(sheetsOf("<style>" + st.slice(SITE_STYLE.length - SITE_CSS.length) + "</style>")); };
+  const counterOwn = own(landingPage("0000-0000", "pw-nonce")), adminOwn = own(landingPage("", "pw-nonce", { master: "fixture-master", accounts: [] }));
   /* W1 */
-  ok(token(desk) === "1376px" && token(counter) === "1376px" && token(admin) === "1376px",
-    "W1 the Desk, the Counter and Salt Admin carry --salt-page-max at 1376px: " + J([token(desk), token(counter), token(admin)]));
+  ok(token(desk) === "1376px" && token(counter) === "" && token(admin) === "",
+    "W1 the Desk carries --salt-page-max at 1376px, and the Counter and Salt Admin, on Ambient, carry none: " + J([token(desk), token(counter), token(admin)]));
   /* W2 */
   const dShell = WIDTHS.map((w) => at(desk, ".shell", "max-width", w)), dWrap = WIDTHS.map((w) => at(desk, ".wrap", "max-width", w));
   ok(dShell.every((v) => v === PAGE), "W2.1 the Desk's frame is at most the page width at " + J(WIDTHS) + ": " + J(dShell));
   ok(dWrap.every((v) => v === "none"), "W2.2 the Desk's wrap caps nothing at " + J(WIDTHS) + ": " + J(dWrap));
   /* W3 */
-  const aGate = WIDTHS.map((w) => at(admin, ".gate.adm", "max-width", w));
-  ok(aGate.every((v) => v === PAGE), "W3 Salt Admin's frame is at most the page width at " + J(WIDTHS) + ": " + J(aGate));
+  const sized = (rules, sels) => WIDTHS.map((w) => sels.map((sel) => ["max-width", "width", "height", "margin-inline", "margin-left", "margin-right"].map((p) => at(rules, sel, p, w)).join("")).join("")).filter(Boolean);
+  const aGate = sized(adminOwn, ["#roster", ".adm", ".gate.adm", ".amb-shell", ".amb-screen", "#roster > .amb-screen"]);
+  ok(aGate.length === 0 && admin.some((r) => r.sel === ".amb-shell" && /100dvh/.test(r.style.getPropertyValue("height"))),
+    "W3 Salt Admin's shell is Ambient's, the screen's height, and the page's layer sizes it at none of " + J(WIDTHS) + ": " + J(aGate));
   /* W4 */
-  const cShell = WIDTHS.map((w) => at(counter, ".cshell", "max-width", w));
-  ok(cShell.every((v) => v === PAGE), "W4 the Counter's shell is at most the page width at " + J(WIDTHS) + ": " + J(cShell));
+  const cShell = sized(counterOwn, ["#tabs", ".cshell", ".amb-shell", ".amb-screen"]);
+  ok(cShell.length === 0 && counter.some((r) => r.sel === ".amb-shell"), "W4 the Counter's shell is Ambient's, and the page's layer sizes it at none of " + J(WIDTHS) + ": " + J(cShell));
 }

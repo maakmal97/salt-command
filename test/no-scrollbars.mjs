@@ -7,7 +7,9 @@
  *   B1  the Desk carries the rule: every element, no scrollbar width, !important; the WebKit bar not displayed
  *   B2  the Counter's page, a guest board and Salt Admin's page carry it the same way
  *   B3  no surface draws a bar back: no rule but the system's sets a scrollbar width, a scrollbar colour or a WebKit scrollbar part
- *   B4  the boxes that scroll still scroll: the Desk's rail and its sliding tables, Salt Admin's frame column
+ *   B4  the boxes that scroll still scroll: the Desk's rail and its sliding tables, Salt Admin's screen
+ * 15 Nov 2026, the move to Ambient: the Counter and Salt Admin carry the rule in Ambient's token block (its "No scrollbars" section), and his page's
+ * one scroll box is Ambient's screen inside the shell (the salt-ds frame column is gone).
  * Every assertion is red under its own mutation (test/no-scrollbars.mutations.json). */
 import { readFileSync } from "node:fs";
 import { JSDOM, VirtualConsole } from "jsdom";
@@ -59,6 +61,6 @@ export async function run({ ok }) {
   const css = (rules, s) => rules.filter((r) => r.sel === s).map((r) => r.style.cssText).join(" ");
   ok(/overflow-y: auto/.test(css(desk, ".rail")) && /overflow-x: auto/.test(css(desk, ".tscroll")),
     "B4.1 the Desk's rail and its sliding tables still scroll: " + J([css(desk, ".rail"), css(desk, ".tscroll")]));
-  const col = admin.filter((r) => r.sel === ".salt-frame__main" && /min-width:\s*1080px/.test(r.q)).map((r) => r.style.cssText).join(" ");
-  ok(/overflow-y: auto/.test(col), "B4.2 from 1080px Salt Admin's frame column still scrolls: " + col);
+  const col = admin.filter((r) => r.sel === ".amb-screen" && !r.q).map((r) => r.style.cssText).join(" ");
+  ok(/overflow-y: auto/.test(col), "B4.2 Salt Admin's screen, the one box that scrolls in his shell, still scrolls: " + col);
 }

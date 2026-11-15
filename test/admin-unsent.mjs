@@ -21,6 +21,7 @@ const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   const fix = await slipFixture();
   const KEEP = "saltMakerPending:";
@@ -35,7 +36,7 @@ export async function run({ ok, pageWork }) {
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.bar = () => d.getElementById("unsentBar");
     p.where = () => {
-      const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
+      const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       const strip = d.querySelector('.aparts[data-place="' + place + '"]');
       const part = strip && (strip.querySelector('[aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
       return place + (part ? "/" + part : "");

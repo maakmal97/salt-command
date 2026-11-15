@@ -230,14 +230,14 @@
   {
     "name": "the orb opens the wrong part of Record",
     "file": "stmt/owner.js",
-    "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
-    "replace": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','pricing',{fresh:true,push:true}); }); });"
+    "find": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
+    "replace": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','customers',{fresh:true,push:true}); });"
   },
   {
     "name": "the orb opens nothing",
     "file": "stmt/owner.js",
-    "find": "  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });",
-    "replace": ""
+    "find": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
+    "replace": "  if(oAdd) oAdd.addEventListener('click', function(){});"
   },
   {
     "name": "the orb stays on Record",
@@ -262,30 +262,6 @@
     "file": "stmt/page.js",
     "find": "data-act=\"nav.add\" aria-label=\"Record an entry\">",
     "replace": "data-act=\"nav.add\">"
-  },
-  {
-    "name": "the orb stands in the page's flow",
-    "file": "stmt/page.js",
-    "find": ".adm #oAdd{position:fixed;",
-    "replace": ".adm #oAdd{position:static;"
-  },
-  {
-    "name": "the orb covers the App bar",
-    "file": "stmt/page.js",
-    "find": "env(safe-area-inset-bottom,0px));z-index:40}",
-    "replace": "env(safe-area-inset-bottom,0px));z-index:60}"
-  },
-  {
-    "name": "the last section is left under the orb",
-    "file": "stmt/page.js",
-    "find": "@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}",
-    "replace": ""
-  },
-  {
-    "name": "the orb still floats on a desk",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:1080px){.adm #oAdd{display:none}}",
-    "replace": "@media (min-width:1080px){.adm #oAdd{right:24px}}"
   },
   {
     "name": "a form is shown at the menu",
@@ -688,5 +664,23 @@
     "file": "stmt/owner.js",
     "find": "    if(ordPays(o).length) return 'Received';\n",
     "replace": ""
+  },
+  {
+    "name": "the page's layer places the circle again",
+    "file": "stmt/page.js",
+    "find": "#roster .salt-orb[data-back]{margin:0 0 16px}",
+    "replace": "#roster .salt-orb[data-back]{margin:0 0 16px}\n.adm #oAdd{position:fixed;right:16px}"
+  },
+  {
+    "name": "the rail's + comes back",
+    "file": "stmt/page.js",
+    "find": "'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"",
+    "replace": "'<button type=\"button\" data-act=\"rail.add\" id=\"oAddRail\"></button><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\""
+  },
+  {
+    "name": "the + is not in the app bar",
+    "file": "stmt/page.js",
+    "find": "        + '<div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\">'\n        + (test ? \"\" : '<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\">' + AMB.glyph(\"plus\") + \"</button>\")\n        + \"</div></div>\"",
+    "replace": "        + '<div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\">'\n        + \"</div></div>\"\n        + (test ? \"\" : '<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\">' + AMB.glyph(\"plus\") + \"</button>\")"
   }
 ]

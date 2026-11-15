@@ -92,6 +92,7 @@ const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.tes
 
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   const open = async (state, extra = {}) => {
     const p = await richOwnerPage({ pageWork, ...busyDay(state), ...extra });
@@ -109,7 +110,7 @@ export async function run({ ok, pageWork }) {
     p.counts = (bar) => Object.fromEntries([...d.querySelectorAll(bar + " [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
-      const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
+      const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       /* 2 Nov 2026 (Orders on the canvas): Approve and Payments have no tab in the Segment; the part showing is the one whose section is in view */
       const seen = (k) => { const s = d.querySelector('[data-in="orders.' + k + '"]'); for (let e = s; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!s; };
       const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => (place === "orders" ? ["approve", "payments", "group", "ledger"].find(seen) || "" : "") }).getAttribute("data-part");
@@ -207,12 +208,13 @@ export async function run({ ok, pageWork }) {
       "and the line opens them in place, and stays open through a redraw");
     d.querySelector('#nlist > details[data-sev="practice"]').open = false; d.querySelector('#nlist > details[data-sev="practice"]').dispatchEvent(new p.w.Event("toggle"));
     const lead = d.getElementById("nCount");
-    ok(p.todo() === 17 && lead.classList.contains("salt-insight") && lead.classList.contains("salt-insight--copper") && lead.classList.contains("nlead")
+    /* 15 Nov 2026, the move to Ambient: the lead is the line under Needs you's title in its hero */
+    ok(p.todo() === 17 && lead.classList.contains("amb-hero__sub") && !!lead.closest("#mHome > header.amb-hero")
       && lead.textContent.startsWith("RM 1,000 waits on your tap now: RM 600 to confirm, RM 400 to agree.") && !/to do now|soon/.test(lead.textContent),
     "the lead is one Insight of the money that waits on his tap now, summed off the payment and the placed-order cards of To do (RM 530 + 50 + 20 to confirm, RM 200 + 100 + 100 to agree), no practice item in it: " + lead.textContent);
 
     /* 4. THE COUNTS ON THE BARS */
-    const rail = p.counts(".salt-rail"), bar = p.counts(".salt-appbar");
+    const rail = p.counts(".amb-tabbar"), bar = p.counts(".amb-tabbar");
     ok(same(rail, { needs: "17", orders: "9", customers: "2", record: "", shop: "" }) && same(rail, bar) && +rail.needs === p.todo(),
       "Needs you counts the To do cards (his own work among them), Orders the open orders (not ended or completed), Customers the threads asked and the links waiting, "
       + "Record and Shop none, the same on the rail and on the bar, and no practice item in any: " + JSON.stringify([rail, bar]));
@@ -335,7 +337,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("need.kind.all");
     ok(p.cards().length === 12 + 10 + 2, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
-    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "17"), "FYI shows under All only, and a filter changes no count");
+    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".amb-tabbar").needs, "17"), "FYI shows under All only, and a filter changes no count");
   } finally { p.w.close(); }
 
   /* 7b. A KIND WITH NOTHING IN IT IS OFF, NEVER HIDDEN */
@@ -354,7 +356,8 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d, line = d.getElementById("nCount").textContent, fail = d.getElementById("nFail"), home = d.getElementById("mHome");
     /* plan 1 (15 Oct 2026): the failed read leads the page, above the title, in plain words with a Retry */
-    const lead = [...home.children].find((n) => !n.hidden && !n.classList.contains("salt-eyebrow"));
+    /* 15 Nov 2026, the move to Ambient: the place's hero opens it, and the failed read is the first thing after it */
+    const lead = [...home.children].find((n) => !n.hidden && !n.classList.contains("salt-eyebrow") && !n.classList.contains("amb-hero"));
     ok(fail && !fail.hidden && lead === fail && fail.getAttribute("role") === "alert" && /^Couldn't read orders and rows and messages[.]/.test(fail.textContent)
       && byAct(fail, "need.retry") && byAct(fail, "need.retry").textContent === "Retry" && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
     "a failed read is the first thing on the page, \"Couldn't read orders and rows and messages.\" with a Retry, and the cards of what could be read stand: " + (fail && fail.textContent) + " | " + line);
@@ -477,10 +480,10 @@ export async function run({ ok, pageWork }) {
     const s2 = state();
     p.w.close();
     p = await open(s2);
-    ok(!p.card("o:ord-new") && p.counts(".salt-rail").needs === "17", "(a day without the order)");
+    ok(!p.card("o:ord-new") && p.counts(".amb-tabbar").needs === "17", "(a day without the order)");
     s2.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
     await p.tick();
-    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".salt-rail").needs === "18" && p.counts(".salt-appbar").needs === "18" && p.counts(".salt-appbar").orders === "10"
+    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".amb-tabbar").needs === "18" && p.counts(".amb-tabbar").needs === "18" && p.counts(".amb-tabbar").orders === "10"
       && p.todo() === 18 && p.d.getElementById("nCount").textContent.startsWith("RM 1,300 waits on your tap now: RM 600 to confirm, RM 700 to agree."),
     "an order placed since the last read is drawn at the next tick, counted on both bars and in the lead: " + p.d.getElementById("nCount").textContent);
 

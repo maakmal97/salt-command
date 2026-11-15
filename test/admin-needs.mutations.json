@@ -464,8 +464,8 @@
  {
   "name": "the banner stands below the title",
   "file": "stmt/page.js",
-  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'\n        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar\n           names it, and the heading stays for a reader */\n        + '<h1 class=\"sr\">Needs you</h1>'",
-  "replace": "        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar\n           names it, and the heading stays for a reader */\n        + '<h1 class=\"sr\">Needs you</h1>'\n        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
+  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'\n        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */\n        + '<section id=\"nGlance\" class=\"nglance\" aria-label=\"At a glance\" hidden></section>'",
+  "replace": "        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */\n        + '<section id=\"nGlance\" class=\"nglance\" aria-label=\"At a glance\" hidden></section>'\n        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
  },
  {
   "name": "one bad key blanks the review",

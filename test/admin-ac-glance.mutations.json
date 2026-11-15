@@ -24,7 +24,7 @@
  {"name":"a book out of stock is not said","file":"stmt/owner.js","find":"if(b.light==='red') out++;","replace":"if(false) out++;"},
  {"name":"a book past its shelf is said by what is agreed","file":"stmt/owner.js","find":"if(over>0.005) past.push(over); else low++;","replace":"if(over>0.005) past.push(+b.commit||0); else low++;"},
  {"name":"the lead's figures are not bold","file":"stmt/owner.js","find":"if(p[0]) nCount.appendChild(el('b',null,p[0]));","replace":"if(p[0]) nCount.appendChild(document.createTextNode(p[0]));"},
- {"name":"the lead is a plain line","file":"stmt/page.js","find":"+ '<p class=\"salt-insight salt-insight--copper nlead\" id=\"nCount\">","replace":"+ '<p class=\"lead nlead\" id=\"nCount\">"},
+ {"name":"the lead is a plain line","file":"stmt/page.js","find":"<p class=\"amb-hero__sub\" id=\"nCount\">","replace":"<p class=\"lead nlead\" id=\"nCount\">"},
  {"name":"the stock tiles stay on the glance","file":"stmt/owner.js","find":"['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)]];","replace":"['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)],['#orders','stock','Stock cover','1','brass']];"},
  {"name":"the tabs are pills","file":"stmt/page.js","find":"ADMIN_KINDS.map(([k, w], i) => '<button type=\"button\" class=\"salt-nav__link nktab","replace":"ADMIN_KINDS.map(([k, w], i) => '<button type=\"button\" class=\"salt-tabs__pill nktab"},
  {"name":"two tabs across on a phone","file":"stmt/page.js","find":".adm .nkinds .nchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))","replace":".adm .nkinds .nchips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))"},

@@ -12,8 +12,7 @@
  *   8  every rule of his page in PAGE_CSS sits under .adm, so the customer's page and a guest's are drawn as they were
  * Drawn by the maker harness (test/maker-act.mjs), with a log of every read the page makes. */
 import { JSDOM } from "jsdom";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE } from "../stmt/page.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
@@ -79,6 +78,7 @@ async function drawn(opts) {
 }
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   /* the busy day, with two orders that are over: a cancelled and a declined one */
   const over = (j) => { const o = { u: "abcd-efgh", product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100 };
@@ -89,8 +89,8 @@ export async function run({ ok, pageWork }) {
     /* 1. THE FIVE PLACES */
     const bar = (sel) => [...d.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m") + ":" + b.textContent.replace(/\d+$/, "").trim());
     const want = PLACES.map((m, i) => m + ":" + LABELS[i]);
-    ok(same(bar(".salt-appbar"), want) && same(bar(".salt-rail"), want),
-      "Salt Admin has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".salt-appbar"), bar(".salt-rail")]));
+    ok(same(bar(".amb-tabbar"), want) && same(bar(".amb-tabbar"), want),
+      "Salt Admin has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".amb-tabbar"), bar(".amb-tabbar")]));
     ok(!/Maker/.test([...d.querySelectorAll(".place, #roster h1, #roster h2, #roster .eyebrow")].map((e) => e.textContent).join(" ")),
       "and none of its items, headings or eyebrows says Maker, a name that is retired on screen");
 
@@ -119,7 +119,7 @@ export async function run({ ok, pageWork }) {
     ok(p.where() === "orders orders/open" && pills === "false,true,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/todo", "and a place he comes back to opens on its first part again: " + p.where());
-    const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
+    const counts = [...d.querySelectorAll(".amb-tabbar [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
     ok(counts.some((c) => c === "customers=2") && !counts.some((c) => /^shop=/.test(c)),
       "Customers carries the threads asked and the guest links waiting, and Shop has none (the counts are proved in test/admin-needs.mjs): " + JSON.stringify(counts));
 
@@ -255,7 +255,8 @@ export async function run({ ok, pageWork }) {
     const html = (o) => landingPage("", "places-nonce", o), ownerHtml = html({ master: "fixture-master", accounts: [] }), customerHtml = html(undefined);
     const style = (h) => (h.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1];
     const body = (h) => h.replace(/<style[^>]*>[\s\S]*?<\/style>/g, "");
-    const css = style(ownerHtml).slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+    /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's tokens, its parts and the site's layer (SITE_STYLE) */
+    const css = style(ownerHtml).slice(SITE_STYLE.length);
     const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
     const rules = [];
     const walk = (list) => { for (const rule of list) { if (rule.selectorText) rules.push(rule.selectorText); else if (rule.cssRules) walk(rule.cssRules); } };

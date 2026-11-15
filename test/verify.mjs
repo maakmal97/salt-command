@@ -8624,8 +8624,10 @@ await (async () => {
   await (await import("./tide-off.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
 })();
 
-section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
-if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
+/* 15 Nov 2026, the move to Ambient: the Counter's Night and Tide retired with his answer of 14 Nov 2026, so the section is re-aimed at the
+   rule that replaced them and runs again */
+section("15 Nov 2026, the move to Ambient: every page of the statements site wears one Ambient head and follows the device, light or dark");
+await (async () => {
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 

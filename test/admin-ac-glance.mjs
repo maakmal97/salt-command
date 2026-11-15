@@ -53,7 +53,8 @@ export async function run({ ok, pageWork }) {
       "each tile is one centred line, the value with no top margin and nothing wrapping, and from 860px the three stand in one row, 56px tall");
     /* 1b */
     const lead = d.getElementById("nCount"), bs = lead ? [...lead.querySelectorAll("b")].map(t) : [];
-    ok(!!lead && lead.className === "salt-insight salt-insight--copper nlead" && J(bs) === J(["RM 1,000", "2 books"])
+    /* 15 Nov 2026, the move to Ambient: the lead is the line under Needs you's title in its hero */
+    ok(!!lead && lead.className === "amb-hero__sub" && !!lead.closest("#mHome > header.amb-hero") && J(bs) === J(["RM 1,000", "2 books"])
       && t(lead) === "RM 1,000 waits on your tap now: RM 600 to confirm, RM 400 to agree. 2 books need stock: one is out, one is promised 2 units past its shelf.",
       "the lead is one Insight: RM 1,000 waits on his tap, RM 600 of payments to confirm and RM 400 of orders to agree (the offer waiting on their yes is theirs), and two books need stock, one out and one promised 2 units past its shelf: " + t(lead));
     w.location.hash = "#orders/approve"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();

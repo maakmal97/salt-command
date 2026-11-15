@@ -135,7 +135,7 @@ export const OWNER_JS = `
     if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
     /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
     if(moved2) fOpen=null;
-    [].forEach.call(document.querySelectorAll('#oAdd, #oAddRail'), function(add){ add.hidden=placeNow==='record'; });
+    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=placeNow==='record'; });
     if(!inChat()) stopMakerChat();
     /* the picture is let go when Waiting on you is left; the one unlock is the page's and stays (PHASE 4b), going only with the lock */
     if(!inClaims()) makerSlipClose();
@@ -151,6 +151,7 @@ export const OWNER_JS = `
       var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
     [].forEach.call(document.querySelectorAll('.aparts.salt-segment'),segSync);
     sweep();
+    moodSet();
     if(placeNow==='orders'&&moved2&&makerData) paintOrdStatus();
     say('');
     unsentPaint();
@@ -208,7 +209,7 @@ export const OWNER_JS = `
       if(aOpen) openCard(aOpen);
       /* the count is of accounts on the book: the test account is not one (v689) */
       var real=sheetRows.filter(function(a){ return !a.test; }).length;
-      document.getElementById('mFoot').textContent=real+' accounts';   /* the time is the live clock beside the name (14 Oct 2026) */
+      var mFootEl=document.getElementById('mFoot'); if(mFootEl) mFootEl.textContent=real+' accounts';   /* 15 Nov 2026: the rail's foot left with the rail; kept for a place that draws it */
     }catch(e){ nGot('sheet', e); if(quiet!==true) sayFail(e); }
     finally{ sheetBusy=false; }
   }
@@ -1101,7 +1102,8 @@ export const OWNER_JS = `
   }
   /* an account as it opens (S9 9.3) */
   function acctPane(box, a){ box.appendChild(acctCard(a)); }
-  function setCount(m, n){ [].slice.call(document.querySelectorAll('[data-count="'+m+'"]')).forEach(function(c){ c.textContent=n?String(n):''; }); }
+  /* 15 Nov 2026 (Ambient 0.7.2): the count on a place's tab, through the page's tabCount: its figure, hidden at nought, and the tab's name */
+  function setCount(m, n){ [].slice.call(document.querySelectorAll('[data-count="'+m+'"]')).forEach(function(c){ tabCount(c,n); }); }
   /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
      Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
      URI, so nothing here encodes anything and the page loads no library to do it. */
@@ -1216,7 +1218,6 @@ export const OWNER_JS = `
      connection, and says so. */
   var ENDED='Your sign-in has ended.';
   function ended(){
-    lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
     ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */
     makerVaultLock();   /* and every key, name, place and picture the one unlock holds (Phase 4b) */
     document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); barDraw();
@@ -1457,13 +1458,15 @@ export const OWNER_JS = `
   function barDraw(){
     var live=document.getElementById('aBarLive'), hrs=document.getElementById('aBarHours'); if(!live||!hrs) return;
     var on=barNet&&navigator.onLine!==false&&!document.body.classList.contains('ended');
-    /* a tick that finds the same answer changes nothing on the page (R4): each part is written only when it differs */
-    if(live.getAttribute('data-on')!==String(on)){
-      live.setAttribute('data-on',String(on));
-      live.className='abarlive '+(on?'on':'off');
-      live.title=on?'Online: the Counter answered his last read.':'Offline: this device cannot reach the Counter just now.';
-      live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';
-    }
+    /* a tick that finds the same answer changes nothing on the page (R4): each part is written only when it differs. 15 Nov 2026: the line
+       stands in every place's hero (data-barlive), a word on the mesh, which carries the ink alone */
+    [].forEach.call(document.querySelectorAll('[data-barlive]'), function(lv){
+      if(lv.getAttribute('data-on')===String(on)) return;
+      lv.setAttribute('data-on',String(on));
+      lv.className='abarlive '+(on?'on':'off');
+      lv.title=on?'Online: the Counter answered his last read.':'Offline: this device cannot reach the Counter just now.';
+      lv.innerHTML='<span>'+(on?'Live':'Offline')+'</span>';
+    });
     var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='', tone='';
     if(h&&typeof h.open==='boolean'&&!(at&&Date.parse(at)<=Date.now())){
       /* 22 Oct 2026 (canvas Needs you): Open, Closed, or Paused for a shop shut by his override for now, each to its next change */
@@ -1472,10 +1475,11 @@ export const OWNER_JS = `
       txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');
     }
     /* the glowing dot and the words, named with what a tap does */
+    /* 15 Nov 2026: a glass chip in Needs you's hero, its dot for something live; Open, Closed or Paused said in its word, the mesh carrying no colour of state */
     if(hrs.getAttribute('data-txt')!==txt+tone){
-      hrs.setAttribute('data-txt',txt+tone); hrs.className='salt-status ashop'+tone;
-      hrs.innerHTML='<svg class="salt-status__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"></circle></svg>';
-      hrs.appendChild(el('span',null,txt));
+      hrs.setAttribute('data-txt',txt+tone); hrs.className='amb-chip amb-chip--glass ashop'+tone;
+      hrs.innerHTML='<span class="amb-chip__dot"></span>';
+      hrs.appendChild(document.createTextNode(txt));
       hrs.setAttribute('aria-label',txt+'. Tap to change');
     }
     if(hrs.hidden===!!txt) hrs.hidden=!txt;
@@ -1989,35 +1993,15 @@ export const OWNER_JS = `
   }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   var chatMs=2000;   /* Speed Wave 2 L2: a minute while the live socket is up */
-  /* 5 NOV 2026, HIS WORD ("like Mail or Messages on a Mac"): THE FRAME (salt-ds 1.28.0). From 1080px the column right of the rail is the one box
-     that scrolls and a record open beside a list is a pane holding to its top: it is given the room left in the column under its own top, so its
-     foot, the record's one main action, is in view without scrolling. Read again as the column scrolls, the window changes or the column redraws.
-     Under 1080px the page scrolls as before, a foot rides the screen's foot, and while one shows the + orb stands down (data-footed). */
-  function frameEl(){ return document.querySelector('.adm .salt-frame__main'); }
-  function framed(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1080px)').matches); }
+  /* 15 NOV 2026, THE MOVE TO AMBIENT: THE SCREEN SCROLLS. His page is one Ambient shell, the height of the display, and its screen is the one box
+     that scrolls (the salt-ds frame and paneFit's --salt-pane-h are gone); a split of panes (amb-split--panes) holds still and scrolls each pane
+     by itself from 960px, with no script. framed() is that width, read off the shell as Ambient reads it. */
+  function frameEl(){ return document.querySelector('#roster > .amb-screen'); }
+  function framed(){ var r=document.getElementById('roster'); return !!(r&&r.clientWidth>=960); }
   function pageTop(){ try{ window.scrollTo(0,0); }catch(e){} var m=frameEl(); if(m) m.scrollTop=0; }
-  var fitAsked=false;
-  function paneFit(){
-    fitAsked=false;
-    var m=frameEl(); if(!m) return;
-    var on=framed(), mr=on?m.getBoundingClientRect():null, pad=on?parseFloat(window.getComputedStyle(m).paddingBottom)||0:0;
-    [].forEach.call(document.querySelectorAll('.adm .salt-pane'), function(p){
-      if(!on||!p.getClientRects().length){ p.style.removeProperty('--salt-pane-h'); return; }
-      var top=Math.max(p.getBoundingClientRect().top, mr.top);
-      p.style.setProperty('--salt-pane-h', Math.max(240, Math.floor(mr.bottom-pad-top))+'px');
-    });
-    var footed=!on&&[].some.call(document.querySelectorAll('.adm .salt-pane__foot'), function(f){ return f.getClientRects().length>0; });
-    var g=document.getElementById('roster'); if(g){ if(footed) g.setAttribute('data-footed',''); else g.removeAttribute('data-footed'); }
-  }
-  function fitSoon(){ if(fitAsked) return; fitAsked=true; if(window.requestAnimationFrame) window.requestAnimationFrame(paneFit); else setTimeout(paneFit,16); }
-  (function(){
-    var m=frameEl(); if(!m) return;
-    m.addEventListener('scroll', fitSoon, {passive:true});
-    window.addEventListener('resize', fitSoon);
-    if(window.MutationObserver) new MutationObserver(fitSoon).observe(m,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
-  })();
   /* what a thread scrolls in: its pane in the frame, the page under 1080px */
-  function threadBox(){ var p=document.getElementById('makerChatOpen'); return framed()&&p?p:(document.scrollingElement||document.documentElement); }
+  function threadBox(){ var p=document.getElementById('makerChatOpen'), sc=function(x){ return !!x&&x.scrollHeight>x.clientHeight&&/auto|scroll/.test(window.getComputedStyle(x).overflowY); };
+    return sc(p)?p:(frameEl()||document.scrollingElement||document.documentElement); }
   function stopMakerChat(){
     if(makerThreadTimer!==null) clearInterval(makerThreadTimer);
     makerThreadTimer=null;
@@ -2209,7 +2193,7 @@ export const OWNER_JS = `
     close.onclick=function(){makerThreadUser=null;root.hidden=true;if(root.parentElement) root.parentElement.classList.remove('open');stopMakerChat();drawThreadList();};
     if(draft.storageError) draft.note=draft.storageError;
     else if(draft.saved&&!draft.pending) draft.note='An unsent reply is kept on this phone. Open it to send it again, or discard it.';
-    makerChatState();paneFit();drawMakerThreadLines(true);startMakerChat();
+    makerChatState();drawMakerThreadLines(true);startMakerChat();
   }
   /* 16 Oct 2026: THE MINI LEDGER. Open orders, Pending orders and the latest twenty, read off the Desk's mirror of the folded book by the engine's own rules (GET
      /all/maker/ledger: txStat for the stage, txOwed, txPaid and txAdvance for what is owed, txEffDeliv for what was handed over). This page states no status
@@ -8007,22 +7991,14 @@ export const OWNER_JS = `
     setCount('customers', makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length+links.filter(waitingLink).length);
     barLive(draftGroups(pendingRows()).length);
   }
-  /* 21 OCT 2026, HIS WORD: THE BAR WAS BARE. The same figures the rail counts and the rows to approve, each a chip that goes to its place, as the
-     Desk's bar carries them. Written only when it differs (R4). 22 Oct 2026, his comment: where he is is not said on Salt Admin ("not required"). */
+  /* 21 Oct 2026 (his word, the bar was bare) to 15 Nov 2026: the bar's chips went with the bar. What waits is the tab counts (setCount), so
+     this reads what it read and draws nothing but Approve's name in Orders' hero; drawCounts still calls it, and it answers the figures. */
   function barLive(rows){
-    var box=document.getElementById('aBarChips'); if(!box) return;
-    /* the rail's own figures, as setCount drew them, so the bar and the rail can never differ */
     var n={approve:rows}; ['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count="'+k+'"]'); n[k]=+(c&&c.textContent)||0; });
-    var chip=function(k,tone,w,c){ return '<button type="button" class="salt-deskbar__chip salt-deskbar__chip--'+tone+(c?'':' is-zero')+'" data-act="bar.'+k+'">'+w
-      +' <span class="salt-deskbar__n">'+c+'</span></button>'; };
-    var h=chip('needs','now','Needs you',n.needs)+chip('orders','wait','Orders',n.orders)+chip('customers','wait','Customers',n.customers)
-      +'<button type="button" class="salt-deskbar__act'+(n.approve?'':' is-zero')+'" data-act="bar.approve">Approve<span class="salt-deskbar__badge">'+n.approve+'</span></button>';
-    if(box.getAttribute('data-h')===h) return;
-    box.setAttribute('data-h',h); box.innerHTML=h;
-    [].forEach.call(box.querySelectorAll('[data-act]'), function(b){ b.addEventListener('click', function(){
-      var k=b.getAttribute('data-act').slice(4);
-      showPlace(k==='approve'?'orders':k==='customers'?'customers':k, k==='approve'?'approve':k==='customers'?'messages':'', {fresh:true,push:true});
-    }); });
+    /* Orders' Approve, in its hero, names the rows that wait */
+    var apBtn=document.getElementById('aApprove'), apSay=rows?'Approve, '+rows+' to approve':'Approve';
+    if(apBtn&&apBtn.getAttribute('aria-label')!==apSay) apBtn.setAttribute('aria-label',apSay);
+    return n;
   }
   function needsReady(){ return NEED_SRC.every(function(s){ return nSrc[s[0]]; }); }
   function needsBad(){ return NEED_SRC.filter(function(s){ return nSrc[s[0]]&&nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; }); }
@@ -8164,7 +8140,16 @@ export const OWNER_JS = `
       g.appendChild(a);
     });
   }
-  function drawGlanceAll(){ drawGlance(); drawStockBooks(); }
+  function drawGlanceAll(){ drawGlance(); drawStockBooks(); moodSet(); }
+  /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026): THE MOOD IS THE MARKET'S HEAT, for him. Salt's heat in the stock he polls
+     (STOCK.books.salt.heat, the engine's marketHeat off its supply step): tight is Flare, and Needs you, Orders and Customers say Supply tight in
+     their hero's chip; anything else is Lagoon with no chip. Shop is at rest, Slate. Heat is never good or bad, and prices nothing. */
+  function moodSet(){
+    var r=document.getElementById('roster'); if(!r) return;
+    var b=glanceStock&&glanceStock.books, tight=!!(b&&b.salt&&b.salt.heat==='tight'), m=placeNow==='shop'?'slate':tight?'flare':'lagoon';
+    if(window.Ambient&&window.Ambient.mood) window.Ambient.mood(m, r); else r.setAttribute('data-mood', m);
+    [].forEach.call(r.querySelectorAll('[data-heat]'), function(c){ if(c.hidden===(m==='flare')) c.hidden=m!=='flare'; });
+  }
   /* 21 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): THE STOCK, the Desk's figures (the master measures them at each
      version, GET /all/maker/stock), the day the next lot is expected his own from Stock. Read once a page open; a failed read is asked again five minutes on.
      22 Oct 2026 (canvas Needs you): Stock cover and Next lot left the glance; Stock by book carries both for every book, and the Insight says which need stock. */
@@ -8657,7 +8642,10 @@ export const OWNER_JS = `
   });
   /* the + orb opens Record's menu of entries */
   var oAdd=document.getElementById('oAdd');
-  [oAdd, document.getElementById('oAddRail')].forEach(function(b){ if(b) b.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); }); });
+  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });
+  /* Approve, Orders' one main action (the bar's Approve until 15 Nov 2026) */
+  var aApprove=document.getElementById('aApprove');
+  if(aApprove) aApprove.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); });
   document.getElementById('afil').addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-f]'); if(b) filterBy(b.getAttribute('data-f'));
   });
@@ -8749,9 +8737,5 @@ export const OWNER_JS = `
       });
     }catch(e){ /* a browser that will not listen still opens the page */ }
   }
-  /* 11 Oct 2026, HIS WORD: SALT ADMIN HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
-     chosen); the choice Sheet is the customer's (stmt/page.js, lookAsk), asked once when this page opens on a device that holds none, and
-     Shop > This device holds the switch. The rest of the look (kept in localStorage salt-look on this origin, applied at once, no
-     reload) is the page's own and is shared. An Access lapse, which ended() reads on a request's answer, takes the Sheet down. */
-  lookAsk(null, true);
+  /* 15 Nov 2026, the move to Ambient: light and dark follow the device (his answer of 14 Nov 2026); nothing here asks for a look */
 `;

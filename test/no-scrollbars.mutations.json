@@ -20,20 +20,20 @@
  {
   "name": "B2.1 the Counter carries no width rule",
   "file": "stmt/statement-css.js",
-  "find": "}\\n\\n* { scrollbar-width: none !important; }",
-  "replace": "}\\n\\n* { }"
+  "find": "he keyboard still scroll. */\\n* { scrollbar-width: none !important; }\\n::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }",
+  "replace": "he keyboard still scroll. */\\n* { }\\n::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }"
  },
  {
   "name": "B2.1 the Counter keeps the width, not important",
   "file": "stmt/statement-css.js",
-  "find": "}\\n\\n* { scrollbar-width: none !important; }",
-  "replace": "}\\n\\n* { scrollbar-width: none; }"
+  "find": "he keyboard still scroll. */\\n* { scrollbar-width: none !important; }\\n::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }",
+  "replace": "he keyboard still scroll. */\\n* { scrollbar-width: none; }\\n::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }"
  },
  {
   "name": "B2.2 the Counter draws the WebKit bar",
   "file": "stmt/statement-css.js",
-  "find": "::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }\\n\\n.salt-aurora",
-  "replace": "::-webkit-scrollbar { width: 0; }\\n\\n.salt-aurora"
+  "find": "he keyboard still scroll. */\\n* { scrollbar-width: none !important; }\\n::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }",
+  "replace": "he keyboard still scroll. */\\n* { scrollbar-width: none !important; }\\n::-webkit-scrollbar { width: 0; }"
  },
  {
   "name": "B3.1 the Desk rail draws a thin bar",
@@ -57,7 +57,7 @@
   "name": "B3.2 Salt Admin draws its column a bar",
   "file": "stmt/page.js",
   "find": "/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
-  "replace": ".adm .amain{scrollbar-width:auto}\n/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S"
+  "replace": ".adm .amb-screen{scrollbar-width:auto}\n/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S"
  },
  {
   "name": "B4.1 the Desk rail no longer scrolls",
@@ -72,9 +72,9 @@
   "replace": ".tscroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}"
  },
  {
-  "name": "B4.2 Salt Admin column no longer scrolls",
+  "name": "B4.2 Salt Admin's screen no longer scrolls",
   "file": "stmt/statement-css.js",
-  "find": "align-self: stretch; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }",
-  "replace": "align-self: stretch; min-width: 0; min-height: 0; overscroll-behavior: contain; }"
+  "find": ".amb-screen {\\n  --amb-inset-l: var(--amb-safe-left);\\n  position: absolute;\\n  inset: 0;\\n  overflow-x: hidden;\\n  overflow-y: auto;",
+  "replace": ".amb-screen {\\n  --amb-inset-l: var(--amb-safe-left);\\n  position: absolute;\\n  inset: 0;\\n  overflow-x: hidden;"
  }
 ]

@@ -70,6 +70,7 @@ function ownerCss() {
   return { html, media, at, top };
 }
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   const state = () => ({ asked: false, answered: false, quiet: false, moved: false, many: false });
   const open = async (st = state(), extra = {}) => {
@@ -83,14 +84,14 @@ export async function run({ ok, pageWork }) {
     p.acts = (id) => [...d.querySelectorAll('#makerReview [data-maker-card="' + id + '"] [data-act]')].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
     p.live = () => p.intervals.filter((i) => i.ms === 5000 && !i.off);
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
-    p.counts = () => Object.fromEntries([...d.querySelectorAll(".salt-rail [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
+    p.counts = () => Object.fromEntries([...d.querySelectorAll(".amb-tabbar [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.needs = () => [...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-need"));
     p.menu = () => [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-settings__label").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
     p.formsOpen = () => [...d.querySelectorAll("#makerInputs section.maker-input[data-form]")].filter(shown).map((s) => s.getAttribute("data-form"));
     p.retained = () => [...d.querySelectorAll("#makerInputs section[data-formmenu]")].filter(shown).map((s) => s.querySelector("h3").textContent);
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
-      const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
+      const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       /* 2 Nov 2026 (Orders on the canvas): Payments, Group, Ledger and Approve have no tab in the Segment, so their part is the address's */
       const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => (p.w.location.hash.split("/")[1] || "") }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
@@ -462,7 +463,8 @@ export async function run({ ok, pageWork }) {
   p = await open();
   try {
     const d = p.d, add = d.getElementById("oAdd"), { at, top } = ownerCss();
-    ok(!!add && add.tagName === "BUTTON" && add.classList.contains("salt-orb") && add.getAttribute("data-act") === "nav.add" && add.getAttribute("aria-label") === "Record an entry"
+    /* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, the orb's id and act kept */
+    ok(!!add && add.tagName === "BUTTON" && add.classList.contains("amb-circle") && !!add.closest("#roster > .amb-appbar > .amb-appbar__group") && add.getAttribute("data-act") === "nav.add" && add.getAttribute("aria-label") === "Record an entry"
       && !!add.querySelector("svg") && d.getElementById("roster").contains(add) && !add.hasAttribute("data-m") && !add.hasAttribute("data-part") && byAct(d, "nav.add") === add,
     "one + orb stands on Salt Admin, found by its act and named by a label: " + (add && add.outerHTML.slice(0, 200)));
     const there = [];
@@ -478,9 +480,11 @@ export async function run({ ok, pageWork }) {
     await p.tap("record.form", "gift");
     await p.tap("nav.shop"); await p.tap("nav.add");
     ok(p.where() === "record/entry" && p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "and a form left open comes back as the menu: " + p.where() + JSON.stringify([p.formsOpen(), p.menu()]));
-    const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "", room = at("(max-width:1079.98px)", ".adm .amain")[0] || "";
-    ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /display: none/.test(wide) && /padding-bottom: 72px/.test(room),
-      "the orb stands 16px above the App bar on a phone, gives way to the rail's + from 1080px (P10, 21 Oct 2026), under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
+    /* 15 Nov 2026, the move to Ambient: Ambient places the app bar's circle (it floats over the screen at every width, so no corner, no room kept
+       for it and no rail button of its own); the page's own layer no longer positions it, and the one + is the circle's */
+    const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "";
+    ok(!orb && !wide && !d.getElementById("oAddRail") && !byAct(d, "rail.add") && d.querySelectorAll('[data-act="nav.add"]').length === 1,
+      "the circle is Ambient's to place, at every width, and is the one +: the page's layer sets none of it, and the rail's + is gone: " + [orb, wide].join(" "));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 8. RECORD'S FORMS ARE A MENU: a row for each form, one form at a time, the form itself moved and never drawn again */

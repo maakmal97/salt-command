@@ -6,3 +6,5 @@
 /* ---- The kit: the head and the shell ---- */
 /* the shell is the screen: the body holds one shell at a time (the door, Salt Admin's roster, the customer's places, the ended page) */
 body.amb { min-height: 100dvh; }
+/* his hero's time line: the live word, then the clock, a step apart */
+#roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
