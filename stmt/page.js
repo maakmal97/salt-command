@@ -835,37 +835,24 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:1080px){
   .adm #oShop{max-width:760px}
 }
-@media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
    (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
    column says Choose a card to see it in full (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
    (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
-.adm .panenone{display:none;margin:0}
 /* 22 Oct 2026 (canvas Needs you): the open card beside the list is one glass, starting level with the first card (under the group's heading), 360px wide
    and 420px from 1440px, where the shell widens to 1376px as the canvas draws it */
-.adm .npane{display:flex;flex-direction:column;gap:12px}
-.adm .npane__title{margin:0;font-size:1.375rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .npane__what{display:flex;align-items:center;gap:8px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .npane__why{margin:0}
-.adm .npane__body:empty{display:none}
-.adm .npane__go{display:flex;gap:10px}
-.adm .npane__go .nbtn{flex:1 1 0;min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .npane-x:empty{display:none}
 @media (max-width:859.98px){
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
-  .adm #nopen{display:none}
 }
 @media (min-width:860px){
   .adm #oLinks,.adm #oCards{max-width:600px}
-  .adm .nsplit,.adm .asplit{display:grid;gap:20px;align-items:start}
-  .adm .nsplit,.adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
+  .adm .asplit{display:grid;gap:20px;align-items:start}
+  .adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
   .adm .asplit{grid-template-columns:minmax(0,1fr)}
-  .adm #nopen,.adm #aopen{overflow-y:auto}
+  .adm #aopen{overflow-y:auto}
   .adm #aopen [data-back]{display:none}
-  .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
   .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
   .adm #nopen[hidden]{display:none}
-  .adm .panenone{display:block}
   .adm #nopen:not([hidden])~.panenone{display:none}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
@@ -893,15 +880,14 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
-  .adm #oShop,.adm #unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm #oShop{max-width:600px;margin-left:auto;margin-right:auto}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
    short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
    columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
 @media (min-width:768px) and (max-width:859.98px){
-  .adm #unsentBar{max-width:none}
   .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
   .adm .maker-input>*{grid-column:1/-1}
   .adm .maker-input>.maker-field--short{grid-column:auto}
@@ -917,7 +903,6 @@ body.ended>*:not(#aEnded){display:none}
 }
 @media (min-width:860px){
   .adm #oRecord{max-width:none}
-  .adm #oOrders>.abody>#oApprove{max-width:600px}
   .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
   .adm .recgrid.open .recnone{display:none}
   .adm .recpane{overflow-y:auto}
@@ -930,11 +915,6 @@ body.ended>*:not(#aEnded){display:none}
    queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
    beside its list. Nothing opens by itself: the column beside the threads is empty until a tap. */
 @media (min-width:1080px){
-  .adm #oOrders>.abody>#oApprove{max-width:none}
-  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
-  .adm #makerDrafts>.maker-card{margin:0}
-  .adm #makerDrafts>.rnone{grid-column:1/-1}
-  .adm #makerDrafts>.aphead,.adm #makerDrafts>.apdone{grid-column:1/-1}
   /* 5 Nov 2026: with no thread open the list is one 640px column, as Shop's lists are; a thread opened stands beside a 280 to 360px list */
   .adm .chatgrid{display:grid;grid-template-columns:minmax(0,640px);gap:0 20px;align-items:start}
   .adm .chatgrid.open{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}
@@ -979,33 +959,14 @@ body.ended>*:not(#aEnded){display:none}
 .adm .unsent-open[hidden]{display:none}
 .adm .unsent-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .adm .unsent-ways>button{min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .apphead{min-height:44px;align-items:center}
-.adm .aplink{min-height:44px;background:none;border:0;padding:0 4px;text-decoration:underline;color:var(--salt-brass)}
-.adm .apverb{margin:0}
-.adm .apnow{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.adm .apnow th,.adm .apnow td{text-align:right;padding:4px 0 4px 12px;font-weight:400}
-.adm .apnow th:first-child{text-align:left;padding-left:0;color:var(--salt-text-muted)}
-.adm .apnow thead th{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
-.adm .apnow .apchg strong{font-weight:500;color:var(--salt-text)}
-.adm .apflag{white-space:normal}
-.adm .apbang{font-weight:500}
-.adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
-.adm .apcard .rdet--row{margin:0}
 .adm .maker-offers__head{margin:16px 0 4px}
 .adm .maker-offers{display:flex;flex-direction:column}
 .adm .maker-offer .salt-ghost[hidden],.adm .maker-reward .salt-ghost[hidden]{display:none}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
-.adm #mHome .salt-eyebrow{margin:0 0 6px}
-.adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
-.adm .nlist .glink{margin:0}
-.adm .ngroup{display:flex;flex-direction:column;gap:10px}
-.adm #mHome .nlist .nsev{margin:0;line-height:1.4}
 /* 22 Oct 2026 (canvas Needs you): the kinds' tab row, the Nav bar's link laid out as equal 48px tabs, the count in brass beside the word */
 .adm .nkinds{margin:0 0 16px;padding:0;gap:0}
-.adm .nkinds .nchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
-@media (min-width:860px){.adm .nkinds .nchips{grid-template-columns:repeat(6,minmax(0,1fr))}}
 .adm .nktab{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:48px;margin:0;padding:0 12px;background:none;border:0;border-bottom:2px solid transparent;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;overflow:hidden}
 .adm .nktab__n{color:var(--salt-brass)}
 .adm .nktab:hover:not(:disabled),.adm .nktab:focus-visible{background:var(--salt-glass-hover);color:var(--salt-salt)}
@@ -1014,54 +975,13 @@ body.ended>*:not(#aEnded){display:none}
 /* 22 Oct 2026 (canvas Needs you, his "some of these cards are using unnecessary space"): THE GLANCE IS SINGLE-LINE KPI TILES, the label at the left and the
    figure at the right, no note, the value with no top margin so the row centres: Ready and To approve side by side, Receivables under them with the
    meter of what is paid of what is agreed between its label and its figure; from 860px one row of three, 56px tall. The Insight leads them. */
-.adm .nglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
-.adm .nglance[hidden]{display:none}
 /* the tile is the system's one-line KPI tile (salt-kpi--line, 1.14.0); the page sets only that it is a link and where Receivables and its meter stand */
-.adm .nkpi{box-sizing:border-box;text-decoration:none;color:inherit}
-.adm .nkpi:hover,.adm .nkpi:focus-visible{border-color:var(--salt-line-strong)}
-.adm .nkpi--owed{grid-column:1/-1;gap:16px}
-.adm .nkpi .salt-meter{flex:1 1 auto;min-width:40px}
-.adm .nkpi .salt-meter__track{display:block}
 @media (min-width:860px){
-  .adm .nglance{grid-template-columns:1fr 1fr 2.4fr;gap:12px}
-  .adm .nkpi--owed{grid-column:auto}
 }
 /* 22 Oct 2026: the multi-tick Approve: a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
-.adm .aphead{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}
-.adm .apticks{display:flex;gap:8px}.adm .apticks button{flex:1 1 0;padding:0 12px}
-.adm .ap--a{border-color:var(--salt-verdigris)}.adm .ap--r{border-color:var(--salt-ember)}
-.adm .aprefused{padding:12px;border-radius:12px;background:var(--salt-slate);border:1px solid var(--salt-ember);display:flex;flex-direction:column;gap:4px}
-.adm .aprefused p{margin:0}
-.adm .apdone{padding:16px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--salt-verdigris)}
-.adm .apdone__head{color:var(--salt-verdigris)}
-.adm .apsheet--a{color:var(--salt-verdigris)}.adm .apsheet--r{color:var(--salt-ember)}
-.adm .apbar{position:sticky;bottom:92px;z-index:5;margin-top:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;border:1px solid var(--salt-line-strong)}
-.adm .apbar[hidden]{display:none}
-.adm .apbar__line{flex:1 1 auto;min-width:0}
-@media (min-width:1080px){.adm .apbar{bottom:16px}}
 /* 22 Oct 2026 (canvas Needs you): STOCK BY BOOK UNDER THE CARDS. On a phone one row a book on one glass: its typed tag and its light, Cover at the right;
    the meter of what is agreed of the shelf, ember once promised past it; Next lot alone on its line. From 860px a plain table on one glass, the columns
    in proportion and no sideways scroll. Nothing wraps. */
-.adm .nstock{display:flex;flex-direction:column;gap:8px;margin:0 0 16px}
-.adm .nstock[hidden]{display:none}
-.adm .nstock__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.adm .nstock__head .salt-eyebrow{margin:0}
-.adm .nstock__list{padding:0 16px}
-.adm .nstock__row{display:flex;flex-direction:column;gap:8px;padding:14px 0;min-width:0}
-.adm .nstock__row+.nstock__row{border-top:1px solid var(--salt-line-faint)}
-.adm .nstock__top{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
-.adm .nstock__who{display:inline-flex;align-items:center;gap:8px;min-width:0}
-.adm .nstock__cover,.adm .nstock__lot{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .nstock__cover b,.adm .nstock__lot b{color:var(--salt-salt);font-weight:500}
-.adm .nstock .salt-meter__line{white-space:nowrap}
-.adm .nstock .salt-meter__track{display:block}
-.adm .nstock__table{display:none;padding:4px 6px;overflow:hidden}
-.adm .nfree--neg{color:var(--salt-ember)}
-@media (min-width:860px){.adm .nstock__list{display:none}.adm .nstock__table{display:block}}
-.adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
-.adm .nfail[hidden]{display:none}
-.adm .nfail__what{margin:0;flex:1 1 12em}
 .adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
@@ -1098,12 +1018,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ncard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
 .adm .need .salt-action__money{width:4.5rem;justify-self:end;padding-top:0}
 @media (max-width:860px){.adm .need .salt-action__kind{grid-column:1 / 2}}
-.adm .nfold{display:flex;flex-direction:column;gap:12px}
-.adm .nfold>summary.nsev{display:flex;align-items:center;min-height:var(--salt-tap);margin:0;cursor:pointer;list-style:none}
-.adm .nfold>summary.nsev::-webkit-details-marker{display:none}
-.adm .nfold>summary.nsev::before{content:"+";display:inline-block;width:1.2em}
-.adm .nfold[open]>summary.nsev::before{content:"-"}
-.adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
 .adm .ordcard--ask,.adm .arow--ask{flex-wrap:wrap}
 /* 2 Nov 2026: the code in a table row is a link that fills its cell's height, so the 44px target holds in the table of Orders and of Customers alike */
@@ -1113,7 +1027,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .oask__q{flex:1 1 100%}
 /* 15 Nov 2026, the move to Ambient: the live line and the clock are the hero's time line, a word and the digits in the ink, the mesh carrying no other */
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
-.adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
@@ -2037,27 +1950,25 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + "</div></div>"
         + '<main class="amb-screen amb-screen--docked">'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
-        + '<div id="unsentBar" hidden></div>'
+        + '<div id="unsentBar" class="amb-stack" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
            ("orders" is every part of Orders, "orders.group" that part alone). The owner's script hides the rest (stmt/owner.js, go),
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
-        + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
-        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */
-        + '<section id="nGlance" class="nglance" aria-label="At a glance" hidden></section>'
-        /* 22 Oct 2026 (canvas Needs you, his "something else that is not just pill styles"): the kinds are a text tab row on the system's Nav bar, the count
-           beside each word, the chosen one on glass with a brass underline, an empty one dimmed; three across on a phone, six wide. Jump to is gone */
-        + '<nav class="salt-nav nkinds" aria-label="Show"><div class="salt-nav__links nchips" role="tablist">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-nav__link nktab'
-          + (i ? "" : " salt-nav__link--active") + '" role="tab" data-chip="' + k + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w
-          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
-        /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
-        + '<div class="nsplit"><div>'
-        + '<div id="nlist" class="nlist"></div>'
-        + '</div><div id="nopen" class="salt-glass-card salt-glass-card--radius-lg salt-pane" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
-        /* 22 Oct 2026 (his word, the restock light made plain; canvas Needs you): every book's light and figures, under the cards (stmt/owner.js drawStockBooks) */
-        + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
+        /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice), the glance (Ambient's tiles, each a link
+           to Orders: Ready, To approve, Receivables with its meter) and the kinds (counted filters, one chosen). Under it the queue and the open card, two columns from
+           960px, the card's one main action the foot of its column (stmt/owner.js needPane, nFoot); Stock by book under both, a table that stacks on a phone. */
+        + '<div class="amb-stack">'
+        + '<div id="nFail" class="amb-notice amb-notice--warn nfail" role="alert" hidden></div>'
+        + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section>'
+        + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nktab" data-chip="' + k
+          + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nktab__n"></span></button>').join("") + "</div>"
+        + "</div>"
+        + '<div class="amb-split nsplit"><div class="amb-stack"><div id="nlist" class="nlist"></div></div>'
+        + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div></div>'
+        + '<section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden></section>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
@@ -2069,15 +1980,14 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen salt-pane"></div></div></section>'
         + ordMore(test)
-        + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
-        + '<p class="lead" id="makerDraftStatus"></p>'
-        + '<div id="makerDrafts"></div>'
-        /* 22 Oct 2026: the multi-tick Approve's bar, drawn by stmt/owner.js apBarDraw once a card is chosen */
-        + '<div id="apBar" class="apbar salt-glass-card salt-glass-card--radius-lg" hidden></div>'
-        /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
-        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
-        + '<div class="salt-plan__body">'
-        + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
+        /* 16 Nov 2026 (the move to Ambient, place F): Approve is one stack of Ambient's approvals (stmt/owner.js drawDeskRows), a save bar over them once a card is
+           chosen (apBarDraw), and the queue a fold shut by default, titled and counted */
+        + '<section id="oApprove" class="amb-stack" data-in="orders.approve" aria-label="Rows to approve">'
+        + '<p class="amb-prose" id="makerDraftStatus" role="status"></p>'
+        + '<div id="makerDrafts" class="apstack"></div>'
+        + '<div id="apBar" class="amb-savebar apbar" hidden></div>'
+        + '<details id="makerQueue" class="nfold"><summary class="amb-section" data-act="record.queue-toggle"><span id="makerQueueCount">0</span> <span id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
+        + '<div id="makerQueueReview" class="apstack" aria-live="polite"></div></details></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'

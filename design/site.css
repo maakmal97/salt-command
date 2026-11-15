@@ -10,3 +10,51 @@ body.amb { min-height: 100dvh; }
 #roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
 /* on Home the Today card holds the clock, so the hero does not say the time twice */
 #tabs[data-place="home"] > .amb-screen > .amb-hero > .amb-hero__time { display: none; }
+
+/* ---- Admin: Needs you, Approve and the unsent bar (place F) ---- */
+/* the head's tiles sit in a stack, which already carries the gutter; a tile that is a link stays plain */
+.amb-stack > .amb-tiles { padding-inline: 0; }
+a.amb-tile { color: inherit; text-decoration: none; }
+a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
+/* a read that failed: the Notice's words, its Retry at the end */
+.nfail[hidden], .apbar[hidden], .nstock[hidden], .nopen[hidden], #unsentBar[hidden] { display: none; }
+.nfail > span { flex: 1 1 auto; min-width: 0; }
+.nfail > .amb-pill, .unsent-note > .amb-pill { margin-inline-start: auto; flex: none; }
+.unsent-note > span { flex: 1 1 auto; min-width: 0; }
+/* the list: a group a word, a card a task; the whole card is its title's tap, the ways above it */
+.nlist { display: grid; gap: var(--amb-space-5); }
+.nlist > .ngroup, .nlist > .nfold, .apstack, .nopen, #nrecord { display: grid; gap: var(--amb-space-3); }
+.nlist > .nfold > summary { display: flex; align-items: center; min-height: var(--amb-tap); cursor: pointer; }
+.ntask { position: relative; }
+.ntask .need-tap { appearance: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--amb-space-2); width: 100%; min-height: var(--amb-tap); margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ntask .need-tap::after { content: ""; position: absolute; inset: 0; }
+.ntask .need-tap:focus-visible { outline: none; }
+.ntask .need-tap:focus-visible::after { outline: 2px solid var(--amb-accent); outline-offset: 2px; border-radius: inherit; }
+.ntask .amb-task__acts, .ntask .nbody { position: relative; z-index: 1; }
+.ntask .need-who--code, .npane .need-who--code { font-family: var(--amb-font-mono); }
+.ntask[aria-current="true"] { outline: 2px solid var(--amb-accent); outline-offset: -2px; }
+#roster .ntask .nage--late { color: var(--amb-neg); }
+.nbody:empty, .npane__body:empty, .npane-x:empty { display: none; }
+.nbody > p, .npane__body > p { margin: 0; }
+/* the open card: the column beside the list from 960px, its one main action the foot */
+.panenone { display: none; margin: 0; color: var(--amb-ink-2); }
+@media (min-width: 960px) { .panenone { display: block; } #nopen:not([hidden]) ~ .panenone { display: none; } }
+@media (max-width: 959px) { #nrecord:not(:has(> #nopen:not([hidden]))) { display: none; } }
+.npane__title { overflow-wrap: anywhere; }
+/* Stock by book: the table's meter stays a hand's width */
+.nstock .amb-meter { min-width: 4rem; }
+/* a kind with nothing waiting is dimmed and cannot be chosen */
+.nchips > .amb-segment__opt:disabled { opacity: 0.5; cursor: default; }
+/* Approve: the head of the list, the cards, the save bar over them */
+.aphead { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-3); }
+.aphead__n { margin: 0; }
+.apcard.ap--a { border-color: var(--amb-pos); }
+.apcard.ap--r { border-color: var(--amb-neg); }
+.apcard > .maker-say:empty { display: none; }
+.apcard .apticks .amb-pill { white-space: normal; }
+.apdet { display: grid; gap: var(--amb-space-3); }
+.apdet[hidden] { display: none; }
+.aprefused > span > span { display: block; }
+.apbar { position: sticky; z-index: 5; bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); }
+@media (min-width: 960px) { .apbar { bottom: var(--amb-space-4); } }
+.apbar__acts { display: flex; gap: var(--amb-space-2); flex: none; }
