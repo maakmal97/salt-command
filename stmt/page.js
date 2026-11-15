@@ -1831,7 +1831,7 @@ function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
   /* 16 Nov 2026, THE MOVE TO AMBIENT: the card is one notice. Whether the Counter is open is its title and the line under it follows, then his
      notice, a line at a time, with Pause. The clock is the hero's own time line now, so the card does not say the time twice. */
-  return '<div id="today" class="amb-notice"' + wl("today.aria") + ">" + AMB.glyph("info")
+  return '<div id="today" class="amb-notice"' + (lines.length ? "" : " hidden") + wl("today.aria") + ">" + AMB.glyph("info")
     + '<span><span id="todayOpen" class="amb-notice__title" hidden></span><span id="todayLine" class="hblock" hidden></span>'
     + '<span id="bull" class="hnote hblock"' + (lines.length ? "" : " hidden") + ">" + wt("span", 'class="amb-notice__title"', "bull.h")
     + '<span class="hlines">' + lines.map((l, i) => '<span class="hline"' + (i ? " hidden" : "") + ">" + esc(l) + "</span>").join("") + "</span>"
@@ -2316,12 +2316,14 @@ const CLIENT_JS = `
     var box=document.getElementById('bull'); if(!box) return;
     [].forEach.call(box.querySelectorAll('.hline'),function(p,i){ p.hidden=!bullAll&&i!==bullAt; });
   }
+  /* the card stands only while it has something to say: the hours read, or a notice */
+  function todayShow(){ var t=document.getElementById('today'), o=document.getElementById('todayOpen'), b=document.getElementById('bull'); if(t&&o&&b) t.hidden=o.hidden&&b.hidden; }
   function bullTurn(){ var n=(BULL.lines||[]).length; if(bullHeld||n<2) return; bullAt=(bullAt+1)%n; bullShow(); }
   function bullDraw(b){
     BULL=b||{lines:[]};
     var box=document.getElementById('bull'); if(!box) return;
     var lines=BULL.lines||[], still=bullStill(), turns=lines.length>1&&!still;
-    box.hidden=!lines.length;
+    box.hidden=!lines.length; todayShow();
     var ls=box.querySelector('.hlines'), pz=box.querySelector('.hpause');
     ls.textContent='';
     if(bullAt>=lines.length) bullAt=0;
@@ -2346,7 +2348,7 @@ const CLIENT_JS = `
   function todayDraw(){
     var chip=document.getElementById('todayOpen'), line=document.getElementById('todayLine'); if(!chip||!line) return;
     var h=counterHours, known=!!h&&!hoursError&&typeof h.open==='boolean';
-    chip.hidden=!known; line.hidden=!known;
+    chip.hidden=!known; line.hidden=!known; todayShow();
     if(!known){ chip.textContent=''; line.textContent=''; return; }
     chip.textContent=tw(h.open?'today.open':'today.closed');
     line.textContent='';
@@ -3732,7 +3734,6 @@ const CLIENT_JS = `
           {left:Uq(rw.left,p.unit), earned:Uq(rw.earned,p.unit), taken:Uq(rw.taken,p.unit)});
         var pc=rw.next!=null?Math.round(rw.next*100):null;
         var rr=hRow({tag:'li', meter:pc!=null, attrs:{'data-reward-book':p.product}, thumb:markThumb(p.product), title:pc!=null?tw('rew.next'):said, sub:pc!=null?said:'', amount:pc!=null?pc+'%':''});
-        rr.firstChild.appendChild(el('span','amb-vh',pshape(p.product)));
         if(pc!=null) rr.appendChild(hMeter(pc));
         var ru=el('ul','amb-list amb-list--ruled'); ru.appendChild(rr); pane.appendChild(ru); led=true;
         /* R3 (plan version 6): the first-week orders of people they brought in that counted toward it, a count and nothing else */
@@ -3903,7 +3904,14 @@ const CLIENT_JS = `
       row.setAttribute('data-join', r.id);
       row.appendChild(hList([hRow({tag:'li', thumb:hIconThumb('person'), title:r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours'),
         sub:hLinkSub(tw(JOIN_STATE[r.state]||'jn.used'),r.state==='open'?'amb-pos':null,'')})]));
-      if(r.state==='open') row.appendChild(hLinkPlate(r.url));
+      if(r.state==='open'){
+        var acts=el('div','amb-cluster'), cp=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.copy')); cp.type='button';
+        cp.addEventListener('click', async function(){
+          try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }
+          setTimeout(function(){ cp.textContent=tw('lnk.copy'); },1500);
+        });
+        acts.appendChild(cp); row.appendChild(acts);
+      }
       sec.appendChild(row);
     });
     if(myJoinNote) sec.appendChild(hSay(myJoinNote,'','','live'));
@@ -6635,7 +6643,6 @@ const CLIENT_JS = `
       if(when) sub.appendChild(el('span',late?'amb-neg':null,when));
       if(x.p&&x.p.cover){ if(when) sub.appendChild(document.createTextNode('. ')); sub.appendChild(setW(el('span'),'part.cover')); }
       var u=unitsOf(d.q,unitFor(d.product)), r=hRow({tag:'li', attrs:{'data-inv':String(i)}, thumb:markThumb(d.product), title:d.friend?tw('part.BareF',{mark:'', u:u}).trim():u, sub:sub, amount:rm(x.fig)});
-      r.firstChild.appendChild(el('span','amb-vh',pshape(d.product)));
       if(i>=HOME_LINES){ r.hidden=!invMoreOpen; r.classList.add('invrest'); rest.push(r); }
       rows.push(r); sent+=x.own+x.acct;
     });
@@ -7234,7 +7241,7 @@ const CLIENT_JS = `
   }
   function markThumb(product,size){
     var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k), L=Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
-    var t=el('span','amb-thumb amb-thumb--ring amb-thumb--mark'+(size?' amb-thumb--'+size:'')+(b>=0&&b<6?' amb-kind-'+(b+1):'')); t.setAttribute('aria-hidden','true');
+    var t=el('span','amb-thumb amb-thumb--ring amb-thumb--mark'+(size?' amb-thumb--'+size:'')+(b>=0&&b<6?' amb-kind-'+(b+1):'')); t.setAttribute('aria-hidden','true'); t.setAttribute('data-shape',pshape(product));
     var svg=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
     svg.setAttribute('class','amb-thumb__shape'); svg.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._)); svg.appendChild(d); t.appendChild(svg);
     if(L&&L.l) t.appendChild(el('span','amb-thumb__word',L.l));
@@ -7247,7 +7254,7 @@ const CLIENT_JS = `
     var b=el(p.tag||'button','amb-row'+(p.meter?' amb-row--meter':'')); if(b.tagName==='BUTTON') b.type='button';
     Object.keys(p.attrs||{}).forEach(function(k){ b.setAttribute(k,p.attrs[k]); });
     if(p.thumb) b.appendChild(p.thumb);
-    var tx=el('span','amb-row__text'); tx.appendChild(hSlot('amb-row__title',p.title)); if(p.sub!=null&&p.sub!=='') tx.appendChild(hSlot('amb-row__sub',p.sub)); b.appendChild(tx);
+    var tx=el('span','amb-row__text'); if(p.thumb&&p.thumb.getAttribute('data-shape')) tx.appendChild(el('span','amb-vh',p.thumb.getAttribute('data-shape'))); tx.appendChild(hSlot('amb-row__title',p.title)); if(p.sub!=null&&p.sub!=='') tx.appendChild(hSlot('amb-row__sub',p.sub)); b.appendChild(tx);
     if(p.age||p.amount||p.act){
       var tr=el('span','amb-row__trail'+(p.age&&(p.amount||p.act)?' amb-row__trail--stack':''));
       if(p.age) tr.appendChild(el('span','amb-row__age',p.age));
@@ -7397,7 +7404,6 @@ const CLIENT_JS = `
     box.appendChild(hList(list.map(function(p){
       var s=supLit(p), sub=s.light!=='green'&&dmShort(s.by,'en')?tw('sup.by',{d:Dd(dmShort,s.by)}):'';
       var b=hRow({attrs:{'data-sup':p.product}, thumb:markThumb(p.product), title:hLight(s.light), sub:sub});
-      b.firstChild.appendChild(el('span','amb-vh',pshape(p.product)));
       b.addEventListener('click',function(){ placeShow('prices',true); var pn=supPanes[p.product]; if(pn&&pn.scrollIntoView) pn.scrollIntoView({block:'start'}); });
       return b;
     })));
@@ -7412,9 +7418,8 @@ const CLIENT_JS = `
        closure (S7R-2 of the stage 7 review). The size under the mark is said in its unit and the price a figure (C19, 29 Sep 2026) */
     box.appendChild(hList(list.slice(0,4).map(function(a){
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z={price:priceAt(P,a.q)};
-      var b=hRow({attrs:{'data-again':'1'}, thumb:markThumb(a.product), title:unitsOf(a.q,P.unit),
+      var b=hRow({attrs:{'data-hagain':'1'}, thumb:markThumb(a.product), title:unitsOf(a.q,P.unit),
         sub:a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})});
-      b.firstChild.appendChild(el('span','amb-vh',pshape(a.product)));
       b.addEventListener('click',function(){ if(a.start) goOrder(a.product,a.q); else againOpen(a,b); });
       return b;
     })));
@@ -7436,7 +7441,7 @@ const CLIENT_JS = `
     box.className='amb-mini'; box.setAttribute('data-live',o.id); box.hidden=tab!=='home';
     var th=markThumb(o.product,'sm'); box.appendChild(th);
     var tx=el('span','amb-mini__text'), waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
-    tx.appendChild(el('span','amb-mini__title',stateWord(o)));
+    tx.appendChild(el('span','amb-vh',pshape(o.product))); tx.appendChild(el('span','amb-mini__title',stateWord(o)));
     tx.appendChild(el('span','amb-mini__sub',stepWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));
     box.appendChild(tx);
     var go=el('button','amb-circle amb-circle--plain hlivego'); go.type='button'; go.setAttribute('aria-label',tw('hl.h')); go.appendChild(ambIcon('next'));
@@ -7527,7 +7532,7 @@ const CLIENT_JS = `
     /* the units of each mark, a row each: two books' units are never summed */
     box.appendChild(hList(ps.map(function(p){
       var b=hRow({tag:'li', attrs:{'data-year':p}, thumb:markThumb(p,'md'), title:unitsOf(+by[p].toFixed(2),'unit')});
-      b.firstChild.appendChild(el('span','amb-vh',pshape(p))); return b;
+      return b;
     })));
     return box;
   }

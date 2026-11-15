@@ -79,7 +79,7 @@ export async function run({ ok, pageWork }) {
     ok(units(v) === "5 units", "9b a grid point only leaves out is skipped (3, 4 and 4.5 never stepped on): " + units(v));
     /* the start tile */
     const fresh = await K.open({ ok, pageWork }); pages.push(fresh);
-    const tile = [...fresh.d.querySelectorAll("#pHome .htile")][1];
+    const tile = [...fresh.d.querySelectorAll("#pHome [data-hagain]")][1];
     tile.click(); await fresh.settle();
     const f = st(fresh, "Cube");
     ok(units(f) === "2.5 units" && fresh.d.activeElement === f.val, "9b a start tile sets its book's stepper to its size and focuses it: " + units(f));

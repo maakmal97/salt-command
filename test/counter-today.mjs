@@ -55,6 +55,8 @@ export async function run({ ok }) {
     const one = bare(false); one.d.defaultView.bullDraw({ lines: ["Only line"] });
     ok(one.d.querySelector("#bull .hpause").hidden && JSON.stringify(on(one.d)) === "[0]",
       "a notice of one line stands, with no Pause");
+    const none = bare(false); none.d.defaultView.bullDraw({ lines: [] });
+    ok(none.d.getElementById("today").hidden && !one.d.getElementById("today").hidden, "with no notice and no hours read the card is not drawn, and a notice brings it");
 
     /* ---- 3: no live region ---- */
     const live = [M.d, S.d].flatMap((d) => [...d.querySelectorAll("#today, #today *")].filter((e) => e.hasAttribute("aria-live") || /^(status|alert|log|marquee|timer)$/.test(e.getAttribute("role") || "")));

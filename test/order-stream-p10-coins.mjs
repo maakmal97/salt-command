@@ -35,14 +35,15 @@ export async function run({ ok, pageWork }) {
     ok(!!lo && lo.className === "salt-light" && /Available/.test(K.txt(lo)), "10b a green light is the plain dot");
     /* Home */
     p.d.querySelector('#tabs button[data-t="home"]').click(); await p.settle();
-    const sup = p.d.querySelector("#pHome .hsup");
-    ok(!!sup && !!sup.querySelector(".salt-coin.salt-coin--sm") && !!sup.querySelector(".salt-light") && !sup.querySelector(".pmark.sup"),
-      "10b Home's Availability rows carry the small coin and the light's dot and word");
+    /* 16 Nov 2026, the move to Ambient: Home's marks are the mark thumb ringed in the book's hue, and its light a chip with its dot and word */
+    const sup = p.d.querySelector("#pHome [data-sup]");
+    ok(!!sup && !!sup.querySelector(".amb-thumb--mark.amb-thumb--ring[class*='amb-kind-']") && !!sup.querySelector(".amb-chip[data-light] .amb-chip__dot") && !sup.querySelector(".pmark.sup"),
+      "10b Home's Availability rows carry the book's mark thumb and the light's chip, a dot and its word");
     const card = p.d.querySelector("#pOrder .mtile");
     ok(!!card && !!card.querySelector(".salt-coin.salt-coin--sm") && !card.querySelector("svg.psym"), "10b an order card's mark is the small coin");
     const fresh = await K.open({ ok, pageWork }); pages.push(fresh);
-    const tile = fresh.d.querySelector("#pHome .htile");
-    ok(!!tile && !!tile.querySelector(".salt-coin.salt-coin--lg") && !tile.querySelector("svg.psym"), "10b Home's start tiles carry the large coin");
+    const tile = fresh.d.querySelector("#pHome [data-hagain]");
+    ok(!!tile && !!tile.querySelector(".amb-thumb--mark.amb-thumb--ring") && !tile.querySelector("svg.psym"), "10b Home's order-again rows carry the book's mark thumb");
     /* the guest board */
     const html = P.boardPage({ prices: { week: { label: "this week" }, products: [{ product: "rice", unit: "unit", sizes: [{ q: 1, price: 8 }] }, { product: "gas", unit: "unit", sizes: [{ q: 1, price: 75 }] }] } }, "nonce10");
     const g = new JSDOM(html).window.document;

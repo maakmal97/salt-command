@@ -23,19 +23,20 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     const C = await open({ ok, pageWork, orders: [ord("ly1", "acknowledged", ago(2))], card: { at: ago(1), products: [{ product: "salt", loyal: { next: 0.7 } }] } });
     pages.push(C);
-    const box = C.d.querySelector("#hReward"), rc = box && box.querySelector(".hreward");
+    const box = C.d.querySelector("#hReward"), rc = box && box.querySelector('[data-reward="loyal"]');   /* 16 Nov 2026, the move to Ambient: a meter row, its mark the thumb */
     const tab = C.d.querySelector('button[data-t="card"]');
-    const rw = { head: t(box && box.querySelector(".hlab")), left: t(rc && rc.querySelector(".hreward__left")), pc: t(rc && rc.querySelector(".salt-meter__line b")),
-      fill: rc ? rc.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") : "", n: box ? box.querySelectorAll(".hreward").length : 0,
-      mark: !!(rc && rc.querySelector(".salt-coin, svg.psym")), tag: rc && rc.tagName, taps: rc ? rc.querySelectorAll("button,a,[tabindex]").length : -1, see: t(rc).includes("See your card"),
+    const mp = rc && rc.querySelector("progress.amb-meter");
+    const rw = { head: t(box && box.querySelector(".amb-section")), left: t(rc && rc.querySelector(".amb-row__sub")), pc: t(rc && rc.querySelector(".amb-row__amount")),
+      fill: mp ? String(mp.value) : "", n: box ? box.querySelectorAll("[data-reward]").length : 0,
+      mark: !!(rc && rc.querySelector(".amb-thumb--mark")), tag: rc && rc.tagName, taps: rc ? rc.querySelectorAll("button,a,[tabindex]").length : -1, see: t(rc).includes("See your card"),
       tab: !!tab && (tab.hidden || tab.closest("[hidden]") !== null) };
     ok(rw.head === "Your next reward" && rw.left === "70% of the way to your next unit" && rw.pc === "70%" && rw.fill === "70" && rw.n === 1 && rw.mark
-      && rw.tag === "DIV" && rw.taps === 0 && !rw.see && !/RM|unit[s]? to|[0-9]+\.[0-9]/.test(t(rc).replace("70%", "")) && rw.tab,
+      && rw.tag === "LI" && rw.taps === 0 && !rw.see && !/RM|unit[s]? to|[0-9]+\.[0-9]/.test(t(rc).replace("70%", "")) && rw.tab,
       "a customer sees the share of their next unit on Home, nothing to tap and no Rewards tab: " + JSON.stringify(rw));
     /* 2 */
     const N = await open({ ok, pageWork, orders: [ord("ly2", "acknowledged", ago(2))], card: { at: ago(1), products: [{ product: "salt" }] } });
     pages.push(N);
-    ok(!N.d.querySelector("#hReward .hreward"), "no loyal share, no reward card");
+    ok(!N.d.querySelector("#hReward [data-reward]"), "no loyal share, no reward card");
   } finally { for (const p of pages) p.close(); }
   /* 3 */
   const TF = await import("../tools/testfix.mjs"), all = TF.buildAll(new Date());

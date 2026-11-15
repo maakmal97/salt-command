@@ -112,15 +112,16 @@ export async function run({ ok }) {
   /* what is DRAWN: every text node a person can see, which leaves out what the reader alone is told (.sr), a mark's own letter (it is in the svg)
      and the page's script and style */
   const drawnText = (root) => { const out = [], tw = root.ownerDocument.createTreeWalker(root, 4);
-    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, svg")) out.push(n.nodeValue); }
+    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, .amb-vh, svg")) out.push(n.nodeValue); }
     return out.join(" ").replace(/\s+/g, " "); };
   /* the shape words drawn under root, each as many times as it stands (a mark whose shape word is drawn is a mark that is not alone) */
   const shapesDrawn = (root) => { const s = drawnText(root); return SHAPES.flatMap((w) => s.match(new RegExp("\\b" + w + "\\b", "g")) || []); };
   /* a mark with no name: the reader is told its shape by the heading's own label, by the .sr that follows it, or by its tile's .sr. A nameless mark is a hole. */
   /* plan version 10 (03 Nov 2026): a mark that stands alone is a coin (span.salt-coin), a mark under 28px keeps svg.psym; both are marks and both are named by their shape */
-  const MARKS = "svg.psym:not(.glyph), .salt-coin";
+  /* 16 Nov 2026, the move to Ambient: Home's and Rewards' marks are the mark thumb, named by a visually hidden shape word in its row (.amb-vh), never drawn */
+  const MARKS = "svg.psym:not(.glyph), .salt-coin, .amb-thumb--mark";
   const nameless = (d) => [...d.querySelectorAll(MARKS)].filter((s) => {
-    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack"), tsr = tile && tile.querySelector(".sr");
+    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack, .amb-row, .amb-mini"), tsr = tile && tile.querySelector(".sr, .amb-vh");
     return !((host && SHAPES.some((x) => host.getAttribute("aria-label").startsWith(x)))
       || (nx && nx.classList.contains("sr") && SHAPES.includes(t(nx))) || (tsr && SHAPES.some((x) => t(tsr).startsWith(x))));
   });
@@ -167,7 +168,7 @@ export async function run({ ok }) {
     const whyA = t(R0[A.id].querySelector(".ocard__what"));
     tab(S, "home");
     await until(() => /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))));
-    ok(whyA === "Waiting for us to confirm" && /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))),
+    ok(whyA === "Waiting for us to confirm" && /[Ww]aiting for us to confirm/.test(t(S.d.getElementById("hComing"))),
       "a placed order is waiting on the same words in the list's reason and on Home's Coming up: " + JSON.stringify([whyA, t(S.d.getElementById("hComing")).slice(0, 80)]));
 
     /* ---- 3: no word of the family in any text the page renders; Place and the order sheet driven too */
