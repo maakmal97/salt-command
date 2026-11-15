@@ -35,5 +35,6 @@
 <symbol id="amb-store" viewBox="0 0 24 24"><path d="M4 9.5L5.5 4h13L20 9.5M4 9.5a2.67 2.67 0 0 0 5.33 0 2.67 2.67 0 0 0 5.34 0 2.67 2.67 0 0 0 5.33 0M5.5 12.5V20h13v-7.5M10 20v-4.5h4V20"/></symbol>
 <symbol id="amb-tag" viewBox="0 0 24 24"><path d="M3.5 12V5a1.5 1.5 0 0 1 1.5-1.5h7l8.5 8.5a1.5 1.5 0 0 1 0 2.12l-6.38 6.38a1.5 1.5 0 0 1-2.12 0z"/><circle cx="8.25" cy="8.25" r="1.5"/></symbol>
 <symbol id="amb-star" viewBox="0 0 24 24"><path d="M12 3l2.41 6.28 6.72.35-5.23 4.24 1.74 6.5L12 16.7l-5.64 3.67 1.74-6.5-5.23-4.24 6.72-.35z"/></symbol>
+<symbol id="amb-bell" viewBox="0 0 24 24"><path d="M12 2.5V4M6 15.5V10a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10.25 19.5a1.75 1.75 0 0 0 3.5 0"/></symbol>
 <symbol id="amb-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
 </svg>

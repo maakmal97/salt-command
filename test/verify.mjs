@@ -15786,7 +15786,9 @@ await (async () => {
     ok(!!sh() && /Order placed/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
       "Place answers in the sheet, Order placed, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
     ok(!/notification|buzz/i.test(sh().textContent) && !bellBox.hidden && bellBox.classList.contains("cbell--off") && !call.hidden
-      && call.textContent === "Turn on notifications" && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
+      /* 16 Nov 2026, the move to Ambient (0.7.3): the call is the app bar's own, two words seen and the whole sentence its name */
+      && call.textContent === "Turn on" && call.getAttribute("aria-label") === "Turn on notifications" && call.classList.contains("amb-pill--bar")
+      && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
       "Sent asks nothing about notifications; the bell is marked with its call beside it, and drawing them asks the browser nothing: " + st.asked);
     call.click();
     for (let i = 0; i < 100 && !(st.subscribed.length && call.hidden); i++) await new Promise((r) => setTimeout(r, 30));
