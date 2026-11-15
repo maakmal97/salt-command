@@ -37,7 +37,7 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet(); return p;
   };
   const editPosts = (p) => p.posts.filter((x) => x.route === "/all/maker/inputs/edit").map((x) => x.body);
-  const inMarket = (p) => shown(p.d.getElementById("makerMarket")) && [...p.d.querySelectorAll('.aparts[data-place="shop"] button[aria-selected="true"]')].map((b) => b.getAttribute("data-part")).join() === "market";
+  const inMarket = (p) => shown(p.d.getElementById("makerMarket")) && [...p.d.querySelectorAll('.aparts[data-place="shop"] button[aria-pressed="true"]')].map((b) => b.getAttribute("data-part")).join() === "market";
   const sheet = (p) => p.d.getElementById("ynSheet");
   const yes = async (p) => { const go = p.d.getElementById("ynGo"); if (go) go.click(); await p.work.quiet(); };
 
@@ -79,7 +79,7 @@ export async function run({ ok, pageWork }) {
     const p = await open();
     enter(p.d, "shop", "market"); await p.work.quiet();
     const sw = byAct(p.d, "market.switch");
-    const on0 = sw.getAttribute("aria-checked");
+    const on0 = String(sw.checked);
     sw.click(); await p.work.quiet();
     ok(sheet(p) && editPosts(p).length === 0, "a tap on the switch asks first and sends nothing");
     state.marketWaiting = [{ kind: "marketOff" }];

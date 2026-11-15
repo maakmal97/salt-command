@@ -40,7 +40,7 @@
  {"name":"the lock keeps the slip key","file":"stmt/owner.js","find":"makerVaultTurn++; makerVault=null;","replace":"makerVaultTurn++; makerVault={base:null,names:{},places:{},slip:makerVault&&makerVault.slip};"},
  {"name":"the lock leaves the names beside the codes","file":"stmt/owner.js","find":"var names=makerVault&&makerVault.names;","replace":"if(!makerVault) return; var names=makerVault.names;"},
  {"name":"the lock leaves the gates open","file":"stmt/owner.js","find":"[].forEach.call(document.querySelectorAll('[data-vault-gate]'),makerVaultDraw);","replace":"void 0;"},
- {"name":"the lock leaves the Show names switch on (1 Nov 2026: re-aimed from the vaultOn row, gone since v1260)","file":"stmt/owner.js","find":"if(vsw) vsw.setAttribute('aria-checked',String(!!makerVault));","replace":"if(vsw) vsw.setAttribute('aria-checked','true');"},
+ {"name":"the lock leaves the Show names switch on","file":"stmt/owner.js","find":"if(vsw) vsw.checked=!!makerVault;","replace":"if(vsw) vsw.checked=true;"},
  {"name":"the lock leaves the Shop state open","file":"stmt/owner.js","find":"state.textContent=makerVault?'Open on this phone':'Locked';","replace":"state.textContent='Open on this phone';"},
  {"name":"the lock leaves the pictures","file":"stmt/owner.js","find":"makerSlipClose(); vaultShut(true);","replace":"vaultShut(true);"},
  {"name":"the lock leaves the Sheet open","file":"stmt/owner.js","find":"makerSlipClose(); vaultShut(true);","replace":"makerSlipClose();"},
@@ -63,5 +63,5 @@
  {"name":"the place form stops naming the day the point was filed","file":"stmt/owner.js","find":"+(day?', filed '+day:'')+'.';","replace":"+'.';"},
  {"name":"a gazetteer place is refused at Add ID again","file":"stmt/owner.js","find":"for(var i=0;!said&&result.how==='list'&&i<parts.length;i++){","replace":"for(var i=0;false;i++){"},
  {"name":"a gazetteer locality the page verified is not public to the saved entry","file":"stmt/owner.js","find":"if(makerGeo.official().indexOf(word)>=0||makerVerifiedWords.has(word))return true;","replace":"if(makerGeo.official().indexOf(word)>=0)return true;"},
- {"name":"the switch does not follow the lock","file":"stmt/owner.js","find":"var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.setAttribute('aria-checked',String(!!makerVault));","replace":""}
+ {"name":"the switch does not follow the lock","file":"stmt/owner.js","find":"var vsw=document.getElementById('vaultSwitch'); if(vsw) vsw.checked=!!makerVault;","replace":""}
 ]

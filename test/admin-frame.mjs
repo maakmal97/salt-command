@@ -67,9 +67,9 @@ export async function run({ ok, pageWork }) {
     ok(has("#roster", "amb-shell") && has("#roster", "amb-shell--rail") && has("#roster > main", "amb-screen") && has("#roster > main", "amb-screen--docked")
       && !d.querySelector("#roster.salt-frame, .salt-frame__main, .salt-frame__bar") && d.querySelector("#roster > .amb-dock > nav.amb-tabbar") !== null,
       "F2.1 his shell is Ambient's: its screen the one scroll box, docked, and its dock the places; no salt-ds frame");
-    /* 16 Nov 2026, the move to Ambient (place F): Needs you's card (#nopen) is drawn in Ambient's split (the record's column #nrecord), so it no longer carries salt-pane */
-    const panes = ["#aopen", "#makerReview", "#makerChatOpen", "#makerDayPane"].filter((s) => !has(s, "salt-pane"));
-    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord"), "F2.2 every record that opens beside a list keeps its place (an account, an order, a thread, Shop's open day) for its builder's split, and Needs you's card has its column in Ambient's split; not: " + J(panes));
+    /* 16 Nov 2026, the move to Ambient (places F and I): Needs you's card (#nopen) is drawn in the record's column #nrecord of Ambient's split, and Shop's open day is the second stack of Ambient's panes; neither carries salt-pane */
+    const panes = ["#aopen", "#makerReview", "#makerChatOpen"].filter((s) => !has(s, "salt-pane"));
+    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (an account, an order, a thread) for its builder's split, Needs you's card has its column in Ambient's split and Shop's open day is a stack of Ambient's panes; not: " + J(panes));
     const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
     ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),
       "F3.1 nothing sizes a frame any more: no --salt-frame-h, no frame column, no .gate.adm");
@@ -137,17 +137,18 @@ export async function run({ ok, pageWork }) {
       enter(d, "record", "entry"); await p.work.quiet();
       await click(byAct(d, "record.form", "sale-or-purchase"));
       const send = byAct(d, "record.trade.send"), mf = send && send.parentElement;
-      ok(!!mf && mf.classList.contains("salt-pane__foot") && mf.parentElement.matches("section.maker-input") && mf.parentElement.closest(".recpane.salt-pane") !== null,
-        "F9.1 a Record form's one pill is its foot, a child of the form, in the pane: " + (mf ? mf.className : "none"));
+      ok(!!mf && mf.classList.contains("amb-foot") && mf.parentElement.matches("section.maker-input") && mf.parentElement.closest(".recpane.amb-stack") !== null,
+        "F9.1 a Record form's one pill is its amb-foot, a child of the form, in the pane's stack: " + (mf ? mf.className : "none"));
       const loan = byAct(d, "record.loan.send");
-      ok(!!loan && loan.parentElement.classList.contains("salt-pane__foot") && [...d.querySelectorAll(".mfoot .salt-ghost:not([hidden])")].length === 0,
+      ok(!!loan && loan.parentElement.classList.contains("amb-foot") && [...d.querySelectorAll(".mfoot .amb-pill--quiet:not([hidden]), .mfoot .salt-ghost:not([hidden])")].length === 0,
         "F9.2 every form's pill is its foot (the loan's too), and no ghost but a half-sent Discard stands in a foot");
       enter(d, "shop", "notice"); await p.work.quiet();
       const set = byAct(d, "notice.set");
       enter(d, "shop", "hours"); await p.work.quiet();
       const save = byAct(d, "points.save");
-      ok(!!set && set.parentElement.classList.contains("salt-pane__foot") && !!save && save.parentElement.classList.contains("salt-pane__foot"),
-        "F10.1 Shop's Set the notice and Save the points are feet: " + J([set && set.parentElement.className, save && save.parentElement.className]));
+      /* 16 Nov 2026, the move to Ambient (place I): Set the notice is its part's one foot; Save the points is the Points section's own filled pill, the Hours stack keeping the open day's Done as its one foot */
+      ok(!!set && set.parentElement.classList.contains("amb-foot") && !!save && save.classList.contains("amb-pill") && !!save.closest(".apoints-save") && !save.closest(".amb-foot"),
+        "F10.1 Shop's Set the notice is a foot and Save the points the section's one pill: " + J([set && set.parentElement.className, save && save.parentElement.className]));
       enter(d, "needs"); await p.work.quiet();
       /* an order's open card draws no ways of its own: the order's card under it carries them, its stage pill in its foot */
       await click(d.querySelector("#nlist [data-need=\"o:ord-p1\"] .need-tap"));

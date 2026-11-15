@@ -64,7 +64,7 @@ export async function run({ ok, pageWork }) {
     await click("nav.shop"); await click("part.shop.hours");
     /* 26 Oct 2026 (Hours as settings): the confirm time is a row of Now, its figure beside it, how many measured said to a reader */
     const band = d.getElementById("makerConfirm"), fig = band && band.querySelector('[data-glance="confirm"]');
-    ok(!!fig && fig.getAttribute("data-confirm") === "45" && t(fig) === "45 min" && /^30 measured/.test(t(band.querySelector(".sr"))),
+    ok(!!fig && fig.getAttribute("data-confirm") === "45" && t(fig) === "45 min" && /^30 measured/.test(t(band.querySelector(".amb-vh"))),
       "Shop hours draws his confirm time and how many are measured: " + t(band));
   } finally { p.w.close(); }
 
@@ -73,7 +73,7 @@ export async function run({ ok, pageWork }) {
     await q.work.quiet();
     byAct(q.d, "nav.shop").click(); await q.work.quiet(); byAct(q.d, "part.shop.hours").click(); await q.work.quiet();
     const band = q.d.getElementById("makerConfirm"), fig = band && band.querySelector('[data-glance="confirm"]');
-    ok(!!fig && t(fig) === "Not yet" && /^7 measured; customers see a figure from 10[.]$/.test(t(band.querySelector(".sr"))) && !band.querySelector("[data-confirm]"),
+    ok(!!fig && t(fig) === "Not yet" && /^7 measured; customers see a figure from 10[.]$/.test(t(band.querySelector(".amb-vh"))) && !band.querySelector("[data-confirm]"),
       "under ten measured, it says so and draws no figure: " + t(band));
   } finally { q.w.close(); }
 }

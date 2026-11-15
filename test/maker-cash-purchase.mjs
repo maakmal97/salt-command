@@ -157,7 +157,7 @@ export async function run({ ok }) {
     const card = () => cardOf(doc, id);
     const button = (test) => card() && [...card().querySelectorAll("button")].find((b) => test(b.textContent));
     const fieldIn = (root, label) => {
-      const wrap = root && [...root.querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label") && l.querySelector(".lbl, .salt-settings__label").textContent === label);
+      const wrap = root && [...root.querySelectorAll("label, div.amb-field")].find((l) => l.querySelector(".lbl, .salt-settings__label, .amb-field__label") && l.querySelector(".lbl, .salt-settings__label, .amb-field__label").textContent === label);
       return wrap && wrap.querySelector("input, select");
     };
     const settle = async (n) => { await until(() => posts.length >= n); await pause(); };

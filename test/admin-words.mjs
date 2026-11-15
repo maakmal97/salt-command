@@ -397,7 +397,7 @@ export async function run({ ok, pageWork }) {
   const drawnWords = (root) => {
     const out = [], walk = root.ownerDocument.createTreeWalker(root, 4);
     /* 22 Oct 2026: a book's typed Product tag is the one place its name is drawn on Salt Admin (his answer on the Needs you canvas), so its words are read apart */
-    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag, .amb-chip[class*='amb-kind-']") && !par.closest(".salt-producttag, .amb-chip[class*='amb-kind-']").querySelector("svg")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
+    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]") && !par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]").querySelector("svg:not(.amb-icon)")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
     root.querySelectorAll("[aria-label],[title],[placeholder],[alt]").forEach((e) => ["aria-label", "title", "placeholder", "alt"].forEach((a) => { if (e.getAttribute(a)) out.push([e.getAttribute(a), a === "aria-label"]); }));
     return out;
   };

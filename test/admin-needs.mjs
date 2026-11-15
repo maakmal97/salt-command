@@ -114,7 +114,7 @@ export async function run({ ok, pageWork }) {
       const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       /* 2 Nov 2026 (Orders on the canvas): Approve and Payments have no tab in the Segment; the part showing is the one whose section is in view */
       const seen = (k) => { const s = d.querySelector('[data-in="orders.' + k + '"]'); for (let e = s; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!s; };
-      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => (place === "orders" ? ["approve", "payments", "group", "ledger"].find(seen) || "" : "") }).getAttribute("data-part");
+      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"], .aparts[data-place="' + place + '"] [aria-pressed="true"]') || { getAttribute: () => (place === "orders" ? ["approve", "payments", "group", "ledger"].find(seen) || "" : "") }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     /* the 5-second read, as the page set it: the one live interval of that length */

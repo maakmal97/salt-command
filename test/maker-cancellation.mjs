@@ -92,8 +92,8 @@ export async function run({ ok, pageWork }) {
   });
   try {
     const window = browser.window, doc = window.document;
-    const field = (root, name) => [...root.querySelectorAll("label")]
-      .find((l) => l.querySelector(".lbl, .salt-settings__label")?.textContent === name)?.querySelector("input,select");
+    const field = (root, name) => [...root.querySelectorAll("label, div.amb-field")]
+      .find((l) => l.querySelector(".lbl, .salt-settings__label, .amb-field__label")?.textContent === name)?.querySelector("input,select");
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((s) => s.querySelector("h3")?.textContent === "Correct a row");
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };

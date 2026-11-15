@@ -426,8 +426,11 @@ const PAGE_CSS = `
    a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
    a part has hidden leaves no gap behind it. */
 .adm .aplace{min-width:0}
-.adm #oOrders,.adm #oRecord{max-width:760px}
+.adm #oOrders{max-width:760px}
 .adm .aparts{margin:0 0 20px}
+.adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
+.adm .nkinds{margin:0 0 16px;padding:0;gap:0}
+.adm #makerBulletinCurrent{overflow-wrap:anywhere}
 .adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 2 Nov 2026 (his Orders canvas): the Segment of four stands 16px over the lead, the lead 24px over the list and the list 24px over More, Shop's grid */
@@ -464,7 +467,6 @@ const PAGE_CSS = `
 @media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
 @media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
 .adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}
-.adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 /* 22 Oct 2026 (canvas Needs you): the Agree inputs two by two, Goods and Delivery, then When and Other across both */
 /* 2 Nov 2026 (his Orders canvas, page 2, "The open order, both sides"): the open order on Shop's grid, no card around it: its parts 24px apart, every glass
    edge on the column's edge, the stage's pill 16px under its group, the figures two by two (four across in a column of their own) */
@@ -490,55 +492,15 @@ const PAGE_CSS = `
 .adm .maker-field .lbl{margin-top:0}
 /* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
    The recipe sets the tile, its 44px and its chosen edge; the page only gives the group the row to itself in a row of fields. */
-.adm .maker-tiles{flex:1 1 100%;min-width:0}
-.adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
-.adm .maker-row--3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.adm .maker-row .salt-option__face{justify-content:center;padding-inline:8px}
-.adm .maker-row .salt-option__label,.adm .maker-tiles .salt-options__grid--2 .salt-option__label{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm .maker-marks .salt-option__face{justify-content:center}
-.adm .maker-sizes{flex:1 1 100%;min-width:0}
-.adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
-.adm .maker-sizes .salt-option__label{flex-wrap:nowrap;white-space:nowrap}
-.adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
-.adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
-.adm .maker-cover-row{display:flex;align-items:center;gap:10px}
-.adm .maker-cover__said{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
-.adm .maker-cover__words,.adm .maker-cover__held{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .maker-cover__held:empty{display:none}
-.adm .maker-cover__fig{flex:none;white-space:nowrap;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
-.adm .reading-head{margin:12px 0 0}
 /* 25 Oct 2026 (Record redesign P5): the row chosen is a card of one height, its reference and when on line one, its typed book and who on line two, its total at the
    right; the changes made ready a ledger; a move of its History one line, its Undo at the right */
-.adm .rowcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;box-sizing:border-box;height:76px;padding:12px 14px;margin:12px 0 0}
-.adm .rowcard[hidden]{display:none}
 /* 25 Oct 2026 (Record redesign P6): a reward held or an offset offered stacks as cards; what is left on a loan one ledger line, its figure at the right */
 .adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column;gap:10px}
 .adm .maker-reward .salt-action__go,.adm .maker-offer .salt-action__go{flex-direction:column;align-items:stretch;gap:6px}
-.adm .repay-left{grid-column:1/-1}
-.adm .repay-left[hidden]{display:none}
 /* 25 Oct 2026 (Record redesign P7): the code a new customer gets, and a changed one's code after, one ledger line, the code in mono at the right */
-.adm .codeline{grid-column:1/-1;margin:8px 0 0}
-.adm .codeline[hidden]{display:none}
-.adm .codeline .salt-ledger__value{white-space:nowrap}
-.adm .codeline .codeline__code{font-family:var(--salt-font-mono)}
-.adm .repay-left .salt-ledger__value{white-space:nowrap}
-.adm .rowcard__kind{grid-column:1;grid-row:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-.adm .rowcard__rid{color:var(--salt-brass)}
-.adm .rowcard__who{grid-column:1;grid-row:2;display:flex;align-items:center;gap:8px;min-width:0}
-.adm .rowcard__code{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono)}
-.adm .rowcard__fig{grid-column:2;grid-row:1/3;white-space:nowrap;font-family:var(--salt-font-mono);font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums}
-.adm .maker-changes{grid-column:1/-1;flex:1 1 100%}
-.adm .maker-changes .salt-ledger__value{white-space:nowrap}
 .adm [data-form="correct-a-row"] .undomove{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;border-bottom:1px solid var(--salt-line-faint)}
 .adm [data-form="correct-a-row"] .undomove>.maker-facts{flex:1 1 auto;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm [data-form="correct-a-row"] .undomove>button{flex:none;margin:0}
-.adm .reading-rows .salt-ledger__line{align-items:baseline}
-.adm .reading-rows .salt-ledger__label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .reading-rows .salt-ledger__value{flex:none;white-space:nowrap;text-align:right}
-.adm .reading-rows .salt-ledger__flag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .reading-rows .reading-bad{color:var(--salt-ember)}
-.adm .maker-cover-row .maker-cover{flex:1 1 auto;min-width:0}
-.adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 /* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
 .adm #oLedger{display:flex;flex-direction:column;gap:24px}
 .adm #oLedger .lead{margin:0}
@@ -558,84 +520,20 @@ const PAGE_CSS = `
 /* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
-.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 128px;align-items:center;gap:12px;padding:0 8px}
 /* 25 Oct 2026 (his Shop canvas): a date's name is wider than a weekday's, so the dates keep their own column */
-.adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}
-.adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
-.adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
-.adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
-.adm .maker-bar{background:var(--salt-brass)}
-.adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}
-.adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .maker-day-times.off{color:var(--salt-mist-bright)}
-.adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
-.adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
-.adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
-@media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
 /* 25 Oct 2026 (his Shop canvas): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
-.adm .apoints-save{display:flex;margin:8px 0 0}
 /* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
-.adm #oLook .adev-note{margin:8px 4px 0}
-.adm #oLook .adev-note:empty{display:none}
-/* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
-   day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
-.adm .hpane{display:none}
-@media (min-width:860px){
-  .adm #oShop{max-width:none}
-  .adm #makerConfirm .shconfirm{grid-column:auto}
-  .adm .hsplit{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
-  .adm .hpane{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px;padding:20px;box-sizing:border-box;margin-top:calc(0.75rem * 1.4 + 10px)}
-}
-@media (min-width:1440px){.adm .hsplit{grid-template-columns:minmax(0,1fr) 420px}}
 /* 26 Oct 2026, his word ("the same design language", iPad and Mac included): Practice, Notice and This device are lists of settings; from
    860px one readable column, as a Mac's settings, never spread across the width */
-.adm #mTest{display:flex;flex-direction:column}
-.adm .atest-u,.adm .atest-pwv{font-family:var(--salt-font-mono)}
-@media (min-width:860px){.adm #mTest,.adm #makerBulletin,.adm #oLook{max-width:640px}}
-.adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
-.adm #makerBulletinCurrent{overflow-wrap:anywhere}
-.adm #makerBulletin{display:flex;flex-direction:column}
-.adm .anotice-lines{display:contents}
 /* 26 Oct 2026 (his word): Hours in the same language. The week and the dates are lists, a row a day; the open day's rows and Now's hold are
    rows of a list; a group after a group stands 24px down; from 860px every part of Shop is one 640px column, the open day beside the week */
-.adm #makerNowCard{margin:0 0 24px}
-.adm #makerNowCard>.msg:empty{display:none}
-.adm .anow-hold{display:contents}
 .adm .anow-src{color:var(--salt-mist-bright)}
 .adm .ahold-seg{flex:0 0 180px}
 /* 27 Oct 2026: a choice of two or three words in a row of Record's forms, as Hold as is on Hours */
-.adm .mseg{flex:1 1 220px;max-width:260px;min-width:0}
-.adm .anow-set,.adm .maker-done,.adm .apoints-save{display:flex;margin:16px 0 0}
-.adm .anow-set>.salt-pill,.adm .maker-done>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
-.adm .maker-week .maker-day{padding:0;min-height:52px;border-top:1px solid var(--salt-line-faint);border-radius:0}
-.adm .maker-week .maker-week-scale{padding:0;min-height:36px}
-.adm .maker-day[aria-expanded=true] .maker-day-name{color:var(--salt-brass)}
-.adm .maker-dayedit{margin:24px 0 0}
-.adm .maker-dayedit select{flex:0 0 120px;min-height:44px}
-.adm .maker-dayedit-times .maker-plus1{flex:none}
-.adm .maker-dayedit-acts,.adm .maker-copy,.adm .maker-keep{margin-top:16px}
-.adm .maker-dates .salt-settings__row>.salt-field__input{flex:0 1 180px}
-.adm .apoints-sec,.adm #mHelp{margin:24px 0 0}
-.adm .apoints-code{font-family:var(--salt-font-mono)}
-.adm .apoints-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;color:var(--salt-mist-bright);cursor:pointer}
-.adm .apoints-x:hover,.adm .apoints-x:focus-visible{color:var(--salt-ember)}
-.adm .apoints-add .salt-field__input{flex:0 1 240px}
-.adm .apoints-found{display:contents}
-.adm .apoints-hit .salt-settings__value{min-width:0;max-width:55%;overflow:hidden;text-overflow:ellipsis}
-.adm .apoints-hit[aria-selected=true]{outline:2px solid var(--salt-brass);outline-offset:-2px}
 .adm .ahelp-list .ahelp__q:first-of-type{margin-top:0;border-top:0}
 .adm .ahelp-list .ahelp__sum{min-height:56px}
-@media (min-width:860px){
-  .adm #makerNowCard,.adm .apoints-sec,.adm #mHelp{max-width:640px}
-  .adm .hsplit{grid-template-columns:minmax(0,640px) minmax(300px,380px)}
-  .adm .hpane{padding:0;margin-top:0}
-  .adm .hpane .maker-dayedit{margin:0}
-}
-.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;margin:0}
-.adm .anotice-foot{margin-top:16px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -658,8 +556,6 @@ const PAGE_CSS = `
 .adm .maker-slipbox.open .maker-slip-open .maker-slip{max-height:none;width:100%}
 /* 12 OCT 2026 (PHASE 4b): THE ONE UNLOCK. A place that needs it says Locked in the page's small line with the one Unlock beside it (44px, the ghost's own); a name put beside
    a code is quieter than the code and wraps under it when the row is narrow */
-.adm .maker-lock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.adm .maker-lock .msg{margin:0;min-height:0}
 .adm .maker-name{margin-left:8px;font-weight:400;color:var(--salt-text-muted)}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}
@@ -680,9 +576,6 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfig--mine{color:var(--salt-ember)}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-@media (min-width:1080px){
-  .adm #oShop{max-width:760px}
-}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
    (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
    column says Choose a card to see it in full (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
@@ -732,30 +625,7 @@ body.ended>*:not(#aEnded){display:none}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
    short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
    columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
-@media (min-width:768px) and (max-width:859.98px){
-  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
-  .adm .maker-input>*{grid-column:1/-1}
-  .adm .maker-input>.maker-field--short{grid-column:auto}
-}
-/* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
-   #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
-   the menu's place and has its way back, and the pane's invitation is not drawn. From 860px up to the rail's 1080 the page widens for Record's forms
-   as it does for Orders, the rows to approve keeping their 600px column. */
-.adm .recgrid{display:block}
-.adm .recpane>.rnone{margin:0}
-@media (max-width:859.98px){
-  .adm .recgrid.open .reclist,.adm .recnone{display:none}
-}
-@media (min-width:860px){
-  .adm #oRecord{max-width:none}
-  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
-  .adm .recgrid.open .recnone{display:none}
-  .adm .recpane{overflow-y:auto}
-  .adm #makerFormBack{display:none}
-}
-@media (min-width:860px) and (max-width:1079.98px){
-  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-}
+/* 16 Nov 2026, the move to Ambient: Record's menu and its form are Ambient's panes (design/site.css lays only the invitation's and the way back's stand-down); the rows to approve keep their 600px column from 860px */
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): FROM 1080px THE PAGE USES THE LAPTOP'S WIDTH. Shop is one column of 760px (it was 600), the rows to approve lie two up (the
    queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
    beside its list. Nothing opens by itself: the column beside the threads is empty until a tap. */
@@ -773,29 +643,16 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ofoot:has(>.ordlead:empty){display:none}
 @media (min-width:1180px){.adm .ordcols--2~.ofoot>.ordlead{width:calc(50% - 12px)}}
 /* a form's foot: its pill, Discard beside it while an entry is half sent */
-.adm .mfoot{flex-direction:row;flex-wrap:wrap;align-items:center}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 /* 25 Oct 2026 (Record redesign P1): the parts a text tab row of three, and a form's row one shape and one height: its name and one line in the display face, a count of
    what it holds at the right where its read has one, then the way in; nothing on it wraps */
-.adm .rparts{margin:0 0 20px;padding:0;gap:0}
-.adm .rparts>.aparts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;margin:0;flex:1 1 auto}
 /* 27 Oct 2026: a form's row is the system's settings row (Shop's This device), one list a group, and the page adds nothing to it */
 /* 25 Oct 2026 (Record redesign P2): an unsent entry is Needs you's card, its pill the phone's size beside the menu at every width; opened, its sentence and its
    second choices two up under it */
-.adm .reclist .ncard{grid-template-columns:minmax(0,1fr) 72px 88px;gap:6px 8px;padding:12px;height:76px}
-.adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}
 /* 25 Oct 2026 (Record redesign P3): A FORM IS TWO COLUMNS AT EVERY WIDTH, a short field (a number, a date, a time, and the sale's Who) beside the next, all else across;
    a label one line, a figure in mono set right, and the form's one pill across the foot on a phone, 240px at its right edge beside the menu */
-.adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;align-items:start}
-.adm .maker-input>*{grid-column:1/-1;min-width:0}
-.adm .maker-input>.maker-field--short{grid-column:auto;min-width:0}
 .adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .maker-input input[type=number]{text-align:right}
 /* 5 Nov 2026 (the pane): the pill is in the form's pinned foot; it crosses the foot on a phone and stands 240px at its right edge from 860px, as before */
-.adm .maker-input>.mfoot{margin-top:16px}
-.adm .maker-input>.mfoot>.btn.salt-pill{flex:1 1 auto;width:auto;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (min-width:860px){.adm .maker-input>.mfoot{justify-content:flex-end}.adm .maker-input>.mfoot>.btn.salt-pill{flex:0 1 auto;min-width:240px;max-width:100%}}
-.adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .unsent-open{display:flex;flex-direction:column;gap:10px}
 .adm .unsent-card .need-tap{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-width:0;cursor:pointer;font:inherit;color:inherit}
 .adm .unsent-card .need-tap::after{content:"";position:absolute;inset:0}
@@ -811,7 +668,6 @@ body.ended>*:not(#aEnded){display:none}
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
 /* 22 Oct 2026 (canvas Needs you): the kinds' tab row, the Nav bar's link laid out as equal 48px tabs, the count in brass beside the word */
-.adm .nkinds{margin:0 0 16px;padding:0;gap:0}
 .adm .nktab{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:48px;margin:0;padding:0 12px;background:none;border:0;border-bottom:2px solid transparent;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;overflow:hidden}
 .adm .nktab__n{color:var(--salt-brass)}
 .adm .nktab:hover:not(:disabled),.adm .nktab:focus-visible{background:var(--salt-glass-hover);color:var(--salt-salt)}
@@ -821,8 +677,6 @@ body.ended>*:not(#aEnded){display:none}
    figure at the right, no note, the value with no top margin so the row centres: Ready and To approve side by side, Receivables under them with the
    meter of what is paid of what is agreed between its label and its figure; from 860px one row of three, 56px tall. The Insight leads them. */
 /* the tile is the system's one-line KPI tile (salt-kpi--line, 1.14.0); the page sets only that it is a link and where Receivables and its meter stand */
-@media (min-width:860px){
-}
 /* 22 Oct 2026: the multi-tick Approve: a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
 /* 22 Oct 2026 (canvas Needs you): STOCK BY BOOK UNDER THE CARDS. On a phone one row a book on one glass: its typed tag and its light, Cover at the right;
    the meter of what is agreed of the shelf, ember once promised past it; Next lot alone on its line. From 860px a plain table on one glass, the columns
@@ -1302,15 +1156,15 @@ function keepPage() {
    21 Oct 2026 (Salt Admin A to C, P8): owner true draws the same four, read only, on Salt Admin's Shop > Hours, so he reads what the
    customer is told beside the hours that answer it; the words are the same keys, nothing there edits them. */
 function helpCard(owner) {
-  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
-    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
+  const row = (k) => (owner ? "<li>" : "") + '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
+    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>" + (owner ? "</li>" : "");
   /* 26 Oct 2026 (his word): on Salt Admin the four are a list of settings under a grey head, one grey line under it */
-  const head = owner ? '<h2 id="mHelpH" class="salt-settings__head">Help</h2>'
+  const head = owner ? '<h2 id="mHelpH" class="amb-section">Help</h2>'
     : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
   const rows = ["pay", "deliv", "coll", "change"].map(row).join("");
   return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
     + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
-    + head + (owner ? '<div class="salt-settings ahelp-list">' + rows + '</div><p class="salt-settings__foot">What a customer reads under Account, Help.</p>' : rows) + "</section>";
+    + head + (owner ? '<div class="amb-settings ahelp-list"><ul class="amb-settings__list">' + rows + '</ul><p class="amb-settings__foot">What a customer reads under Account, Help.</p></div>' : rows) + "</section>";
 }
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
@@ -1329,19 +1183,19 @@ function vaultRow() {
   /* 26 Oct 2026, his word on This device, second look ("learn from how iPhone designs app"): every row the same shape, a name and one control.
      Show names is a Switch like the others: turned on it asks for the password in the one Sheet, as a phone asks for its code; on, the names
      show; turned off, they lock again */
-  return '<div id="vaultRow" class="salt-settings__row"><span class="salt-settings__label" id="vaultH">Show names</span>'
-    + '<span id="vaultState" class="sr" role="status">Locked</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></button></div>';
+  return '<li><label id="vaultRow" class="amb-setting"><span class="amb-setting__name" id="vaultH">Show names</span>'
+    + '<span id="vaultState" class="amb-vh" role="status">Locked</span>'
+    + '<input type="checkbox" class="amb-switch" role="switch" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></label></li>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
 function alertRow() {
   /* 26 Oct 2026, his word: one Switch, coloured when on; Turn on and Turn off stay, hidden, and the Switch presses the one that applies */
-  return '<div id="alertRow" class="salt-settings__row"><span class="salt-settings__label" id="alertH">Notifications</span>'
-    + '<span id="alertState" class="sr" role="status">Off</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></button>'
+  return '<li id="alertRow"><label class="amb-setting"><span class="amb-setting__name" id="alertH">Notifications</span>'
+    + '<span id="alertState" class="amb-vh" role="status">Off</span>'
+    + '<input type="checkbox" class="amb-switch" role="switch" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></label>'
     + '<button type="button" id="alertOn" data-act="alerts.on" hidden>Turn on</button>'
-    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></div>';
+    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></li>';
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
@@ -1713,10 +1567,12 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? ordSegment()
   /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
-  : p === "shop"
-  ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
-    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="salt-nav__link nktab" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
-    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div></nav>"
+  /* 16 Nov 2026, the move to Ambient (place I): Record's three parts and Shop's six are Ambient's Segment (three or four, one row; six, wrapping), a part pressed not selected, the count of what
+     waits unsent beside Record's; the acts, ids and addresses as every strip's */
+  : p === "shop" || p === "record"
+  ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
+    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div></div>"
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
@@ -1881,7 +1737,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
         + aHero("Record", "")
-        + '<p class="sr">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
+        + '<p class="amb-vh">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
@@ -1889,29 +1745,31 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
         + aHero("Shop", "")
-        + '<p class="sr">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
+        + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
-        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
-        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
-        /* 26 Oct 2026, his word (Hours "the same change" as Notice and Practice): every part of Hours a group of settings, in one column */
-        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="salt-settings__foot" id="makerHoursStatus">Reading.</p></div>'
+        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the week; 26 Oct 2026 (his word): every part of Hours a group of settings.
+           16 Nov 2026, the move to Ambient (place I): Hours is Ambient's panes, Now, the week of spans, the points and Help in the first stack, the open day in the second, its one foot Done */
+        + '<div class="amb-split amb-split--panes hsplit" data-in="shop.hours"><div class="amb-stack">'
+        + '<h2 id="makerHoursTitle" class="amb-vh">Shop hours</h2>'
+        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="amb-settings__foot" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="hpane salt-pane" aria-label="The open day"></aside></div></section>'
-        + '<section class="apoints-sec" data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-settings__head">Collection points</h2>'
-        + '<p class="msg" id="makerPointsStatus">Reading.</p>'
+        + '<div id="makerSchedule"></div>'
+        + '<section class="apoints-sec" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="amb-section">Collection points</h2>'
+        + '<p class="amb-settings__foot" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true)
-        + '<section data-in="shop.market" aria-labelledby="makerMarketTitle"><h2 id="makerMarketTitle" class="sr">Market</h2><div id="makerMarket"></div></section>'
-        + '<section data-in="shop.calendar" aria-labelledby="makerCalTitle"><h2 id="makerCalTitle" class="sr">Calendar</h2><div id="makerCalendar"></div></section>'
-        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
-        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
+        + '</div><div class="amb-stack" id="makerDayPane" aria-label="The open day"></div></div>'
+        + '<div class="amb-stack" data-in="shop.market"><h2 id="makerMarketTitle" class="amb-vh">Market</h2><div id="makerMarket"></div></div>'
+        + '<div class="amb-stack" data-in="shop.calendar"><h2 id="makerCalTitle" class="amb-vh">Calendar</h2><div id="makerCalendar"></div></div>'
+        + '<div class="amb-stack" data-in="shop.notice"><h2 id="makerBulletinTitle" class="amb-vh">Notice</h2>'
+        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></div>'
+        + '<div id="mTest" class="mtest amb-stack" data-in="shop.practice"></div>'
         /* 15 Nov 2026: This device holds the one unlock and his notifications; light and dark follow the device (his answer of 14 Nov 2026) */
-        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
-        + '<div class="salt-settings adevice">' + vaultRow() + (test ? "" : alertRow()) + "</div>"
-        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
+        + '<div id="oLook" class="amb-stack" data-in="shop.device"><h2 id="oLookTitle" class="amb-vh">This device</h2>'
+        + '<div class="amb-settings adevice"><ul class="amb-settings__list">' + vaultRow() + (test ? "" : alertRow()) + "</ul></div>"
+        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</div>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
         + '<div class="amb-dock"><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>

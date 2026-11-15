@@ -120,8 +120,8 @@ export async function run({ ok, pageWork }) {
     const col = at(q, ".gate.adm"), grid = at(q, ".adm .maker-input"), full = at(q, ".adm .maker-input>*"), short = at(q, ".adm .maker-input>.maker-field--short");
     /* 15 Nov 2026, the move to Ambient: his shell is Ambient's, which lays itself out by its own width; the page no longer sizes a column there */
     ok(!col && !at(q, "#roster") && !at(q, ".adm"), "from 768 to 859px the page sizes no column of its own, the shell laying itself out: " + col);
-    ok(/display: grid/.test(grid) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(grid) && /grid-column: 1 ?\/ ?-1/.test(full) && /grid-column: auto/.test(short),
-      "a form is two columns there, a short field takes one and anything else across both: " + [grid, full, short].join(" | "));
+    /* 16 Nov 2026, the move to Ambient (place I): a Record form is Ambient's stack of fields, one column; the page lays none out */
+    ok(!grid && !full && !short, "a form is Ambient's stack of fields there, the page laying out no column of its own: " + [grid, full, short].join(" | "));
     const rules = media.filter((m) => m.q === q).flatMap((m) => m.rules.map((r) => r.sel));
     ok(!rules.filter((s) => /need|nlist|ordrow|ordlist|makerOrderList|nopen|aopen/.test(s)).length && !at("(min-width:860px)", ".adm .maker-input"),
       "Needs you cards and order rows keep one column there, and a form beside its menu from 860px keeps its own: " + rules.join(" | "));
@@ -138,7 +138,7 @@ export async function run({ ok, pageWork }) {
         const form = page.querySelector('section.maker-input[data-form="' + slug + '"]');
         if (form) record.push(form);
       }
-      const rowsOk = record.length === 2 && record.every((f) => ![...f.children].some((c) => c.matches("label.maker-field")) && f.querySelectorAll(".salt-settings.maker-list > label.salt-settings__row").length >= 5
+      const rowsOk = record.length === 2 && record.every((f) => ![...f.children].some((c) => c.matches("label.maker-field")) && f.querySelectorAll(":scope > label.amb-field, :scope > div.amb-field").length >= 5
         && !f.querySelector(".maker-field--short"));
       const every = await richOwnerPage({ pageWork, slip: true, probe: true });
       let fields = [];
@@ -148,16 +148,16 @@ export async function run({ ok, pageWork }) {
       /* v1377: Order for them's own box, the one form outside Record with a marked field and a text field, is gone (it opens their page), so
          what holds is that any field marked short is a number, a date or a time */
       ok(rowsOk && marked.every((f) => SHORT.includes(kind(f))) && !others.some((f) => f.classList.contains("maker-field--short")),   /* the cards also hand-build a few number fields that carry no mark */
-        "the sale and new customer forms are rows of lists with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
-    } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+        "the sale and new customer forms are Ambient's fields with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
+    } catch (e) { ok(false, "the form stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   }
 
   /* 6. FROM 1080px, THE LAPTOP: Shop is one column of 760px, the rows to approve lie two up, and Messages stands the thread beside the thread list */
   {
     const q = "(min-width:1080px)";
     const shop = at(q, ".adm #oShop");
-    ok(/max-width: 760px/.test(shop), "from 1080px Shop is one column of 760px: " + shop);
-    /* 16 Nov 2026, the move to Ambient (place F) (place F): the rows to approve are Ambient's stack (one column, the gutter the stack's), the page keeping no width or grid of its own for them */
+    ok(!shop, "from 1080px the page sizes no Shop column (Ambient's panes lay it out): " + shop);
+    /* 16 Nov 2026, the move to Ambient (place F): the rows to approve are Ambient's stack (one column, the gutter the stack's), the page keeping no width or grid of its own for them */
     ok(!at(q, ".adm #makerDrafts") && !at(q, ".adm #oOrders>.abody>#oApprove") && /\.apstack \{ display: grid; gap: var\(--amb-space-3\); \}/.test(SITE_CSS) && !!d.querySelector("#oApprove.amb-stack #makerDrafts.apstack"),
       "and the rows to approve are Ambient's stack, a card one under the other, the page setting no width or grid for them");
     const shut = at(q, ".adm .chatgrid"), chat = at(q, ".adm .chatgrid.open"), heads = at(q, ".adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus"), list = at(q, ".adm #makerChatList"), open = at(q, ".adm #makerChatOpen");
@@ -183,9 +183,8 @@ export async function run({ ok, pageWork }) {
   /* 7. SHOP'S HOURS FIT A PHONE OF 320px (20 Oct 2026, canvas V63): the week chart's row is the day's name, a track that takes what is left and the
      times, so a 288px column holds it with room for the track; the table and its narrow-phone rules are gone */
   {
-    const row = (top(".adm .maker-week-scale,.adm .maker-day").match(/grid-template-columns:([^;]*)/) || [])[1] || "";
-    const fixed = (row.replace(/minmax\([^)]*\)/, "").match(/[0-9]+px/g) || []).reduce((s, x) => s + parseInt(x, 10), 0);
-    ok(/minmax\(0(px)?, ?1fr\)/.test(row) && fixed > 0 && fixed + 2 * 12 + 16 <= 288 - 60 && !/maker-hours/.test(html),
-      "the week chart's row fits a 320px phone's column with room for its track, and the table's rules are gone: " + row);
+    const row = (html.match(/\.amb-week__day \{[^}]*?grid-template-columns: ([^;]*);/) || [])[1] || "";
+    ok(/minmax\(0(px)?, ?1fr\)/.test(row) && /var\(--amb-week-name\)/.test(row) && !/maker-hours/.test(html) && !/[.]maker-day[{ ,.:]/.test(html),
+      "the week of spans takes its name column from Ambient's token and gives its bar what is left, so a 288px column holds it with room for the bar, and the table's rules are gone: " + row);
   }
 }

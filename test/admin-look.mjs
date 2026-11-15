@@ -13,7 +13,7 @@ import { landingPage } from "../stmt/page.js";
 export async function run({ ok, pageWork }) {
   /* 1 */
   const html = landingPage("", "nlook", { master: "fixture-master", accounts: [] });
-  ok(!/id="lookRow"|id="lookSheet"|data-look=|data-act="look\./.test(html) && /<section id="oLook" data-in="shop.device"[^>]*>[\s\S]*?<div class="salt-settings adevice"><div id="vaultRow"/.test(html),
+  ok(!/id="lookRow"|id="lookSheet"|data-look=|data-act="look\./.test(html) && /<div id="oLook" class="amb-stack" data-in="shop.device"[^>]*>[\s\S]*?<div class="amb-settings adevice"><ul class="amb-settings__list"><li><label id="vaultRow"/.test(html),
     "his page draws no Look row, no choice Sheet and no look act; This device opens on the one unlock");
   /* 2 */
   const seen = [];

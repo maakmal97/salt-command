@@ -69,6 +69,46 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .nstock .amb-chip:not(.amb-chip--pos, .amb-chip--neg, .amb-chip--warn, [class*="amb-kind-"]) > .amb-chip__dot { background: var(--amb-ink-2); }
 @media (min-width: 720px) { .nstock .amb-table th, .nstock .amb-table td { padding-inline: var(--amb-space-3); } }
 
+/* ---- Record and Shop (Salt Admin) ---- */
+/* the wrappers a place draws into stand aside, so what they hold is the stack's own children and a foot stays the last thing of its stack */
+#makerNowCard, #makerNow, #makerSchedule, #makerPoints, #makerMarket, #makerCalendar, #makerBulletin, .apoints-sec, #mHelp, .recpane > section.maker-input:not([hidden]) { display: contents; }
+.hsplit > .amb-stack > section.apoints-sec > h2 { margin-block: var(--amb-space-3) 0; }
+/* a form's lines stand in the stack's rhythm */
+.maker-fields, .maker-cancellation, .maker-edit, .maker-edit-hist, .maker-reading, .maker-trade-attribution, .maker-trade-tail, .maker-extra-books, .maker-extra-trade, .maker-rewards, .maker-offers, .maker-changes, .maker-edit-more, .amform, .amout, .maker-lock, .anotice-acts, .maker-cover-row { display: grid; gap: var(--amb-space-4); min-width: 0; }
+.maker-extra-trade { padding: var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); }
+.maker-fields:empty, .maker-cancellation:empty, .maker-edit-hist:empty, .maker-edit-more:empty, .maker-offers:empty, .maker-rewards:empty, .maker-changes:empty, .apoints-found:empty, .anotice-lines:empty { display: none; }
+.maker-cover-row:not(:has(.maker-cover:not([hidden]), button:not([hidden]))) { display: none; }
+.anotice-acts:not(:has(button:not([hidden]))) { display: none; }
+.apoints-act { display: flex; flex-wrap: wrap; gap: var(--amb-space-3); }
+.rowcard { display: grid; gap: var(--amb-space-1); }
+.rowcard:empty { display: none; }
+.rowcard__fig { font-variant-numeric: tabular-nums; }
+.reading-bad { color: var(--amb-neg); }
+.repay-left { margin: 0; }
+/* the form's description under its heading, and its status line */
+.maker-input > .msg, .recpane > section > .msg, #makerInputs .msg { margin: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.hsplit .msg:empty, #oShop .msg:empty, #oRecord .msg:empty { display: none; }
+/* the way back to the menu, below the two columns; from 960px the menu stands beside the form */
+@container amb (min-width: 960px) { #makerFormBack { display: none; } }
+@container amb (max-width: 959px) { .recgrid.open .reclist, .recnone { display: none; } }
+.recgrid.open .recnone { display: none; }
+/* a menu row names the form, the count of what it holds at the right */
+.mfig:empty { display: none; }
+/* the help's four answers, a disclosure row as a settings row (Ambient has no disclosure part yet) */
+.ahelp-list .ahelp__q { border-bottom: 1px solid var(--amb-line); }
+.ahelp-list li:last-child > .ahelp__q { border-bottom: 0; }
+.ahelp-list .ahelp__sum { display: flex; align-items: center; gap: var(--amb-space-3); min-height: 56px; padding: 6px 0; cursor: pointer; list-style: none; font-size: var(--amb-text-callout); }
+.ahelp-list .ahelp__sum::-webkit-details-marker { display: none; }
+.ahelp-list .ahelp__sum > .ahelp__t { flex: 1 1 auto; min-width: 0; }
+.ahelp-list .ahelp__a { margin: 0 0 var(--amb-space-3); font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
+/* a list of found places stands under its field only while it holds one */
+.apoints-found { margin: 0; }
+/* the form's status and the mood of a read-only row */
+.amb-setting__name.anow-title[data-now="open"] { color: var(--amb-pos); }
+.codeline__code { font-family: var(--amb-font-mono); white-space: nowrap; }
+/* the menu's lists stand in the stack's rhythm */
+#makerMenu, #makerMenu > [data-in] { display: grid; gap: var(--amb-space-4); min-width: 0; }
+#makerMenu > [data-in]:empty { display: none; }
 
 /* ---- Counter: Home, Today and Rewards ---- */
 /* a part of Home, of the reward card and of the links takes no place of its own: its heading, its list and its notes stand in the stack, so

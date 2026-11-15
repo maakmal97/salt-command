@@ -26,8 +26,8 @@
  {
   "name": "the look row shows under Hours",
   "file": "stmt/page.js",
-  "find": "<section id=\"oLook\" data-in=\"shop.device\"",
-  "replace": "<section id=\"oLook\" data-in=\"shop.hours\""
+  "find": "<div id=\"oLook\" class=\"amb-stack\" data-in=\"shop.device\"",
+  "replace": "<div id=\"oLook\" class=\"amb-stack\" data-in=\"shop.hours\""
  },
  {
   "name": "Shop loses its This device part",
@@ -128,14 +128,14 @@
  {
   "name": "a form shows in no part",
   "file": "stmt/owner.js",
-  "find": "function makerForm(part){ var section=el('section','maker-input'); section.setAttribute('data-in','record.'+part); return section; }",
-  "replace": "function makerForm(part){ var section=el('section','maker-input'); return section; }"
+  "find": "section.setAttribute('data-in','record.'+part); return section; }",
+  "replace": "return section; }"
  },
  {
   "name": "the practice accounts show under Hours",
   "file": "stmt/page.js",
-  "find": "<div id=\"mTest\" class=\"mtest\" data-in=\"shop.practice\">",
-  "replace": "<div id=\"mTest\" class=\"mtest\" data-in=\"shop.hours\">"
+  "find": "<div id=\"mTest\" class=\"mtest amb-stack\" data-in=\"shop.practice\">",
+  "replace": "<div id=\"mTest\" class=\"mtest amb-stack\" data-in=\"shop.hours\">"
  },
  {
   "name": "a confirmed order is filed as ready",
@@ -338,8 +338,8 @@
  {
   "name": "his page is not marked .adm",
   "file": "stmt/page.js",
-  "find": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm\" data-mood=\"lagoon\">'",
-  "replace": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page\" data-mood=\"lagoon\">'"
+  "find": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm\" data-mood=\"lagoon\">",
+  "replace": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page\" data-mood=\"lagoon\">"
  },
  {
   "name": "a shared rule is moved under .adm (the customer's lead)",

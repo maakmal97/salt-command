@@ -314,8 +314,8 @@
   {
     "name": "the menu leaves a form out",
     "file": "stmt/owner.js",
-    "find": "if(part==='entry') entryRows[slug]=row; else (lists[part].firstChild",
-    "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=row; } else (lists[part].firstChild"
+    "find": "if(part==='entry') entryRows[slug]=li; else (lists[part].firstChild",
+    "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=li; } else (lists[part].firstChild"
   },
   {
     "name": "the menu lists every form under Entry",
@@ -326,8 +326,8 @@
   {
     "name": "the stock count is not named",
     "file": "stmt/owner.js",
-    "find": "countForm.appendChild(el('h3',null,'Stock count'));",
-    "replace": "countForm.appendChild(el('h3',null,'Count'));"
+    "find": "countForm.appendChild(el('h3','amb-section','Stock count'));",
+    "replace": "countForm.appendChild(el('h3','amb-section','Count'));"
   },
   {
     "name": "opening a form reads",
@@ -356,8 +356,8 @@
   {
     "name": "the way back is not named for the part",
     "file": "stmt/owner.js",
-    "find": "backOrb('form','All forms')",
-    "replace": "backOrb('form','Back')"
+    "find": "amb.circle('All forms','back',{'data-back':'form'})",
+    "replace": "amb.circle('Back','back',{'data-back':'form'})"
   },
   {
     "name": "the owner's script names a variable the customer page names a function",
@@ -468,46 +468,46 @@
     "replace": "if(n.hasAttribute('data-form')) pane.appendChild(n);"
   },
   {
-    "name": "a form open does not take the menu's place below 860px",
-    "file": "stmt/page.js",
-    "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
-    "replace": "  .adm .recgrid.open .reclist,.adm .recnone{display:block}"
+    "name": "a form open does not take the menu's place below 960px",
+    "file": "stmt/statement-css.js",
+    "find": "@container amb (max-width: 959px) { .recgrid.open .reclist, .recnone { display: none; } }",
+    "replace": "@container amb (max-width: 959px) { .recgrid.open .reclist, .recnone { display: block; } }"
   },
   {
-    "name": "the pane's invitation is drawn on a phone",
-    "file": "stmt/page.js",
-    "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
-    "replace": "  .adm .recgrid.open .reclist{display:none}"
+    "name": "the pane's invitation is drawn beside a form open",
+    "file": "stmt/statement-css.js",
+    "find": ".recgrid.open .recnone { display: none; }",
+    "replace": ".recgrid.open .recnone { display: block; }"
   },
   {
-    "name": "the menu and the form do not stand side by side from 860px",
-    "file": "stmt/page.js",
-    "find": "  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}",
-    "replace": "  .adm .recgrid{display:block}"
+    "name": "the menu and the form are not Ambient's panes",
+    "file": "stmt/owner.js",
+    "find": "el('div','amb-split amb-split--panes recgrid')",
+    "replace": "el('div','recgrid')"
   },
   {
     "name": "the way back still shows beside the menu",
-    "file": "stmt/page.js",
-    "find": "  .adm #makerFormBack{display:none}",
-    "replace": "  .adm #makerFormBack{display:inline-flex}"
+    "file": "stmt/statement-css.js",
+    "find": "@container amb (min-width: 960px) { #makerFormBack { display: none; } }",
+    "replace": "@container amb (min-width: 960px) { #makerFormBack { display: inline-flex; } }"
   },
   {
-    "name": "Record keeps its narrow column from 860px",
+    "name": "Record keeps its narrow column",
     "file": "stmt/page.js",
-    "find": "  .adm #oRecord{max-width:none}",
-    "replace": "  .adm #oRecord{max-width:760px}"
+    "find": ".adm #oOrders{max-width:760px}",
+    "replace": ".adm #oOrders,.adm #oRecord{max-width:760px}"
   },
   {
-    "name": "the pane does not scroll inside itself",
+    "name": "the page lays out the pane again",
     "file": "stmt/page.js",
-    "find": "  .adm .recpane{overflow-y:auto}",
-    "replace": "  .adm .recpane{}"
+    "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
+    "replace": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .recpane{overflow-y:auto}\n"
   },
   {
-    "name": "the pane's height ignores the App bar",
+    "name": "the page lays out the grid again",
     "file": "stmt/page.js",
-    "find": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
-    "replace": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px)}"
+    "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
+    "replace": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .recgrid{display:grid}\n"
   },
   {
     "name": "an order stands in two stages",
@@ -572,8 +572,8 @@
   {
     "name": "every Entry row says Open again",
     "file": "stmt/owner.js",
-    "find": "row.appendChild(el('span','salt-settings__label',MENU_NAME[slug]||name));",
-    "replace": "row.appendChild(el('span','salt-settings__label',(MENU_NAME[slug]||name)+' Open'));"
+    "find": "var row=sOpen(MENU_NAME[slug]||name,'','record.form',slug)",
+    "replace": "var row=sOpen((MENU_NAME[slug]||name)+' Open','','record.form',slug)"
   },
   {
     "name": "a reward offset is listed as a customer's",
