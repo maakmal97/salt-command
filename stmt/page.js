@@ -320,7 +320,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
    the right. */
 @media (min-width:1080px){
-  /* 15 Nov 2026, his word: the shell is salt-ds's one page width (--salt-page-max), as the Desk and Salt Admin stand (it was 1240px) */
+  /* 15 Nov 2026, his word: the shell is salt-ds's one page width (--salt-page-max), as every surface stands (it was 1240px) */
   .cshell{display:flex;gap:28px;align-items:flex-start;max-width:var(--salt-page-max);margin:0 auto;padding-bottom:48px}
   .cmain{flex:1 1 auto;min-width:0}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
@@ -940,8 +940,8 @@ body.ended>*:not(#aEnded){display:none}
   /* 5 Nov 2026, his word ("like Mail or Messages on a Mac"): THE FRAME (salt-frame). The bar and the rail never move and the column right of the
      rail is the one box that scrolls, so the page itself never does: the frame is the screen less the body's 22px top and a 24px margin under it, and it
      takes back 36px of the body's 60px foot, so the page is exactly the screen tall (22 + frame + 24 = the screen) */
-  /* 15 Nov 2026, his word: one width on every Salt surface, salt-ds's --salt-page-max (1376px), as the Desk and the Counter read it, at every
-     screen from 1080px (it was 1180px, and 1376px from 1440px) */
+  /* 15 Nov 2026, his word: one page width everywhere, salt-ds's --salt-page-max (1376px), at every screen from 1080px (it was 1180px, and
+     1376px from 1440px) */
   .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-36px;--salt-frame-h:calc(100dvh - 46px)}
   .adm .amain{padding-bottom:24px}
   /* a pane holds to the column's very top (the frame's own scroll), not 24px under the screen's */
