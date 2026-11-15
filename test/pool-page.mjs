@@ -53,13 +53,13 @@ export async function page({ ok }) {
   try {
     const { d } = A, rows = [...d.querySelectorAll("#hPool [data-pool]")], row = (id) => rows.find((r) => r.getAttribute("data-pool") === id);
     const order = [...d.getElementById("payHead").parentNode.children].map((x) => x.id).filter(Boolean);
-    const hc = [...d.querySelectorAll("#pHome .hcol > div")].map((x) => x.id);
+    const hc = [...d.querySelectorAll("#pHome > .amb-stack > div")].map((x) => x.id);   /* 16 Nov 2026, the move to Ambient: a pool is a row (title the size, second line the words), its Join a pill */
     ok(rows.length === 4 && hc.indexOf("hPool") >= 0 && hc.indexOf("hPool") < hc.indexOf("hComing") && order.indexOf("hNeeds") >= 0
-      && text(d.querySelector("#hPool .hlab")).startsWith(W.fill(W.EN["hp.h"])),
+      && text(d.querySelector("#hPool .amb-section")).startsWith(W.fill(W.EN["hp.h"])),
       "Home draws a row for each group order, under its heading, after Needs you and before Coming up: " + JSON.stringify([rows.length, hc]));
-    const t1 = text(row(P1.id).querySelector(".salt-inbox-row__main")), t2 = text(row(P2.id).querySelector(".salt-inbox-row__main")), t3 = text(row(P3.id).querySelector(".salt-inbox-row__main"));
-    ok(t1 === W.fill(W.EN["hp.in"], { n: 4, t: "10 units" }) + W.fill(W.EN["hp.closes"], { d: "12 Oct 2026" })
-      && t2 === W.fill(W.EN["hp.joined"], { q: "2 units" }) + W.fill(W.EN["hp.in"], { n: 6, t: "10 units" }) && t3 === W.EN["hp.closed"],
+    const t1 = text(row(P1.id).querySelector(".amb-row__sub")), t2 = text(row(P2.id).querySelector(".amb-row__sub")), t3 = text(row(P3.id).querySelector(".amb-row__sub"));
+    ok(t1 === W.fill(W.EN["hp.in"], { n: 4, t: "10 units" }) + " " + W.fill(W.EN["hp.closes"], { d: "12 Oct 2026" })
+      && t2 === W.fill(W.EN["hp.joined"], { q: "2 units" }) + " " + W.fill(W.EN["hp.in"], { n: 6, t: "10 units" }) && t3 === W.EN["hp.closed"],
       "the card's text is the table's words filled, nothing else: " + JSON.stringify([t1, t2, t3]));
     ok(t1.startsWith("4 of 10 units in") && t2.endsWith("6 of 10 units in"), "the target carries the product's own unit word, once: " + JSON.stringify([t1, t2]));
     const joins = [...d.querySelectorAll("#hPool [data-pool-join]")].map((b) => b.getAttribute("data-pool-join"));
@@ -69,7 +69,7 @@ export async function page({ ok }) {
        its element still stands apart */
     const spaced = d.getElementById("hPool").innerHTML.replace(/<[^>]*>/g, " ");
     const all = text(d.getElementById("hPool")), bare = d.getElementById("hPool").cloneNode(true);
-    ok(!/\b(salt|oil|candy|rice|ambassador|titanium|platinum|gold|silver|bronze|desk|command)\b/i.test(spaced.replace(/Cube/g, "")) && !/—/.test(all) && row(P1.id).querySelector(".salt-coin, svg.psym"),
+    ok(!/\b(salt|oil|candy|rice|ambassador|titanium|platinum|gold|silver|bronze|desk|command)\b/i.test(spaced.replace(/Cube/g, "")) && !/—/.test(all) && row(P1.id).querySelector(".amb-thumb--mark"),
       "the card names no product, no level and no brand, and carries the mark: " + JSON.stringify(all.slice(0, 120)));
     row(P2.id).click();
     ok(await wait(() => !!d.querySelector('.oscreen[data-order="' + mine.id + '"]')), "a row they are in opens their order");
@@ -96,7 +96,7 @@ export async function page({ ok }) {
     ok(posted.length === 1 && j.path === "/pools/" + P1.id + "/join" && j.j.q === 2 && j.j.total === 200 && j.j.unit === 100 && j.j.digest === "dp1"
       && /^[0-9a-f]{32}$/.test(j.j.rid) && j.j.forFriend === false && Object.keys(j.j).sort().join() === "digest,forFriend,q,rid,total,unit",
       "Join sends the size, their own price and unit, the list's digest, a request id and who it is for, and nothing else: " + JSON.stringify(j));
-    ok(await wait(() => /Order placed/.test(text(d.getElementById("osheet")))) && await wait(() => !!d.querySelector('#hPool [data-pool="' + P1.id + '"] .salt-inbox-row__main') && !d.querySelector("[data-pool-join]")),
+    ok(await wait(() => /Order placed/.test(text(d.getElementById("osheet")))) && await wait(() => !!d.querySelector('#hPool [data-pool="' + P1.id + '"] .amb-row__sub') && !d.querySelector("[data-pool-join]")),
       "and Home reads the join at once: the Join is gone and the row says they are in");
   } finally { await new Promise((r) => setTimeout(r, 80)); B.w.close(); }
 

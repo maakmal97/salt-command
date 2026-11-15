@@ -24,14 +24,16 @@ export async function run({ ok, pageWork }) {
   try {
     /* ---- 1 ---- */
     const A = await page({ list: lit() });
-    const box = A.d.getElementById("hSupply"), rows = box ? [...box.querySelectorAll("button.hsup")] : [];
-    const read = rows.map((r) => ({ mark: r.querySelector(".pmark").className, coin: !!r.querySelector(".pmark .salt-coin--sm"), st: r.querySelector(".salt-light").className, word: txt(r.querySelector(".salt-light")),
-      by: txt(r.querySelector(".salt-inbox-row__what")), sr: txt(r.querySelector(".sr")) || (r.querySelector(".sr") || {}).textContent, all: txt(r) }));
+    const box = A.d.getElementById("hSupply"), rows = box ? [...box.querySelectorAll("button[data-sup]")] : [];
+    /* 16 Nov 2026, the move to Ambient: a row is Ambient's row, the book's mark its thumb ringed in its hue, the light a chip with its dot and word (green pos,
+       red neg, amber warn, yellow plain), More by its second line */
+    const read = rows.map((r) => ({ mark: r.querySelector(".amb-thumb").className, coin: !!r.querySelector(".amb-thumb--mark.amb-thumb--ring"), st: r.querySelector(".amb-chip").className, word: txt(r.querySelector(".amb-chip")),
+      by: txt(r.querySelector(".amb-row__sub")), sr: txt(r.querySelector(".amb-vh")), all: txt(r), dot: !!r.querySelector(".amb-chip .amb-chip__dot") }));
     const col = box && box.parentNode, order = col ? [...col.children].map((c) => c.id) : [];
-    ok(!!box && txt(box.querySelector(".hlab")) === "Availability" && order.indexOf("hSupply") >= 0 && order.indexOf("hSupply") === order.indexOf("hStart") - 1
+    ok(!!box && txt(box.querySelector(".amb-section")) === "Availability" && order.indexOf("hSupply") >= 0 && order.indexOf("hSupply") === order.indexOf("hStart") - 1
       && rows.length === 3 && read.map((r) => r.word).join("|") === "Selling fast|Out of stock|Available"
-      && read.every((r, i) => r.coin && !/sup|sup-/.test(r.mark) && (i === 2 ? r.st === "salt-light" : r.st === "salt-light salt-light--" + ["yellow", "red"][i])),
-    "Availability stands above New order, a row a lit book in the list's order, its coin bare and the light a dot and its words, plain for green: " + JSON.stringify({ order, read }));
+      && read.every((r, i) => r.coin && r.dot && !/sup|sup-/.test(r.mark) && r.st === ["amb-chip", "amb-chip amb-chip--neg", "amb-chip amb-chip--pos"][i]),
+    "Availability stands above New order, a row a lit book in the list's order, its mark thumb ringed and the light a chip, a dot and its words, plain for yellow: " + JSON.stringify({ order, read }));
     ok(read[0].by === "More by " + dm(by) && read[1].by === "" && read[2].by === "" && read.every((r) => !/\d/.test(r.all.replace(r.by, ""))),
       "More by DD Mon under the yellow with a day, nothing under a red with none or a green with one, and no figure but the day: " + JSON.stringify(read));
 
@@ -46,15 +48,15 @@ export async function run({ ok, pageWork }) {
     const lines = panes.map((p) => txt(p.querySelector(".supline")));
     const css = [...A.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(lines.join("|") === "Selling fast|Out of stock|Available|" && panes.slice(0, 3).every((p) => p.querySelector(".supline").getAttribute("aria-hidden") === "true" && !!p.querySelector(".supline .salt-light"))
-      && !/\.pmark\.sup|\.salt-status\.supst|\.sup-(green|yellow|red)/.test(css) && /\.hsup\{min-height:44px/.test(css),
-    "on Prices the word stands under each lit mark (the heading says it once), no border or status rule of the old light is left and a row is 44px: " + JSON.stringify(lines));
+      && !/\.pmark\.sup|\.salt-status\.supst|\.sup-(green|yellow|red)/.test(css) && !/\.hsup/.test(css),
+    "on Prices the word stands under each lit mark (the heading says it once), no border or status rule of the old light is left and Home's rows are Ambient's: " + JSON.stringify(lines));
 
     /* ---- 4 ---- */
     const N = await page({ list: LIST() });
     const K = await page({ list: lit(), late: 5 });
     const k = K.d.getElementById("hSupply");
-    ok(!N.d.querySelector("#hSupply .hsup") && !!k && k.querySelectorAll(".hsup").length === 3 && k.classList.contains("lockd") && k.hasAttribute("inert"),
-      "no light sealed, no card; on a locked account it is greyed and inert with the rest of Home: " + JSON.stringify([!!N.d.querySelector("#hSupply .hsup"), k && k.className]));
+    ok(!N.d.querySelector("#hSupply [data-sup]") && !!k && k.querySelectorAll("[data-sup]").length === 3 && k.classList.contains("lockd") && k.hasAttribute("inert"),
+      "no light sealed, no card; on a locked account it is greyed and inert with the rest of Home: " + JSON.stringify([!!N.d.querySelector("#hSupply [data-sup]"), k && k.className]));
   } catch (e) { ok(false, "counter-supply-home stopped on an error: " + (e && e.stack)); }
   finally { pages.forEach((p) => p.close()); }
 }

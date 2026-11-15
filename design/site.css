@@ -8,5 +8,17 @@
 body.amb { min-height: 100dvh; }
 /* his hero's time line: the live word, then the clock, a step apart */
 #roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
-/* on Home the Today card holds the clock, so the hero does not say the time twice */
-#tabs[data-place="home"] > .amb-screen > .amb-hero > .amb-hero__time { display: none; }
+
+/* ---- Counter: Home, Today and Rewards ---- */
+/* a part of Home, of the reward card and of the links takes no place of its own: its heading, its list and its notes stand in the stack, so
+   Ambient's gaps and insets are the only ones. The boxes stay because each is drawn afresh and put on the page only where it reads differently. */
+#payHead, #hNeeds, #hRate, #hThread, #hSupply, #hStart, #hPool, #hComing, #hAgain, #hReward, #hYear,
+.hinv, .hprod, .rlinks, .glink, [data-joins] { display: contents; }
+/* the Today notice: its words take the room the icon leaves, the title and the sentences each a line, Pause a step under the notice lines */
+#today > span:not(.amb-icon) { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--amb-space-2); }
+#today .hblock, #today .hline { display: block; }
+#today .hnote { display: grid; gap: var(--amb-space-1); justify-items: start; }
+/* a book's mark alone heads its block */
+.hbook { margin: 0; }
+/* the live order is the dock's mini bar, a tap anywhere on it opening the order */
+.amb-mini[data-live] { cursor: pointer; }
