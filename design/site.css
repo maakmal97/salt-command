@@ -1,0 +1,8 @@
+/* design/site.css: THE STATEMENTS SITE'S OWN LAYER OVER AMBIENT (15 Nov 2026, the move to Ambient).
+   Salt Counter and Salt Admin are one page; this layer is both faces', served after ambient.css. It reads --amb-* tokens only and
+   names no colour: tools/stmt-style.mjs refuses one and carries this file to the Worker as SITE_CSS. Each builder of a place writes
+   its own marked section below; a part Ambient lacks is added in Code/ambient-ds first, never drawn here. */
+
+/* ---- The kit: the head and the shell ---- */
+/* the shell is the screen: the body holds one shell at a time (the door, Salt Admin's roster, the customer's places, the ended page) */
+body.amb { min-height: 100dvh; }

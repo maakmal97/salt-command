@@ -320,18 +320,63 @@ b.short{color:var(--salt-ember)}
 
 /* 14 NOV 2026, THE MOVE TO AMBIENT (docs/plan-ambient-move.html, his answers of 14 Nov 2026: Salt Admin first). Salt Admin's page carries
    Ambient, which tools/ambientsync.mjs pulls into design/ambient/ and checks there against its lock: the token block, ambient.css,
-   ambient.js and the icon sprite, each byte for byte as pulled (a carried copy is never edited here), and Salt Admin's own layer,
-   design/admin.css, which reads --amb-* tokens only. They travel to the Worker as JSON strings and are interpolated into the page,
+   ambient.js and the icon sprite, each byte for byte as pulled (a carried copy is never edited here), and the site's own layer,
+   design/site.css, which reads --amb-* tokens only. They travel to the Worker as JSON strings and are interpolated into the page,
    never pasted into its template literals, where a backslash in ambient.js would be eaten and a backtick in a comment would end the
-   literal; the suite proves the served page holds each one whole, its hash the lock's. The Counter keeps salt-ds until its own move. */
+   literal; the suite proves the served page holds each one whole, its hash the lock's.
+   15 Nov 2026, THE MOVE TO AMBIENT (Salt Counter and Salt Admin together, his word of 15 Nov 2026): both faces of the site wear it, so the
+   site's own layer is design/site.css (SITE_CSS; it was design/admin.css, ADMIN_CSS, never drawn), and two more things are made here:
+   AMB_THEME, the browser bar's colour in light and in dark, read out of the carried tokens (Lagoon's base in each mode, the shell's
+   default mood), never typed; and AMB_MAINT_CSS, the few rules the maintenance page draws with, cut out of ambient.css whole. */
 export function ambientParts() {
   const dir = join(REPO, "design", "ambient"), read = (f) => readFileSync(join(dir, f), "utf8").replace(/\r\n/g, "\n");
   const tokens = carried();
   if (tokens == null) throw new Error("stmt-style: design/ambient/app.css carries no DESIGN tokens block: run node tools/ambientsync.mjs --pull");
-  const own = join(REPO, "design", "admin.css");
-  const admin = existsSync(own) ? readFileSync(own, "utf8").replace(/\r\n/g, "\n") : "";
-  if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(admin.replace(/\/\*[\s\S]*?\*\//g, ""))) throw new Error("stmt-style: design/admin.css names a colour; it reads --amb-* tokens only");
-  return { tokens, css: read("ambient.css"), js: read("ambient.js"), icons: read("icons.svg"), admin };
+  const own = join(REPO, "design", "site.css");
+  const site = existsSync(own) ? readFileSync(own, "utf8").replace(/\r\n/g, "\n") : "";
+  if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(site.replace(/\/\*[\s\S]*?\*\//g, ""))) throw new Error("stmt-style: design/site.css names a colour; it reads --amb-* tokens only");
+  const css = read("ambient.css");
+  return { tokens, css, js: read("ambient.js"), icons: read("icons.svg"), site, theme: ambTheme(tokens), maint: cutRules(css, MAINT_PARTS) };
+}
+/** The browser bar's two colours: Lagoon's base in light and in dark, as the token block states them. */
+export function ambTheme(tokens) {
+  const lagoon = /\[data-mood="lagoon"\]\s*\{([^}]*)\}/.exec(tokens);
+  const pick = (k) => { const m = lagoon && new RegExp("--amb-" + k + "-base:\\s*(#[0-9a-fA-F]{3,8})\\s*;").exec(lagoon[1]); return m ? m[1] : null; };
+  const light = pick("l"), dark = pick("d");
+  if (!light || !dark) throw new Error("stmt-style: the carried tokens state no Lagoon base in light and in dark (--amb-l-base, --amb-d-base)");
+  return { light, dark };
+}
+/* THE MAINTENANCE PAGE'S PARTS. Its policy is closed (no script, no stylesheet fetched), so the CSS it uses travels inline; ambient.css
+   whole is about 118 KB, and the page draws one shell, its mesh and a hero. These are the classes it wears; cutRules keeps every rule
+   whose selector names nothing else (a selector naming no class at all, :root or a bare element, is kept too), inside the at-rules
+   that hold them, and drops the rest: the rules are ambient.css's own, to the character, never retyped. */
+export const MAINT_PARTS = ["amb", "amb-shell", "amb-screen", "amb-mesh", "amb-hero", "amb-hero__title", "amb-hero__sub"];
+export function cutRules(css, keep) {
+  const want = new Set(keep), src = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const fits = (sel) => { const cls = sel.match(/\.[A-Za-z0-9_-]+/g) || []; return cls.every((c) => want.has(c.slice(1))); };
+  const walk = (s) => {
+    let out = "", i = 0;
+    while (i < s.length) {
+      const open = s.indexOf("{", i);
+      if (open < 0) break;
+      const head = s.slice(i, open).trim();
+      let depth = 1, j = open + 1;
+      for (; j < s.length && depth; j++) { if (s[j] === "{") depth++; else if (s[j] === "}") depth--; }
+      const body = s.slice(open + 1, j - 1);
+      if (head.startsWith("@")) {
+        if (/^@(container|media|supports|layer)\b/.test(head)) { const inner = walk(body); if (inner) out += head + "{" + inner + "}"; }
+        else if (/^@property\b/.test(head)) out += head + "{" + body.trim() + "}";
+      } else {
+        const sels = head.split(",").map((x) => x.trim()).filter((x) => x && fits(x));
+        if (sels.length) out += sels.join(",") + "{" + body.trim() + "}";
+      }
+      i = j;
+    }
+    return out;
+  };
+  const out = walk(src);
+  if (out.split("{").length !== out.split("}").length) throw new Error("stmt-style: the cut rules' braces do not balance");
+  return out;
 }
 
 /** The whole stylesheet for a statement document. */
@@ -407,7 +452,9 @@ function ambientModule() {
     + "export const AMB_CSS = " + JSON.stringify(a.css) + ";\n"
     + "export const AMB_JS = " + JSON.stringify(a.js) + ";\n"
     + "export const AMB_ICONS = " + JSON.stringify(a.icons) + ";\n"
-    + "export const ADMIN_CSS = " + JSON.stringify(a.admin) + ";\n";
+    + "export const AMB_THEME = " + JSON.stringify(a.theme) + ";\n"
+    + "export const AMB_MAINT_CSS = " + JSON.stringify(a.maint) + ";\n"
+    + "export const SITE_CSS = " + JSON.stringify(a.site) + ";\n";
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
