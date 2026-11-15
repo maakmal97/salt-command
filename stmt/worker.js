@@ -71,7 +71,7 @@ export { OrderBook } from "./orderbook.js";
 import { readPoints, resolvePoint } from "./points.js";
 import { sendReminders } from "./remind.js";
 import { mintSession, dropSession, sessionUser, sessionOfToken, onBook, liveConnect, liveDrop, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
-  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
+  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, expectedLive, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -1120,7 +1120,7 @@ async function handleDesk(request, env, p, m) {
   /* F4: the restock date a book expects, one clear key, {<book>: "YYYY-MM-DD"}; the publish reads it and seals it with the light */
   if (p === "/desk/expected") {
     const cur = async () => (await env.STMT.get("expected", "json").catch(() => null)) || {};
-    if (m === "GET") return json({ ok: true, expected: await cur() });
+    if (m === "GET") return json({ ok: true, expected: expectedLive(await cur()) });   /* 15 Nov 2026: a passed day is no day, and the read says so */
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const body = await readJson(request);
     if (!body) return json({ ok: false, error: "send JSON" }, 400);

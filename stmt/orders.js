@@ -1798,11 +1798,16 @@ export const klDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZo
  * KV `expected`, {<book>: "YYYY-MM-DD"}: the day he expects each book's next lot, set from the desk's Enter. It holds no
  * figure and no name; the publish reads it and seals it with the light. `on` null clears a book; a day in the past is
  * refused, a real calendar day within a year is kept, and a day already passed is dropped from the map at every set. */
+/** The days today or ahead (Kuala Lumpur), a passed one dropped: what every read answers (15 Nov 2026) and what a write keeps. */
+export function expectedLive(cur, at) {
+  const today = klDay(at || new Date().toISOString()), next = {};
+  for (const [k, v] of Object.entries(cur && typeof cur === "object" ? cur : {})) if (typeof v === "string" && v >= today) next[k] = v;
+  return next;
+}
 export function expectedSet(cur, product, on, at) {
   const today = klDay(at || new Date().toISOString());
   if (typeof product !== "string" || !/^[a-z][a-z0-9]{0,15}$/.test(product)) return { error: "name a book" };
-  const next = {};
-  for (const [k, v] of Object.entries(cur && typeof cur === "object" ? cur : {})) if (typeof v === "string" && v >= today) next[k] = v;
+  const next = expectedLive(cur, at);
   if (on === null) { delete next[product]; return { expected: next }; }
   if (typeof on !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(on) || klDay(on + "T04:00:00Z") !== on) return { error: "send the day as YYYY-MM-DD, or null to clear" };
   if (on < today) return { error: "that day has passed" };
