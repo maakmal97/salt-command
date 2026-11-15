@@ -1080,7 +1080,7 @@ export const OWNER_JS = `
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
       var k=x.getAttribute('data-f'), n=pool.filter(FILTER[k]||FILTER.all).length, c=x.querySelector('.amb-segment__count');
       if(c) c.textContent=sheet?String(n):'';
-      x.disabled=k!=='all'&&!n; });
+      if(k!=='all'&&!n) x.setAttribute('aria-disabled','true'); else x.removeAttribute('aria-disabled'); });   /* dimmed, as Ambient says it: aria-disabled with its count at 0 */
     if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all; filterMark(); }
     var hits=pool.filter(function(a){
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
@@ -8713,7 +8713,7 @@ export const OWNER_JS = `
   var aApprove=document.getElementById('aApprove');
   if(aApprove) aApprove.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); });
   document.getElementById('afil').addEventListener('click', function(ev){
-    var b=ev.target.closest('button[data-f]'); if(b) filterBy(b.getAttribute('data-f'));
+    var b=ev.target.closest('button[data-f]'); if(b&&b.getAttribute('aria-disabled')!=='true') filterBy(b.getAttribute('data-f'));
   });
   rq.addEventListener('input', drawRoster);
   showPlace('needs','',{fresh:true});

@@ -1,56 +1,56 @@
 [
   {
-    "name": "1 the table is not drawn",
+    "name": "the list is not drawn",
     "file": "stmt/owner.js",
-    "find": "      rlist.appendChild(t.card);\n",
-    "replace": "\n"
+    "find": "      sec.appendChild(list); rlist.appendChild(sec);",
+    "replace": "      rlist.appendChild(sec);"
   },
   {
-    "name": "1 the state's word",
+    "name": "the state's word",
     "file": "stmt/owner.js",
-    "find": "sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word));",
-    "replace": "sd.appendChild(chip('mist', ''));"
+    "find": "sub.appendChild(el('span',s.sev==='now'||s.late?'amb-neg':null,s.word));",
+    "replace": "sub.appendChild(el('span',null,''));"
   },
   {
-    "name": "1 what is owed",
+    "name": "what is owed",
     "file": "stmt/owner.js",
-    "find": "row.appendChild(el('td',s.mine?'nfig--mine':null,+s.rm>0.004?rmShort(s.rm):''));",
-    "replace": "row.appendChild(el('td',null,''));"
+    "find": "if(+s.rm>0.004){ sub.appendChild(document.createTextNode(', ')); sub.appendChild(el('span',s.mine?'amb-neg':null,rmShort(s.rm))); }",
+    "replace": ""
   },
   {
-    "name": "2 the code opens the account",
+    "name": "the text opens the account",
     "file": "stmt/owner.js",
-    "find": "open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });",
-    "replace": "open.addEventListener('click', function(ev){ ev.preventDefault(); });"
+    "find": "    open.addEventListener('click', function(){ openCard(a.username); });\n    li.appendChild(open);",
+    "replace": "    li.appendChild(open);"
   },
   {
-    "name": "2 Message opens the thread",
+    "name": "Message opens the thread",
     "file": "stmt/owner.js",
     "find": "ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); });",
     "replace": ""
   },
   {
-    "name": "3 the open account takes the list's place",
-    "file": "stmt/page.js",
-    "find": "  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}\n",
+    "name": "the open account does not take the list's place",
+    "file": "stmt/statement-css.js",
+    "find": "#oAccts.open .afind, #oAccts.open #rlist,",
+    "replace": "#oAccts.open .afind, #oAccts.open .zzz,"
+  },
+  {
+    "name": "the account in columns",
+    "file": "stmt/statement-css.js",
+    "find": ".apct__prev:empty { display: none; }",
+    "replace": ".apct__prev:empty { display: none; } .oacct { column-count: 2; }"
+  },
+  {
+    "name": "the way back stays beside the list",
+    "file": "stmt/statement-css.js",
+    "find": "@container amb (min-width: 960px) { .aback { display: none; } }",
     "replace": ""
   },
   {
-    "name": "3 the account in columns",
-    "file": "stmt/page.js",
-    "find": "  .adm #aopen .oacct{display:block;column-count:2;column-gap:24px}",
-    "replace": "  .adm #aopen .oacct{display:block;column-gap:24px}"
-  },
-  {
-    "name": "3 three from 1440px",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:1440px){.adm #aopen .oacct{column-count:3}}",
-    "replace": ""
-  },
-  {
-    "name": "3 its way back",
-    "file": "stmt/page.js",
-    "find": "  .adm #oAccts.open #aopen [data-back]{display:grid}",
-    "replace": ""
+    "name": "the account pane shows with nothing open",
+    "file": "stmt/statement-css.js",
+    "find": "#oAccts:not(.open) #aside",
+    "replace": "#oAccts:not(.open) #asidx"
   }
 ]

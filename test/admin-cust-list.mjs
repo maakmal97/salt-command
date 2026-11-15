@@ -67,7 +67,7 @@ export async function run({ ok, pageWork }) {
       "a tap on the row's text opens the account, a tap on its way does not");
     /* 6 */
     const tabs = [...d.querySelectorAll("#afil button[data-f]")];
-    const said = tabs.map((b) => b.firstChild.textContent + ":" + t(b.querySelector(".amb-segment__count")) + (b.disabled ? ":off" : ""));
+    const said = tabs.map((b) => b.firstChild.textContent + ":" + t(b.querySelector(".amb-segment__count")) + (b.getAttribute("aria-disabled") === "true" ? ":off" : ""));
     ok(tabs.every((b) => b.classList.contains("amb-segment__opt")) && d.getElementById("afil").classList.contains("amb-segment--wrap") && d.getElementById("afil").getAttribute("role") === "group"
       && J(said) === J(["All:8", "Not sent:1", "Not opened:3", "They owe:2", "Locked out:1", "No account:1"]) && tabs[0].getAttribute("aria-pressed") === "true" && !!d.querySelector("#oAccts .amb-search > input#rq.amb-input"),
       "the filters are Ambient's counted wrapping segment, each with its count, No account in place of No account yet, All chosen; the find field is Ambient's Search: " + J(said));
@@ -79,7 +79,7 @@ export async function run({ ok, pageWork }) {
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();
       const f = (k) => q.d.querySelector('#afil button[data-f="' + k + '"]');
-      ok(!f("all").disabled && f("locked").disabled && f("none").disabled && !f("owes").disabled && !f("locked").hidden, "a filter with no account in its state is dimmed and cannot be chosen"); }
+      ok(f("all").getAttribute("aria-disabled") !== "true" && f("locked").getAttribute("aria-disabled") === "true" && f("none").getAttribute("aria-disabled") === "true" && f("owes").getAttribute("aria-disabled") !== "true" && !f("locked").hidden, "a filter with no account in its state is dimmed and cannot be chosen"); }
     finally { q.w.close(); }
     /* 7 */
     const lead = d.getElementById("alead");

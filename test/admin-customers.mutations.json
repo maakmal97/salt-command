@@ -14,8 +14,8 @@
   {
     "name": "a filter with no account is still offered",
     "file": "stmt/owner.js",
-    "find": "x.disabled=k!=='all'&&!n; });",
-    "replace": "x.disabled=false; });"
+    "find": "if(k!=='all'&&!n) x.setAttribute('aria-disabled','true'); else x.removeAttribute('aria-disabled'); });",
+    "replace": "x.removeAttribute('aria-disabled'); });"
   },
   {
     "name": "a link has no panel",

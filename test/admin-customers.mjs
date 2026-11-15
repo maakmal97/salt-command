@@ -32,12 +32,12 @@ export async function run({ ok, pageWork }) {
     const quiet = cards().find((r) => /CX4-ZED/.test(r.textContent));
     ok(!!quiet && quiet.querySelectorAll(".amb-chip").length === 0 && quiet.querySelectorAll(".salt-pill").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
     const none = d.querySelector('#afil button[data-f="none"]'), locks = d.querySelector('#afil button[data-f="locked"]');
-    ok(!!none && !none.disabled && !!locks && !locks.disabled && none.classList.contains("amb-segment__opt"), "a filter can be chosen while an account is in its state");
+    ok(!!none && none.getAttribute("aria-disabled") !== "true" && !!locks && locks.getAttribute("aria-disabled") !== "true" && none.classList.contains("amb-segment__opt"), "a filter can be chosen while an account is in its state");
 
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();
       const f = (k) => q.d.querySelector('#afil button[data-f="' + k + '"]');
-      ok(!!f("all") && !f("all").disabled && f("locked").disabled && f("none").disabled && !f("owes").disabled && !f("locked").hidden, "a filter for a state no account is in is dimmed and cannot be chosen, not hidden"); }
+      ok(!!f("all") && f("all").getAttribute("aria-disabled") !== "true" && f("locked").getAttribute("aria-disabled") === "true" && f("none").getAttribute("aria-disabled") === "true" && f("owes").getAttribute("aria-disabled") !== "true" && !f("locked").hidden, "a filter for a state no account is in is dimmed and cannot be chosen, not hidden"); }
     finally { q.w.close(); }
 
     enter(d, "customers", "links"); await p.work.quiet();

@@ -68,8 +68,8 @@
   {
     "name": "6 an empty filter dimmed",
     "file": "stmt/owner.js",
-    "find": "x.disabled=k!=='all'&&!n; });",
-    "replace": "x.disabled=false; });"
+    "find": "if(k!=='all'&&!n) x.setAttribute('aria-disabled','true'); else x.removeAttribute('aria-disabled'); });",
+    "replace": "x.removeAttribute('aria-disabled'); });"
   },
   {
     "name": "a filter chosen is ignored",
