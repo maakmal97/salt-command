@@ -620,7 +620,6 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
-  .adm #oShop{max-width:600px;margin-left:auto;margin-right:auto}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
    short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
