@@ -100,7 +100,7 @@ export async function run({ ok }) {
     /* ---- the writes the Desk keeps still work ---- */
     posts.length = 0;
     w.eval("switchTab('inventory')"); await settle(); await settle();   /* the restock date is on Stock since 17 Oct 2026 */
-    w.eval("expDraw()");
+    w.eval("EXPECTED={salt:'2099-01-01'};expDraw()");   /* 15 Nov 2026: a held day keeps the control on whatever the light */
     const inp = D.getElementById("exp_salt");
     if (inp) inp.value = "2099-12-31";
     ctl.where = "expected";

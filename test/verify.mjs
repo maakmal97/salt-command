@@ -51522,6 +51522,17 @@ await (async () => {
   const got = await (await sreq("/desk/expected", "GET", null, D)).json();
   ok(set.ok && got.ok && got.expected.salt === day && JSON.parse(skv.m.get("expected")).salt === day, "a day set on the desk key is kept in KV expected and read back");
   ok((await sreq("/desk/expected", "POST", { product: "salt", on: "2020-01-01" }, D)).status === 400 && JSON.parse(skv.m.get("expected")).salt === day, "a past day is refused and the kept one stands");
+  /* 15 Nov 2026: a passed day is no day, on every read */
+  {
+    const { expectedLive } = await import("../stmt/orders.js");
+    const live = expectedLive({ salt: "2026-10-04", oil: "2026-10-05", candy: "2026-10-12", rice: 7 }, at);
+    ok(!("salt" in live) && live.oil === "2026-10-05" && live.candy === "2026-10-12" && !("rice" in live), "expectedLive keeps today and ahead and drops a passed day: " + JSON.stringify(live));
+    const keep = skv.m.get("expected");
+    skv.m.set("expected", JSON.stringify({ salt: day, oil: "2020-01-01" }));
+    const g = await (await sreq("/desk/expected", "GET", null, D)).json();
+    ok(g.ok && g.expected.salt === day && !("oil" in g.expected), "the Counter's read leaves a passed day out: " + JSON.stringify(g.expected));
+    skv.m.set("expected", keep);
+  }
   const pxDb = (ids) => ({ prepare() { const all = async () => ({ results: [{ key: "PRICING", doc: JSON.stringify({ byProduct: Object.fromEntries(ids.map((i) => [i, {}])) }) }] });
     return { bind: () => ({ all, first: async () => null }), all, first: async () => null }; } });
   const denv = { ...mkEnv(new KV()), SALT_LEDGER: pxDb(["salt", "oil", "candy", "rice"]), SALT_WRITE_KEY: "k-f4", STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
@@ -51586,14 +51597,15 @@ await (async () => {
       const L = w.eval("expLights()"), today = w.eval("TODAY.toISOString().slice(0,10)"), E = w.eval("EXPECTED");
       const rows = [...w.document.querySelectorAll("#expRows .expgrid > .exprow")], ids = Object.keys(L);
       const bad = ids.filter((p, i) => {
-        const r = rows[i], asks = (L[p].light === "amber" || L[p].light === "red") && !(E[p] && E[p] >= today), clr = r && r.querySelector(`button[data-expclr="${p}"]`);
+        const held = !!(E[p] && E[p] >= today), asks = (L[p].light === "amber" || L[p].light === "red") && !held, ctl = L[p].light !== "green" || held;
+        const r = rows[i], clr = r && r.querySelector(`button[data-expclr="${p}"]`);
         return !r || !r.classList.contains("exprow--" + L[p].light) || r.classList.contains("exprow--asks") !== asks || !!r.querySelector(".expask") !== asks
-          || r.querySelector(".expword").textContent.toLowerCase() !== L[p].light || !r.querySelector(".expctl #exp_" + p) || !clr || clr.disabled !== !E[p];
+          || r.querySelector(".expword").textContent.toLowerCase() !== L[p].light || !!r.querySelector(".expctl #exp_" + p) !== ctl || (ctl && (!clr || clr.disabled !== !held));
       });
       const css = [...w.document.querySelectorAll("style")].map((s) => s.textContent).join("\n");
       ok(rows.length === ids.length && bad.length === 0 && /\.expctl \.dtin\{width:310px;flex:0 0 auto;\}/.test(css)
         && /\.exprow\{display:grid;grid-template-columns:minmax\(0,1fr\) auto;/.test(css),
-        "the restock card is one row a book: its light, Asks where a day is wanted, Clear shut with no day, the control 310px in a column of its own: " + JSON.stringify(bad));
+        "the restock card is one row a book: its light, Asks where a day is wanted, the day's control only where a day can show or one is held, Clear shut with no day, the control 310px in a column of its own: " + JSON.stringify(bad));
     }
     w.document.getElementById("exp_salt").value = "2099-03-04";
     await w.eval("expPost('salt',false)");
@@ -51603,7 +51615,59 @@ await (async () => {
     const n0 = sent.filter((x) => x[1] === "POST").length;
     w.document.getElementById("exp_salt").value = "2020-01-01";
     await w.eval("expPost('salt',false)");
-    ok(sent.filter((x) => x[1] === "POST").length === n0 && /passed/.test(w.document.getElementById("expMsg").textContent), "a day that has passed is refused on the desk and sends nothing");
+    const saltNote = () => { const b = w.document.querySelector('#expRows button[data-expset="salt"]'); const n = b && b.closest(".exprow").querySelector(".expnote"); return n ? { t: n.textContent, cls: n.className } : null; };
+    ok(sent.filter((x) => x[1] === "POST").length === n0 && /passed/.test((saltNote() || {}).t) && /expnote--bad/.test((saltNote() || {}).cls),
+      "a day that has passed is refused on the desk, sends nothing, and says so on its own row in ember");
+    /* ---- 15 Nov 2026, his word ("I want the Set and Clear button to function properly"): KV's read can trail a write by a minute, so
+       the desk takes the dates from the server's answer to the tap and holds them over a read that disagrees; a passed day is no day ---- */
+    {
+      const ahead = "2099-05-06";
+      let store = {}, stale = {}, gate = null;
+      w.fetch = async (q, init) => {
+        const m = (init && init.method) || "GET", b = init && init.body ? JSON.parse(init.body) : null;
+        sent.push([String(q), m, b]);
+        if (m === "POST") { if (gate) await gate; if (b.on === null) delete store[b.product]; else store[b.product] = b.on;
+          return { ok: true, status: 200, json: async () => ({ ok: true, expected: { ...store } }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true, expected: { ...stale } }) };
+      };
+      w.eval("EXP_HOLD=null;EXP_SAID={};EXP_BUSY={};EXPECTED={};expDraw();");
+      store = { oil: "2020-01-01" }; stale = {};
+      w.document.getElementById("exp_salt").value = ahead;
+      await w.eval("expPost('salt',false)");
+      ok(w.eval("EXPECTED").salt === ahead && !("oil" in w.eval("EXPECTED")) && w.document.getElementById("exp_salt").value === ahead
+        && /^Sent\. Customers see More by/.test((saltNote() || {}).t) && /expnote--said/.test((saltNote() || {}).cls),
+        "Set draws the day the server wrote at once, says Sent on its own row, and drops a passed day from the answer: " + JSON.stringify([w.eval("EXPECTED"), saltNote()]));
+      await w.eval("expLoad(true)");
+      ok(w.eval("EXPECTED").salt === ahead && w.document.getElementById("exp_salt").value === ahead,
+        "a read that trails the write does not take the day back off the card: " + JSON.stringify(w.eval("EXPECTED")));
+      stale = { salt: ahead };
+      await w.eval("expPost('salt',true)");
+      await w.eval("expLoad(true)");
+      const clr = w.document.querySelector('#expRows button[data-expclr="salt"]');
+      ok(!("salt" in w.eval("EXPECTED")) && clr && clr.disabled && /^Cleared/.test((saltNote() || {}).t),
+        "Clear takes the day off at once and a read that still holds it does not put it back: " + JSON.stringify([w.eval("EXPECTED"), saltNote()]));
+      w.eval("EXP_HOLD=null;");
+      stale = { salt: "2020-01-01", candy: ahead };
+      await w.eval("expLoad(true)");
+      ok(!("salt" in w.eval("EXPECTED")) && w.eval("EXPECTED").candy === ahead, "a passed day in a read is no day: " + JSON.stringify(w.eval("EXPECTED")));
+      let open; gate = new Promise((res) => { open = res; });
+      w.document.getElementById("exp_salt").value = ahead;
+      const n1 = sent.filter((x) => x[1] === "POST").length;
+      const first = w.eval("expPost('salt',false)");
+      const set = w.document.querySelector('#expRows button[data-expset="salt"]'), cl = w.document.querySelector('#expRows button[data-expclr="salt"]');
+      const busyDrawn = set && set.disabled && set.textContent === "Sending" && cl && cl.disabled;
+      const second = w.eval("expPost('salt',false)");
+      open(); await first; await second; gate = null;
+      const keptWhileBusy = w.document.getElementById("exp_salt").value;
+      ok(busyDrawn && keptWhileBusy === ahead && sent.filter((x) => x[1] === "POST").length === n1 + 1,
+        "while a Set is on its way its Set and Clear rest, the day typed stays in its box, and a second tap sends nothing: " + JSON.stringify([busyDrawn, keptWhileBusy, sent.filter((x) => x[1] === "POST").length - n1]));
+      w.fetch = async () => ({ ok: false, status: 400, json: async () => ({ ok: false, error: "that day has passed" }) });
+      w.document.getElementById("exp_salt").value = "2099-07-08";
+      await w.eval("expPost('salt',false)");
+      ok(/refused it: that day has passed/.test((saltNote() || {}).t) && /expnote--bad/.test((saltNote() || {}).cls) && w.document.getElementById("exp_salt").value === "2099-07-08",
+        "a refusal is said on its own row in ember and the day typed stays in its box: " + JSON.stringify([saltNote(), w.document.getElementById("exp_salt").value]));
+      w.eval("EXP_HOLD=null;EXP_SAID={};EXP_BUSY={};");
+    }
     /* ---- 6. THE PUBLISH: the shelf and commitments read off the desk, the light the engine's, sealed outside the stamp ---- */
     const { supplySnapshot } = await import("../tools/book.mjs");
     const raw = supplySnapshot(w), prodBefore = w.eval("PROD");

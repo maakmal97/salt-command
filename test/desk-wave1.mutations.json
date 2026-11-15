@@ -49,7 +49,7 @@
  {"name": "the ledger's kept columns wait for the frame", "find": "if(late&&part==='ledger'){try{ledFit(true);}catch(e){}}", "replace": ""},
  {"name": "the cached-only ledger call measures", "find": "  if(cachedOnly)return;\n", "replace": ""},
  {"name": "the rail's count is never warmed", "find": "WARM_T=setTimeout(()=>{WARM_T=0;try{railCounts();}catch(e){}},400);", "replace": "WARM_T=setTimeout(()=>{WARM_T=0;},400);"},
- {"name": "the restock date does not ask for the warm", "find": "EXPECTED=j.expected;EXPECTED_READ=true;\n  warmSoon();", "replace": "EXPECTED=j.expected;EXPECTED_READ=true;"},
+ {"name": "the restock date does not ask for the warm", "find": "EXPECTED=next;EXPECTED_READ=true;\n  warmSoon();", "replace": "EXPECTED=next;EXPECTED_READ=true;"},
  {"name": "the hushes do not ask for the warm", "find": "HUSH=j.hush;HUSH_READ=true;\n  warmSoon();", "replace": "HUSH=j.hush;HUSH_READ=true;"},
  {"name": "the waiting list does not ask for the warm", "find": "function waitRecount(){warmSoon();const n=", "replace": "function waitRecount(){const n="},
  {"name": "a kept canvas runs its entrance again", "find": "D.transitions=D.transitions||{};D.transitions.attach={animation:{duration:0}};", "replace": ""},

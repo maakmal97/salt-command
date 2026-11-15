@@ -1,0 +1,68 @@
+[
+ {
+  "name": "a read that trails the tap takes the day back",
+  "file": "master/salt_command.html",
+  "find": "  if(EXP_HOLD&&Date.now()-EXP_HOLD.at<EXP_HOLD_MS&&JSON.stringify(next)!==EXP_HOLD.v)next=JSON.parse(EXP_HOLD.v);",
+  "replace": "  if(false)next=JSON.parse(EXP_HOLD.v);"
+ },
+ {
+  "name": "the tap ignores the server's answer and reads again",
+  "file": "master/salt_command.html",
+  "find": "  if(j.expected&&typeof j.expected==='object'){EXPECTED=expLive(j.expected);",
+  "replace": "  if(false){EXPECTED=expLive(j.expected);"
+ },
+ {
+  "name": "a passed day stays a day on the desk",
+  "file": "master/salt_command.html",
+  "find": "&&/^\\d{4}-\\d{2}-\\d{2}$/.test(v)&&v>=t)out[k]=v;return out;}",
+  "replace": "&&/^\\d{4}-\\d{2}-\\d{2}$/.test(v))out[k]=v;return out;}"
+ },
+ {
+  "name": "a second tap sends while the first is out",
+  "file": "master/salt_command.html",
+  "find": "  if(EXP_BUSY[p])return;\n",
+  "replace": ""
+ },
+ {
+  "name": "Set does not rest while its call is out",
+  "file": "master/salt_command.html",
+  "find": "data-expset=\"${esc(p)}\"${busy?' disabled':''}>${busy==='set'?'Sending':'Set'}</button>",
+  "replace": "data-expset=\"${esc(p)}\">Set</button>"
+ },
+ {
+  "name": "a green book with no day still draws the controls",
+  "file": "master/salt_command.html",
+  "find": "    const ctl=l.light!=='green'||!!d;",
+  "replace": "    const ctl=true;"
+ },
+ {
+  "name": "a refusal is drawn as a success",
+  "file": "master/salt_command.html",
+  "find": "${said?(said.bad?' expnote--bad':' expnote--said'):''}",
+  "replace": "${said?' expnote--said':''}"
+ },
+ {
+  "name": "the tap's answer is not said on its row",
+  "file": "master/salt_command.html",
+  "find": "${esc(said?said.t:note)}",
+  "replace": "${esc(note)}"
+ },
+ {
+  "name": "the Counter's read keeps a passed day",
+  "file": "stmt/worker.js",
+  "find": "expected: expectedLive(await cur()) });",
+  "replace": "expected: await cur() });"
+ },
+ {
+  "name": "expectedLive keeps a passed day",
+  "file": "stmt/orders.js",
+  "find": "for (const [k, v] of Object.entries(cur && typeof cur === \"object\" ? cur : {})) if (typeof v === \"string\" && v >= today) next[k] = v;\n  return next;",
+  "replace": "for (const [k, v] of Object.entries(cur && typeof cur === \"object\" ? cur : {})) if (typeof v === \"string\") next[k] = v;\n  return next;"
+ },
+ {
+  "name": "a redraw draws the stored day over the one typed",
+  "file": "master/salt_command.html",
+  "find": "    if(i&&(EXP_BUSY[p]||(s&&s.bad&&Date.now()-s.at<EXP_SAID_MS)))i.value=typed[p];});",
+  "replace": "    if(false)i.value=typed[p];});"
+ }
+]
