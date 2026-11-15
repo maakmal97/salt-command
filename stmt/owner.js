@@ -3932,8 +3932,8 @@ export const OWNER_JS = `
       var his=m.by==='desk'; return bubble(his?'mine':'theirs',m.text,(his?'You, ':'They wrote, ')+fmtWhen(m.at),'',false);
     });
     var sec=oThreadOf('Messages',lines,'Messages on this order'); sec.setAttribute('data-ocol','record');
-    if(!lines.length) sec.querySelector('.salt-thread__lines').appendChild(el('p','salt-settings__foot omsgs__none','No messages yet.'));
-    var th=sec.querySelector('.salt-thread'), quick=el('div','oquick'), f=oComposerOf('Your line','Send'), said=f.field;
+    if(!lines.length) sec.appendChild(el('p','onote omsgs__none','No messages yet.'));
+    var th=sec, quick=el('div','oquick'), f=oComposerOf('Your line','Send'), said=f.field;
     actOn(said,'order.reply-text'); actOn(f.sendButton,'order.reply');
     makerQuick().forEach(function(line,i){
       makerButton(quick,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
