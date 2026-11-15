@@ -12231,7 +12231,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1519","d":"15 Nov 2026","t":"THE RESTOCK DATE'S SET AND CLEAR WORK AT ONCE","n":["<b>SET AND CLEAR TAKE EFFECT ON THE CARD AT ONCE.</b> On Stock's Restock date, a Set or a Clear now shows on the card the moment the server answers. Before, the card read the dates again straight away, and that read could return them as they were for up to a minute, so Set and Clear looked to do nothing.","<b>SAID ON ITS OWN ROW.</b> What a tap did is said on that book's row for a minute: Sent, with the day customers will read, or Cleared, or the reason it was refused, in red. The old line at the foot of the card, which said customers would see it within the hour, is gone; a publish follows within a few minutes.","<b>A PASSED DAY GOES.</b> A day that has passed is dropped from the card, from To do and from what the server answers, so it no longer sits in its box. While a tap is on its way its Set and Clear rest and the day typed stays in its box.","<b>FEWER BOXES.</b> A green book with no day set shows its light and figures alone; the day's box, Set and Clear stand only where customers would read a day (any light but green) or where one is already set."]}];
+const evolution=[{"v":"v1520","d":"15 Nov 2026","t":"THE MOVE TO AMBIENT BEGINS","n":["<b>AMBIENT IS CARRIED; NOTHING CHANGES ON SCREEN YET.</b> The first part of the move to Ambient, your main design system: Ambient 0.7 is carried into the repository and checked against its lock on every build, and salt's market heat is read off its stock cover, tight at 7 days or under and soft past 14, ready for Salt Admin's screens to take their colour from it. Salt Admin moves next, then the Counter, then the Desk."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12393,7 +12393,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Nov 2026, 21:18 KL';
+const LAST_UPDATED='15 Nov 2026, 21:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

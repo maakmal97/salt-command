@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0dc2440295226d01";
+var SALT_BUILD_ID="4bad089703977405";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9619,6 +9619,12 @@ function marketWalk(C,p,day,from){
 /* the day's move for a book, null off a band book or before the rule's since; marketK the number the walk reads */
 function marketOf(C,p){if(!marketRule(C,p)||!C.today)return null;const d=todayISO(C);return viaMemo(C,'market|'+p+'|'+d,()=>marketWalk(C,p,d));}
 function marketK(C,p){const m=marketOf(C,p);return m&&m.on&&Math.abs(m.k)>1e-9?m.k:null;}
+/* 14 Nov 2026, THE MOVE TO AMBIENT (docs/plan-ambient-move.html, his answers of 14 Nov 2026): THE HEAT, the colour a staff screen takes (Flare
+   tight, Lagoon otherwise), read off the day's SUPPLY STEP and never off the move itself, which walks 5 points a day towards its target and so lags
+   a lot that lands. Tight while supply's step is up (7 days of cover or under), soft while it is down (past 14 days), neutral between. A day
+   switched off, a day before the rule's since and a book with no market carry no supply step, and no demand measured is a step of nought:
+   each reads neutral. A reading only: nothing prices from it. */
+function marketHeat(C,p){const m=marketOf(C,p),s=m&&typeof m.supply==="number"?m.supply:0;return s>1e-9?"tight":s<-1e-9?"soft":"neutral";}
 /* THE REASON, in his words, the one place they are made (the Desk's Pricing and Salt Admin both show it): "Median +5: 4.2 days of cover" */
 function marketWhy(e){
   if(!e)return '';
@@ -9959,7 +9965,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,nrsShare,heldBefore,
   inputs,policy,fiveTiers,figures,
-  ruleFor,shelfAt,marketCover,marketPace,marketWalk,marketOf,marketK,marketWhy,marketReplay,priceReading,marketScore,switchOn,
+  ruleFor,shelfAt,marketCover,marketPace,marketWalk,marketOf,marketK,marketHeat,marketWhy,marketReplay,priceReading,marketScore,switchOn,
   habitOf,habits,habitMap,sizeWarn,winBack,newBuyers,testOf,testReading,calendarLift,
   ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,pctBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
@@ -12430,7 +12436,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1519","d":"15 Nov 2026","t":"THE RESTOCK DATE'S SET AND CLEAR WORK AT ONCE","n":["<b>SET AND CLEAR TAKE EFFECT ON THE CARD AT ONCE.</b> On Stock's Restock date, a Set or a Clear now shows on the card the moment the server answers. Before, the card read the dates again straight away, and that read could return them as they were for up to a minute, so Set and Clear looked to do nothing.","<b>SAID ON ITS OWN ROW.</b> What a tap did is said on that book's row for a minute: Sent, with the day customers will read, or Cleared, or the reason it was refused, in red. The old line at the foot of the card, which said customers would see it within the hour, is gone; a publish follows within a few minutes.","<b>A PASSED DAY GOES.</b> A day that has passed is dropped from the card, from To do and from what the server answers, so it no longer sits in its box. While a tap is on its way its Set and Clear rest and the day typed stays in its box.","<b>FEWER BOXES.</b> A green book with no day set shows its light and figures alone; the day's box, Set and Clear stand only where customers would read a day (any light but green) or where one is already set."]}];
+const evolution=[{"v":"v1520","d":"15 Nov 2026","t":"THE MOVE TO AMBIENT BEGINS","n":["<b>AMBIENT IS CARRIED; NOTHING CHANGES ON SCREEN YET.</b> The first part of the move to Ambient, your main design system: Ambient 0.7 is carried into the repository and checked against its lock on every build, and salt's market heat is read off its stock cover, tight at 7 days or under and soft past 14, ready for Salt Admin's screens to take their colour from it. Salt Admin moves next, then the Counter, then the Desk."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12592,7 +12598,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Nov 2026, 21:18 KL';
+const LAST_UPDATED='15 Nov 2026, 21:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
