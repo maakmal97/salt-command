@@ -66,9 +66,9 @@ export function world() {
 
 const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
 /* 27 Oct 2026: the tail (Handed over, Cash paid) stands after the added books, so the form's own row is the one outside an added book */
-const mainField = (root, label) => [...root.querySelectorAll("label")].filter((e) => !e.closest(".maker-extra-trade"))
+const mainField = (root, label) => [...root.querySelectorAll("label, div.amb-field")].filter((e) => !e.closest(".maker-extra-trade"))
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
-const field = (root, label) => [...root.querySelectorAll("label")]
+const field = (root, label) => [...root.querySelectorAll("label, div.amb-field")]
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
 /* 22 Oct 2026 (multi-tick Approve): a card's Approve chooses; the bar's Confirm asks on the sheet, and its go sends the batch */
 async function decide(doc, work, approve) {
@@ -348,9 +348,9 @@ export async function run({ ok, pageWork }) {
       page.change("Type", "sale");
       page.change("Associate", stream); page.change("Which associate", "CA1-ZED");
       if (stream === "R2") page.change("Their customer", buyer);
-      const party = [...page.section.querySelectorAll(":scope > .maker-list > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer" : "Who")));
-      ok((stream === "R2" ? party?.hidden && !field(page.section, "Their customer").parentElement.hidden
-        : !party?.hidden && field(page.section, "Their customer").parentElement.hidden)
+      const party = [...page.section.querySelectorAll(":scope > label.amb-field")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer" : "Who")));
+      ok((stream === "R2" ? party?.hidden && !field(page.section, "Their customer").closest(".amb-field").hidden
+        : !party?.hidden && field(page.section, "Their customer").closest(".amb-field").hidden)
         && field(page.section, "Which associate").value === "CA1-ZED",
         "multi-book attribution controls: " + stream + " exposes its own party/end-customer conditions " + String(buyer));
       const posted = await page.post("/all/maker/inputs/sale", formSale(AT, stream === "R2"

@@ -66,7 +66,7 @@ async function drawn(opts) {
   const tap = async (act) => { log.length = 0; const c = byAct(p.d, act); if (!c) return ["MISSING " + act]; c.click(); await p.work.quiet(); return gets(); };
   const where = () => {
     const place = [...p.d.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m"));
-    const part = [...p.d.querySelectorAll(".aparts button[aria-selected='true']")].map((b) => b.parentNode.getAttribute("data-place") + "/" + b.getAttribute("data-part"));
+    const part = [...p.d.querySelectorAll(".aparts button[aria-selected='true'], .aparts button[aria-pressed='true']")].map((b) => b.parentNode.getAttribute("data-place") + "/" + b.getAttribute("data-part"));
     /* 2 Nov 2026: a part with no tab in the Segment (Approve, Payments, Group, Ledger) is the address's */
     if (!part.length && new Set(place).size === 1 && place[0] === "orders") {
       const here = ["approve", "payments", "group", "ledger"].find((k) => shown(p.d.querySelector('[data-in="orders.' + k + '"]')));
@@ -104,11 +104,13 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
     /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
     /* 2 Nov 2026: Orders' four parts are one Segment, as Customers' */
-    const recipe = (s) => (["customers", "orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
-    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
-      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
+    const recipe = (s) => (["customers", "orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record"].includes(s.getAttribute("data-place")) ? ["amb-segment", "amb-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 16 Nov 2026, the move to Ambient (place I): Record's three and Shop's six are Ambient's Segment, a group of pressed buttons, not a tablist */
+    const ambStrip = (s) => ["shop", "record"].includes(s.getAttribute("data-place"));
+    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === (ambStrip(s) ? "group" : "tablist") && s.getAttribute("aria-label")
+      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && (ambStrip(s) ? !b.hasAttribute("role") : b.getAttribute("role") === "tab")))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs, or Customers' slider, or Shop's, Orders' and Record's Nav bar tabs, a tablist of tabs, and Needs you has none");
+    "a strip is the system's tabs, or Customers' and Orders' slider, or Shop's and Record's Segment, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
@@ -135,7 +137,7 @@ export async function run({ ok, pageWork }) {
     /* a part shows a menu of its forms by name, and a retained input above it; a form is shown when its row is tapped (test/admin-orders.mjs) */
     const formsIn = (part) => {
       const kept = [...d.querySelectorAll("#makerInputs .maker-input")].filter(shown).map((f) => (f.querySelector("h3") || {}).textContent);
-      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-settings__label").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
+      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".amb-setting__name").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
       return kept.concat(rows);
     };
     const byPart = {};

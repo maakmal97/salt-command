@@ -2800,8 +2800,62 @@ export const OWNER_JS = `
     };
     s.fill(items); return s;
   }
+  /* 16 Nov 2026: an order's card and the group order (builders G's places) keep the older tiles and Segment until they are redrawn */
+  function makerTilesOld(label,items,none){
+    var L=labOf(label), setO=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq), legend=el('legend','salt-options__legend salt-options__legend--label lbl',L[0]);
+    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(productTag(L[3])); }   /* a legend about a book ends in its typed tag: [words, act, key, book] (25 Oct 2026) */
+    setO.appendChild(legend); setO.appendChild(grid);
+    Object.defineProperty(setO,'value',{
+      get:function(){ var on=setO.querySelector('input:checked'); return on?on.value:''; },
+      set:function(v){ [].forEach.call(setO.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }
+    });
+    setO.fill=function(list){
+      var on=setO.querySelector('input:checked'), keptO=on?on.value:null, offeredO=list.some(function(item){ return String(item.value)===keptO; });
+      grid.textContent='';
+      /* tiles that are marks alone (the books) sit compact and centred, never a wide box with a mark in its corner */
+      /* 25 Oct 2026 (Record redesign P3): two or three short choices lie on one row, as the canvas draws them; the books, typed tags, four up */
+      var brief=list.every(function(item){ return String(item.label).length<=14; });
+      grid.className='salt-options__grid'+(list.length&&list.every(function(item){ return item.mark; })?' maker-marks'
+        :list.length===3&&brief?' maker-row maker-row--3':list.length!==3&&brief?' salt-options__grid--2':'');
+      list.forEach(function(item,i){
+        var lab=el('label','salt-option'), rad=el('input','salt-option__input'), face=el('span','salt-option__face');
+        rad.type='radio'; rad.name=name; rad.value=String(item.value); if(item.aria) rad.setAttribute('aria-label',item.aria);
+        actOn(rad,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        rad.checked=offeredO?String(item.value)===keptO:(!none&&i===0);
+        if(item.mark) face.appendChild(productTag(item.mark));
+        else if(item.detail){ var said=el('span','salt-option__text'); said.appendChild(el('span','salt-option__label',item.label)); said.appendChild(el('span','salt-option__detail',item.detail)); face.appendChild(said); }   /* a tile with its note under its words (25 Oct 2026) */
+        else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its typed tag on Salt Admin (his decision of 22 Oct 2026; Record from 25 Oct) */
+        lab.appendChild(rad); lab.appendChild(face); grid.appendChild(lab);
+      });
+    };
+    setO.fill(items); return setO;
+  }
+  var segSeqOld=0;
+  function makerSegRowOld(root,label,items){
+    var L=labOf(label), row=el('div','salt-settings__row mrow'), name=el('span','salt-settings__label',L[0]), s=el('div','salt-segment salt-segment--tight mseg'), curO='', dis=false;
+    name.id='mseg'+(++segSeqOld); row.appendChild(name); row.appendChild(s); makerList(root).appendChild(row);
+    s.setAttribute('role','radiogroup'); s.setAttribute('aria-labelledby',name.id);
+    var pickO=function(v){ curO=''; [].forEach.call(s.children,function(b,i){ var on=b.getAttribute('data-value')===v; b.setAttribute('aria-checked',String(on)); if(on){ curO=v; s.style.setProperty('--i',String(i)); } }); };
+    Object.defineProperty(s,'value',{ get:function(){ return curO; }, set:function(v){ pickO(String(v)); } });
+    Object.defineProperty(s,'disabled',{ get:function(){ return dis; }, set:function(v){ dis=!!v; [].forEach.call(s.children,function(b){ b.disabled=dis; }); } });
+    Object.defineProperty(s,'hidden',{ get:function(){ return row.hidden; }, set:function(v){ row.hidden=!!v; } });
+    s.fill=function(list){
+      /* the choice kept is the option shown chosen, never the empty value before any is (For good is the empty value: the first fill falls to 7 days, as the tiles did) */
+      var on=s.querySelector('[aria-checked="true"]'), keptO=on?on.getAttribute('data-value'):null, offeredO=list.some(function(item){ return String(item.value)===keptO; });
+      s.textContent=''; s.style.setProperty('--n',String(Math.max(list.length,1)));
+      list.forEach(function(item){
+        var b=actOn(el('button','salt-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        b.type='button'; b.setAttribute('role','radio'); b.setAttribute('data-value',String(item.value)); b.disabled=dis; if(item.aria) b.setAttribute('aria-label',item.aria);
+        b.addEventListener('click',function(){ if(dis) return; pickO(String(item.value)); s.dispatchEvent(new Event('change',{bubbles:true})); });
+        s.appendChild(b);
+      });
+      pickO(offeredO?keptO:(list.length?String(list[0].value):''));
+    };
+    s.fill(items); return s;
+  }
   function makerTilesIn(root,label,items,none){
-    if(makerAmb(root)&&makerSegFits(items,none)) return makerSegRow(root,label,items);
+    if(!makerAmb(root)){ if(makerRowMode(root)&&makerSegFits(items,none)) return makerSegRowOld(root,label,items); var old=makerTilesOld(label,items,none); root.appendChild(old); return old; }
+    if(makerSegFits(items,none)) return makerSegRow(root,label,items);
     var set=makerTiles(label,items,none); root.appendChild(set); return set;
   }
   /* 27 Oct 2026 (his answers: Record's forms in the language of Shop's This device): AN ORDER'S CARD (.odecide) KEEPS A FIELD OR A DROPDOWN AS A ROW OF A SETTINGS LIST, its name at the left and the
@@ -6977,7 +7031,7 @@ export const OWNER_JS = `
     if(status){ status.className='amb-settings__foot'; status.textContent=list.length?'Ready to collect asks which one.':'Ready to collect needs one.'; root.appendChild(status); }
     root.appendChild(el('h3','amb-section','New point'));
     var field=function(label,act,ph){ var i=actOn(el('input','amb-input'),act); i.type='text'; i.placeholder=ph; root.appendChild(sField(label,i)); return i; };
-    var code=field('Code','points.code','A3'), where=field('Place','points.place','Search, or paste a link');
+    var code=field('Code','points.code','A3'), where=field('Place','points.place','');
     code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false');
     /* 26 Oct 2026, his word ("type it and the relevant recommended place from OpenStreetMap appears"): three letters or more, a moment's pause,
        and up to five places stand as rows under Place, each its name and where it is; a tap (or the arrows and Enter) puts its point in

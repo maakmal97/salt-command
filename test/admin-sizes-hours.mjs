@@ -38,23 +38,22 @@ export async function run({ ok, pageWork }) {
   try {
     await p.tap("nav.record");
     const form = p.form("Printed sizes");
-    const group = form && form.querySelector("fieldset.maker-sizes");
-    const grid = group && group.querySelector(":scope > .salt-options__grid");
+    /* 16 Nov 2026, the move to Ambient (place I): the sizes are a settings group, a switch a size, ticked while it is printed */
+    const group = form && form.querySelector(".maker-sizes.amb-settings");
+    const grid = group && group.querySelector(":scope > .amb-settings__list");
     const ticks = () => (grid ? [...grid.querySelectorAll("input")] : []);
     const want = [0.5, 1, 2.5, 5, 10, 12.5];
     const tiles = grid ? [...grid.children] : [];
-    ok(!!group && !!grid && group.classList.contains("salt-options") && group.querySelector(":scope > legend.salt-options__legend") && /^Sizes to print$/.test(group.querySelector("legend").textContent)
-      && tiles.length === want.length && tiles.every((t, i) => t.tagName === "LABEL" && t.classList.contains("salt-option") && t.firstElementChild === ticks()[i]
-        && ticks()[i].classList.contains("salt-option__input") && ticks()[i].nextElementSibling.classList.contains("salt-option__face")
-        && ticks()[i].nextElementSibling.textContent === unitsOf(want[i])),
-    "the sizes are a group of the system's Option tiles named by a legend, a tile for each size in order, its face saying the size in words: " + (grid ? [...grid.children].map((t) => t.textContent).join() : "no grid"));
+    ok(!!group && !!grid && group.querySelector(":scope > h3.amb-settings__head") && /^Sizes to print$/.test(group.querySelector("h3").textContent)
+      && tiles.length === want.length && tiles.every((t, i) => t.tagName === "LI" && t.firstElementChild.classList.contains("amb-setting") && t.firstElementChild.lastElementChild === ticks()[i]
+        && ticks()[i].classList.contains("amb-switch") && t.firstElementChild.firstElementChild.textContent === unitsOf(want[i])),
+    "the sizes are a settings group named by its head, a row for each size in order, its name saying the size in words, its switch last: " + (grid ? [...grid.children].map((t) => t.textContent).join() : "no grid"));
     ok(ticks().length === want.length && ticks().every((t, i) => t.type === "checkbox" && t.value === String(want[i]) && t.getAttribute("data-act") === "record.house.size" && t.getAttribute("data-key") === String(want[i]))
       && same(ticks().map((t) => t.checked), [true, true, false, true, true, false]),
     "each tile is a checkbox with the act it had, keyed by its size, ticked while the size is printed and not when it is hidden: " + ticks().map((t) => t.getAttribute("data-key") + ":" + t.checked).join());
     ok(form && form.querySelectorAll("label.maker-field input[type=checkbox]").length === 0, "and no list of checkboxes in rows is left in the form");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.maker-sizes\s*\{[^}]*flex:\s*1 1 100%[^}]*min-width:\s*0/.test(css) && /\.adm \.maker-sizes \.salt-options__grid\s*\{[^}]*repeat\(auto-fill,\s*minmax\(/.test(css),
-      "the group has the row of its form to itself and its tiles run in as many columns as the pane holds");
+    ok(!/\.adm \.maker-sizes/.test(css) && /\.amb-settings__list \{/.test(css), "the page lays out no size group of its own: Ambient's settings list holds the rows");
     const send = async () => {
       const before = p.sent("/all/maker/inputs/house-sizes").length;
       byAct(form, "record.house.send").click(); await p.work.quiet();
@@ -65,7 +64,7 @@ export async function run({ ok, pageWork }) {
     const body = await send();
     ok(body && body.product === "salt" && same(body.hide, [1, 5, 12.5]) && Object.keys(body).sort().join() === "at,hide,product",
       "the sizes sent are the product and the sizes left unticked, as numbers, with the id and nothing else: " + JSON.stringify(body));
-    const books = form.querySelector("fieldset.maker-tiles");
+    const books = form.querySelector("fieldset.maker-tiles");   /* a Choice of the books' chips */
     const oil = [...books.querySelectorAll("input")].find((r) => r.value === "oil");
     oil.checked = true; oil.dispatchEvent(new p.w.Event("change", { bubbles: true }));
     ok(same(ticks().map((t) => t.value), ["1", "5"]) && ticks().every((t) => t.checked) && ticks().every((t) => t.getAttribute("data-act") === "record.house.size"),
@@ -95,18 +94,18 @@ export async function run({ ok, pageWork }) {
     const ui = () => {
       /* 26 Oct 2026 (Hours as settings): the override is Now's, opened by the Hold the shop switch: Hold as a Segment of two, then Until */
       const now = p.d.getElementById("makerNowCard");
-      const state = now.querySelector('[role="radiogroup"]');
+      const state = now.querySelector(".amb-segment");
       const until = now.querySelector('input[type="datetime-local"]');
-      return { radios: state ? [...state.querySelectorAll('[role="radio"]')] : [], until, label: until ? until.closest("label").querySelector(".salt-settings__label").textContent : "no field" };
+      return { radios: state ? [...state.querySelectorAll(".amb-segment__opt")] : [], until, label: until ? until.closest("label").querySelector(".amb-setting__name").textContent : "no field" };
     };
     const choose = (value) => { ui().radios.find((x) => x.getAttribute("data-key") === value).click(); };
     const sw = () => byAct(p.d, "hours.hold");
-    ok(!!sw() && sw().getAttribute("role") === "switch" && sw().getAttribute("aria-checked") === "false" && ui().radios.length === 0, "Hold the shop is a switch, off, with nothing under it");
+    ok(!!sw() && sw().getAttribute("role") === "switch" && sw().checked === false && ui().radios.length === 0, "Hold the shop is a switch, off, with nothing under it");
     sw().click(); await p.work.quiet();
     const radios = ui().radios;
-    ok(sw().getAttribute("aria-checked") === "true" && radios.length === 2 && same(radios.map((r) => r.getAttribute("data-key")), ["false", "true"]) && same(radios.map((r) => r.textContent), ["Closed", "Open"])
-      && radios.every((r) => r.getAttribute("data-act") === "hours.override-state") && radios[0].getAttribute("aria-checked") === "true" && radios[1].getAttribute("aria-checked") === "false" && ui().label === "Closed until",
-    "on, the shop held for now is a choice of two, Closed first and chosen, over a field that says Closed until: " + radios.map((r) => r.getAttribute("data-key") + ":" + r.getAttribute("aria-checked")).join() + " " + ui().label);
+    ok(sw().checked === true && radios.length === 2 && same(radios.map((r) => r.getAttribute("data-key")), ["false", "true"]) && same(radios.map((r) => r.textContent), ["Closed", "Open"])
+      && radios.every((r) => r.getAttribute("data-act") === "hours.override-state") && radios[0].getAttribute("aria-pressed") === "true" && radios[1].getAttribute("aria-pressed") === "false" && ui().label === "Closed until",
+    "on, the shop held for now is a choice of two, Closed first and chosen, over a field that says Closed until: " + radios.map((r) => r.getAttribute("data-key") + ":" + r.getAttribute("aria-pressed")).join() + " " + ui().label);
     choose("true");
     const openLabel = ui().label;
     choose("false");
@@ -119,7 +118,7 @@ export async function run({ ok, pageWork }) {
 
     filed = { open: false, until: new Date(Date.parse(stamp + ":00+08:00")).toISOString() };
     byAct(p.d, "hours.override-set").click(); await p.work.quiet();
-    ok(sw().getAttribute("aria-checked") === "true" && !!byAct(p.d, "hours.override-set") && ui().radios.length === 2,
+    ok(sw().checked === true && !!byAct(p.d, "hours.override-set") && ui().radios.length === 2,
       "once one is filed, the switch stays on with its choice and Set it, to change it");
     choose("true"); p.type(ui().until, stamp);
     byAct(p.d, "hours.override-set").click(); await p.work.quiet();

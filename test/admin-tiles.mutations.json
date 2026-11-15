@@ -1,296 +1,51 @@
 [
- {
-  "name": "a group has no legend",
-  "file": "stmt/owner.js",
-  "find": "set.appendChild(legend); set.appendChild(grid);",
-  "replace": "set.appendChild(grid);"
- },
- {
-  "name": "a group's legend is not in the form's label style",
-  "file": "stmt/owner.js",
-  "find": "el('legend','salt-options__legend salt-options__legend--label lbl',L[0])",
-  "replace": "el('legend','salt-options__legend',L[0])"
- },
- {
-  "name": "a group is not the system's Options fieldset",
-  "file": "stmt/owner.js",
-  "find": "el('fieldset','salt-options maker-tiles')",
-  "replace": "el('fieldset','maker-tiles')"
- },
- {
-  "name": "a group is a div, not a fieldset",
-  "file": "stmt/owner.js",
-  "find": "el('fieldset','salt-options maker-tiles')",
-  "replace": "el('div','salt-options maker-tiles')"
- },
- {
-  "name": "a tile is a checkbox",
-  "file": "stmt/owner.js",
-  "find": "radio.type='radio'; radio.name=name;",
-  "replace": "radio.type='checkbox'; radio.name=name;"
- },
- {
-  "name": "the groups share one radio name",
-  "file": "stmt/owner.js",
-  "find": "radio.name=name; radio.value=String(item.value);",
-  "replace": "radio.name='tiles'; radio.value=String(item.value);"
- },
- {
-  "name": "a tile carries no act",
-  "file": "stmt/owner.js",
-  "find": "actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));",
-  "replace": ""
- },
- {
-  "name": "the empty tile is keyed by nothing",
-  "file": "stmt/owner.js",
-  "find": "actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value))",
-  "replace": "actOn(radio,L[1],(L[2]?L[2]+'-':'')+item.value)"
- },
- {
-  "name": "a tile is not in the recipe's label",
-  "file": "stmt/owner.js",
-  "find": "lab=el('label','salt-option')",
-  "replace": "lab=el('div','salt-option')"
- },
- {
-  "name": "a tile has no recipe face",
-  "file": "stmt/owner.js",
-  "find": "face=el('span','salt-option__face');\n        radio.type='radio'",
-  "replace": "face=el('span','salt-option__plain');\n        radio.type='radio'"
- },
- {
-  "name": "a tile's face names nothing",
-  "file": "stmt/owner.js",
-  "find": "face.appendChild(el('span','salt-option__label',item.label));",
-  "replace": "face.appendChild(el('span','salt-option__label',''));"
- },
- {
-  "name": "a tile is out of the tab order",
-  "file": "stmt/owner.js",
-  "find": "lab.appendChild(radio); lab.appendChild(face);",
-  "replace": "radio.setAttribute('tabindex','-1'); lab.appendChild(radio); lab.appendChild(face);"
- },
- {
-  "name": "the face comes before the radio",
-  "file": "stmt/owner.js",
-  "find": "lab.appendChild(radio); lab.appendChild(face);",
-  "replace": "lab.appendChild(face); lab.appendChild(radio);"
- },
- {
-  "name": "a group drawn again forgets its choice",
-  "file": "stmt/owner.js",
-  "find": "radio.checked=offered?String(item.value)===kept:(!none&&i===0);",
-  "replace": "radio.checked=!none&&i===0;"
- },
- {
-  "name": "a group that may have none chosen picks its first",
-  "file": "stmt/owner.js",
-  "find": ":(!none&&i===0);",
-  "replace": ":(i===0);"
- },
- {
-  "name": "a fresh group takes the empty value as its choice (27 Oct 2026: the one group whose empty value is not its first, Hide for, is a Segment now)",
-  "file": "stmt/owner.js",
-  "find": "kept=on?on.getAttribute('data-value'):null,",
-  "replace": "kept=on?on.getAttribute('data-value'):'',"
- },
- {
-  "name": "a group with nothing chosen answers a value no tile has",
-  "file": "stmt/owner.js",
-  "find": "return on?on.value:''; }",
-  "replace": "return on?on.value:'x'; }"
- },
- {
-  "name": "setting a value checks every tile",
-  "file": "stmt/owner.js",
-  "find": "r.checked=r.value===String(v);",
-  "replace": "r.checked=true;"
- },
- {
-  "name": "a supplier's starting drift stays open",
-  "file": "stmt/owner.js",
-  "find": "idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});",
-  "replace": "idDrifts.forEach(function(item){item.select.disabled=false;item.typed.disabled=!canStart;});"
- },
- {
-  "name": "the sale Who is a select again",
-  "file": "stmt/owner.js",
-  "find": "actOn(el('input','fld salt-field__input mwho'),'record.trade.party')",
-  "replace": "actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party')"
- },
- {
-  "name": "the count's book sends another word",
-  "file": "stmt/owner.js",
-  "find": "context.products.map(bookItem)",
-  "replace": "context.products.map(function(code){ var b=bookItem(code); b.value=code+'x'; return b; })"
- },
- {
-  "name": "a purchase sends another word",
-  "file": "stmt/owner.js",
-  "find": "{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}",
-  "replace": "{value:'sale',label:'Sale'},{value:'buy',label:'Purchase'}"
- },
- {
-  "name": "the trade's book sends another word",
-  "file": "stmt/owner.js",
-  "find": "return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return bookItem(item.product); }));",
-  "replace": "return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ var b=bookItem(item.product); b.value=item.product+'x'; return b; }));"
- },
- {
-  "name": "the trade's collected handover sends another word",
-  "file": "stmt/owner.js",
-  "find": "var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'}",
-  "replace": "var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'picked',label:'Collected'}"
- },
- {
-  "name": "the gift's collected handover sends another word",
-  "file": "stmt/owner.js",
-  "find": "var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'}",
-  "replace": "var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'picked',label:'Collected'}"
- },
- {
-  "name": "a resale sends another stream",
-  "file": "stmt/owner.js",
-  "find": "[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'}",
-  "replace": "[{value:'',label:'No'},{value:'R2x',label:'Resells',aria:'They resell'}"
- },
- {
-  "name": "an introduction sends another stream",
-  "file": "stmt/owner.js",
-  "find": "{value:'R3',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc",
-  "replace": "{value:'R3x',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc"
- },
- {
-  "name": "a loan in goods sends another word",
-  "file": "stmt/owner.js",
-  "find": "[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]",
-  "replace": "[{value:'goods',label:'Goods'},{value:'cash',label:'Cash'}]"
- },
- {
-  "name": "a loan lent sends another word",
-  "file": "stmt/owner.js",
-  "find": "{value:'out',label:'We lent'}",
-  "replace": "{value:'lent',label:'We lent'}"
- },
- {
-  "name": "the loan, gift and correction books send another word",
-  "file": "stmt/owner.js",
-  "find": "var productItems=books.map(function(item){return bookItem(item.product);});",
-  "replace": "var productItems=books.map(function(item){var b=bookItem(item.product); b.value=item.product+'x'; return b;});"
- },
- {
-  "name": "the printed sizes' book sends another word",
-  "file": "stmt/owner.js",
-  "find": "houseBooks.map(function(item){ return bookItem(item.product); })), houseBoxes",
-  "replace": "houseBooks.map(function(item){ var b=bookItem(item.product); b.value=item.product+'x'; return b; })), houseBoxes"
- },
- {
-  "name": "a reminder hidden for a week sends another number",
-  "file": "stmt/owner.js",
-  "find": "{value:'7',label:'7 days'}",
-  "replace": "{value:'8',label:'7 days'}"
- },
- {
-  "name": "a reminder hidden for good sends a number of days",
-  "file": "stmt/owner.js",
-  "find": "{value:'',label:'For good'}",
-  "replace": "{value:'0',label:'For good'}"
- },
- {
-  "name": "a fulfilment sends another word",
-  "file": "stmt/owner.js",
-  "find": ":['Correction','Fulfilment','Cancellation'];\n      editKind.fill(",
-  "replace": ":['Correction','Fulfilled','Cancellation'];\n      editKind.fill("
- },
- {
-  "name": "a correction's yes sends another word",
-  "file": "stmt/owner.js",
-  "find": "[{value:'true',label:'Yes'},{value:'false',label:'No'}]",
-  "replace": "[{value:'yes',label:'Yes'},{value:'false',label:'No'}]"
- },
- {
-  "name": "a correction's resale sends another stream",
-  "file": "stmt/owner.js",
-  "find": ":definition.kind==='stream'?[{value:'R2',label:'They resell'}",
-  "replace": ":definition.kind==='stream'?[{value:'R2x',label:'They resell'}"
- },
- {
-  "name": "a correction's delivered sends another word",
-  "file": "stmt/owner.js",
-  "find": ":definition.kind==='handover'?[{value:'delivered',label:'Delivered'}",
-  "replace": ":definition.kind==='handover'?[{value:'dropped',label:'Delivered'}"
- },
- {
-  "name": "a yes or no in a correction is a select",
-  "file": "stmt/owner.js",
-  "find": "var tiled=definition.kind==='boolean'||definition.kind==='stream'",
-  "replace": "var tiled=definition.kind==='stream'"
- },
- {
-  "name": "a downstream customer role sends another word",
-  "file": "stmt/owner.js",
-  "find": "{value:'downstream',label:'Customer of an associate'}",
-  "replace": "{value:'downstream2',label:'Customer of an associate'}"
- },
- {
-  "name": "a new customer's starting % that is not set sends a word",
-  "file": "stmt/owner.js",
-  "find": "'record.add-id.drift',item.product,item.product],[{value:'',label:'Not set'}]",
-  "replace": "'record.add-id.drift',item.product,item.product],[{value:'none',label:'Not set'}]"
- },
- {
-  "name": "an associate appointed sends the stream for the kind",
-  "file": "stmt/owner.js",
-  "find": "return {value:item.kind,label:item.kind==='referral'",
-  "replace": "return {value:item.stream,label:item.kind==='referral'"
- },
- {
-  "name": "an associate's role starts chosen",
-  "file": "stmt/owner.js",
-  "find": "appointmentKinds,true)",
-  "replace": "appointmentKinds)"
- },
- {
-  "name": "a group does not fill the row of its form",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-tiles{flex:1 1 100%;min-width:0}",
-  "replace": ".adm .maker-tiles{min-width:0}"
- },
- {
-  "name": "a book's tile is the drawn mark again",
-  "file": "stmt/owner.js",
-  "find": "if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)",
-  "replace": "if(item.mark) face.appendChild(bookMark(item.mark,28));\n        else if(item.detail)"
- },
- {
-  "name": "a book's tile loses its tag",
-  "file": "stmt/owner.js",
-  "find": "        if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)",
-  "replace": "        if(item.mark) face.appendChild(el('span','salt-option__label',item.label));\n        else if(item.detail)"
- },
- {
-  "name": "a group of marks is two wide boxes across",
-  "file": "stmt/owner.js",
-  "find": "return item.mark; })?' maker-marks'",
-  "replace": "return item.mark; })?' salt-options__grid--2'"
- },
- {
-  "name": "a group of marks has no compact grid",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}",
-  "replace": ".adm .maker-marks{grid-template-columns:repeat(2,minmax(0,1fr))}"
- },
- {
-  "name": "a mark sits in its tile's corner",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-marks .salt-option__face{justify-content:center}",
-  "replace": ".adm .maker-marks .salt-option__face{justify-content:flex-start}"
- },
- {
-  "name": "the typed starting % gets the decimal pad back, which has no minus key on an iPhone",
-  "file": "stmt/owner.js",
-  "find": "typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');",
-  "replace": "typed.min=String(tlo);typed.max=String(thi);typed.inputMode='decimal';"
- }
+ {"name":"a group has no legend","file":"stmt/owner.js","find":"set.appendChild(legend);\n","replace":""},
+ {"name":"a group's legend is not in the form's label style","file":"stmt/owner.js","find":"el('legend','salt-options__legend salt-options__legend--label lbl',L[0])","replace":"el('legend','salt-options__legend',L[0])"},
+ {"name":"a group is not the system's Options fieldset","file":"stmt/owner.js","find":"el('fieldset','salt-options maker-tiles')","replace":"el('fieldset','maker-tiles')"},
+ {"name":"a group is a div, not a fieldset","file":"stmt/owner.js","find":"el('fieldset','salt-options maker-tiles')","replace":"el('div','salt-options maker-tiles')"},
+ {"name":"a tile is a checkbox","file":"stmt/owner.js","find":"radio.type='radio'; radio.name=name;","replace":"radio.type='checkbox'; radio.name=name;"},
+ {"name":"the groups share one radio name","file":"stmt/owner.js","find":"radio.name=name; radio.value=String(item.value);","replace":"radio.name='tiles'; radio.value=String(item.value);"},
+ {"name":"a tile carries no act","file":"stmt/owner.js","find":"actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));","replace":""},
+ {"name":"the empty tile is keyed by nothing","file":"stmt/owner.js","find":"actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value))","replace":"actOn(radio,L[1],(L[2]?L[2]+'-':'')+item.value)"},
+ {"name":"a tile is not in the recipe's label","file":"stmt/owner.js","find":"lab=el('label','salt-option')","replace":"lab=el('div','salt-option')"},
+ {"name":"a tile has no mark","file":"stmt/owner.js","find":"mark=el('span','amb-option__mark')","replace":"mark=el('span','amb-option__plain')"},
+ {"name":"a tile's face names nothing","file":"stmt/owner.js","find":"face.appendChild(el('span','salt-option__label',item.label));","replace":"face.appendChild(el('span','salt-option__label',''));"},
+ {"name":"a tile is out of the tab order","file":"stmt/owner.js","find":"lab.appendChild(radio); lab.appendChild(mark); lab.appendChild(title);","replace":"radio.setAttribute('tabindex','-1'); lab.appendChild(radio); lab.appendChild(mark); lab.appendChild(title);"},
+ {"name":"the mark comes before the radio","file":"stmt/owner.js","find":"lab.appendChild(radio); lab.appendChild(mark); lab.appendChild(title);","replace":"lab.appendChild(mark); lab.appendChild(radio); lab.appendChild(title);"},
+ {"name":"a group drawn again forgets its choice","file":"stmt/owner.js","find":"radio.checked=offered?String(item.value)===kept:(!none&&i===0);","replace":"radio.checked=!none&&i===0;"},
+ {"name":"a group that may have none chosen picks its first","file":"stmt/owner.js","find":":(!none&&i===0);\n        mark.setAttribute","replace":":(i===0);\n        mark.setAttribute"},
+ {"name":"a fresh group takes the empty value as its choice (27 Oct 2026: the one group whose empty value is not its first, Hide for, is a Segment now)","file":"stmt/owner.js","find":"kept=on?on.getAttribute('data-value'):null,","replace":"kept=on?on.getAttribute('data-value'):'',"},
+ {"name":"a group with nothing chosen answers a value no tile has","file":"stmt/owner.js","find":"var on=set.querySelector('input:checked'); return on?on.value:''; }","replace":"var on=set.querySelector('input:checked'); return on?on.value:'x'; }"},
+ {"name":"setting a value checks every tile","file":"stmt/owner.js","find":"set:function(v){ [].forEach.call(set.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }","replace":"set:function(v){ [].forEach.call(set.querySelectorAll('input'),function(r){ r.checked=true; }); }"},
+ {"name":"a supplier's starting drift stays open","file":"stmt/owner.js","find":"idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});","replace":"idDrifts.forEach(function(item){item.select.disabled=false;item.typed.disabled=!canStart;});"},
+ {"name":"the sale Who is a select again","file":"stmt/owner.js","find":"actOn(el('input','amb-input mwho'),'record.trade.party')","replace":"actOn(el('select'),'record.trade.party')"},
+ {"name":"the count's book sends another word","file":"stmt/owner.js","find":"context.products.map(bookItem)","replace":"context.products.map(function(code){ var b=bookItem(code); b.value=code+'x'; return b; })"},
+ {"name":"a purchase sends another word","file":"stmt/owner.js","find":"{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}","replace":"{value:'sale',label:'Sale'},{value:'buy',label:'Purchase'}"},
+ {"name":"the trade's book sends another word","file":"stmt/owner.js","find":"return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return bookItem(item.product); }));","replace":"return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ var b=bookItem(item.product); b.value=item.product+'x'; return b; }));"},
+ {"name":"the trade's collected handover sends another word","file":"stmt/owner.js","find":"var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'}","replace":"var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'picked',label:'Collected'}"},
+ {"name":"the gift's collected handover sends another word","file":"stmt/owner.js","find":"var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'}","replace":"var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'picked',label:'Collected'}"},
+ {"name":"a resale sends another stream","file":"stmt/owner.js","find":"[{value:'',label:'No'},{value:'R2',label:'Resells',aria:'They resell'}","replace":"[{value:'',label:'No'},{value:'R2x',label:'Resells',aria:'They resell'}"},
+ {"name":"an introduction sends another stream","file":"stmt/owner.js","find":"{value:'R3',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc","replace":"{value:'R3x',label:'Referred',aria:'They introduced the buyer'}]);\n      var tradeAssoc"},
+ {"name":"a loan in goods sends another word","file":"stmt/owner.js","find":"[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]","replace":"[{value:'goods',label:'Goods'},{value:'cash',label:'Cash'}]"},
+ {"name":"a loan lent sends another word","file":"stmt/owner.js","find":"{value:'out',label:'We lent'}","replace":"{value:'lent',label:'We lent'}"},
+ {"name":"the loan, gift and correction books send another word","file":"stmt/owner.js","find":"var productItems=books.map(function(item){return bookItem(item.product);});","replace":"var productItems=books.map(function(item){var b=bookItem(item.product); b.value=item.product+'x'; return b;});"},
+ {"name":"the printed sizes' book sends another word","file":"stmt/owner.js","find":"houseBooks.map(function(item){ return bookItem(item.product); })), houseBoxes","replace":"houseBooks.map(function(item){ var b=bookItem(item.product); b.value=item.product+'x'; return b; })), houseBoxes"},
+ {"name":"a reminder hidden for a week sends another number","file":"stmt/owner.js","find":"{value:'7',label:'7 days'}","replace":"{value:'8',label:'7 days'}"},
+ {"name":"a reminder hidden for good sends a number of days","file":"stmt/owner.js","find":"{value:'',label:'For good'}","replace":"{value:'0',label:'For good'}"},
+ {"name":"a fulfilment sends another word","file":"stmt/owner.js","find":":['Correction','Fulfilment','Cancellation'];\n      editKind.fill(","replace":":['Correction','Fulfilled','Cancellation'];\n      editKind.fill("},
+ {"name":"a correction's yes sends another word","file":"stmt/owner.js","find":"[{value:'true',label:'Yes'},{value:'false',label:'No'}]","replace":"[{value:'yes',label:'Yes'},{value:'false',label:'No'}]"},
+ {"name":"a correction's resale sends another stream","file":"stmt/owner.js","find":":definition.kind==='stream'?[{value:'R2',label:'They resell'}","replace":":definition.kind==='stream'?[{value:'R2x',label:'They resell'}"},
+ {"name":"a correction's delivered sends another word","file":"stmt/owner.js","find":":definition.kind==='handover'?[{value:'delivered',label:'Delivered'}","replace":":definition.kind==='handover'?[{value:'dropped',label:'Delivered'}"},
+ {"name":"a yes or no in a correction is a select","file":"stmt/owner.js","find":"var tiled=definition.kind==='boolean'||definition.kind==='stream'","replace":"var tiled=definition.kind==='stream'"},
+ {"name":"a downstream customer role sends another word","file":"stmt/owner.js","find":"{value:'downstream',label:'Customer of an associate'}","replace":"{value:'downstream2',label:'Customer of an associate'}"},
+ {"name":"a new customer's starting % that is not set sends a word","file":"stmt/owner.js","find":"'record.add-id.drift',item.product,item.product],[{value:'',label:'Not set'}]","replace":"'record.add-id.drift',item.product,item.product],[{value:'none',label:'Not set'}]"},
+ {"name":"an associate appointed sends the stream for the kind","file":"stmt/owner.js","find":"return {value:item.kind,label:item.kind==='referral'","replace":"return {value:item.stream,label:item.kind==='referral'"},
+ {"name":"an associate's role starts chosen","file":"stmt/owner.js","find":"appointmentKinds,true)","replace":"appointmentKinds)"},
+ {"name":"a group is laid out by the page again","file":"stmt/page.js","find":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n","replace":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .maker-tiles{flex:1 1 100%;min-width:0}\n"},
+ {"name":"a book's tile is the drawn mark again","file":"stmt/owner.js","find":"if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)","replace":"if(item.mark) face.appendChild(bookMark(item.mark,28));\n        else if(item.detail)"},
+ {"name":"a book's tile loses its tag","file":"stmt/owner.js","find":"        if(item.mark) face.appendChild(productTag(item.mark));\n        else if(item.detail)","replace":"        if(item.mark) face.appendChild(el('span','salt-option__label',item.label));\n        else if(item.detail)"},
+ {"name":"a group of marks is two wide boxes across","file":"stmt/owner.js","find":"return item.mark; })?' maker-marks'","replace":"return item.mark; })?' salt-options__grid--2'"},
+ {"name":"a group of marks is laid out by the page again","file":"stmt/page.js","find":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n","replace":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .maker-marks{grid-template-columns:repeat(2,minmax(0,1fr))}\n"},
+ {"name":"Ambient's tile is not 64px","file":"stmt/statement-css.js","find":"min-height: 64px; padding: 10px var(--amb-space-4); border: 1px solid var(--amb-line-field)","replace":"min-height: 40px; padding: 10px var(--amb-space-4); border: 1px solid var(--amb-line-field)"},
+ {"name":"the typed starting % gets the decimal pad back, which has no minus key on an iPhone","file":"stmt/owner.js","find":"typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');","replace":"typed.min=String(tlo);typed.max=String(thi);typed.inputMode='decimal';"}
 ]
