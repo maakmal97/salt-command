@@ -259,7 +259,8 @@ export const OWNER_JS = `
   function closeHo(){
     if(!hoSheet) return;
     var from=hoSheet.from;
-    hoSheet.scrim.remove(); hoSheet.box.remove(); hoSheet=null;
+    try{ if(hoSheet.box.close) hoSheet.box.close(); }catch(e){}
+    hoSheet.box.remove(); hoSheet=null;
     try{ if(from) from.focus(); }catch(e){}
   }
   function svgEl(tag, attrs){
@@ -267,11 +268,12 @@ export const OWNER_JS = `
     for(var k in attrs) e.setAttribute(k, attrs[k]);
     return e;
   }
-  /* rectangles, one a run of dark modules, as engine/qr.mjs's qrRectSvg draws them: a stroked path does not scan */
+  /* rectangles, one a run of dark modules, as engine/qr.mjs's qrRectSvg draws them: a stroked path does not scan. 16 Nov 2026 (Ambient): the symbol is the code frame's own, four modules of quiet zone in its viewBox, dark modules on the frame's white field */
   function qrRects(rows){
     var n=rows.length, q=4, span=n+q*2;
     var svg=svgEl('svg', {viewBox:'0 0 '+span+' '+span, role:'img', 'aria-label':'A code their camera opens, signed in'});
-    var g=svgEl('g', {}); g.style.fill='var(--salt-slate)';
+    svg.setAttribute('role','img'); svg.setAttribute('class','amb-codeframe__code');
+    var g=svgEl('g', {fill:'#000'});
     for(var r=0;r<n;r++){
       for(var c=0;c<n;){
         if(rows[r][c]!=='1'){ c++; continue; }
@@ -285,47 +287,36 @@ export const OWNER_JS = `
   }
   async function showHandover(a, from){
     closeHo();
-    var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true');
-    var box=el('div','salt-sheet ho adm asheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
-    box.setAttribute('aria-labelledby','hoT'); box.tabIndex=-1;
-    box.appendChild(el('div','salt-sheet__grab'));
-    var head=el('div','salt-sheet__head'), title=el('h2','salt-sheet__title','Sign in on their phone'); title.id='hoT';
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close');
-    var xg=svgEl('svg', {width:16, height:16, viewBox:'0 0 16 16', fill:'none', stroke:'currentColor', 'stroke-width':'1.5', 'stroke-linecap':'round', 'aria-hidden':'true'});
-    xg.appendChild(svgEl('path', {d:'M3.5 3.5l9 9M12.5 3.5l-9 9'})); x.appendChild(xg);
-    head.appendChild(title); head.appendChild(x); box.appendChild(head);
-    var body=el('div','salt-sheet__body'); box.appendChild(body);
+    var box=sheetNode('hoSheet','ho','hoT'), head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body'), title=el('h2','amb-sheet__title','Sign in on their phone'); title.id='hoT';
+    var x=el('button','amb-circle'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close'); x.appendChild(ambIcon('close'));
+    head.appendChild(title); head.appendChild(x); box.appendChild(head); box.appendChild(body);
     body.appendChild(el('p','ho-for','For '+a.username+'.'));
     var wait=el('p','ho-wait','Making a code...'); body.appendChild(wait);
-    document.body.appendChild(scrim); document.body.appendChild(box);
-    var me=hoSheet={scrim:scrim, box:box, from:from};
-    scrim.addEventListener('click', closeHo); x.addEventListener('click', closeHo);
+    var me=hoSheet={box:box, from:from};
+    x.addEventListener('click', closeHo);
+    sheetShow(box, closeHo);
     box.addEventListener('keydown', function(e){ if(e.key==='Escape'){ e.stopPropagation(); closeHo(); } });
-    try{ box.focus(); }catch(e){}
+    try{ box.focus({preventScroll:true}); }catch(e){}
     try{
       var k=await keyFor(a);
       var j=await refs('/all/handover', {u:a.username, token:k.token, wrap:k.wrap});
       k=null;
       if(hoSheet!==me) return;
       wait.remove();
-      /* the panel's width is the component's own prop, and its place in the sheet is this page's: set from the
-         script, which the page's style policy allows where a style attribute is refused */
-      var qr=el('div','salt-qr'); qr.style.width='min(280px, 100%)'; qr.style.margin='4px auto 20px';
-      var qc=el('div','salt-qr__code'); qc.appendChild(qrRects(j.qr||[])); qr.appendChild(qc);
-      var qm=el('div','salt-qr__meta'); qm.appendChild(el('span','salt-qr__caption','Their camera opens it, signed in')); qr.appendChild(qm);
-      body.appendChild(qr);
+      var fig=el('figure','amb-codeframe'), fld=el('div','amb-codeframe__field');
+      fld.appendChild(qrRects(j.qr||[])); fig.appendChild(fld); fig.appendChild(el('figcaption','amb-codeframe__caption','Their camera opens it, signed in'));
+      body.appendChild(fig);
       var p=klBits(j.exp);
-      var cf=el('div','salt-field salt-code');
-      var lab=el('label','salt-code__label','Or type this code where Salt Counter asks for one'); lab.htmlFor='hoC';
-      var inp=el('input','salt-field__input salt-field__input--code'); inp.id='hoC'; inp.readOnly=true; actOn(inp,'code.value');
+      var cf=el('label','amb-field'), lab=el('span','amb-field__label','Or type this code where Salt Counter asks for one');
+      var inp=el('input','amb-input amb-input--code'); inp.id='hoC'; inp.readOnly=true; actOn(inp,'code.value');
       inp.setAttribute('autocomplete','off'); inp.setAttribute('spellcheck','false');
       inp.value=String(j.code||'').replace('-',' ');
       cf.appendChild(lab); cf.appendChild(inp);
-      cf.appendChild(el('p','salt-code__hint','Works once, until '+p.hour+':'+p.minute+'.'));
+      cf.appendChild(el('span','amb-field__hint','Works once, until '+p.hour+':'+p.minute+'.'));
       body.appendChild(cf);
     }catch(e){
       if(hoSheet!==me) return;
-      wait.className='salt-code__error'; refusal(wait,e,'Could not make a code: ');
+      wait.className='amb-field__error'; refusal(wait,e,'Could not make a code: ');
     }
   }
   /* ---- AN ACCOUNT (S9 9.3, the plan's f13) ----------------------------------------------------------
@@ -348,7 +339,7 @@ export const OWNER_JS = `
     var m=madeLink[b.getAttribute('data-pill')]||{}, again=!m.j&&!m.busy&&!!m.fail;
     b.disabled=b.getAttribute('data-none')==='1'||!!m.busy;
     b.textContent=m.busy?'Making the link...':m.j?'Share the link':again?'Try again':'Send a sign-in link';
-    if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); withDetails(b.note,m.err); }
+    if(b.note){ b.note.textContent=m.note||''; b.note.className='amb-settings__foot anote'+(m.bad?' bad amb-neg':''); withDetails(b.note,m.err); }
   }
   function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
   function linkMoved(u){ paintPills(u); if(!mHome.hidden) drawNeeds(); }
@@ -361,7 +352,7 @@ export const OWNER_JS = `
       function(e){ m.busy=false; m.fail=m.bad=true; m.note='Could not make a link: '+e.message; m.err=e; linkMoved(u); });
   }
   function sendPill(a, note, onSent){
-    var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
+    var u=a.username, b=el('button','amb-pill amb-pill--block apill','Send a sign-in link'); b.type='button';
     b.setAttribute('data-pill', u); b.note=note; actOn(b,'acct.signin-link');
     if(a.account===false){ b.setAttribute('data-none','1'); b.title='No account yet'; }
     paintPill(b);
@@ -403,38 +394,43 @@ export const OWNER_JS = `
   }
   function aval(t, hot){ return el('span',hot?'nage--late':null,t); }
   function onWhat(where){ return where?' on '+String(where).replace(/^An? /,function(m){ return m.toLowerCase(); }):''; }
+  /* an event of the account, read only: what it was and where, and when; a row with a control of its own stands as Ambient's row does, the control at its trail */
+  function aEvent(title, sub, when, hot){
+    var li=el('li','amb-row'), tx=el('span','amb-row__text');
+    tx.appendChild(el('span','amb-row__title',title)); if(sub) tx.appendChild(el('span','amb-row__sub',sub)); li.appendChild(tx);
+    if(when!=null){ var tr=el('span','amb-row__trail amb-row__trail--stack'); tr.appendChild(el('span','amb-row__age'+(hot?' amb-neg':''),when)); li.appendChild(tr); }
+    return li;
+  }
   function drawStory(box, a){
     var s=story[a.username];
     box.textContent='';
-    box.appendChild(el('h2','salt-settings__head','Sign-ins'));
-    var list=el('div','salt-settings astory__list'), L=a.locked;
-    if(L) list.appendChild(lineRow('Password', aval('Locked out',true), 'Too many wrong passwords'+(L.until?', until '+hm(L.until):'')));
+    box.appendChild(el('h2','amb-section','Sign-ins'));
+    var list=el('ul','amb-list amb-list--ruled astory__list'), L=a.locked;
+    if(L) list.appendChild(aEvent('Password','Too many wrong passwords'+(L.until?', until '+hm(L.until):''),'Locked out',true));
     var log=(s&&s.log)||[];
     log.forEach(function(x){
       var sub=HOWT[x.how]?HOWT[x.how]+onWhat(x.where):x.where?String(x.where):'';
-      list.appendChild(lineRow(HOWW[x.how]||'Signed in', aval(fmtWhen(x.at)), sub));
+      list.appendChild(aEvent(HOWW[x.how]||'Signed in', sub, fmtWhen(x.at)));
     });
-    if(!s){ var rd=lineRow('Reading', null, ''); rd.classList.add('salt-settings__row--muted'); list.appendChild(rd); }
-    else if(s.err) list.appendChild(lineRow('Not read', null, s.err));
+    if(!s) box.appendChild(el('p','amb-empty','Reading.'));
+    else if(s.err) list.appendChild(aEvent('Not read', s.err, null));
     else if(!log.length) list.appendChild(a.seen&&a.seen.opens
-      ?lineRow('Last opened', aval(dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')), 'Earlier sign-ins were not kept.')
-      :lineRow('Not opened yet', a.sent?aval('Sent '+dayMon(a.sent)):null, ''));
-    box.appendChild(list);
+      ?aEvent('Last opened', 'Earlier sign-ins were not kept.', dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''))
+      :aEvent('Not opened yet', null, a.sent?'Sent '+dayMon(a.sent):null));
+    if(list.firstChild) box.appendChild(list);
     /* S9 9.4: PHONES AND COMPUTERS, off the account's own pointers: each device named as its browser described itself when it signed in, when it came and
-       when it was last used, whether it is kept signed in, and a Sign out of its own. 3 Nov 2026: the device a row, its Sign out an ember row under it */
-    var devs=(s&&s.devices)||[], dh=el('h2','salt-settings__head dhead','Phones and computers');
-    if(devs.length) dh.appendChild(el('span','dcount',String(devs.length)));
+       when it was last used, whether it is kept signed in, and a Sign out of its own */
+    var devs=(s&&s.devices)||[], dh=el('h2','amb-section dhead','Phones and computers');
+    if(devs.length) dh.appendChild(el('span','amb-section__note dcount',String(devs.length)));
     box.appendChild(dh);
-    var dl=el('div','salt-settings adevs');
+    var dl=el('ul','amb-list amb-list--ruled adevs');
     devs.forEach(function(d){
-      dl.appendChild(lineRow(d.label||'An older device', null, d.kept
-        ?'Kept since '+dayMon(d.at)+', used '+when(d.last)
-        :'Not kept, signed in '+when(d.at)));
-      var so=asRow(ghost(['Sign out','acct.device-signout',d.id]),true);
+      var li=aEvent(d.label||'An older device', d.kept?'Kept since '+dayMon(d.at)+', used '+when(d.last):'Not kept, signed in '+when(d.at), null);
+      var tr=el('span','amb-row__trail'), so=aPill('Sign out','acct.device-signout',d.id,true,true);
       so.addEventListener('click', function(){ endOne(a, d, so); });
-      dl.appendChild(so);
+      tr.appendChild(so); li.appendChild(tr); dl.appendChild(li);
     });
-    if(s&&!s.err&&!devs.length) dl.appendChild(lineRow('None signed in', null, 'A sign-in link or a code signs them in.'));
+    if(s&&!s.err&&!devs.length) box.appendChild(el('p','amb-empty','None signed in. A sign-in link or a code signs them in.'));
     if(dl.firstChild) box.appendChild(dl); else dh.remove();
   }
   async function endOne(a, d, b){
@@ -483,63 +479,61 @@ export const OWNER_JS = `
     if(a.flag==='pend') return {word:'Agreed', fig:rmShort(t.pend), hot:false};
     return {word:'Owed', fig:'Nil', hot:false};
   }
-  function acctLine(L, k, v){ var r=lineRow(k, aval(v), ''); r.setAttribute('data-line',k); L.appendChild(r); return r; }
+  /* a button made by makerButton on an action row of a group: the button and its Discard each a row of the list, the Discard standing only while it is shown */
+  function aActBtn(group, label, action, onSuccess, danger){
+    var b=makerButton(group, label, action, false, onSuccess), cancel=b.nextSibling;
+    aAct(b, danger); aAct(cancel); group.add(b); group.add(cancel); return b;
+  }
+  function acctLine(L, k, v){ var r=aLine(k, v); r.setAttribute('data-line',k); L.add(r); return r; }
   function acctCard(a){
-    /* 2 Nov 2026 (his Orders canvas, page 2, the open account in the order's language; "accept all asks as recommended"): THE ACCOUNT AS THE OPEN ORDER IS.
-       Its head is the band (the state and its age, the code and the username, what is owed at the right), then where it stands as a settings list, their
-       messages a row that goes there, Sign-in as rows with the one filled pill (Send a sign-in link) under them, what prices them and what they hold, and
-       last, in ember and alone in their list, Copy password and Sign out everywhere, each asking on the Sheet first. Every control keeps its act. */
+    /* 16 Nov 2026, THE MOVE TO AMBIENT (place H): THE ACCOUNT IN AMBIENT'S PARTS. Its head is the code over where it stands (a chip for the state, its age, the username) and what is owed,
+       then where it stands as a settings group, their messages a row that goes there, Sign-in as action rows, what prices them and what they hold, their sign-ins and devices,
+       and, in ember and alone in their group, Copy password and Sign out everywhere, each asking on the Sheet first. The one main action, Send a sign-in link, is the foot of the
+       pane. Every control keeps its act. */
     var u=a.username, none=a.account===false, why='No account yet';
     var c=el('section','oacct scard'); c.setAttribute('data-acct', u);
-    var head=el('div','asec ahead salt-band salt-band--grid'), top=el('div','ahead__top'), who=el('div','ahead__who'), s=acctState(a), f=acctFig(a);
-    var kd=el('span','salt-eyebrow salt-eyebrow--'+SEVC[s.sev]+' ahead__kind', s.word);
-    if(s.age){ kd.appendChild(document.createTextNode(' · ')); kd.appendChild(el('span','nage'+(s.late?' nage--late':''),s.age)); }
-    who.appendChild(kd);
-    who.appendChild(whoTag(el('h2',a.test?null:'ahead__code',a.test?testName(a):(a.code||u)),a.test?'':a.code));
-    who.appendChild(el('span','un',u));
-    top.appendChild(who);
-    if(f){ var fb=el('div','ahead__fig'); fb.appendChild(el('span','salt-eyebrow salt-eyebrow--mist',f.word)); fb.appendChild(el('span','ahead__rm'+(f.hot?' ahead__rm--hot':''),f.fig)); top.appendChild(fb); }
-    head.appendChild(top);
+    var head=el('div','asec ahead'), s=acctState(a), f=acctFig(a), line=el('p','ahead__line');
+    head.appendChild(whoTag(el('h2','amb-section'+(a.test?'':' ahead__code'),a.test?testName(a):(a.code||u)),a.test?'':a.code));
+    line.appendChild(el('span','amb-chip ahead__kind'+(s.sev==='now'?' amb-chip--neg':s.sev==='soon'?' amb-chip--warn':''),s.word));
+    if(s.age) line.appendChild(el('span','nage'+(s.late?' amb-neg nage--late':''),s.age));
+    line.appendChild(el('span','un',u));
+    head.appendChild(line);
+    if(f){ var fb=amb.node(amb.stat(f.word,f.fig)); fb.classList.add('ahead__fig'); if(f.hot) fb.querySelector('.amb-stat__value').classList.add('amb-neg'); head.appendChild(fb); }
     c.appendChild(head);
-    var stand=el('section','astandsec'); stand.setAttribute('aria-label','Where it stands');
-    var st=el('div','salt-settings astand');
-    function standRow(k, v){ var r=el('div','salt-settings__row'); r.appendChild(el('span','salt-settings__label',k)); r.appendChild(el('span','salt-settings__value',v)); r.setAttribute('data-line',k); st.appendChild(r); return r; }
+    var stand=aGroup(null,'astand'); stand.setAttribute('aria-label','Where it stands');
+    function standRow(k, v, hot){ var r=aLine(k, v, hot); r.setAttribute('data-line',k); stand.add(r); return r; }
     function standDraw(){
-      st.textContent='';
+      stand.list.textContent='';
       if(a.test){ standRow('Practice','Nothing recorded'); return; }
       if(none){ standRow('Account','Next update'); return; }
-      if(a.locked){ var lk=standRow('Locked out',a.locked.until?'until '+hm(a.locked.until):'now'); lk.classList.add('astand--hot'); lk.querySelector('.salt-settings__value').classList.add('nage--late'); }
+      if(a.locked) standRow('Locked out',a.locked.until?'until '+hm(a.locked.until):'now',true);
       standRow('Opened',a.seen&&a.seen.opens?dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not yet');
       if(a.sent) standRow('Marked sent',dayMon(a.sent));
       if(a.alerts) standRow('Notifications','On');
     }
-    standDraw(); stand.appendChild(st);
-    if(a.test) stand.appendChild(el('p','salt-settings__foot atot','A practice account. Nothing it does is recorded.'));
-    else if(none) stand.appendChild(el('p','salt-settings__foot atot',waitLine()));
+    standDraw();
+    if(a.test) stand.foot('A practice account. Nothing it does is recorded.').classList.add('atot');
+    else if(none) stand.foot(waitLine()).classList.add('atot');
     c.appendChild(stand);
     var th=(makerThreads||[]).filter(function(x){ return x.u===u&&!x.test&&makerThreadAsked(x); })[0];
     if(th){
-      /* their line waiting for his reply: a row that goes to the thread (it was the card's second filled pill) */
-      var last=th.msgs[th.msgs.length-1], tl=el('div','salt-settings athread'), rp=actOn(el('button','salt-settings__row salt-settings__row--action athread__row'),'acct.reply',u);
-      rp.type='button'; rp.appendChild(el('span','salt-settings__label','Their messages')); rp.appendChild(el('span','salt-settings__value anote athread__v','Waiting '+ageOf(last.at))); rp.appendChild(rowMark());
-      rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(u); }); tl.appendChild(rp); c.appendChild(tl);
+      /* their line waiting for his reply: a row that goes to the thread */
+      var last=th.msgs[th.msgs.length-1], tl=aGroup(null,'athread'), rp=aOpens('Their messages','Waiting '+ageOf(last.at),'acct.reply',u);
+      rp.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(u); }); tl.add(rp); c.appendChild(tl);
     }
-    var sign=el('section','asign'); sign.setAttribute('aria-label','Sign-in');
-    sign.appendChild(el('h2','salt-settings__head','Sign-in'));
-    var mark=asRow(ghost(['Mark as sent','acct.sent']));
-    var pn=el('p','salt-settings__foot anote'); pn.setAttribute('role','status');
-    var rows=el('div','salt-settings asignrows'), gn=el('p','salt-settings__foot anote'); gn.setAttribute('role','status');
-    var hob=asRow(ghost(['Show a code','acct.show-code'])), open=asRow(ghost(['View as them','acct.view-as'])), orderFor=asRow(ghost(['Order for them','acct.order-for']));
-    var pwb=asRow(ghost(['Copy password','acct.password']),true), sob=asRow(ghost(['Sign out everywhere','acct.signout-all']),true);
+    var sign=aGroup('Sign-in','asign'); sign.setAttribute('aria-label','Sign-in');
+    var mark=aBtn('Mark as sent','amb-action','acct.sent');
+    var pn=sign.foot(''); pn.className='amb-settings__foot anote'; pn.setAttribute('role','status');
+    var gn=null;
+    var hob=aBtn('Show a code','amb-action','acct.show-code'), open=aBtn('View as them','amb-action','acct.view-as'), orderFor=aBtn('Order for them','amb-action','acct.order-for');
+    var pwb=aBtn('Copy password','amb-action amb-action--danger','acct.password'), sob=aBtn('Sign out everywhere','amb-action amb-action--danger','acct.signout-all');
     sob.classList.add('asignout');
-    [hob, open, orderFor, mark].forEach(function(b){ rows.appendChild(b); });
+    [hob, open, orderFor, mark].forEach(function(b){ sign.add(b); });
     [hob, open, orderFor, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } });
     if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Password not stored yet.'; }
-    sign.appendChild(rows);
-    /* 5 Nov 2026 (the pane): the one filled pill and its answer are the card's foot, pinned at the foot of the open account */
-    var afoot=el('div','salt-pane__foot afoot');
-    afoot.appendChild(sendPill(a, pn, function(){ standDraw(); mark.hidden=!!a.sent||none||!!a.test; }));
-    afoot.appendChild(pn);
+    /* the one main action and its answer are the pane's foot, pinned at the foot of the open account */
+    var afoot=el('div','amb-foot afoot');
+    afoot.appendChild(sendPill(a, pn, function(){ standDraw(); markShow(); }));
     hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
     /* S9 9.5: View as them, their own page, read only */
     open.addEventListener('click', function(){ openAcct(a); });
@@ -566,17 +560,18 @@ export const OWNER_JS = `
       if(!await ownerAsk(sob,'acct.signout-all:'+u,{title:'Sign out everywhere?', go:'Sign out everywhere', keep:'Not now',
         say:['Every phone, link, code and alert on this account ends. A new link or a code signs them back in.']})) return;
       sob.disabled=true; sob.textContent='Signing out...';
-      try{ var j=await refs('/all/signout', {u:u, keep:await linkId(u)}); gn.textContent=endedLine(j); gn.className='salt-settings__foot anote'; }
-      catch(e){ gn.textContent='Could not sign out: '+e.message; gn.className='salt-settings__foot anote bad'; }
+      try{ var j=await refs('/all/signout', {u:u, keep:await linkId(u)}); gn.textContent=endedLine(j); gn.className='amb-settings__foot anote'; }
+      catch(e){ gn.textContent='Could not sign out: '+e.message; gn.className='amb-settings__foot anote bad amb-neg'; }
       sob.textContent='Sign out everywhere'; sob.disabled=false;
       loadStory(a);
     });
-    mark.hidden=!!a.sent||none||!!a.test;
+    function markShow(){ var off=!!a.sent||none||!!a.test; mark.hidden=off; mark.parentNode.hidden=off; }
+    markShow();
     mark.addEventListener('click', async function(){
       mark.disabled=true;
       try{
         var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true});
-        a.sent=j.sent; standDraw(); mark.hidden=!!a.sent; say(''); countSent(); drawRoster(); drawNeeds();
+        a.sent=j.sent; standDraw(); markShow(); say(''); countSent(); drawRoster(); drawNeeds();
       }catch(e){ sayFail(e); }
       mark.disabled=false;
     });
@@ -587,20 +582,21 @@ export const OWNER_JS = `
     if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
     var sty=el('section','asec astory'); sty.setAttribute('data-story', u); sty.setAttribute('aria-label','Sign-ins');
     if(!none){ c.appendChild(sty); drawStory(sty, a); loadStory(a); }
-    /* what ends or removes, last and alone in its list */
-    var endList=el('div','salt-settings aend'); endList.appendChild(pwb); endList.appendChild(sob);
-    c.appendChild(endList); c.appendChild(gn); c.appendChild(afoot);
+    /* what ends or removes, last and alone in its group */
+    var endList=aGroup(null,'aend'); endList.add(pwb); endList.add(sob); gn=endList.foot('');
+    gn.className='amb-settings__foot anote'; gn.setAttribute('role','status');
+    c.appendChild(endList); c.appendChild(afoot);
     return c;
   }
   /* 26 OCT 2026 (canvas Salt Admin Customers, P3 and P4; his yes to Asks A, B and G): WHAT PRICES A CUSTOMER STANDS ON THEIR CARD. Their % moved here from
-     Record: a book a tab, the suggestion and why, a stepper in whole steps of 5 from -30% to +30% (his alone; nothing sets it but his Send, and it goes to
+     Record: a book a choice, the suggestion and why, a stepper in whole steps of 5 from the book's low to its high (his alone; nothing sets it but his Send, and it goes to
      Approve), their prices at that % off the Desk (drift-preview) against the Floor, Send at that % only once it differs from what is set, Use the
      suggestion, Set back to 0. Then This customer (salt) and the associate reward, read by the account's code (customer-of, reward-of), and Partner, which
-     asks once. Nothing on the card prices: every figure is the Desk's. */
+     asks once. Nothing on the card prices: every figure is the Desk's. 16 Nov 2026 (Ambient): the stepper walks its values (Ambient 0.7.2). */
   var pctOn={}, pctReads={}, ofReads={}, ofWait={};
   function pctWord(n){ return n>0?'+'+n+'%':n<0?'−'+(-n)+'%':'0%'; }
   function acctMore(box, a){
-    readParty().then(function(cat){ if(box.isConnected) drawMore(box, a, cat||{}); }, function(){ if(box.isConnected){ box.textContent=''; box.appendChild(el('p','anote bad','Their prices could not be read.')); } });
+    readParty().then(function(cat){ if(box.isConnected) drawMore(box, a, cat||{}); }, function(){ if(box.isConnected){ box.textContent=''; box.appendChild(el('p','amb-field__hint anote bad amb-neg','Their prices could not be read.')); } });
   }
   function drawMore(box, a, cat){
     box.textContent='';
@@ -619,16 +615,16 @@ export const OWNER_JS = `
     var mine=(cat.openRefunds||[]).filter(function(r){ return r.party===a.code||r.party===a.code+'-R'; });
     if(!mine.length) return null;
     var s=el('section','asec arefund'); s.setAttribute('aria-label','Refunds');
-    s.appendChild(el('h2','salt-settings__head','Refunds'));
+    s.appendChild(el('h2','amb-section','Refunds'));
     mine.forEach(function(r){
       var waits=(cat.editWaiting||[]).some(function(w){ return w.party===r.party&&w.since===r.since&&+w.amount===+r.amount; });
-      /* 3 Nov 2026: a refund is its own list: its line a text row, then its two rows, the answer inside the list where makerButton looks for it */
-      var row=el('div','salt-settings arefund__row'), line=el('div','salt-settings__row salt-settings__row--text');
-      line.appendChild(el('span','salt-settings__label',rm(r.amount)+' to '+r.party+', '+r.since+(waits?'. Waiting under Approve.':'. Paid marks it returned.')));
-      row.appendChild(line); s.appendChild(row); if(waits) return;
-      var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
+      /* a refund is its own group: its line a read row, then its two actions, the answer its foot where makerButton looks for it */
+      var row=aGroup(null,'arefund__row');
+      row.add(aLine(rm(r.amount)+' to '+r.party+', '+r.since, waits?'Waiting under Approve':'Paid marks it returned')).classList.add('arefund__line');
+      s.appendChild(row); if(waits) return;
+      var answer=row.foot(''); answer.className='amb-settings__foot anote aanswer'; answer.setAttribute('role','status');
       [['Mark paid today','refundPaid','Sent. It is marked paid once you approve it.'],['Remove as stale','refundRemove','Sent. It comes off the book once you approve it.']].forEach(function(k){
-        var armed=null, at=null, b=makerButton(row,[k[0],'acct.refund',a.code+':'+r.since+':'+r.amount+':'+k[1]],async function(send){
+        var armed=null, at=null, b=aActBtn(row,[k[0],'acct.refund',a.code+':'+r.since+':'+r.amount+':'+k[1]],async function(send){
           if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent=k[0]; }, 4000); return; }
           clearTimeout(armed); armed=null; b.textContent=k[0];
           var body={kind:k[1],party:r.party,since:r.since,amount:r.amount};
@@ -637,10 +633,8 @@ export const OWNER_JS = `
           body.at=at;
           try{ await send('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }
           catch(error){ refusal(answer,error); }
-        },false,function(){ at=null; });
-        asRow(b, k[1]==='refundRemove');
+        },function(){ at=null; },k[1]==='refundRemove');
       });
-      row.appendChild(answer);
     });
     return s;
   }
@@ -654,156 +648,165 @@ export const OWNER_JS = `
       .then(function(){ var r=ofReads[k], wait=ofWait[k]||[]; delete ofWait[k]; [paint].concat(wait).forEach(function(f){ f(r); }); delete r.reading; setTimeout(function(){ delete ofReads[k]; }, 60000); });
   }
   function pctSection(a, cat, books, partner){
-    /* 3 Nov 2026 (the account on Shop's grid): no glass around it and the mist head: the books as tabs, then one list of the suggestion and the stepper */
     var s=el('section','asec apct'); s.setAttribute('aria-label','Their %');
-    s.appendChild(el('h2','salt-settings__head','Their %'));
-    if(partner){ var pl=el('div','salt-settings'); pl.appendChild(lineRow('Pays the Floor', null, 'A partner has no % to set.')); s.appendChild(pl); return s; }
+    s.appendChild(el('h2','amb-section','Their %'));
+    if(partner){ var pl=aGroup(null,'apct__partner'); pl.add(aLine('Pays the Floor')); pl.foot('A partner has no % to set.'); s.appendChild(pl); return s; }
     var code=a.code, st=pctOn[code]||(pctOn[code]={book:books[0], pct:{}});
     if(books.indexOf(st.book)<0) st.book=books[0];
-    var tabs=el('nav','salt-nav nkinds apct__books'), row=el('div','salt-nav__links apct__tabs'); tabs.setAttribute('aria-label','Book'); row.setAttribute('role','tablist');
+    var tabs=el('div','amb-segment apct__books'+(books.length>4?' amb-segment--wrap':'')); tabs.setAttribute('role','group'); tabs.setAttribute('aria-label','Book');
     books.forEach(function(b){
-      var t=actOn(el('button','salt-nav__link nktab'+(b===st.book?' salt-nav__link--active':'')),'acct.pct.book',b); t.type='button'; t.setAttribute('role','tab'); t.setAttribute('aria-selected', b===st.book?'true':'false');
-      t.appendChild(productTag(b)); t.addEventListener('click', function(){ st.book=b; s.replaceWith(pctSection(a, cat, books, partner)); }); row.appendChild(t);
+      var t=actOn(el('button','amb-segment__opt',b.charAt(0).toUpperCase()+b.slice(1)),'acct.pct.book',b); t.type='button'; t.setAttribute('aria-pressed', b===st.book?'true':'false');
+      t.addEventListener('click', function(){ st.book=b; s.replaceWith(pctSection(a, cat, books, partner)); }); tabs.appendChild(t);
     });
-    tabs.appendChild(row); s.appendChild(tabs);
+    s.appendChild(tabs);
     var card=(cat.driftCards||[]).filter(function(x){ return x.code===code&&x.product===st.book; })[0]||{};
     /* 10 Nov 2026: the stepper runs the book's own range (salt's band -100 to +100, a board -30 to +30) and sends the book's unit */
     var pbook=(cat.products||[]).filter(function(x){ return x.product===st.book; })[0]||{}, lim={min:typeof pbook.driftMin==='number'?pbook.driftMin:-30, max:typeof pbook.driftMax==='number'?pbook.driftMax:30}, punit=pbook.driftUnit||'pct';
     var held=card.held?Math.round(+card.value*100):0, sug=typeof card.suggest==='number'?Math.round(card.suggest*100):null;
     if(st.pct[st.book]==null) st.pct[st.book]=held;
-    var L=el('div','salt-settings apct__list');
-    L.appendChild(lineRow('Suggested', aval(sug==null?'None':pctWord(sug)), sug!=null&&card.why?card.why.charAt(0).toUpperCase()+card.why.slice(1):''));
-    /* the stepper is a row: its name, then the Counter's stepper (an Orb either side of the figure) */
-    var step=el('div','salt-settings__row apct__step'), down=actOn(el('button','salt-orb apct__btn','−'),'acct.pct.down'), up=actOn(el('button','salt-orb apct__btn','+'),'acct.pct.up'), out=el('output','apct__val');
-    down.type=up.type='button'; down.setAttribute('aria-label','5% lower'); up.setAttribute('aria-label','5% higher'); out.setAttribute('aria-live','polite');
-    step.appendChild(el('span','salt-settings__label','Set to')); step.appendChild(down); step.appendChild(out); step.appendChild(up); L.appendChild(step); s.appendChild(L);
+    var L=aGroup(null,'apct__list');
+    L.add(aLine('Suggested', sug==null?'None':pctWord(sug)));
+    if(sug!=null&&card.why) L.foot(card.why.charAt(0).toUpperCase()+card.why.slice(1));
+    s.appendChild(L);
+    /* the stepper walks the steps of 5 inside the book's range, and the figures it holds that are not on a step (what is set, the suggestion) */
+    var fld=el('div','amb-field apct__step'), lab=el('label','amb-field__label','Set to, %'), box=el('div','amb-stepper'), inp=actOn(el('input','amb-input'),'acct.pct.value'), vid='apctv'+(++tileSeq);
+    lab.setAttribute('for',vid); inp.id=vid; inp.type='text'; inp.setAttribute('inputmode','numeric'); inp.setAttribute('autocomplete','off');   /* text, not number: a signed figure a number field draws in the device's own style, in brackets on some */
+    function stepsFor(extra){
+      var list=[], v; for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);
+      [held,sug,extra].forEach(function(x){ if(typeof x==='number'&&x>=lim.min&&x<=lim.max&&list.indexOf(x)<0) list.push(x); });
+      return list.sort(function(p,q){ return p-q; }).join(' ');
+    }
+    function stepBtn(dir){
+      var b=actOn(el('button','amb-circle amb-circle--lg'),dir<0?'acct.pct.down':'acct.pct.up'); b.type='button'; b.setAttribute('data-amb-step',String(dir));
+      b.setAttribute('aria-label',dir<0?'5% lower':'5% higher'); b.appendChild(ambIcon(dir<0?'minus':'plus')); return b;
+    }
+    box.appendChild(stepBtn(-1)); box.appendChild(inp); box.appendChild(stepBtn(1)); fld.appendChild(lab); fld.appendChild(box); s.appendChild(fld);
     var prev=el('div','apct__prev'); s.appendChild(prev);
-    var acts=el('div','salt-settings apct__acts'), answer=el('p','anote aanswer apct__answer'); answer.setAttribute('role','status');
+    var acts=aGroup(null,'apct__acts'), answer=acts.foot(''); answer.className='amb-settings__foot anote aanswer apct__answer'; answer.setAttribute('role','status');
     var at=null, sig='';
-    var sendB=makerButton(acts,['Send','acct.pct.send',code],async function(send){
+    var sendB=aActBtn(acts,['Send','acct.pct.send',code],async function(send){
       var whole=st.pct[st.book]; if(whole===held) return;
       var body={code:code,product:st.book,tier:Number((whole/100).toFixed(2)),unit:punit}, check=JSON.stringify(body);
       if(check!==sig){ sig=check; at=new Date().toISOString(); }
       body.at=at;
       try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
       catch(error){ refusal(answer,error); }
-    },false,function(){ at=null; sig=''; });
-    asRow(sendB);
-    var use=asRow(actOn(el('button','salt-ghost',sug==null?'No suggestion':'Use '+pctWord(sug)),'acct.pct.suggest')); use.type='button'; use.disabled=sug==null;
+    },function(){ at=null; sig=''; });
+    var use=aBtn(sug==null?'No suggestion':'Use '+pctWord(sug),'amb-action','acct.pct.suggest'); use.disabled=sug==null;
     use.addEventListener('click', function(){ if(sug!=null){ st.pct[st.book]=sug; pctPaint(); } });
-    acts.appendChild(use);
-    var clr=null;
+    acts.add(use);
     if(card.held){
-      clr=makerButton(acts,['Set back to 0','acct.pct.clear',code],async function(send){
+      var clr=aActBtn(acts,['Set back to 0','acct.pct.clear',code],async function(send){
         var body={code:code,product:st.book,tier:null,unit:punit}, check=JSON.stringify(body);
         if(check!==sig){ sig=check; at=new Date().toISOString(); }
         body.at=at;
         try{ await send('/all/maker/inputs/tier-set',body); answer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
         catch(error){ refusal(answer,error); }
-      },false,function(){ at=null; sig=''; });
-      asRow(clr); clr.classList.add('apct__clear');
+      },function(){ at=null; sig=''; });
+      clr.classList.add('apct__clear');
     }
-    /* the answer stands inside the buttons' own box, where makerButton looks for it, so a refused retry is said on the card, never let go */
-    acts.appendChild(answer); s.appendChild(acts);
+    /* the answer stands inside the buttons' own group, where makerButton looks for it, so a refused retry is said on the card, never let go */
+    s.appendChild(acts);
     function pctDraw(j){
       prev.textContent='';
       if(!j||!j.rows||!j.rows.length) return;
-      var say=pctWord(st.pct[st.book]), card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none apct__table'), wrap=el('div','salt-table-wrap'), table=el('table','salt-table salt-table--plain salt-table--rows'), hr=el('tr'), body=el('tbody');
-      wrap.setAttribute('role','region'); wrap.setAttribute('aria-label','Their prices at '+say); wrap.setAttribute('tabindex','0');
-      table.appendChild(el('caption','sr',code+' at '+say+': their prices before anything goes to Approve'));
-      ['Units','Now','At '+say,'Floor'].forEach(function(t, i){ var th=el('th',i?null:'salt-table__left',t); th.setAttribute('scope','col'); hr.appendChild(th); });
+      var say=pctWord(st.pct[st.book]), table=el('table','amb-table amb-table--stack apct__table'), hr=el('tr'), body=el('tbody'), heads=['Units','Now','At '+say,'Floor'];
+      table.appendChild(el('caption','amb-vh',code+' at '+say+': their prices before anything goes to Approve'));
+      heads.forEach(function(t, i){ var th=el('th',i?'is-num':null,t); th.setAttribute('scope','col'); hr.appendChild(th); });
       table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
       j.rows.forEach(function(r){
-        var tr=el('tr'), th=el('th','salt-table__left',units(r.q)); th.setAttribute('scope','row'); tr.appendChild(th);
-        tr.appendChild(el('td',null,rmShort(r.now))); tr.appendChild(el('td','apct__at',rmShort(r.at))); tr.appendChild(el('td','apct__floor',rmShort(r.floor)));
+        var tr=el('tr');
+        [[units(r.q),null],[rmShort(r.now),'is-num'],[rmShort(r.at),'is-num apct__at'],[rmShort(r.floor),'is-num apct__floor']].forEach(function(x,i){ var td=el('td',x[1],x[0]); td.setAttribute('data-label',heads[i]); tr.appendChild(td); });
         body.appendChild(tr);
       });
-      wrap.appendChild(table); card.appendChild(wrap); prev.appendChild(card);
+      prev.appendChild(table);
       var usual=j.rows.filter(function(r){ return r.usual; })[0];
-      if(usual) prev.appendChild(el('p','salt-settings__foot','Their usual is '+units(usual.q)+', and a change goes to Approve first.'));
+      if(usual) prev.appendChild(el('p','amb-settings__foot','Their usual is '+units(usual.q)+', and a change goes to Approve first.'));
     }
     function pctPaint(){
       var whole=st.pct[st.book];
-      out.textContent=pctWord(whole); down.disabled=whole<=lim.min; up.disabled=whole>=lim.max;
+      inp.setAttribute('data-amb-values',stepsFor(whole)); inp.value=String(whole);
       sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;
       var key=code+'/'+st.book+'/'+whole;
       if(pctReads[key]){ pctDraw(pctReads[key]); return; }
       refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) pctDraw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
     }
-    down.addEventListener('click', function(){ st.pct[st.book]=Math.max(lim.min, Math.ceil(st.pct[st.book]/5)*5-5); pctPaint(); });
-    up.addEventListener('click', function(){ st.pct[st.book]=Math.min(lim.max, Math.floor(st.pct[st.book]/5)*5+5); pctPaint(); });
+    /* a step, or a figure typed: a whole % inside the book's range */
+    inp.addEventListener('change', function(){
+      var v=Math.round(+inp.value); if(!isFinite(v)) v=st.pct[st.book];
+      v=Math.max(lim.min,Math.min(lim.max,v)); if(v===st.pct[st.book]){ inp.value=String(v); return; }
+      st.pct[st.book]=v; pctPaint();
+    });
     pctPaint();
     return s;
   }
-  /* 3 Nov 2026 (the account on Shop's grid): This customer and the associate reward are lists under a mist head with the book's tag; the line of their rates,
-     the meter and the figures are its rows, what it means the grey line under it */
-  function acctHead(box, t){ var h=el('h2','salt-settings__head ahead2',t); h.appendChild(productTag('salt')); box.appendChild(h); }
-  function rowOf(L, node, cls){ var r=el('div','salt-settings__row '+cls); r.appendChild(node); L.appendChild(r); return r; }
+  /* 3 Nov 2026: This customer and the associate reward are groups under a head with the book's chip; the line of their rates, the meter and the figures are its rows, what it means the grey line under it */
+  function acctHead(box, t){ var h=el('h2','amb-section ahead2',t); h.appendChild(document.createTextNode(' ')); h.appendChild(bookChip('salt')); box.appendChild(h); }
+  /* a measure with its words, as Ambient's meter row: the words over the bar */
+  function meterRow(title, sub, value){
+    var li=el('li','amb-row amb-row--meter ameterrow'), tx=el('span','amb-row__text'), p=el('progress','amb-meter');
+    tx.appendChild(el('span','amb-row__title',title)); if(sub) tx.appendChild(el('span','amb-row__sub',sub)); li.appendChild(tx);
+    p.max=100; p.value=Math.max(0,Math.min(100,value)); p.setAttribute('aria-label',title+(sub?', '+sub:'')); li.appendChild(p);
+    var ul=el('ul','amb-list'); ul.appendChild(li); return ul;
+  }
   /* 13 Nov 2026 (the price band's version 3): THEIR HABIT AND THE SIZE WARNING, from the snapshot's habit (never priced): how often and how much, and how late; what a bigger lot or ten points off would do to what they earn him a month */
   function habitRows(L, h){
     if(!h||!(+h.gap>0)) return;
     var late=Math.round((+h.since||0)-(+h.gap)), said='Every '+(+h.gap)+' d, usually '+units(h.usual)+(h.state!=='early'&&late>0?'; late '+late+' d':'');
     var hr=acctLine(L,'Habit',said); hr.setAttribute('data-habit',h.state||'');
     var w=h.warn||{};
-    if(w.bigger&&+w.bigger.less30>0){ var bw=lineRow('A '+(+w.bigger.q)+'-unit lot earns '+rmShort(+w.bigger.less30)+' less a month',null,''); bw.setAttribute('data-warn','bigger'); L.appendChild(bw); }
-    if(w.tenOff&&+w.tenOff.less30>0){ var tw=lineRow('10% off costs '+rmShort(+w.tenOff.less30)+' a month',null,''); tw.setAttribute('data-warn','tenOff'); L.appendChild(tw); }
+    if(w.bigger&&+w.bigger.less30>0){ var bw=aLine('A '+(+w.bigger.q)+'-unit lot earns '+rmShort(+w.bigger.less30)+' less a month'); bw.setAttribute('data-warn','bigger'); L.add(bw); }
+    if(w.tenOff&&+w.tenOff.less30>0){ var tw=aLine('10% off costs '+rmShort(+w.tenOff.less30)+' a month'); tw.setAttribute('data-warn','tenOff'); L.add(tw); }
   }
   function paintCust(box, r){
     box.textContent='';
     if(!r||r.reading||!r.customer||r.error){ box.hidden=true; return; }
     box.hidden=false;
     acctHead(box,'This customer');
-    var L=el('div','salt-settings acust__list');
     if(r.rates&&r.rates.length>1){
       var lo=Math.min.apply(null,r.rates.map(function(x){ return x.rate; })), hi=Math.max.apply(null,r.rates.map(function(x){ return x.rate; })), span=hi-lo||1;
-      L.appendChild(lineRow('Last '+r.rates.length+' rates', aval(rmShort(lo)+' to '+rmShort(hi)), ''));
-      var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 100 24'); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('class','ocust__spark acust__spark');
+      var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'), tile=el('div','amb-tiles acust__tiles'), tl=el('div','amb-tile acust__tile');
+      svg.setAttribute('viewBox','0 0 120 36'); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('class','amb-tile__spark acust__spark');
       svg.setAttribute('role','img'); svg.setAttribute('aria-label','Their price a unit, '+r.rates.map(function(x){ return rmShort(x.rate); }).join(', '));
-      var pl=document.createElementNS(NS,'polyline'); pl.setAttribute('fill','none'); pl.setAttribute('stroke','currentColor'); pl.setAttribute('stroke-width','1.5'); pl.setAttribute('vector-effect','non-scaling-stroke');
-      pl.setAttribute('points',r.rates.map(function(x,i){ return (i*100/(r.rates.length-1)).toFixed(1)+','+(21-(x.rate-lo)/span*18).toFixed(1); }).join(' '));
-      svg.appendChild(pl); rowOf(L, svg, 'acust__sparkrow');
+      var pl=document.createElementNS(NS,'polyline');
+      pl.setAttribute('points',r.rates.map(function(x,i){ return (i*120/(r.rates.length-1)).toFixed(1)+','+(32-(x.rate-lo)/span*28).toFixed(1); }).join(' '));
+      svg.appendChild(pl);
+      tl.appendChild(el('span','amb-tile__label','Last '+r.rates.length+' rates')); tl.appendChild(el('span','amb-tile__figure',rmShort(lo)+' to '+rmShort(hi))); tl.appendChild(svg); tile.appendChild(tl); box.appendChild(tile);
     }
+    var y=r.loyal||{}, share=Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)));
+    box.appendChild(meterRow('Loyalty', (+y.units||0)+' of '+(y.every||20)+' units, they see '+share+'%', share));
+    var L=aGroup(null,'acust__list');
     if(r.unitNow!=null) acctLine(L,'A unit now',rmShort(r.unitNow));
     if(r.highest!=null) acctLine(L,'Highest',rmShort(r.highest));
     if(r.cadence) acctLine(L,'Orders every',r.cadence.every+' days');
     if(r.dueIn!=null) acctLine(L,'Next order due',r.dueIn>0?'in '+r.dueIn+(r.dueIn===1?' day':' days'):r.dueIn===0?'today':(-r.dueIn)+(r.dueIn===-1?' day':' days')+' late');
     habitRows(L,r.habit);
-    var y=r.loyal||{}, m=el('div','salt-meter salt-meter--verdigris'), ml=el('div','salt-meter__line'), a1=el('span',null,'Loyalty '), a2=el('span',null,'They see ');
-    var share=Math.max(0,Math.min(100,Math.round((+y.units||0)/(+y.every||20)*100)));
-    a1.appendChild(el('b',null,(+y.units||0)+' of '+(y.every||20)+' units')); a2.appendChild(el('b',null,share+'%'));
-    ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
-    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr); m.style.setProperty('--salt-fill',String(share));
-    rowOf(L, m, 'ameterrow');
-    if(y.paused) L.appendChild(lineRow('Loyalty paused', null, y.why==='writeoff'?'A write-off':'A late payment'));
+    if(y.paused) L.add(aLine('Loyalty paused', y.why==='writeoff'?'A write-off':'A late payment'));
+    L.foot('1 unit at cost every '+(y.every||20)+(r.cost!=null?' ('+rmShort(r.cost)+' to you)':'')+'.');
     box.appendChild(L);
-    box.appendChild(el('p','salt-settings__foot','1 unit at cost every '+(y.every||20)+(r.cost!=null?' ('+rmShort(r.cost)+' to you)':'')+'.'));
   }
   function paintRwd(box, r){
     box.textContent='';
     if(!r||r.reading||!r.associate||r.error||!(r.step>0)){ box.hidden=true; return; }
     box.hidden=false;
     acctHead(box,'Associate reward');
-    var L=el('div','salt-settings arwd__list');
-    var m=el('div','salt-meter'), ml=el('div','salt-meter__line'), a1=el('span',null,'Margin '), a2=el('span',null,'Next unit ');
-    a1.appendChild(el('b',null,rmShort(r.progress))); a2.appendChild(el('b',null,rmShort(r.step)));
-    ml.appendChild(a1); ml.appendChild(a2); m.appendChild(ml);
-    var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
-    m.style.setProperty('--salt-fill',String(Math.max(0,Math.min(100,Math.round(r.progress/r.step*100))))); rowOf(L, m, 'ameterrow');
+    box.appendChild(meterRow('Reward', 'Margin '+rmShort(r.progress)+', next unit '+rmShort(r.step), Math.round(r.progress/r.step*100)));
+    var L=aGroup(null,'arwd__list');
     acctLine(L,'Step, '+r.times+' units’ cost',rmShort(r.step)); acctLine(L,'Given under Median Price',rmShort(r.given)); acctLine(L,'A unit, net to you',rmShort(r.net));
     /* R3 (plan version 6): each person they brought in, their first week's last day and the orders of it counted */
     (Array.isArray(r.r3)?r.r3:[]).forEach(function(w){ if(w&&w.code) acctLine(L,'Brought in '+w.code,w.orders+' counted, to '+dayMon(w.last)); });
+    L.foot('Counted once paid, and they see no figure.');
     box.appendChild(L);
-    box.appendChild(el('p','salt-settings__foot','Counted once paid, and they see no figure.'));
   }
   function partnerSection(a, partner, waiting){
     /* 3 Nov 2026: where they stand a row, Make partner an action row under it that still asks with a second tap, what it means the grey line */
     var s=el('section','asec apart'); s.setAttribute('aria-label','Partner');
-    s.appendChild(el('h2','salt-settings__head','Partner'));
-    var list=el('div','salt-settings apart__list'); s.appendChild(list);
-    list.appendChild(lineRow('Status', aval(partner?'Partner':waiting?'Waiting under Approve':'Not a partner'), ''));
-    if(partner||waiting){ s.appendChild(el('p','salt-settings__foot','Pays the Floor on every book.')); return s; }
-    var answer=el('p','anote aanswer'); answer.setAttribute('role','status');
-    var armed=null, at=null, sig='', b=makerButton(list,['Make partner','acct.partner',a.code],async function(send){
+    s.appendChild(el('h2','amb-section','Partner'));
+    var list=aGroup(null,'apart__list'); s.appendChild(list);
+    var st=aLine('Status', partner?'Partner':waiting?'Waiting under Approve':'Not a partner'); list.add(st);
+    if(partner||waiting){ list.foot('Pays the Floor on every book.'); return s; }
+    var answer=list.foot('Pays the Floor on every book.'); answer.setAttribute('role','status'); answer.classList.add('aanswer');
+    var armed=null, at=null, sig='', b=aActBtn(list,['Make partner','acct.partner',a.code],async function(send){
       if(!armed){ b.textContent='Tap again to confirm'; armed=setTimeout(function(){ armed=null; b.textContent='Make partner'; }, 4000); return; }
       clearTimeout(armed); armed=null; b.textContent='Make partner';
       var body={code:a.code}, check=JSON.stringify(body);
@@ -811,11 +814,8 @@ export const OWNER_JS = `
       body.at=at;
       try{ await send('/all/maker/inputs/partner',body); answer.textContent='Sent. They pay the Floor once you approve it.'; loadMaker(); }
       catch(error){ refusal(answer,error); }
-    },false,function(){ at=null; sig=''; });
+    },function(){ at=null; sig=''; });
     b.classList.add('apart__go');
-    asRow(b);
-    list.appendChild(answer);
-    s.appendChild(el('p','salt-settings__foot','Pays the Floor on every book.'));
     return s;
   }
   /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
@@ -830,33 +830,28 @@ export const OWNER_JS = `
   /* 3 Nov 2026 (the account on Shop's grid): a loan is a row that opens Repayment (what was lent and when, what is left at the right), the reward a row */
   function drawBooks(box, a){
     box.textContent='';
-    box.appendChild(el('h2','salt-settings__head','Loans and reward'));
-    var body=el('div','salt-settings aloans'), rd=lineRow('Reading', null, ''); rd.classList.add('salt-settings__row--muted');
-    box.appendChild(body); body.appendChild(rd);
+    box.appendChild(el('h2','amb-section','Loans and reward'));
+    var body=aGroup(null,'aloans'), rd=aLine('Reading'); rd.classList.add('aloans__reading');
+    box.appendChild(body); body.add(rd);
     readParty().then(function(cat){
       if(!box.isConnected) return;
-      body.textContent='';
+      body.list.textContent='';
       var mine=(cat.loans||[]).filter(function(item){ return item.party===a.code; });
       var reward=(cat.rewards||[]).filter(function(item){ return item.code===a.code; })[0];
       mine.forEach(function(item){
         var cash=item.form==='cash', fmt=cash?rm:units, on=fmtWhen(item.date);
-        var go=actOn(el('button','salt-settings__row salt-settings__row--action aloan'),'acct.repay',item.rid); go.type='button'; go.setAttribute('data-loan', item.rid);
-        var tx=el('span','salt-settings__text');
-        tx.appendChild(el('span','salt-settings__label',(item.direction==='in'?'Borrowed':'Lent')+(item.value!=null?' '+fmt(item.value):'')));
         /* what was lent and what is left say what was repaid; the second line is the day, or what was repaid when no day is kept */
         var sub=on||(item.repaid!=null?'Repaid '+fmt(item.repaid):'');
-        if(sub) tx.appendChild(el('span','salt-settings__sub',sub));
-        go.appendChild(tx);
-        if(item.remaining!=null) go.appendChild(el('span','salt-settings__value',fmt(item.remaining)+' left'));
-        go.appendChild(rowMark());
+        var go=aOpens((item.direction==='in'?'Borrowed':'Lent')+(item.value!=null?' '+fmt(item.value):'')+(sub?', '+sub:''), item.remaining!=null?fmt(item.remaining)+' left':'', 'acct.repay', item.rid);
+        go.classList.add('aloan'); go.setAttribute('data-loan', item.rid);
         go.addEventListener('click', function(){ repayFor(item.rid); });
-        body.appendChild(go);
+        body.add(go);
       });
-      if(!mine.length) body.appendChild(lineRow('Loans', aval('None'), ''));
-      var rw=lineRow('Reward', aval(reward?units(reward.held)+' held':'None'), reward?(reward.departed?'While away':reward.free<reward.held?units(reward.free)+' free':''):'');
+      if(!mine.length) body.add(aLine('Loans','None'));
+      var rw=aLine('Reward', reward?units(reward.held)+' held'+(reward.departed?', while away':reward.free<reward.held?', '+units(reward.free)+' free':''):'None');
       if(reward) rw.setAttribute('data-reward',a.code);
-      body.appendChild(rw);
-    }).catch(function(){ if(box.isConnected){ body.textContent=''; body.appendChild(lineRow('Not read', null, 'Their loans could not be read.')); } });
+      body.add(rw);
+    }).catch(function(){ if(box.isConnected){ body.list.textContent=''; body.add(aLine('Not read','Their loans could not be read.')); } });
   }
   /* Repayment opens Record's own form for that loan: the form is the one that sends, so a repayment waits under Approve like any other. A form not built yet is
      filled when it is (repayWant, applied once Record's forms are drawn). */
@@ -974,47 +969,89 @@ export const OWNER_JS = `
     if(a.flag==='pend') return {sev:'soon', word:'Agreed', age:dayMon(a.seen.last), rm:+t.pend||0, act:'open'};
     return {sev:'watch', word:'Opened', age:dayMon(a.seen.last), act:'open'};
   }
-  /* 2 Nov 2026 (his Customers canvas, his answers of 31 Oct 2026, as his Orders canvas): AN ACCOUNT IS A SETTINGS ROW BELOW 1080PX AND A ROW OF ONE PLAIN TABLE FROM IT,
-     drawn one at a time (ordWide). Its code, or the practice account's name, over where it stands in a word and an age (copper when it waits on him, ember when
-     late), what they owe, or what he owes back in ember, and its one way as a lit ghost: Message, Send, Show or Open, each with the act and the request it had on the
-     card. A group is a head over ONE list, To do, Pending or FYI, the largest sum first. A move's answer or the guest list stands under its row. */
-  function acctRowNodes(a){
-    var wide=ordWide(), s=acctState(a), who=a.test?testName(a):(a.code||a.username), row=el(wide?'tr':'div',wide?'arow':'salt-settings__row arow'), open, mv=null;
-    var tail=rowTail(wide,a.username,6), c={_body:tail.into, _grow:function(){}, _add:function(b){ if(!mv){ mv=asMove(b); if(!mv.getAttribute('data-key')) mv.setAttribute('data-key',a.username); } }};
-    row.setAttribute('data-u',a.username);
-    if(s.act==='message'&&a.username){ var ms=pill(['Message','acct.message',a.username]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
-    else if(s.act==='send') c._add(linkButton(a, noteOf(c)));
-    else if(s.act==='show') silverOn(a, c, 'acct');
-    else { var op=ghost(['Open','acct.open-card',a.username]); op.addEventListener('click', function(){ openCard(a.username); }); c._add(op); }
-    if(wide){
-      open=el('a','arow__open',who); whoTag(open,who); var th=el('th','salt-table__left'); th.setAttribute('scope','row'); th.appendChild(open); row.appendChild(th);
-      row.appendChild(el('td','salt-table__left',a.username));
-      var sd=el('td','salt-table__left'); sd.appendChild(chip(s.sev==='now'?'copper':s.sev==='soon'?'brass':'mist', s.word)); row.appendChild(sd);
-      row.appendChild(el('td','salt-table__left'+(s.late?' nage--late':''),s.age||''));
-      row.appendChild(el('td',s.mine?'nfig--mine':null,+s.rm>0.004?rmShort(s.rm):''));
-      var go=el('td'), act=el('div','salt-table__act'); if(mv) act.appendChild(mv); go.appendChild(act); row.appendChild(go);
-    }else{
-      open=el('a','arow__open salt-settings__text');
-      var lab=el('span','salt-settings__label'); lab.appendChild(whoTag(el('span','acode',who),who)); open.appendChild(lab);
-      open.appendChild(el('span','salt-settings__sub'+(s.late?' salt-settings__sub--late':s.sev==='now'?' salt-settings__sub--why':''),[s.word,s.age].filter(Boolean).join(' · '))); row.appendChild(open);
-      if(+s.rm>0.004) row.appendChild(el('span','salt-settings__value salt-settings__value--lg'+(s.mine?' nfig--mine':''),rmShort(s.rm)));
-      if(mv) row.appendChild(mv);
-    }
-    open.setAttribute('href','#customers'); actOn(open,'acct.open','a:'+a.username);
-    open.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(a.test?'':', '+a.username)+(s.rm?', '+rmShort(s.rm):''));
-    if(aOpen===a.username){ open.setAttribute('aria-current','true'); row.setAttribute('aria-current','true'); }
-    open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });
-    /* 2 Nov 2026: as a phone's settings row, a tap anywhere on the row opens it; its move and its tail keep their own taps */
-    row.addEventListener('click', function(ev){ if(ev.target===open||open.contains(ev.target)) return; if(tail.box.contains(ev.target)) return; if(ev.target.closest&&ev.target.closest('button,a,input,select,textarea')) return; openCard(a.username); });
-    /* the tail is shown only while it holds an answer or the guest list: the note under the Send button fills as it is tapped */
-    var sync=function(){ var on=!!tail.into.textContent; tail.box.hidden=!on; row.classList.toggle('arow--ask',on&&!wide); };
-    sync(); if(window.MutationObserver) new MutationObserver(sync).observe(tail.into,{childList:true,characterData:true,subtree:true});
-    if(!wide) row.appendChild(tail.box);
-    return wide?[row,tail.box]:[row];
+  /* 16 Nov 2026, THE MOVE TO AMBIENT (place H, Customers): THE ACCOUNTS ARE AMBIENT'S ROWS under a head each, To do, Pending and FYI, the largest sum first; the same on a
+     phone and wide (the list stands beside the open account from 960px, in its place below it). A row is a tap anywhere on its text, which opens the account, and its one
+     way as a small pill at the trail: Message, Send, Show or Open, each keeping its act and the request it had. The state is a word of the second line (ember while it waits
+     on him or is late), then its age and the sum; his own credit in ember. A move's answer stands under its row. */
+  function aBtn(word, cls, act, key){ var b=actOn(el('button',cls,word),act,key); b.type='button'; return b; }
+  function aPill(word, act, key, sm, quiet){ return aBtn(word,'amb-pill'+(sm?' amb-pill--sm':'')+(quiet?' amb-pill--quiet':''),act,key); }
+  /* an action row of a settings list: what a ghost on its own row was, the one that ends or removes in ember */
+  function aAct(b, danger){
+    [].slice.call(b.classList).forEach(function(c){ if(/^(salt-|amb-pill|amb-circle|btn$)/.test(c)) b.classList.remove(c); });
+    b.classList.add('amb-action'); if(danger) b.classList.add('amb-action--danger'); return b;
   }
-  /* the Insight over the list, one sentence, money first: what is owed to him and how much of it is late, what he owes back, the sign-ins waiting */
+  /* a group of settings: its head, its list (add puts a node in a row of it), and the one line under it */
+  function aGroup(head, cls){
+    var box=el('div','amb-settings'+(cls?' '+cls:'')), ul=el('ul','amb-settings__list');
+    box.setAttribute('data-amb','');   /* a makerButton in it draws the system's own small pill, which the group's action rows then take */
+    if(head) box.appendChild(el('h3','amb-settings__head',head));
+    box.appendChild(ul); box.list=ul;
+    box.add=function(n){ var li=el('li'); li.appendChild(n); ul.appendChild(li); return n; };
+    box.foot=function(t){ var p=el('p','amb-settings__foot',t); box.appendChild(p); return p; };
+    return box;
+  }
+  /* a line read only: its name and what it says; hot is ember */
+  function aLine(name, value, hot){
+    var r=amb.node(amb.setting(name, value==null?'':value));
+    if(value==null) r.removeChild(r.querySelector('.amb-setting__value'));
+    else if(hot) r.querySelector('.amb-setting__value').classList.add('amb-neg');
+    return r;
+  }
+  /* a line that opens: its name, what it says, the chevron */
+  function aOpens(name, value, act, key){
+    var at={'data-act':act}; if(key!=null&&key!=='') at['data-key']=String(key);
+    return amb.node(amb.setting(name, value, at));
+  }
+  function acctRowNodes(a){
+    var s=acctState(a), who=a.test?testName(a):(a.code||a.username), li=el('li','amb-row arow'), mv=null;
+    var tail=el('li','oask'); tail.setAttribute('data-rowof',a.username); tail.setAttribute('role','status');
+    var c={_body:tail, _grow:function(){}, _add:function(b){ if(!mv){ mv=b; if(!mv.getAttribute('data-key')) mv.setAttribute('data-key',a.username); } }};
+    li.setAttribute('data-u',a.username);
+    if(s.act==='message'&&a.username){ var ms=aPill('Message','acct.message',a.username,true); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
+    else if(s.act==='send'){ c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm'; }
+    else if(s.act==='show') acctShow(a, c);
+    else { var op=aPill('Open','acct.open-card',a.username,true,true); op.addEventListener('click', function(){ openCard(a.username); }); c._add(op); }
+    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button';
+    var tx=el('span','amb-row__text'), ti=el('span','amb-row__title'), sub=el('span','amb-row__sub');
+    ti.appendChild(whoTag(el('span','acode',who),who)); tx.appendChild(ti);
+    sub.appendChild(el('span',s.sev==='now'||s.late?'amb-neg':null,s.word));
+    if(s.age) sub.appendChild(document.createTextNode(', '+s.age));
+    if(+s.rm>0.004){ sub.appendChild(document.createTextNode(', ')); sub.appendChild(el('span',s.mine?'amb-neg':null,rmShort(s.rm))); }
+    tx.appendChild(sub); open.appendChild(tx);
+    open.setAttribute('aria-label', s.word+(s.age?', '+s.age:'')+': '+who+(a.test?'':', '+a.username)+(s.rm?', '+rmShort(s.rm):''));
+    if(aOpen===a.username){ open.setAttribute('aria-current','true'); li.setAttribute('aria-current','true'); }
+    open.addEventListener('click', function(){ openCard(a.username); });
+    li.appendChild(open);
+    if(mv){ var tr=el('span','amb-row__trail'); tr.appendChild(mv); li.appendChild(tr); }
+    /* the tail is shown only while it holds an answer or the guest list: the note under the Send button fills as it is tapped */
+    var sync=function(){ tail.hidden=!tail.textContent&&!tail.querySelector('figure'); };
+    sync(); if(window.MutationObserver) new MutationObserver(sync).observe(tail,{childList:true,characterData:true,subtree:true});
+    return [li, tail];
+  }
+  /* Show, for an ID with no account: the standing guest link, its code in the system's frame and Copy link, under the row it was asked on */
+  function acctShow(a, c){
+    var sh=aPill('Show','acct.show-link',null,true); sh.setAttribute('aria-label','Show the guest price list');
+    c._add(sh);
+    var note=noteOf(c);
+    function openSilver(){
+      var r=strangerLink();
+      if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
+      silverOpen[a.username]=true;
+      var box=el('figure','amb-codeframe ashow'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cap=el('figcaption','amb-codeframe__caption');
+      img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; fld.appendChild(img); box.appendChild(fld);
+      cap.appendChild(el('code','gu',r.url)); box.appendChild(cap);
+      var cp=aPill('Copy link','acct.copy-link',null,true,true);
+      cp.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
+      });
+      c._body.insertBefore(cp, note); c._body.insertBefore(box, cp); sh.disabled=true;
+    }
+    sh.addEventListener('click', openSilver);
+    if(silverOpen[a.username]) openSilver();
+  }
+  /* the notice over the list, one sentence, money first: what is owed to him and how much of it is late, what he owes back, the sign-ins waiting */
   function drawALead(pool){
-    var box=document.getElementById('alead'); if(!box) return;
+    var wrap=document.getElementById('alead'), box=document.getElementById('aleadT'); if(!box) return;
     var real=pool.filter(function(a){ return !a.test; }), owedRM=0, lateRM=0, back=0, wait=0;
     real.forEach(function(a){
       var t=a.t||{}, s=acctState(a);
@@ -1032,17 +1069,16 @@ export const OWNER_JS = `
     bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });
     if(bits.length) box.appendChild(document.createTextNode('.'));
     else box.textContent='Nothing is owed either way, and every account has its sign-in.';
-    box.hidden=!sheet;
+    wrap.hidden=!sheet;
   }
   function drawRoster(){
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
     var pool=sheet?sheetRows:OWNER.accounts;
-    /* 25 Oct 2026: each filter counts its accounts beside its word, as Needs you's kinds do, and one with none is dimmed and cannot be chosen; the one in
-       use is let go when none is left in it */
+    /* each filter counts its accounts beside its word, and one with none is dimmed and cannot be chosen; the one in use is let go when none is left in it */
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
-      var k=x.getAttribute('data-f'), n=pool.filter(FILTER[k]||FILTER.all).length, c=x.querySelector('.nktab__n');
+      var k=x.getAttribute('data-f'), n=pool.filter(FILTER[k]||FILTER.all).length, c=x.querySelector('.amb-segment__count');
       if(c) c.textContent=sheet?String(n):'';
       x.disabled=k!=='all'&&!n; });
     if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all; filterMark(); }
@@ -1050,55 +1086,52 @@ export const OWNER_JS = `
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
     countSent(); drawALead(pool);
-    if(!hits.length){ rlist.appendChild(el('p','salt-settings__foot','Nothing matches that.')); return; }
+    if(!hits.length){ rlist.appendChild(el('p','amb-empty','Nothing matches that.')); return; }
     var rm=function(a){ var s=acctState(a); return +s.rm||0; }, groups=[];
     SEVS.forEach(function(s){
       var group=hits.map(function(a, i){ return [a, i]; }).filter(function(x){ return acctState(x[0]).sev===s[0]; })
         .sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
       if(group.length) groups.push({sev:s[0], head:s[1], rows:group});
     });
-    /* from 1080px one plain table for every group, its columns named over it and a group's head a row of it; below, a head over one settings list a group */
-    if(ordWide()){
-      var t=rowsTable('Accounts',[0,168,136,120,112,128],[['Account',1],['Username',1],['State',1],['Since',1],['Owed',0],['',0]]);
-      groups.forEach(function(g){
-        tableGroup(t,g.head).setAttribute('data-sev',g.sev);
-        g.rows.forEach(function(a){ acctRowNodes(a).forEach(function(n){ t.body.appendChild(n); }); });
-      });
-      rlist.appendChild(t.card);
-    }else groups.forEach(function(g){
-      var sec=el('section',null), list=el('div','salt-settings');
+    groups.forEach(function(g){
+      var sec=el('section','agroup'), list=el('ul','amb-list amb-list--ruled');
       sec.setAttribute('data-sev',g.sev); sec.setAttribute('aria-label',g.head);
-      sec.appendChild(el('h2','salt-settings__head',g.head));
+      sec.appendChild(el('h2','amb-section',g.head));
       g.rows.forEach(function(a){ acctRowNodes(a).forEach(function(n){ list.appendChild(n); }); });
       sec.appendChild(list); rlist.appendChild(sec);
     });
   }
   function filterMark(){
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
-      var on=x.getAttribute('data-f')===aFilter; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on); });
+      x.setAttribute('aria-pressed', x.getAttribute('data-f')===aFilter?'true':'false'); });
   }
   function filterBy(f){
     aFilter=FILTER[f]?f:'all';
     filterMark();
     drawRoster();
   }
-  /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
+  /* the way back from an open account, below 960px where it takes the list's place: one pill named for where it goes */
+  function acctBack(){
+    var b=aBtn('','amb-pill amb-pill--quiet amb-pill--sm aback','acct.back'); b.setAttribute('data-back','accounts');
+    b.appendChild(ambIcon('back','amb-icon--sm')); b.appendChild(document.createTextNode(' All accounts')); b.setAttribute('aria-label','All accounts'); return b;
+  }
+  /* the open account: its way back, then the account's card, which ends in the one main action, pinned at the pane's foot */
   function openCard(u){
     var a=u&&((sheet&&sheet[u])||OWNER.accounts.filter(function(x){ return x.username===u; })[0]);
     aOpen=a?u:null;
     oAccts.classList.toggle('open', !!a);
     aopen.hidden=!a; aopen.textContent='';
+    var none=document.getElementById('anone'); if(none) none.hidden=!!a;
     [].slice.call(rlist.querySelectorAll('[data-u]')).forEach(function(r){
       if(r.getAttribute('data-u')===aOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
     if(!a) return;
-    var back=backOrb('accounts','All accounts'); actOn(back,'acct.back');
+    var back=acctBack();
     aopen.appendChild(back);
     acctPane(aopen, a);
-    /* below 860px the account takes the list's place with its way back showing, so he is taken to the top of it; from 860px the list is the page's
-       scroll and the account stands beside it, sticky, so a tap on a low row leaves the page where it is and only brings the pane into view */
+    /* below 960px the account takes the list's place with its way back showing, so he is taken to the top of it; from 960px the panes scroll apart, so only the pane's own top */
     try{
-      if(window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
-      else if(aopen.scrollIntoView) aopen.scrollIntoView({block:'nearest'});
+      if(window.getComputedStyle(back).display!=='none') pageTop();
+      else { var side=document.getElementById('aside'); if(side) side.scrollTop=0; }
     }catch(e){}
   }
   /* an account as it opens (S9 9.3) */
@@ -1127,7 +1160,7 @@ export const OWNER_JS = `
   function drawLinks(){
     var glist=document.getElementById('glist');
     glist.textContent='';
-    if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
+    if(!links.length){ glist.appendChild(el('p','amb-empty','No links yet.')); return; }
     var isWaiting=waitingLink;
     /* UX8, 24 Sep 2026: AN ASSOCIATE'S LINK STAYS THEIRS once he has decided on it. Approved or declined, it went
        under "made against a customer" as "Tier 2, (no label)", with nothing to say who minted it */
@@ -1143,73 +1176,67 @@ export const OWNER_JS = `
     if(standing.length){ heads[seq.length]='Standing link'; seq=seq.concat(standing); }
     if(assoc.length){ heads[seq.length]='Made by associates'; seq=seq.concat(assoc); }
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
-    /* 26 OCT 2026 (canvas Salt Admin Customers, P6): A LINK IS NEEDS YOU'S CARD under Waiting on you, Standing link, Made by associates and Older links: its state
-       and its age (Waiting, Standing, Opened, Never opened, Declined, Withdrawn), who it is for in words (Made by or Via a code, the note alone), its one way
-       (Approve while it waits, Restore once withdrawn, else Copy) and how often it was opened, in the figure's place, left empty on a shut link. A tap on the
-       card opens its address, QR and every move under it; it stays open across a redraw, and opens at once for the answer to a move made on it. */
-    var group=null, gname=null, SEVOF={'Waiting on you':['now','copper'],'Standing link':['soon','brass'],'Made by associates':['soon','brass'],'Older links':['watch','mist']};
+    /* 16 Nov 2026, THE MOVE TO AMBIENT (place H): A LINK IS AMBIENT'S ROW under Waiting on you, Standing link, Made by associates and Older links: who it is for in words (Made by or Via a code, the
+       note alone), its state and its age (Waiting, Standing, Opened, Never opened, Declined, Withdrawn) and how often it was opened, and its one way as a small pill (Approve while it waits,
+       Restore once withdrawn, else Copy). A tap on the row opens its address, its code in the system's frame and every move under it; it stays open across a redraw, and opens at once
+       for the answer to a move made on it. */
+    var group=null, list=null, gname=null;
     seq.forEach(function(r,i){
-      if(heads[i]){ gname=heads[i]; group=el('section','ngroup glinks'); group.setAttribute('aria-label',heads[i]); group.appendChild(el('h2','salt-eyebrow salt-eyebrow--'+SEVOF[heads[i]][1]+' nsev ghead',heads[i])); glist.appendChild(group); }
-      var sev=SEVOF[gname][0];
+      if(heads[i]){ gname=heads[i]; group=el('section','agroup glinks'); group.setAttribute('aria-label',heads[i]); group.appendChild(el('h2','amb-section ghead',heads[i])); list=el('ul','amb-list amb-list--ruled'); group.appendChild(list); glist.appendChild(group); }
       var declined=r.declined===true, pending=r.approved===false&&!declined, shut=pending||declined;
       var word=pending?'Waiting':declined?'Declined':r.revoked?'Withdrawn':r.standing?'Standing':r.opens?'Opened':'Never opened';
       var age=pending?ageOf(r.made):r.opens?stampDay(r.last):stampDay(r.made);
       var lead=r.standing?'':isAssoc(r)?(shut?'Made by ':'Via '):'', who=r.standing?'Median Price list':isAssoc(r)?codeByUser(r.by):(r.label||'Link');
-      var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
-      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id)); card.hidden=!card.open;
-      var c=needCard({sev:sev, kind:'links', word:word, key:'g:'+r.id, at:'', age:age, late:pending, who:who, title:who, rm:0, act:'link.open',
-        open:true, onTap:function(){ card.open=!card.open; card.hidden=!card.open; if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; c.setAttribute('aria-expanded',card.open?'true':'false'); }});
-      c.setAttribute('data-glink', r.id); c.setAttribute('aria-expanded',card.open?'true':'false');
-      var tw=c.querySelector('.need-who'); if(lead) tw.parentNode.insertBefore(el('span','need-lead',lead.trim()), tw);
-      if(r.revoked) c.classList.add('off');
-      var fig=c.querySelector('.nfig'); fig.textContent='';
-      if(!shut){ fig.classList.add('nfig--opens'); fig.appendChild(el('span','salt-eyebrow salt-eyebrow--mist nfig__k','Opens')); fig.appendChild(el('span','nfig__v',String(r.opens||0))); }
+      var open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id));
+      var row=el('li','amb-row glrow'+(r.revoked?' off':'')), main=actOn(el('button','amb-row__main need-tap'),'link.open','g:'+r.id), tx=el('span','amb-row__text'), ti=el('span','amb-row__title'), sub=el('span','amb-row__sub');
+      main.type='button'; row.setAttribute('data-glink', r.id);
+      if(lead) ti.appendChild(el('span','need-lead',lead)); ti.appendChild(el('span','need-who',who)); tx.appendChild(ti);
+      sub.appendChild(el('span',pending?'amb-neg':null,word)); sub.appendChild(document.createTextNode(', '+age+(shut?'':', opened '+(r.opens||0)+(+r.opens===1?' time':' times')))); tx.appendChild(sub);
+      main.appendChild(tx); main.setAttribute('aria-expanded',open?'true':'false'); row.appendChild(main);
       var go;
-      if(pending){ go=pill(['Approve','link.approve-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }
-      else if(r.revoked){ go=pill(['Restore','link.restore-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'restore'); }); }
-      else { go=pill(['Copy','link.copy-card',r.id]); go.addEventListener('click', async function(){ try{ await navigator.clipboard.writeText(r.url); go.textContent='Copied'; }catch(e){ go.textContent='Not copied'; } setTimeout(function(){ go.textContent='Copy'; }, 1500); }); }
-      c._add(go);
-      c.addEventListener('click', function(ev){ if(ev.target===c) c.querySelector('.need-tap').click(); });
-      group.appendChild(c);
-      card.appendChild(el('h4','gwho',r.standing?'For strangers, opens the Median Price list'
+      if(pending){ go=aPill('Approve','link.approve-card',r.id,true); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }
+      else if(r.revoked){ go=aPill('Restore','link.restore-card',r.id,true); go.addEventListener('click', function(){ moveLink(r,'restore'); }); }
+      else { go=aPill('Copy','link.copy-card',r.id,true); go.addEventListener('click', async function(){ try{ await navigator.clipboard.writeText(r.url); go.textContent='Copied'; }catch(e){ go.textContent='Not copied'; } setTimeout(function(){ go.textContent='Copy'; }, 1500); }); }
+      var tr=el('span','amb-row__trail'); tr.appendChild(go); row.appendChild(tr);
+      list.appendChild(row);
+      var card=el('li','glpanel'); card.setAttribute('data-link',r.id); card.open=open; card.hidden=!open;
+      main.addEventListener('click', function(){ card.open=!card.open; card.hidden=!card.open; if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; main.setAttribute('aria-expanded',card.open?'true':'false'); });
+      card.appendChild(el('p','amb-field__hint gwho',r.standing?'For strangers, opens the Median Price list'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
         :isAssoc(r)?('Made by '+codeByUser(r.by))
         :(r.label||'(no note)'))));
-      card.appendChild(el('code','gu',r.url));
-      var img=document.createElement('img');
+      var fig=el('figure','amb-codeframe'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cap=el('figcaption','amb-codeframe__caption');
       img.src=r.qr; img.alt=r.standing?'QR to the guest price list':'QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
-      card.appendChild(img);
-      var row=el('div','grow');
-      var copy=el('button','salt-ghost','Copy link'); copy.type='button'; actOn(copy,'link.copy');
+      fld.appendChild(img); fig.appendChild(fld); cap.appendChild(el('code','gu',r.url)); fig.appendChild(cap); card.appendChild(fig);
+      var acts=aGroup(null,'grow');
+      var copy=aBtn('Copy link','amb-action','link.copy');
       copy.addEventListener('click', async function(){
         try{ await navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
         catch(e){ copy.textContent='Copy failed'; }
         setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
       });
-      var rev=el('button','salt-ghost'+(r.revoked?'':' salt-ghost--danger'),r.revoked?'Restore':'Withdraw'); rev.type='button'; rev.setAttribute('data-move',''); actOn(rev,r.revoked?'link.restore':'link.withdraw');
-      rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
-      row.appendChild(copy); row.appendChild(rev);
-      /* v709: his word on one an associate minted, and the tier he may change on it. A tier he
-         does not set leaves it following the associate, which is what "if need be" means. */
-      if(!r.standing&&r.by){
-        if(r.approved===false&&!r.revoked){
-          /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
-             a withdrawn one has neither, Restore being the way back */
-          var ap=el('button','salt-ghost','Approve'); ap.type='button'; ap.setAttribute('data-move',''); actOn(ap,'link.approve');
-          ap.addEventListener('click', function(){ moveLink(r,'approve'); });
-          row.appendChild(ap);
-          if(!declined){
-            var de=el('button','salt-ghost salt-ghost--danger','Decline'); de.type='button'; de.setAttribute('data-move',''); actOn(de,'link.decline');
-            de.addEventListener('click', function(){ moveLink(r,'decline'); });
-            row.appendChild(de);
-          }
+      acts.add(copy);
+      /* v709: his word on one an associate minted. A tier he does not set leaves it following the associate, which is what "if need be" means. */
+      if(!r.standing&&r.by&&r.approved===false&&!r.revoked){
+        /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
+           a withdrawn one has neither, Restore being the way back */
+        var ap=aBtn('Approve','amb-action','link.approve'); ap.setAttribute('data-move','');
+        ap.addEventListener('click', function(){ moveLink(r,'approve'); });
+        acts.add(ap);
+        if(!declined){
+          var de=aBtn('Decline','amb-action amb-action--danger','link.decline'); de.setAttribute('data-move','');
+          de.addEventListener('click', function(){ moveLink(r,'decline'); });
+          acts.add(de);
         }
       }
-      card.appendChild(row);
-      if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
-      if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
-      group.appendChild(card);
+      var rev=aBtn(r.revoked?'Restore':'Withdraw','amb-action'+(r.revoked?'':' amb-action--danger'),r.revoked?'link.restore':'link.withdraw'); rev.setAttribute('data-move','');
+      rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
+      acts.add(rev);
+      card.appendChild(acts);
+      if(moved&&moved.id===r.id){ var mv=el('p','amb-settings__foot msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
+      if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','amb-settings__foot msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
+      list.appendChild(card);
     });
   }
   /* S9 9.7, HIS D13: WHEN ACCESS LAPSES, SAY SO. A request under /all after the Access session has ended is
@@ -2035,15 +2062,13 @@ export const OWNER_JS = `
       drawThreadList();
       var waiting=makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);});
       status.textContent=!makerThreads.length?'No messages yet.':!waiting.length?'Nothing waits for your reply.':waiting.length+(waiting.length===1?' waits':' wait')+' for your reply.';
-      status.className='msg salt-insight salt-insight--copper';
       if(makerThreadUser) drawMakerThreadLines();
     }catch(error){ nGot('threads', error); apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }
     finally{ makerThreadsReading=false; if(apply) drawNeeds(); }
   }
-  /* 5 NOV 2026 (his screenshot of Messages: Needs you's card in the 360px column beside the thread ran its line into the next card and stood a big
-     pill in the middle): A THREAD IS A SETTINGS ROW, as an account is (2 Nov 2026). Waiting (theirs last) under To do, Answered under FYI, each a head
-     over ONE list; within each what they owe first, then the oldest. The code over one line, the state and its age and the last line said, cut to the
-     row (copper while it waits); what they owe on the right; Reply, a lit ghost, only on one waiting, a chevron on the rest; a tap anywhere opens it. */
+  /* 16 Nov 2026, THE MOVE TO AMBIENT (place H, Messages): A THREAD IS AMBIENT'S ROW. Waiting (theirs last) under To do, Answered under FYI, each a head over ONE list; within each what they owe
+     first, then the oldest. The code over one line, the state and its age and the last line said, cut to the row (ember while it waits); Reply, a small pill, only on one waiting;
+     a tap anywhere on the text opens it. 5 Nov 2026: what they owe stands in the second line. */
   function drawThreadList(){
     var list=document.getElementById('makerChatList'); if(!list) return;
     list.textContent='';
@@ -2053,30 +2078,29 @@ export const OWNER_JS = `
       var rows=makerThreads.map(function(th, i){ return [th, i]; }).filter(function(x){ return (makerThreadAsked(x[0])&&!x[0].test?'now':'watch')===g[0]; })
         .sort(function(x, y){ return (owedOn(y[0].u)-owedOn(x[0].u))||(x[1]-y[1]); }).map(function(x){ return x[0]; });
       if(!rows.length) return;
-      var box=el('section','athreads'), ul=el('div','salt-settings');
-      box.setAttribute('data-sev', g[0]); box.setAttribute('aria-label', g[1]); box.appendChild(el('h2','salt-settings__head',g[1]));
+      var box=el('section','athreads'), ul=el('ul','amb-list amb-list--ruled');
+      box.setAttribute('data-sev', g[0]); box.setAttribute('aria-label', g[1]); box.appendChild(el('h2','amb-section',g[1]));
       rows.forEach(function(th){
         var ms=th.msgs||[], last=ms[ms.length-1]||{}, asked=g[0]==='now', who=th.test?'Practice':codeByUser(th.u), owe=owedOn(th.u), age=last.at?ageOf(last.at):'';
-        var said=[(asked?'Waiting':'Answered')+(age?' '+age:''), (last.by==='desk'?'You: ':'')+cut(last.text||'')].filter(Boolean).join(' · ');
-        var row=el('div','salt-settings__row athrow'), open=actOn(el('a','salt-settings__text'),'chat.open',th.u), lab=el('span','salt-settings__label');
+        var row=el('li','amb-row athrow'), open=actOn(el('button','amb-row__main'),'chat.open',th.u), tx=el('span','amb-row__text'), ti=el('span','amb-row__title'), sub=el('span','amb-row__sub athrow__line');
+        open.type='button';
         row.setAttribute('data-thread', th.u); row.setAttribute('data-sev', g[0]); if(th.test) row.setAttribute('data-practice','');
-        lab.appendChild(whoTag(el('span','acode',who),who)); open.appendChild(lab);
-        open.appendChild(el('span','salt-settings__sub athrow__line'+(asked?' salt-settings__sub--why':''),said)); row.appendChild(open);
-        open.setAttribute('href','#customers'); open.setAttribute('aria-label',(asked?'Waiting':'Answered')+(age?', '+age:'')+': '+who+(last.text?', '+cut(last.text):'')+(owe>0.004?', owes '+rmShort(owe):''));
-        open.addEventListener('click', function(ev){ ev.preventDefault(); openMakerThread(th.u); });
-        if(owe>0.004) row.appendChild(el('span','salt-settings__value salt-settings__value--lg',rmShort(owe)));
-        if(asked){ var b=asMove(pill(['Reply','chat.reply-open',th.u])); b.addEventListener('click', function(){ openMakerThread(th.u); }); row.appendChild(b); }
-        else row.appendChild(rowMark());
+        ti.appendChild(whoTag(el('span','acode',who),who)); tx.appendChild(ti);
+        sub.appendChild(el('span',asked?'amb-neg':null,(asked?'Waiting':'Answered')+(age?' '+age:'')));
+        if(owe>0.004) sub.appendChild(document.createTextNode(', owes '+rmShort(owe)));
+        var said=(last.by==='desk'?'You: ':'')+cut(last.text||''); if(said) sub.appendChild(document.createTextNode(' · '+said));
+        tx.appendChild(sub); open.appendChild(tx); row.appendChild(open);
+        open.setAttribute('aria-label',(asked?'Waiting':'Answered')+(age?', '+age:'')+': '+who+(last.text?', '+cut(last.text):'')+(owe>0.004?', owes '+rmShort(owe):''));
+        open.addEventListener('click', function(){ openMakerThread(th.u); });
+        if(asked){ var tr=el('span','amb-row__trail'), b=aPill('Reply','chat.reply-open',th.u,true); b.addEventListener('click', function(){ openMakerThread(th.u); }); tr.appendChild(b); row.appendChild(tr); }
         if(makerThreadUser===th.u){ row.setAttribute('aria-current','true'); open.setAttribute('aria-current','true'); }
-        /* as a phone's settings row, a tap anywhere on the row opens it; Reply keeps its own tap */
-        row.addEventListener('click', function(ev){ if(ev.target.closest&&ev.target.closest('button,a,input,select,textarea')) return; openMakerThread(th.u); });
         ul.appendChild(row);
       });
       box.appendChild(ul); list.appendChild(box);
     });
   }
-  /* 5 Nov 2026, his word: A THREAD OPENS AT ITS NEWEST LINE, as Messages does, older lines a scroll up. A line that lands while he reads the newest
-     keeps him there; one that lands while he has scrolled up to read leaves him where he is (the poll redraws every line every 2 seconds). */
+  /* 5 NOV 2026, his word: A THREAD OPENS AT ITS NEWEST LINE, as Messages does, older lines a scroll up. A line that lands while he reads the newest
+     keeps him there; one that lands while he has scrolled up to read leaves him where he is (the poll redraws every line every 2 seconds). 16 Nov 2026: the lines are Ambient's Thread. */
   function drawMakerThreadLines(first){
     var root=document.getElementById('makerChatLines');
     if(!root) return;
@@ -2084,9 +2108,13 @@ export const OWNER_JS = `
     root.textContent='';
     var thread=makerThreads.filter(function(value){ return value.u===makerThreadUser; })[0];
     (thread&&thread.msgs||[]).forEach(function(line){
-      var mine=line.by==='desk', b=el('div','salt-bubble salt-bubble--'+(mine?'mine':'theirs')), meta=el('p','salt-bubble__meta');
-      b.appendChild(el('p','salt-bubble__text maker-row',line.text));
-      meta.appendChild(el('span','maker-facts',(mine?'You':codeByUser(makerThreadUser))+', '+stampDay(line.at))); b.appendChild(meta);
+      var mine=line.by==='desk', b=el('li','amb-msg'+(mine?' amb-msg--mine':'')), meta=el('p','amb-msg__meta'), tm=el('time',null,stampDay(line.at));
+      b.appendChild(el('p','amb-msg__text maker-row',line.text));
+      meta.appendChild(el('span','maker-facts',mine?'You':codeByUser(makerThreadUser)));
+      if(line.at){ var d=new Date(line.at); if(!isNaN(d)) tm.setAttribute('datetime',d.toISOString()); }
+      meta.appendChild(tm);
+      if(mine) meta.appendChild(el('span','amb-msg__state','Sent'));
+      b.appendChild(meta);
       root.appendChild(b);
     });
     box.scrollTop=end?box.scrollHeight:keep;
@@ -2094,13 +2122,15 @@ export const OWNER_JS = `
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
-    if(root.parentElement) root.parentElement.classList.add('open'); drawThreadList();
+    var grid=root.closest('.chatgrid'), none=document.getElementById('chatnone');
+    if(grid) grid.classList.add('open'); if(none) none.hidden=true; drawThreadList();
     root.setAttribute('data-key',user);
-    var ah=el('div','chathead salt-pane__head'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
-    aw.appendChild(el('span','salt-eyebrow salt-eyebrow--copper','Messages')); aw.appendChild(whoTag(el('h3','chathead__code',codeByUser(user)),codeOfUser(user))); ah.appendChild(aw);
-    if(owe>0.004){ var af=el('div','ahead__fig'); af.appendChild(el('span','salt-eyebrow salt-eyebrow--mist','They owe')); af.appendChild(el('span','ahead__rm',rmShort(owe))); ah.appendChild(af); }
+    var ah=el('div','chathead'), aw=el('div','chathead__who'), ac=sheet&&sheet[user], owe=ac&&ac.flag==='owes'&&ac.t?+ac.t.owed||0:0;
+    aw.appendChild(whoTag(el('h2','amb-section chathead__code',codeByUser(user)),codeOfUser(user)));
+    if(owe>0.004) aw.appendChild(el('p','amb-field__hint ahead__fig','They owe '+rmShort(owe)));
+    ah.appendChild(aw);
     root.appendChild(ah);
-    var lines=el('div','salt-thread__lines');lines.id='makerChatLines';lines.setAttribute('role','log');lines.setAttribute('aria-label','The thread with '+codeByUser(user));root.appendChild(lines);
+    var lines=el('ol','amb-thread');lines.id='makerChatLines';lines.setAttribute('role','log');lines.setAttribute('aria-label','The thread with '+codeByUser(user));root.appendChild(lines);
     var draft=makerChatDrafts[user], savedPrefix='saltMakerChat:'+user+':';
     if(!draft){
       draft=makerChatDrafts[user]={text:'',pending:null,saved:null};
@@ -2115,19 +2145,20 @@ export const OWNER_JS = `
         }
       }catch(error){draft.storageError=error.message;}
     }
-    /* 5 Nov 2026 (the pane): after the lines what else he may do, then the foot, pinned: his box, its answer and Send */
-    var more=el('div','chatmore'), foot=el('div','salt-pane__foot chatfoot');
-    root.appendChild(more); root.appendChild(foot);
-    var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','Answer them'));
-    var text=el('textarea','fld salt-field__input');text.maxLength=200;text.value=draft.text;
+    /* after the lines what else he may do, then the answer, then the foot, pinned: his box and Send, the pane's one main action */
+    var more=el('div','chatmore'), status=el('p','amb-field__hint msg'), foot=el('div','amb-foot chatfoot'), form=el('form','amb-compose');
+    form.addEventListener('submit',function(ev){ ev.preventDefault(); });
+    var text=el('textarea','amb-input');text.rows=1;text.maxLength=200;text.value=draft.text;text.placeholder='Answer them';text.setAttribute('aria-label','Answer them');
     text.setAttribute('data-thread-reply',user);actOn(text,'chat.reply');text.oninput=function(){draft.text=text.value;};
-    label.appendChild(text);foot.appendChild(label);
-    var status=el('p','msg');status.setAttribute('role','status');foot.appendChild(status);
-    var send=el('button','btn salt-pill salt-pill--md','Send'),
-      quiet=el('button','salt-ghost','No reply needed'),cancel=el('button','salt-ghost','Discard unsent reply'),
-      restore=el('button','salt-ghost','Open unsent reply'),close=el('button','salt-ghost','Close');
+    status.setAttribute('role','status');
+    var send=el('button','amb-circle amb-circle--lg'),
+      quiet=el('button','amb-pill amb-pill--quiet amb-pill--sm','No reply needed'),cancel=el('button','amb-pill amb-pill--quiet amb-pill--sm','Discard unsent reply'),
+      restore=el('button','amb-pill amb-pill--quiet amb-pill--sm','Open unsent reply'),close=el('button','amb-pill amb-pill--quiet amb-pill--sm','Close');
+    send.appendChild(ambIcon('send'));send.setAttribute('aria-label','Send');
     [send,quiet,restore,cancel,close].forEach(function(button){button.type='button';});
-    foot.appendChild(send); [quiet,restore,cancel].forEach(function(button){more.appendChild(button);}); ah.appendChild(close);
+    form.appendChild(text); form.appendChild(send); foot.appendChild(form);
+    [quiet,restore,cancel,close].forEach(function(button){more.appendChild(button);});
+    root.appendChild(more); root.appendChild(status); root.appendChild(foot);
     actOn(send,'chat.send');actOn(quiet,'chat.no-reply');actOn(restore,'chat.open-retained');actOn(cancel,'chat.cancel-retry');actOn(close,'chat.close');
     function makerChatState(){
       var busy=!!draft.busy;
@@ -2138,7 +2169,7 @@ export const OWNER_JS = `
       quiet.disabled=busy||unopened||(draft.pending&&draft.pending.message!==undefined);
       restore.hidden=!draft.saved||!!draft.pending;restore.disabled=busy||!!draft.storageError;
       cancel.hidden=!draft.pending&&!draft.saved&&!draft.storageError;cancel.disabled=busy;
-      send.textContent=draft.pending&&draft.pending.message!==undefined?'Send again':'Send';
+      send.setAttribute('aria-label',draft.pending&&draft.pending.message!==undefined?'Send again':'Send');
       quiet.textContent=draft.pending&&draft.pending.noReply?'Send it again':'No reply needed';
     }
     draft.redraw=makerChatState;
@@ -2191,7 +2222,7 @@ export const OWNER_JS = `
         catch(error){status.textContent='Not discarded: '+error.message;}
       });
     };
-    close.onclick=function(){makerThreadUser=null;root.hidden=true;if(root.parentElement) root.parentElement.classList.remove('open');stopMakerChat();drawThreadList();};
+    close.onclick=function(){makerThreadUser=null;root.hidden=true;var g=root.closest('.chatgrid'),n=document.getElementById('chatnone');if(g) g.classList.remove('open');if(n) n.hidden=false;stopMakerChat();drawThreadList();};
     if(draft.storageError) draft.note=draft.storageError;
     else if(draft.saved&&!draft.pending) draft.note='An unsent reply is kept on this phone. Open it to send it again, or discard it.';
     makerChatState();drawMakerThreadLines(true);startMakerChat();
@@ -7181,26 +7212,30 @@ export const OWNER_JS = `
     var box=document.getElementById('jlist'); if(!box) return;
     box.textContent='';
     if(!joins.length) return;
-    var group=el('section','ngroup glinks'); group.setAttribute('aria-label','Join links');
-    group.appendChild(el('h2','salt-eyebrow salt-eyebrow--brass nsev ghead','Join links'));
+    var group=el('section','agroup glinks'), list=el('ul','amb-list amb-list--ruled');
+    group.setAttribute('aria-label','Join links');
+    group.appendChild(el('h2','amb-section ghead','Join links')); group.appendChild(list);
     joins.forEach(function(r){
       var who=codeByUser(r.by), waiting=joinWaiting(r), key='jl:'+r.id;
-      var c=needCard({sev:waiting?'now':r.state==='sent'?'soon':'watch', kind:'links', word:joinWord(r), key:key, at:'', age:waiting?ageOf(r.made):stampDay(r.made), late:waiting,
-        who:who, title:'Join link from '+who, rm:0});
-      c.setAttribute('data-join', r.id);
+      var row=el('li','amb-row glrow'), tx=el('span','amb-row__text'), sub=el('span','amb-row__sub'), age=waiting?ageOf(r.made):stampDay(r.made);
+      row.setAttribute('data-join', r.id);
+      tx.appendChild(el('span','amb-row__title','Join link from '+who));
+      sub.appendChild(el('span',waiting?'amb-neg':null,joinWord(r))); sub.appendChild(document.createTextNode(age?', '+age:'')); tx.appendChild(sub); row.appendChild(tx);
+      var tr=el('span','amb-row__trail');
       if(waiting){
-        var ap=pill(['Approve','join.approve',key]), de=ghost(['Decline','join.decline',key]);
+        var ap=aPill('Approve','join.approve',key,true), de=aPill('Decline','join.decline',key,true,true);
         ap.setAttribute('data-move',''); de.setAttribute('data-move','');
         ap.disabled=de.disabled=!!joinMoving[r.id];
         ap.addEventListener('click', function(){ moveJoin(r,'approve'); }); de.addEventListener('click', function(){ moveJoin(r,'decline'); });
-        c._grow(); c._add(ap); c._add(de);
+        tr.appendChild(ap); tr.appendChild(de);
       }else if(r.approved===true&&!r.revoked&&r.state!=='spent'){
-        var wd=ghost(['Withdraw','join.withdraw',key]); wd.setAttribute('data-move',''); wd.disabled=!!joinMoving[r.id];
+        var wd=aPill('Withdraw','join.withdraw',key,true,true); wd.setAttribute('data-move',''); wd.disabled=!!joinMoving[r.id];
         wd.addEventListener('click', function(){ moveJoin(r,'revoke'); });
-        c._add(wd);
+        tr.appendChild(wd);
       }
-      if(joinSaid[r.id]){ var n=noteOf(c); n.textContent=joinSaid[r.id]; n.className+=' bad'; }
-      group.appendChild(c);
+      if(tr.firstChild) row.appendChild(tr);
+      list.appendChild(row);
+      if(joinSaid[r.id]){ var n=el('li','oask'); n.setAttribute('role','status'); n.appendChild(el('p','amb-field__hint nnote bad amb-neg',joinSaid[r.id])); list.appendChild(n); }
     });
     box.appendChild(group);
   }
@@ -8392,70 +8427,41 @@ export const OWNER_JS = `
     try{ cards=await refs('/all/assoc'); drawCards(); }
     catch(e){ sayFail(e); }
   }
-  /* 26 OCT 2026 (canvas Salt Admin Customers, P7): A BOOK IS ITS TYPED TAG AND HOW MANY; an associate is a card on a phone and a row of one plain table from 860px:
-     what they bought, sold for him and brought in, right-aligned; the reward on salt alone as the system's Meter, in units; the code opens their account */
+  /* 16 Nov 2026, THE MOVE TO AMBIENT (place H, Associates): A BOOK IS ITS CHIP AND HOW MANY; its associates are one Table, which stacks into labelled lines where there is no room: what they bought, sold for him and
+     brought in, right-aligned, the counts beside, and the reward on salt alone as the system's meter, in units; the code opens their account */
   function assocMeter(w){
-    var m=el('div','salt-meter ameter'), line=el('div','salt-meter__line'), a=el('span',null,'Reward '), b=el('span',null,''), tr=el('div','salt-meter__track');
-    a.appendChild(el('b',null,String(Math.round(w.left*100)/100))); a.appendChild(document.createTextNode(' left'));
-    b.appendChild(el('b',null,Math.round(w.next*100)+'%')); b.appendChild(document.createTextNode(' to next'));
-    line.appendChild(a); line.appendChild(b); m.appendChild(line); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);
-    m.style.setProperty('--salt-fill', String(Math.max(0, Math.min(100, Math.round(w.next*100)))));
+    var cell=el('div','ameter'), m=el('progress','amb-meter'), words=w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':'')+', '+Math.round(w.next*100)+'% to next';
+    m.max=100; m.value=Math.max(0, Math.min(100, Math.round(w.next*100)));
     m.setAttribute('aria-label','Reward, '+(Math.round(w.left*100)/100)+' units left, '+Math.round(w.next*100)+'% of the way to the next');
-    return m;
+    cell.appendChild(m); cell.appendChild(el('span','amb-field__hint',words));
+    return cell;
   }
   function assocCode(code, act){
     var acc=OWNER.accounts.filter(function(x){ return x.code===code&&x.username; })[0];
     if(!acc) return el('b','acode',code);
-    var b=actOn(el('button','acode apick',code),act||'assoc.open',code); b.type='button';
+    var b=actOn(el('button','amb-pill amb-pill--quiet amb-pill--sm acode apick',code),act||'assoc.open',code); b.type='button';
     b.addEventListener('click', function(){ showPlace('customers','accounts',{fresh:true, push:true}); openCard(acc.username); });
     return b;
   }
-  function cardOf(r){
-    var c=el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''));
-    var head=el('div','srow');
-    head.appendChild(assocCode(r.id));
-    var marks=[];
-    if(r.founder) marks.push('founder');
-    if(r.rank) marks.push('#'+r.rank);
-    if(r.departed) marks.push('away');
-    if(r.stars) marks.push(new Array(r.stars+1).join('\\u2605'));
-    head.appendChild(el('span','un',marks.join(' \\u00b7 ')));
-    c.appendChild(head);
-    var g=el('div','agrid salt-metrics salt-metrics--sm');
-    [['Bought',rm(r.bought)],['Sold',rm(r.soldFor)],['Introduced',rm(r.introduced)]].forEach(function(p){
-      var cell=el('div','acell'); cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(el('span','salt-metrics__value',p[1])); g.appendChild(cell);
-    });
-    c.appendChild(g);
-    /* 14 OCT 2026 (the layout rework): the counts and the reward are names and values, one to a line, the figures aligned down the right */
-    var led=el('div','salt-ledger salt-ledger--plain aled');
-    function ledRow(k,v){ var rw=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
-      l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',String(v))); rw.appendChild(l); led.appendChild(rw); }
-    if(r.onward) ledRow('Resales',r.onward);
-    if(r.referred) ledRow('Introduced',r.referred);
-    if(r.share) ledRow('Share of all revenue',r.share+'%');
-    if(r.reward){
-      var w=r.reward;
-      ledRow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
-    }
-    if(led.childElementCount) c.appendChild(led);
-    if(r.reward&&r.reward.next!=null) c.appendChild(assocMeter(r.reward));
-    return c;
-  }
   function assocTable(p){
-    var card=el('div','salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-none atable'), wrap=el('div','salt-table-wrap'), table=el('table','salt-table salt-table--plain salt-table--rows'), hr=el('tr'), body=el('tbody'), tiered=p.rows.some(function(r){ return !!r.reward; });
-    wrap.setAttribute('role','region'); wrap.setAttribute('aria-label','Associates on this book'); wrap.setAttribute('tabindex','0');
-    table.appendChild(el('caption','sr','Each associate, this book'));
-    ['Associate','Standing','Bought','Sold','Introduced',tiered?'Reward, units':'Reward'].forEach(function(h, i){ var th=el('th',i<2||i===5?'salt-table__left':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
+    var table=el('table','amb-table amb-table--stack atable'), hr=el('tr'), body=el('tbody'), tiered=p.rows.some(function(r){ return !!r.reward; });
+    var heads=['Associate','Standing','Bought','Sold','Introduced','Resales','Referred','Share',tiered?'Reward, units':'Reward'], num={2:1,3:1,4:1,5:1,6:1,7:1};
+    table.appendChild(el('caption','amb-vh','Each associate, this book'));
+    heads.forEach(function(h, i){ var th=el('th',num[i]?'is-num':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });
     table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);
     p.rows.forEach(function(r){
-      var tr=el('tr'), th=el('th','salt-table__left'); th.setAttribute('scope','row'); th.appendChild(assocCode(r.id,'assoc.open-row')); tr.appendChild(th);
-      var marks=[]; if(r.founder) marks.push('founder'); if(r.rank) marks.push('#'+r.rank); if(r.departed) marks.push('away'); if(r.stars) marks.push(new Array(r.stars+1).join('\u2605'));
-      tr.appendChild(el('td','salt-table__left astand2',marks.join(' \u00b7 ')));
-      [r.bought, r.soldFor, r.introduced].forEach(function(v){ tr.appendChild(el('td',null,rm(v))); });
-      var rw=el('td','salt-table__left'); if(r.reward&&r.reward.next!=null) rw.appendChild(assocMeter(r.reward)); else rw.textContent=tiered?'':'None on this book';
-      tr.appendChild(rw); body.appendChild(tr);
+      var tr=el('tr',r.departed?'off':null), marks=[]; if(r.founder) marks.push('founder'); if(r.rank) marks.push('#'+r.rank); if(r.departed) marks.push('away'); if(r.stars) marks.push(new Array(r.stars+1).join('★'));
+      var cells=[assocCode(r.id,'assoc.open-row'), marks.join(' · '), rm(r.bought), rm(r.soldFor), rm(r.introduced), r.onward?String(r.onward):'', r.referred?String(r.referred):'', r.share?r.share+'%':'', null];
+      cells.forEach(function(v, i){
+        var td=el('td',num[i]?'is-num':null); td.setAttribute('data-label',heads[i]);
+        if(i===8){ if(r.reward&&r.reward.next!=null) td.appendChild(assocMeter(r.reward)); else if(r.reward) td.textContent=r.reward.earned+' earned, '+r.reward.taken+' taken, '+(Math.round(r.reward.left*100)/100)+' left'; else td.textContent=tiered?'':'None on this book'; }
+        else if(typeof v==='string') td.textContent=v; else td.appendChild(v);
+        if(i===0) td.classList.add('astand2');
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
     });
-    wrap.appendChild(table); card.appendChild(wrap); return card;
+    return table;
   }
   function drawCards(){
     var wrap=document.getElementById('clist'); if(!wrap) return;
@@ -8463,15 +8469,14 @@ export const OWNER_JS = `
     var head=document.getElementById('ccount');
     if(!cards||!cards.products||!cards.products.length){
       if(head) head.textContent='';
-      wrap.appendChild(el('p','rnone','No report yet. It comes with the next update.'));
+      wrap.appendChild(el('p','amb-empty','No report yet. It comes with the next update.'));
       return;
     }
     if(head) head.textContent='As at '+(cards.at?stampDay(cards.at):'the last publish')+'.';
     cards.products.forEach(function(p){
-      var hd=el('div','aprodhead'), h2=el('h2','aprodtag'); h2.appendChild(productTag(p.product)); hd.appendChild(h2);
-      hd.appendChild(el('span','salt-status salt-status--mist',p.rows.length+(p.rows.length===1?' associate':' associates'))); wrap.appendChild(hd);
-      if(!p.rows.length){ wrap.appendChild(el('p','rnone','Nobody on this book yet.')); return; }
-      var list=el('div','aclist'); p.rows.forEach(function(r){ list.appendChild(cardOf(r)); }); wrap.appendChild(list);
+      var hd=el('h2','amb-section aprodhead'), tag=el('span','aprodtag'); tag.appendChild(bookChip(p.product)); hd.appendChild(tag);
+      hd.appendChild(el('span','amb-section__note',p.rows.length+(p.rows.length===1?' associate':' associates'))); wrap.appendChild(hd);
+      if(!p.rows.length){ wrap.appendChild(el('p','amb-empty','Nobody on this book yet.')); return; }
       wrap.appendChild(assocTable(p));
     });
   }

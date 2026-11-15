@@ -565,19 +565,13 @@ body.ended>*:not(#aEnded){display:none}
 /* 15 Nov 2026, the move to Ambient: his shell is Ambient's (the app bar, the screen, the dock that stands up as the rail from 960px); the salt-ds frame, the Desk bar
    and the rail went, with their rules */
 /* 15 Nov 2026, the move to Ambient: the hours are a glass chip in Needs you's hero, said in its word (barDraw) */
-.adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
+
 /* 25 Oct 2026 (the Customers canvas, P1): the filters are Needs you's tab row, three across on a phone and six wide; the accounts are Needs you's
    cards under To do, Pending and FYI, the username quiet beside the code, a sum he owes back in ember */
-.adm .afilnav{margin:0}
-.adm .afil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 4px}
-.adm .afil .nktab{padding:0 4px;gap:6px;text-overflow:ellipsis}
-@media (min-width:860px){.adm .afil{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
-.adm .alead{margin:0 0 24px}
-.adm .alead[hidden]{display:none}
-.adm .alist{display:flex;flex-direction:column;gap:24px}
+
 .adm .ncard .need-who--code{flex:none}
 .adm .nfig--mine{color:var(--salt-ember)}
-.adm .alist .salt-inbox-row__title{gap:6px}
+
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
@@ -596,16 +590,16 @@ body.ended>*:not(#aEnded){display:none}
 .adm .npane__go .nbtn{flex:1 1 0;min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .npane-x:empty{display:none}
 @media (max-width:859.98px){
-  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
+  
   .adm #nopen{display:none}
 }
 @media (min-width:860px){
-  .adm #oLinks,.adm #oCards{max-width:600px}
-  .adm .nsplit,.adm .asplit{display:grid;gap:20px;align-items:start}
-  .adm .nsplit,.adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
-  .adm .asplit{grid-template-columns:minmax(0,1fr)}
-  .adm #nopen,.adm #aopen{overflow-y:auto}
-  .adm #aopen [data-back]{display:none}
+  
+  .adm .nsplit{display:grid;gap:20px;align-items:start}
+  .adm .nsplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
+  
+  .adm #nopen{overflow-y:auto}
+  
   .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
   .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
   .adm #nopen[hidden]{display:none}
@@ -637,7 +631,7 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .adm #nopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
   .adm #oShop,.adm #unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
@@ -661,10 +655,10 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerDrafts>.rnone{grid-column:1/-1}
   .adm #makerDrafts>.aphead,.adm #makerDrafts>.apdone{grid-column:1/-1}
   /* 5 Nov 2026: with no thread open the list is one 640px column, as Shop's lists are; a thread opened stands beside a 280 to 360px list */
-  .adm .chatgrid{display:grid;grid-template-columns:minmax(0,640px);gap:0 20px;align-items:start}
-  .adm .chatgrid.open{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}
-  .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
-  .adm #makerChatList{display:flex;flex-direction:column;gap:24px}
+  
+  
+  
+  
 }
 /* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, so the orb's corner, the room kept for it and its
    stand-down under a foot went with the frame */
@@ -847,16 +841,12 @@ body.ended>*:not(#aEnded){display:none}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
-.adm .acard{padding:14px 16px;margin:12px 0 0}
-.adm .acard.off{opacity:.55}
+
 /* V5 (his answer of 29 Sep 2026): a locked account still sees Home and Rewards, greyed out and not to be tapped */
 .lockd{opacity:.45;pointer-events:none;user-select:none}
-.adm .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
-.adm .acard .acell{min-width:0}
-.adm #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
+
 /* v696: the five stand above anything minted against a customer, each under its own line */
-.adm .ghead{margin:18px 0 6px}
-.adm .ghead:first-child{margin-top:4px}
+
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
@@ -865,117 +855,47 @@ body.ended>*:not(#aEnded){display:none}
    S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
    after it, took that Account's two columns from 1080px when the stages were merged */
 /* 2 Nov 2026 (his Orders canvas, page 2): the open account on Shop's grid, its parts 24px apart, the one pill 16px under its rows */
-.adm .oacct{display:flex;flex-direction:column;gap:24px}
+
 /* 25 Oct 2026 (the Customers canvas, P2): an account is glass cards, its head first: the state and age, the code and username, the figure large at the
    right; a ledger of the standing; their waiting line with Reply. Sign-in two by two, Sign out everywhere the width of the card. Nothing wraps. */
 /* 3 Nov 2026 (the account on Shop's grid): every part a group with no glass of its own, its mist head 6px over its list (the recipe's), a second list or a
    table 12px under the first, the groups 24px apart; in columns from 1080px each group keeps 24px under it, the answer of the last list 6px under it */
-.adm .oacct .asec{display:flex;flex-direction:column;margin:0;min-width:0}
-.adm .oacct .asec>.salt-settings+.salt-settings,.adm .oacct .asec>nav+.salt-settings,.adm .apct__prev:not(:empty),.adm .apct__prev+.apct__acts{margin-top:12px}
-.adm .oacct .ahead2{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.adm .oacct .salt-settings>.aanswer{padding:10px 0}
-.adm .apct__step .apct__val{flex:none;min-width:5ch}
-.adm .acust__sparkrow,.adm .ameterrow{display:block;padding:12px 0}
-.adm .ahead__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
-.adm .ahead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
-.adm .ahead__kind,.adm .ahead__fig .salt-eyebrow{margin:0;white-space:nowrap}
-.adm .oacct .ahead h2.ahead__code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
-.adm .ahead__fig{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
-.adm .ahead__rm{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;line-height:1.2;white-space:nowrap;color:var(--salt-salt)}
+
 .adm .ahead__rm--hot{color:var(--salt-ember)}
-.adm .asign{display:flex;flex-direction:column;min-width:0}
-.adm .asign>.apill{min-height:48px;margin-top:16px}
-.adm .oacct>.anote{margin:-18px 16px 0}
+
 /* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
    between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
-.adm .amore{display:flex;flex-direction:column;gap:24px}
+
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
-.adm #makerChatList{display:flex;flex-direction:column;gap:24px}
+
 /* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
-.adm #glist{display:flex;flex-direction:column;gap:16px}
+
 /* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
-.adm .aprodhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 8px}
-.adm .aprodtag{margin:0;font-size:inherit}
-.adm .aclist{display:flex;flex-direction:column;gap:0}
-.adm .acard .agrid .acell{align-items:flex-end;text-align:right}
-.adm .acard .salt-metrics__label,.adm .acard .salt-metrics__value{white-space:nowrap}
-.adm .acard .srow{flex-wrap:nowrap}
-.adm .acard .srow .un{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm .apick{min-height:44px;padding:0;background:none;border:0;color:inherit;font:inherit;font-weight:500;cursor:pointer;text-align:left}
-.adm .apick:hover{color:var(--salt-brass)}
-.adm .ameter{margin-top:10px}
-.adm .ameter .salt-meter__line{white-space:nowrap}
-.adm .ameter .salt-meter__track{display:block}
-.adm .atable{display:none}
-.adm .atable .ameter{margin:0}
-.adm .atable td,.adm .atable th{white-space:nowrap}
-@media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}
+
 /* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px the accounts are one plain table (his Customers canvas, 2 Nov 2026); an account opened fills
    the page in columns, two and three from 1440px, as an open order does, the list and its way back as on a phone; Links and Associates use the width */
-@media (min-width:1080px){
-  .adm #oLinks,.adm #oCards{max-width:none}
-  .adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr)}
-  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}
-  .adm #oAccts.open #aopen{position:static;max-height:none;overflow:visible}
-  .adm #oAccts.open #aopen [data-back]{display:grid}
-  .adm #aopen .oacct{display:block;column-count:2;column-gap:24px}
-  .adm #aopen .oacct .amore{display:contents}
-  .adm #aopen .oacct>*,.adm #aopen .oacct .amore>*{break-inside:avoid;margin:0 0 24px}
-  .adm #aopen .oacct>.anote{margin:-18px 16px 24px}
-}
-@media (min-width:1440px){.adm #aopen .oacct{column-count:3}}
-.adm .glinks{gap:10px}
-.adm .glinks .glink[hidden]{display:none}
+
 .adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}
 .adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
 .adm .nfig__k{margin:0;line-height:1}
 .adm .ncard.off{opacity:.7}
 .adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
-.adm .chathead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
-.adm .chathead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
-.adm .chathead__who .salt-eyebrow{margin:0}
-.adm .chathead__code{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm #makerChatOpen{display:flex;flex-direction:column;gap:12px}
+
 /* 5 Nov 2026 (the pane): the head holds the code, what they owe and Close; the lines; what else he may do; the foot his box and Send */
-.adm #makerChatOpen .salt-ghost{min-height:48px}
-.adm .chathead.salt-pane__head{padding:4px 0 8px}
-.adm .chathead>.salt-ghost{flex:none}
-.adm .chatmore{display:flex;flex-wrap:wrap;gap:8px}
-.adm .chatfoot .maker-field{margin:0;flex:none}
-.adm .chatfoot>.msg:empty{display:none}
-.adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
-.adm .apct__books{margin:0}
-.adm .apct__tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 4px}
-.adm .apct__tabs .nktab{padding:0 2px}
-.adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
-.adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-salt);white-space:nowrap}
-.adm .apct__at{font-weight:500;color:var(--salt-salt)}
-.adm .apct__floor{color:var(--salt-mist-bright)}
-.adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
-.adm .amore .salt-meter__line{white-space:nowrap}
-.adm .amore .salt-meter__track{display:block}
-.adm .oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
-.adm .oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
-  letter-spacing:.06em;color:var(--salt-text-muted)}
-.adm .oacct .achips{margin:0}
-.adm .oacct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.adm .oacct .apill{width:100%}
-.adm .agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.adm .agrid .salt-ghost{width:100%;text-align:center}
+
 .adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
-.adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
+
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
 #roster .salt-orb[data-back]{margin:0 0 16px}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
 /* #glist as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is more specific than .glink alone */
-.glink,.adm #glist .glink{padding:14px 16px;margin:12px 0 0}
+.glink{padding:14px 16px;margin:12px 0 0}
 .glink.off{opacity:.5}
 .glink h4{margin:0;font-size:var(--salt-text-md);font-weight:500}
 .glink .gt{margin:0 0 6px}
@@ -987,30 +907,12 @@ body.ended>*:not(#aEnded){display:none}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
 /* 14 OCT 2026 (the layout rework): a guest link is one row (summary), the address, QR and moves under it once opened; accounts are rows with one state; an associate's
    code has room beside its marks and its figures stand in a ledger; a customer's loans stand on their card as rows of figures */
-.adm #glist .glink{padding:0;margin:8px 0 0}
-.adm #glist .glink>*:not(summary){margin-left:16px;margin-right:16px}
-.adm #glist .glink>.grow,.adm #glist .glink>.msg{margin-bottom:14px}
-.adm #glist .glink>.gu{margin-top:0}
-.adm #glist .glink>.gwho{margin-top:0;margin-bottom:0;font-size:var(--salt-text-sm);font-weight:400;color:var(--salt-text-muted)}
-.adm #glist .glink img{width:150px;height:150px}
-.adm #glist .glink{position:relative}
-.adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.adm #glist select{margin-top:12px}
-.adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
-.adm .alist .arow .astate{margin-left:auto;text-align:right}
-.adm .alist .arow .salt-inbox-row__what{overflow-wrap:anywhere}
-.adm .acard .srow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
-.adm .acard .srow .un{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
-.adm .acard .aled{margin-top:8px}
-.adm .acard .aled .salt-ledger__line{padding:4px 0}
-.adm .acard .acell{display:flex;flex-direction:column;justify-content:space-between;gap:4px}
-.adm .acard .aled .salt-ledger__value{text-align:right;white-space:nowrap}
+
 .rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
 .rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
 .rlinks .msg:empty{display:none}
 .rlinks .rlnext{margin:16px 0 10px}
-.adm .grow{display:flex;gap:8px;margin-top:12px}
-.adm .grow .salt-ghost{flex:1}
+
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
 .adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
 .adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
@@ -1668,7 +1570,7 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
   /* 16 Nov 2026, the move to Ambient (place I): Record's three parts and Shop's six are Ambient's Segment (three or four, one row; six, wrapping), a part pressed not selected, the count of what
      waits unsent beside Record's; the acts, ids and addresses as every strip's */
-  : p === "shop" || p === "record"
+  : p === "shop" || p === "record" || p === "customers"
   ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
     + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div></div>"
@@ -1799,40 +1701,46 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'
-        /* 25 Oct 2026 (the Customers canvas, P1): an Insight leads, money first, then the find field and the filters as Needs you's text tab row */
-        + '<p class="salt-insight salt-insight--copper alead" id="alead" hidden></p>'
-        + '<div class="afind">'
-        + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
-        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find">'
-        + '<nav class="salt-nav nkinds afilnav" aria-label="Show only"><div class="salt-nav__links afil" id="afil" role="tablist">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="salt-nav__link nktab' + (k ? "" : " salt-nav__link--active") + '" role="tab" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-selected="' + (k ? "false" : "true") + '">' + w
-          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
-        + '<p class="lead" id="scount"></p>'
+        /* 16 Nov 2026, the move to Ambient (place H): a notice leads, money first, then the find field and the filters, counted, as Ambient's Search and Filters; the accounts are
+           rows in the first pane and the open account the second, which holds its one main action at its foot */
+        + '<div class="amb-stack afind">'
+        + '<div class="amb-notice alead" id="alead" hidden>' + AMB.glyph("info") + '<span id="aleadT"></span></div>'
+        + '<div class="amb-search">' + AMB.glyph("search", "sm")
+        + '<input class="amb-input" id="rq" type="search" autocapitalize="none" autocorrect="off" '
+        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>'
+        + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
+          '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
+          + '<span class="amb-segment__count"></span></button>').join("") + "</div>"
+        + '<p class="amb-field__hint" id="scount"></p>'
         + "</div>"
-        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" class="salt-pane" hidden></div></div>'
+        + '<div class="amb-split amb-split--panes asplit"><div id="rlist" class="amb-stack alist"></div><div id="aside" class="amb-stack">'
+        + '<p class="amb-empty" id="anone">Choose an account.</p><div id="aopen" hidden></div></div></div>'
         + "</div>"
-        + '<section class="chatgrid" data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
-        + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
-        + '<div id="makerChatList"></div><div id="makerChatOpen" class="salt-pane" hidden></div></section>'
-        + '<div id="oLinks" data-in="customers.links">'
-        + "<h2>Guest links</h2>"
-        + '<p class="lead">A guest link opens the +30% list for everybody; naming whose friend it is stays your note.</p>'
-        + '<label class="lbl salt-field__label" for="gintro">Whose friend?</label>'
-        + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
-        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'
-        + '<label class="lbl salt-field__label" for="glabel">A note for you</label>'
-        + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
-        + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label">'
-        + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
+        /* 16 Nov 2026, the move to Ambient (place H): Messages is a notice and two panes, the threads and the one open, which ends in its compose box as its foot */
+        + '<div class="chatgrid" data-in="customers.messages"><div class="amb-stack"><h2 id="makerChatTitle" class="amb-vh">Messages</h2>'
+        + '<div class="amb-notice chatnote">' + AMB.glyph("info") + '<span id="makerChatStatus" role="status" aria-live="polite"></span></div></div>'
+        + '<div class="amb-split amb-split--panes chatsplit"><div id="makerChatList" class="amb-stack"></div><div id="chatside" class="amb-stack">'
+        + '<p class="amb-empty" id="chatnone">Choose a thread.</p><div id="makerChatOpen" hidden></div></div></div></div>'
+        /* Links: the guest links and the join links, a row each, its address, code and moves under it once opened */
+        + '<div id="oLinks" class="amb-stack" data-in="customers.links">'
+        + '<h2 class="amb-section">Guest links</h2>'
+        + '<p class="amb-field__hint">A guest link opens the +30% list for everybody; naming whose friend it is stays your note.</p>'
+        + '<label class="amb-field"><span class="amb-field__label">Whose friend?</span>'
+        + '<input class="amb-input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
+        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer"></label>'
+        + '<label class="amb-field"><span class="amb-field__label">A note for you</span>'
+        + '<input class="amb-input" id="glabel" type="text" maxlength="60" '
+        + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label"></label>'
+        + '<button class="amb-pill amb-pill--block" type="button" id="gmake" data-act="link.make">Make a link</button>'
         /* 13 Oct 2026 (stress): the answer to Make a link stands under it, where it went to the page's one line at the foot of Customers */
-        + '<p class="msg osaid" id="gmsg" role="status" aria-live="polite"></p>'
-        + '<div id="glist"></div>'
-        + '<div id="jlist"></div>'
+        + '<p class="amb-field__hint osaid" id="gmsg" role="status" aria-live="polite"></p>'
+        + '<div id="glist" class="amb-stack"></div>'
+        + '<div id="jlist" class="amb-stack"></div>'
         + "</div>"
-        + '<div id="oCards" data-in="customers.associates">'
-        + "<h2>Associates report card</h2>"
-        + '<p class="lead" id="ccount"></p>'
-        + '<div id="clist"></div>'
+        + '<div id="oCards" class="amb-stack" data-in="customers.associates">'
+        + '<h2 class="amb-section">Associates report card</h2>'
+        + '<p class="amb-field__hint" id="ccount"></p>'
+        + '<div id="clist" class="amb-stack"></div>'
         + "</div>"
         + "</div></div>"
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
