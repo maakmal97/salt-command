@@ -104,7 +104,7 @@ export function answerSheets(win, asked, answer = () => true) {
     const sheet = doc.getElementById("ynSheet");
     if (!sheet || sheet.hasAttribute("data-answered")) return;
     sheet.setAttribute("data-answered", "");
-    asked.push(sheet.querySelector(".salt-sheet__title").textContent + " " + sheet.textContent);
+    asked.push(sheet.querySelector(".amb-sheet__title").textContent + " " + sheet.textContent);
     doc.getElementById(answer() ? "ynGo" : "ynKeep").click();
   }).observe(doc.body, { childList: true });
 }

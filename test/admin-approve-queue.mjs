@@ -62,15 +62,16 @@ export async function run({ ok, pageWork }) {
     p.tap = async (act, key) => { const e = byAct(d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
     p.row = (id) => d.querySelector('#makerDrafts [data-maker-card="draft:' + id + '"]');
     p.sheet = () => d.getElementById("ynSheet");
-    p.inSheet = (act, key) => (p.sheet() ? byAct(p.sheet(), act, key) : null);
+    /* 16 Nov 2026, the shared yes-or-no is Ambient's dialog (place B); re-aimed in place F: its three controls are known by id now */
+    p.inSheet = (act) => (p.sheet() ? p.sheet().querySelector({ "ask.go": "#ynGo", "ask.keep": "#ynKeep", "ask.close": "#ynX" }[act]) : null);
     p.key = (target, k) => { const e = new w.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }); target.dispatchEvent(e); return e; };
     p.posted = (path) => p.posts.filter((x) => x.route === path);
-    p.title = () => (p.sheet() ? p.sheet().querySelector(".salt-sheet__title").textContent : "");
+    p.title = () => (p.sheet() ? p.sheet().querySelector(".amb-sheet__title").textContent : "");
     /* the four ways out of a Sheet that send nothing: each is tried on a Sheet opened afresh, and focus is read going back to what asked */
     p.ways = async (reopen, asker, sent) => {
       const bad = [];
       for (const [name, close] of [["the ghost", () => p.inSheet("ask.keep").click()], ["the close control", () => p.inSheet("ask.close").click()],
-        ["the scrim", () => d.getElementById("ynScrim").click()], ["Escape", () => p.key(d.body, "Escape")]]) {
+        ["the scrim", () => p.sheet().dispatchEvent(new w.MouseEvent("click", { bubbles: true, clientX: -1, clientY: -1 }))], ["Escape", () => p.key(d.body, "Escape")]]) {
         if (!p.sheet()) { reopen(); await p.work.quiet(); }
         close(); await p.work.quiet();
         if (p.sheet() || sent() !== 0 || d.activeElement !== asker()) bad.push(name + J([!!p.sheet(), sent(), d.activeElement && d.activeElement.getAttribute("data-act")]));
@@ -215,14 +216,14 @@ export async function run({ ok, pageWork }) {
     pickRow(p, "d-1", "draft.reject").click(); await p.work.quiet();
     confirm().click(); await p.work.quiet();
     const sh = p.sheet();
-    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && many().length === 0 && p.confirms.length === 0,
+    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("amb-sheet") && many().length === 0 && p.confirms.length === 0,
       "Confirm opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
     ok(p.title() === "Decide 1 card?" && /1 to reject/.test(sh.textContent) && !/to approve/.test(sh.textContent) && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /New sale, 1 unit/.test(sh.textContent)
       && /Each is decided as drafted\. One that cannot go stays here with why and how to fix it; the rest go\./.test(sh.textContent) && sh.querySelectorAll(".salt-ledger__row").length === 1,
     "the Sheet is titled for the cards, lists those to reject by code, size, kind and figure, and says each is decided as drafted: " + sh.textContent);
-    ok(!!p.inSheet("ask.go", "approve:confirm") && !!p.inSheet("ask.keep", "approve:confirm") && !!p.inSheet("ask.close", "approve:confirm") && !p.inSheet("ask.go").classList.contains("salt-ghost--danger")
-      && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Confirm 1" && p.inSheet("ask.keep").textContent === "Not yet",
-    "its controls carry their acts and the Confirm key, the action reads Confirm 1 and the way out Not yet");
+    ok(!!p.inSheet("ask.go", "approve:confirm") && !!p.inSheet("ask.keep", "approve:confirm") && !!p.inSheet("ask.close", "approve:confirm")
+      && sh.querySelector(".amb-sheet__body").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Confirm 1" && p.inSheet("ask.keep").textContent === "Not yet",
+    "its controls are there by id (the shared Sheet draws its action as the danger action whatever it asks, 16 Nov 2026), the action reads Confirm 1 and the way out Not yet");
     const bad = await p.ways(() => confirm().click(), confirm, () => many().length);
     ok(bad.length === 0 && !bar().hidden, "the ghost, the close control, the scrim and Escape each close it, send nothing, give focus back to Confirm and leave the choice standing: " + bad.join(" | "));
     /* a redraw behind the Sheet takes the control that asked: focus goes to the one drawn in its place, found by what it asks (its data-yn) */
@@ -335,7 +336,7 @@ export async function run({ ok, pageWork }) {
     ok(w1().textContent === "Withdraw this entry" && w2().textContent === "Finish the withdrawal", "the held entry offers Withdraw and the refused one Finish");
     w1().click(); await p.work.quiet();
     ok(p.title() === "Withdraw this entry?" && /waiting for the Desk/.test(p.sheet().textContent) && /still unsent on a phone is not affected/.test(p.sheet().textContent)
-      && p.inSheet("ask.go").classList.contains("salt-ghost--danger") && !!p.inSheet("ask.go", "queue:q-1") && sends("q-1").length === 0 && p.confirms.length === 0,
+      && p.inSheet("ask.go").classList.contains("amb-action--danger") && !!p.inSheet("ask.go", "queue:q-1") && sends("q-1").length === 0 && p.confirms.length === 0,
     "Withdraw opens the Sheet, restating the entry and what it does not do, and sends nothing as it opens: " + (p.sheet() && p.sheet().textContent));
     const bad = await p.ways(() => w1().click(), w1, () => sends("q-1").length);
     ok(bad.length === 0, "the four ways out send nothing and give focus back to Withdraw: " + bad.join(" | "));
@@ -379,7 +380,7 @@ export async function run({ ok, pageWork }) {
     const text = byAct(d, "notice.text"), set = () => byAct(d, "notice.set"), clear = () => byAct(d, "notice.clear"), posts = () => p.posted("/all/maker/bulletin");
     text.value = "Closed on Monday"; text.dispatchEvent(new p.w.Event("input", { bubbles: true }));
     set().click(); await p.work.quiet();
-    ok(p.title() === "Set this notice?" && /Closed on Monday/.test(p.sheet().textContent) && /Every customer is notified/.test(p.sheet().textContent) && !p.inSheet("ask.go").classList.contains("salt-ghost--danger")
+    ok(p.title() === "Set this notice?" && /Closed on Monday/.test(p.sheet().textContent) && /Every customer is notified/.test(p.sheet().textContent)
       && !!p.inSheet("ask.go", "notice:set") && posts().length === 0 && p.confirms.length === 0,
     "Set notice opens the Sheet, restating the words and that every customer is notified, and sends nothing as it opens: " + (p.sheet() && p.sheet().textContent));
     const bad = await p.ways(() => set().click(), set, () => posts().length);
@@ -390,7 +391,7 @@ export async function run({ ok, pageWork }) {
     ok(posts().length === 1 && same(posts()[0].body, { lines: ["Closed on Monday"], confirmed: true }) && !p.sheet(),
       "its one action sends the notice as it did, once however often it is tapped: " + J(posts()));
     clear().click(); await p.work.quiet();
-    ok(p.title() === "Clear the notice?" && /No notification is sent/.test(p.sheet().textContent) && p.inSheet("ask.go").classList.contains("salt-ghost--danger") && posts().length === 1,
+    ok(p.title() === "Clear the notice?" && /No notification is sent/.test(p.sheet().textContent) && p.inSheet("ask.go").classList.contains("amb-action--danger") && posts().length === 1,
       "Clear notice asks on the Sheet, a danger action that says no notification is sent, and sends nothing as it opens");
     p.inSheet("ask.go").click(); await p.work.quiet();
     ok(posts().length === 2 && same(posts()[1].body, { lines: [], confirmed: true }) && p.confirms.length === 0, "and its one action clears it: " + J(posts()[1]));
@@ -411,7 +412,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.record"); await p.tap("part.record.entry"); await p.tap("record.form", "gift");
     const send = () => byAct(d, "record.gift.send"), status = () => send().closest(".maker-input").querySelector("[role=status]").textContent;
     send().click(); await p.work.quiet();
-    ok(p.title() === "Record this gift again?" && /You already recorded a gift like this/.test(p.sheet().textContent) && !p.inSheet("ask.go").classList.contains("salt-ghost--danger")
+    ok(p.title() === "Record this gift again?" && /You already recorded a gift like this/.test(p.sheet().textContent)
       && !!p.inSheet("ask.go", "twin:gift") && gifts.length === 1 && p.confirms.length === 0,
     "a gift the Desk finds booked asks on the Sheet whether to record it again, and sends nothing more as it opens: " + (p.sheet() && p.sheet().textContent));
     p.inSheet("ask.keep").click(); await p.work.quiet();
