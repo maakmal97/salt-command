@@ -1553,15 +1553,15 @@ function keepPage() {
    21 Oct 2026 (Salt Admin A to C, P8): owner true draws the same four, read only, on Salt Admin's Shop > Hours, so he reads what the
    customer is told beside the hours that answer it; the words are the same keys, nothing there edits them. */
 function helpCard(owner) {
-  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
-    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
+  const row = (k) => (owner ? "<li>" : "") + '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
+    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>" + (owner ? "</li>" : "");
   /* 26 Oct 2026 (his word): on Salt Admin the four are a list of settings under a grey head, one grey line under it */
-  const head = owner ? '<h2 id="mHelpH" class="salt-settings__head">Help</h2>'
+  const head = owner ? '<h2 id="mHelpH" class="amb-section">Help</h2>'
     : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
   const rows = ["pay", "deliv", "coll", "change"].map(row).join("");
   return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
     + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
-    + head + (owner ? '<div class="salt-settings ahelp-list">' + rows + '</div><p class="salt-settings__foot">What a customer reads under Account, Help.</p>' : rows) + "</section>";
+    + head + (owner ? '<div class="amb-settings ahelp-list"><ul class="amb-settings__list">' + rows + '</ul><p class="amb-settings__foot">What a customer reads under Account, Help.</p></div>' : rows) + "</section>";
 }
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
@@ -1580,19 +1580,19 @@ function vaultRow() {
   /* 26 Oct 2026, his word on This device, second look ("learn from how iPhone designs app"): every row the same shape, a name and one control.
      Show names is a Switch like the others: turned on it asks for the password in the one Sheet, as a phone asks for its code; on, the names
      show; turned off, they lock again */
-  return '<div id="vaultRow" class="salt-settings__row"><span class="salt-settings__label" id="vaultH">Show names</span>'
-    + '<span id="vaultState" class="sr" role="status">Locked</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></button></div>';
+  return '<li><label id="vaultRow" class="amb-setting"><span class="amb-setting__name" id="vaultH">Show names</span>'
+    + '<span id="vaultState" class="amb-vh" role="status">Locked</span>'
+    + '<input type="checkbox" class="amb-switch" role="switch" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></label></li>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
 function alertRow() {
   /* 26 Oct 2026, his word: one Switch, coloured when on; Turn on and Turn off stay, hidden, and the Switch presses the one that applies */
-  return '<div id="alertRow" class="salt-settings__row"><span class="salt-settings__label" id="alertH">Notifications</span>'
-    + '<span id="alertState" class="sr" role="status">Off</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></button>'
+  return '<li id="alertRow"><label class="amb-setting"><span class="amb-setting__name" id="alertH">Notifications</span>'
+    + '<span id="alertState" class="amb-vh" role="status">Off</span>'
+    + '<input type="checkbox" class="amb-switch" role="switch" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></label>'
     + '<button type="button" id="alertOn" data-act="alerts.on" hidden>Turn on</button>'
-    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></div>';
+    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></li>';
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
@@ -1964,10 +1964,12 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? ordSegment()
   /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
-  : p === "shop"
-  ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
-    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="salt-nav__link nktab" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
-    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div></nav>"
+  /* 16 Nov 2026, the move to Ambient (place I): Record's three parts and Shop's six are Ambient's Segment (three or four, one row; six, wrapping), a part pressed not selected, the count of what
+     waits unsent beside Record's; the acts, ids and addresses as every strip's */
+  : p === "shop" || p === "record"
+  ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
+    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div></div>"
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
@@ -2135,7 +2137,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
         + aHero("Record", "")
-        + '<p class="sr">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
+        + '<p class="amb-vh">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
@@ -2143,29 +2145,31 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
         + aHero("Shop", "")
-        + '<p class="sr">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
+        + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
-        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
-        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
-        /* 26 Oct 2026, his word (Hours "the same change" as Notice and Practice): every part of Hours a group of settings, in one column */
-        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="salt-settings__foot" id="makerHoursStatus">Reading.</p></div>'
+        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the week; 26 Oct 2026 (his word): every part of Hours a group of settings.
+           16 Nov 2026, the move to Ambient (place I): Hours is Ambient's panes, Now, the week of spans, the points and Help in the first stack, the open day in the second, its one foot Done */
+        + '<div class="amb-split amb-split--panes hsplit" data-in="shop.hours"><div class="amb-stack">'
+        + '<h2 id="makerHoursTitle" class="amb-vh">Shop hours</h2>'
+        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="amb-settings__foot" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="hpane salt-pane" aria-label="The open day"></aside></div></section>'
-        + '<section class="apoints-sec" data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-settings__head">Collection points</h2>'
-        + '<p class="msg" id="makerPointsStatus">Reading.</p>'
+        + '<div id="makerSchedule"></div>'
+        + '<section class="apoints-sec" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="amb-section">Collection points</h2>'
+        + '<p class="amb-settings__foot" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true)
-        + '<section data-in="shop.market" aria-labelledby="makerMarketTitle"><h2 id="makerMarketTitle" class="sr">Market</h2><div id="makerMarket"></div></section>'
-        + '<section data-in="shop.calendar" aria-labelledby="makerCalTitle"><h2 id="makerCalTitle" class="sr">Calendar</h2><div id="makerCalendar"></div></section>'
-        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
-        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
+        + '</div><div class="amb-stack" id="makerDayPane" aria-label="The open day"></div></div>'
+        + '<div class="amb-stack" data-in="shop.market"><h2 id="makerMarketTitle" class="amb-vh">Market</h2><div id="makerMarket"></div></div>'
+        + '<div class="amb-stack" data-in="shop.calendar"><h2 id="makerCalTitle" class="amb-vh">Calendar</h2><div id="makerCalendar"></div></div>'
+        + '<div class="amb-stack" data-in="shop.notice"><h2 id="makerBulletinTitle" class="amb-vh">Notice</h2>'
+        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></div>'
+        + '<div id="mTest" class="mtest amb-stack" data-in="shop.practice"></div>'
         /* 15 Nov 2026: This device holds the one unlock and his notifications; light and dark follow the device (his answer of 14 Nov 2026) */
-        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
-        + '<div class="salt-settings adevice">' + vaultRow() + (test ? "" : alertRow()) + "</div>"
-        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
+        + '<div id="oLook" class="amb-stack" data-in="shop.device"><h2 id="oLookTitle" class="amb-vh">This device</h2>'
+        + '<div class="amb-settings adevice"><ul class="amb-settings__list">' + vaultRow() + (test ? "" : alertRow()) + "</ul></div>"
+        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</div>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
         + '<div class="amb-dock"><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
