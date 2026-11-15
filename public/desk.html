@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="4f1f9c4af892a05e";
+var SALT_BUILD_ID="0dc2440295226d01";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12430,7 +12430,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1518","d":"15 Nov 2026","t":"ONE PAGE WIDTH ON EVERY SALT SURFACE","n":["<b>ONE WIDTH.</b> Salt Desk, Salt Admin and Salt Counter now stand the same width on every screen: at most 1376px, with the same gutters either side. The Desk was 1144px wide, the Counter 1240px, and Salt Admin 1180px until a 1440px screen, then 1376px.","<b>FROM THE DESIGN SYSTEM.</b> The width is one figure in the Salt design system (1.32.0), and each surface's frame reads it, so a change to it moves all three together."]}];
+const evolution=[{"v":"v1519","d":"15 Nov 2026","t":"THE RESTOCK DATE'S SET AND CLEAR WORK AT ONCE","n":["<b>SET AND CLEAR TAKE EFFECT ON THE CARD AT ONCE.</b> On Stock's Restock date, a Set or a Clear now shows on the card the moment the server answers. Before, the card read the dates again straight away, and that read could return them as they were for up to a minute, so Set and Clear looked to do nothing.","<b>SAID ON ITS OWN ROW.</b> What a tap did is said on that book's row for a minute: Sent, with the day customers will read, or Cleared, or the reason it was refused, in red. The old line at the foot of the card, which said customers would see it within the hour, is gone; a publish follows within a few minutes.","<b>A PASSED DAY GOES.</b> A day that has passed is dropped from the card, from To do and from what the server answers, so it no longer sits in its box. While a tap is on its way its Set and Clear rest and the day typed stays in its box.","<b>FEWER BOXES.</b> A green book with no day set shows its light and figures alone; the day's box, Set and Clear stand only where customers would read a day (any light but green) or where one is already set."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12592,7 +12592,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Nov 2026, 20:22 KL';
+const LAST_UPDATED='15 Nov 2026, 21:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

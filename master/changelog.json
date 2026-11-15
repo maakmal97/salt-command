@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1519",
+  "d": "15 Nov 2026",
+  "t": "THE RESTOCK DATE'S SET AND CLEAR WORK AT ONCE",
+  "n": [
+   "<b>SET AND CLEAR TAKE EFFECT ON THE CARD AT ONCE.</b> On Stock's Restock date, a Set or a Clear now shows on the card the moment the server answers. Before, the card read the dates again straight away, and that read could return them as they were for up to a minute, so Set and Clear looked to do nothing.",
+   "<b>SAID ON ITS OWN ROW.</b> What a tap did is said on that book's row for a minute: Sent, with the day customers will read, or Cleared, or the reason it was refused, in red. The old line at the foot of the card, which said customers would see it within the hour, is gone; a publish follows within a few minutes.",
+   "<b>A PASSED DAY GOES.</b> A day that has passed is dropped from the card, from To do and from what the server answers, so it no longer sits in its box. While a tap is on its way its Set and Clear rest and the day typed stays in its box.",
+   "<b>FEWER BOXES.</b> A green book with no day set shows its light and figures alone; the day's box, Set and Clear stand only where customers would read a day (any light but green) or where one is already set."
+  ]
+ },
+ {
   "v": "v1518",
   "d": "15 Nov 2026",
   "t": "ONE PAGE WIDTH ON EVERY SALT SURFACE",
