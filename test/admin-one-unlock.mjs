@@ -171,7 +171,7 @@ export async function run({ ok, pageWork }) {
   await p.unlockFrom(p.ask(card), PASS);
   ok(readsOf(p, "/all/maker/vault") - reads1.names === 1 && readsOf(p, "/all/maker/vault/addr") - reads1.addr === 1 && readsOf(p, "/all/maker/vault/key") - reads1.key === 1,
     "one password reads the names, the places and the slip key from the Counter, once each");
-  ok(sheet.hidden && field().value === "" && d.getElementById("vaultScrim").hidden && p.state() === "Open on this phone" && d.getElementById("vaultSwitch").getAttribute("aria-checked") === "true"
+  ok(sheet.hidden && field().value === "" && d.getElementById("vaultScrim").hidden && p.state() === "Open on this phone" && d.getElementById("vaultSwitch").checked === true
     && [...d.querySelectorAll("input,textarea")].every((i) => i.value !== PASS) && !d.documentElement.outerHTML.includes(PASS),
     "the right password closes the Sheet, empties its field, shows the page open and is held in no field and no markup");
   ok(!!p.claim()?.querySelector('[data-act="claim.slip"]') && p.urls.made.length === 1 && p.wire.filter((w) => w.startsWith("/all/maker/slips/" + U1 + "/s-1")).length === 1
@@ -276,7 +276,7 @@ export async function run({ ok, pageWork }) {
     ok(q.names().length === 0 && q.d.querySelectorAll(".maker-name").length === 0, name + ": no name is left beside a code");
     ok(!q.d.querySelector("[data-maker-slip]") && q.urls.made.length === 1 && q.urls.revoked.length === 1 && q.urls.revoked[0] === q.urls.made[0],
       name + ": the slip picture is removed and its blob URL revoked");
-    ok(q.state() === "Locked" && q.d.getElementById("vaultSwitch").getAttribute("aria-checked") === "false" && q.gates().length >= 3 && q.gates().every((g) => /^Locked/.test(g.textContent) && g.querySelectorAll('[data-act="vault.unlock"]').length === 1)
+    ok(q.state() === "Locked" && q.d.getElementById("vaultSwitch").checked === false && q.gates().length >= 3 && q.gates().every((g) => /^Locked/.test(g.textContent) && g.querySelectorAll('[data-act="vault.unlock"]').length === 1)
       && !!card2 && /Unlock names and places to see the slip on this phone[.]/.test(card2.textContent) && card2.querySelectorAll('[data-act="vault.unlock"]').length === 1,   /* 1 Nov 2026: the slip's note is the unlock sentence, not Locked */
       name + ": the Shop row and every gate read Locked, and the claim's slip says to unlock, each with the one Unlock");
     q.type(byAct(form, "record.add-id.name"), "Zed Tester");

@@ -18,7 +18,7 @@ export async function run({ ok, pageWork }) {
     enter(d, "record", "customers"); await quiet();
     const form = (slug) => d.querySelector('#makerInputs section.maker-input[data-form="' + slug + '"]');
     const type = async (f, act, v) => { const x = byAct(f, act); x.value = v; x.dispatchEvent(new W.Event("input", { bubbles: true })); await quiet(); };
-    const code = (f) => { const box = f.querySelector(".codeline"); return box.hidden ? null : [t(box.querySelector(".salt-ledger__label")), t(box.querySelector(".codeline__code"))]; };
+    const code = (f) => { const box = f.querySelector(".codeline"); return box.hidden ? null : [t(box.querySelector(".amb-setting__name")), t(box.querySelector(".codeline__code"))]; };
     /* 1 */
     const add = form("new-customer"), seen = [];
     seen.push(code(add));
@@ -41,7 +41,8 @@ export async function run({ ok, pageWork }) {
       "Change a name or place shows the code after the change, and unchanged where the name and place keep it: " + J([before, moved, kept]));
     /* 3 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.codeline\[hidden\]\{display:none\}/.test(css) && /\.adm \.codeline \.codeline__code\{font-family:var\(--salt-font-mono\)\}/.test(css) && /\.adm \.codeline \.salt-ledger__value\{white-space:nowrap\}/.test(css),
-      "the line is one ledger row, its code in mono and on one line, never drawn while empty");
+    /* 16 Nov 2026, the move to Ambient (place I): the line is one read row of a settings group, never drawn while empty by Ambient's own [hidden] rule */
+    ok(/\.amb \[hidden\] \{ display: none !important; \}/.test(css) && /\.codeline__code \{[^}]*font-family: var\(--amb-font-mono\)[^}]*white-space: nowrap/.test(css),
+      "the line is one read row, its code in mono and on one line, never drawn while empty");
   } finally { p.w.close(); }
 }

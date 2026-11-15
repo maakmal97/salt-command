@@ -323,7 +323,7 @@ export async function run({ ok }) {
     const card = (id) => cardOf(doc, id) || doc.querySelector('#makerDrafts [data-maker-card="draft:' + id + '"]');
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
-      const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label") && l.querySelector(".lbl, .salt-settings__label").textContent === label);
+      const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label, .amb-field__label") && l.querySelector(".lbl, .salt-settings__label, .amb-field__label").textContent === label);
       /* 2 Nov 2026 (his Orders canvas, page 2): the reply's box is the thread's composer, an input named by its aria-label with no label around it */
       return (wrap && wrap.querySelector("input")) || (card(id) && card(id).querySelector('form.amb-compose input[aria-label="' + label + '"]'));
     };

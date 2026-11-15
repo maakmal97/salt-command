@@ -73,23 +73,24 @@ export async function run({ ok, pageWork }) {
   try {
     const bad = [];
     /* 27 Oct 2026 (Record's forms as settings rows): a choice of two or three plain words is a Segment in its row (role radiogroup, a button for each option), the rest stay fieldsets of tiles */
-    const found = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles, #makerInputs .salt-segment.mseg")];
+    /* 16 Nov 2026, the move to Ambient (place I): a Segment is Ambient's (a group of buttons pressed), a Choice is Ambient's fieldset.amb-options of real radios */
+    const found = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles, #makerInputs .amb-segment.mseg")];
     for (const [form, label, act, values, chosen] of GROUPS) {
       const section = p.form(form), group = section && tileGroup(section, label);
       if (!group) { bad.push(form + " / " + label + " (no group)"); continue; }
-      const seg = group.matches(".mseg"), radios = [...group.querySelectorAll(seg ? "button.salt-segment__opt" : "input")];
-      const got = seg ? [radios.map((r) => r.getAttribute("data-value")), (radios.find((r) => r.getAttribute("aria-checked") === "true") || { getAttribute: () => null }).getAttribute("data-value")]
+      const seg = group.matches(".mseg"), radios = [...group.querySelectorAll(seg ? "button.amb-segment__opt" : "input")];
+      const got = seg ? [radios.map((r) => r.getAttribute("data-value")), (radios.find((r) => r.getAttribute("aria-pressed") === "true") || { getAttribute: () => null }).getAttribute("data-value")]
         : [radios.map((r) => r.value), (radios.find((r) => r.checked) || { value: null }).value];
       const keys = radios.map((r) => r.getAttribute("data-key"));
-      if (!(same(got, [values, chosen]) && radios.every((r) => (seg ? r.tagName === "BUTTON" && r.getAttribute("role") === "radio" : r.type === "radio") && r.getAttribute("data-act") === act) && new Set(keys).size === keys.length
-        && (seg ? group.getAttribute("role") === "radiogroup" && !!group.getAttribute("aria-labelledby") : group.tagName === "FIELDSET" && !!group.querySelector("legend")) && group.closest("section") === section))
+      if (!(same(got, [values, chosen]) && radios.every((r) => (seg ? r.tagName === "BUTTON" && !r.hasAttribute("role") : r.type === "radio") && r.getAttribute("data-act") === act) && new Set(keys).size === keys.length
+        && (seg ? group.getAttribute("role") === "group" && !!group.getAttribute("aria-labelledby") : group.tagName === "FIELDSET" && !!group.querySelector("legend")) && group.closest("section") === section))
         bad.push(form + " / " + label + " " + JSON.stringify(got));
     }
     ok(bad.length === 0 && found.length === GROUPS.length,
       "each of the " + GROUPS.length + " few, fixed choices of the forms is a group of tiles in its own form, offering its values in order with the one a select began on chosen (none for the appointment's role), "
         + "and no other group is drawn: " + JSON.stringify(bad) + " " + found.length);
     /* 27 Oct 2026 (Record's forms as settings rows): the starting % stays tiles whatever its number of presets, its radios carrying the keys */
-    const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input.salt-option__input");
+    const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input.amb-option__input");
     ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
       "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
     const parties = ["record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
@@ -101,9 +102,9 @@ export async function run({ ok, pageWork }) {
     ok(!!who && who.tagName === "INPUT" && who.type === "text" && !!who.getAttribute("list"), "the sale's Who is a typed field over a datalist, not a select: " + (who && who.tagName));
     const legends = found.filter((g) => g.tagName === "FIELDSET").map((g) => g.querySelector("legend")).filter(Boolean);
     const sets = found.filter((g) => g.tagName === "FIELDSET");
-    ok(legends.length === sets.length && legends.every((l) => l.classList.contains("salt-options__legend") && l.classList.contains("lbl") && l.textContent.length > 0)
-      && sets.every((g) => g.classList.contains("salt-options")),
-    "each group is the system's Options fieldset, named by a legend in the form's own label style");
+    ok(legends.length === sets.length && legends.every((l) => l.classList.contains("amb-field__label") && l.textContent.length > 0)
+      && sets.every((g) => g.classList.contains("amb-options")),
+    "each group is Ambient's Choice fieldset, named by a legend in the field's own label style");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 2. A TILE IS THE CONTROL */
@@ -111,41 +112,36 @@ export async function run({ ok, pageWork }) {
   try {
     const radios = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles input")];
     /* 27 Oct 2026 (Record's forms as settings rows): the Segments' buttons are tiles too, so the count of tiles on offer adds them */
-    const segButtons = p.d.querySelectorAll("#makerInputs .salt-segment.mseg button.salt-segment__opt").length;
+    const segButtons = p.d.querySelectorAll("#makerInputs .amb-segment.mseg button.amb-segment__opt").length;
     const names = new Map();
     for (const r of radios) { const g = r.closest("fieldset"); names.set(r.name, new Set([...(names.get(r.name) || []), g])); }
     ok(radios.length + segButtons > 30 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
       "every group is one radio group of its own, so it is one tab stop and the arrows move the choice: " + radios.length + " tiles in " + names.size + " groups");
-    ok(radios.every((r) => !r.disabled && r.getAttribute("tabindex") === null && r.closest("label.salt-option") && r.nextElementSibling && r.nextElementSibling.classList.contains("salt-option__face")
-      && (r.nextElementSibling.querySelector(".salt-option__label, .salt-producttag") || { textContent: "" }).textContent.length > 0),
-    "each tile is a radio in the recipe's own label, followed by its face (its words, or for a book its typed tag), in the tab order and not disabled");
+    ok(radios.every((r) => !r.disabled && r.getAttribute("tabindex") === null && r.closest("label.amb-option") && r.classList.contains("amb-vh") && r.nextElementSibling.classList.contains("amb-option__mark")
+      && (r.closest("label").querySelector(".amb-option__title") || { textContent: "" }).textContent.length > 0),
+    "each tile is a real radio in the Choice's own label, then its mark and its title (its words, or for a book its chip), in the tab order and not disabled");
     /* 25 Oct 2026 (Record redesign P3): on Salt Admin a book's tile is its typed Product tag (his decision of 22 Oct 2026, Needs you first), never the drawn mark */
-    const books = radios.filter((r) => r.nextElementSibling.querySelector(".salt-producttag"));
-    ok(books.length >= 8 && books.every((r) => { const face = r.nextElementSibling, tag = face.querySelector(".salt-producttag");
-      return !face.querySelector(".salt-option__label") && !face.querySelector("svg.psym") && tag.classList.contains("salt-producttag--" + r.value) && !!tag.querySelector(".salt-producttag__dot")
-        && tag.textContent.trim() === r.value.charAt(0).toUpperCase() + r.value.slice(1) && face.textContent.trim() === tag.textContent.trim(); }),
-    "a book's tile is its typed tag alone, its name in its hue with the dot, no label and no drawn mark (" + books.length + " tiles)");
-    const markGrids = new Set(books.map((r) => r.closest(".salt-options__grid")));
-    ok([...markGrids].every((g) => g.classList.contains("maker-marks") && !g.classList.contains("salt-options__grid--2"))
-      && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector(".salt-producttag")),
-    "a group of books is laid compact (maker-marks), never two wide boxes across, and only books are: " + markGrids.size + " groups");
+    const books = radios.filter((r) => r.closest("label").querySelector(".amb-option__title > .amb-chip"));
+    const BOOKN = ["salt", "oil", "candy", "rice", "gas"];
+    ok(books.length >= 8 && books.every((r) => { const title = r.closest("label").querySelector(".amb-option__title"), chip = title.querySelector(".amb-chip");
+      return !title.querySelector("svg.psym") && new RegExp("\\bamb-kind-" + (BOOKN.indexOf(r.value) + 1) + "\\b").test(chip.className) && !!chip.querySelector(".amb-chip__dot")
+        && chip.textContent.trim() === r.value.charAt(0).toUpperCase() + r.value.slice(1) && title.textContent.trim() === chip.textContent.trim(); }),
+    "a book's tile is its chip alone, the dot in the book's hue and its name in ink, no drawn mark (" + books.length + " tiles)");
+    const markSets = new Set(books.map((r) => r.closest("fieldset")));
+    ok([...markSets].every((g) => g.classList.contains("amb-options")) && radios.filter((r) => r.closest("label").querySelector(".amb-chip")).every((r) => !!r.closest("label").querySelector(".amb-option__title > .amb-chip")),
+    "a group of books is Ambient's Choice, the chip the title of each, and only books carry one: " + markSets.size + " groups");
     /* Their % left Record on 26 Oct 2026 (a stepper on the account card): Record draws no form for it, and the one typed % field left, Add ID's, still takes a negative with no decimal pad */
     const driftField = byAct(p.d, "record.add-id.drift-value");
     ok(!p.d.querySelector('[data-act^="record.drift"]') && driftField && driftField.min === "-0.3" && driftField.max === "0.3" && driftField.getAttribute("inputmode") === null
       && [...p.d.querySelectorAll("#makerInputs input[type=number]")].filter((f) => f !== driftField && f.min === "0").every((f) => f.getAttribute("inputmode") === "decimal"),
       "Record draws no Their % form, the typed starting % takes a negative and no decimal pad (a negative needs the minus key, which a decimal pad lacks on an iPhone); the other number fields keep the decimal pad");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
-      && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),
-    "the recipe makes the face 44px high and lays the radio over the whole tile, so a tile is 44px in both dimensions and the tile is the hit area");
-    ok(/\.adm \.maker-marks\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(72px,\s*1fr\)\)/.test(css) && /\.adm \.maker-marks \.salt-option__face\s*\{[^}]*justify-content:\s*center/.test(css),
-      "a group of books lays tiles 72px and over, as many as fit (the four on one row of a phone), each tag centred in its tile");
-    ok(/\.adm \.maker-tiles\s*\{[^}]*flex:\s*1 1 100%[^}]*min-width:\s*0/.test(css),
-      "a group fills the row of its form's flex layout and may shrink, so its tiles wrap inside a narrow pane instead of widening it");
+    ok(/\.amb-option \{[^}]*min-height: 64px/.test(css) && /--amb-tap: 44px/.test(css) && !/\.adm \.maker-marks|\.adm \.maker-tiles/.test(css),
+    "Ambient makes a tile 64px high with the radio over its whole tile, so a tile is 44px in both dimensions and the tile is the hit area; the page adds no rule of its own to a group");
     const group = tileGroup(p.form("Sale or purchase"), "Handover");
     tile(p.form("Sale or purchase"), "Handover", "collected");
     /* 27 Oct 2026 (Record's forms as settings rows): the handover is a Segment, its chosen option the button that is aria-checked */
-    const checked = () => [...group.querySelectorAll("button.salt-segment__opt")].filter((r) => r.getAttribute("aria-checked") === "true").map((r) => r.getAttribute("data-value"));
+    const checked = () => [...group.querySelectorAll("button.amb-segment__opt")].filter((r) => r.getAttribute("aria-pressed") === "true").map((r) => r.getAttribute("data-value"));
     const one = checked();
     tile(p.form("Sale or purchase"), "Handover", "delivered");
     ok(same(one, ["collected"]) && same(checked(), ["delivered"]) && group.value === "delivered",
@@ -178,7 +174,7 @@ export async function run({ ok, pageWork }) {
     role("customer");
     ok(same(shut, [true, true]) && !drift.disabled, "a supplier has no starting %, so the group is shut with every tile in it, and open again for a customer: " + shut.join());
     drift.value = "nothing";
-    ok(drift.value === "" && ![...drift.querySelectorAll("input, button")].some((r) => r.checked || r.getAttribute("aria-checked") === "true"), "a value no tile offers leaves none chosen, as a select left none");
+    ok(drift.value === "" && ![...drift.querySelectorAll("input, button")].some((r) => r.checked || r.getAttribute("aria-pressed") === "true"), "a value no tile offers leaves none chosen, as a select left none");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 4. EACH TILE SENDS WHAT ITS SELECT DID */

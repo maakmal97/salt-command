@@ -48,9 +48,9 @@ export async function run({ ok, pageWork }) {
       "a tap on the card opens it and a second shuts it, its state spoken: " + J([on, open.hidden]));
     /* 4 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.reclist \.ncard\{grid-template-columns:minmax\(0,1fr\) 72px 88px;[^}]*height:76px\}/.test(css) && /\.adm \.reclist \.ncard \.nbtn\{width:72px;/.test(css)
-      && /\.adm \.unsent-ways\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(css)
+    /* 16 Nov 2026, the move to Ambient (place I): the menu's column is Ambient's stack, so the page's 72px card columns beside it went; the card itself is Needs you's (builder F draws it) */
+    ok(!/\.adm \.reclist/.test(css) && /\.adm \.unsent-ways\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(css)
       && /\.adm \.unsent-card \.need-tap::after\{content:"";position:absolute;inset:0\}/.test(css) && /\.adm \.unsent-card>\.salt-action__go\{position:relative;z-index:1\}/.test(css),
-      "beside the menu the card keeps the phone's columns and its 72px pill at every width, its second choices lie two up, and the whole card is the tap, its pill above it");
+      "the menu's column adds no card rule of the page's own, its second choices lie two up, and the whole card is the tap, its pill above it");
   } finally { p.w.close(); }
 }

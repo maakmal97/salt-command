@@ -23,59 +23,59 @@ export async function run({ ok, pageWork }) {
     const form = (slug) => d.querySelector('#makerInputs section.maker-input[data-form="' + slug + '"]');
     const trade = form("sale-or-purchase"), gift = form("gift"), add = form("new-customer"), loan = form("loan");
     const forms = [...d.querySelectorAll("#makerInputs section.maker-input[data-form]")];
+    /* 16 Nov 2026, the move to Ambient (place I): a field is Ambient's field, its label over its control; a choice of two or three plain words a Segment; the books a Choice
+       with their chips; a wheel the stepper over values; the form's one pill the amb-foot */
     /* 1 */
-    const rowOf = (f, act) => { const c = byAct(f, act); return c && c.closest(".salt-settings__row"); };
+    const rowOf = (f, act) => { const c = byAct(f, act); return c && c.closest(".amb-field"); };
     const giftRows = ["record.gift.party", "record.gift.date", "record.gift.units"].map((a) => rowOf(gift, a));
-    const read = (r) => r ? [r.tagName, t(r.querySelector(".salt-settings__label")), r.lastElementChild.matches("input,select"), r.parentElement.classList.contains("salt-settings")] : null;
-    const names = forms.flatMap((f) => [...f.querySelectorAll(".salt-settings__row .salt-settings__label")].map(t)).filter(Boolean);
+    const read = (r) => r ? [r.tagName, t(r.querySelector(".amb-field__label")), r.lastElementChild.matches("input,.amb-select"), r.classList.contains("amb-field") && !!r.parentElement.closest("section.maker-input")] : null;
+    const names = forms.flatMap((f) => [...f.querySelectorAll(".amb-field__label")].map(t)).filter(Boolean);
     ok(J(giftRows.map(read)) === J([["LABEL", "Who", true, true], ["LABEL", "Date", true, true], ["LABEL", "Units", true, true]])
-      && giftRows[1].parentElement === giftRows[2].parentElement && giftRows[1].nextElementSibling === giftRows[2] && giftRows[2].nextElementSibling === rowOf(gift, "record.gift.handover")
-      && forms.length === 15 && forms.every((f) => !f.querySelector(".maker-field")) && names.length >= 30 && names.every((n) => n.split(" ").length <= 3),
-      "a field or a dropdown is a row of a settings list, its name left and its control right, Gift's Date, Units and Handover one list under the books, no form draws a label over its field, every name three words at most: "
-        + J([giftRows.map(read), forms.filter((f) => f.querySelector(".maker-field")).map((f) => f.getAttribute("data-form")), names.filter((n) => n.split(" ").length > 3)]));
+      && giftRows[1].nextElementSibling === giftRows[2] && giftRows[2].nextElementSibling === rowOf(gift, "record.gift.handover")
+      && forms.length === 15 && forms.every((f) => !f.querySelector(".maker-field, .salt-settings__row, .salt-field__input")) && names.length >= 30 && names.every((n) => n.split(" ").length <= 3),
+      "a field or a dropdown is Ambient's field, its label over its control, Gift's Date, Units and Handover one after another under the books, no form draws a settings row or a salt field, every name three words at most: "
+        + J([giftRows.map(read), forms.filter((f) => f.querySelector(".maker-field, .salt-settings__row")).map((f) => f.getAttribute("data-form")), names.filter((n) => n.split(" ").length > 3)]));
     /* 2 */
-    const seg = (f, act) => { const r = rowOf(f, act); const s = r && r.querySelector(".salt-segment"); return s ? [t(r.querySelector(".salt-settings__label")), s.getAttribute("role"), [...s.children].map((b) => [t(b), b.getAttribute("role"), b.getAttribute("data-key"), b.getAttribute("aria-checked")])] : null; };
+    const seg = (f, act) => { const r = rowOf(f, act); const s = r && r.querySelector(".amb-segment"); return s ? [t(r.querySelector(".amb-field__label")), s.getAttribute("role"), [...s.children].map((b) => [t(b), b.getAttribute("role"), b.getAttribute("data-key"), b.getAttribute("aria-pressed")])] : null; };
     const type = seg(trade, "record.trade.direction"), hand = seg(trade, "record.trade.handover"), of = seg(loan, "record.loan.form");
     /* 03 Nov 2026 (his decision: Record records no new sale): with no row chosen the Type stands on Purchase (its row hidden, held by Record's new-sale checks in test/order-stream-v6.mjs) */
-    ok(J(type) === J(["Type", "radiogroup", [["Sale", "radio", "sale", "false"], ["Purchase", "radio", "purchase", "true"]]])
-      && J(hand) === J(["Handover", "radiogroup", [["Not yet", "radio", "none", "true"], ["Collected", "radio", "collected", "false"], ["Delivered", "radio", "delivered", "false"]]])
-      && J(of) === J(["Loan of", "radiogroup", [["Goods", "radio", "salt", "true"], ["Cash", "radio", "cash", "false"]]]) && !trade.querySelector('fieldset.maker-tiles [data-act="record.trade.handover"]'),
-      "a choice of two or three plain words is a Segment in its row, each option keeping its act and key: " + J([type, hand, of]));
+    ok(J(type) === J(["Type", "group", [["Sale", null, "sale", "false"], ["Purchase", null, "purchase", "true"]]])
+      && J(hand) === J(["Handover", "group", [["Not yet", null, "none", "true"], ["Collected", null, "collected", "false"], ["Delivered", null, "delivered", "false"]]])
+      && J(of) === J(["Loan of", "group", [["Goods", null, "salt", "true"], ["Cash", null, "cash", "false"]]]) && !trade.querySelector('fieldset.maker-tiles [data-act="record.trade.handover"]'),
+      "a choice of two or three plain words is a Segment in its field, each option keeping its act and key: " + J([type, hand, of]));
     const tap = (act, key) => { const c = byAct(loan, act, key); if (c) c.click(); };
     tap("record.loan.form", "cash"); await quiet();
-    const amount = rowOf(loan, "record.loan.amount"), cashOn = t(amount && amount.querySelector(".salt-settings__label")), segNow = seg(loan, "record.loan.form");
+    const amount = rowOf(loan, "record.loan.amount"), cashOn = t(amount && amount.querySelector(".amb-field__label")), segNow = seg(loan, "record.loan.form");
     tap("record.loan.form", "salt"); await quiet();
-    ok(cashOn === "RM" && !!segNow && J(segNow[2].map((x) => x[3])) === J(["false", "true"]) && t(amount && amount.querySelector(".salt-settings__label")) === "Units",
+    ok(cashOn === "RM" && !!segNow && J(segNow[2].map((x) => x[3])) === J(["false", "true"]) && t(amount && amount.querySelector(".amb-field__label")) === "Units",
       "the Segment answers as the tiles did: Cash makes the loan's amount read RM, and Goods gives Units back: " + J([cashOn, segNow && segNow[2]]));
     /* 3 */
-    const grid = (f, label) => { const g = tileGroup(f, label); return g ? g.querySelector(".salt-options__grid").className : null; };
-    /* Starting % is a legend over its tiles, Other % a row's name: each about one book */
-    const about = add ? [...add.querySelectorAll("fieldset.maker-tiles legend, .salt-settings__row .salt-settings__label")].filter((n) => n.querySelector(".salt-producttag")) : [];
-    ok(grid(trade, "Book") === "salt-options__grid maker-marks" && [...tileGroup(trade, "Book").querySelectorAll(".salt-option__face")].every((f) => f.querySelector(".salt-producttag") && !f.querySelector("svg.psym"))
-      && about.length === 2 && about.every((n) => n.lastElementChild.classList.contains("salt-producttag--salt") && t(n.lastElementChild) === "Salt") && !add.querySelector("legend svg.psym, legend .pwith, .salt-settings__label svg.psym"),
-      "the books stay typed tags four up, and a name or a legend about one book (Starting %, Other %) ends in its typed tag, never its drawn mark: " + J([grid(trade, "Book"), about.map(t)]));
+    const bookSet = tileGroup(trade, "Book");
+    /* Starting % is a legend over its tiles, Other % a field's label: each about one book */
+    const about = add ? [...add.querySelectorAll("fieldset.maker-tiles legend, .amb-field__label")].filter((n) => n.querySelector(".amb-chip")) : [];
+    ok(bookSet.classList.contains("amb-options") && [...bookSet.querySelectorAll("label.amb-option")].every((o) => o.querySelector(".amb-option__title > .amb-chip[class*='amb-kind-'] > .amb-chip__dot") && !o.querySelector("svg.psym, .salt-producttag"))
+      && about.length === 2 && about.every((n) => n.lastElementChild.classList.contains("amb-chip") && /amb-kind-1\b/.test(n.lastElementChild.className) && t(n.lastElementChild) === "Salt") && !add.querySelector("legend svg.psym, legend .pwith, .amb-field__label svg.psym"),
+      "the books are a Choice of chips, the dot in the book's hue and its name in ink, and a label or a legend about one book (Starting %, Other %) ends in its chip, never its drawn mark: " + J([bookSet.className, about.map(t)]));
     /* 4 */
-    const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    const outside = css.replace(/@media[^{]*\{(?:[^{}]*\{[^}]*\})*[^{}]*\}/g, "");
     const nums = [...d.querySelectorAll("#makerInputs section.maker-input input[type=number]")];
-    /* 27 Oct 2026: Units and Handed over are wheels now, so the typed figures are fewer and the wheels are counted beside them */
-    const wheels = [...d.querySelectorAll("#makerInputs section.maker-input select.mwheel")];
-    ok(nums.length >= 10 && wheels.length >= 2 && wheels.every((n) => n.classList.contains("salt-field__input--mono")) && nums.every((n) => n.classList.contains("salt-field__input--mono")) && /\.adm \.maker-input input\[type=number\]\{text-align:right\}/.test(css),
-      "every figure, a wheel too, is in mono and set to the right: " + nums.length + " fields, " + wheels.length + " wheels");
+    /* 27 Oct 2026: Units and Handed over are wheels; 16 Nov 2026: each the stepper over its sizes, the plain figures beside them */
+    const wheels = [...d.querySelectorAll("#makerInputs section.maker-input input[data-amb-values]")];
+    ok(nums.length >= 10 && wheels.length >= 2 && nums.every((n) => n.classList.contains("amb-input")) && wheels.every((w) => w.parentElement.classList.contains("amb-stepper") && w.step === "any" && /^(0 )?0\.25 /.test(w.getAttribute("data-amb-values")) && w.parentElement.querySelectorAll("[data-amb-step]").length === 2
+      && w.parentElement.parentElement.classList.contains("amb-field") && w.max === "200"),
+      "every figure is in the Ambient input, and a wheel is the stepper over its sizes, a quarter to 25 then whole to 200: " + nums.length + " fields, " + wheels.length + " wheels");
     /* 5 */
     const send = byAct(trade, "record.trade.send");
-    /* 5 Nov 2026 (the pane): the pill stands in the form's pinned foot (.mfoot), a child of the form; it still crosses that foot on a phone and stands 240px at its right from 860px */
-    ok(!!send && send.parentElement.parentElement === trade && send.parentElement.matches(".salt-pane__foot.mfoot") && send.classList.contains("salt-pill") && send.classList.contains("btn")
-      && /\.adm \.maker-input>\.mfoot>\.btn\.salt-pill\{flex:1 1 auto;width:auto;height:48px;white-space:nowrap/.test(outside) && /@media \(min-width:860px\)\{\.adm \.maker-input>\.mfoot\{justify-content:flex-end\}\.adm \.maker-input>\.mfoot>\.btn\.salt-pill\{flex:0 1 auto;min-width:240px;max-width:100%\}\}/.test(css),
-      "a form's one pill crosses its foot on a phone, one line, and from 860px stands at its right edge, 240px at least");
+    /* 16 Nov 2026 (Ambient): the pill stands in the form's amb-foot, a child of the form, the pill across it */
+    ok(!!send && send.parentElement.parentElement === trade && send.parentElement.classList.contains("amb-foot") && send.classList.contains("amb-pill") && send.classList.contains("amb-pill--block") && !send.classList.contains("amb-pill--quiet"),
+      "a form's one pill is its amb-foot, a block pill and never a quiet one");
     /* 6 */
     const addBook = byAct(trade, "record.trade.add-book");
-    const before = addBook && [addBook.className, t(addBook), addBook.parentElement.classList.contains("salt-settings"), addBook.parentElement.nextElementSibling && addBook.parentElement.nextElementSibling.className, t(addBook.parentElement.nextElementSibling)];
+    const before = addBook && [addBook.className, t(addBook), addBook.parentElement.tagName, addBook.parentElement.parentElement.classList.contains("amb-settings__list"), t(addBook.closest(".amb-settings").nextElementSibling), addBook.closest(".amb-settings").nextElementSibling.className];
     addBook.click(); await quiet();
     const remove = byAct(trade, "record.trade.remove-book");
-    ok(J(before) === J(["salt-settings__row salt-settings__row--action", "Add a book", true, "salt-settings__foot", "Same buyer, same day; delivery charged once; approved in one tap."])
-      && !!remove && remove.classList.contains("salt-settings__row--danger") && t(remove) === "Remove this book" && remove.parentElement.classList.contains("salt-settings")
+    ok(J(before) === J(["amb-action", "Add a book", "LI", true, "Same buyer, same day; delivery charged once; approved in one tap.", "amb-field__hint"])
+      && !!remove && remove.classList.contains("amb-action--danger") && t(remove) === "Remove this book" && remove.parentElement.parentElement.classList.contains("amb-settings__list")
       && !!rowOf(trade, "record.trade.extra-units"),
-      "the trip: Add a book an action row, the trip's line the grey line under it, an added book's rows a list and Remove this book a danger row: " + J([before, remove && remove.className]));
+      "the trip: Add a book an action in a list, the trip's line the hint under it, an added book's fields and Remove this book a danger action: " + J([before, remove && remove.className]));
   } finally { p.w.close(); }
 }

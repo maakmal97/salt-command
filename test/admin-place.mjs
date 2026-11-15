@@ -150,8 +150,8 @@ export async function run({ ok, pageWork }) {
     type("Pa"); type("Pav"); type("Pavi"); await pause();
     const rows = [...list().querySelectorAll('[role="option"]')];
     ok(JSON.stringify(searched) === JSON.stringify([{ q: "Pavi" }]) && list().getAttribute("role") === "listbox" && place().getAttribute("role") === "combobox"
-      && place().getAttribute("aria-expanded") === "true" && rows.length === 2 && t(rows[0].querySelector(".salt-settings__label")) === "Pavilion Kuala Lumpur"
-      && t(rows[0].querySelector(".salt-settings__value")) === "Bukit Bintang, Kuala Lumpur" && list().previousElementSibling === place().closest("label"),
+      && place().getAttribute("aria-expanded") === "true" && rows.length === 2 && t(rows[0].querySelector(".amb-setting__name")) === "Pavilion Kuala Lumpur"
+      && t(rows[0].querySelector(".amb-setting__value")) === "Bukit Bintang, Kuala Lumpur" && list().previousElementSibling === place().closest("label"),
       "three letters and a pause ask the search once; the places stand as rows under Place: " + JSON.stringify([searched, rows.map(t)]));
     /* U2 */
     rows[0].click(); await p.work.quiet();

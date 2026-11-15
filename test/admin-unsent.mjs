@@ -38,7 +38,7 @@ export async function run({ ok, pageWork }) {
     p.where = () => {
       const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       const strip = d.querySelector('.aparts[data-place="' + place + '"]');
-      const part = strip && (strip.querySelector('[aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
+      const part = strip && (strip.querySelector('[aria-selected="true"], [aria-pressed="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     p.kept = () => Object.keys(p.w.localStorage).filter((k) => k.startsWith(KEEP)).sort();

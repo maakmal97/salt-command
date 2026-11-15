@@ -172,7 +172,7 @@ export async function run({ ok }) {
     };
     const pause = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
     const fieldIn = (root, label) => {
-      const wrap = root && [...root.querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label") && l.querySelector(".lbl, .salt-settings__label").textContent === label);
+      const wrap = root && [...root.querySelectorAll("label, div.amb-field")].find((l) => l.querySelector(".lbl, .salt-settings__label, .amb-field__label") && l.querySelector(".lbl, .salt-settings__label, .amb-field__label").textContent === label);
       return wrap && wrap.querySelector("input, select");
     };
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Correct a row");

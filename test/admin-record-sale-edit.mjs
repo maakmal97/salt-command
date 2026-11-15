@@ -54,11 +54,11 @@ export async function run({ ok, pageWork }) {
     /* a */
     const after = (x, y) => !!x && !!y && (x.compareDocumentPosition(y) & 4) === 4;
     const seq = [A("record.trade.edit"), A("record.trade.direction"), tileGroup(f, "Book"), A("record.trade.party"), A("record.trade.date"), A("record.trade.units"), A("record.trade.total"), A("record.trade.add-book")];
-    const tail = f.querySelector(".maker-trade-tail"), tailNames = tail ? [...tail.querySelectorAll(":scope > .salt-settings__row > .salt-settings__label")].map(t) : [];
+    const tail = f.querySelector(".maker-trade-tail"), tailNames = tail ? [...tail.children].map((c) => t(c.querySelector(".amb-field__label"))) : [];   /* 16 Nov 2026, the move to Ambient (place I): the tail is Ambient's fields */
     ok(seq.every((x, i) => !!x && (i === 0 || after(seq[i - 1], x))) && !!tail && after(seq[7], tail) && J(tailNames) === J(["Handover", "Freight", "Handed over", "Cash paid"])
       /* 5 Nov 2026 (the pane): the pill is the form's pinned foot, a child of the form */
       && after(tail, A("record.trade.send")) && pill() === "Record the purchase" && A("record.trade.send").parentElement.parentElement === f && A("record.trade.send").parentElement.matches(".mfoot")
-      && !f.querySelector(":scope > .salt-settings:not(.maker-trade-tail) [data-act='record.trade.cash'], :scope > .salt-settings:not(.maker-trade-tail) [data-act='record.trade.moved']"),
+      && !f.querySelector(":scope > .amb-field [data-act='record.trade.cash'], :scope > .amb-field [data-act='record.trade.moved']"),
       "the form stands in his order: Row, Type, Book, Who, Date, Units, Price, Add a book, then Handover, Freight (a sale's Delivery), Handed over and Cash paid in one tail list, then Record the purchase (the pill with no row chosen, 03 Nov 2026): "
         + J([seq.map((x) => !!x), tailNames, pill()]));
 
@@ -70,12 +70,12 @@ export async function run({ ok, pageWork }) {
 
     /* b */
     const who = A("record.trade.party"), list = f.querySelector("#makerWhoList"), units = A("record.trade.units"), moved = A("record.trade.moved");
-    const vals = (s) => [...s.options].map((o) => o.value);
+    const vals = (s) => s.getAttribute("data-amb-values").split(" ");
     ok(who.tagName === "INPUT" && who.type === "text" && who.getAttribute("list") === "makerWhoList" && !!list && list.tagName === "DATALIST"
       && J([...list.options].map((o) => o.value)) === J(["CX1-ZED", "CX2-ZED", "SX1-ZED", "AX1-ZED", "AX1-ZED-R"])
-      && units.tagName === "SELECT" && units.classList.contains("mwheel") && vals(units)[0] === "0.25" && vals(units)[1] === "0.5" && vals(units).includes("25") && vals(units).includes("26") && vals(units).pop() === "200" && units.value === "1"
-      && moved.tagName === "SELECT" && moved.classList.contains("mwheel") && vals(moved)[0] === "0" && vals(moved)[1] === "0.25" && vals(moved).pop() === "200" && moved.value === "0",
-      "Who is a text input over a datalist of the catalog's parties; Units is a wheel from 0.25 to 200 and Handed over one from 0: "
+      && units.tagName === "INPUT" && units.type === "number" && vals(units)[0] === "0.25" && vals(units)[1] === "0.5" && vals(units).includes("25") && vals(units).includes("26") && vals(units).pop() === "200" && units.value === "1"
+      && moved.tagName === "INPUT" && moved.type === "number" && vals(moved)[0] === "0" && vals(moved)[1] === "0.25" && vals(moved).pop() === "200" && moved.value === "0",
+      "Who is a text input over a datalist of the catalog's parties; Units is the stepper over values from 0.25 to 200 and Handed over one from 0: "
         + J([who.tagName, who.getAttribute("list"), list && list.options.length, vals(units).slice(0, 2), vals(units).slice(-1), vals(moved).slice(0, 2), moved.value]));
 
     /* c */
@@ -132,7 +132,7 @@ export async function run({ ok, pageWork }) {
 
     /* f */
     await choose("row-1");
-    const more = [...f.querySelectorAll(".maker-edit-more .salt-settings__label")].map(t);
+    const more = [...f.querySelectorAll(".maker-edit-more .amb-action")].map(t);
     const other = A("record.trade.other"); other && other.click(); await quiet();
     const fix = d.querySelector('#makerInputs section.maker-input[data-form="correct-a-row"]');
     const fixAt = fix ? [byAct(fix, "record.amend.row").value, shown(fix), shown(f)] : null;
@@ -145,7 +145,7 @@ export async function run({ ok, pageWork }) {
     enter(d, "orders"); await quiet();
     w.__owner("amendFor('row-4')"); await quiet();
     const viaAmend = [A("record.trade.edit").value, pill(), shown(f)];
-    const heads = [...d.querySelectorAll('#makerMenu [data-in="record.entry"] > .salt-settings__head')].map(t);
+    const heads = [...d.querySelectorAll('#makerMenu [data-in="record.entry"] > .amb-settings > .amb-settings__head')].map(t);
     ok(!!open && t(open) === "row-1" && J(viaLedger) === J(["row-1", "Record the change", true]) && J(viaAmend) === J(["row-4", "Record the change", true])
       && J(heads) === J(["Everyday", "Now and then"])
       && J(more) === J(["Other fields"]) && J(fixAt) === J(["row-1", true, false]),
