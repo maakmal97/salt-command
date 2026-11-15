@@ -6512,6 +6512,7 @@ export const OWNER_JS = `
     var bar=document.getElementById('apBar'); if(!bar) return;
     var gs=apGroups(), A=gs.filter(function(g){ return apPick[g.lead.id]==='a'; }), R=gs.filter(function(g){ return apPick[g.lead.id]==='r'; });
     bar.textContent=''; bar.hidden=!(A.length+R.length);
+    try{ drawNeedOpen(false); }catch(e){}
     if(bar.hidden) return;
     bar.appendChild(el('span','amb-savebar__text apbar__line',[A.length?A.length+' to approve':'',R.length?R.length+' to reject':''].filter(Boolean).join(' \u00b7 ')));
     var acts=el('span','apbar__acts');
@@ -7488,7 +7489,7 @@ export const OWNER_JS = `
   /* a book's name in ink with its hue on the dot: Ambient's kind chip (the book's index in PSYM's order) */
   function nBook(product){ var k=String(product||'').toLowerCase().replace(/[^a-z]/g,''); return amb.node(amb.kindChip(k, k.charAt(0).toUpperCase()+k.slice(1))); }
   /* the action register's words on a to-do: Overdue when late, Due while it waits on his tap now, Open after. The group's word (Now, Soon, Watch) stays over the list. */
-  function needTone(o){ return o.late?['neg','Overdue']:o.sev==='now'?['warn','Due']:['','Open']; }
+  function needTone(o){ return o.late?['neg','Overdue']:o.sev==='now'?['warn','Due']:o.sev==='watch'?['','Watch']:['','Open']; }
   /* THE CARD OF THE LIST (16 Nov 2026): Ambient's To-do. Line one the kind and its age and the state's chip; the title its one button (the whole card is the tap,
      the title's ::after stretched over it in site.css), a book's chip before the code; the money the card is about as its one figure; the way on a row of
      quiet small pills, made once the first is added; notes and an ask stand between, made once something writes to them. */
@@ -7510,6 +7511,7 @@ export const OWNER_JS = `
     Object.defineProperty(c,'_body',{get:function(){ if(!bodyEl){ bodyEl=el('div','nbody'); c.insertBefore(bodyEl, go.parentNode===c?go:null); } return bodyEl; }, configurable:true});
     c._grow=function(){ c.classList.add('need--grow'); };
     c._add=function(b){
+      if(o.sev==='watch') return;   /* Ambient 0.7.5: Watch is a state with nothing to do yet, so it has no control (its title opens it) */
       var grown=c.classList.contains('need--grow');
       if(go.children.length&&!grown) return;
       var filled=!b.classList.contains('salt-ghost')&&!b.classList.contains('salt-ghost--lit');
@@ -7613,7 +7615,8 @@ export const OWNER_JS = `
   /* the record's one main action stands last in its column (Ambient's foot), outside #nopen, and goes with the card */
   function nFoot(nh){
     var rec=nopen.parentNode, old=rec.querySelector(':scope > .npane__go'); if(old) rec.removeChild(old);
-    if(nh&&nh._go&&nh._go.children.length) rec.appendChild(nh._go);
+    var sv=document.getElementById('apBar');   /* 16 Nov 2026 (Ambient 0.7.5): while the save bar shows, saving is the one main action and no record has a foot */
+    if(nh&&nh._go&&nh._go.children.length&&!(sv&&!sv.hidden)) rec.appendChild(nh._go);
   }
   /* an account's Open on a phone goes to its card on Customers */
   function openNeed(u){ showPlace('customers','accounts',{fresh:true,push:true}); openCard(u); }
@@ -8219,14 +8222,14 @@ export const OWNER_JS = `
      22 Oct 2026 (canvas Needs you): the count stands beside the word on its tab, and a kind with nothing at all is dimmed and cannot be chosen. */
   function drawKindCounts(items){
     var n={all:0}, have={all:1}, ready=needsReady();
-    items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
+    items.forEach(function(i){ have[i.kind]=1; if(i.practice||i.sev==='watch') return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
     [].forEach.call(document.querySelectorAll('.nchips button'), function(b){
       var k=b.getAttribute('data-chip'), c=b.querySelector('.nkopt__n');
       if(!c){ c=el('span','amb-segment__count nkopt__n'); b.appendChild(c); }
       var said=ready?String(n[k]||0):'';
       if(c.textContent!==said) c.textContent=said;
       var none=ready&&!have[k];
-      if(b.disabled!==none) b.disabled=none;
+      if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }
     });
   }
   /* the chosen kind's tab: selected, and the Nav bar's active link */
@@ -8743,7 +8746,7 @@ export const OWNER_JS = `
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
     var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
-    if(k){ nPick(k.getAttribute('data-chip')); return; }
+    if(k){ if(k.getAttribute('aria-disabled')!=='true') nPick(k.getAttribute('data-chip')); return; }
     var t=ev.target.closest('button[data-part]');
     /* 2 Nov 2026: the Accounts tab, tapped while an account is open, returns to the list, as the way back does */
     if(t&&aOpen&&t.parentNode.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);

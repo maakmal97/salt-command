@@ -61,6 +61,11 @@ export async function run({ ok, pageWork }) {
     ok(J(link) === J([["Approve", "pill"], ["Decline", "ghost"]]) && J(lock.map((x) => x[0])) === J(["Send", "Show a code"]) && J(claim) === J([["Received", "pill"], ["Open the claim", "ghost"]])
       && !!pane().querySelector(".npane-x .oacct") === false,
       "any other card carries every way of its row, the first the foot's one main action and the second choice a quiet pill: " + J([link, lock, claim]));
+    /* 16 Nov 2026, Ambient 0.7.5 (place F): while the save bar shows, saving is the one main action and no record has a foot, so the open card's goes and comes back */
+    const footN = () => d.querySelectorAll("#nrecord > .npane__go").length, had = footN();
+    p.w.__owner("document.getElementById('apBar').hidden=false; drawNeedOpen(true);"); const during = footN();
+    p.w.__owner("document.getElementById('apBar').hidden=true; drawNeedOpen(true);");
+    ok(had === 1 && during === 0 && footN() === 1, "while the Confirm bar shows the open card has no foot, and has it again when the bar goes: " + J([had, during, footN()]));
     await click(card("k:tvwx-yz23").querySelector(".need-tap"));
     ok(!!pane().querySelector(".npane-x .oacct"), "an account's card stands under a card about that account");
     /* 5 */

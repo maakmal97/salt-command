@@ -48,8 +48,6 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .npane__title { overflow-wrap: anywhere; }
 /* Stock by book: the table's meter stays a hand's width */
 .nstock .amb-meter { min-width: 4rem; }
-/* a kind with nothing waiting is dimmed and cannot be chosen */
-.nchips > .amb-segment__opt:disabled { opacity: 0.5; cursor: default; }
 /* Approve: the head of the list, the cards, the save bar over them */
 .aphead { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-3); }
 .aphead__n { margin: 0; }
@@ -60,13 +58,8 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .apdet { display: grid; gap: var(--amb-space-3); }
 .apdet[hidden] { display: none; }
 .aprefused > span > span { display: block; }
-.apbar { position: sticky; z-index: 5; bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); }
-@media (min-width: 960px) { .apbar { bottom: var(--amb-space-4); } }
 .apbar__acts { display: flex; gap: var(--amb-space-2); flex: none; }
-/* Stock by book: a light's dot takes its tone's colour, and the wide table's columns keep a gap */
-.nstock .amb-chip--neg > .amb-chip__dot { background: var(--amb-neg); }
-.nstock .amb-chip--warn > .amb-chip__dot { background: var(--amb-warn); }
-.nstock .amb-chip:not(.amb-chip--pos, .amb-chip--neg, .amb-chip--warn, [class*="amb-kind-"]) > .amb-chip__dot { background: var(--amb-ink-2); }
+/* Stock by book: the wide table's columns keep a gap */
 @media (min-width: 720px) { .nstock .amb-table th, .nstock .amb-table td { padding-inline: var(--amb-space-3); } }
 
 /* ---- Record and Shop (Salt Admin) ---- */

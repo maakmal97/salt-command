@@ -135,7 +135,8 @@ export async function run({ ok, pageWork }) {
       + "goods paid and not handed over and a step to send again are To do; money owed past term and his offer waiting on their yes are Pending; the override and the notice are FYI: "
       + JSON.stringify([p.keys("now"), p.keys("soon"), p.keys("watch")]));
     /* 16 Nov 2026, the move to Ambient (place F): a card is Ambient's To-do: its head (kind and age, the state's chip), its title, the figure and the ways, the rule down its edge agreeing with the word */
-    const STATE = { "Overdue": "amb-task--neg", "Due": "amb-task--warn", "Open": "" };
+    /* 16 Nov 2026, Ambient 0.7.5 (place F): Watch is a state of its own (a plain chip, no rule), and has no control */
+    const STATE = { "Overdue": "amb-task--neg", "Due": "amb-task--warn", "Open": "", "Watch": "" };
     ok(p.cards().every((c) => { const w = c.querySelector(".amb-task__head > .amb-chip").textContent, k = STATE[w]; const kids = [...c.children].map((x) => x.classList[0]);
       return c.classList.contains("amb-task") && c.classList.contains("ntask") && k !== undefined && (k === "" ? !/amb-task--(neg|warn)/.test(c.className) : c.classList.contains(k))
         && kids[0] === "amb-task__head" && kids[1] === "amb-task__title" && kids.every((x) => ["amb-task__head", "amb-task__title", "amb-task__figures", "nbody", "amb-task__acts"].includes(x))
@@ -282,7 +283,7 @@ export async function run({ ok, pageWork }) {
       && byAct(p.card("n:" + U2), "need.show-link").getAttribute("aria-label") === "Show the guest price list",
     "the guest link, the refused account, the accounts not sent and the ID with no account keep the one filled action they had, shortened to Approve, Send, Send and Show, the long form kept for a reader");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
-    ok(p.cards().every((c) => c.querySelectorAll(".amb-task__acts > button").length === 1 && c.querySelector(".amb-task__acts > button").classList.contains("amb-pill--sm") && c.querySelector(".amb-task__acts > button").classList.contains("amb-pill--quiet") && !c.classList.contains("need--act")),
+    ok(p.cards().every((c) => c.getAttribute("data-sev") === "watch" ? c.querySelectorAll("button:not(.need-tap)").length === 0 && c.querySelector(".amb-task__head > .amb-chip").textContent === "Watch" : c.querySelectorAll(".amb-task__acts > button").length === 1 && c.querySelector(".amb-task__acts > button").classList.contains("amb-pill--sm") && c.querySelector(".amb-task__acts > button").classList.contains("amb-pill--quiet") && !c.classList.contains("need--act")),
       "a resting card has exactly one action, a small quiet pill in its ways row (a to-do's one control), the second choice (Decline, Show a code, Record payment) kept for the opened card");
     ok(p.cards().every((c) => !p.buttons(c).includes("Open") || c.getAttribute("data-need").startsWith("u:")) && !d.querySelector("#nlist button[data-act='need.open']:not(.need-tap)")
       && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("h3.amb-task__title > button.need-tap") && c.querySelector(".need-tap .need-who")),
@@ -319,10 +320,10 @@ export async function run({ ok, pageWork }) {
     ok(chips.map((b) => b.firstChild.textContent.trim()).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("amb-segment__opt") && b.classList.contains("nkopt") && b.hasAttribute("aria-pressed"))
       && chips[0].getAttribute("aria-pressed") === "true" && d.querySelector("div.amb-segment.amb-segment--wrap.nchips").getAttribute("role") === "group" && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
     "the kinds are All, Orders, Payments, Messages, Rows and Accounts, Ambient's counted filters (a wrapped Segment), each with its act, All pressed, and no Jump to beside them");
-    ok(same(chips.map((b) => b.querySelector(".nkopt__n").textContent), ["21", "7", "4", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
-      "each kind carries its count of cards, practice apart (21 in all: 17 To do, 2 Pending, 2 FYI): " + chips.map((b) => b.textContent).join());
+    ok(same(chips.map((b) => b.querySelector(".nkopt__n").textContent), ["19", "7", "4", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
+      "each kind carries its count of cards, practice and Watch apart (19 in all: 17 To do, 2 Pending; Watch is not counted, Ambient 0.7.5): " + chips.map((b) => b.textContent).join());
     p.reads.length = 0;
-    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip"));
+    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip"));
     ok(same(visible(d), KO), "with a card of every kind, every kind is on: " + visible(d));
     const kinds = {};
     for (const k of ["orders", "payments", "messages", "rows", "accounts"]) {
@@ -350,10 +351,10 @@ export async function run({ ok, pageWork }) {
     const d = p.d, kinds = new Set(p.cards().map((c) => c.getAttribute("data-kind")));
     const tabs = [...d.querySelectorAll(".nchips button")];
     ok(!kinds.has("messages") && same(visible2(d), ["all", ...["orders", "payments", "messages", "rows", "accounts"].filter((k) => kinds.has(k))]) && !visible2(d).includes("messages")
-      && tabs.length === 6 && tabs.every((b) => !b.hidden) && tabs.find((b) => b.getAttribute("data-chip") === "messages").disabled,
+      && tabs.length === 6 && tabs.every((b) => !b.hidden) && tabs.find((b) => b.getAttribute("data-chip") === "messages").getAttribute("aria-disabled") === "true" && tabs.every((b) => !b.disabled),
     "with no message waiting the Messages tab is disabled and still drawn, and each other kind present stays on: " + visible2(d));
   } finally { p.w.close(); }
-  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip")); }
+  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip")); }
 
   /* 8. A READ THAT FAILED IS SAID */
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.threads] });

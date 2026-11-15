@@ -130,6 +130,9 @@ export async function run({ ok, pageWork }) {
     ok(pa.getAttribute("aria-pressed") === "true" && !pa.classList.contains("amb-pill--quiet") && ca.classList.contains("ap--a") && byAct(ca, "draft.reject").getAttribute("aria-pressed") === "false"
       && !bar0.hidden && bar0.querySelector(".apbar__line").textContent === "1 to approve" && !p.sheet() && sentNone() && p.confirms.length === 0,
     "a tap on Approve chooses it: pressed, the filled pill, the card lit, the bar says 1 to approve, no Sheet opens and nothing is sent: " + bar0.textContent);
+    /* 16 Nov 2026, Ambient 0.7.5 (place F): Confirm's save bar stands in the dock, straight before the tab bar */
+    ok(bar0.parentElement.classList.contains("amb-dock") && bar0.nextElementSibling === d.querySelector(".amb-dock > nav.amb-tabbar") && bar0.classList.contains("amb-savebar"),
+      "Confirm's save bar stands in the dock, straight before the tab bar");
     byAct(ca, "draft.reject").click(); await p.work.quiet();
     const cr = p.row("d-1");
     ok(byAct(cr, "draft.reject").getAttribute("aria-pressed") === "true" && byAct(cr, "draft.approve").getAttribute("aria-pressed") === "false" && cr.classList.contains("ap--r") && !cr.classList.contains("ap--a")

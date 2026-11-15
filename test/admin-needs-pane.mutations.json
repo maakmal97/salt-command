@@ -124,5 +124,11 @@
     "file": "stmt/owner.js",
     "find": "var was=nopen.getAttribute('data-order'), said=was&&makerSaid[was];",
     "replace": "var was=nopen.getAttribute('data-order'), said=null;"
+  },
+  {
+    "name": "the open card keeps its foot beside the Confirm bar",
+    "file": "stmt/owner.js",
+    "find": "&&!(sv&&!sv.hidden)",
+    "replace": ""
   }
 ]

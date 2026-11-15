@@ -400,5 +400,11 @@
   "file": "stmt/owner.js",
   "find": "function bookTag(product){ return productTag(product); }",
   "replace": "function bookTag(product){ return bookMark(product,20); }"
+ },
+ {
+  "name": "the Confirm bar stands in the tab bar, not before it",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-dock\"><div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\">",
+  "replace": "<div class=\"amb-dock\"><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\"><div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div>"
  }
 ]

@@ -63,13 +63,13 @@ export async function run({ ok, pageWork }) {
     ok(!!lit && !d.getElementById("oOrders").hidden, "and Ready's tile lands on Orders at Open, which holds the ready orders");
     w.location.hash = "#needs"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     /* 2 */
-    const pills = [...d.querySelectorAll(".nchips button")].filter((b) => !b.disabled);
+    const pills = [...d.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true");
     const counts = {}, shown = {};
     for (const b of pills) {
       const k = b.getAttribute("data-chip");
       counts[k] = t(b.querySelector(".nkopt__n"));
       await click(b);
-      shown[k] = String([...d.querySelectorAll("#nlist [data-need]")].filter((c) => !c.closest('details[data-sev="practice"]')).length);
+      shown[k] = String([...d.querySelectorAll("#nlist [data-need]")].filter((c) => !c.closest('details[data-sev="practice"]') && c.getAttribute("data-sev") !== "watch").length);
     }
     await click(byAct(d, "need.kind.all"));
     const practice = d.querySelectorAll('#nlist details[data-sev="practice"] [data-need]').length;
@@ -102,7 +102,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.needs").click(); await q.work.quiet();
     const m = d.querySelector('.nchips button[data-chip="messages"]'), o = d.querySelector('.nchips button[data-chip="orders"]');
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(!!m && m.disabled && !m.hidden && t(m.querySelector(".nkopt__n")) === "0" && !o.disabled && /\.nchips > \.amb-segment__opt:disabled \{ opacity: 0\.5; cursor: default; \}/.test(css),
-      "with no message waiting the Messages tab stays in its place at 0, dimmed, and cannot be chosen, while Orders can");
+    ok(!!m && m.getAttribute("aria-disabled") === "true" && !m.disabled && !m.hidden && t(m.querySelector(".nkopt__n")) === "0" && o.getAttribute("aria-disabled") !== "true" && !/\.nchips > \.amb-segment__opt:disabled/.test(css),
+      "with no message waiting the Messages tab stays in its place at 0, aria-disabled (Ambient 0.7.5 draws it dimmed, no dimming rule of ours), and cannot be chosen, while Orders can");
   } finally { q.w.close(); }
 }

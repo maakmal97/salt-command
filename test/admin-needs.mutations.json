@@ -194,8 +194,8 @@
  {
   "name": "a chip reads",
   "file": "stmt/owner.js",
-  "find": "if(k){ nPick(k.getAttribute('data-chip')); return; }",
-  "replace": "if(k){ nPick(k.getAttribute('data-chip')); readNeeds(true); return; }"
+  "find": "if(k){ if(k.getAttribute('aria-disabled')!=='true') nPick(k.getAttribute('data-chip')); return; }",
+  "replace": "if(k){ if(k.getAttribute('aria-disabled')!=='true') nPick(k.getAttribute('data-chip')); readNeeds(true); return; }"
  },
  {
   "name": "a chip has no act",
@@ -422,7 +422,7 @@
  {
   "name": "a kind with nothing is hidden, not disabled",
   "file": "stmt/owner.js",
-  "find": "if(b.disabled!==none) b.disabled=none;",
+  "find": "if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }",
   "replace": "b.hidden=none;"
  },
  {
@@ -686,8 +686,8 @@
  {
   "name": "a kind with nothing is not disabled",
   "file": "stmt/owner.js",
-  "find": "if(b.disabled!==none) b.disabled=none;",
-  "replace": "if(b.disabled) b.disabled=false;"
+  "find": "if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }",
+  "replace": "if(b.getAttribute('aria-disabled')) b.removeAttribute('aria-disabled');"
  },
  {
   "name": "money does not rank first",
@@ -766,5 +766,29 @@
   "file": "stmt/owner.js",
   "find": "setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice&&i.counts; }).length);",
   "replace": "setCount('needs', items.filter(function(i){ return !i.practice&&i.counts; }).length);"
+ },
+ {
+  "name": "Watch is Open again",
+  "file": "stmt/owner.js",
+  "find": ":o.sev==='watch'?['','Watch']:['','Open']",
+  "replace": ":['','Open']"
+ },
+ {
+  "name": "Watch is counted",
+  "file": "stmt/owner.js",
+  "find": "if(i.practice||i.sev==='watch') return; n.all++;",
+  "replace": "if(i.practice) return; n.all++;"
+ },
+ {
+  "name": "an empty kind is disabled, not aria-disabled",
+  "file": "stmt/owner.js",
+  "find": "if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else",
+  "replace": "if(none){ b.disabled=true; } else"
+ },
+ {
+  "name": "a Watch card carries a control",
+  "file": "stmt/owner.js",
+  "find": "      if(o.sev==='watch') return;   /* Ambient 0.7.5:",
+  "replace": "      if(false) return;   /* Ambient 0.7.5:"
  }
 ]

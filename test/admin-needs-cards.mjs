@@ -50,10 +50,10 @@ export async function run({ ok, pageWork }) {
       "the age is in ember when late: an order past his usual 20 min, money owed past its term, its age how late it is: " + J([t(age("o:ord-p1")), t(age("$:CX1-ZED"))]));
     /* 5 */
     const btns = (k) => [...card(k).querySelectorAll(".amb-task__acts button")];
-    const one = ["l:w1", "k:tvwx-yz23", "$:CX1-ZED", "p:ord-a1", "o:ord-p1", "w:notice", "x:0", "$:CX7-ZED"].map((k) => [k, btns(k).length, btns(k).every((b) => b.classList.contains("amb-pill") && b.classList.contains("amb-pill--sm") && b.classList.contains("amb-pill--quiet") && !/salt-/.test(b.className))]);
+    const one = ["l:w1", "k:tvwx-yz23", "$:CX1-ZED", "p:ord-a1", "o:ord-p1", "x:0", "$:CX7-ZED"].map((k) => [k, btns(k).length, btns(k).every((b) => b.classList.contains("amb-pill") && b.classList.contains("amb-pill--sm") && b.classList.contains("amb-pill--quiet") && !/salt-/.test(b.className))]);
     ok(one.every((x) => x[1] === 1 && x[2]) && t(btns("l:w1")[0]) === "Approve" && t(btns("k:tvwx-yz23")[0]) === "Send" && btns("k:tvwx-yz23")[0].getAttribute("aria-label") === "Send a sign-in link"
-      && t(btns("$:CX1-ZED")[0]) === "Message" && t(btns("w:notice")[0]) === "Change" && t(btns("$:CX7-ZED")[0]) === "Record" && btns("$:CX7-ZED")[0].getAttribute("aria-label") === "Record payment",
-      "a resting card shows one small quiet pill, a to-do's one control, its second choice (Decline, Show a code, Record payment) left to the opened card, and a card whose one way was a ghost (Record payment, for a customer with no account to message) shows it the same: " + J(one));
+      && t(btns("$:CX1-ZED")[0]) === "Message" && btns("w:notice").length === 0 && t(card("w:notice").querySelector(".amb-task__head > .amb-chip")) === "Watch" && t(btns("$:CX7-ZED")[0]) === "Record" && btns("$:CX7-ZED")[0].getAttribute("aria-label") === "Record payment",
+      "a resting card shows one small quiet pill, a to-do's one control (a Watch card has none, Ambient 0.7.5), its second choice (Decline, Show a code, Record payment) left to the opened card, and a card whose one way was a ghost (Record payment, for a customer with no account to message) shows it the same: " + J(one));
     await click(btns("c:abcd-efgh:c-1")[0]);
     const asking = card("c:abcd-efgh:c-1");
     ok(asking.classList.contains("need--grow") && !!asking.querySelector(".nbody .nask") && J(btns("c:abcd-efgh:c-1").map(t)) === J(["Yes", "Cancel"]),

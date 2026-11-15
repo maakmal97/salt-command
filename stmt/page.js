@@ -1681,7 +1681,6 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section id="oApprove" class="amb-stack" data-in="orders.approve" aria-label="Rows to approve">'
         + '<p class="amb-prose" id="makerDraftStatus" role="status"></p>'
         + '<div id="makerDrafts" class="apstack"></div>'
-        + '<div id="apBar" class="amb-savebar apbar" hidden></div>'
         + '<details id="makerQueue" class="nfold"><summary class="amb-section" data-act="record.queue-toggle"><span id="makerQueueCount">0</span> <span id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
         + '<div id="makerQueueReview" class="apstack" aria-live="polite"></div></details></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
@@ -1776,7 +1775,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</div>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
-        + '<div class="amb-dock"><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
+        + '<div class="amb-dock"><div id="apBar" class="amb-savebar apbar" hidden></div><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
           AMB.glyph(ADMIN_GLYPH[p === "messages" ? "customers" : m]) + "<span>" + w + "</span>"
           + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("") + "</nav></div>"
         + "</div>"
