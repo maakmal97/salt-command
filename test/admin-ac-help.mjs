@@ -23,6 +23,14 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     ok(!!box && !box.hidden && J(got) === J(want) && rows.every((r) => !r.open) && rows.every((r) => r.querySelector("summary").classList.contains("ahelp__sum")),
       "Shop > Hours shows the customer's Help, four questions in their order, each folded shut, in the words a customer reads: " + J(got.map((g) => g[0])));
+    /* 1b, 16 Nov 2026, the move to Ambient (0.7.4): each question is Ambient's disclosure row, one group name so one opens at a time,
+       its summary a settings row with the chevron that turns, its answer Ambient's text; the page's layer keeps no rule of its own for it */
+    const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("");
+    ok(rows.length === 4 && rows.every((r) => r.classList.contains("amb-disclose") && r.getAttribute("name") === "shop-help"
+        && r.querySelector(":scope > summary").classList.contains("amb-setting") && !!r.querySelector(":scope > summary > .amb-setting__name")
+        && !!r.querySelector(":scope > summary > svg.amb-disclose__mark use[href='#amb-chevron']") && !!r.querySelector(":scope > p.amb-disclose__text"))
+      && !/.ahelp-list/.test(css),
+      "each question is Ambient's disclosure row in one group (shop-help), a settings row with its turning chevron over Ambient's answer text, and no rule of the page's own for it");
     /* 2 */
     ok(!!box && box.querySelectorAll("input, textarea, select, button, a, [contenteditable]").length === 0, "and it is read only: no field, button or link in it");
     /* 3 */
