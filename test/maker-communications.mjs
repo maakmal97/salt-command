@@ -475,7 +475,7 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="part.shop.hours"]').click();
     /* 25 Oct 2026 (Salt Admin Shop): Set it and the way back are For now's, first on Hours; the way back reads Weekly hours and goes once taken */
     /* 26 Oct 2026 (Hours as settings): the way back is the Hold the shop switch turned off, and Set it stands once the switch is on */
-    const hoursBtn = (label) => label === "Weekly hours" ? doc.querySelector('#makerNowCard [data-act="hours.hold"][aria-checked="true"]')
+    const hoursBtn = (label) => label === "Weekly hours" ? doc.querySelector('#makerNowCard [data-act="hours.hold"]:checked')
       : [...doc.querySelectorAll("#makerSchedule button, #makerNowCard button, #makerDayPane button")].find((button) => button.textContent === label);
     const holdHours = async (label, ready, saved) => {
       /* 20 Oct 2026 (canvas V63): Done stands in an opened day */

@@ -86,14 +86,14 @@ export async function run({ ok, pageWork }) {
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
     p.counts = () => Object.fromEntries([...d.querySelectorAll(".amb-tabbar [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.needs = () => [...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-need"));
-    p.menu = () => [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-settings__label").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
+    p.menu = () => [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".amb-setting__name").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
     p.formsOpen = () => [...d.querySelectorAll("#makerInputs section.maker-input[data-form]")].filter(shown).map((s) => s.getAttribute("data-form"));
     p.retained = () => [...d.querySelectorAll("#makerInputs section[data-formmenu]")].filter(shown).map((s) => s.querySelector("h3").textContent);
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
       const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       /* 2 Nov 2026 (Orders on the canvas): Payments, Group, Ledger and Approve have no tab in the Segment, so their part is the address's */
-      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => (p.w.location.hash.split("/")[1] || "") }).getAttribute("data-part");
+      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"], .aparts[data-place="' + place + '"] [aria-pressed="true"]') || { getAttribute: () => (p.w.location.hash.split("/")[1] || "") }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     return p;
@@ -347,21 +347,14 @@ export async function run({ ok, pageWork }) {
   /* 4b. RECORD'S FORM IS A PANE (Phase 4a): the menu and a retained input one column, the forms the pane beside it from 860px and in the menu's place below it */
   {
     const { html, media, at } = ownerCss();
-    const split = at("(min-width:860px)", ".adm .recgrid")[0] || "";
-    const phoneAny = media.filter((m) => m.q === "(max-width:859.98px)").flatMap((m) => m.rules).join(" ");
-    const phone = at("(max-width:859.98px)", ".adm .recgrid.open .reclist,.adm .recnone")[0] || "";
-    ok(/display: grid/.test(split) && /grid-template-columns: minmax\(280px,360px\) minmax\(0,1fr\)/.test(split),
-      "from 860px Record's menu and the form open stand side by side, the menu 280 to 360px: " + split);
-    ok(/display: none/.test(phone) && /\.adm \.recgrid\.open \.reclist/.test(phoneAny) && /\.adm \.recnone/.test(phoneAny),
-      "below 860px a form open takes the menu's place, and the pane's invitation to choose one is not drawn: " + phoneAny.slice(0, 240));
-    const pane = at("(min-width:860px)", ".adm .recpane")[0] || "", band = at("(min-width:860px)and(max-width:1079.98px)", ".adm .recpane")[0] || "";
-    /* 5 Nov 2026 (the frame): sticky 24px down only to 1080px; from 1080px the pane is the frame's (salt-pane, read on the grid below), held to the column's top */
-    ok(/overflow-y: auto/.test(pane) && /position: sticky/.test(band) && /top: 24px/.test(band) && /salt-bar-h/.test(band),
-      "the pane is sticky and scrolls inside itself, and between 860 and 1080px its height gives up the App bar's: " + pane + " | " + band);
-    const back = at("(min-width:860px)", ".adm #makerFormBack")[0] || "", wide = at("(min-width:860px)", ".adm #oRecord")[0] || "";
+    /* 16 Nov 2026, the move to Ambient (place I): Record's menu and its form are Ambient's panes (two columns from 960px, the pane scrolling by itself), the page adding only the invitation's and the way back's stand-down */
     const approve = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove")[0] || "";
-    ok(/display: none/.test(back) && /max-width: none/.test(wide) && /max-width: 600px/.test(approve),
-      "from 860px the way back is not drawn (the menu is beside the form), Record widens for its forms and the rows to approve keep their column: " + [back, wide, approve].join(" | "));
+    ok(!/\.adm \.recgrid|\.adm \.recpane|\.adm \.reclist/.test(html.replace(/<script[\s\S]*?<\/script>/g, "")),
+      "the page lays out none of Record's menu and form open: Ambient's panes stand them side by side from 960px (the grid is read below)");
+    ok(/@container amb \(max-width: 959px\) \{ \.recgrid\.open \.reclist, \.recnone \{ display: none; \}/.test(html) && /\.recgrid\.open \.recnone \{ display: none; \}/.test(html),
+      "below 960px a form open takes the menu's place, and the pane's invitation to choose one is not drawn once one is open");
+    ok(/@container amb \(min-width: 960px\) \{ #makerFormBack \{ display: none; \} \}/.test(html) && !/\.adm #oRecord\{/.test(html) && /max-width: 600px/.test(approve),
+      "from 960px the way back is not drawn (the menu is beside the form) and the rows to approve keep their column: " + approve);
     const d = new JSDOM(html).window.document;
     ok(!!d.querySelector("#makerInputs") && d.querySelector("#makerInputs").getAttribute("data-in") === "record.entry record.customers record.pricing",
       "the forms stand in Record's one section, which Entry, Customers and Pricing show");
@@ -371,7 +364,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.record");
     const grid = p.d.getElementById("makerFormGrid"), list = grid && grid.querySelector(".reclist"), pane = grid && grid.querySelector(".recpane");
     /* 5 Nov 2026 (the frame): the form's pane is the frame's pane too */
-    ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "reclist,recpane salt-pane" && grid.classList.contains("recgrid") && !grid.classList.contains("open")
+    ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "amb-stack reclist,amb-stack recpane" && grid.classList.contains("recgrid") && grid.classList.contains("amb-split--panes") && !grid.classList.contains("open")
       && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 15
       && !list.querySelector("section[data-form]") && !!pane.querySelector(".recnone"),
     "the menu and the retained input stand in one column and the 15 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));
@@ -499,12 +492,12 @@ export async function run({ ok, pageWork }) {
     /* 18 Oct 2026 (clarity part 4): Entry's forms stand in three groups by how often they are used, each under a small eyebrow, and every row keeps its slug */
     const lst = d.querySelector('#makerMenu .formlist[data-in="record.entry"]');
     /* 27 Oct 2026: each group is a settings head over its own settings list, the rows inside it */
-    const groups = lst ? [...lst.children].flatMap((n) => n.classList.contains("salt-settings__head") ? ["# " + n.textContent]
-      : n.classList.contains("salt-settings") ? [...n.children].map((r) => r.querySelector(".salt-settings__label").textContent + "=" + r.getAttribute("data-key")) : ["? " + n.className]) : [];
+    /* 16 Nov 2026, the move to Ambient (place I): a group is div.amb-settings, its head h3 then its list of rows */
+    const groups = lst ? [...lst.children].flatMap((n) => n.classList.contains("amb-settings") ? ["# " + n.querySelector(".amb-settings__head").textContent, ...[...n.querySelectorAll(".amb-settings__list > li > button")].map((r) => r.querySelector(".amb-setting__name").textContent + "=" + r.getAttribute("data-key"))] : ["? " + n.className]) : [];
     ok(same(groups, ["# Everyday", "Sale or purchase=sale-or-purchase", "Repayment=repayment", "Stock count=stock-count", "# Now and then", "Gift=gift", "Loan=loan", "Rewards=rewards", "Offsets=offsets"]),   /* 27 Oct 2026, his word: Fixing is gone, and Correct a row and Reopen are no rows of the menu (the sale form reaches them) */
     "Entry's menu is Everyday and Now and then, each a settings head over its own list of forms in that order, every row keeping its slug: " + JSON.stringify(groups));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
-    ok(rows.length === 13 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-settings__row--action") && r.parentElement.classList.contains("salt-settings") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !/Open/.test(r.textContent))
+    ok(rows.length === 13 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("amb-setting") && r.parentElement.tagName === "LI" && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !/Open/.test(r.textContent))
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 13 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's settings row in a settings list (27 Oct 2026; it was the Inbox row), named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
     /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
@@ -526,7 +519,7 @@ export async function run({ ok, pageWork }) {
       await p.tap("part.record." + part);
       for (const name of MENU[part]) {
         /* 27 Oct 2026: the row is a settings row named in three words at most; three forms keep a longer heading of their own */
-        const row = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).find((r) => r.querySelector(".salt-settings__label").textContent === name);
+        const row = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).find((r) => r.querySelector(".amb-setting__name").textContent === name);
         if (!row) { bad.push(name + " (no row: " + p.where() + " " + JSON.stringify(p.menu()) + ")"); continue; }
         const slug = row.getAttribute("data-key");
         p.posts.length = 0; p.reads.length = 0;
@@ -534,7 +527,7 @@ export async function run({ ok, pageWork }) {
         const back = d.getElementById("makerFormBack"), form = d.querySelector('#makerInputs [data-form="' + slug + '"]');
         if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === ({ "Reopen an order": "Reopen a cancelled order", "Name or place": "Change a name or place", "Map point": "Place on the map" }[name] || name) && same(p.menu(), MENU[part]) && gridOpen() && row.getAttribute("aria-current") === "true"
           && d.querySelectorAll('#makerMenu [aria-current="true"]').length === 1 && shown(back)
-          && back.getAttribute("aria-label") === "All forms" && back.classList.contains("salt-orb") && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
+          && back.getAttribute("aria-label") === "All forms" && back.classList.contains("amb-circle") && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
         back.click(); await p.work.quiet();
         if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !gridOpen() && !row.hasAttribute("aria-current") && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
       }

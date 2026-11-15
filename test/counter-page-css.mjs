@@ -194,8 +194,8 @@ export async function run({ ok, pageWork }) {
     const { d, work, click } = p;
     await work.quiet();
     let bad = [], seen = 0, sels = 0, selBad = [];
-    const audit = () => { seen += d.querySelectorAll(".lbl").length; bad.push(...labelsBad(d));
-      for (const x of d.querySelectorAll("select")) { sels++; if (!x.classList.contains("salt-field__select")) selBad.push(x.getAttribute("data-act") || x.className); } };
+    const audit = () => { seen += d.querySelectorAll(".lbl, .amb-field__label").length; bad.push(...labelsBad(d));
+      for (const x of d.querySelectorAll("select")) { sels++; if (!x.classList.contains("salt-field__select") && !x.classList.contains("amb-input")) selBad.push(x.getAttribute("data-act") || x.className); } };
     await click(byAct(d, "nav.record")); await click(byAct(d, "part.record.entry"));
     const forms = [...d.querySelectorAll('[data-act="record.form"]')].length;
     for (let i = 0; i < forms; i++) {
@@ -228,9 +228,9 @@ export async function run({ ok, pageWork }) {
 
     /* the hours are the week chart (20 Oct 2026, canvas V63), a button a day; the table is gone */
     await click(byAct(d, "nav.shop")); await click(byAct(d, "part.shop.hours")); audit();
-    const week = d.querySelector("#makerSchedule .maker-week");
-    ok(!!week && !d.querySelector("table.maker-hours") && week.querySelectorAll("button.maker-day").length === 7,
-      "the weekly hours are the week chart, a button a day, and the table is gone");
+    const week = d.querySelector("#makerSchedule ol.amb-week");   /* 16 Nov 2026, the move to Ambient (place I): Ambient's week of spans */
+    ok(!!week && !d.querySelector("table.maker-hours") && week.querySelectorAll("button.amb-week__day").length === 7,
+      "the weekly hours are the week of spans, a button a day, and the table is gone");
 
     /* the guest links and the report card, on Customers */
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links")); audit();

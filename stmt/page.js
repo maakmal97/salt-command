@@ -578,7 +578,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
    a part has hidden leaves no gap behind it. */
 .adm .aplace{min-width:0}
-.adm #oOrders,.adm #oRecord{max-width:760px}
+.adm #oOrders{max-width:760px}
 .adm .aparts{margin:0 0 20px}
 .adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .nkinds{margin:0 0 16px;padding:0;gap:0}
@@ -799,18 +799,9 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:768px) and (max-width:859.98px){
   .adm #unsentBar{max-width:none}
 }
-/* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
-   #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
-   the menu's place and has its way back, and the pane's invitation is not drawn. From 860px up to the rail's 1080 the page widens for Record's forms
-   as it does for Orders, the rows to approve keeping their 600px column. */
-@media (max-width:859.98px){
-}
+/* 16 Nov 2026, the move to Ambient: Record's menu and its form are Ambient's panes (design/site.css lays only the invitation's and the way back's stand-down); the rows to approve keep their 600px column from 860px */
 @media (min-width:860px){
-  .adm #oRecord{max-width:none}
   .adm #oOrders>.abody>#oApprove{max-width:600px}
-  .adm #makerFormBack{display:none}
-}
-@media (min-width:860px) and (max-width:1079.98px){
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): FROM 1080px THE PAGE USES THE LAPTOP'S WIDTH. Shop is one column of 760px (it was 600), the rows to approve lie two up (the
    queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
