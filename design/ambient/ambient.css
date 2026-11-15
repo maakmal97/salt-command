@@ -59,13 +59,14 @@
 }
 .amb-screen {
   --amb-inset-l: var(--amb-safe-left);
+  --amb-inset-r: var(--amb-safe-right);
   position: absolute;
   inset: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 0 var(--amb-safe-right) calc(var(--amb-space-6) + var(--amb-safe-bottom)) var(--amb-inset-l);
+  padding: 0 var(--amb-inset-r) calc(var(--amb-space-6) + var(--amb-safe-bottom)) var(--amb-inset-l);
 }
 /* a screen with a dock under it leaves the dock's height clear, so its last row can be reached */
 .amb-screen--docked { padding-bottom: var(--amb-bleed); scroll-padding-bottom: var(--amb-bleed); }
@@ -136,8 +137,8 @@
   align-items: center;
   justify-content: flex-end;
   min-height: var(--amb-mesh-h);
-  margin: 0 calc(-1 * var(--amb-safe-right)) 0 calc(-1 * var(--amb-inset-l));
-  padding: calc(var(--amb-safe-top) + var(--amb-tap) + var(--amb-space-6)) calc(var(--amb-safe-right) + var(--amb-space-5)) var(--amb-space-7) calc(var(--amb-inset-l) + var(--amb-space-5));
+  margin: 0 calc(-1 * var(--amb-inset-r)) 0 calc(-1 * var(--amb-inset-l));
+  padding: calc(var(--amb-safe-top) + var(--amb-tap) + var(--amb-space-6)) calc(var(--amb-inset-r) + var(--amb-space-5)) var(--amb-space-7) calc(var(--amb-inset-l) + var(--amb-space-5));
   text-align: center;
 }
 .amb-hero__title { margin: var(--amb-space-2) 0 0; font-size: var(--amb-text-title1); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; text-wrap: balance; }
@@ -583,7 +584,7 @@ textarea.amb-input { min-height: 96px; padding-block: 12px; resize: none; }
   align-items: flex-start;
   justify-content: flex-start;
   min-height: 0;
-  padding: calc(var(--amb-safe-top) + var(--amb-space-8)) calc(var(--amb-safe-right) + var(--amb-doc-gutter)) var(--amb-space-7) calc(var(--amb-inset-l) + var(--amb-doc-gutter));
+  padding: calc(var(--amb-safe-top) + var(--amb-space-8)) calc(var(--amb-inset-r) + var(--amb-doc-gutter)) var(--amb-space-7) calc(var(--amb-inset-l) + var(--amb-doc-gutter));
   text-align: left;
 }
 .amb-hero--doc > .amb-hero__title { max-width: 26ch; margin-top: var(--amb-space-3); }
@@ -1462,13 +1463,13 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .amb-tabbar, .amb-savebar { background: var(--amb-glass-capsule); -webkit-backdrop-filter: blur(var(--amb-blur-capsule)) saturate(180%); backdrop-filter: blur(var(--amb-blur-capsule)) saturate(180%); }
   .amb-mini, .amb-toast { background: var(--amb-glass-mini); -webkit-backdrop-filter: blur(var(--amb-blur-mini)) saturate(190%); backdrop-filter: blur(var(--amb-blur-mini)) saturate(190%); }
-  .amb-circle:not(.amb-circle--plain), .amb-chip--glass, .amb-glyph { background: var(--amb-glass-circle); -webkit-backdrop-filter: blur(var(--amb-blur-circle)); backdrop-filter: blur(var(--amb-blur-circle)); }
+  .amb-circle:not(.amb-circle--plain), .amb-chip--glass, .amb-glyph, .amb-pill.amb-pill--bar { background: var(--amb-glass-circle); -webkit-backdrop-filter: blur(var(--amb-blur-circle)); backdrop-filter: blur(var(--amb-blur-circle)); }
   .amb-sheet { background: var(--amb-glass-sheet); -webkit-backdrop-filter: blur(var(--amb-blur-sheet)) saturate(160%); backdrop-filter: blur(var(--amb-blur-sheet)) saturate(160%); }
 }
 @media (prefers-reduced-transparency: reduce) {
   .amb-tabbar, .amb-savebar { background: var(--amb-solid-capsule); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .amb-mini, .amb-toast { background: var(--amb-solid-mini); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .amb-circle:not(.amb-circle--plain), .amb-chip--glass, .amb-glyph { background: var(--amb-solid-circle); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .amb-circle:not(.amb-circle--plain), .amb-chip--glass, .amb-glyph, .amb-pill.amb-pill--bar { background: var(--amb-solid-circle); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .amb-sheet { background: var(--amb-solid-sheet); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
@@ -1641,4 +1642,25 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   .amb-tab > .amb-tab__count { border: 1px solid CanvasText; box-shadow: none; }
   .amb-week__bar { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
   .amb-rating__star:has(> .amb-rating__input:checked), .amb-rating__star:has(~ .amb-rating__star > .amb-rating__input:checked), .amb-rating--shown .amb-icon.is-on { color: Highlight; }
+}
+
+/* ---- 0.7.3, for the Salt apps' move: a call in the app bar, and one page width ---- */
+/* A call: the one control in the app bar that is not a circle. A word or two in the circle's own glass and
+   ink, a tap's height, standing beside the circle it belongs to (Turn on, beside the bell): never the solid
+   pill, which is the screen's one main action. One in a bar, and only while what it calls for is still to do;
+   once it is done the call goes and the circle stands alone. */
+.amb-pill--bar { min-height: var(--amb-tap); padding: 0 var(--amb-space-4); border-color: var(--amb-rim); background: var(--amb-solid-circle); color: var(--amb-ink); font-size: var(--amb-text-subhead); font-weight: 600; white-space: nowrap; }
+/* One page width. From 1080px, a shell with amb-shell--page holds what stands on its ground to one box,
+   at most --amb-page-max wide and centred, with at least --amb-page-gutter of ground either side: the app
+   bar's two ends, the hero's words, the splits and the panes, and the rail, which stands at the box's left
+   edge as it stands at the screen's. A side safe area counts towards the gutter, not on top of it. The ground, the mesh and the fades still run the whole width; only what
+   stands on them is held. Every app that carries the class stands in the same box at every width; narrower
+   than 1080px nothing changes. The side is read from the shell's own width, so it is set on its children. */
+@container amb (min-width: 1080px) {
+  .amb-shell--page > * { --amb-page-side: max(var(--amb-page-gutter), (100cqi - var(--amb-page-max)) / 2); }
+  .amb-shell--page > .amb-screen { --amb-inset-l: max(var(--amb-safe-left), var(--amb-page-side)); --amb-inset-r: max(var(--amb-safe-right), var(--amb-page-side)); }
+  .amb-shell--page > .amb-appbar { left: max(0px, var(--amb-page-side) - var(--amb-safe-left)); right: max(0px, var(--amb-page-side) - var(--amb-safe-right)); }
+  .amb-shell--page.amb-shell--rail > .amb-screen { --amb-inset-l: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset) + max(var(--amb-safe-left), var(--amb-page-side))); }
+  .amb-shell--page.amb-shell--rail > .amb-dock { left: calc(var(--amb-dock-inset) + max(var(--amb-safe-left), var(--amb-page-side))); }
+  .amb-shell--page.amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset) + max(0px, var(--amb-page-side) - var(--amb-safe-left))); }
 }
