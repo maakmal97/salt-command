@@ -10,6 +10,9 @@
  * 15 Nov 2026, THE MOVE TO AMBIENT: the Counter and Salt Admin no longer wear salt-ds, so they carry no --salt-page-max. Each is one Ambient shell,
  * which lays itself out by its own width (container queries) and is never sized by the page; so W1 holds the token on the Desk alone, and W3 and
  * W4 hold that the page's own layer sizes neither shell. Ambient has no page width of its own for an app's shell yet: said in the kit's notes.
+ * 16 Nov 2026, THE MOVE TO AMBIENT, Ambient 0.7.3: Ambient now holds the page width itself (--amb-page-max, 1376px, and amb-shell--page, which
+ * holds the rail and the screen's content to one centred box from a 1080px shell). W5 holds that Ambient's token is the Desk's figure and that
+ * both shells wear amb-shell--page, so the three surfaces stand in the same box again (his word of 15 Nov 2026).
  * Every assertion is red under its own mutation (test/page-width.mutations.json). */
 import { readFileSync } from "node:fs";
 import { JSDOM, VirtualConsole } from "jsdom";
@@ -59,4 +62,10 @@ export async function run({ ok }) {
   /* W4 */
   const cShell = sized(counterOwn, ["#tabs", ".cshell", ".amb-shell", ".amb-screen"]);
   ok(cShell.length === 0 && counter.some((r) => r.sel === ".amb-shell"), "W4 the Counter's shell is Ambient's, and the page's layer sizes it at none of " + J(WIDTHS) + ": " + J(cShell));
+  /* W5 */
+  const ambMax = (rules) => rules.filter((r) => r.sel === ":root" && !r.q).map((r) => r.style.getPropertyValue("--amb-page-max").trim()).filter(Boolean).pop() || "";
+  ok(ambMax(counter) === token(desk) && ambMax(admin) === token(desk), "W5.1 Ambient's page width is the Desk's, on the Counter and on Salt Admin: " + J([ambMax(counter), ambMax(admin), token(desk)]));
+  const wears = (html, id) => { const m = new RegExp('<div id="' + id + '" class="([^"]*)"').exec(html); return !!m && m[1].split(" ").includes("amb-shell--page"); };
+  ok(wears(landingPage("0000-0000", "pw-nonce"), "tabs") && wears(landingPage("", "pw-nonce", { master: "fixture-master", accounts: [] }), "roster"),
+    "W5.2 the Counter's shell and Salt Admin's each wear Ambient's page width (amb-shell--page)");
 }

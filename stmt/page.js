@@ -1611,11 +1611,13 @@ function vaultSheet() {
    are on it is marked and its call sits beside it; a tap on either asks (the ask is still a tap: iOS requires one).
    Once on, the call goes and the bell stays, plain, opening This device's notifications row */
 /* 15 Nov 2026, the move to Ambient: the bell is a circle in the shell's app bar and its call a glass chip beside it, the app bar's only
-   two parts; Ambient has no bell glyph yet, so the circle draws its info glyph until one is added (asked of Ambient). The ids and the words are kept. */
+   two parts; Ambient has no bell glyph yet, so the circle draws its info glyph until one is added (asked of Ambient). The ids and the words are kept.
+   16 Nov 2026, Ambient 0.7.3: the circle draws Ambient's bell, and the call is the app bar's own call (amb-pill--bar), first, its words two
+   ("Turn on", bell.short) and its name the whole sentence (bell.call); it is hidden once notifications are on, so the bell stands alone. */
 function bellBox() {
   return '<div id="bellBox" class="amb-appbar__group" hidden>'
-    + wt("button", 'type="button" class="amb-chip amb-chip--glass" id="bellCall"', "bell.call")
-    + '<button type="button" class="amb-circle" id="bell"' + wl("bell.off") + ">" + AMB.glyph("info") + "</button></div>";
+    + wt("button", 'type="button" class="amb-pill amb-pill--bar" id="bellCall"' + wl("bell.call"), "bell.short")
+    + '<button type="button" class="amb-circle" id="bell"' + wl("bell.off") + ">" + AMB.glyph("bell") + "</button></div>";
 }
 /* refused on this phone: its own Settings steps, and the bell to tap again once they are on */
 function bellSheet() {
@@ -2033,7 +2035,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
          which Ambient stands up as the rail from 960px. The mood is the market's heat off STOCK (moodSet in stmt/owner.js): Flare and Supply
          tight while salt's supply is tight, Lagoon otherwise, Slate on Shop. .adm stays on the root, where every older rule of his page is
          scoped until its place is redrawn. */
-      ? '<div id="roster" class="amb-shell amb-shell--rail adm" data-mood="lagoon">'
+      ? '<div id="roster" class="amb-shell amb-shell--rail amb-shell--page adm" data-mood="lagoon">'
         + '<div class="amb-appbar"><span></span><div class="amb-appbar__group">'
         + (test ? "" : '<button type="button" class="amb-circle" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + AMB.glyph("plus") + "</button>")
         + "</div></div>"
@@ -2223,7 +2225,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
        heat reaches the Counter only after Fable's review, and a customer sees the mood alone, never told); the app bar holds the bell; the
        screen opens on the place's hero, its name the title, whose account it is under it and the time under that; then his read-only line
        on View as them and Order as them, or a lapsed session's, each a notice with its one quiet pill; then the places; then one dock. */
-    + '<div id="tabs" class="amb-shell amb-shell--rail" data-mood="lagoon" hidden>'
+    + '<div id="tabs" class="amb-shell amb-shell--rail amb-shell--page" data-mood="lagoon" hidden>'
     + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
     + '<main class="amb-screen amb-screen--docked">'
     + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")

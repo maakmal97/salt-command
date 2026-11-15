@@ -379,6 +379,7 @@ export const EN = {
   /* ---- NOTIFICATIONS, on This device, the order sheet and Orders ---- */
   "push.h": "Notifications",
   "bell.call": "Turn on notifications",
+  "bell.short": "Turn on",
   "bell.off": "Notifications are off",
   "bell.on": "Notifications",
   "bell.h": "Notifications are blocked",
