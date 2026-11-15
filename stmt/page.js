@@ -6139,6 +6139,8 @@ const CLIENT_JS = `
     if(oTopEl&&!none) col.appendChild(oTopEl);
     col.appendChild(el('h2','amb-section',tw('ord.yours'))); col.appendChild(oList(id));
     if(open&&!wide) col.hidden=true;
+    /* the record's foot is the one main action beside an open order: New order then stands quiet */
+    var nbq=oTopEl&&oTopEl.querySelector('#oNew'); if(nbq) nbq.classList.toggle('amb-pill--quiet',wide&&!!o);
     pOrder.appendChild(col);
     if(o) pOrder.appendChild(oScreen(o));
     else if(none){ var rec=el('div','amb-stack orecord'); if(oTopEl) rec.appendChild(oTopEl); pOrder.appendChild(rec); }
