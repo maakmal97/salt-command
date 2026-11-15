@@ -168,7 +168,8 @@ export async function run({ ok }) {
     const whyA = t(R0[A.id].querySelector(".ocard__what"));
     tab(S, "home");
     await until(() => /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))));
-    ok(whyA === "Waiting for us to confirm" && /[Ww]aiting for us to confirm/.test(t(S.d.getElementById("hComing"))),
+    /* 16 Nov 2026, the move to Ambient: Coming up names the state, then its words in lower case ("Placed, waiting for us to confirm"), so the row is read whole and the old family looked for in any case */
+    ok(whyA === "Waiting for us to confirm" && /Placed, waiting for us to confirm/.test(t(S.d.getElementById("hComing"))) && !/sent, waiting(?! for us to confirm)/i.test(t(S.d.getElementById("hComing"))),
       "a placed order is waiting on the same words in the list's reason and on Home's Coming up: " + JSON.stringify([whyA, t(S.d.getElementById("hComing")).slice(0, 80)]));
 
     /* ---- 3: no word of the family in any text the page renders; Place and the order sheet driven too */
