@@ -509,7 +509,7 @@ export const FEATURES = [
     && new Set(f.orders.filter((o) => OPEN_STATES.includes(o.status)).map((o) => o.sheet || o.id)).size < 5],
   ["the way on Prices, the newest order's, a delivery with its place (Counter Batch B)", (f) => { const n = f.orders.slice().sort((a, b) => String(b.at).localeCompare(String(a.at)))[0];
     return !!n && n.mode === "deliver" && !!String(n.place || "").trim(); }],
-  ["This year on Home, off the live statement's lines this year (Counter Batch A)", (f) => !!(f.live && new RegExp('salt-lines__row[^"]*" role="row" data-m="' + new Date(Date.parse(f.at) + 8 * 3600e3).toISOString().slice(0, 4)).test(f.live.body || ""))],
+  ["This year on Home, off the live statement's lines this year (Counter Batch A)", (f) => !!(f.live && new RegExp('<tr[^>]* data-m="' + new Date(Date.parse(f.at) + 8 * 3600e3).toISOString().slice(0, 4)).test(f.live.body || ""))],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
   ["first-week orders of people an associate brought in, counted toward their reward (R3, 03 Nov 2026)", (f) => !!(f.card && f.card.products.some((p) => p.reward && +p.reward.r3 > 0))],
