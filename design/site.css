@@ -94,13 +94,6 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .recgrid.open .recnone { display: none; }
 /* a menu row names the form, the count of what it holds at the right */
 .mfig:empty { display: none; }
-/* the help's four answers, a disclosure row as a settings row (Ambient has no disclosure part yet) */
-.ahelp-list .ahelp__q { border-bottom: 1px solid var(--amb-line); }
-.ahelp-list li:last-child > .ahelp__q { border-bottom: 0; }
-.ahelp-list .ahelp__sum { display: flex; align-items: center; gap: var(--amb-space-3); min-height: 56px; padding: 6px 0; cursor: pointer; list-style: none; font-size: var(--amb-text-callout); }
-.ahelp-list .ahelp__sum::-webkit-details-marker { display: none; }
-.ahelp-list .ahelp__sum > .ahelp__t { flex: 1 1 auto; min-width: 0; }
-.ahelp-list .ahelp__a { margin: 0 0 var(--amb-space-3); font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
 /* a list of found places stands under its field only while it holds one */
 .apoints-found { margin: 0; }
 /* the form's status and the mood of a read-only row */

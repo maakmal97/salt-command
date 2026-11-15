@@ -1,9 +1,80 @@
 [
- {"name":"no Help on his page","file":"stmt/page.js","find":"        + helpCard(true)\n","replace":""},
- {"name":"the answers left out","file":"stmt/page.js","find":"    + wt(\"p\", 'class=\"ahelp__a\"', \"help.\" + k + \"A\") + \"</details>\" + (owner ? \"</li>\" : \"\");","replace":"    + \"</details>\" + (owner ? \"</li>\" : \"\");"},
- {"name":"a question missing","file":"stmt/page.js","find":"  const rows = [\"pay\", \"deliv\", \"coll\", \"change\"].map(row).join(\"\");","replace":"  const rows = [\"pay\", \"deliv\", \"coll\"].map(row).join(\"\");"},
- {"name":"the folds open","file":"stmt/page.js","find":"const row = (k) => (owner ? \"<li>\" : \"\") + '<details class=\"ahelp__q\"><summary","replace":"const row = (k) => (owner ? \"<li>\" : \"\") + '<details class=\"ahelp__q\" open><summary"},
- {"name":"an Edit button","file":"stmt/page.js","find":"'<h2 id=\"mHelpH\" class=\"amb-section\">Help</h2>'","replace":"'<h2 id=\"mHelpH\" class=\"amb-section\">Help</h2><button type=\"button\">Edit</button>'"},
- {"name":"on every Shop part","file":"stmt/page.js","find":"(owner ? ' data-in=\"shop.hours\"' : \"\")","replace":"(owner ? ' data-in=\"shop\"' : \"\")"},
- {"name":"his copy takes the customer id","file":"stmt/page.js","find":"'<section id=\"' + (owner ? \"mHelp\" : \"aHelp\")","replace":"'<section id=\"' + (owner ? \"aHelp\" : \"aHelp\")"}
+ {
+  "name": "no Help on his page",
+  "file": "stmt/page.js",
+  "find": "        + helpCard(true)\n",
+  "replace": ""
+ },
+ {
+  "name": "the answers left out",
+  "file": "stmt/page.js",
+  "find": "      + wt(\"p\", 'class=\"amb-disclose__text ahelp__a\"', \"help.\" + k + \"A\") + \"</details></li>\"",
+  "replace": "      + \"</details></li>\""
+ },
+ {
+  "name": "a question missing",
+  "file": "stmt/page.js",
+  "find": "  const rows = [\"pay\", \"deliv\", \"coll\", \"change\"].map(row).join(\"\");",
+  "replace": "  const rows = [\"pay\", \"deliv\", \"coll\"].map(row).join(\"\");"
+ },
+ {
+  "name": "the folds open",
+  "file": "stmt/page.js",
+  "find": "<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\">",
+  "replace": "<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\" open>"
+ },
+ {
+  "name": "an Edit button",
+  "file": "stmt/page.js",
+  "find": "'<h2 id=\"mHelpH\" class=\"amb-section\">Help</h2>'",
+  "replace": "'<h2 id=\"mHelpH\" class=\"amb-section\">Help</h2><button type=\"button\">Edit</button>'"
+ },
+ {
+  "name": "on every Shop part",
+  "file": "stmt/page.js",
+  "find": "(owner ? ' data-in=\"shop.hours\"' : \"\")",
+  "replace": "(owner ? ' data-in=\"shop\"' : \"\")"
+ },
+ {
+  "name": "his copy takes the customer id",
+  "file": "stmt/page.js",
+  "find": "'<section id=\"' + (owner ? \"mHelp\" : \"aHelp\")",
+  "replace": "'<section id=\"' + (owner ? \"aHelp\" : \"aHelp\")"
+ },
+ {
+  "name": "1b a question is a plain details",
+  "file": "stmt/page.js",
+  "find": "'<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\">",
+  "replace": "'<li><details class=\"ahelp__q\" name=\"shop-help\">"
+ },
+ {
+  "name": "1b each question opens on its own",
+  "file": "stmt/page.js",
+  "find": "'<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\">",
+  "replace": "'<li><details class=\"amb-disclose ahelp__q\">"
+ },
+ {
+  "name": "1b the summary is no settings row",
+  "file": "stmt/page.js",
+  "find": "<summary class=\"amb-setting ahelp__sum\" data-act=",
+  "replace": "<summary class=\"ahelp__sum\" data-act="
+ },
+ {
+  "name": "1b the chevron is the old next glyph",
+  "file": "stmt/page.js",
+  "find": "'<svg class=\"amb-icon amb-icon--sm amb-disclose__mark\" aria-hidden=\"true\"><use href=\"#amb-chevron\"/></svg></summary>'",
+  "replace": "glyphSvg(\"next\", 18) + '</summary>'"
+ },
+ {
+  "name": "1b the answer is not Ambient's text",
+  "file": "stmt/page.js",
+  "find": "wt(\"p\", 'class=\"amb-disclose__text ahelp__a\"'",
+  "replace": "wt(\"p\", 'class=\"ahelp__a\"'"
+ },
+ {
+  "name": "1b the page draws its own disclosure",
+  "file": "stmt/page.js",
+  "find": ".ahelp{margin:0}\n",
+  "replace": ".ahelp{margin:0}\n.ahelp-list .ahelp__sum{min-height:56px}\n"
+ }
 ]

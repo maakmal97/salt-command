@@ -133,7 +133,7 @@ export async function run({ ok, pageWork }) {
       "New point is Code and Place fields and Add point, and Save the points the one filled pill");
     /* P3.4: Help, read only, a list under a heading */
     const help = p.d.getElementById("mHelp");
-    ok(!!help && p.d.getElementById("mHelpH").classList.contains("amb-section") && help.querySelectorAll(".ahelp-list > .amb-settings__list > li > details").length === 4 && !!help.querySelector(".ahelp-list > .amb-settings__foot"),
+    ok(!!help && p.d.getElementById("mHelpH").classList.contains("amb-section") && /* 16 Nov 2026, the move to Ambient (0.7.4): the list is Ambient's own settings group, its rows disclosure rows */ help.querySelectorAll(":scope > .amb-settings > .amb-settings__list > li > details.amb-disclose").length === 4 && !!help.querySelector(":scope > .amb-settings > .amb-settings__foot"),
       "Help is a list of its four answers under a heading, one grey line under it");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 

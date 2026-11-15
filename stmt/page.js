@@ -532,8 +532,6 @@ const PAGE_CSS = `
 .adm .anow-src{color:var(--salt-mist-bright)}
 .adm .ahold-seg{flex:0 0 180px}
 /* 27 Oct 2026: a choice of two or three words in a row of Record's forms, as Hold as is on Hours */
-.adm .ahelp-list .ahelp__q:first-of-type{margin-top:0;border-top:0}
-.adm .ahelp-list .ahelp__sum{min-height:56px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -1154,16 +1152,23 @@ function keepPage() {
    customer's Account, the test accounts' included; never on Salt Admin's Account.
    21 Oct 2026 (Salt Admin A to C, P8): owner true draws the same four, read only, on Salt Admin's Shop > Hours, so he reads what the
    customer is told beside the hours that answer it; the words are the same keys, nothing there edits them. */
+/* 16 Nov 2026, the move to Ambient (0.7.4): on Salt Admin each question is Ambient's disclosure row in the settings list, one open at a time
+   (the group's own name, shop-help), its chevron turning; the old classes stay beside Ambient's as the checks' hooks. The customer's card is place D's. */
 function helpCard(owner) {
-  const row = (k) => (owner ? "<li>" : "") + '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
-    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>" + (owner ? "</li>" : "");
+  const row = (k) => owner
+    ? '<li><details class="amb-disclose ahelp__q" name="shop-help"><summary class="amb-setting ahelp__sum" data-act="shop.help.' + k + '">'
+      + wt("span", 'class="amb-setting__name ahelp__t"', "help." + k)
+      + '<svg class="amb-icon amb-icon--sm amb-disclose__mark" aria-hidden="true"><use href="#amb-chevron"/></svg></summary>'
+      + wt("p", 'class="amb-disclose__text ahelp__a"', "help." + k + "A") + "</details></li>"
+    : '<details class="ahelp__q"><summary class="ahelp__sum">' + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
+      + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
   /* 26 Oct 2026 (his word): on Salt Admin the four are a list of settings under a grey head, one grey line under it */
   const head = owner ? '<h2 id="mHelpH" class="amb-section">Help</h2>'
     : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
   const rows = ["pay", "deliv", "coll", "change"].map(row).join("");
   return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
     + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
-    + head + (owner ? '<div class="amb-settings ahelp-list"><ul class="amb-settings__list">' + rows + '</ul><p class="amb-settings__foot">What a customer reads under Account, Help.</p></div>' : rows) + "</section>";
+    + head + (owner ? '<div class="amb-settings"><ul class="amb-settings__list">' + rows + '</ul><p class="amb-settings__foot">What a customer reads under Account, Help.</p></div>' : rows) + "</section>";
 }
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
