@@ -1520,7 +1520,7 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
   /* a switch of a few choices stacks them, and a tab keeps its glyph and its name but shows only the glyph */
   .amb-segment { flex-wrap: wrap; border-radius: var(--amb-radius-lg); }
   .amb-segment__opt { flex: 1 1 auto; border-radius: var(--amb-radius-md); }
-  .amb-tab > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .amb-tab > span:not(.amb-tab__count) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* with its name out of sight, the tab one is on is marked by a bar as well as by its colour */
   .amb-tab[aria-current="page"]::after { content: ""; width: 1.25rem; height: 3px; border-radius: 2px; background: currentColor; }
 }
@@ -1547,4 +1547,98 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
   .amb-meter::-webkit-progress-bar { background: Canvas; }
   .amb-meter::-webkit-progress-value { background: Highlight; }
   .amb-meter::-moz-progress-bar { background: Highlight; }
+}
+
+/* ---- 0.7.2, for the Salt apps' move: a count on a tab, a ringed thumb that holds an app's own mark, a week
+   of open hours, and a rating ---- */
+/* A tab's count: how many things wait in that place, drawn only while there is one or more. On the tab bar
+   it is a small solid count over the glyph's upper right, the accent with its own ink, as the pill's; on
+   the rail it is the figure alone at the row's end, in the second ink, the accent on the tab one is on.
+   It stands clear of the glyph's upper right, ringed in the bar's own ground.
+   The count is for the eye (aria-hidden): the tab carries its whole name in aria-label, its own word first,
+   "Orders, 3 waiting". It is part of the tab and never a target of its own. */
+.amb-tab:has(> .amb-tab__count) { position: relative; }
+.amb-tab > .amb-tab__count { position: absolute; top: -4px; left: calc(50% + 9px); box-sizing: border-box; min-width: 20px; max-width: none; height: 20px; padding: 0 6px; overflow: visible; border-radius: var(--amb-radius-pill); background: var(--amb-accent); color: var(--amb-on-accent); font-size: var(--amb-text-caption); font-weight: 700; line-height: 20px; letter-spacing: 0; text-align: center; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 2px var(--amb-solid-capsule); pointer-events: none; }
+@container amb (min-width: 960px) {
+  .amb-shell--rail > .amb-dock .amb-tab > .amb-tab__count { box-shadow: none; position: static; min-width: 0; height: auto; margin-left: auto; padding: 0; background: none; color: var(--amb-ink-2); font-size: var(--amb-text-footnote); font-weight: 600; line-height: inherit; }
+  .amb-shell--rail > .amb-dock .amb-tab[aria-current="page"] > .amb-tab__count { color: var(--amb-accent); }
+}
+
+/* A ringed thumb that holds an app's own mark: the shape the app supplies as path data, filled in the ink
+   (the ring carries the kind's hue; the shape stays in the ink, so a set of marks reads even), and under
+   it a word of one to four letters, never under 12px. Three sizes: 44px in a row or a card, where the word
+   is dropped and the shape stands alone (its name stands beside it in ink); 56px, the default; and 72px
+   for a start tile. The sizes are any thumb's, in order: amb-thumb--sm 36px, amb-thumb--md 44px, the default
+   56px, amb-thumb--lg 72px. A 44px mark always has its name beside it: two shapes can be near twins. */
+.amb-thumb--md { width: 44px; height: 44px; }
+.amb-thumb--lg { width: 72px; height: 72px; }
+/* a row led by a 44px thumb starts its hairline where its text does, 12px past the thumb */
+.amb-row:has(> .amb-thumb--md) { --amb-hairline-inset: 56px; }
+.amb-thumb--mark { align-content: center; gap: 2px; }
+.amb-thumb__shape { display: block; width: 26px; height: 26px; fill: currentColor; stroke: none; }
+.amb-thumb__word { display: block; font-size: var(--amb-text-caption); font-weight: 800; line-height: 1; letter-spacing: .02em; color: var(--amb-ink); white-space: nowrap; }
+.amb-thumb--md > .amb-thumb__word { display: none; }
+.amb-thumb--md > .amb-thumb__shape { width: 24px; height: 24px; }
+.amb-thumb--lg > .amb-thumb__shape { width: 36px; height: 36px; }
+.amb-thumb--lg > .amb-thumb__word { font-size: var(--amb-text-footnote); }
+
+/* A week of open hours: a row a day, Mon to Sun and then any dated days, each its name, a bar of the day's
+   24 hours and the day's hours in words under it. The bar is an inline SVG in hours (viewBox 0 0 24 1), so a
+   span's x and width are its open and its length. A close earlier than the open runs past midnight: the
+   evening is drawn to 24 on its own day and the hours after midnight at the head of the next day's bar,
+   as a strip two fifths as tall, and that day's words open with it (Until 02:00 from Fri, then ...), so the words
+   say all the bar shows. The day open in the record beside it is aria-current on its button, its bar on the
+   surface so its closed hours still show. Lines at 06, 12 and 18 under the spans. Dated days stand apart
+   after Sun, the first of them amb-week__dated. */
+.amb-week, .amb-week__axis { --amb-week-name: 5.5rem; }
+.amb-week { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.amb-week__day { -webkit-appearance: none; appearance: none; box-sizing: border-box; display: grid; grid-template-columns: var(--amb-week-name) minmax(0, 1fr); grid-template-areas: "name bar" ". said"; align-items: center; gap: 2px var(--amb-space-3); width: calc(100% + 16px); min-height: var(--amb-tap); margin-inline: -8px; padding: 6px 8px; border: 0; border-radius: var(--amb-radius-md); background: none; color: inherit; font: inherit; text-align: left; }
+button.amb-week__day { cursor: pointer; touch-action: manipulation; }
+.amb-week__day[aria-current="true"] { background: var(--amb-well); }
+.amb-week__day[aria-current="true"] .amb-week__bar { background-color: var(--amb-surface); }
+.amb-week > .amb-week__dated { margin-top: var(--amb-space-3); padding-top: var(--amb-space-3); border-top: 1px solid var(--amb-line); }
+.amb-week__name { grid-area: name; min-width: 0; font-size: var(--amb-text-subhead); font-weight: 600; line-height: 1.25; overflow-wrap: normal; }
+.amb-week__day[aria-current="true"] .amb-week__name { color: var(--amb-accent); font-weight: 700; }
+.amb-week__bar { grid-area: bar; display: block; box-sizing: border-box; width: 100%; height: 20px; overflow: hidden; border: 1px solid var(--amb-line-field); border-radius: 4px; color: var(--amb-series-1);
+  background: linear-gradient(var(--amb-line), var(--amb-line)) 25% 0 / 1px 100% no-repeat, linear-gradient(var(--amb-line), var(--amb-line)) 50% 0 / 1px 100% no-repeat, linear-gradient(var(--amb-line), var(--amb-line)) 75% 0 / 1px 100% no-repeat, var(--amb-well); }
+.amb-week__bar > rect { fill: currentColor; }
+.amb-week__said { grid-area: said; min-width: 0; font-size: var(--amb-text-footnote); line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-week__axis { display: flex; justify-content: space-between; margin: 4px 0 0; padding: 0 0 0 calc(var(--amb-week-name) + var(--amb-space-3)); list-style: none; font-size: var(--amb-text-caption); line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+/* each hour a point: a label as wide as nothing, centred on its line, the ends held in */
+.amb-week__axis > li { display: flex; justify-content: center; width: 0; white-space: nowrap; }
+.amb-week__axis > li:first-child { justify-content: flex-start; }
+.amb-week__axis > li:last-child { justify-content: flex-end; }
+.amb-week__key { flex: none; width: 18px; height: 12px; border-radius: 3px; background: var(--amb-series-1); }
+.amb-week__key--carry { height: 4px; border-radius: 2px; }
+@media (hover: hover) {
+  button.amb-week__day:not([aria-current="true"]):hover { background: var(--amb-hover); }
+}
+
+/* A rating: one to five stars, chosen once. Five real radios, each under a star 44px across, the stars up to
+   the one chosen filled in the accent and the rest drawn in the field's line. Once chosen it is shown, not
+   asked again: the stars, smaller and not a control, then the figure in words, "4 of 5". */
+.amb-rating { min-width: 0; margin: 0; padding: 0; border: 0; }
+fieldset.amb-rating { display: grid; gap: var(--amb-space-1); }
+/* the first star stands under the question, its target reaching past it */
+fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
+.amb-rating__stars { display: flex; align-items: center; }
+.amb-rating__star { position: relative; display: grid; place-items: center; width: var(--amb-tap); height: var(--amb-tap); border-radius: 50%; color: var(--amb-line-field); cursor: pointer; touch-action: manipulation; }
+.amb-rating__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.amb-rating__star > .amb-icon { width: 30px; height: 30px; stroke-width: 1.75; }
+.amb-rating__star:has(> .amb-rating__input:checked), .amb-rating__star:has(~ .amb-rating__star > .amb-rating__input:checked) { color: var(--amb-accent); }
+.amb-rating__star:has(> .amb-rating__input:checked) > .amb-icon, .amb-rating__star:has(~ .amb-rating__star > .amb-rating__input:checked) > .amb-icon { fill: currentColor; }
+.amb-rating__star:has(> .amb-rating__input:focus-visible) { outline: 2px solid var(--amb-accent); outline-offset: -2px; }
+.amb-rating--shown { display: flex; align-items: center; gap: var(--amb-space-2); }
+.amb-rating--shown .amb-rating__stars { gap: 2px; }
+.amb-rating--shown .amb-icon { width: 20px; height: 20px; stroke-width: 1.75; color: var(--amb-line-field); }
+.amb-rating--shown .amb-icon.is-on { color: var(--amb-accent); fill: currentColor; }
+.amb-rating__said { font-size: var(--amb-text-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (hover: hover) {
+  /* before a choice, a pointer shows what a tap would choose, in the second ink */
+  fieldset.amb-rating:not(:has(:checked)) .amb-rating__star:is(:hover, :has(~ .amb-rating__star:hover)) { color: var(--amb-ink-2); }
+}
+@media (forced-colors: active) {
+  .amb-tab > .amb-tab__count { border: 1px solid CanvasText; box-shadow: none; }
+  .amb-week__bar { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
+  .amb-rating__star:has(> .amb-rating__input:checked), .amb-rating__star:has(~ .amb-rating__star > .amb-rating__input:checked), .amb-rating--shown .amb-icon.is-on { color: Highlight; }
 }
