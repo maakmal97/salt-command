@@ -7,21 +7,9 @@
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, enter } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
-import { JSDOM } from "jsdom";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const J = JSON.stringify;
-
-function pageRules() {
-  const html = landingPage("", "assoc-nonce", { master: "fixture-master", accounts: [] });
-  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
-  const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
-  const out = [];
-  const walk = (rules, media) => { for (const r of rules) { if (r.selectorText) out.push([media + r.selectorText, r.style]); if (r.cssRules) walk(r.cssRules, r.conditionText ? "@" + r.conditionText + " " : media); } };
-  walk(sheet.cssRules, "");
-  return out;
-}
 
 export async function run({ ok, pageWork }) {
   const p = await richOwnerPage({ pageWork, assocAnswer: (j) => ({ ...j, products: [
@@ -31,27 +19,26 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     await p.work.quiet();
     enter(d, "customers", "associates"); await p.work.quiet();
+    /* 16 Nov 2026, the move to Ambient (place H): a book is its section head with its chip and how many; its associates one Table that stacks where there is no room, the reward Ambient's meter */
     /* 1 */
-    const heads = [...d.querySelectorAll("#clist .aprodhead")];
-    ok(heads.length === 2 && J(heads.map((h) => [t(h.querySelector("h2 .salt-producttag")), t(h.querySelector(".salt-status"))])) === J([["Salt", "1 associate"], ["Oil", "1 associate"]])
-      && heads.every((h) => t(h.querySelector("h2")) === t(h.querySelector("h2 .salt-producttag"))),
-      "a book is its typed tag and how many: " + J(heads.map(t)));
+    const heads = [...d.querySelectorAll("#clist h2.aprodhead")];
+    ok(heads.length === 2 && J(heads.map((h) => [t(h.querySelector(".aprodtag")), t(h.querySelector(".amb-section__note"))])) === J([["Salt", "1 associate"], ["Oil", "1 associate"]])
+      && heads.every((h) => !!h.querySelector(".aprodtag .amb-chip.amb-kind-1, .aprodtag .amb-chip[class*='amb-kind-']")),
+      "a book is its chip and how many: " + J(heads.map(t)));
     /* 2 */
-    const card = d.querySelector("#clist .aclist .acard"), cells = [...card.querySelectorAll(".acell")].map(t), m = card.querySelector(".salt-meter");
-    ok(J(cells) === J(["BoughtRM 2,480.00", "SoldRM 1,150.00", "IntroducedRM 640.00"]) && !!m && t(m.querySelector(".salt-meter__line")) === "Reward 1.4 left80% to next"
-      && m.style.getPropertyValue("--salt-fill") === "80" && !card.querySelector(".pbar") && !d.querySelectorAll("#clist .aclist .acard")[1].querySelector(".salt-meter"),
-      "a card's figures and the reward as a Meter on salt alone: " + J([cells, m && t(m)]));
+    const tables = [...d.querySelectorAll("#clist table.amb-table--stack")];
+    const row = tables[0] && [...tables[0].querySelectorAll("tbody tr")[0].children];
+    const m = row && row[8].querySelector("progress.amb-meter");
+    ok(tables.length === 2 && J(row.slice(0, 5).map(t)) === J(["CX1-ZED", "founder · #1 · ★★★", "RM 2,480.00", "RM 1,150.00", "RM 640.00"]) && t(row[5]) === "3"
+      && J([...tables[0].querySelectorAll("thead th")].map(t)) === J(["Associate", "Standing", "Bought", "Sold", "Introduced", "Resales", "Referred", "Share", "Reward, units"])
+      && !!m && m.value === 80 && /3 earned, 1 taken, 1.4 left, 80% to next/.test(t(row[8])) && row.every((c) => c.hasAttribute("data-label")) && !tables[1].querySelector("progress")
+      && !d.querySelector("#clist .atable table, #clist .salt-table-wrap, #clist .aclist"),
+      "an associate is a row of one stacking table, every cell labelled, the reward a meter on salt alone: " + J(row && row.map(t)));
     /* 3 */
-    const tables = [...d.querySelectorAll("#clist .atable table.salt-table--plain")];
-    const row = tables[0] && [...tables[0].querySelectorAll("tbody tr")[0].children].map(t);
-    const R = pageRules(), rule = (sel) => (R.find((x) => x[0] === sel) || [, null])[1];
-    const wide = rule("@(min-width:860px) .adm .atable"), list = rule("@(min-width:860px) .adm .aclist"), base = rule(".adm .atable");
-    ok(tables.length === 2 && J(row) === J(["CX1-ZED", "founder · #1 · ★★★", "RM 2,480.00", "RM 1,150.00", "RM 640.00", "Reward 1.4 left80% to next"])
-      && J([...tables[0].querySelectorAll("thead th")].map(t)) === J(["Associate", "Standing", "Bought", "Sold", "Introduced", "Reward, units"])
-      && !!base && base.getPropertyValue("display") === "none" && !!wide && wide.getPropertyValue("display") === "block" && !!list && list.getPropertyValue("display") === "none",
-      "the same book is one plain table from 860px, the cards hidden there: " + J(row));
+    ok(row[0].querySelector("button.amb-pill--quiet") && row[0].querySelector("button").getAttribute("data-act") === "assoc.open-row" && [...tables[0].querySelectorAll("thead th")].slice(2, 8).every((h) => h.classList.contains("is-num")),
+      "the code is a small quiet pill that opens the account, the figures right: " + (row && t(row[0])));
     /* 4 */
-    await click(d.querySelector('#clist .aclist [data-act="assoc.open"]'));
+    await click(d.querySelector('#clist [data-act="assoc.open-row"]'));
     ok(!d.getElementById("oAccts").hidden && !!d.querySelector('#aopen [data-acct="abcd-efgh"]'), "the code opens the associate's account");
   } finally { p.w.close(); }
 }
