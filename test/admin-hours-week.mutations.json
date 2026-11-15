@@ -38,5 +38,5 @@
  {"name":"a picker is not the Ambient input","file":"stmt/owner.js","find":"select.classList.add('amb-input'); var w=el('span','amb-select');","replace":"var w=el('span','amb-select');"},
  {"name":"a day's button is no action","file":"stmt/owner.js","find":"var b=actOn(el('button','amb-action'+(danger?' amb-action--danger':''),label),act,key); b.type='button'; return b;","replace":"var b=actOn(el('button','salt-ghost'+(danger?' amb-action--danger':''),label),act,key); b.type='button'; return b;"},
  {"name":"the preview line is not drawn","file":"stmt/owner.js","find":"var pv=sFoot('','maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status'); box.appendChild(pv);","replace":"var pv=sFoot('','maker-preview'); pv.id='makerHoursPreview'; pv.setAttribute('role','status');"},
- {"name":"the preview is sent as a write","file":"stmt/owner.js","find":"refs('/all/maker/hours?preview='+encodeURIComponent(JSON.stringify(hrsWeekOut())))","replace":"refs('/all/maker/hours',{preview:hrsWeekOut()})"}
+ {"name":"the preview is sent as a write to the week's own route","file":"stmt/owner.js","find":"refs('/all/maker/hours?preview='+encodeURIComponent(JSON.stringify(hrsWeekOut())))","replace":"refs('/all/maker/hours',{preview:hrsWeekOut()})"}
 ]
