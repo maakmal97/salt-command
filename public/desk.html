@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="8f56d49dff5a8cee";
+var SALT_BUILD_ID="5b38a7d028aa2a95";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -1698,9 +1698,9 @@ details.obs>summary{min-height:var(--tap);}
   --salt-tap: 44px;                      /* the least a control may measure, either way */
   --salt-bar-h: 4rem;                    /* the phone's bar of places, above the safe area: 64px at the
                                             default text size, and in rem so it grows with the words in it */
-  --salt-page-max: 1376px;               /* 1.32.0, his word of 15 Nov 2026: the one widest the page stands on every Salt
-                                            surface (the Desk, Salt Admin, Salt Counter), its gutters outside it; each
-                                            surface's frame reads it, so all three are the same width at every screen */
+  --salt-page-max: 1376px;               /* 1.32.0, his word of 15 Nov 2026: the widest a page stands, its gutters outside
+                                            it; every surface's frame reads it, so each is the same width at every
+                                            screen (1.32.1: the comment names no surface, as a served page must not) */
   --salt-sheet-radius: var(--salt-radius-lg); /* the top corners of a sheet, the inner corners of a drawer */
 
   /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
