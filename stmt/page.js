@@ -179,9 +179,6 @@ const PAGE_CSS = `
 .row2{display:flex;gap:8px}
 .row2 .fld{flex:1}
 .seg{display:flex;gap:8px;margin-top:6px}
-.pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-.pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
-.pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
 /* 16 NOV 2026, THE MOVE TO AMBIENT: the Orders place is drawn in the system's parts and laid out in design/site.css (the orders' own section); what is left here is
    his page's, which reads a settled figure in the book's colour, and the note under a part that their reward paid (coverTo) */
 .adm .osettled{color:var(--salt-verdigris)}

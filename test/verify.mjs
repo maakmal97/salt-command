@@ -21490,7 +21490,7 @@ await (async () => {
     const pickM = (v) => { msel.value = v; msel.dispatchEvent(new W.Event("change", { bubbles: true })); };
     const shown = () => [...D.querySelectorAll("#fsOut tr[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
     const months = [...new Set(shown())];
-    ok(!strip.hidden && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
+    ok(!strip.hidden && !!strip.querySelector("label.amb-field .amb-select > select.amb-input") && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
       && strip.nextElementSibling === note && note.nextElementSibling === D.getElementById("fsOut") && !!list && !D.getElementById("mos"),
       "one filter, All first and chosen, on the list it filters: " + JSON.stringify(mopts.map((b) => b.textContent)));
     const one = mopts[mopts.length - 1].value;
@@ -21745,6 +21745,9 @@ await (async () => {
   const st = cells(live, "Status"), dt = cells(live, "Date");
   ok(st.some((x) => /^settled paid 20 Sep 2026$/.test(x)) && st.some((x) => /^paid in full paid 07 Aug 2026 /.test(x)) && st.some((x) => /^RM 60\.00 due$/.test(x))
     && !dt.some((x) => /paid/.test(x)), "every fully paid row says when it was paid under its state word, the same day too, and the date cell carries the order's date alone (C4): " + JSON.stringify([st, dt]));
+  /* 16 Nov 2026 (place D): a debt is a loss chip with its dot and word, a settled line a gain, and the live document carries no salt- class at all */
+  ok(/<span class="amb-chip amb-chip--neg"><span class="amb-chip__dot"><\/span>RM 60\.00 due<\/span>/.test(live) && /<span class="amb-chip amb-chip--pos"><span class="amb-chip__dot"><\/span>settled<\/span>/.test(live) && !/salt-/.test(live.slice(live.indexOf("<body>"))),
+    "a debt is a loss chip with its word, a settled row a gain chip, and no salt- class is left in the live document: " + JSON.stringify([live.includes('amb-chip--neg"><span class="amb-chip__dot"></span>RM 60'), live.includes('amb-chip--pos"><span class="amb-chip__dot"></span>settled'), (live.slice(live.indexOf("<body>")).match(/.{20}salt-.{20}/g) || []).slice(0, 2)]));
   /* C5: the live footer's every figure carries RM, as its lines do; an issue's footer is as it was sent */
   const figs = (h) => h.includes('class="amb-settings tot"')
       ? [...h.slice(h.indexOf('class="amb-settings tot"'), h.indexOf("</ul></div>", h.indexOf('class="amb-settings tot"'))).matchAll(/<span class="amb-setting__value[^"]*">([^<]*)<\/span>/g)].map((m) => m[1])   /* 16 Nov 2026: the live foot is a group of the system's settings */
@@ -27044,7 +27047,7 @@ await (async () => {
       && /Two groups of four, like abcd-efgh\./.test(text) && /Pasting the whole message works: we keep only the password\./.test(text),
       "the door says Sign in, what to sign in with, and how each field is written");
     const tick = D.getElementById("rem"), tickText = tick.closest("label").textContent;
-    ok(tick.checked && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
+    ok(tick.checked && tick.getAttribute("role") === "switch" && tick.classList.contains("amb-switch") && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
     const help = [...gate.querySelectorAll(".amb-field__hint")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now; 16 Nov 2026: the system's field hint under the form */
     ok(!!help && /ask us for a new sign-in link\./.test(help.textContent)
       && (help.compareDocumentPosition(D.getElementById("go")) & D.defaultView.Node.DOCUMENT_POSITION_PRECEDING) !== 0,
@@ -39742,6 +39745,7 @@ await (async () => {
   let retried = null;
   console.log = () => {};
   try { retried = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret", retry: true }); }
+  catch (e) { retried = null; }
   finally { console.log = quiet72; }
   ok(retried && existsSync(join(root72, "2026-10", "_kv")),
     "with a retry asked for it goes through, keeping the passwords already issued, which is what a retry after a failure is");

@@ -1,0 +1,4 @@
+[
+ {"name":"the question's heading is a bare heading","file":"stmt/page.js","find":"box.appendChild(el('h3','amb-section',tw('pay.did',{rm:rm(w.amt)})));","replace":"box.appendChild(el('h3','',tw('pay.did',{rm:rm(w.amt)})));"},
+ {"name":"the question's mark is not the system's","file":"stmt/page.js","find":"box.appendChild(ambIcon(qr?'qr':jom?'doc':'bank','paycheck__mark'));","replace":"box.appendChild(el('span','paycheck__mark'));"}
+]

@@ -1,0 +1,4 @@
+[
+ {"name":"Home's year reads no line of the Table","file":"stmt/page.js","find":"> tbody > tr[data-m]'),function(r){","replace":"> tbody > tr.nope'),function(r){"},
+ {"name":"Home's year counts a cancelled line","file":"stmt/page.js","find":"if(m.slice(0,4)!==y||!mq||r.classList.contains('is-off')) return;","replace":"if(m.slice(0,4)!==y||!mq) return;"}
+]

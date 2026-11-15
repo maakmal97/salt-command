@@ -1,0 +1,7 @@
+[
+ {"name":"the orders are not a table","file":"tools/make_statements.mjs","find":"'<table class=\"amb-table amb-table--stack\"'+(mark?' data-lines=\"'+mark+'\"':'')","replace":"'<div class=\"amb-table amb-table--stack\"'+(mark?' data-lines=\"'+mark+'\"':'')"},
+ {"name":"a quantity says unit at every size","file":"tools/make_statements.mjs","find":"const units=q=>n2(q)+' '+(+q>1||+q===0?'units':'unit');","replace":"const units=q=>n2(q)+' unit';"},
+ {"name":"a month chosen filters nothing","file":"stmt/page.js","find":"rows[i].style.display=(!c.pick||m===c.pick)?'':'none';","replace":"rows[i].style.display='';"},
+ {"name":"the month select is not the system's","file":"stmt/page.js","find":"lab=el('label','amb-field'), wrap=el('span','amb-select')","replace":"lab=el('label','fld'), wrap=el('span','sel')"},
+ {"name":"Notifications is a button again","file":"stmt/page.js","find":"var b=el('input','amb-switch'); b.type='checkbox'; b.setAttribute('role','switch');","replace":"var b=el('input','amb-switch'); b.type='button'; b.setAttribute('role','switch');"}
+]

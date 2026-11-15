@@ -1,0 +1,3 @@
+[
+ {"name":"the door's hero is not the system's","file":"stmt/page.js","find":"'<header class=\"amb-hero amb-hero--compact amb-mesh\">' + (owner ? \"\" : wt(\"span\", 'class=\"amb-chip amb-chip--glass\"', \"door.app\"))","replace":"'<div class=\"amb-hero amb-hero--compact amb-mesh\">' + (owner ? \"\" : wt(\"span\", 'class=\"amb-chip amb-chip--glass\"', \"door.app\"))"}
+]

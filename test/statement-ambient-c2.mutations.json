@@ -1,0 +1,9 @@
+[
+ {"name":"a paid row says no day","file":"tools/make_statements.mjs","find":"const paidSaid=(o.dates&&r.paidOn)?'paid '+e(dLong(r.paidOn)):'';","replace":"const paidSaid='';"},
+ {"name":"the live foot's figures lose RM","file":"tools/make_statements.mjs","find":"const fig=v=>(o.live?'RM ':'')+money(v);","replace":"const fig=v=>money(v);"},
+ {"name":"a refund row loses its month","file":"tools/make_statements.mjs","find":"'<tr'+(r.date?' data-m=\"'+e(String(r.date).slice(0,7))+'\"':'')+'><td data-label=\"Date\">'+e(dLong(r.date))+'</td>'","replace":"'<tr><td data-label=\"Date\">'+e(dLong(r.date))+'</td>'"},
+ {"name":"the live title is an h1","file":"tools/make_statements.mjs","find":"o.live?'<h2 class=\"amb-section\">Statement of account</h2>'","replace":"o.live?'<h1 class=\"amb-section\">Statement of account</h1>'"},
+ {"name":"a due row is not a loss chip","file":"tools/make_statements.mjs","find":":due?['RM '+money(r.owed)+' due','neg',[]]","replace":":due?['RM '+money(r.owed)+' due','',[]]"},
+ {"name":"the test account keeps the retired lines","file":"stmt/worker.js","find":"'<h2 class=\"amb-section\">Test account</h2>'","replace":"'<h2 class=\"stmth\">Test account</h2>'"},
+ {"name":"the workings' heading is a paragraph","file":"tools/make_statements.mjs","find":"'<div class=\"amb-stack\"><h3 class=\"amb-section\">'+(R.owed>0.009?'How the '","replace":"'<div class=\"amb-stack\"><p class=\"amb-section\">'+(R.owed>0.009?'How the '"}
+]

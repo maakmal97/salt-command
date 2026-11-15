@@ -189,6 +189,12 @@ regenerates in place, keeping the passwords already issued, because minting fres
 invalidate every password already sent. A *different* issue date means a second issue in one
 month and the tool refuses. Do not talk it out of that.
 
+**A sealed issue is never written again by accident** (16 Nov 2026, the move to Ambient, place D). The live
+document's markup moved to the system's parts that day, so a same-date re-run over a set already sealed would
+redraw a past date's documents in today's code: the tool refuses it unless it is asked for in so many words,
+`--retry`, which is the retry after a failure and keeps the passwords already issued. An `--archive` holds no
+record and is not sealed, so it is let through. Proved red in test/v772-retry.mutations.json.
+
 ## How a customer reads it (03 Sep 2026, his instruction)
 
 **Not bound to a month** (v690, his instruction of 18 Sep 2026). The live statement has always
@@ -198,8 +204,11 @@ then the months the account has, newest first. Undated rows show whatever is cho
 own position under the list does not move with the filter.
 
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
-the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
-own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
+the system's Table (16 Nov 2026, the move to Ambient: `table.amb-table.amb-table--stack`, every `td` named by its
+`data-label`, a row `tr` carrying the `data-m`, `data-d`, `data-g`, `data-dv` and `data-b` the Counter reads; the mark is the system's
+thumb, `markThumbHtml` in `stmt/page.js`; the state is a chip; the foot and Still to collect are groups of settings), "units"
+above one; an issue is a standalone file and keeps its table. A sealed issue that still carries `.salt-lines` or `.salt-settings`
+reads through a small layer in `design/site.css`; nothing draws those classes now. **The account is the live
 document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter and out of every published record (15 Oct 2026), kept on disk and on
 his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
 publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
@@ -2417,7 +2426,7 @@ username is the pool's (E1); the passkey is offered on the account as ever. The 
 
 **One list** (plan version 7, his answers F and the plan's version 7 of 02 Nov 2026). The live statement's order lines carry `data-d` (the row's day),
 `data-g` (goods), `data-dv` (delivery) and `data-b` (the book's index in the page's own mark table, `Object.keys(PSYM)` less `_`), and their list
-`data-lines="orders"` (`tools/make_statements.mjs`); refund rows, the money rows and an issued statement carry none. The page (`stmt/page.js`
+`data-lines="orders"` (`tools/make_statements.mjs`; the table's `tbody > tr` since 16 Nov 2026, place D, which re-aimed `earlierLines`, `earlierRow` and Home's year at it); refund rows, the money rows and an issued statement carry none. The page (`stmt/page.js`
 `earlierLines`, `oEarlier`) holds a line by a site order when book, day (`rowOn` or `ackDayOf`), goods (`total`, or `closed.total`) and delivery
 agree, one to one, oldest order first; a cancelled order holds only its own cancelled line, a declined one nothing. Orders draws the site orders,
 then Earlier: the lines no order holds, by month newest first, behind one fold, with a Month select over two months or more. Account
@@ -3289,3 +3298,15 @@ it.
 - **No overlaps**: Needs you no longer lists rows to approve; the glance's fifth tile, **To approve**, counts the cards and opens Approve.
 - The Desk's one-tap `/drafts/<id>/approve|reject` and the bridge's `/_internal/maker/drafts/<id>/approve|reject` stand unchanged; Salt Admin no
   longer calls the second.
+
+
+## Place D, the Counter's Account, statement, This device, pay and Sheets on Ambient (16 Nov 2026)
+
+- **Drawn in the system's parts**: Account is one stack (the glance, the thread row, This device, Help, the statement); This device is a group of settings
+  (a Switch is the native checkbox, Sign out the system's danger action, its own list at the foot of the card); Help is the system's disclosure rows,
+  one open at a time by a name of its own (`account-help`; Salt Admin's is `shop-help`); the door is one shell (a hero naming the app, the lock screen's form);
+  every Sheet is a native `dialog.amb-sheet` the page's HTML carries (`ambSheet`), put up and away by `sheetUp` and `sheetDown` (`hidden` stays the page's word
+  for shut), its backdrop the scrim; the pay sheet is Options, a Tile, a Segment, a Field, a Plate (a row a detail, itself the copy control) and the code frame.
+- **Acts and ids kept**: every `data-act`, every id the page's script or a check reads, and every request body. Gone with the scrims: `outScrim`, `payScrim`, `devScrim`,
+  `bellScrim`, `thScrim`, `fsScrim`, `vaultScrim` (the dialog's own backdrop took their place). Salt Admin's names Sheet (`vaultSheet`) is the same dialog.
+- **Said, not drawn**: the pay ways' lead glyphs (the Options part has no lead slot); the door's ring (its one name is a glass chip in the hero).
