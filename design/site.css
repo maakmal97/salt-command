@@ -130,8 +130,11 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .apct__table .apct__at { font-weight: 600; }
 .apct__step .amb-input { text-align: center; font-variant-numeric: normal; }
 /* the associates' table: the reward's meter over its words */
-.ameter { display: grid; gap: var(--amb-space-1); min-width: 8rem; }
+.ameter { display: grid; gap: var(--amb-space-1); min-width: 12rem; }
+.atable td:last-child, .atable th:last-child { padding-inline-start: var(--amb-space-5); }
 .atable tr.off { opacity: .6; }
 .aprodhead { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
 /* the filters wrap onto a second line of chips and never narrow to the width a segment keeps (Ambient caps .amb-segment at 30rem; a gap for the parts session) */
 .amb-segment--wrap { max-width: none; }
+/* the links' and the associates' lists stand in their place's stack, the way the accounts' do */
+#glist, #jlist, #clist { display: contents; }

@@ -655,7 +655,7 @@ export const OWNER_JS = `
     if(books.indexOf(st.book)<0) st.book=books[0];
     var tabs=el('div','amb-segment apct__books'+(books.length>4?' amb-segment--wrap':'')); tabs.setAttribute('role','group'); tabs.setAttribute('aria-label','Book');
     books.forEach(function(b){
-      var t=actOn(el('button','amb-segment__opt',b.charAt(0).toUpperCase()+b.slice(1)),'acct.pct.book',b); t.type='button'; t.setAttribute('aria-pressed', b===st.book?'true':'false');
+      var t=actOn(el('button','amb-segment__opt'),'acct.pct.book',b); t.type='button'; t.setAttribute('aria-pressed', b===st.book?'true':'false'); t.appendChild(bookChip(b));   /* a book is its chip, its name in ink */
       t.addEventListener('click', function(){ st.book=b; s.replaceWith(pctSection(a, cat, books, partner)); }); tabs.appendChild(t);
     });
     s.appendChild(tabs);

@@ -96,7 +96,7 @@ export async function run({ ok, pageWork }) {
 
     /* the account thread: a No reply needed that did not go through */
     enter(d, "customers", "messages"); await p.work.quiet();
-    await click(d.querySelector('[data-thread="abcd-efgh"]'));
+    await click(d.querySelector('[data-thread="abcd-efgh"] .amb-row__main'));
     p.fail.add("/all/maker/threads/abcd-efgh");
     const chat = d.getElementById("makerChatOpen"), chatBtn = (label) => [...chat.querySelectorAll("button")].find((b) => t(b) === label);
     const before = !!chatBtn("No reply needed");

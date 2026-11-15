@@ -331,7 +331,7 @@ export async function run({ ok, pageWork }) {
     s.refuse["/all/signin/abcd-efgh"] = "the link maker would not start";
     byAct(aopen(), "acct.signin-link").click(); await work.quiet();
     /* 5 Nov 2026 (the pane): Send a sign-in link and its answer are the card's foot, last, so the answer is read there (the card's thread line and Sign out's answer are .anote too) */
-    const made = aopen().querySelector(".afoot > .anote");
+    const made = aopen().querySelector(".asign > .anote");
     ok(!!made && made.firstChild.textContent === "Could not make a link: " + GENERAL_SENTENCE && made.querySelectorAll("details > .rraw").length === 1
       && made.querySelector(".rraw").textContent === "the link maker would not start",
     "a link that could not be made says so in a plain sentence on the account card, the server's words under Details: " + (made ? made.textContent : "nothing drawn"));
@@ -370,15 +370,16 @@ export async function run({ ok, pageWork }) {
     /* 12 Nov 2026 (his Approve review): the Sheet asks only on a Reject, so the trip is chosen to reject to draw it */
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.reject").click(); await work.quiet();
     byAct(d, "approve.confirm").click(); await work.quiet();
-    const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
+    const sheet = [...d.querySelectorAll("dialog.amb-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
     ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
       "the sheet that asks on a trip draws each of its rows as a mark with 1 unit beneath, and a reader hears a different shape for each: " + JSON.stringify(sheet));
     byAct(d, "ask.keep").click(); await work.quiet();
     byAct(d, "nav.customers").click(); await work.quiet();
     byAct(d, "part.customers.associates").click(); await work.quiet();
     /* 26 Oct 2026: the report card's book heading is an h2 holding the typed Product tag (his rule of 22 Oct 2026 for Salt Admin), its name in its hue with its dot, and no drawn mark */
-    const heads = [...d.querySelectorAll("#clist h2.aprodtag")].map((h) => [h.className, h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".salt-producttag__dot") ? "dot" : "", (h.querySelector(".salt-producttag") || { className: "" }).className.replace(/^salt-producttag salt-producttag--([a-z]+) ntag$/, "$1")]);
-    ok(heads.length === 2 && heads.every((h) => h[0] === "aprodtag" && h[1] === "" && h[3] === "dot" && /^[a-z]+$/.test(h[4]) && h[2].toLowerCase() === h[4]) && new Set(heads.map((h) => h[4])).size === 2,
+    /* 16 Nov 2026, the move to Ambient (place H): the book is Ambient's chip, its name in ink, its dot in the book's hue (amb-kind-N) */
+    const heads = [...d.querySelectorAll("#clist h2.aprodhead > .aprodtag")].map((h) => [h.className, h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".amb-chip__dot") ? "dot" : "", ((h.querySelector(".amb-chip") || { className: "" }).className.match(/amb-kind-([0-9])/) || [])[1] || ""]);
+    ok(heads.length === 2 && heads.every((h) => h[0] === "aprodtag" && h[1] === "" && h[3] === "dot" && /^[0-9]$/.test(h[4]) && /^(Salt|Oil)$/.test(h[2])) && new Set(heads.map((h) => h[4])).size === 2,
     "the report card's book headings are the typed Product tag, the name in its hue with its dot, and no drawn mark: " + JSON.stringify(heads));
     /* 22 Oct 2026: on Needs you a book is its typed Product tag, the name in its hue with its dot, and no drawn mark */
     byAct(d, "nav.needs").click(); await work.quiet();
@@ -417,7 +418,7 @@ export async function run({ ok, pageWork }) {
       + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)) + "; " + typed.length + " tags");
     /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Confirm */
     const sheets = [];
-    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector(".salt-coin, svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
+    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector(".amb-thumb--mark svg, svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
     byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();

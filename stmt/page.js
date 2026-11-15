@@ -588,16 +588,12 @@ body.ended>*:not(#aEnded){display:none}
 .adm .npane__go .nbtn{flex:1 1 0;min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .npane-x:empty{display:none}
 @media (max-width:859.98px){
-  
   .adm #nopen{display:none}
 }
 @media (min-width:860px){
-  
   .adm .nsplit{display:grid;gap:20px;align-items:start}
   .adm .nsplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
-  
   .adm #nopen{overflow-y:auto}
-  
   .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
   .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
   .adm #nopen[hidden]{display:none}
@@ -653,10 +649,6 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerDrafts>.rnone{grid-column:1/-1}
   .adm #makerDrafts>.aphead,.adm #makerDrafts>.apdone{grid-column:1/-1}
   /* 5 Nov 2026: with no thread open the list is one 640px column, as Shop's lists are; a thread opened stands beside a 280 to 360px list */
-  
-  
-  
-  
 }
 /* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, so the orb's corner, the room kept for it and its
    stand-down under a foot went with the frame */
