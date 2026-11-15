@@ -65,7 +65,7 @@ export async function run({ ok, pageWork }) {
     p.inSheet = (act, key) => (p.sheet() ? byAct(p.sheet(), act, key) : null);
     p.key = (target, k) => { const e = new w.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }); target.dispatchEvent(e); return e; };
     p.posted = (path) => p.posts.filter((x) => x.route === path);
-    p.title = () => (p.sheet() ? p.sheet().querySelector(".salt-sheet__title").textContent : "");
+    p.title = () => (p.sheet() ? p.sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent : "");
     /* the four ways out of a Sheet that send nothing: each is tried on a Sheet opened afresh, and focus is read going back to what asked */
     p.ways = async (reopen, asker, sent) => {
       const bad = [];

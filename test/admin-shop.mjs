@@ -190,7 +190,7 @@ export async function run({ ok, pageWork }) {
     /* P5.3 */
     const sent = () => all.posts.filter((x) => x.route === "/all/test").length, sheet = () => all.d.getElementById("ynSheet");
     rm.click(); await all.work.quiet();
-    ok(!!sheet() && !sheet().hidden && t(sheet().querySelector(".salt-sheet__title")) === "Remove all three?" && /Everything they wrote goes with them/.test(t(sheet())) && sent() === 0 && byAct(all.d.getElementById("mTest"), "more.test-accounts").checked === true,
+    ok(!!sheet() && !sheet().hidden && t(sheet().querySelector(".salt-sheet__title, .amb-sheet__title")) === "Remove all three?" && /Everything they wrote goes with them/.test(t(sheet())) && sent() === 0 && byAct(all.d.getElementById("mTest"), "more.test-accounts").checked === true,
       "turning it off asks once on the Sheet and sends nothing yet, the switch staying on until the answer");
     byAct(sheet(), "ask.keep", "test:remove").click(); await all.work.quiet();
     ok(sent() === 0, "Keep them sends nothing");

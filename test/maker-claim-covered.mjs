@@ -109,7 +109,7 @@ export async function run({ ok }) {
     await until(() => button("20261004090002-own", (t) => t.startsWith("Yes, I got")));
     button("20261004090002-own", (t) => t.startsWith("Yes, I got")).click();
     await new Promise((r) => setTimeout(r, 50));
-    ok(!!sheet() && posts.length === 1 && /Received RM 70\.00 from/.test(sheet().querySelector(".salt-sheet__title").textContent),
+    ok(!!sheet() && posts.length === 1 && /Received RM 70\.00 from/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent),
       "Receive claimed asks on the Sheet too, and sends nothing as it opens: " + (sheet() && sheet().textContent));
     go().click();
     await until(() => posts.length >= 2);

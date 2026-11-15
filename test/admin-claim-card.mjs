@@ -162,7 +162,7 @@ export async function run({ ok, pageWork }) {
     const sh = sheet();
     ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && answers(p, "c-1", "received").length === 0 && calls.length === 0,
       "Received opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
-    ok(/Received RM 50\.00 from CX1-ZED\?/.test(sh.querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /RM 50\.00/.test(sh.textContent)
+    ok(/Received RM 50\.00 from CX1-ZED\?/.test(sh.querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /RM 50\.00/.test(sh.textContent)
       && /08 Oct 2026: RM 50\.00 of RM 60\.00/.test(sh.textContent) && /recorded against the rows below/.test(sh.textContent),
       "the Sheet says who and how much, lists the rows and says what follows: " + sh.textContent);
     const lineOf = sh.querySelector(".salt-ledger__line");
@@ -190,7 +190,7 @@ export async function run({ ok, pageWork }) {
     /* Not found: a danger action, sending the amount and a request id */
     await p.tap("claim.open", C2);
     p.in("claim.not-found", C2).click(); await p.work.quiet();
-    ok(/Not found RM 20\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && inSheet("claim.ask-go", C2).classList.contains("salt-ghost--danger")
+    ok(/Not found RM 20\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && inSheet("claim.ask-go", C2).classList.contains("salt-ghost--danger")
       && answers(p, "c-2", "notfound").length === 0, "Not found asks on the Sheet, a danger action, and sends nothing as it opens");
     /* a second tap on the action of a sheet already closed sends nothing, whether or not the first answer has landed: the sheet is shut before the request goes */
     p.fail.add("/all/maker/claims/" + U + "/c-2/notfound");
@@ -239,7 +239,7 @@ export async function run({ ok, pageWork }) {
     ok(p.in("claim.received").disabled && !p.in("claim.received-booked").disabled && /RM 20\.00 more than the rows/.test(p.card(C1).textContent),
       "a claim above its rows shuts Received and opens Received, on the book already");
     p.in("claim.received-booked", C1).click(); await p.work.quiet();
-    ok(/Already recorded\?/.test(d.getElementById("ynSheet").querySelector(".salt-sheet__title").textContent) && /Nothing more is recorded/.test(d.getElementById("ynSheet").textContent)
+    ok(/Already recorded\?/.test(d.getElementById("ynSheet").querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /Nothing more is recorded/.test(d.getElementById("ynSheet").textContent)
       && answers(p, "c-1", "received").length === 0, "its Sheet says nothing more is booked, and sends nothing as it opens");
     byAct(d, "claim.ask-go").click(); await p.work.quiet();
     const sent = answers(p, "c-1", "received");
@@ -260,7 +260,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "order.open", "ord-a1").click(); await p.work.quiet();
     const card = () => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "ord-a1");
     byAct(card(), "order.claim-received", ACLAIM).click(); await p.work.quiet();
-    ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /records RM 30\.00 against this order/.test(sheet().textContent)
+    ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /records RM 30\.00 against this order/.test(sheet().textContent)
       && !byAct(sheet(), "order.ask-go").classList.contains("salt-ghost--danger") && sends("received").length === 0 && asked.length === 0,
       "an order's Receive claimed asks on the Sheet, naming the amount and who, and sends nothing as it opens: " + (sheet() && sheet().textContent));
     byAct(sheet(), "order.ask-keep").click(); await p.work.quiet();
@@ -271,11 +271,11 @@ export async function run({ ok, pageWork }) {
     ok(got.length === 1 && got[0].body.amount === 30 && got[0].body.claim === ACLAIM && !Object.hasOwn(got[0].body, "covered") && /^[0-9a-f]{32}$/.test(got[0].body.rid),
       "its one action sends the claim's amount and moment under a request id, as the tap did: " + JSON.stringify(got));
     byAct(card(), "order.claim-received", BCLAIM).click(); await p.work.quiet();
-    ok(/Already recorded, RM 500\.00\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && /Nothing more is recorded/.test(sheet().textContent), "a claim above what the order owes asks as Received, on the book already");
+    ok(/Already recorded, RM 500\.00\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /Nothing more is recorded/.test(sheet().textContent), "a claim above what the order owes asks as Received, on the book already");
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     ok(sends("received").length === 2 && sends("received")[1].body.covered === true && sends("received")[1].body.claim === BCLAIM, "and sends covered: " + JSON.stringify(sends("received")[1]));
     byAct(card(), "order.claim-not-found", ACLAIM).click(); await p.work.quiet();
-    ok(/Not found RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && byAct(sheet(), "order.ask-go").classList.contains("salt-ghost--danger") && sends("notfound").length === 0,
+    ok(/Not found RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && byAct(sheet(), "order.ask-go").classList.contains("salt-ghost--danger") && sends("notfound").length === 0,
       "Not found on an order's claim asks on the Sheet, a danger action, and sends nothing as it opens");
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     const lost = sends("notfound");
