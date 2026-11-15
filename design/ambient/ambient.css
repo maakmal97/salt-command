@@ -1214,6 +1214,91 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
   .amb-key--route { forced-color-adjust: none; }
 }
 
+/* ---- Salt: a hue for each kind of thing, and panes that scroll apart (0.7) ---- */
+/* A kind is one of a small set of things told apart by hue: the books of goods a desk sells, the kinds of
+   a list. An app numbers its own list in order, its first thing amb-kind-1, and sets the class on the mark
+   that shows it. A kind is a mark's colour and never text's: it colours a chip's dot, 8px across while the
+   chip's words stay in the ink, and a ringed thumb's ring. Each is solved per mood and mode on a ladder of
+   contrast against the four grounds a mark stands on (the base, a surface, a raised face, a well), so two
+   kinds on different rungs part by lightness as well as hue. A chip's dot stands on the chip's own well; a
+   glass chip's ground is the mesh, where only the ink reads, so a glass chip keeps the dot it has. */
+.amb-kind-1 { --amb-kind: var(--amb-kind-1); }
+.amb-kind-2 { --amb-kind: var(--amb-kind-2); }
+.amb-kind-3 { --amb-kind: var(--amb-kind-3); }
+.amb-kind-4 { --amb-kind: var(--amb-kind-4); }
+.amb-kind-5 { --amb-kind: var(--amb-kind-5); }
+.amb-kind-6 { --amb-kind: var(--amb-kind-6); }
+.amb-chip:not(.amb-chip--glass):is(.amb-kind-1, .amb-kind-2, .amb-kind-3, .amb-kind-4, .amb-kind-5, .amb-kind-6) > .amb-chip__dot { width: 8px; height: 8px; background: var(--amb-kind); }
+/* a ringed thumb: for a thumb that holds an app's own drawing, as a bare one does, set on the surface in a
+   ring 2px wide: in its kind's hue, or with no kind in the hairline, which no kind can be taken for. The
+   ring is the thumb's border, so it is drawn inside the thumb's edge and nothing the thumb holds covers it */
+.amb-thumb--ring { border: 2px solid var(--amb-kind, var(--amb-line)); background: var(--amb-surface); }
+/* Panes, the owner's word for Salt Admin: like Mail or Messages on a Mac. From 960px wide and 640px tall, a
+   split of panes holds its screen still: the hero keeps its place at the top, the split fills the rest of
+   the screen's height, and each of its two stacks scrolls on its own, from the top, so a long queue never
+   pushes the open record out of view and the record keeps its place while the queue scrolls. The queue
+   is narrower than a split's first column, and gives way first where the panes are narrow, so the record
+   always has the room. What scrolls up dissolves into the
+   ground in a soft fade under the hero, and runs down to the screen's foot; a control the keyboard takes
+   to comes to rest below that fade, never under it. Narrower or shorter, nothing
+   changes: the screen scrolls as one. A shell is a container of its width alone, so the height is read from
+   the window, which an app's shell is. */
+@container amb (min-width: 960px) {
+  @media (min-height: 640px) {
+    .amb-screen:has(> .amb-split--panes) { display: flex; flex-direction: column; overflow-y: hidden; }
+    .amb-screen:has(> .amb-split--panes) > :not(.amb-split--panes) { flex: none; }
+    .amb-shell--rail > .amb-screen:has(> .amb-split--panes) { padding-bottom: var(--amb-safe-bottom); }
+    .amb-screen > .amb-split--panes { position: relative; flex: 1 1 0; min-height: 0; grid-template-columns: minmax(280px, min(340px, 45%)) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+    .amb-screen > .amb-split--panes::before { content: ""; position: absolute; z-index: 1; inset: 0 0 auto; height: var(--amb-space-6); background: linear-gradient(to bottom, var(--amb-base), transparent); pointer-events: none; }
+    .amb-split--panes > .amb-stack { align-content: start; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-block: calc(var(--amb-space-6) + var(--amb-space-1)) var(--amb-space-6); scroll-padding-top: calc(var(--amb-space-6) + var(--amb-space-1)); }
+    .amb-split--panes > .amb-stack:has(> .amb-foot) { padding-bottom: 0; scroll-padding-bottom: calc(2 * var(--amb-pill-h) + var(--amb-space-6)); }
+  }
+}
+/* A foot: a record's one main action, the last thing in its stack, in view at the foot of its pane, or, on
+   a phone and wherever the screen scrolls as one, at the foot of the screen, a dock's inset above the dock.
+   It draws no box and no edge (the owner's word: never a black square behind the main action). Behind it
+   lies a soft fade of the ground across the stack's full width, clear at its top and the ground itself
+   from the pill down, so whatever scrolls under the foot dissolves into the base before it reaches the
+   pill: the base is the one ground the pill ever meets, and that pair is measured. The fade is the pill's
+   height, and is the foot's own, so the stack's last part rests clear above it at the end of the scroll.
+   It holds one pill or one box to write in, and never what ends or removes the record. A sticky box keeps
+   clear of the padding of what scrolls it, so the foot is set back by that padding to reach the screen's
+   foot or the dock's top (the mini bar's too), and the room under its pill is its own. The foot lets taps
+   through to what shows in its fade, as the app bar and the dock do, and only what it holds takes them. */
+.amb-foot { position: sticky; z-index: 1; bottom: var(--amb-foot-at, calc(-1 * (var(--amb-space-6) + var(--amb-safe-bottom)))); margin-inline: calc(-1 * var(--amb-space-4)); padding: var(--amb-pill-h) var(--amb-space-4) var(--amb-foot-under, calc(var(--amb-space-6) + var(--amb-safe-bottom))); background: linear-gradient(to bottom, transparent, var(--amb-base) var(--amb-pill-h)); pointer-events: none; }
+.amb-foot > * { pointer-events: auto; }
+.amb-foot > .amb-pill { max-width: 36rem; }
+.amb-screen--docked .amb-foot { --amb-foot-at: calc(var(--amb-tabbar-h) + var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px) - var(--amb-bleed)); --amb-foot-under: var(--amb-dock-inset); }
+.amb-shell:has(> .amb-dock > .amb-mini) { --amb-foot-mini: calc(var(--amb-mini-h) + var(--amb-peek)); }
+/* Over a dock the ground runs on from the foot down to the screen's foot and the dock floats over it, so
+   nothing that scrolls shows between the pill and the dock or under the dock. It is drawn where the foot's
+   record ends the screen, so it never covers what follows, and it takes the taps meant for what it hides. */
+.amb-screen--docked > .amb-stack:last-child > .amb-foot::after,
+.amb-screen--docked > .amb-split:last-child > .amb-stack:last-child > .amb-foot::after { content: ""; position: absolute; inset: 100% 0 auto; height: calc(var(--amb-tabbar-h) + var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px)); background: var(--amb-base); pointer-events: auto; }
+/* a control taken to by the keyboard comes to rest above the dock and the foot */
+.amb-screen--docked:has(.amb-foot) { scroll-padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px) + 2 * var(--amb-pill-h)); }
+@container amb (min-width: 960px) {
+  .amb-shell--rail > .amb-screen .amb-foot { --amb-foot-at: initial; --amb-foot-under: initial; }
+  .amb-shell--rail > .amb-screen .amb-foot::after { content: none; }
+  @media (min-height: 640px) {
+    .amb-split--panes > .amb-stack > .amb-foot { --amb-foot-at: 0px; --amb-foot-under: var(--amb-space-6); }
+    .amb-split--panes > .amb-stack > .amb-foot::after { content: none; }
+  }
+}
+/* on paper the panes are one column that runs on and the foot stays where it stands, with no fade */
+@media print {
+  .amb-screen:has(> .amb-split--panes) { display: block; overflow: visible; }
+  .amb-screen > .amb-split--panes { grid-template-rows: none; }
+  .amb-screen > .amb-split--panes::before { display: none; }
+  .amb-split--panes > .amb-stack { overflow: visible; }
+  .amb-foot { position: static; margin: 0; padding: 0; background: none; }
+  .amb-foot::after { content: none; }
+}
+@media (forced-colors: active) {
+  .amb-chip:not(.amb-chip--glass):is(.amb-kind-1, .amb-kind-2, .amb-kind-3, .amb-kind-4, .amb-kind-5, .amb-kind-6) > .amb-chip__dot { background: CanvasText; }
+  .amb-foot, .amb-foot::after { background: Canvas; }
+}
+
 /* ---- Skeleton, empty, the live bars ---- */
 .amb-skeleton { border-radius: var(--amb-radius-sm); background: var(--amb-well); color: transparent; animation: amb-pulse calc(var(--amb-dur) * 4) ease-in-out infinite alternate; }
 .amb-skeleton--line { display: block; height: 14px; }
