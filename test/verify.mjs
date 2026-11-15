@@ -49316,7 +49316,7 @@ await (async () => {
     doc.getElementById("pw").value = password;
     doc.getElementById("f").dispatchEvent(new page.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 120 && !doc.getElementById("oNew"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
-    const notice = doc.querySelector("#pOrder .salt-insight");
+    const notice = [...doc.querySelectorAll("#pOrder .otop .onote")].find((n) => /Counter is closed/.test(n.textContent));   /* 16 Nov 2026, the move to Ambient: the notice is a plain note of the list head */
     ok(!!doc.getElementById("oNew") && notice && /Counter is closed/.test(notice.textContent)
       && /confirmation may be delayed/.test(notice.textContent),
       "a closed-hours customer still sees New order and the delayed-confirmation notice");
