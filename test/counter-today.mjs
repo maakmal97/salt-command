@@ -30,42 +30,43 @@ export async function run({ ok }) {
     wins.push(dom.window);
     return { d: dom.window.document, timers };
   };
-  const on = (d) => [...d.querySelectorAll("#bull .salt-notice__line")].map((p, i) => (p.classList.contains("salt-notice__line--on") ? i : -1)).filter((i) => i >= 0);
+  /* 16 Nov 2026, the move to Ambient: the card is one notice, its lines spans (.hline) the turned-away ones hidden, Pause a quiet pill, and no dots */
+  const on = (d) => [...d.querySelectorAll("#bull .hline")].map((p, i) => (p.hidden ? -1 : i)).filter((i) => i >= 0);
   try {
     /* ---- 1: rotating ---- */
-    const M = bare(false), pz = M.d.querySelector("#bull .salt-notice__pause"), dots = M.d.querySelectorAll("#bull .salt-notice__dot");
-    ok(M.timers.length === 1 && JSON.stringify(on(M.d)) === "[0]" && M.d.querySelectorAll("#bull .salt-notice__line").length === 3 && dots.length === 3
-      && dots[0].classList.contains("salt-notice__dot--on") && !!pz && !pz.hidden && pz.getAttribute("aria-label") === "Pause notices" && pz.classList.contains("salt-notice__pause"),
-      "the notice shows one line at a time with a dot a line, one six-second timer and Pause, named: " + JSON.stringify([M.timers.length, on(M.d), dots.length]));
+    const M = bare(false), pz = M.d.querySelector("#bull .hpause");
+    ok(M.timers.length === 1 && JSON.stringify(on(M.d)) === "[0]" && M.d.querySelectorAll("#bull .hline").length === 3
+      && !!pz && !pz.hidden && pz.getAttribute("aria-label") === "Pause notices" && pz.classList.contains("amb-pill") && pz.textContent === "Pause notices",
+      "the notice shows one line at a time, one six-second timer and Pause, a pill named: " + JSON.stringify([M.timers.length, on(M.d)]));
     M.timers[0]();
-    ok(JSON.stringify(on(M.d)) === "[1]" && M.d.querySelectorAll("#bull .salt-notice__dot")[1].classList.contains("salt-notice__dot--on"), "after six seconds the next line and its dot are on: " + JSON.stringify(on(M.d)));
+    ok(JSON.stringify(on(M.d)) === "[1]", "after six seconds the next line is the one shown: " + JSON.stringify(on(M.d)));
     M.timers[0](); M.timers[0]();
     ok(JSON.stringify(on(M.d)) === "[0]", "and after the last it comes round to the first");
     pz.click(); M.timers[0](); M.timers[0]();
-    ok(JSON.stringify(on(M.d)) === "[0]" && pz.getAttribute("aria-pressed") === "true" && pz.getAttribute("aria-label") === "Play notices",
+    ok(JSON.stringify(on(M.d)) === "[0]" && pz.getAttribute("aria-pressed") === "true" && pz.getAttribute("aria-label") === "Play notices" && pz.textContent === "Play notices",
       "Pause holds the line on screen, says it is pressed, and is then named Play: " + JSON.stringify([on(M.d), pz.getAttribute("aria-label")]));
     pz.click(); M.timers[0]();
     ok(JSON.stringify(on(M.d)) === "[1]" && pz.getAttribute("aria-pressed") === "false", "and a second tap lets it turn again");
 
     /* ---- 2: reduced motion ---- */
-    const S = bare(true), spz = S.d.querySelector("#bull .salt-notice__pause");
-    ok(S.timers.length === 0 && S.d.querySelectorAll("#bull .salt-notice__line").length === 3 && S.d.querySelectorAll("#bull .salt-notice__dot").length === 0 && !!spz && spz.hidden,
-      "under reduced motion no timer runs, every line is drawn and neither the dots nor Pause is: " + JSON.stringify([S.timers.length, S.d.querySelectorAll("#bull .salt-notice__dot").length]));
+    const S = bare(true), spz = S.d.querySelector("#bull .hpause");
+    ok(S.timers.length === 0 && JSON.stringify(on(S.d)) === "[0,1,2]" && !!spz && spz.hidden,
+      "under reduced motion no timer runs, every line stands on the screen and Pause is not drawn: " + JSON.stringify([S.timers.length, on(S.d)]));
     const one = bare(false); one.d.defaultView.bullDraw({ lines: ["Only line"] });
-    ok(one.d.querySelector("#bull .salt-notice__pause").hidden && one.d.querySelectorAll("#bull .salt-notice__dot").length === 0 && JSON.stringify(on(one.d)) === "[0]",
-      "a notice of one line stands, with no dots and no Pause");
+    ok(one.d.querySelector("#bull .hpause").hidden && JSON.stringify(on(one.d)) === "[0]",
+      "a notice of one line stands, with no Pause");
 
     /* ---- 3: no live region ---- */
     const live = [M.d, S.d].flatMap((d) => [...d.querySelectorAll("#today, #today *")].filter((e) => e.hasAttribute("aria-live") || /^(status|alert|log|marquee|timer)$/.test(e.getAttribute("role") || "")));
-    ok(live.length === 0 && !!M.d.querySelector("#pHome #today #bull") && !!M.d.querySelector("#today [data-clock]"),
-      "the card is Home's first, holds the clock and the notice, and nothing in it is a live region: " + live.length);
+    ok(live.length === 0 && !!M.d.querySelector("#pHome #today #bull") && !M.d.querySelector("#today [data-clock]") && !!M.d.querySelector(".amb-hero > .amb-hero__time[data-clock]"),
+      "the card is Home's first and holds the notice, the clock is the hero's own time line, and nothing in the card is a live region: " + live.length);
     /* the render pass of 19 Oct 2026: the card wears the system's padding, and on Home the header does not say the time twice */
     /* read off the served sheet: jsdom's parser drops part of this stylesheet, which a browser applies */
     const css = [...P.landingPage("", "ntd3", null, null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
-    /* 15 Nov 2026, the move to Ambient: the header is the place's hero, and on Home its time line gives way to the card's */
+    /* 16 Nov 2026, the move to Ambient: the card is Ambient's notice, and the hero's time line is the one clock, so no rule hides it on Home */
     const once = css.match(/#tabs\[data-place="home"\] > \.amb-screen > \.amb-hero > \.amb-hero__time \{([^}]*)\}/g) || [];
-    ok(M.d.getElementById("today").classList.contains("salt-glass-card--pad-sm") && once.length === 1 && /display: none/.test(once[0]),
-      "the card is padded by the system's own modifier, and on Home the hero's clock gives way to the card's: " + JSON.stringify(once));
+    ok(M.d.getElementById("today").classList.contains("amb-notice") && once.length === 0,
+      "the card is Ambient's notice, and on Home nothing hides the hero's clock: " + JSON.stringify(once));
 
     /* ---- 4: open or closed, off /hours ---- */
     const u = "abcd-efgh", pass = "fixture-pass-p8", ck = await C.contentKey("test-secret", u);
@@ -95,7 +96,7 @@ export async function run({ ok }) {
     const soon = new Date(Date.now() + 20 * 60e3).toISOString();
     const dO = await signed({ ok: true, open: true, nextChange: soon, nextOpen: null });
     const wantO = sameDay(soon) ? "Until " + hm(soon) + ". Order now and we confirm it today." : null;
-    ok(t(dO.getElementById("todayOpen")) === "Open" && dO.getElementById("todayOpen").classList.contains("salt-status--verdigris")
+    ok(t(dO.getElementById("todayOpen")) === "Open" && dO.getElementById("todayOpen").classList.contains("amb-notice__title")
       && (wantO ? t(dO.getElementById("todayLine")) === wantO : /^Until \d\d \w{3} \d{4}, \d\d:\d\d\. Order now/.test(t(dO.getElementById("todayLine")))),
       "while it is open the card says Open and until when, off /hours: " + t(dO.getElementById("todayLine")));
     const later = new Date(Date.now() + 3 * 864e5).toISOString();

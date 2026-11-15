@@ -74,29 +74,34 @@ export async function run({ ok, pageWork }) {
   };
 
   try {
+    /* 16 Nov 2026, the move to Ambient: the foot is Ambient's (one pill, sticky above the dock by its own rule), To pay now's figure always a stat in
+       the head, the invoice lines rows of a list and the fold a quiet pill that opens the rest; the geometry the older checks measured (a sticky
+       bottom by the bar's token, from 1080px static) is Ambient's to keep, so those checks read what stands on the page now. */
     /* ---- 1: the markup, as served */
     const bare = new JSDOM(landingPage("abcd-efgh", "nhf0", null)).window.document;
     const home = bare.getElementById("pHome"), foot0 = bare.getElementById("homeFoot");
-    const kids = [...home.children].map((n) => n.id || n.className.split(" ")[0]).join(" ");
-    ok(!!foot0 && bare.querySelectorAll("#homeFoot").length === 1 && home.lastElementChild === foot0 && kids === "hcol hcol hLive homeFoot"
-      && foot0.hidden && foot0.classList.contains("payfoot") && !foot0.hasChildNodes(),
-      "the foot is Home's last child, after both columns and the live order, drawn hidden and empty, so no bar stands there until something is owed: " + kids);
+    const kids = [...home.children].map((n) => n.className.split(" ").join(".")).join(" ");
+    ok(!!foot0 && bare.querySelectorAll("#homeFoot").length === 1 && home.firstElementChild.lastElementChild === foot0 && kids === "amb-stack amb-stack"
+      && foot0.hidden && foot0.classList.contains("amb-foot") && !foot0.hasChildNodes(),
+      "the foot is the last thing of Home's first stack, Ambient's foot, drawn hidden and empty, so no bar stands there until something is owed: " + kids);
 
     /* ---- 2: something owed, five lines */
     const five = await open({ list: parts(5) });
     const { d: D5 } = five, foot = D5.getElementById("homeFoot"), head = D5.getElementById("payHead"), pill = D5.getElementById("payNow");
-    const fp = { hidden: foot.hidden, last: D5.getElementById("pHome").lastElementChild === foot, label: t(foot.querySelector(".salt-kpi__label")), value: t(foot.querySelector(".salt-kpi__value")),
-      ember: !!foot.querySelector(".salt-kpi--ember"), pill: t(pill), inFoot: foot.contains(pill), pills: D5.querySelectorAll("#pHome .salt-pill").length,
-      headHolds: !!head.querySelector(".salt-kpi, .salt-pill, #payNow") };
-    ok(!fp.hidden && fp.last && fp.label === "To pay now" && fp.value === money(five.sum) && fp.ember && fp.pill === "Pay " + money(five.sum) && fp.inFoot && fp.pills === 1 && !fp.headHolds,
-      "with something to pay, To pay now's tile, in ember for what they owe, and the one filled Pay stand in the foot, and the head keeps neither: " + JSON.stringify(fp));
+    const stat = head.querySelector(".amb-stat[data-now]");
+    const fp = { hidden: foot.hidden, last: D5.querySelector("#pHome > .amb-stack").lastElementChild === foot, label: t(stat && stat.querySelector(".amb-stat__label")), value: t(stat && stat.querySelector(".amb-stat__value")),
+      owing: !!stat && stat.getAttribute("data-now") === "owing", pill: t(pill), inFoot: foot.contains(pill), one: foot.children.length === 1, pills: D5.querySelectorAll("#pHome .amb-pill:not(.amb-pill--quiet)").length,
+      footTile: !!foot.querySelector(".amb-stat") };
+    ok(!fp.hidden && fp.last && fp.label === "To pay now" && fp.value === money(five.sum) && fp.owing && fp.pill === "Pay " + money(five.sum) && fp.inFoot && fp.one && fp.pills === 1 && !fp.footTile,
+      "with something to pay, To pay now's figure stands in the head and the one filled Pay is the foot, which holds nothing else: " + JSON.stringify(fp));
 
     /* ---- 5: three lines, then N more */
-    const rowsOf = (box) => [...box.querySelectorAll(":scope > .salt-ledger__row")].map((r) => t(r.querySelector(".salt-ledger__value")));
-    const inv = head.querySelector(":scope > .inv"), more = D5.getElementById("invMore"), sm = more && more.querySelector("summary");
-    const shown = { rows: inv ? rowsOf(inv) : [], more: !!more, word: t(sm), open: !!more && more.open, rest: more ? rowsOf(more.querySelector(".inv")) : [], parent: more ? more.parentElement === inv : false };
-    ok(shown.rows.join() === "RM 100.00,RM 101.00,RM 102.00" && shown.more && shown.parent && shown.word === "2 more" && !shown.open && shown.rest.join() === "RM 103.00,RM 104.00",
-      "five lines are three in the list, the oldest first, then the fold reading 2 more, shut, with the other two inside it: " + JSON.stringify(shown));
+    const amt = (r) => t(r.querySelector(".amb-row__amount"));
+    const inv = head.querySelector(".hinv"), more = D5.getElementById("invMore");
+    const shown = { rows: inv ? [...inv.querySelectorAll("li:not([hidden])")].map(amt) : [], more: !!more, word: t(more), open: !!more && more.getAttribute("aria-expanded") === "true",
+      rest: inv ? [...inv.querySelectorAll("li.invrest")].map((r) => amt(r) + (r.hidden ? "-" : "+")) : [], quiet: !!more && more.classList.contains("amb-pill--quiet") };
+    ok(shown.rows.join() === "RM 100.00,RM 101.00,RM 102.00" && shown.more && shown.quiet && shown.word === "2 more" && !shown.open && shown.rest.join() === "RM 103.00-,RM 104.00-",
+      "five lines are three rows, the oldest first, then a quiet pill reading 2 more, shut, the other two rows hidden: " + JSON.stringify(shown));
     ok(W.EN["inv.more"] === "{n} more" && shown.word === W.EN["inv.more"].replace("{n}", "2"), "and the count is a word by key, read off the table and not typed in the page");
 
     /* ---- 4: the Pay opens the one sheet on the whole invoice */
@@ -107,64 +112,49 @@ export async function run({ ok, pageWork }) {
       "the Pay in the foot opens the pay sheet, which draws all five lines whole and not three: " + JSON.stringify({ open: !sheet.hidden, title: t(D5.getElementById("payT")), sheetRows }));
     D5.getElementById("payX").click();
 
-    /* ---- 6: the fold opens, and stays as it was across a redraw (a return to the page reads the account again and redraws Home) */
-    let toggled = false;
-    if (more) more.addEventListener("toggle", () => { toggled = true; });
-    if (sm) sm.click();
-    await until(() => toggled, 60);
-    const mid = D5.getElementById("invMore"), opened = !!mid && mid.open, restShown = mid ? [...mid.querySelectorAll(".salt-ledger__row")].map((r) => t(r.querySelector(".salt-ledger__value"))) : [];
+    /* ---- 6: the pill opens the rest, and stays as it was across a redraw (a return to the page reads the account again and redraws Home) */
+    if (more) more.click();
+    const mid = D5.getElementById("invMore"), opened = !!mid && mid.getAttribute("aria-expanded") === "true", restShown = [...D5.querySelectorAll("#payHead li.invrest:not([hidden])")].map(amt);
     D5.dispatchEvent(new five.w.Event("visibilitychange"));
     await five.work.quiet();
-    const after = D5.getElementById("invMore");
-    ok(opened && restShown.join() === "RM 103.00,RM 104.00" && !!after && after.open && t(after.querySelector("summary")) === "2 more",
-      "a tap on it opens the other two lines, and a return to the page, which draws Home again, leaves it open: " + JSON.stringify({ opened, restShown, after: !!after && after.open }));
+    const after = D5.getElementById("invMore"), restAfter = [...D5.querySelectorAll("#payHead li.invrest:not([hidden])")].map(amt);
+    ok(opened && restShown.join() === "RM 103.00,RM 104.00" && !!after && after.getAttribute("aria-expanded") === "true" && restAfter.join() === "RM 103.00,RM 104.00" && t(after) === "2 more",
+      "a tap on it opens the other two lines, and a return to the page, which draws Home again, leaves it open: " + JSON.stringify({ opened, restShown, restAfter }));
 
-    /* ---- 8 and 9: the cascade a phone reads, and the desktop's by its width query made to hold */
+    /* ---- 8 and 9: Ambient's foot, and a tap is 44px */
     const cs = (e) => five.w.getComputedStyle(e);
-    const bar = D5.querySelector("#tabs > .amb-dock"), z = (e) => +cs(e).zIndex;   /* 15 Nov 2026, the move to Ambient: the bar of places is Ambient's dock */
-    const phone = { position: cs(foot).position, bottom: cs(foot).bottom, zFoot: z(foot), zBar: z(bar), display: cs(foot).display };
-    ok(phone.position === "sticky" && /var\(--salt-bar-h\)/.test(phone.bottom) && /safe-area-inset-bottom/.test(phone.bottom) && phone.zFoot > 0 && phone.zFoot < phone.zBar && phone.zBar < 70 && phone.display === "flex",
-      "on a phone the foot sticks, its bottom edge the App bar's own height token and the safe area above the screen's edge, in front of the page and behind the bar, which stays behind the sheet: " + JSON.stringify(phone));
-    const holds = (q, px) => q.split(",").some((one) => { const fs = one.split(/\band\b/).map((s) => s.trim()).filter(Boolean);
-      return fs.length > 0 && fs.every((f) => { const x = /^\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)$/.exec(f); return !!x && (x[1] === "min" ? px >= +x[2] : px <= +x[2]); }); });
-    const at = (html, px) => html.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, px) ? "@media all{" : m));
-    const wide = new JSDOM(at(landingPage("abcd-efgh", "nhf1", null), 1280)), wf = wide.window.document.getElementById("homeFoot");
-    const wideCs = wide.window.getComputedStyle(wf);
-    ok(wideCs.position === "static" && !!wide.window.document.querySelector("#tabs > .amb-dock"),
-      "from 1080px, where the rail stands for the bar, the foot is in the flow and not stuck: " + JSON.stringify({ position: wideCs.position }));
-    wide.window.close();
-    /* jsdom lets .payfoot's display beat the attribute's, which no browser does, so the rule that shuts a hidden foot is read off the sheet the page carries */
-    const rules = [...D5.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.selectorText === ".payfoot[hidden]");
-    ok(rules.length === 1 && rules[0].style.getPropertyValue("display") === "none",
-      "a foot drawn hidden is shut by the page's own rule, since its display would otherwise keep an empty bar on show: " + JSON.stringify(rules.map((r) => r.cssText)));
-    const tap = { pill: pill ? cs(pill).minHeight : "(none)", summary: sm ? cs(sm).minHeight : "(none)" };
-    ok(tap.pill === "var(--salt-tap)" && tap.summary === "var(--salt-tap)",
-      "a tap is 44px both ways: the Pay and the fold's summary hold the design system's tap size: " + JSON.stringify(tap));
+    const css = [...landingPage("abcd-efgh", "nhf1", null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+    const phone = { position: cs(foot).position, pill: pill && pill.classList.contains("amb-pill--block"), shut: /\.amb \[hidden\] \{ display: none !important; \}/.test(css), payfoot: /\.payfoot/.test(css) };
+    ok(phone.position === "sticky" && phone.pill && phone.shut && !phone.payfoot,
+      "the foot sticks by Ambient's own rule, a hidden foot is shut by Ambient's, and the page carries no foot rule of its own: " + JSON.stringify(phone));
+    const tap = { pill: pill ? cs(pill).minHeight : "(none)", more: more ? cs(more).minHeight : "(none)" };
+    ok(tap.pill === "var(--amb-pill-h)" && tap.more === "var(--amb-tap)",
+      "a tap is 44px both ways: the Pay and the pill that opens the rest hold Ambient's own sizes: " + JSON.stringify(tap));
 
     /* ---- 5 again: exactly three lines draw no fold, and four read 1 more */
     const three = await open({ list: parts(3) }), four = await open({ list: parts(4) });
-    const rows3 = rowsOf(three.d.querySelector("#payHead > .inv")), rows4 = rowsOf(four.d.querySelector("#payHead > .inv")), m4 = four.d.getElementById("invMore");
-    ok(rows3.join() === "RM 100.00,RM 101.00,RM 102.00" && !three.d.getElementById("invMore") && !three.d.querySelector("#payHead details")
-      && rows4.length === 3 && !!m4 && t(m4.querySelector("summary")) === "1 more" && rowsOf(m4.querySelector(".inv")).join() === "RM 103.00" && !m4.open,
-      "three lines draw no fold, and four draw three and the fold reading 1 more: " + JSON.stringify({ rows3, rows4, m4: !!m4 }));
+    const rows3 = [...three.d.querySelectorAll("#payHead .hinv li")].map(amt), rows4 = [...four.d.querySelectorAll("#payHead .hinv li:not([hidden])")].map(amt), m4 = four.d.getElementById("invMore");
+    ok(rows3.join() === "RM 100.00,RM 101.00,RM 102.00" && !three.d.getElementById("invMore")
+      && rows4.length === 3 && !!m4 && t(m4) === "1 more" && [...four.d.querySelectorAll("#payHead li.invrest")].map(amt).join() === "RM 103.00" && m4.getAttribute("aria-expanded") === "false",
+      "three lines draw no fold, and four draw three and the pill reading 1 more: " + JSON.stringify({ rows3, rows4, m4: !!m4 }));
 
     /* ---- 3: nothing owed, and all of it already sent */
     const none = await open({ list: [] });
     const fn = none.d.getElementById("homeFoot");
-    ok(fn.hidden && !fn.hasChildNodes() && !none.d.getElementById("payNow") && !none.d.querySelector("#pHome .salt-pill") && !none.d.querySelector("#payHead .salt-kpi") && /Nothing to pay now\./.test(t(none.d.getElementById("payHead"))),
+    ok(fn.hidden && !fn.hasChildNodes() && !none.d.getElementById("payNow") && !none.d.querySelector("#pHome .amb-pill:not([hidden])") && !none.d.querySelector("#payHead .amb-stat") && /Nothing to pay now\./.test(t(none.d.getElementById("payHead"))),
       "with nothing to pay now no foot is drawn: it stays hidden and empty, there is no Pay, and Home says so once: " + JSON.stringify({ hidden: fn.hidden, kids: fn.childNodes.length, head: t(none.d.getElementById("payHead")) }));
     const sent = await open({ list: parts(3), claims: [{ id: "c-7a", at: new Date().toISOString(), amount: 303, method: "transfer", account: "maybank", state: "waiting", claim: "waiting" }] });
-    const fs = sent.d.getElementById("homeFoot"), kp = sent.d.querySelector("#payHead .salt-kpi");
-    ok(fs.hidden && !fs.hasChildNodes() && !sent.d.getElementById("payNow") && !!kp && !!kp.classList.contains("salt-kpi--verdigris") && t(kp.querySelector(".salt-kpi__value")) === "RM 0.00"
-      && /Less sentRM 303\.00Waiting for us to confirm/.test(t(sent.d.getElementById("payHead"))),
-      "and with all of it sent and waiting on him there is nothing to pay, so no foot, the tile stays in the head at RM 0.00, and what was sent is still said, waiting on him: " + JSON.stringify({ hidden: fs.hidden, tile: t(kp), head: t(sent.d.getElementById("payHead")).slice(-80) }));
+    const fs = sent.d.getElementById("homeFoot"), kp = sent.d.querySelector("#payHead .amb-stat");
+    ok(fs.hidden && !fs.hasChildNodes() && !sent.d.getElementById("payNow") && !!kp && kp.getAttribute("data-now") === "clear" && t(kp.querySelector(".amb-stat__value")) === "RM 0.00"
+      && /Less sentWaiting for us to confirmRM 303\.00/.test(t(sent.d.getElementById("payHead"))),
+      "and with all of it sent and waiting on him there is nothing to pay, so no foot, the figure stays in the head at RM 0.00, and what was sent is still said, waiting on him: " + JSON.stringify({ hidden: fs.hidden, tile: t(kp), head: t(sent.d.getElementById("payHead")).slice(-80) }));
 
     /* ---- 7: the V5 lock, past the lock day: only To pay now is live */
     const late = part(0, { date: kl(-8), since: kl(-6), due: kl(-5), late: true, rm: 45, whole: 45, goods: 45, rate: 45, qty: 1, got: 1, gotOn: kl(-6) });
     const lock = await open({ list: [late, part(1)] });
     const lf = lock.d.getElementById("homeFoot"), grey = ["hNeeds", "hComing", "hAgain"].map((id) => { const n = lock.d.getElementById(id); return !!n && n.classList.contains("lockd") && n.hasAttribute("inert"); }).join();
     const live = { footShown: !lf.hidden, footInert: !!lf.closest("[inert]") || lf.hasAttribute("inert"), headInert: !!lock.d.getElementById("payHead").closest("[inert]"), grey,
-      note: t(lock.d.getElementById("stageNote")), pill: t(lock.d.getElementById("payNow")), tile: t(lf.querySelector(".salt-kpi__value")) };
+      note: t(lock.d.getElementById("stageNote")), pill: t(lock.d.getElementById("payNow")), tile: t(lock.d.querySelector("#payHead .amb-stat__value")) };
     const lp = lock.d.getElementById("payNow");
     if (lp) lp.click();
     const lockSheet = !lock.d.getElementById("paySheet").hidden;

@@ -156,6 +156,8 @@ export const EN = {
   "hy.order1": "1 order",
   "hy.orderN": "{n} orders",
   "hy.bars": "Orders: {list}",
+  "hy.figures": "The figures",
+  "hy.col": "Orders",
   "gl.reply": "A new reply",
   "gl.line1": "1 line",
   "gl.lineN": "{n} lines",
