@@ -1156,6 +1156,21 @@ button.amb-setting, a.amb-setting, label.amb-setting { cursor: pointer; touch-ac
    accent for what it does, the colour of a loss for what cannot be undone */
 .amb-settings__list .amb-action { min-height: 56px; padding: 6px 0; border-bottom: 1px solid var(--amb-line); border-radius: 0; font-weight: 600; color: var(--amb-accent); }
 .amb-settings__list .amb-action--danger { color: var(--amb-neg); }
+/* a row that opens in place: its question is the group's own row in a summary, its answer one or two
+   short paragraphs under it. The chevron turns as it opens; the answer stands at once (nothing slides,
+   so reduced motion only stills the turn). With the same name on every row of a group, one is open at a time.
+   The question never wraps its chevron onto a line of its own, however narrow the group. Before Safari 15.4
+   a summary is not a flex box: the chevron then follows the question inline, still legible and still a tap */
+.amb-disclose { border-bottom: 1px solid var(--amb-line); }
+.amb-settings__list > li:last-child > .amb-disclose { border-bottom: 0; }
+.amb-disclose > summary.amb-setting { border-bottom: 0; flex-wrap: nowrap; cursor: pointer; touch-action: manipulation; list-style: none; }
+.amb-disclose > summary::-webkit-details-marker { display: none; }
+/* a row's focus ring is drawn inside it, clear of the answer under it and of the group's rounded corners */
+button.amb-setting:focus-visible, a.amb-setting:focus-visible, .amb-disclose > summary.amb-setting:focus-visible { outline-offset: -2px; }
+.amb-disclose__mark { flex: none; color: var(--amb-ink-2); transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-disclose[open] > summary > .amb-disclose__mark { transform: rotate(180deg); }
+.amb-disclose__text { max-width: var(--amb-measure); margin: 0; padding: 0 var(--amb-space-6) var(--amb-space-3) 0; font-size: var(--amb-text-subhead); line-height: 1.45; color: var(--amb-ink-2); overflow-wrap: anywhere; }
+.amb-disclose__text + .amb-disclose__text { margin-top: calc(-1 * var(--amb-space-1)); }
 @container amb (max-width: 20rem) {
   .amb-option { grid-template-columns: 22px minmax(0, 1fr); }
   .amb-option__figure { grid-column: 2; grid-row: auto; text-align: left; }
