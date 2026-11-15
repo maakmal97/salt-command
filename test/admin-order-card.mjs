@@ -378,9 +378,10 @@ export async function run({ ok, pageWork }) {
     const sent = byAct(d.getElementById("aopen"), "acct.sent");
     const ruleOf = cssRules(p.w), prop = (r, name) => (r ? r.getPropertyValue(name) : "");
     /* 2 Nov 2026 (his Orders canvas, page 2): Mark as sent is a row of the account's Sign-in list, the whole row its button, the system's 56px row (over the 44px target) */
-    const rowRule = ruleOf(".salt-settings__row")[0];
-    ok(!!sent && sent.tagName === "BUTTON" && sent.textContent === "Mark as sent" && !sent.hidden && sent.matches(".salt-settings__row.salt-settings__row--action") && !sent.matches(".salt-ghost, .salt-pill") && !sent.closest("label.tick")
-      && !d.querySelector("#aopen input[type=checkbox]") && !!rowRule && parseFloat(prop(rowRule, "min-height")) >= 44 && sent.parentElement.classList.contains("salt-settings"),
+    /* 16 Nov 2026, the move to Ambient (place H): Mark as sent is an action row of the Sign-in group, the system's 56px row */
+    const rowRule = ruleOf(".amb-settings__list .amb-action")[0];
+    ok(!!sent && sent.tagName === "BUTTON" && sent.textContent === "Mark as sent" && !sent.hidden && sent.matches(".amb-action") && !sent.matches(".salt-ghost, .salt-pill") && !sent.closest("label.tick")
+      && !d.querySelector("#aopen input[type=checkbox]") && !!rowRule && parseFloat(prop(rowRule, "min-height")) >= 44 && !!sent.closest("ul.amb-settings__list"),
       "Sent is no checkbox: Mark as sent is an action row of at least 44px while it is not sent: " + (sent && sent.outerHTML));
     /* v1377: the tick rules styled only Order for them's own box, gone with it */
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }

@@ -2771,6 +2771,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
 | `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
 | `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
+| `acct.pct.value` | Account card, Their % | The stepper's field, over the book's steps of 5 (Ambient 0.7.2): a figure typed is held to a whole % inside the book's range; it sends nothing. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Asks on the Sheet (2 Nov 2026), then opens their sealed password straight to the clipboard, never into the page. |

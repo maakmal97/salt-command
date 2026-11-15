@@ -235,27 +235,28 @@ export async function run({ ok, pageWork }) {
 
     /* the guest links and the report card, on Customers */
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links")); audit();
-    const links = [...d.querySelectorAll("#glist .glink")];   /* 26 Oct 2026: a link is Needs you's card; its panel (the .glink) holds the address, QR and moves */
-    const moves = links.flatMap((l) => [...l.querySelectorAll(".grow > button")]);
-    ok(links.length >= 2 && links.every((l) => l.classList.contains("salt-glass-card") && l.classList.contains("salt-glass-card--radius-md") && l.querySelector("h4.gwho"))
+    /* 16 Nov 2026, the move to Ambient (place H): a link is Ambient's row, its panel (the .glpanel) the next item of the list, holding the code in the system's frame and its moves as action rows, Withdraw and Decline in ember */
+    const links = [...d.querySelectorAll("#glist .glpanel")];
+    const moves = links.flatMap((l) => [...l.querySelectorAll(".amb-settings button.amb-action")]);
+    ok(links.length >= 2 && links.every((l) => !!l.querySelector("p.gwho") && !!l.querySelector("figure.amb-codeframe"))
       && ["link.copy", "link.withdraw", "link.restore", "link.approve", "link.decline"].every((a) => moves.some((b) => b.getAttribute("data-act") === a))
-      && moves.every((b) => b.classList.contains("salt-ghost")) && moves.filter((b) => /^link\.(withdraw|decline)$/.test(b.getAttribute("data-act"))).every((b) => b.classList.contains("salt-ghost--danger"))
-      && moves.filter((b) => /^link\.(copy|restore|approve)$/.test(b.getAttribute("data-act"))).every((b) => !b.classList.contains("salt-ghost--danger")),
-    `a guest link's panel is the system's glass card, its heading its own line, and its moves ghosts, Withdraw and Decline the danger ghost (${links.length} links, ${moves.length} moves)`);
-    const heads = [...d.querySelectorAll("#glist .ghead")], picks = [...d.querySelectorAll(".glink select")];
-    ok(heads.length >= 1 && heads.every((h) => h.classList.contains("salt-eyebrow") && /(^| )salt-eyebrow--(copper|brass|mist)( |$)/.test(h.className)) && picks.length === 0,
-      `the heads over the links are the system's eyebrow in the group's severity colour (${heads.length}) and no level picker is drawn (${picks.length})`);
+      && moves.filter((b) => /^link\.(withdraw|decline)$/.test(b.getAttribute("data-act"))).every((b) => b.classList.contains("amb-action--danger"))
+      && moves.filter((b) => /^link\.(copy|restore|approve)$/.test(b.getAttribute("data-act"))).every((b) => !b.classList.contains("amb-action--danger")),
+    `a guest link's panel is the system's code frame over a settings group, its moves action rows, Withdraw and Decline in ember (${links.length} links, ${moves.length} moves)`);
+    const heads = [...d.querySelectorAll("#glist .ghead")], picks = [...d.querySelectorAll(".glpanel select")];
+    ok(heads.length >= 1 && heads.every((h) => h.tagName === "H2" && h.classList.contains("amb-section")) && picks.length === 0 && ["gintro", "glabel"].every((id) => !!d.getElementById(id) && d.getElementById(id).classList.contains("amb-input") && !!d.getElementById(id).closest("label.amb-field")),
+      `the heads over the links are the system's section head (${heads.length}), its two fields are Ambient's, and no level picker is drawn (${picks.length})`);
     await click(byAct(d, "part.customers.associates"));
-    const card = d.querySelector("#clist .acard"), cells = card ? [...card.querySelectorAll(".agrid > .acell")] : [];
-    ok(!!card && card.classList.contains("salt-glass-card") && card.querySelector(".agrid").classList.contains("salt-metrics") && card.querySelector(".agrid").classList.contains("salt-metrics--sm")
-      && JSON.stringify(cells.map((c) => [c.querySelector(".salt-metrics__label").textContent, c.querySelector(".salt-metrics__value").textContent])) === JSON.stringify([["Bought", "RM 100.00"], ["Sold", "RM 50.00"], ["Introduced", "RM 20.00"]]),
-    "the report card is the system's glass card and its three figures its Metric row, label over figure");
+    const trow = d.querySelector("#clist table.amb-table tbody tr"), tcells = trow ? [...trow.children] : [];
+    ok(!!trow && d.querySelector("#clist table.amb-table").classList.contains("amb-table--stack") && JSON.stringify(tcells.slice(2, 5).map((c) => [c.getAttribute("data-label"), c.textContent])) === JSON.stringify([["Bought", "RM 100.00"], ["Sold", "RM 50.00"], ["Introduced", "RM 20.00"]]),
+    "the report card is the system's stacking table, its three figures cells labelled for the stack");
+    /* 16 Nov 2026 (place H): the thread's box is Ambient's compose, no longer a labelled field, so four are read, not five */
     /* 27 Oct 2026 (Record's forms as settings rows): Record's forms now name a field with the settings row's label, so the Field label class is read where a field keeps its label above it, the cards and sheets drawn on their busiest day */
     const every = await richOwnerPage({ pageWork, slip: true, probe: true });
     try {
       await drawEverything(every);
       const above = [...every.d.querySelectorAll("label.maker-field .lbl")];
-      ok(above.length >= 5 && labelsBad(every.d).length === 0 && above.every((n) => n.classList.contains("salt-field__label")),
+      ok(above.length >= 4 && labelsBad(every.d).length === 0 && above.every((n) => n.classList.contains("salt-field__label")),
         `every field that keeps its label above it wears the system's Field label (${above.length} read; bare: ${labelsBad(every.d).slice(0, 3).join(" | ") || "none"})`);
     } finally { every.w.close(); }
   } finally { p.w.close(); }

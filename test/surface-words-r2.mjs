@@ -55,7 +55,7 @@ export async function run({ ok, pageWork }) {
 
   /* ---- Salt Admin's two leads, written in the page ---- */
   const page = new JSDOM(landingPage("", "r2-nonce", { master: "fixture-master", accounts: [] })).window.document;
-  const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks .lead"));
+  const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks > .amb-field__hint"));
   ok(sentence(group, 20) && sentence(links, 20), "W5: Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most: " + J([group, links]));
   const vaultLead = t(page.querySelector("#vaultSheet .lead"));
   ok(/^One password/.test(vaultLead) && sentence(vaultLead, 14), "W19: Salt Admin's vault sheet leads with one sentence of fourteen words at most: " + J(vaultLead));
@@ -80,7 +80,7 @@ export async function run({ ok, pageWork }) {
     enter(d, "customers", "accounts"); await p.work.quiet();
     /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
     const acct = (code) => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === code);
-    await click(acct("CX1-ZED"));
+    await click(acct("CX1-ZED").querySelector(".amb-row__main"));
     const a = d.querySelector("#aopen .oacct"), key = "CX1-ZED:" + SINCE + ":40:";
     const paid = byAct(a, "acct.refund", key + "refundPaid"), stale = byAct(a, "acct.refund", key + "refundRemove"), out = byAct(a, "acct.signout-all");
     const named = [t(paid), t(stale), t(out)];
@@ -90,8 +90,8 @@ export async function run({ ok, pageWork }) {
       && asked.length === 1 && /^Sign out everywhere\?/.test(asked[0]) && t(out) === "Sign out everywhere",
       "W6: a refund's two buttons read Tap again to confirm once tapped, and Sign out everywhere asks on the Sheet: " + J({ named, armed: [t(paid), t(stale), t(out)], asked }));
     /* 3 Nov 2026 (the account on Shop's grid): the refund's line is the text row of its own list */
-    const note = t(a.querySelector(".arefund__row .salt-settings__row--text .salt-settings__label"));
-    ok(/^RM 40[.]00 to CX1-ZED, .*Paid marks it returned[.]$/.test(note) && nw(note) <= 14 && !/Remove as stale|money received/.test(note),
+    const note = t(a.querySelector(".arefund__line"));
+    ok(/^RM 40[.]00 to CX1-ZED, .*Paid marks it returned$/.test(note) && nw(note) <= 14 && !/Remove as stale|money received/.test(note),
       "W7: a refund's line is its figure and what Paid does, with no second explanation: " + J(note));
 
     /* the account thread: a No reply needed that did not go through */

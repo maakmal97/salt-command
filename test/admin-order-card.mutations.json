@@ -254,8 +254,8 @@
   {
     "name": "Mark as sent is a plain button again",
     "file": "stmt/owner.js",
-    "find": "var mark=asRow(ghost(['Mark as sent','acct.sent']));",
-    "replace": "var mark=el('button',null,'Mark as sent'); mark.setAttribute('data-act','acct.sent');"
+    "find": "var mark=aBtn('Mark as sent','amb-action','acct.sent');",
+    "replace": "var mark=aBtn('Mark as sent','','acct.sent');"
   },
   {
     "name": "an edit put back to what it was offers no read",

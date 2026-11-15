@@ -568,7 +568,6 @@ body.ended>*:not(#aEnded){display:none}
    cards under To do, Pending and FYI, the username quiet beside the code, a sum he owes back in ember */
 
 .adm .ncard .need-who--code{flex:none}
-.adm .nfig--mine{color:var(--salt-ember)}
 
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}
@@ -799,7 +798,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nfold[open]>summary.nsev::before{content:"-"}
 .adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
-.adm .ordcard--ask,.adm .arow--ask{flex-wrap:wrap}
+.adm .ordcard--ask{flex-wrap:wrap}
 /* 2 Nov 2026: the code in a table row is a link that fills its cell's height, so the 44px target holds in the table of Orders and of Customers alike */
 .adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}
 .adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
@@ -851,7 +850,6 @@ body.ended>*:not(#aEnded){display:none}
 /* 3 Nov 2026 (the account on Shop's grid): every part a group with no glass of its own, its mist head 6px over its list (the recipe's), a second list or a
    table 12px under the first, the groups 24px apart; in columns from 1080px each group keeps 24px under it, the answer of the last list 6px under it */
 
-.adm .ahead__rm--hot{color:var(--salt-ember)}
 
 /* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
    between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
@@ -868,7 +866,6 @@ body.ended>*:not(#aEnded){display:none}
 
 .adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}
 .adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
-.adm .nfig__k{margin:0;line-height:1}
 .adm .ncard.off{opacity:.7}
 .adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
 

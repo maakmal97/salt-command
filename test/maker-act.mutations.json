@@ -2,8 +2,8 @@
   {
     "name": "A1 a card control loses its act: Approve on a link card",
     "file": "stmt/owner.js",
-    "find": "ap.type='button'; ap.setAttribute('data-move',''); actOn(ap,'link.approve');",
-    "replace": "ap.type='button'; ap.setAttribute('data-move','');"
+    "find": "var ap=aBtn('Approve','amb-action','link.approve');",
+    "replace": "var ap=aBtn('Approve','amb-action','');"
   },
   {
     "name": "A2 every Cancel retained input loses its act (the table never names them, so only the presence check can see it)",
@@ -38,8 +38,8 @@
   {
     "name": "C1 an act is renamed in the page and not in the table",
     "file": "stmt/owner.js",
-    "find": "ghost(['Mark as sent','acct.sent'])",
-    "replace": "ghost(['Mark as sent','acct.ticked'])"
+    "find": "aBtn('Mark as sent','amb-action','acct.sent')",
+    "replace": "aBtn('Mark as sent','amb-action','acct.ticked')"
   },
   {
     "name": "C2 the table loses a row for an act the page draws",

@@ -86,14 +86,14 @@
   {
     "name": "V8 Their messages is a pill again",
     "file": "stmt/owner.js",
-    "find": "rp=actOn(el('button','salt-settings__row salt-settings__row--action athread__row'),'acct.reply',u);",
-    "replace": "rp=actOn(el('button','salt-pill salt-pill--md athread__row'),'acct.reply',u);"
+    "find": "rp=aOpens('Their messages','Waiting '+ageOf(last.at),'acct.reply',u);",
+    "replace": "rp=aBtn('Their messages','amb-pill amb-pill--block','acct.reply',u);"
   },
   {
     "name": "V8 Copy password is no ember row",
     "file": "stmt/owner.js",
-    "find": "var pwb=asRow(ghost(['Copy password','acct.password']),true)",
-    "replace": "var pwb=asRow(ghost(['Copy password','acct.password']))"
+    "find": "var pwb=aBtn('Copy password','amb-action amb-action--danger','acct.password')",
+    "replace": "var pwb=aBtn('Copy password','amb-action','acct.password')"
   },
   {
     "name": "V8 Sign out everywhere sends without asking",
