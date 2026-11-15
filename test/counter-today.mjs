@@ -62,9 +62,10 @@ export async function run({ ok }) {
     /* the render pass of 19 Oct 2026: the card wears the system's padding, and on Home the header does not say the time twice */
     /* read off the served sheet: jsdom's parser drops part of this stylesheet, which a browser applies */
     const css = [...P.landingPage("", "ntd3", null, null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
-    const once = css.match(/\.cshell\[data-place=home\] \.chead \.cclock\{([^}]*)\}/g) || [];
-    ok(M.d.getElementById("today").classList.contains("salt-glass-card--pad-sm") && once.length === 1 && /display:none/.test(once[0]),
-      "the card is padded by the system's own modifier, and on Home the header's clock gives way to the card's: " + JSON.stringify(once));
+    /* 15 Nov 2026, the move to Ambient: the header is the place's hero, and on Home its time line gives way to the card's */
+    const once = css.match(/#tabs\[data-place="home"\] > \.amb-screen > \.amb-hero > \.amb-hero__time \{([^}]*)\}/g) || [];
+    ok(M.d.getElementById("today").classList.contains("salt-glass-card--pad-sm") && once.length === 1 && /display: none/.test(once[0]),
+      "the card is padded by the system's own modifier, and on Home the hero's clock gives way to the card's: " + JSON.stringify(once));
 
     /* ---- 4: open or closed, off /hours ---- */
     const u = "abcd-efgh", pass = "fixture-pass-p8", ck = await C.contentKey("test-secret", u);

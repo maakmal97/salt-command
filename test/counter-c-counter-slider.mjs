@@ -33,19 +33,17 @@ export async function run({ ok, pageWork }) {
     /* ---- 2 and 3: the customer's page ---- */
     const A = await open({ pageWork, orders: [ord("c1", "done", ago(300), { paid: 100, moved: 1 }), ord("c2", "placed", ago(100)), ord("c3", "acknowledged", ago(50))] });
     wins.push(A);
-    /* 26 Oct 2026, his word ("like settings on an iPhone"): the customer's Look is one Switch, Tide off and greyed while Tide is off */
-    const tide = A.d.querySelector('#lookRow [data-look="tide"]');
-    ok(!!tide && tide.classList.contains("salt-switch") && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && tide.disabled && !A.d.querySelector("#lookRow .lookset"),
-      "the Look row is a switch, Tide off and greyed");
-    tide.disabled = false; tide.click(); await A.settle();
-    ok(A.d.documentElement.getAttribute("data-theme") === "night" && tide.getAttribute("aria-checked") === "false", "and a forced tap on Tide moves nothing");
+    /* 26 Oct 2026, his word: the customer's Look was one Switch; 15 Nov 2026, the move to Ambient: there is none, light and dark following the device */
+    ok(!A.d.getElementById("lookRow") && !A.d.querySelector("[data-look]") && !A.d.querySelector(".lookset"),
+      "no Look row is drawn: the device chooses light or dark");
+    ok(!A.d.documentElement.hasAttribute("data-theme"), "and no theme is set on the page, signed in");
     /* 26 Oct 2026, his word: the customer's This device is a list of settings too; a browser that cannot take notifications says Not here in
        its row and why on the one line under the list */
     const devList = A.d.querySelector("#thisDevice .salt-settings"), devLabels = devList ? [...devList.querySelectorAll(".salt-settings__label")].filter((n) => n.id !== "lockT").map((n) => n.textContent) : [];
     const pushRow = devList && [...devList.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === "Notifications");
-    ok(!!devList && J(devLabels) === J(["Notifications", "Tide theme"]) && !!pushRow && (pushRow.querySelector(".salt-settings__value") || {}).textContent === "Not here"
+    ok(!!devList && J(devLabels) === J(["Notifications"]) && !!pushRow && (pushRow.querySelector(".salt-settings__value") || {}).textContent === "Not here"
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
-      "This device is a list of settings, Notifications and Tide theme; with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
+      "This device is a list of settings, Notifications (Tide theme gone, 15 Nov 2026, the move to Ambient); with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
     const row = () => A.d.querySelector("#pOrder .otabs");
     const r1 = seg(row());
     ok(row() && row().classList.contains("salt-segment") && r1.n === "4" && r1.i === "0" && r1.on === "1000" && row().querySelectorAll(".salt-segment__count").length === 4
@@ -102,9 +100,8 @@ export async function run({ ok, pageWork }) {
     const ordSeg = d.querySelector('.aparts[data-place="orders"]');
     ok(!!ordSeg && ordSeg.classList.contains("salt-segment") && [...ordSeg.querySelectorAll("button")].length === 4 && [...ordSeg.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
       "and Orders' four parts are the slider, a Segment of four");
-    /* 26 Oct 2026, his word: Salt Admin's look is one Switch now, Tide on or off */
-    const al = d.querySelector("#lookRow .salt-switch");
-    ok(!!al && al.getAttribute("role") === "switch" && !d.querySelector("#lookRow .lookset"), "Salt Admin's Look row is a switch, not the slider");
+    /* 26 Oct 2026, his word: Salt Admin's look was one Switch; 15 Nov 2026, the move to Ambient: there is none */
+    ok(!d.getElementById("lookRow") && !d.querySelector(".lookset"), "Salt Admin draws no Look row, the device choosing light or dark");
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));
 
     /* ---- 6 ---- */

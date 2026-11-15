@@ -50445,8 +50445,9 @@ await (async () => {
   await (await import("./admin-ledger.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin wears Night or Tide, chosen on its own (11 Oct 2026)");
-if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
+/* 15 Nov 2026, the move to Ambient: Salt Admin's Night and Tide retired with his answer of 14 Nov 2026; the section holds the rule that replaced them */
+section("15 Nov 2026, the move to Ambient: Salt Admin asks for no look, light and dark following the device");
+await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 

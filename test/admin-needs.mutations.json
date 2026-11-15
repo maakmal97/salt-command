@@ -462,10 +462,10 @@
   "replace": "if(sheet&&!sheetBusy)"
  },
  {
-  "name": "the banner stands below the title",
+  "name": "something stands between the title and the banner",
   "file": "stmt/page.js",
-  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'\n        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */\n        + '<section id=\"nGlance\" class=\"nglance\" aria-label=\"At a glance\" hidden></section>'",
-  "replace": "        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */\n        + '<section id=\"nGlance\" class=\"nglance\" aria-label=\"At a glance\" hidden></section>'\n        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
+  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'",
+  "replace": "        + '<p class=\"nfirst\">A line before the banner.</p><div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
  },
  {
   "name": "one bad key blanks the review",

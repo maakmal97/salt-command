@@ -202,15 +202,15 @@ export async function run({ ok, pageWork }) {
     await dv.tap("nav.shop"); await dv.tap("part.shop.device");
     const sec = dv.d.getElementById("oLook"), list = sec.querySelector(".salt-settings"), rows = list ? [...list.querySelectorAll(".salt-settings__row")] : [];
     /* P6.1 */
-    ok(rows.length === 3 && JSON.stringify(rows.map((r) => t(r.querySelector(".salt-settings__label")))) === JSON.stringify(["Tide theme", "Show names", "Notifications"]) && !sec.querySelector(".lead") && rows.every((r) => r.querySelectorAll("button:not([hidden]), input").length === 1 && !!r.querySelector(".salt-switch")),
-      "This device is one list of settings, Tide theme, Show names and Notifications, each row a name and one switch, with no lead: " + rows.map((r) => t(r.querySelector(".salt-settings__label"))).join());
-    const tide = rows[0].querySelector(".salt-switch"), bell = rows[2].querySelector(".salt-switch");
-    ok(!!tide && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && tide.disabled
-      && !!bell && bell.getAttribute("role") === "switch" && bell.getAttribute("aria-checked") === "false" && !bell.disabled,
-      "Tide theme and Notifications are switches, off; Tide greyed while it is off");
+    /* 15 Nov 2026, the move to Ambient: the Tide theme row went (light and dark follow the device) */
+    ok(rows.length === 2 && JSON.stringify(rows.map((r) => t(r.querySelector(".salt-settings__label")))) === JSON.stringify(["Show names", "Notifications"]) && !sec.querySelector(".lead") && rows.every((r) => r.querySelectorAll("button:not([hidden]), input").length === 1 && !!r.querySelector(".salt-switch")),
+      "This device is one list of settings, Show names and Notifications, each row a name and one switch, with no lead: " + rows.map((r) => t(r.querySelector(".salt-settings__label"))).join());
+    const bell = rows[1].querySelector(".salt-switch");
+    ok(!sec.querySelector("[data-look]") && !!bell && bell.getAttribute("role") === "switch" && bell.getAttribute("aria-checked") === "false" && !bell.disabled,
+      "Notifications is a switch, off, and no look is asked");
     /* his second look of 26 Oct 2026: Show names is a switch too, and the password is asked in the one Sheet */
-    const names = rows[1].querySelector(".salt-switch");
-    ok(!!names && names.id === "vaultSwitch" && names.getAttribute("role") === "switch" && names.getAttribute("aria-checked") === "false" && !names.disabled && !rows[1].querySelector("input"),
+    const names = rows[0].querySelector(".salt-switch");
+    ok(!!names && names.id === "vaultSwitch" && names.getAttribute("role") === "switch" && names.getAttribute("aria-checked") === "false" && !names.disabled && !rows[0].querySelector("input"),
       "Show names is a switch, off, with no field in its row");
     ok(dv.d.getElementById("alertNote").textContent === "", "and no line of words stands under the list until there is something to say");
     /* P6.2 */
@@ -262,7 +262,7 @@ export async function run({ ok, pageWork }) {
       "Shop's six parts (Market since 11 Nov 2026, Calendar since 13 Nov 2026) are the Nav bar's text tabs, Hours chosen: " + tabs.map((b) => t(b) + ":" + b.getAttribute("aria-selected")).join());
     ok(["makerPointsTitle", "mHelpH"].every((id) => tb.d.getElementById(id).classList.contains("salt-settings__head")), "Collection points and Help head their sections as every group of settings does");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { tb.w.close(); }
-  /* P6.4: the customer's own Look row is drawn as it was */
+  /* P6.4: the customer's own Look row was drawn as his; 15 Nov 2026, the move to Ambient: neither page draws one */
   const cust = landingPage("0000-0000", "n", null, null);
-  ok(cust.includes('<div id="lookRow" class="salt-settings__row">') && /data-look="tide" disabled><\/button>/.test(cust) && !/data-act="look\./.test(cust), "the customer's Look row is the same switch, with no act of his page");
+  ok(!cust.includes('id="lookRow"') && !/data-look=/.test(cust) && !/data-act="look\./.test(cust), "the customer's page draws no Look row either, nor any act of his page");
 }
