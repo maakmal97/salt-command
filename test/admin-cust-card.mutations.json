@@ -2,8 +2,8 @@
   {
     "name": "1 the state and its age in the head",
     "file": "stmt/owner.js",
-    "find": "if(s.age){ kd.appendChild(document.createTextNode(' · ')); kd.appendChild(el('span','nage'+(s.late?' nage--late':''),s.age)); }\n    who.appendChild(kd);",
-    "replace": "who.appendChild(kd);"
+    "find": "if(s.age) line.appendChild(el('span','nage'+(s.late?' amb-neg nage--late':''),s.age));",
+    "replace": ""
   },
   {
     "name": "1 the figure in ember when late",
@@ -26,8 +26,8 @@
   {
     "name": "2 locked first and hot",
     "file": "stmt/owner.js",
-    "find": "lk.classList.add('astand--hot'); lk.querySelector('.salt-settings__value').classList.add('nage--late');",
-    "replace": ""
+    "find": "if(a.locked) standRow('Locked out',a.locked.until?'until '+hm(a.locked.until):'now',true);",
+    "replace": "if(a.locked) standRow('Locked out',a.locked.until?'until '+hm(a.locked.until):'now');"
   },
   {
     "name": "2 notifications",
@@ -50,20 +50,20 @@
   {
     "name": "4 Sign out everywhere last",
     "file": "stmt/owner.js",
-    "find": "endList.appendChild(pwb); endList.appendChild(sob);",
-    "replace": "endList.appendChild(sob); endList.appendChild(pwb);"
+    "find": "endList.add(pwb); endList.add(sob);",
+    "replace": "endList.add(sob); endList.add(pwb);"
   },
   {
     "name": "4 Show a code",
     "file": "stmt/owner.js",
-    "find": "var hob=asRow(ghost(['Show a code','acct.show-code']))",
-    "replace": "var hob=asRow(ghost(['Show a code, in person','acct.show-code']))"
+    "find": "var hob=aBtn('Show a code','amb-action','acct.show-code')",
+    "replace": "var hob=aBtn('Show a code, in person','amb-action','acct.show-code')"
   },
   {
     "name": "5 Mark as sent hidden once sent",
     "file": "stmt/owner.js",
-    "find": "    mark.hidden=!!a.sent||none||!!a.test;\n    mark.addEventListener",
-    "replace": "    mark.hidden=none||!!a.test;\n    mark.addEventListener"
+    "find": "function markShow(){ var off=!!a.sent||none||!!a.test;",
+    "replace": "function markShow(){ var off=none||!!a.test;"
   },
   {
     "name": "5 Mark as sent marks it",
@@ -79,9 +79,9 @@
   },
   {
     "name": "7 the code never wraps",
-    "file": "stmt/page.js",
-    "find": "line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}",
-    "replace": "line-height:1.2;overflow:hidden;overflow-wrap:normal}"
+    "file": "stmt/statement-css.js",
+    "find": ".ahead__code, .chathead__code { overflow-wrap: anywhere; }",
+    "replace": ".ahead__code, .chathead__code { }"
   },
   {
     "name": "4 Copy password asks on the Sheet",

@@ -35,45 +35,46 @@ export async function run({ ok, pageWork }) {
     const card = (code) => rows().find((c) => t(c.querySelector(".acode")) === code);
     const groupOf = (code) => { const c = card(code); return c ? c.closest("section").getAttribute("data-sev") : ""; };
     /* 1 */
-    const shape = (c) => [...c.children].map((x) => x.classList.contains("arow__open") ? "open" : x.classList.contains("salt-settings__value") ? "value" : x.classList.contains("salt-ghost--lit") ? "move" : x.classList.contains("oask") ? "tail" : x.className);
+    /* 16 Nov 2026, the move to Ambient (place H): an account is Ambient's row: its text a button (amb-row__main), its way a small pill in the trail, its answer the next item of the list */
+    const shape = (c) => [...c.children].map((x) => x.classList.contains("arow__open") ? "open" : x.classList.contains("amb-row__trail") ? "move" : x.className);
     const cards = rows();
     const one = card("CX1-ZED"), open1 = one && one.querySelector(".arow__open");
-    ok(cards.length === 8 && cards.every((c) => c.classList.contains("salt-settings__row") && c.classList.contains("arow") && c.firstElementChild.classList.contains("salt-settings__text") && !c.querySelector(".salt-pill")) && J(shape(one)) === J(["open", "value", "move", "tail"])
-      && t(one.querySelector(".salt-settings__sub")) === "Owed · 3 d late" && one.querySelector(".salt-settings__sub").classList.contains("salt-settings__sub--late")
-      && /abcd-efgh/.test(open1.getAttribute("aria-label")) && open1.querySelector(".salt-settings__label").firstElementChild === one.querySelector(".acode") && !!card("CX2-ZED").getAttribute("data-u")
-      && d.querySelector('.aparts[data-place="customers"]').classList.contains("salt-segment--tight"),
+    ok(cards.length === 8 && cards.every((c) => c.tagName === "LI" && c.classList.contains("amb-row") && c.classList.contains("arow") && c.firstElementChild.classList.contains("amb-row__main") && !c.querySelector(".salt-pill")) && J(shape(one)) === J(["open", "move"])
+      && t(one.querySelector(".amb-row__sub")) === "Owed, 3 d late, RM 100" && one.querySelector(".amb-row__sub .amb-neg").textContent === "Owed" && one.nextElementSibling.classList.contains("oask")
+      && /abcd-efgh/.test(open1.getAttribute("aria-label")) && open1.querySelector(".amb-row__title").firstElementChild === one.querySelector(".acode") && !!card("CX2-ZED").getAttribute("data-u")
+      && d.querySelector('.aparts[data-place="customers"]').classList.contains("amb-segment"),
       "an account is a settings row, its code over its state and age, its username in the reading name, one way and the figure: " + cards.length + " rows, " + t(one));
     /* 2 */
     const order = (sev) => [...d.querySelectorAll('#rlist section[data-sev="' + sev + '"] [data-u]')].map((c) => t(c.querySelector(".acode")));
     ok(J(order("now")) === J(["CX1-ZED", "CX5-ZED", "CX2-ZED", "CX3-ZED", "CX4-ZED"]) && J(order("soon")) === J(["CX6-ZED", "CX7-ZED"]) && J(order("watch")) === J(["Practice account, open"])
-      && J([...d.querySelectorAll("#rlist section > h2.salt-settings__head")].map(t)) === J(["To do", "Pending", "FYI"]) && [...d.querySelectorAll("#rlist section")].every((s) => s.querySelectorAll(":scope > .salt-settings").length === 1),
+      && J([...d.querySelectorAll("#rlist section > h2.amb-section")].map(t)) === J(["To do", "Pending", "FYI"]) && [...d.querySelectorAll("#rlist section")].every((s) => s.querySelectorAll(":scope > ul.amb-list").length === 1),
       "To do holds owed past term, the refund, no account, locked and not sent, the largest sum first; Pending owed within term and not opened; FYI the practice account, each group one list under its head: " + J([order("now"), order("soon"), order("watch")]));
     /* 3 */
-    const fig = (code) => card(code).querySelector(".salt-settings__value");
-    ok(t(fig("CX1-ZED")) === "RM 100" && t(fig("CX6-ZED")) === "RM 300" && t(fig("CX5-ZED")) === "RM 25" && fig("CX5-ZED").classList.contains("nfig--mine") && !fig("CX1-ZED").classList.contains("nfig--mine") && t(fig("CX3-ZED")) === ""
-      && fig("CX1-ZED").classList.contains("salt-settings__value--lg"),
+    const sums = (code) => [...card(code).querySelectorAll(".amb-row__sub span")].filter((x) => /^RM/.test(t(x)));
+    const fig = (code) => sums(code)[0] || { textContent: "", classList: { contains: () => false } };
+    ok(t(fig("CX1-ZED")) === "RM 100" && t(fig("CX6-ZED")) === "RM 300" && t(fig("CX5-ZED")) === "RM 25" && fig("CX5-ZED").classList.contains("amb-neg") && !fig("CX1-ZED").classList.contains("amb-neg") && t(fig("CX3-ZED")) === "",
       "the figure is what they owe, a refund he owes back in ember, and none where nothing is owed: " + J(["CX1-ZED", "CX6-ZED", "CX5-ZED", "CX3-ZED"].map((c) => t(fig(c)))));
     /* 4 */
-    const way = (code) => { const b = card(code).querySelector(".salt-ghost--lit"); return b ? t(b) + "/" + b.getAttribute("data-act") : ""; };
+    const way = (code) => { const b = card(code).querySelector(".amb-row__trail .amb-pill"); return b ? t(b) + "/" + b.getAttribute("data-act") : ""; };
     ok(J(["CX1-ZED", "CX3-ZED", "CX4-ZED", "CX7-ZED", "CX2-ZED", "CX5-ZED"].map(way)) === J(["Message/acct.message", "Send/need.signin-link", "Send/need.signin-link", "Send/need.signin-link", "Show/acct.show-link", "Open/acct.open-card"])
-      && card("CX1-ZED").querySelectorAll("button").length === 1 && !card("CX1-ZED").querySelector(".salt-pill"),
+      && card("CX1-ZED").querySelectorAll("button").length === 2 && !card("CX1-ZED").querySelector(".salt-pill"),
       "the one way follows the state and keeps its act: Message, Send, Show, Open: " + J(["CX1-ZED", "CX3-ZED", "CX4-ZED", "CX7-ZED", "CX2-ZED", "CX5-ZED"].map(way)));
     /* 5 */
-    await click(card("CX3-ZED").querySelector(".salt-ghost--lit"));
+    await click(card("CX3-ZED").querySelector(".amb-row__trail .amb-pill"));
     const notOpened = d.getElementById("aopen").hidden;
     await click(card("CX7-ZED").querySelector('[data-act="acct.open"]'));
     ok(notOpened && !d.getElementById("aopen").hidden && !!d.querySelector('#aopen [data-acct="unop-acct"]'),
       "a tap on the row's text opens the account, a tap on its way does not");
     /* 6 */
     const tabs = [...d.querySelectorAll("#afil button[data-f]")];
-    const said = tabs.map((b) => b.firstChild.textContent + ":" + t(b.querySelector(".nktab__n")) + (b.disabled ? ":off" : ""));
-    ok(tabs.every((b) => b.getAttribute("role") === "tab" && b.classList.contains("nktab") && b.classList.contains("salt-nav__link")) && d.getElementById("afil").getAttribute("role") === "tablist"
-      && J(said) === J(["All:8", "Not sent:1", "Not opened:3", "They owe:2", "Locked out:1", "No account:1"]) && tabs[0].getAttribute("aria-selected") === "true",
-      "the filters are a tab row, each with its count, No account in place of No account yet, All chosen: " + J(said));
+    const said = tabs.map((b) => b.firstChild.textContent + ":" + t(b.querySelector(".amb-segment__count")) + (b.disabled ? ":off" : ""));
+    ok(tabs.every((b) => b.classList.contains("amb-segment__opt")) && d.getElementById("afil").classList.contains("amb-segment--wrap") && d.getElementById("afil").getAttribute("role") === "group"
+      && J(said) === J(["All:8", "Not sent:1", "Not opened:3", "They owe:2", "Locked out:1", "No account:1"]) && tabs[0].getAttribute("aria-pressed") === "true" && !!d.querySelector("#oAccts .amb-search > input#rq.amb-input"),
+      "the filters are Ambient's counted wrapping segment, each with its count, No account in place of No account yet, All chosen; the find field is Ambient's Search: " + J(said));
     await click(tabs[3]);
-    ok(tabs[3].getAttribute("aria-selected") === "true" && tabs[3].classList.contains("salt-nav__link--active") && tabs[0].getAttribute("aria-selected") === "false"
+    ok(tabs[3].getAttribute("aria-pressed") === "true" && tabs[0].getAttribute("aria-pressed") === "false"
       && J([...d.querySelectorAll("#rlist [data-u]")].map((c) => t(c.querySelector(".acode")))) === J(["CX1-ZED", "CX6-ZED"]),
-      "a filter chosen is selected and narrows the rows");
+      "a filter chosen is pressed and narrows the rows");
     await click(tabs[0]);
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();
@@ -82,7 +83,7 @@ export async function run({ ok, pageWork }) {
     finally { q.w.close(); }
     /* 7 */
     const lead = d.getElementById("alead");
-    ok(!lead.hidden && lead.classList.contains("salt-insight") && t(lead) === "RM 400 is owed to you, RM 100 of it late; RM 25 owed back; 2 accounts await a sign-in."
+    ok(!lead.hidden && lead.classList.contains("amb-notice") && t(lead) === "RM 400 is owed to you, RM 100 of it late; RM 25 owed back; 2 accounts await a sign-in."
       && J([...lead.querySelectorAll("b")].map(t)) === J(["RM 400", "RM 25", "2 accounts"]) && t(lead).split(/[.] /).length === 1 && t(lead).split(" ").length <= 20,
       "an Insight leads in one sentence: owed and late, what he owes back, the sign-ins waiting: " + t(lead));
   } finally { p.w.close(); }

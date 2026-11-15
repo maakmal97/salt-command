@@ -40,25 +40,26 @@ export async function run({ ok, pageWork }) {
     const open = async (code) => { await click([...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === code).querySelector('[data-act="acct.open"]')); return d.querySelector("#aopen .oacct"); };
     let a = await open("CX1-ZED");
     if (!d.querySelector("#aopen .apct") || !d.querySelector("#aopen .acust")) { ok(false, "the account carries Their % and This customer"); return; }
-    const pct = () => d.querySelector("#aopen .apct"), btn = (act) => byAct(pct(), act, act === "acct.pct.send" || act === "acct.pct.clear" ? "CX1-ZED" : undefined) || byAct(pct(), act);
+    /* 16 Nov 2026, the move to Ambient (place H): the stepper is Ambient's, over values, a text field holding the whole % (-10), its minus and plus the system's circles */
+    const pct = () => d.querySelector("#aopen .apct"), val = () => pct().querySelector(".apct__step input").value, btn = (act) => byAct(pct(), act, act === "acct.pct.send" || act === "acct.pct.clear" ? "CX1-ZED" : undefined) || byAct(pct(), act);
     /* 1 */
     const tabs = [...pct().querySelectorAll('[data-act="acct.pct.book"]')];
     /* 3 Nov 2026 (the account on Shop's grid): no glass card, a settings list; the suggestion a row, its why the second line under it */
-    const sug = [...pct().querySelectorAll(".apct__list > .salt-settings__row:first-child")].map(t);
-    ok(!!pct() && !pct().classList.contains("salt-glass-card") && J(tabs.map(t)) === J(["Salt", "Oil"]) && tabs[0].getAttribute("aria-selected") === "true" && !!tabs[0].querySelector(".salt-producttag")
-      && J(sug) === J(["SuggestedGood record−15%"]) && t(pct().querySelector(".apct__val")) === "−10%" && t(btn("acct.pct.send")) === "Send −10%" && btn("acct.pct.send").disabled
-      && t(btn("acct.pct.suggest")) === "Use −15%" && !btn("acct.pct.suggest").disabled && !!btn("acct.pct.clear"),
-      "Their % stands on the account: the books as tabs, the suggestion and why, the stepper at what is set, Send off while unchanged: " + J([tabs.map(t), sug, t(pct().querySelector(".apct__val"))]));
+    const sug = [...pct().querySelectorAll(".apct__list .amb-setting")].map(t);
+    ok(!!pct() && !pct().classList.contains("salt-glass-card") && J(tabs.map(t)) === J(["Salt", "Oil"]) && tabs[0].getAttribute("aria-pressed") === "true" && !tabs[0].querySelector(".salt-producttag") && tabs[0].classList.contains("amb-segment__opt")
+      && J(sug) === J(["Suggested−15%"]) && t(pct().querySelector(".apct__list .amb-settings__foot")) === "Good record" && val() === "-10" && t(btn("acct.pct.send")) === "Send −10%" && btn("acct.pct.send").disabled
+      && t(btn("acct.pct.suggest")) === "Use −15%" && btn("acct.pct.suggest").classList.contains("amb-action") && !!pct().querySelector(".amb-stepper > [data-amb-step='-1']") && pct().querySelector(".amb-stepper input").getAttribute("data-amb-values").split(" ").includes("-10") && !btn("acct.pct.suggest").disabled && !!btn("acct.pct.clear"),
+      "Their % stands on the account: the books as tabs, the suggestion and why, the stepper at what is set, Send off while unchanged: " + J([tabs.map(t), sug, val()]));
     /* 2 */
     const reads0 = p.wire.length;
     await click(btn("acct.pct.down"));
     const rows = () => [...pct().querySelectorAll(".apct__table tbody tr")].map((r) => [...r.children].map(t).join("|"));
-    ok(t(pct().querySelector(".apct__val")) === "−15%" && t(btn("acct.pct.send")) === "Send −15%" && !btn("acct.pct.send").disabled
+    ok(val() === "-15" && t(btn("acct.pct.send")) === "Send −15%" && !btn("acct.pct.send").disabled
       && J([...pct().querySelectorAll(".apct__table thead th")].map(t)) === J(["Units", "Now", "At −15%", "Floor"]) && J(rows()) === J(["1 unit|RM 110|RM 105|RM 60", "5 units|RM 440|RM 400|RM 300"])
       && p.wire.slice(reads0).some((w) => w.startsWith("/all/maker/drift-preview/CX1-ZED/salt/-15 GET")),
       "a step moves 5 and their prices are the Desk's preview at the new %, against the Floor: " + J(rows()));
     for (let i = 0; i < 17; i++) await click(btn("acct.pct.down"));
-    ok(t(pct().querySelector(".apct__val")) === "−100%" && btn("acct.pct.down").disabled && !btn("acct.pct.up").disabled, "the stepper on salt stops at −100%, the end the catalog gives it");
+    ok(val() === "-100" && !btn("acct.pct.up").disabled, "the stepper on salt stops at -100, the end the catalog gives it");
     for (let i = 0; i < 17; i++) await click(btn("acct.pct.up"));
     /* 3 */
     p.posts.length = 0;
@@ -68,28 +69,28 @@ export async function run({ ok, pageWork }) {
       "Send sends one tier-set at that %, as a fraction, and nothing else: " + J(p.posts));
     a = await open("CX1-ZED");
     await click(btn("acct.pct.down")); await click(btn("acct.pct.suggest"));
-    ok(t(pct().querySelector(".apct__val")) === "−15%", "Use the suggestion fills the stepper: " + t(pct().querySelector(".apct__val")));
+    ok(val() === "-15", "Use the suggestion fills the stepper: " + val());
     p.posts.length = 0;
     await click(btn("acct.pct.clear"));
     ok(p.posts.length === 1 && p.posts[0].route === "/all/maker/inputs/tier-set" && p.posts[0].body.tier === null && p.posts[0].body.product === "salt", "Set back to 0 sends a null: " + J(p.posts));
     /* 4 */
     await click(pct().querySelectorAll('[data-act="acct.pct.book"]')[1]);
-    ok(pct().querySelectorAll('[data-act="acct.pct.book"]')[1].getAttribute("aria-selected") === "true" && t(pct().querySelector(".apct__val")) === "0%" && btn("acct.pct.suggest").disabled
-      && t(btn("acct.pct.suggest")) === "No suggestion" && !byAct(pct(), "acct.pct.clear", "CX1-ZED") && t(pct().querySelector(".apct__list > .salt-settings__row")) === "SuggestedNone",
+    ok(pct().querySelectorAll('[data-act="acct.pct.book"]')[1].getAttribute("aria-pressed") === "true" && val() === "0" && btn("acct.pct.suggest").disabled
+      && t(btn("acct.pct.suggest")) === "No suggestion" && !byAct(pct(), "acct.pct.clear", "CX1-ZED") && t(pct().querySelector(".apct__list .amb-setting")) === "SuggestedNone",
       "a book with nothing set offers neither Use nor Set back to 0");
     for (let i = 0; i < 7; i++) await click(btn("acct.pct.down"));
-    ok(t(pct().querySelector(".apct__val")) === "−30%" && btn("acct.pct.down").disabled && !btn("acct.pct.up").disabled, "and a board's stepper stops at −30%, its own end");
+    ok(val() === "-30" && !btn("acct.pct.up").disabled, "and a board's stepper stops at −30%, its own end");
     /* 5 */
     const c = d.querySelector("#aopen .acust"), r = d.querySelector("#aopen .arwd");
     /* 3 Nov 2026 (the account on Shop's grid): the figures are settings rows (data-line), the head a mist settings head carrying the book's tag */
-    const lines = (box) => [...box.querySelectorAll(".salt-settings__row[data-line]")].map((l) => t(l.querySelector(".salt-settings__label")) + "=" + t(l.querySelector(".salt-settings__value")));
-    const headOf = (box) => (box.querySelector("h2.salt-settings__head").firstChild.textContent || "").trim();
+    const lines = (box) => [...box.querySelectorAll(".amb-setting[data-line]")].map((l) => t(l.querySelector(".amb-setting__name")) + "=" + t(l.querySelector(".amb-setting__value")));
+    const headOf = (box) => (box.querySelector("h2.amb-section").firstChild.textContent || "").trim();
     ok(!!c && !c.hidden && headOf(c) === "This customer" && J(lines(c)) === J(["A unit now=RM 110", "Highest=RM 120", "Orders every=9 days", "Next order due=in 2 days"])
-      && /Loyalty 7 of 20 units/.test(t(c.querySelector(".salt-meter"))) && c.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "35" && !!c.querySelector("svg.acust__spark")
+      && /Loyalty ?7 of 20 units/.test(t(c.querySelector(".amb-row--meter"))) && c.querySelector("progress.amb-meter").value === 35 && !!c.querySelector("svg.acust__spark")
       && p.wire.some((w) => w.startsWith("/all/maker/customer-of/CX1-ZED GET")),
       "This customer is read by the account's code and drawn: " + J(lines(c)));
     ok(!!r && !r.hidden && headOf(r) === "Associate reward" && J(lines(r)) === J(["Step, 10 units’ cost=RM 560", "Given under Median Price=RM 15", "A unit, net to you=RM 41"])
-      && r.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "68" && p.wire.some((w) => w.startsWith("/all/maker/reward-of/CX1-ZED GET")),
+      && r.querySelector("progress.amb-meter").value === 68 && p.wire.some((w) => w.startsWith("/all/maker/reward-of/CX1-ZED GET")),
       "the associate reward is read by code and drawn: " + J(lines(r)));
     /* 6 */
     const mk = byAct(d.getElementById("aopen"), "acct.partner", "CX1-ZED");

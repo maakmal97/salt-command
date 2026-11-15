@@ -20,8 +20,8 @@
   {
     "name": "3 a refund in ember",
     "file": "stmt/owner.js",
-    "find": "salt-settings__value--lg'+(s.mine?' nfig--mine':''),rmShort(s.rm)));",
-    "replace": "salt-settings__value--lg',rmShort(s.rm)));"
+    "find": "sub.appendChild(el('span',s.mine?'amb-neg':null,rmShort(s.rm)));",
+    "replace": "sub.appendChild(el('span',null,rmShort(s.rm)));"
   },
   {
     "name": "4 Message for money owed",
@@ -32,26 +32,26 @@
   {
     "name": "4 Show for no account",
     "file": "stmt/owner.js",
-    "find": "else if(s.act==='show') silverOn(a, c, 'acct');",
+    "find": "    else if(s.act==='show') acctShow(a, c);\n",
     "replace": ""
   },
   {
-    "name": "4 the way is a lit ghost, never the filled pill",
+    "name": "the way is the filled pill, never the small quiet one",
     "file": "stmt/owner.js",
-    "find": "b.classList.add('salt-ghost','salt-ghost--lit','salt-ghost--tight'); return b; }\n  function rowTail",
-    "replace": "return b; }\n  function rowTail"
+    "find": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm';",
+    "replace": "c._add(linkButton(a, noteOf(c)));"
   },
   {
     "name": "5 the row's way opens the account too",
     "file": "stmt/owner.js",
-    "find": "if(!mv){ mv=asMove(b);",
-    "replace": "if(!mv){ mv=asMove(b); b.addEventListener('click', function(){ openCard(a.username); });"
+    "find": "if(!mv){ mv=b; if(!mv.getAttribute('data-key'))",
+    "replace": "if(!mv){ mv=b; b.addEventListener('click', function(){ openCard(a.username); }); if(!mv.getAttribute('data-key'))"
   },
   {
     "name": "5 the row's text opens",
     "file": "stmt/owner.js",
-    "find": "open.addEventListener('click', function(ev){ ev.preventDefault(); openCard(a.username); });",
-    "replace": "open.addEventListener('click', function(ev){ ev.preventDefault(); });"
+    "find": "    open.addEventListener('click', function(){ openCard(a.username); });\n",
+    "replace": ""
   },
   {
     "name": "6 No account",
@@ -72,10 +72,10 @@
     "replace": "x.disabled=false; });"
   },
   {
-    "name": "6 the chosen one selected",
+    "name": "a filter chosen is ignored",
     "file": "stmt/owner.js",
-    "find": "x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on); });",
-    "replace": "x.classList.toggle('salt-nav__link--active', on); });"
+    "find": "    aFilter=FILTER[f]?f:'all';\n    filterMark();",
+    "replace": "    aFilter='all';\n    filterMark();"
   },
   {
     "name": "7 past its term",
@@ -92,19 +92,19 @@
   {
     "name": "7 the lead shows",
     "file": "stmt/owner.js",
-    "find": "    box.hidden=!sheet;\n  }",
-    "replace": "    box.hidden=true;\n  }"
+    "find": "    wrap.hidden=!sheet;",
+    "replace": "    wrap.hidden=true;"
   },
   {
-    "name": "1 the parts are the tight slider",
+    "name": "the parts are not Ambient segment",
     "file": "stmt/page.js",
-    "find": "(seg && p === \"customers\" ? \" salt-segment--tight\" : \"\")",
-    "replace": "\"\""
+    "find": "p === \"shop\" || p === \"record\" || p === \"customers\"",
+    "replace": "p === \"shop\" || p === \"record\""
   },
   {
-    "name": "1 Customers is a slider",
-    "file": "stmt/page.js",
-    "find": "const ADMIN_SLIDERS = [\"customers\"];",
-    "replace": "const ADMIN_SLIDERS = [];"
+    "name": "a row text carries no act",
+    "file": "stmt/owner.js",
+    "find": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button';",
+    "replace": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button'; open.removeAttribute('data-act');"
   }
 ]
