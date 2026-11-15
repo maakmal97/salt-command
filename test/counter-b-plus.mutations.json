@@ -26,8 +26,8 @@
  {
   "name": "a size's row opens the sheet",
   "file": "stmt/page.js",
-  "find": "row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); }); }",
-  "replace": "row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }"
+  "find": "if(tapTo) row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); });",
+  "replace": "if(tapTo) row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); });"
  },
  {
   "name": "the stepper under the gate",

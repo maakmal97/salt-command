@@ -23,7 +23,8 @@ export async function run({ ok, pageWork }) {
   /* 11 Nov 2026 (his answer "Always ask"): the sheet asks the way, so a check that places chooses collect first */
   const collect = async (p) => { const m = p.d.querySelector('#osheet [data-k="mode:0"]:not([aria-pressed="true"])'); if (m) { m.click(); await p.settle(); } const g = p.d.getElementById("oGo"); if (g && g.getAttribute("aria-disabled") !== "true") { g.click(); await p.settle(); } };
   const bar = (p) => { const b = p.d.getElementById("bkBar"); return b && !b.hidden ? b : null; };
-  const kpi = (p) => { const b = bar(p); return b ? [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => txt(b.querySelector(s))) : null; };
+  /* 16 Nov 2026, the move to Ambient: the bar's figure is the system's Stat (its label, its value, the words under it as a second label) with the one pill in a foot */
+  const kpi = (p) => { const b = bar(p); if (!b) return null; const l = b.querySelectorAll(".amb-stat__label"); return [txt(l[0]), txt(b.querySelector(".amb-stat__value")), txt(l[1])]; };
   try {
     /* ---- 1 ---- */
     const A = await page({ orders: [done("o1", ago(100))] });
@@ -40,7 +41,7 @@ export async function run({ ok, pageWork }) {
     const k2 = kpi(A);
     A.d.getElementById("bkGo").click(); await A.settle();
     await collect(A);
-    const lines = A.d.querySelectorAll("#osheet .mhero > *").length;
+    const lines = A.d.querySelectorAll("#osheet .amb-list > li").length;
     A.d.getElementById("oPlace").click(); await A.settle();
     const ps = A.st.posts;
     ok(k2[0] === "2 in the basket" && k2[1] === "RM 1,095.00" && lines === 2 && ps.length === 2 && ps[0].product === "salt" && ps[0].qty === 10 && ps[0].total === 980
@@ -53,7 +54,7 @@ export async function run({ ok, pageWork }) {
     await put(R, 0, 1); await put(R, 1, 1);
     R.d.getElementById("bkGo").click(); await R.settle(); await collect(R);
     R.d.querySelector('#osheet [data-k="rm:1"]').click(); await R.settle();
-    const one = R.d.querySelectorAll("#osheet .mhero > *").length;
+    const one = R.d.querySelectorAll("#osheet .amb-list > li").length;
     R.d.getElementById("oPlace").click(); await R.settle();
     const rb = R.st.posts[0] || {};
     ok(one === 1 && R.st.posts.length === 1 && rb.product === "salt" && !("sheet" in rb) && /^[0-9a-f]{32}$/.test(rb.rid || "") && !bar(R),
@@ -66,10 +67,12 @@ export async function run({ ok, pageWork }) {
        both is 2 (Place and Sent clear the bar and the lines) and 3 (Remove keeps the basket). */
 
     /* ---- 6 ---- */
+    /* 16 Nov 2026, the move to Ambient: the bar's own sticking is the system's foot (it holds the one pill and stands at the screen's foot above the dock by itself); the bar's box takes no
+       place of its own, so the figure stands in the stack and the foot after it */
     const css = [...P.landingPage("", "nbb6", null, null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
-    const base = /\.bkbar\{z-index:10;position:sticky;margin-top:24px;bottom:calc\(var\(--salt-bar-h\) \+ env\(safe-area-inset-bottom,0px\) - 1px\)/.test(css);
-    const wide = /@media \(min-width:1080px\)\{\s*\.bkbar\{bottom:0;/.test(css);
-    ok(base && wide, "the bar sticks above the App bar on a phone and to the foot of the column from 1080px, where the bar is the rail: " + JSON.stringify([base, wide]));
+    const base = /#pWay, #bkBar \{ display: contents; \}/.test(css);
+    const wide = !!bar(D) && !!bar(D).querySelector(".amb-foot > #bkGo.amb-pill.amb-pill--block") && !bar(D).querySelector(".amb-foot").nextElementSibling;
+    ok(base && wide, "the bar takes no place of its own and its one Continue is the system's foot: " + JSON.stringify([base, wide]));
 
     /* ---- 7 ---- */
     const three = LIST(); three.products.push({ product: "candy", unit: "unit", basis: "board", sizes: [{ q: 1, price: 12 }] });

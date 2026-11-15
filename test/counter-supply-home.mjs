@@ -41,15 +41,18 @@ export async function run({ ok, pageWork }) {
     let into = null; A.w.HTMLElement.prototype.scrollIntoView = function () { into = this; };
     rows[1].click(); await A.settle();
     const pr = A.d.getElementById("pPrices"), panes = [...A.d.querySelectorAll("#pPrices .pane")];
-    ok(!pr.hidden && !!into && into === panes[1] && !!into.querySelector(".pmark .salt-coin") && !/sup/.test(into.querySelector(".pmark").className),
+    ok(!pr.hidden && !!into && into === panes[1] && !!into.querySelector(".pmark .amb-thumb--mark") && !/sup/.test(into.querySelector(".pmark").className),
       "a row opens Prices and brings that book's pane into view: " + JSON.stringify({ shown: !pr.hidden, pane: into && into.querySelector(".pmark").className }));
 
     /* ---- 3 ---- */
-    const lines = panes.map((p) => txt(p.querySelector(".supline")));
+    /* 16 Nov 2026, the move to Ambient: the light on Prices is the one chip (hLight, as Home's), beside the thumb in the heading, which says it once; its tone is by the light */
+    const lines = panes.map((p) => txt(p.querySelector(".pmark .amb-chip")));
+    const tones = panes.slice(0, 3).map((p) => p.querySelector(".pmark .amb-chip").className);
     const css = [...A.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(lines.join("|") === "Selling fast|Out of stock|Available|" && panes.slice(0, 3).every((p) => p.querySelector(".supline").getAttribute("aria-hidden") === "true" && !!p.querySelector(".supline .salt-light"))
+    ok(lines.join("|") === "Selling fast|Out of stock|Available|" && panes.slice(0, 3).every((p) => p.querySelector(".pmark .amb-chip").getAttribute("aria-hidden") === "true" && !!p.querySelector(".pmark .amb-chip .amb-chip__dot"))
+      && JSON.stringify(tones) === JSON.stringify(["amb-chip", "amb-chip amb-chip--neg", "amb-chip amb-chip--pos"])
       && !/\.pmark\.sup|\.salt-status\.supst|\.sup-(green|yellow|red)/.test(css) && !/\.hsup/.test(css),
-    "on Prices the word stands under each lit mark (the heading says it once), no border or status rule of the old light is left and Home's rows are Ambient's: " + JSON.stringify(lines));
+    "on Prices the one chip stands beside each lit mark (the heading says it once), its tone by the light (Selling fast plain, Out of stock negative, Available positive), no border or status rule of the old light is left and Home's rows are Ambient's: " + JSON.stringify([lines, tones]));
 
     /* ---- 4 ---- */
     const N = await page({ list: LIST() });

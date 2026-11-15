@@ -84,7 +84,7 @@ export async function run({ ok }) {
   const openLimit = async (pg) => { pg.d.querySelector('button[data-t="prices"]').click();
     /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
     await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
-    await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
+    await until(() => pg.d.querySelector('#osheet [data-k^="cancel:"]')); return pg.d.querySelector('#osheet [data-k^="cancel:"]'); };
   const payWays = [["the close orb", (pg) => pg.d.getElementById("payX").click()], ["the scrim", (pg) => pg.d.getElementById("payScrim").click()], ["Escape", (pg) => key(pg, "Escape")]];
   const sheetUp = (pg) => !pg.d.getElementById("paySheet").hidden;
   const lbl = (e) => (e ? (e.id || e.tagName) : "nothing");
@@ -188,11 +188,11 @@ export async function run({ ok }) {
     cb.focus(); cb.click(); cb.click();
     ok(ynN() === 1 && !!L.d.getElementById("osheet") && L.d.getElementById("osheet") === osh,
       "two quick opens of the question over the New order sheet leave one question, and the New order sheet under it: " + ynN());
-    const ynWays = [["Escape", (pg) => key(pg, "Escape")], ["the close orb", (pg) => pg.d.getElementById("ynX").click()], ["the scrim", (pg) => pg.d.getElementById("ynScrim").click()],
+    const ynWays = [["Escape", (pg) => key(pg, "Escape")], ["the close orb", (pg) => pg.d.getElementById("ynX").click()], ["the scrim", (pg) => pg.d.getElementById("ynSheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))   /* 16 Nov 2026, the move to Ambient: the scrim is the dialog's own box */],
       ["the ghost", (pg) => pg.d.getElementById("ynKeep").click()]];
     const ynRes = [];
     for (const [name, fn] of ynWays) {
-      if (!ynN()) { const b = L.d.querySelector('#osheet .olim button'); b.focus(); b.click(); }
+      if (!ynN()) { const b = L.d.querySelector('#osheet [data-k^="cancel:"]'); b.focus(); b.click(); }
       const was = ynN() === 1; fn(L);
       ynRes.push([name, was && ynN() === 0 && L.d.getElementById("osheet") === osh && !L.d.getElementById("osheet").hasAttribute("inert")]);
     }

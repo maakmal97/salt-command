@@ -113,7 +113,7 @@ export async function run({ ok }) {
   const openLimit = async (pg) => { pg.d.querySelector('button[data-t="prices"]').click();
     /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
     await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
-    await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
+    await until(() => pg.d.querySelector("#osheet [data-k^=\"cancel:\"]")); return pg.d.querySelector("#osheet [data-k^=\"cancel:\"]"); };
   const openLinks = async (pg) => { pg.d.querySelector('button[data-t="card"]').click();
     await until(() => pg.d.querySelector('#pCard button[data-yn="link:' + LINK.id + '"]')); return pg.d.querySelector('#pCard button[data-yn="link:' + LINK.id + '"]'); };
 
@@ -141,12 +141,12 @@ export async function run({ ok }) {
       "one danger action, the system's danger ghost, and a ghost that keeps, on the system's Sheet with its scrim and its close orb: " + JSON.stringify([go.className, keep.className]));
     /* 19 Oct 2026: whole words over the sheet spaced at every tag, so encounter, frontier and levelled pass */
     const banned = /\b(salt|oil|candy|rice|gas|titanium|platinum|gold|silver|bronze|ambassador|tiers?|levels?|counter)\b/i;
-    ok(!banned.test(sh.innerHTML.replace(/<[^>]*>/g, " ")) && !banned.test(go.textContent + " " + keep.textContent) && !P.d.getElementById("ynWrap").querySelector("[style]") && !/[A-Z]{2,}[0-9]-[A-Z]{3}/.test(say),
+    ok(!banned.test(sh.innerHTML.replace(/<[^>]*>/g, " ")) && !banned.test(go.textContent + " " + keep.textContent) && !P.d.getElementById("ynSheet").querySelector("[style]") && !/[A-Z]{2,}[0-9]-[A-Z]{3}/.test(say),
       "it names no product, no brand, no level and no code, and carries no style attribute: " + JSON.stringify(say));
 
     /* 5: keep */
     keep.click();
-    ok(!sheet(P) && !P.d.getElementById("ynWrap") && sends(P) === 0 && P.d.activeElement === cancelA,
+    ok(!sheet(P) && !P.d.getElementById("ynSheet") && sends(P) === 0 && P.d.activeElement === cancelA,
       "the ghost that keeps closes the Sheet, sends nothing and gives the focus back to the control that opened it");
 
     /* 6: the danger action, a refusal and a retry; the id the old confirm path sent */
@@ -178,12 +178,12 @@ export async function run({ ok }) {
     P.d.getElementById("ynKeep").click();
 
     /* 7: Escape, the scrim and the close orb, on the order's Cancel */
-    const closers = [["Escape", (pg) => key(pg, "Escape")], ["the scrim", (pg) => pg.d.getElementById("ynScrim").click()], ["the close orb", (pg) => pg.d.getElementById("ynX").click()]];
+    const closers = [["Escape", (pg) => key(pg, "Escape")], ["the scrim", (pg) => pg.d.getElementById("ynSheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))], ["the close orb", (pg) => pg.d.getElementById("ynX").click()]];
     const sendsBefore = sends(P), res = [];
     for (const [name, fn] of closers) {
       cancelB.focus(); cancelB.click();
       const was = !!sheet(P); fn(P);
-      res.push([name, was && !sheet(P) && !P.d.getElementById("ynWrap") && P.d.activeElement === cancelB]);
+      res.push([name, was && !sheet(P) && !P.d.getElementById("ynSheet") && P.d.activeElement === cancelB]);
     }
     ok(res.every((r) => r[1]) && sends(P) === sendsBefore, "Escape, the scrim and the close orb each close the order's Sheet, send nothing and give the focus back: " + JSON.stringify(res));
 
@@ -292,7 +292,7 @@ export async function run({ ok }) {
     S.st.down = true;
     await until(() => !sheet(S), 200);
     await until(() => !S.d.getElementById("outSheet").hidden, 200);
-    ok(up && !sheet(S) && !S.d.getElementById("ynWrap") && !S.d.getElementById("outSheet").hidden && !S.d.getElementById("lapse").hidden && sends(S) === 0,
+    ok(up && !sheet(S) && !S.d.getElementById("ynSheet") && !S.d.getElementById("outSheet").hidden && !S.d.getElementById("lapse").hidden && sends(S) === 0,
       "a lapse of the session while the Sheet is open takes it down: nothing lies over the signed-out Sheet, and nothing was sent: "
       + JSON.stringify({ up, ynGone: !sheet(S), out: !S.d.getElementById("outSheet").hidden }));
 
@@ -302,7 +302,7 @@ export async function run({ ok }) {
     cG.click();
     const upG = !!sheet(G);
     G.d.getElementById("lock").click(); G.d.getElementById("lock").click();   /* a tap and a tap again (7d part 2) */
-    ok(upG && !sheet(G) && !G.d.getElementById("ynWrap") && !G.d.getElementById("f").closest("[hidden]") && sends(G) === 0,
+    ok(upG && !sheet(G) && !G.d.getElementById("ynSheet") && !G.d.getElementById("f").closest("[hidden]") && sends(G) === 0,
       "Log out with the Sheet open takes it down, leaving the door and not the question: " + JSON.stringify({ upG }));
 
     /* ---- 1: not once the browser's own dialog */

@@ -8,7 +8,8 @@
  * (test/counter-tablet.mutations.json, run with tools/section.mjs).
  *   1  the customer's tablet rules exist at their widths, the script's own width follows them, and none is under .adm
  *   2  a sheet of the customer's and one of Salt Admin's are placed alike at 375, 768, 861, 1000 and 1280px
- *   3  the order sheet's tiles are two columns, in the 560px dialog at 768px (not the 364px each had in a sheet as wide as the screen) and in the drawer at 861px
+ *   3  the order sheet is the system's dialog (a card at most 560px wide, from the foot of the screen below 720px) and its two ways are one Segment of two equal options, side by side, at 768px and at 861px
+ *      (16 Nov 2026, the move to Ambient: the tiles in two columns of the salt- options are the Segment's two options)
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
 import { landingPage, SITE_STYLE as PG_SITE_STYLE } from "../stmt/page.js";
@@ -111,14 +112,16 @@ export async function run({ ok }) {
         d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
         for (let i = 0; i < 200 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 15));
         if (d.getElementById("oNew")) await startAt(d);   /* plan version 8: a size tapped on Order opens the sheet */
-        const box = d.querySelector("#osheet .salt-sheet"), grids = [...d.querySelectorAll("#osheet .salt-options__grid")].filter((g) => g.children.length > 1);
-        return { box: box ? placed(w, box) : "", grids: grids.map((g) => ({ kids: g.children.length, cols: w.getComputedStyle(g).getPropertyValue("grid-template-columns") })) };
+        const box = d.getElementById("osheet"), segs = [...d.querySelectorAll("#osheet .amb-segment")].filter((g) => g.children.length > 1);
+        const cs = box ? w.getComputedStyle(box) : null;
+        return { box: cs ? ["max-width:" + cs.getPropertyValue("max-width"), "width:" + cs.getPropertyValue("width"), "position:" + cs.getPropertyValue("position")].join(" ") : "",
+          segs: segs.map((g) => ({ kids: g.children.length, display: w.getComputedStyle(g).getPropertyValue("display"), grows: [...g.children].map((o) => w.getComputedStyle(o).getPropertyValue("flex-grow")) })) };
       } finally { w.close(); }
     };
     const a = await read(768), b = await read(861);
     /* plan version 8 (03 Nov 2026): the size tiles left the new order's sheet (an amendment's keeps them), so its one grid of two columns is the two ways */
-    const two = (r) => r.grids.length >= 1 && r.grids.every((g) => /^repeat\(2, ?minmax\(0, ?1fr\)\)$/.test(g.cols));
-    ok(two(a) && two(b) && /top:50%/.test(a.box) && /width:min\(560px/.test(a.box) && /top:0px/.test(b.box) && /width:min\(460px/.test(b.box),
-      "the order sheet's two ways are two columns, in the 560px dialog at 768px and in the drawer at 861px: " + JSON.stringify({ a, b }));
+    const two = (r) => r.segs.length >= 1 && r.segs.every((g) => g.kids === 2 && g.display === "flex" && g.grows.every((x) => x === "1"));
+    ok(two(a) && two(b) && /max-width:560px/.test(a.box) && /max-width:560px/.test(b.box) && /position:fixed/.test(a.box),
+      "the order sheet is the system's dialog, at most 560px, and its two ways are two equal options side by side at 768px and at 861px: " + JSON.stringify({ a, b }));
   }
 }

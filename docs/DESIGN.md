@@ -289,6 +289,16 @@ first, a fresh Opus reviewer may gate the first version while Fable is rate-limi
   their notes (they name Salt QR and Salt Admin). Salt Admin and the Counter each stand in one `.amb-shell.amb-shell--rail` (app
   bar, a hero a place, one dock that stands up as the rail from 960px). Night and Tide, the Aurora, the faces and the salt-ds
   recipes are no longer served there. The guide for the place builders is the kit's notes (kit.md).
+- **Counter Shop, the order sheet and spots (16 Nov 2026, place B).** Shop is a stack of the system's parts: a plain line, the way as one
+  setting row (`#pWay`, opening the sheet), each book a pane whose heading is the mark thumb (`markThumb`, the one drawing of a mark
+  standing alone; the old coin is gone) beside the light's chip (`hLight`, the one function Home and Shop share: Out of stock negative,
+  Low on stock warning, Available positive, Selling fast plain), the system's Stepper over the book's walk (`data-amb-values`, the
+  list `stepWalk` supplies; a grid walked freely is typed into the same field and read on change, one with only or multiples is read
+  only), Add, the basket's line, and the sizes behind the system's More. The basket's figure is a Stat and its one Continue the
+  system's foot. The order sheet is a native dialog (`sheetNode`, `sheetShow`; modal, Escape and a tap outside go through the page's
+  own dismissal, which waits while Place is on its way); its questions are Segments (the delivery's windows the wrapping Segment), its
+  check Rows and Settings, its spots the system's Choice with Edit and Add as pills. The yes or no (`ynOpen`) is the same dialog,
+  lying over it: its ids `ynSheet`, `ynGo`, `ynKeep`, `ynX` stay, `ynWrap` and `ynScrim` are gone. No act changed.
 - **The heat.** The snapshot engine's `marketHeat` reads the day's supply step of the salt market move: tight at 7 days of cover or
   under, soft past 14, neutral between, and neutral switched off, before the rule's since and on a book with no market. The stock
   document (`STOCK.books[p].heat`) carries it to Salt Admin, which polls it already. It prices nothing.
