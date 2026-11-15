@@ -179,6 +179,7 @@
       return;
     }
     if ((el = t.closest(".amb-segment__opt"))) {
+      if (el.getAttribute("aria-disabled") === "true") return;
       var seg = el.closest(".amb-segment"), opts = seg ? seg.querySelectorAll(".amb-segment__opt") : [];
       for (var i = 0; i < opts.length; i++) opts[i].setAttribute("aria-pressed", opts[i] === el ? "true" : "false");
       if (el.hasAttribute("data-amb-mood")) mood(el.getAttribute("data-amb-mood"), el.closest(".amb-shell") || root);
