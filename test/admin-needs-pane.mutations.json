@@ -90,10 +90,10 @@
     "replace": "  .adm .nsplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}"
   },
   {
-    "name": "the shell stays 1180px at 1440",
+    "name": "the pane stays 360px at 1440",
     "file": "stmt/page.js",
-    "find": "@media (min-width:1440px){.gate.adm{max-width:1376px}.adm .nsplit",
-    "replace": "@media (min-width:1440px){.gate.adm{max-width:1180px}.adm .nsplit"
+    "find": "@media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}",
+    "replace": "@media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}}"
   },
   {
     "name": "the pane starts at the top",

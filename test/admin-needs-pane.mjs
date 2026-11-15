@@ -9,7 +9,7 @@
  *   5  a poll that changes the order redraws the card under it, but never while a field of it is in use; a card gone from the list closes the pane
  *   5b (Fable's review of 22 Oct 2026) a tap in the order's card does not hold it: the next change redraws it; an answer to that card lands on its
  *      own line beside Needs you; the Offer card keeps its ask-once Withdraw in the pane, and an order's head asks nothing of its own
- *   6  the page's rules: 360px beside the list, 420px from 1440px where the shell widens to 1376px, the pane level with the first card
+ *   6  the page's rules: 360px beside the list, 420px from 1440px, the shell at salt-ds's one page width (1376px, test/page-width.mjs), the pane level with the first card
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -107,8 +107,7 @@ export async function run({ ok, pageWork }) {
 
   /* 6 */
   const css = (await import("../stmt/page.js")).landingPage("", "pane-nonce", { master: "", accounts: [] }).match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
-  ok(/\.adm \.nsplit\{grid-template-columns:minmax\(0,1fr\) 360px\}/.test(css) && /@media \(min-width:1440px\)\{\.gate\.adm\{max-width:1376px\}\.adm \.nsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(css)
-    && /\.adm #nopen\{margin-top:calc\(0\.75rem \* 1\.4 \+ 10px\)/.test(css) && /\.adm \.ngroup\{display:flex;flex-direction:column;gap:10px\}/.test(css) && /\.adm #mHome \.nlist \.nsev\{margin:0;line-height:1\.4\}/.test(css)
-    && css.indexOf("@media (min-width:1440px){.gate.adm{max-width:1376px}") > css.indexOf(".gate.adm{max-width:1180px;"),
-    "the pane is 360px beside the list and 420px from 1440px, where the shell widens to 1376px, and starts level with the first card, under its group's 1.4-line heading and the 10px gap");
+  ok(/\.adm \.nsplit\{grid-template-columns:minmax\(0,1fr\) 360px\}/.test(css) && /@media \(min-width:1440px\)\{\.adm \.nsplit\{grid-template-columns:minmax\(0,1fr\) 420px\}\}/.test(css)
+    && /\.adm #nopen\{margin-top:calc\(0\.75rem \* 1\.4 \+ 10px\)/.test(css) && /\.adm \.ngroup\{display:flex;flex-direction:column;gap:10px\}/.test(css) && /\.adm #mHome \.nlist \.nsev\{margin:0;line-height:1\.4\}/.test(css),
+    "the pane is 360px beside the list and 420px from 1440px, the shell at salt-ds's one page width, and starts level with the first card, under its group's 1.4-line heading and the 10px gap");
 }

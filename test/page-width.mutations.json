@@ -1,0 +1,9 @@
+[
+ {"name": "W1 the Desk carries no page width", "file": "master/salt_command.html", "find": "  --salt-page-max: 1376px;", "replace": "  --salt-page-mx: 1376px;"},
+ {"name": "W1 the Counter carries no page width", "file": "stmt/statement-css.js", "find": "  --salt-page-max: 1376px;", "replace": "  --salt-page-mx: 1376px;"},
+ {"name": "W2.1 the Desk's frame takes the screen", "file": "master/salt_command.html", "find": "  .shell{max-width:var(--salt-page-max);margin-inline:auto;}", "replace": "  .shell{margin-inline:auto;}"},
+ {"name": "W2.2 the Desk's wrap caps it at 1180px again", "file": "master/salt_command.html", "find": "  .wrap{max-width:none;}", "replace": ""},
+ {"name": "W3 Salt Admin stands 1180px", "file": "stmt/page.js", "find": "  .gate.adm{max-width:var(--salt-page-max);margin-top:0;", "replace": "  .gate.adm{max-width:1180px;margin-top:0;"},
+ {"name": "W3 Salt Admin widens to 1376px only from 1440", "file": "stmt/page.js", "find": "@media (min-width:1440px){.adm .nsplit{", "replace": "@media (min-width:1440px){.gate.adm{max-width:1376px}.adm .nsplit{"},
+ {"name": "W4 the Counter stands 1240px", "file": "stmt/page.js", "find": "align-items:flex-start;max-width:var(--salt-page-max);margin:0 auto;padding-bottom:48px}", "replace": "align-items:flex-start;max-width:1240px;margin:0 auto;padding-bottom:48px}"}
+]

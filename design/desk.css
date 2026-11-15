@@ -772,5 +772,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 @media (min-width:1080px){
   .wrap{padding-bottom:24px;}
   .shell{--salt-frame-h:calc(100dvh - 46px);}
+  /* 15 Nov 2026, his word: one width on every Salt surface (salt-ds 1.32.0). The frame stands at most --salt-page-max wide, as Salt Admin's and
+     the Counter's do, the page's 18px gutters outside it; the wrap no longer caps it at 1180px */
+  .wrap{max-width:none;}
+  .shell{max-width:var(--salt-page-max);margin-inline:auto;}
   .shell>.rail{max-height:none;}
 }

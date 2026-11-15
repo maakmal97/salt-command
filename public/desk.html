@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9b5c9971172b7ae4";
+var SALT_BUILD_ID="ef2921d5f5785033";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -1698,6 +1698,9 @@ details.obs>summary{min-height:var(--tap);}
   --salt-tap: 44px;                      /* the least a control may measure, either way */
   --salt-bar-h: 4rem;                    /* the phone's bar of places, above the safe area: 64px at the
                                             default text size, and in rem so it grows with the words in it */
+  --salt-page-max: 1376px;               /* 1.32.0, his word of 15 Nov 2026: the one widest the page stands on every Salt
+                                            surface (the Desk, Salt Admin, Salt Counter), its gutters outside it; each
+                                            surface's frame reads it, so all three are the same width at every screen */
   --salt-sheet-radius: var(--salt-radius-lg); /* the top corners of a sheet, the inner corners of a drawer */
 
   /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
@@ -5549,6 +5552,10 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 @media (min-width:1080px){
   .wrap{padding-bottom:24px;}
   .shell{--salt-frame-h:calc(100dvh - 46px);}
+  /* 15 Nov 2026, his word: one width on every Salt surface (salt-ds 1.32.0). The frame stands at most --salt-page-max wide, as Salt Admin's and
+     the Counter's do, the page's 18px gutters outside it; the wrap no longer caps it at 1180px */
+  .wrap{max-width:none;}
+  .shell{max-width:var(--salt-page-max);margin-inline:auto;}
   .shell>.rail{max-height:none;}
 }
 /* ==== END DESIGN desk ==== */

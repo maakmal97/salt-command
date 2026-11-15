@@ -50590,6 +50590,11 @@ await (async () => {
   await (await import("./desk-customers.mjs")).run({ ok });
 })();
 
+section("15 Nov 2026: one page width on every Salt surface, the Desk, Salt Admin and the Counter");
+await (async () => {
+  await (await import("./page-width.mjs")).run({ ok });
+})();
+
 section("9 Nov 2026: no scrollbar on any Salt surface, so a page that scrolls and one that does not are the same width");
 await (async () => {
   await (await import("./no-scrollbars.mjs")).run({ ok });
