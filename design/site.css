@@ -33,6 +33,7 @@ body.amb { min-height: 100dvh; }
 /* the way back to the menu, below the two columns; from 960px the menu stands beside the form */
 @container amb (min-width: 960px) { #makerFormBack { display: none; } }
 @container amb (max-width: 959px) { .recgrid.open .reclist, .recnone { display: none; } }
+.recgrid.open .recnone { display: none; }
 /* a menu row names the form, the count of what it holds at the right */
 .mfig:empty { display: none; }
 /* the help's four answers, a disclosure row as a settings row (Ambient has no disclosure part yet) */
