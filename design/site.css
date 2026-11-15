@@ -51,3 +51,48 @@ body.amb { min-height: 100dvh; }
 /* the menu's lists stand in the stack's rhythm */
 #makerMenu, #makerMenu > [data-in] { display: grid; gap: var(--amb-space-4); min-width: 0; }
 #makerMenu > [data-in]:empty { display: none; }
+
+/* ---- Counter: Home, Today and Rewards ---- */
+/* a part of Home, of the reward card and of the links takes no place of its own: its heading, its list and its notes stand in the stack, so
+   Ambient's gaps and insets are the only ones. The boxes stay because each is drawn afresh and put on the page only where it reads differently. */
+#payHead, #hNeeds, #hRate, #hThread, #hSupply, #hStart, #hPool, #hComing, #hAgain, #hReward, #hYear,
+.hinv, .hprod, .rlinks, .glink, [data-joins] { display: contents; }
+/* the Today notice: its words take the room the icon leaves, the title and the sentences each a line, Pause a step under the notice lines */
+#today > span:not(.amb-icon) { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--amb-space-2); }
+#today .hblock, #today .hline { display: block; }
+#today .hnote { display: grid; gap: var(--amb-space-1); justify-items: start; }
+/* a book's mark alone heads its block */
+.hbook { margin: 0; }
+/* the live order is the dock's mini bar, a tap anywhere on it opening the order */
+.amb-mini[data-live] { cursor: pointer; }
+
+/* ---- Counter: Shop, the order sheet and spots ---- */
+/* the way, the notices and the book panes stand in Shop's stack; the way's box and the basket's bar take no place of their own */
+#pWay, #bkBar { display: contents; }
+#pPrices > p { margin: 0; font-size: var(--amb-text-subhead); }
+/* two books across from 960px, the system's own width for two columns */
+.pgrid { display: grid; gap: var(--amb-space-4); align-items: start; }
+@media (min-width: 960px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* a book's pane: its heading (the mark thumb and the light chip), the stepper, the figure and Add, the basket line, the sizes */
+.pane { display: grid; gap: var(--amb-space-3); min-width: 0; }
+.pane > h2.pmark { display: flex; align-items: center; gap: var(--amb-space-3); margin: 0; }
+.pane .amb-more { margin: 0; justify-self: start; }
+.pane .amb-list { margin: 0; }
+.strow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+.stfig { font-size: var(--amb-text-callout); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stadd { margin-inline-start: auto; }
+.bkline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+.bkline__t { font-size: var(--amb-text-subhead); }
+/* a question of the sheet is a fieldset standing as a field */
+fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+/* the sheet: its foot is a second body under the first, and a list in it keeps no side inset of the screen's */
+.osheet > .osheet__foot { margin-top: var(--amb-space-3); }
+.amb-sheet .amb-list { margin: 0; }
+.amb-sheet .amb-list--ruled { border-top: 0; }
+.amb-sheet .amb-options { max-width: none; }
+.ospot { display: flex; align-items: stretch; gap: var(--amb-space-2); }
+.ospot > .amb-option { flex: 1 1 auto; min-width: 0; }
+.ospot__add { justify-self: start; }
+.osent { display: grid; justify-items: center; gap: var(--amb-space-2); text-align: center; }
+.otick { width: 40px; height: 40px; color: var(--amb-pos); }
+.ofl { display: block; font-size: var(--amb-text-caption); color: var(--amb-ink-2); }

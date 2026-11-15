@@ -97,7 +97,7 @@ export async function run({ ok }) {
   const openLimit = async (pg) => { pg.d.querySelector('button[data-t="prices"]').click();
     /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
     await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
-    await until(() => pg.d.querySelector("#osheet .olim button")); return pg.d.querySelector("#osheet .olim button"); };
+    await until(() => pg.d.querySelector("#osheet [data-k^=\"cancel:\"]")); return pg.d.querySelector("#osheet [data-k^=\"cancel:\"]"); };
   const key = (pg, k) => pg.d.dispatchEvent(new pg.w.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
   const before = (a, b) => !!a && !!b && (a.compareDocumentPosition(b) & 4) !== 0;   /* a precedes b in the document */
 
@@ -234,12 +234,12 @@ export async function run({ ok }) {
 
     /* the yes-or-no Sheet, over the order screen */
     const ynRes = [], ynWays = [["Keep it", (pg) => pg.d.getElementById("ynKeep").click()], ["the danger action", (pg) => pg.d.getElementById("ynGo").click()],
-      ["the close orb", (pg) => pg.d.getElementById("ynX").click()], ["the scrim", (pg) => pg.d.getElementById("ynScrim").click()], ["Escape", (pg) => key(pg, "Escape")]];
+      ["the close orb", (pg) => pg.d.getElementById("ynX").click()], ["the scrim", (pg) => pg.d.getElementById("ynSheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))   /* 16 Nov 2026, the move to Ambient: the scrim is the dialog's own box */], ["Escape", (pg) => key(pg, "Escape")]];
     const N = await open({ orders: [A] });
     for (const [name, fn] of ynWays) {
       const opener = await openOrder(N, A.id);
       opener.focus(); opener.click();
-      const up = !!N.d.getElementById("ynSheet") && behindShut(N.d, ["ynWrap"]);
+      const up = !!N.d.getElementById("ynSheet") && behindShut(N.d, ["ynSheet"]);
       fn(N);
       ynRes.push([name, up, !N.d.getElementById("ynSheet") && clean(N.d)]);
       await until(() => !!cancelBtn(N, A.id));
@@ -251,10 +251,10 @@ export async function run({ ok }) {
     const lim = await openLimit(Lm);
     const orderUp = behindShut(Lm.d, ["osheet"]);
     lim.click();
-    const askUp = behindShut(Lm.d, ["ynWrap"]) && Lm.d.getElementById("osheet").hasAttribute("inert");
+    const askUp = behindShut(Lm.d, ["ynSheet"]) && Lm.d.getElementById("osheet").hasAttribute("inert");
     Lm.d.getElementById("ynKeep").click();
     const orderBack = behindShut(Lm.d, ["osheet"]) && !Lm.d.getElementById("osheet").hasAttribute("inert");
-    Lm.d.querySelector("#osheet .salt-sheet__close").click();
+    Lm.d.querySelector("#osheet [data-k=\"close\"]").click();
     ok(orderUp && askUp && orderBack && !Lm.d.getElementById("osheet") && clean(Lm.d),
       "the order sheet shuts the page, a yes or no over it shuts the order sheet too and hands it back on Keep it, and closing the order sheet hands back the page: " + JSON.stringify({ orderUp, askUp, orderBack }));
 

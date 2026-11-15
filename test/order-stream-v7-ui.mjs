@@ -283,7 +283,8 @@ export async function run({ ok, pageWork }) {
     D.getElementById("tCard").click();
     const box = () => D.querySelector("#pCard [data-joins]"), row = (id) => box() && box().querySelector('[data-join="' + id + '"]');
     ok(await until(() => box() && row(idWait)), "B0 an associate's links card draws their join links");
-    const state1 = (id) => t(row(id) && row(id).querySelector(".gstate"));
+    /* 16 Nov 2026, the move to Ambient: a join link is a row, its state the word of the second line, Copy link a quiet pill */
+    const state1 = (id) => t(row(id) && row(id).querySelector(".amb-row__sub"));
     ok(state1(idWait) === "Waiting for us" && state1(idOpen) === "Ready to share" && state1(idUsed) === "Used" && state1(idNo) === "Not approved" && state1(idGone) === "Withdrawn",
       "B1 each join link says where it stands: waiting for us, ready to share, used, not approved, withdrawn: " + J([idWait, idOpen, idUsed, idNo, idGone].map(state1)));
     const copies = (id) => [...row(id).querySelectorAll("button")].filter((b) => b.textContent === "Copy link");
@@ -300,7 +301,7 @@ export async function run({ ok, pageWork }) {
     ok(await until(async () => (await count1()) === count0 + 1) && await until(() => box() && box().querySelectorAll('[data-join]').length === 6),
       "B6 Ask for a join link mints one and lists it: " + J([count0, await count1()]));
     const newest = [...box().querySelectorAll("[data-join]")].find((r) => ![idWait, idOpen, idUsed, idNo, idGone].includes(r.getAttribute("data-join")));
-    ok(!!newest && t(newest.querySelector(".gstate")) === "Waiting for us" && !newest.querySelector("button"), "B7 the new link waits for us and cannot be copied yet");
+    ok(!!newest && t(newest.querySelector(".amb-row__sub")) === "Waiting for us" && !newest.querySelector("button"), "B7 the new link waits for us and cannot be copied yet");
     /* B8: Log out lets the previous associate's join links go, so a read that fails for the next never shows them */
     failJoins = true;
     const lock = D.getElementById("lock"); lock.click(); lock.click();

@@ -1,8 +1,8 @@
 [
  {"name":"a customer goes down the associate's card","file":"stmt/page.js","find":"    if(!assoc){\n      var lp=card.products","replace":"    if(false){\n      var lp=card.products"},
- {"name":"the meter stands empty","file":"stmt/page.js","find":"lm.style.setProperty('--salt-fill',String(lpc));","replace":"lm.style.setProperty('--salt-fill','0');"},
+ {"name":"the meter stands empty","file":"stmt/page.js","find":"m.max=100; m.value=pc;","replace":"m.max=100; m.value=0;"},
  {"name":"the associate's heading","file":"stmt/page.js","find":"box.appendChild(hHead(tw('hr.hLoyal')));","replace":"box.appendChild(hHead(tw('hr.h')));"},
- {"name":"the card is a button","file":"stmt/page.js","find":"var lc=el('div','hreward hloyal","replace":"var lc=el('button','hreward hloyal"},
+ {"name":"the card is a button","file":"stmt/page.js","find":"var lr=hRow({tag:'li', meter:true,","replace":"var lr=hRow({tag:'button', meter:true,"},
  {"name":"a card with no share draws one","file":"stmt/page.js","find":"      if(!lp) return box;\n      var lpc=","replace":"      if(!lp) lp={product:'salt',loyal:{next:0}};\n      var lpc="},
  {"name":"the Rewards tab for everybody","file":"stmt/page.js","find":"placeHide('card',!assoc);","replace":"placeHide('card',false);"},
  {"name":"0000-0002 stays an associate","file":"tools/testfix.mjs","find":"    orders: O, claims: [], refs: [], card, assoc: false, thread: null, pools, bulletin: null, look: \"asked\", pay: invented() };","replace":"    orders: O, claims: [], refs: [], card, assoc: true, thread: null, pools, bulletin: null, look: \"asked\", pay: invented() };"},

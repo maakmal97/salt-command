@@ -31,12 +31,12 @@ export async function run({ ok, pageWork }) {
     const l0 = wayLine(A), on0 = onOrder(A);
     A.d.getElementById("pWayGo").click(); await A.settle();
     const p0 = pressed(A);
-    ok(on1 && on0 && l1 === "Delivering" && l0 === "Collecting" && p1 === "mode:1" && !where && waiting && p0 === "mode:0" && txt(A.d.querySelector("#hStart .hlab")) === "New order",
+    ok(on1 && on0 && l1 === "Delivering" && l0 === "Collecting" && p1 === "mode:1" && !where && waiting && p0 === "mode:0" && txt(A.d.querySelector("#hStart .amb-section")) === "New order",
       "Deliver to me lands on Order saying Delivering, and Change opens the sheet with Deliver pressed, no spot picked and no line to review (the last place is no longer filled: Counter Batch C, his answer 4 of 20 Oct 2026); I will collect says Collecting and presses Collect: " + JSON.stringify([on1, on0, l1, l0, p1, p0]));
 
     /* ---- 2 ---- */
     const N = await page({ orders: [done("o1", ago(100))] });
-    const say = (p, k) => [".salt-option__label", ".salt-option__detail"].map((s) => txt(tile(p, k).querySelector(s))).join(" / ");
+    const say = (p, k) => [".amb-setting__name", ".amb-setting__value"].map((s) => txt(tile(p, k).querySelector(s))).join(" / ");
     ok(say(A, "deliver") === "Deliver to me / To your last place" && say(N, "deliver") === "Deliver to me / To a place you name" && say(N, "collect") === "I will collect / Point told at Ready",
       "the Deliver tile says the last place is used, or that one is named: " + JSON.stringify([say(A, "deliver"), say(N, "deliver")]));
 

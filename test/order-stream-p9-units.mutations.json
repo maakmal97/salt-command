@@ -11,14 +11,15 @@
  {"name":"U10 an ask has no words","file":"stmt/page.js","find":"S.fig.textContent=t!=null?rm(t):over?tw('st.ask'):'';","replace":"S.fig.textContent=t!=null?rm(t):'';"},
  {"name":"U11 Add adds to the line","file":"stmt/page.js","find":"    bsSet(k,q); if(draft.bkTaps) delete draft.bkTaps[k];","replace":"    bsSet(k,bsOf(k)+q); if(draft.bkTaps) delete draft.bkTaps[k];"},
  {"name":"U12 Add never says In basket","file":"stmt/page.js","find":"S.add.textContent=tw(!inB?'st.add':same?'st.in':'st.update');","replace":"S.add.textContent=tw(!inB?'st.add':'st.update');"},
- {"name":"U13 a typed size off the walk is taken","file":"stmt/page.js","find":"      if(v!==''&&stepOk(P,q)) stepTo(k,+q.toFixed(6),false);","replace":"      if(v!==''&&q>0) stepTo(k,+q.toFixed(6),false);"},
- {"name":"U14 a refusal is not said","file":"stmt/page.js","find":"sentence(offWhy(g,q)); S.why.hidden=false; }","replace":"sentence(offWhy(g,q)); }"},
+ {"name":"U13 a typed size off the walk is taken","file":"stmt/page.js","find":"    if(q>0&&stepOk(P,q)){ stepTo(k,+q.toFixed(6),false); return; }","replace":"    if(q>0){ stepTo(k,+q.toFixed(6),false); return; }"},
+ {"name":"U14 a refusal is not said","file":"stmt/page.js","find":"sentence(offWhy(g,q)):tw('bk.noPrice'); S.why.hidden=false;","replace":"sentence(offWhy(g,q)):tw('bk.noPrice');"},
  {"name":"U15 an ask closes Continue","file":"stmt/page.js","find":"    var sum=0, open=ls.some(function(x){ return x.t==null&&!x.over; });","replace":"    var sum=0, open=ls.some(function(x){ return x.t==null; });"},
  {"name":"U16 an ask never reaches the sheet","file":"stmt/page.js","find":"    var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null||x.over; }):[];","replace":"    var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null; }):[];"},
- {"name":"U17 a fold row does not set the stepper","file":"stmt/page.js","find":"          row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); }); }","replace":"          }"},
- {"name":"U18 the chosen row is not pressed","file":"stmt/page.js","find":"r.setAttribute('aria-pressed',String(Math.abs(+r.getAttribute('data-q')-q)<1e-6));","replace":"r.setAttribute('aria-pressed','false');"},
+ {"name":"U17 a fold row does not set the stepper","file":"stmt/page.js","find":"        if(tapTo) row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); });\n","replace":""},
+ {"name":"U18 the chosen row is not pressed","file":"stmt/page.js","find":"r.setAttribute('aria-pressed',String(on));","replace":"r.setAttribute('aria-pressed','false');"},
  {"name":"U19 a start tile leaves the stepper","file":"stmt/page.js","find":"    if(q!=null&&stepIx(S,+q)>=0) stepTo(product,+q,false);\n","replace":""},
- {"name":"U20 no fold of sizes","file":"stmt/page.js","find":"var fd=el('details','sfold'); fd.appendChild(el('summary',null,tw('st.sizes'))); fd.appendChild(L); pane.appendChild(fd);","replace":"pane.appendChild(L);"},
- {"name":"U21 minus from an ask goes nowhere","file":"stmt/page.js","find":"    else for(var j=0;j<S.W.length;j++){ if(d>0&&S.W[j]>q){ n=j; break; } if(d<0&&S.W[j]<q) n=j; }","replace":""},
- {"name":"U22 the chip never shows","file":"stmt/page.js","find":"S.usual.hidden=!(U&&U.product===k&&Math.abs(+U.q-q)<1e-6);","replace":"S.usual.hidden=true;"}
+ {"name":"U20 no fold of sizes","file":"stmt/page.js","find":"var fd=el('div','sfold'); fd.id=id; fd.hidden=true; fd.appendChild(L); pane.appendChild(mo); pane.appendChild(fd); stepPatch(p.product,false);","replace":"pane.appendChild(L); stepPatch(p.product,false);"},
+ {"name":"U21 the stepper is not handed the walk","file":"stmt/page.js","find":"S.val.setAttribute('data-amb-values',W.join(' '));","replace":""},
+ {"name":"U22 the chip never shows","file":"stmt/page.js","find":"S.usual.hidden=!(U&&U.product===k&&Math.abs(+U.q-q)<1e-6);","replace":"S.usual.hidden=true;"},
+ {"name":"U23 the field is typed on a book with only","file":"stmt/page.js","find":"S.val.readOnly=!typed;","replace":"S.val.readOnly=false;"}
 ]

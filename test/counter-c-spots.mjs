@@ -28,7 +28,7 @@ export async function run({ ok, pageWork }) {
   const sheet = async (p) => { p.d.querySelector('button[data-t="order"]').click(); await p.settle(); await startAt(p.d); await p.settle();
     p.d.querySelector('#osheet [data-k="mode:1"]').click(); await p.settle(); };
   const close = async (p) => { p.d.querySelector('#osheet [data-k="close"]').click(); await p.settle(); };
-  const list = (p) => [...p.d.querySelectorAll("#osheet .ospot")].map((r) => ({ label: txt(r.querySelector(".salt-option__label")), on: r.querySelector("input").checked, edit: r.querySelector(".ospot__edit").getAttribute("aria-label") }));
+  const list = (p) => [...p.d.querySelectorAll("#osheet .ospot")].map((r) => ({ label: txt(r.querySelector(".amb-option__title")), on: r.querySelector("input").checked, edit: r.querySelector(".ospot__edit").getAttribute("aria-label") }));
   const review = (p) => p.d.getElementById("oGo");
   const typeIn = (p, id, v) => { const x = p.d.getElementById(id); x.value = v; x.dispatchEvent(new p.w.Event("input", { bubbles: true })); };
   const add = async (p, { name = "Home", addr = "12 Jalan Veloria" } = {}) => {
@@ -49,15 +49,15 @@ export async function run({ ok, pageWork }) {
     /* ---- 2 ---- */
     A.d.getElementById("spAdd").click(); await A.settle();
     const nm = A.d.getElementById("spName"), ad = A.d.getElementById("spAddr");
-    const inputs = [...A.d.querySelectorAll("#osheet .salt-sheet__body input, #osheet .salt-sheet__body textarea")].map((x) => x.id);
+    const inputs = [...A.d.querySelectorAll("#osheet .amb-sheet__body input, #osheet .amb-sheet__body textarea")].map((x) => x.id);
     ok(nm && nm.placeholder === "Home, Shop or Work" && ad && ad.placeholder === "Type the address, or paste a map link" && !!A.d.getElementById("oPinHere")
       && JSON.stringify(inputs) === JSON.stringify(["spName", "spAddr"]) && !A.d.querySelector('#osheet [data-k^="spn:"]') && !A.d.getElementById("spSave") && !A.d.getElementById("spUnit") && !A.d.getElementById("oWhere"),
       "Add a spot asks a name and an address, with Use my location, and nothing else: " + JSON.stringify(inputs));
     /* ---- 3 ---- */
     typeIn(A, "spName", "H"); typeIn(A, "spAddr", "12 Jalan Veloria"); await A.settle();
-    const short = [A.d.getElementById("spUse").disabled, txt(A.d.querySelector("#osheet .salt-sheet__foot .ototal"))];
+    const short = [A.d.getElementById("spUse").disabled, txt(A.d.querySelector("#osheet .osheet__foot .ototal"))];
     typeIn(A, "spName", "Home"); typeIn(A, "spAddr", "12"); await A.settle();
-    const noAddr = [A.d.getElementById("spUse").disabled, txt(A.d.querySelector("#osheet .salt-sheet__foot .ototal"))];
+    const noAddr = [A.d.getElementById("spUse").disabled, txt(A.d.querySelector("#osheet .osheet__foot .ototal"))];
     ok(short[0] && /Give the spot a name\./.test(short[1]) && noAddr[0] && /Type the address, or use your location\./.test(noAddr[1]),
       "a name under two letters or an address under five is refused, saying which: " + JSON.stringify([short, noAddr]));
     A.d.querySelector('#osheet [data-k="back"]').click(); await A.settle();
@@ -107,9 +107,9 @@ export async function run({ ok, pageWork }) {
     /* ---- 7 ---- */
     const ed = A.d.querySelector('#osheet [data-k="spotedit:0"]');
     const P = await import("../stmt/page.js?" + Date.now()), css = P.landingPage("abcd-efgh", "n", null).replace(/\/\*[\s\S]*?\*\//g, "");
-    const rule = (sel) => { const m = new RegExp(sel.replace(/[.]/g, "[.]") + "\\{([^}]*)\\}").exec(css); return m ? m[1] : ""; };
-    ok(ed && ed.getAttribute("aria-label") === "Edit Home" && ed.classList.contains("salt-ghost") && /min-height:var\(--salt-tap\)/.test(rule(".ospot__edit"))
-      && /min-width:var\(--salt-tap\)/.test(rule(".ospot__edit")) && /min-height:var\(--salt-tap\)/.test(rule(".spremove")),
+    /* 16 Nov 2026, the move to Ambient: the controls of the step are the system's pills (44px by its own token on a small one) and its action */
+    ok(ed && ed.getAttribute("aria-label") === "Edit Home" && ed.classList.contains("amb-pill") && ed.classList.contains("amb-pill--sm") && A.d.getElementById("spAdd") && A.d.getElementById("spAdd").classList.contains("amb-pill")
+      && /[.]amb-pill--sm \{ min-height: var\(--amb-tap\)/.test(css),
       "each spot's Edit is named for it and every control of the step is 44px: " + (ed && ed.getAttribute("aria-label")));
     /* ---- 8 ---- */
     await close(A); await sheet(A);
@@ -144,7 +144,7 @@ export async function run({ ok, pageWork }) {
       const D = await page({ orders: [ord("s2", "done", ago(300))] });
       D.w.localStorage.setItem(KEY, JSON.stringify([{ id: "o1", label: "Shop", place: "Veloria", unit: "Level 2" }]));
       await sheet(D);
-      const row = D.d.querySelector("#osheet .ospot .salt-option__detail");
+      const row = D.d.querySelector("#osheet .ospot .amb-option__sub");
       ok(list(D).length === 1 && list(D)[0].on && txt(row) === "Level 2, Veloria",
         "a spot kept before 11 Nov 2026 is read back with its floor and area as its address: " + txt(row));
       await close(D);
