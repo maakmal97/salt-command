@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1518",
+  "d": "15 Nov 2026",
+  "t": "ONE PAGE WIDTH ON EVERY SALT SURFACE",
+  "n": [
+   "<b>ONE WIDTH.</b> Salt Desk, Salt Admin and Salt Counter now stand the same width on every screen: at most 1376px, with the same gutters either side. The Desk was 1144px wide, the Counter 1240px, and Salt Admin 1180px until a 1440px screen, then 1376px.",
+   "<b>FROM THE DESIGN SYSTEM.</b> The width is one figure in the Salt design system (1.32.0), and each surface's frame reads it, so a change to it moves all three together."
+  ]
+ },
+ {
   "v": "v1517",
   "d": "14 Nov 2026",
   "t": "THE DESK'S OWN NEWS REACHES ITS DEVICES",

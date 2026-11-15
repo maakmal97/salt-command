@@ -12222,7 +12222,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1517","d":"14 Nov 2026","t":"THE DESK'S OWN NEWS REACHES ITS DEVICES","n":["<b>THE SYSTEM'S NEWS WAKES THE DESK.</b> A stock light turning, the suite failing on the live build, and a fold live or refused now wake every Desk device, sent the way the morning round is. Sent under their own names since 19 Oct 2026, they reached none: each of the seven Desk devices asks for orders, approve and the morning round alone. The banner's words are unchanged, and no device has to turn alerts on again."]}];
+const evolution=[{"v":"v1518","d":"15 Nov 2026","t":"ONE PAGE WIDTH ON EVERY SALT SURFACE","n":["<b>ONE WIDTH.</b> Salt Desk, Salt Admin and Salt Counter now stand the same width on every screen: at most 1376px, with the same gutters either side. The Desk was 1144px wide, the Counter 1240px, and Salt Admin 1180px until a 1440px screen, then 1376px.","<b>FROM THE DESIGN SYSTEM.</b> The width is one figure in the Salt design system (1.32.0), and each surface's frame reads it, so a change to it moves all three together."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12375,7 +12375,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Nov 2026, 20:07 KL';
+const LAST_UPDATED='15 Nov 2026, 20:22 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
