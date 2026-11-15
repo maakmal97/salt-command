@@ -289,6 +289,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .expask{color:var(--salt-copper);border:1px solid var(--salt-copper);border-radius:999px;padding:2px 8px;}
 .expfig{display:flex;gap:4px 16px;flex-wrap:wrap;font-family:var(--salt-font-mono);font-size:13px;color:var(--salt-salt);}
 .expnote{font-size:13px;color:var(--salt-text-muted);}
+/* 15 Nov 2026: what a Set or Clear did, said on its book's row for a minute; a refusal in ember */
+.expnote--said{color:var(--salt-text);}
+.expnote--bad{color:var(--salt-ember);}
 .expctl{display:flex;align-items:center;gap:8px;}
 .expctl .dtin{width:310px;flex:0 0 auto;}
 .expctl input[type="date"]{padding-left:10px;}

@@ -4864,6 +4864,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .expask{color:var(--salt-copper);border:1px solid var(--salt-copper);border-radius:999px;padding:2px 8px;}
 .expfig{display:flex;gap:4px 16px;flex-wrap:wrap;font-family:var(--salt-font-mono);font-size:13px;color:var(--salt-salt);}
 .expnote{font-size:13px;color:var(--salt-text-muted);}
+/* 15 Nov 2026: what a Set or Clear did, said on its book's row for a minute; a refusal in ember */
+.expnote--said{color:var(--salt-text);}
+.expnote--bad{color:var(--salt-ember);}
 .expctl{display:flex;align-items:center;gap:8px;}
 .expctl .dtin{width:310px;flex:0 0 auto;}
 .expctl input[type="date"]{padding-left:10px;}
@@ -12325,6 +12328,15 @@ const TODAY=new Date(new Date(Date.now()+8*36e5).toISOString().slice(0,10));
 /* F4 (his decision of 05 Oct 2026): the day he expects each book's next lot, {<book>: 'YYYY-MM-DD'}, read from the Counter's KV
    `expected` through the keyed /expected. Named expected, not restock: restock is the engine's own reorder plan. */
 let EXPECTED={},EXPECTED_READ=false;
+/* 15 Nov 2026, his word ("I want the Set and Clear button to function properly"): the store's own read (KV) can trail a write by up to a
+   minute, so a read straight after Set or Clear could draw the dates as they were and Set and Clear looked to do nothing. A tap now takes
+   the dates the server wrote from its own answer and holds them on this device for two minutes over any read that disagrees (EXP_HOLD);
+   what the tap did is said on its own book's row for a minute (EXP_SAID), and a book's Set and Clear rest while their call is out (EXP_BUSY).
+   A day that has passed is no day: expLive drops it from every read, so it leaves the card and To do the morning after. */
+let EXP_HOLD=null,EXP_SAID={},EXP_BUSY={};
+const EXP_HOLD_MS=120000,EXP_SAID_MS=60000;
+function expLive(o){const t=TODAY.toISOString().slice(0,10),out={};
+  for(const [k,v] of Object.entries(o&&typeof o==='object'?o:{}))if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&v>=t)out[k]=v;return out;}
 /* the cloud's hushes, {tip id: snooze day, or null for dismissed}: one store for this desk and Counter Maker, read once on load */
 let HUSH={},HUSH_READ=false;
 /* HIS COMMENT OF 12 SEP 2026: "if there is an input for date, make sure today is clickable while
@@ -21430,16 +21442,21 @@ function expDraw(){
   /* 18 Oct 2026, his "redesign this": one row a book, the light first in its own colour (the Counter's three tokens), the
      figures number first, what customers read now, and the day and its actions in one column that lines up down the card */
   const LW={green:'Green',yellow:'Yellow',amber:'Amber',red:'Red'};
+  /* 15 Nov 2026: the day he typed stays in its box while its call is out and after a refusal, where a redraw drew the stored day over it */
+  const typed={};box.querySelectorAll('input[id^="exp_"]').forEach(i=>{typed[i.id.slice(4)]=i.value;});
   box.innerHTML='<div class="expgrid">'+ids.map(p=>{
-    const l=L[p],d=EXPECTED[p]||'',asks=expAsks(l.light)&&!(d&&d>=today);
-    const note=d&&d<today?'Passed '+dShow(d)+'. Set a new day.'
-      :d?(l.light==='green'?'Set for '+dShow(d)+'. Shown when the light turns.':'Customers read: More by '+dShow(d)+'.')
+    const l=L[p],d=EXPECTED[p]&&EXPECTED[p]>=today?EXPECTED[p]:'',asks=expAsks(l.light)&&!d,said=EXP_SAID[p]&&Date.now()-EXP_SAID[p].at<EXP_SAID_MS?EXP_SAID[p]:null,busy=EXP_BUSY[p]||'';
+    /* 15 Nov 2026: the day's controls stand only where a day can show (any light but green) or one is held; a green book with none says so and no more */
+    const ctl=l.light!=='green'||!!d;
+    const note=d?(l.light==='green'?'Set for '+dShow(d)+'. Customers see it once the light is not green.':'Customers read: More by '+dShow(d)+'.')
       :asks?'No day set. Customers see the light alone.':l.light==='green'?'No day needed while green.':'No day needed while selling fast.';
     return `<div class="exprow exprow--${esc(l.light)}${asks?' exprow--asks':''}"><div class="expwho">`
       +`<div class="expbook"><span class="explight" aria-hidden="true"></span><b>${esc((PRODUCTS[p]&&PRODUCTS[p].name)||p)}</b><span class="expword">${LW[l.light]||esc(l.light)}</span>${asks?'<span class="expask">Asks</span>':''}</div>`
-      +`<div class="expfig"><span>${units(l.shelf)} held</span><span>${units(l.commit)} committed</span></div><div class="expnote">${note}</div></div>`
-      +`<div class="expctl">${dateIn('exp_'+p,d)}<span class="expact"><button type="button" class="salt-ghost salt-ghost--lit" data-expset="${esc(p)}">Set</button><button type="button" class="salt-ghost" data-expclr="${esc(p)}"${d?'':' disabled'}>Clear</button></span></div></div>`;
+      +`<div class="expfig"><span>${units(l.shelf)} held</span><span>${units(l.commit)} committed</span></div><div class="expnote${said?(said.bad?' expnote--bad':' expnote--said'):''}"${said?' role="status"':''}>${esc(said?said.t:note)}</div></div>`
+      +(ctl?`<div class="expctl">${dateIn('exp_'+p,d)}<span class="expact"><button type="button" class="salt-ghost salt-ghost--lit" data-expset="${esc(p)}"${busy?' disabled':''}>${busy==='set'?'Sending':'Set'}</button><button type="button" class="salt-ghost" data-expclr="${esc(p)}"${d&&!busy?'':' disabled'}>${busy==='clear'?'Clearing':'Clear'}</button></span></div>`:'')+`</div>`;
   }).join('')+'</div>';
+  Object.keys(typed).forEach(p=>{const i=document.getElementById('exp_'+p),s=EXP_SAID[p];
+    if(i&&(EXP_BUSY[p]||(s&&s.bad&&Date.now()-s.at<EXP_SAID_MS)))i.value=typed[p];});
   box.querySelectorAll('button[data-expset]').forEach(b=>{b.onclick=()=>expPost(b.dataset.expset,false);});
   box.querySelectorAll('button[data-expclr]').forEach(b=>{b.onclick=()=>expPost(b.dataset.expclr,true);});
 }
@@ -21449,21 +21466,34 @@ async function expLoad(quiet){
   let j=null;
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
   if(!j||!j.ok||!j.expected||typeof j.expected!=='object'){const m=document.getElementById('expMsg');if(m&&!quiet)m.textContent='The restock dates could not be read.';return;}
-  const was=JSON.stringify(EXPECTED),first=!EXPECTED_READ;EXPECTED=j.expected;EXPECTED_READ=true;
+  let next=expLive(j.expected);
+  if(EXP_HOLD&&Date.now()-EXP_HOLD.at<EXP_HOLD_MS&&JSON.stringify(next)!==EXP_HOLD.v)next=JSON.parse(EXP_HOLD.v);   /* a read older than this device's last tap */
+  const was=JSON.stringify(EXPECTED),first=!EXPECTED_READ;EXPECTED=next;EXPECTED_READ=true;
   warmSoon();
   expDraw();
   if((first||was!==JSON.stringify(EXPECTED))&&curAddr==='today')render();
 }
 async function expPost(p,clear){
-  const msg=document.getElementById('expMsg'),say=t=>{if(msg)msg.textContent=t;};
+  if(EXP_BUSY[p])return;
+  const say=(t,bad)=>{EXP_SAID[p]={t:t,bad:!!bad,at:Date.now()};expDraw();
+    setTimeout(()=>{if(EXP_SAID[p]&&Date.now()-EXP_SAID[p].at>=EXP_SAID_MS){delete EXP_SAID[p];expDraw();}},EXP_SAID_MS+50);};
   const el=document.getElementById('exp_'+p),on=clear?null:(el&&el.value)||'';
-  if(!clear&&!/^\d{4}-\d{2}-\d{2}$/.test(on))return say('Pick a day first. Nothing was set.');
-  if(!clear&&on<TODAY.toISOString().slice(0,10))return say('That day has passed. Nothing was set.');
+  if(!clear&&!/^\d{4}-\d{2}-\d{2}$/.test(on))return say('Pick a day first. Nothing was set.',true);
+  if(!clear&&on<TODAY.toISOString().slice(0,10))return say('That day has passed. Nothing was set.',true);
+  const green=(expLights()[p]||{}).light==='green';
   const go=()=>fetch('expected',{method:'POST',headers:qHeaders(),body:JSON.stringify({product:p,on})});
-  try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); let j={};try{j=await r.json();}catch(e){}
-    say(r.status===401?'That write key was refused. Nothing was set.':!r.ok?'The server refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. Customers see it gone at the next publish, within the hour.':'Set. Customers see it at the next publish, within the hour.');
-  }catch(e){ say('No connection, so nothing was set.'); }
-  await expLoad(true);
+  EXP_BUSY[p]=clear?'clear':'set';expDraw();
+  let r=null,j={};
+  try{ r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); try{j=await r.json();}catch(e){j={};} }catch(e){ r=null; }
+  delete EXP_BUSY[p];
+  if(!r)return say('No connection, so nothing was set.',true);
+  if(r.status===401)return say('That write key was refused. Nothing was set.',true);
+  if(!r.ok||!j||!j.ok)return say('The server refused it: '+((j&&j.error)||'http '+r.status)+'.',true);
+  /* the server's answer is the store as it wrote it: drawn at once, and held over a read that trails it */
+  if(j.expected&&typeof j.expected==='object'){EXPECTED=expLive(j.expected);EXPECTED_READ=true;EXP_HOLD={at:Date.now(),v:JSON.stringify(EXPECTED)};warmSoon();if(curAddr==='today')render();}
+  else await expLoad(true);
+  say(clear?'Cleared. Customers stop seeing a day within a few minutes.'
+    :green?'Sent. Customers see More by '+dShow(on)+' once the light is not green.':'Sent. Customers see More by '+dShow(on)+' within a few minutes.');
 }
 async function hushLoad(quiet){
   if(!cloudMode())return;
