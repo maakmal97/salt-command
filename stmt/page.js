@@ -1876,7 +1876,11 @@ export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><
   + '<meta name="color-scheme" content="light dark">'
   + '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + AMB_THEME.light + '">'
   + '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + AMB_THEME.dark + '">';
-export const SITE_STYLE = AMB_TOKENS + AMB_CSS + SITE_CSS;
+/* THE NOTES STAY UPSTREAM (as the salt-ds recipes' did, 24 Sep 2026): Ambient's notes name its other apps (Salt QR, Salt Admin) and the site's
+   layer names both faces, and a customer is served this; the rules are carried to the character, the comments are not */
+const noNotes = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
+export const AMB_STYLE = noNotes(AMB_TOKENS + AMB_CSS);
+export const SITE_STYLE = AMB_STYLE + noNotes(SITE_CSS);
 export const BODY_OPEN = '<body class="amb">' + AMB_ICONS;
 export const ambScript = (nonce) => '<script nonce="' + nonce + '">' + AMB_JS + "</script>";
 function guestPage(inner, nonce, title) {
@@ -2087,7 +2091,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + aHero("Customers", "", { heat: true })
+        + aHero("Customers", '<p class="amb-hero__sub" id="mFoot"></p>', { heat: true })   /* the count of accounts, the rail's foot until 15 Nov 2026 */
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'

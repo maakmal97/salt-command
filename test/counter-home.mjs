@@ -96,7 +96,7 @@ export async function run({ ok, pageWork }) {
     ok(!B.d.getElementById("hLive").hasChildNodes() && !B.d.querySelector(".hlive"), "with every order ended there is no live order on Home");
 
     /* ---- 2: the cascade */
-    const cs = (e) => A.w.getComputedStyle(e), hl = A.d.getElementById("hLive"), bar = A.d.querySelector("nav.salt-appbar");
+    const cs = (e) => A.w.getComputedStyle(e), hl = A.d.getElementById("hLive"), bar = A.d.querySelector("#tabs > .amb-dock");   /* 15 Nov 2026, the move to Ambient: the bar of places is Ambient's dock */
     const ph = { position: cs(hl).position, bottom: cs(hl).bottom, z: +cs(hl).zIndex, zBar: +cs(bar).zIndex, next: hl.nextElementSibling && hl.nextElementSibling.id, head: cs(hl.querySelector(".hlive__h")).display, tap: cs(hl.querySelector(".hlive__go")).minHeight };
     ok(ph.position === "sticky" && /var\(--salt-bar-h\)/.test(ph.bottom) && /var\(--hfoot/.test(ph.bottom) && ph.z > 0 && ph.z < ph.zBar && ph.next === "homeFoot" && ph.head === "none" && ph.tap === "var(--salt-tap)",
       "on a phone it is a pill sticking above the App bar and above the pay foot by the foot's height, behind the bar, with no heading, 44px tall: " + JSON.stringify(ph));

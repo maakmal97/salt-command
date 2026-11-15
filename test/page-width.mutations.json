@@ -2,7 +2,7 @@
  {"name":"W1 the Desk carries no page width","file":"master/salt_command.html","find":"  --salt-page-max: 1376px;","replace":"  --salt-page-mx: 1376px;"},
  {"name":"W2.1 the Desk's frame takes the screen","file":"master/salt_command.html","find":"  .shell{max-width:var(--salt-page-max);margin-inline:auto;}","replace":"  .shell{margin-inline:auto;}"},
  {"name":"W2.2 the Desk's wrap caps it at 1180px again","file":"master/salt_command.html","find":"  .wrap{max-width:none;}","replace":""},
- {"name":"W1 the Counter carries the salt-ds page width again","file":"stmt/page.js","find":"export const SITE_STYLE = AMB_TOKENS + AMB_CSS + SITE_CSS;","replace":"export const SITE_STYLE = AMB_TOKENS + AMB_CSS + SITE_CSS + \":root{--salt-page-max:1376px}\";"},
+ {"name":"W1 the Counter carries the salt-ds page width again","file":"stmt/page.js","find":"export const SITE_STYLE = AMB_STYLE + noNotes(SITE_CSS);","replace":"export const SITE_STYLE = AMB_STYLE + noNotes(SITE_CSS) + \":root{--salt-page-max:1376px}\";"},
  {"name":"W3 Salt Admin's shell is held to 1376px","file":"stmt/page.js","find":"#roster .salt-orb[data-back]{margin:0 0 16px}","replace":"#roster .salt-orb[data-back]{margin:0 0 16px}\n@media (min-width:1080px){#roster{max-width:1376px;margin-inline:auto}}"},
  {"name":"W3 Salt Admin's screen is narrowed from 1440","file":"stmt/page.js","find":"@media (min-width:1440px){.adm .nsplit{","replace":"@media (min-width:1440px){#roster > .amb-screen{max-width:1376px}}\n@media (min-width:1440px){.adm .nsplit{"},
  {"name":"W4 the Counter's shell is held to 1240px","file":"stmt/page.js","find":"[hidden]{display:none!important}","replace":"[hidden]{display:none!important}\n@media (min-width:1080px){#tabs{max-width:1240px}}"}

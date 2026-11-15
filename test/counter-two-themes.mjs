@@ -24,7 +24,11 @@ export async function run({ ok }) {
     + '<meta name="color-scheme" content="light dark">'
     + '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + A.AMB_THEME.light + '">'
     + '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + A.AMB_THEME.dark + '">';
-  const STYLE = A.AMB_TOKENS + A.AMB_CSS + A.SITE_CSS;
+  /* the rules to the character, the notes left upstream: Ambient's name its other apps, which a customer is never told of */
+  const notes = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
+  const STYLE = notes(A.AMB_TOKENS + A.AMB_CSS) + notes(A.SITE_CSS);
+  ok(/Salt QR|Salt Admin/.test(A.AMB_CSS + A.SITE_CSS) && !/Salt QR|Salt Admin|Salt Desk/.test(PG.landingPage("", "nQ", null).replace(/<script[\s\S]*?<\/script>/g, "")),
+    "the customer's page is served Ambient's rules without its notes, which name Salt QR and Salt Admin, so it names no other app");
   const pages = [
     ["Salt Counter", PG.landingPage("", "nC", null), "nC", true],
     ["Salt Admin", PG.landingPage("", "nA", { master: "m", accounts: [] }), "nA", true],

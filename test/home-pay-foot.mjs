@@ -121,7 +121,7 @@ export async function run({ ok, pageWork }) {
 
     /* ---- 8 and 9: the cascade a phone reads, and the desktop's by its width query made to hold */
     const cs = (e) => five.w.getComputedStyle(e);
-    const bar = D5.querySelector("nav.salt-appbar"), z = (e) => +cs(e).zIndex;
+    const bar = D5.querySelector("#tabs > .amb-dock"), z = (e) => +cs(e).zIndex;   /* 15 Nov 2026, the move to Ambient: the bar of places is Ambient's dock */
     const phone = { position: cs(foot).position, bottom: cs(foot).bottom, zFoot: z(foot), zBar: z(bar), display: cs(foot).display };
     ok(phone.position === "sticky" && /var\(--salt-bar-h\)/.test(phone.bottom) && /safe-area-inset-bottom/.test(phone.bottom) && phone.zFoot > 0 && phone.zFoot < phone.zBar && phone.zBar < 70 && phone.display === "flex",
       "on a phone the foot sticks, its bottom edge the App bar's own height token and the safe area above the screen's edge, in front of the page and behind the bar, which stays behind the sheet: " + JSON.stringify(phone));
@@ -130,7 +130,7 @@ export async function run({ ok, pageWork }) {
     const at = (html, px) => html.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, px) ? "@media all{" : m));
     const wide = new JSDOM(at(landingPage("abcd-efgh", "nhf1", null), 1280)), wf = wide.window.document.getElementById("homeFoot");
     const wideCs = wide.window.getComputedStyle(wf);
-    ok(wideCs.position === "static" && wide.window.getComputedStyle(wide.window.document.querySelector("nav.salt-appbar")).display === "none",
+    ok(wideCs.position === "static" && !!wide.window.document.querySelector("#tabs > .amb-dock"),
       "from 1080px, where the rail stands for the bar, the foot is in the flow and not stuck: " + JSON.stringify({ position: wideCs.position }));
     wide.window.close();
     /* jsdom lets .payfoot's display beat the attribute's, which no browser does, so the rule that shuts a hidden foot is read off the sheet the page carries */

@@ -29,7 +29,8 @@ body{margin:0;background:var(--salt-obsidian);color:var(--salt-salt)}
 @media (min-width:1080px){
 .ts-tabs{display:none}
 .ts-views{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ts-views iframe[hidden]{display:block}
+/* 15 Nov 2026: over Ambient's own rule that a hidden element is never drawn */
+.ts-views iframe[hidden]{display:block!important}
 }
 `;
 

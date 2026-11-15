@@ -13,7 +13,7 @@
  * Every assertion is red under its own mutation (test/page-width.mutations.json). */
 import { readFileSync } from "node:fs";
 import { JSDOM, VirtualConsole } from "jsdom";
-import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { landingPage, SITE_STYLE, AMB_STYLE } from "../stmt/page.js";
 import { SITE_CSS } from "../stmt/statement-css.js";
 
 const J = JSON.stringify;
@@ -42,7 +42,7 @@ export async function run({ ok }) {
   const admin = flat(sheetsOf(landingPage("", "pw-nonce", { master: "fixture-master", accounts: [] })));
   const PAGE = "var(--salt-page-max)";
   /* the page's own layers (the site's layer and the page's older one), read as served after Ambient, which is the shell's own */
-  const own = (html) => { const st = (/<style[^>]*>([\s\S]*?)<\/style>/.exec(html) || [, ""])[1]; return flat(sheetsOf("<style>" + st.slice(SITE_STYLE.length - SITE_CSS.length) + "</style>")); };
+  const own = (html) => { const st = (/<style[^>]*>([\s\S]*?)<\/style>/.exec(html) || [, ""])[1]; return flat(sheetsOf("<style>" + st.slice(AMB_STYLE.length) + "</style>")); };
   const counterOwn = own(landingPage("0000-0000", "pw-nonce")), adminOwn = own(landingPage("", "pw-nonce", { master: "fixture-master", accounts: [] }));
   /* W1 */
   ok(token(desk) === "1376px" && token(counter) === "" && token(admin) === "",

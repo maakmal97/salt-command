@@ -121,13 +121,14 @@ export async function run({ ok }) {
 
     /* ---- 2: the card, compact and ordered, every control with its id */
     const card = d.getElementById("thisDevice");
-    const seq = ["devH", "devRows", "lookRow", "lock", "devSlot", "keepCard"].map((id) => d.getElementById(id));
+    /* 15 Nov 2026, the move to Ambient: the Look left This device (light and dark follow the device) */
+    const seq = ["devH", "devRows", "lock", "devSlot", "keepCard"].map((id) => d.getElementById(id));
     ok(seq.every((x) => !!x && card.contains(x)) && seq.every((x, i) => i === 0 || before(seq[i - 1], x)),
-      "This device reads notifications, the Look, Sign out, then the other devices and the install guide, each control with its id");
-    /* 26 Oct 2026, his word: the Look is one Switch, Tide on or off */
-    ok(!!d.querySelector('#lookRow .salt-switch[data-look="tide"]') && !d.querySelector('#lookRow [data-look="night"]') && t(d.getElementById("lock")) === W.fill(W.EN["dev.out"], { dev: "computer" }, "en")
+      "This device reads notifications, Sign out, then the other devices and the install guide, each control with its id");
+    /* 26 Oct 2026, his word: the Look was one Switch; 15 Nov 2026, the move to Ambient: there is none, the device choosing light or dark */
+    ok(!d.getElementById("lookRow") && !d.querySelector("[data-look]") && t(d.getElementById("lock")) === W.fill(W.EN["dev.out"], { dev: "computer" }, "en")
       && d.getElementById("keepHead").tagName === "H3" && d.querySelectorAll("#pStmt h1").length === 0,
-      "the Look is one switch, Sign out keeps its words, and the install guide's heading is the card's third level, so Account carries no second page heading of its own: "
+      "no Look is asked, Sign out keeps its words, and the install guide's heading is the card's third level, so Account carries no second page heading of its own: "
       + JSON.stringify({ lock: t(d.getElementById("lock")), keep: d.getElementById("keepHead").tagName }));
 
     /* 28 Oct 2026 (his yes, the statement in the language): Sign out is the last row of This device's list, in ember, never a ghost */
@@ -166,12 +167,13 @@ export async function run({ ok }) {
     wins.push(owner.window);
     const od = owner.window.document, back = od.getElementById("lock"), backWords = t(back);
     const placeBefore = od.getElementById("oCustomers").hidden;
-    const ownSheetUp = !od.getElementById("lookSheet").hidden && [...od.body.children].every((c) => !c.hasAttribute("inert") && !c.hasAttribute("data-behind"));
+    /* 15 Nov 2026, the move to Ambient: his page draws no look Sheet now, so nothing on it is shut by one */
+    const ownSheetUp = !od.getElementById("lookSheet") && [...od.body.children].every((c) => !c.hasAttribute("inert") && !c.hasAttribute("data-behind"));
     back.click();
     ok(backWords === "Back to accounts" && t(back) === backWords && !back.hasAttribute("data-w") && placeBefore && !od.getElementById("oCustomers").hidden,
       "his Back to accounts is a plain tap: one tap does its work and the control never reads as armed: " + JSON.stringify({ backWords, now: t(back), customersShown: !od.getElementById("oCustomers").hidden }));
-    ok(TIDE_OFF || ownSheetUp,   /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
-      "and his page, which draws Sheets of its own, is left as it was: its look Sheet is open and nothing on it is shut");
+    ok(ownSheetUp,
+      "and his page, which draws Sheets of its own, is left as it was: no look Sheet stands on it and nothing on it is shut");
 
     /* ---- 4 and 5: the door, as served */
     const door = new JSDOM(landingPage(u, "n7d2d", null), { url: "https://site.test/" });

@@ -14,15 +14,14 @@
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct, drawEverything } from "./maker-act.mjs";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE } from "../stmt/page.js";
 
 /* the owner page's own stylesheet, read as rules, by query (spaces taken out) and selector (a list is written "a,b"). It starts where PAGE_CSS says the owner page's rules begin: what
    comes before is the customer's, which has its own rules at 768px and 860px (test/counter-tablet.mjs) */
 const OWNER_MARK = "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S";
 export function ownerCss() {
   const html = landingPage("", "tablet-nonce", { master: "fixture-master", accounts: [] });
-  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice(SITE_STYLE.length);   /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's and the site's */
   const from = all.indexOf(OWNER_MARK), css = from < 0 ? "" : all.slice(all.lastIndexOf("/*", from));
   const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
   const sel = (r) => r.selectorText.replace(/\s*,\s*/g, ",");
@@ -95,10 +94,11 @@ export async function run({ ok, pageWork }) {
     const rest = [...props].filter((x) => !free.includes(x));
     ok(props.size >= 9 && !rest.length, "and it writes placement only, no colour, no type and no surface: " + [...props].join() + (rest.length ? " | not placement: " + rest : ""));
     const mine = (h) => new JSDOM(h).window.document;
-    const lone = mine(landingPage("", "n", null)).getElementById("lookSheet");
+    /* 15 Nov 2026, the move to Ambient: the look's choice Sheet is gone from both pages (light and dark follow the device) */
+    const lone = mine(landingPage("", "n", null));
     const own = (e) => !!e && e.classList.contains("adm") && e.classList.contains("asheet");
-    ok(own(d.getElementById("lookSheet")) && own(d.getElementById("vaultSheet")) && !!lone && !lone.classList.contains("adm") && !lone.classList.contains("asheet"),
-      "the choice and unlock sheets of Salt Admin carry .adm and .asheet beside .salt-sheet, and the customer's choice sheet carries neither: " + d.getElementById("lookSheet").className + " | " + (lone && lone.className));
+    ok(own(d.getElementById("vaultSheet")) && !d.getElementById("lookSheet") && !lone.getElementById("lookSheet") && !lone.getElementById("vaultSheet"),
+      "the unlock sheet of Salt Admin carries .adm and .asheet beside .salt-sheet, the customer's page draws none, and neither draws a look Sheet: " + d.getElementById("vaultSheet").className);
     const p = await richOwnerPage({ pageWork });
     try {
       await p.work.quiet();
@@ -117,7 +117,8 @@ export async function run({ ok, pageWork }) {
   {
     const q = "(min-width:768px)and(max-width:859.98px)";
     const col = at(q, ".gate.adm"), grid = at(q, ".adm .maker-input"), full = at(q, ".adm .maker-input>*"), short = at(q, ".adm .maker-input>.maker-field--short");
-    ok(/max-width: 620px/.test(col), "from 768 to 859px the column is 620px, centred by the shell's own auto margins: " + col);
+    /* 15 Nov 2026, the move to Ambient: his shell is Ambient's, which lays itself out by its own width; the page no longer sizes a column there */
+    ok(!col && !at(q, "#roster") && !at(q, ".adm"), "from 768 to 859px the page sizes no column of its own, the shell laying itself out: " + col);
     ok(/display: grid/.test(grid) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(grid) && /grid-column: 1 ?\/ ?-1/.test(full) && /grid-column: auto/.test(short),
       "a form is two columns there, a short field takes one and anything else across both: " + [grid, full, short].join(" | "));
     const rules = media.filter((m) => m.q === q).flatMap((m) => m.rules.map((r) => r.sel));

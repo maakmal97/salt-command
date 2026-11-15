@@ -18114,14 +18114,15 @@ await (async () => {
     } }).window;
     const D = win.document;
     const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
-    ok(places(".salt-appbar") === "needs,orders,customers,record,shop" && places(".salt-rail") === "needs,orders,customers,record,shop",
-      "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    /* 15 Nov 2026, the move to Ambient: one tab bar, which Ambient stands up as the rail from 960px */
+    ok(places(".amb-tabbar") === "needs,orders,customers,record,shop" && D.querySelectorAll(".place[data-m]").length === 5,
+      "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), on the one tab bar: " + JSON.stringify(places(".amb-tabbar")));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
     ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
       "and it carries the count of what is To do there on both bars, the refused account, the ID with no account and the account not sent (all his to act since 22 Oct 2026): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
-    D.querySelector('.salt-appbar button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     /* 2 Nov 2026 (Customers on the canvas): an account is a settings row inside its group's list (.salt-settings), no longer Needs you's card */
     const rows = () => [...D.querySelectorAll("#rlist .arow[data-u]")];
     const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
@@ -18163,10 +18164,10 @@ ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-selected") 
     D.querySelector('#aopen button[data-back="accounts"]').click();
     ok(!D.getElementById("oAccts").classList.contains("open") && D.getElementById("aopen").hidden && !rowOf(uO).hasAttribute("aria-current"),
       "and the way back closes it");
-    D.querySelector('.salt-rail button[data-m="shop"]').click();
+    D.querySelector('.amb-tabbar button[data-m="shop"]').click();
     ok(D.getElementById("oShop").hidden === false && current() === "shop" && !!D.querySelector('#oShop [data-act="part.shop.practice"]') && !!D.getElementById("mTest"),
       "Shop holds the test accounts, with the hours and the notice beside them");
-    D.querySelector('.salt-rail button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     D.querySelector('[data-act="part.customers.associates"]').click();
     ok(D.getElementById("oCards").hidden === false && D.getElementById("oAccts").hidden === true && current() === "customers",
       "and Customers holds the associates' report card under Associates");
@@ -18223,7 +18224,7 @@ await (async () => {
     view.click();
     ok(await until(() => !D.getElementById("tabs").hidden && !D.getElementById("barw").hidden),
       "View as them opens their own page");
-    const bar = D.querySelector("#barw .bar");
+    const bar = D.querySelector("#barw .amb-notice");   /* 15 Nov 2026, the move to Ambient: his read-only line is a notice under the hero */
     ok(D.getElementById("vas").textContent === "Viewing as " + u + ", read only" && D.getElementById("roster").hidden,
       "under a banner naming the username and saying read only: " + JSON.stringify(D.getElementById("vas").textContent));
     const lockB = D.getElementById("lock");
@@ -18850,7 +18851,7 @@ await (async () => {
       "Share the link shares the one it made, and mints no second: " + JSON.stringify({ shared: shared.length, ots: await ots() }));
     /* a redraw while one is being made: the card drawn in its place waits, then shares, and one link is made */
     btn("k:" + uM, "Send a sign-in link").click();
-    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    D.querySelector('.amb-tabbar button[data-m="needs"]').click();
     ok(!!btn("k:" + uM, "Making it...") && btn("k:" + uM, "Making it...").disabled, "a redraw while one is made draws its button waiting");
     ok(await until(() => btn("k:" + uM, "Share the link")) && (await ots()) === 2, "and once made the redrawn card offers Share the link, one link made for it, not two");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -18915,7 +18916,7 @@ await (async () => {
     cut.on = false;
     ok(!card().querySelector("select"), "and the card offers no price level to pin");
     /* the same in Links */
-    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
     ok(await until(() => btn(lcard(), "Approve")), "Links lists the link with its Approve");
     cut.on = true;
@@ -18989,7 +18990,7 @@ await (async () => {
     ok(await until(() => hold.held === 1) && first.disabled && btn(pane(), "Decline").disabled,
       "while Approve is out, the card's Approve and Decline are off: " + JSON.stringify([first.disabled, btn(pane(), "Decline").disabled]));
     /* a redraw puts fresh buttons in their place; a tap on the new Approve while the first move is out sends nothing */
-    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    D.querySelector('.amb-tabbar button[data-m="needs"]').click();
     const again = btn(card(), "Approve");
     ok(!!again && again !== first, "a redraw put a new Approve on the card");
     again.click();
@@ -19000,13 +19001,13 @@ await (async () => {
       "and the move lands once: " + JSON.stringify({ sent: sent("approve") }));
 
     /* ---- Links: Withdraw held in flight ---- */
-    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => btn(lcard(), "Withdraw")), "Links lists the approved link with its Withdraw");
     holdNext("POST /all/refs/" + lid + "/revoke");
     const wd = btn(lcard(), "Withdraw");
     wd.click();
     ok(await until(() => hold.held === 1) && wd.disabled, "while Withdraw is out, its button in Links is off");
-    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const wd2 = btn(lcard(), "Withdraw");
     ok(!!wd2 && wd2 !== wd, "a redraw put a new Withdraw on the card");
     wd2.click();
@@ -19068,7 +19069,7 @@ await (async () => {
     ok(await until(() => ko() && /Last signed in by code, 03 Sep 2026[.]/.test(ko().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card, opened: " + (ko() || {}).textContent);
     delete win.matchMedia;
-    D.querySelector('.salt-appbar button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     /* 25 OCT 2026: an open is read from the opened card's Opened line, no longer from the row */
     const opened = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return ""; r.click();
       const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .salt-settings__value'); return v ? v.textContent : ""; };
@@ -19345,7 +19346,7 @@ await (async () => {
       && [...nc().querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")),
       "Needs you offers the guest price list with only the sheet read: " + (nc() || {}).textContent);
     delete win.matchMedia;
-    D.querySelector('.salt-appbar button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     /* 25 OCT 2026: the row says No account and offers Show; the next-update words are on the opened card */
     const cardOf = (u) => { row(u).click(); const c = D.querySelector("#aopen .scard"); return c && c.textContent.includes(u) ? c : null; };
@@ -19976,7 +19977,7 @@ await (async () => {
       "Sign out everywhere ends both copied links, where it spared the one the page still held");
 
     /* ---- Needs you's Share the link, on the locked account's card ---- */
-    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    D.querySelector('.amb-tabbar button[data-m="needs"]').click();
     const need = () => D.querySelector('#nlist [data-need="k:' + uL + '"]');
     const nbtn = (t) => need() && [...need().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(await until(() => nbtn("Send a sign-in link")), "Needs you carries the refused account's card");
@@ -22452,21 +22453,16 @@ await (async () => {
   const { JSDOM: JDF } = await import("jsdom");
   const dom = new JDF(lpF("", "nF", null), { url: "https://site.test/", pretendToBeVisual: true });
   try {
+    /* 15 Nov 2026, THE MOVE TO AMBIENT: the bar is gone. The lapse (and his read-only line) are notices in a stack under the place's hero, in the
+       shell's screen, which scrolls inside the shell; the app bar floats over it and clears the safe area by Ambient's own rule; each line's one control
+       is a quiet pill, 44px by Ambient's --amb-tap */
     const W = dom.window, D = W.document, barw = D.getElementById("barw");
-    barw.hidden = false;
-    const cs = W.getComputedStyle(barw), inner = W.getComputedStyle(barw.querySelector(".bar"));
-    ok(cs.position === "sticky" && inner.position !== "sticky",
-      "the wrapper is the sticky element and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, bar: inner.position }));
-    /* UX2: pinned under the status bar, which a saved iPhone app draws the page beneath. jsdom reads no env(),
-       so the rule is read off the page as served */
     const served = D.documentElement.outerHTML;
-    ok(/#barw\{position:sticky;top:env\(safe-area-inset-top,0px\);/.test(served) && /viewport-fit=cover/.test(served),
-      "and it sticks at the safe-area inset, not at top:0 behind the clock, on a page drawn under the status bar");
-    /* UX4: Log out and Continue were 55 and 62 by 21. Measured by a hit test in the rig at 320, 360 and 390: 55 and
-       62 by 44 after, the bar 46px tall as it was about 45 before. The rule is read as served: jsdom resolves no var() */
-    const barBtn = (/\.bar button\{([^}]*)\}/.exec(served) || ["", ""])[1];
-    ok(/min-height:var\(--salt-tap\)/.test(barBtn) && /min-width:var\(--salt-tap\)/.test(barBtn) && /flex:none/.test(barBtn) && !/min-height:auto/.test(barBtn),
-      "the bar's two buttons are 44px both ways and never shrink under it: " + JSON.stringify(barBtn));
+    ok(barw.classList.contains("amb-stack") && barw.parentElement.matches("#tabs > main.amb-screen") && barw.previousElementSibling.matches("header.amb-hero")
+      && D.getElementById("lapse").classList.contains("amb-notice--warn") && !/#barw\{position:sticky/.test(served),
+      "the lapse line is a warning notice in a stack under the place's hero, in the screen that scrolls, no sticky bar of the page's own");
+    ok(/viewport-fit=cover/.test(served) && D.getElementById("lapseGo").classList.contains("amb-pill") && D.getElementById("lapseGo").classList.contains("amb-pill--quiet"),
+      "and its one control, Continue, is Ambient's quiet pill, 44px by its own measure, on a page drawn under the status bar");
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.39: no em-dash reaches the served page, and a waiting link says it is shut");
@@ -23947,8 +23943,8 @@ await (async () => {
     "and it is ONE page, byte for byte but its nonce, so the door says nothing about which it was: "
     + JSON.stringify(got.map((x, i) => [x.what, bare[i].length])));
   ok(/This link is not open/.test(bare[0]) && /Ask the person who sent it to you[.]/.test(bare[0])
-    && /name="viewport"/.test(bare[0]) && /url[(][/]fonts[/]/.test(bare[0]) && !/Not found/.test(bare[0]),
-    "it says the link is not open and whom to ask, with a viewport and the brand faces, never the bare Not found");
+    && /name="viewport"/.test(bare[0]) && !/url[(][/]fonts[/]/.test(bare[0]) && /<body class="amb">/.test(bare[0]) && !/Not found/.test(bare[0]),
+    "it says the link is not open and whom to ask, with a viewport, on Ambient (the device's own face, 15 Nov 2026), never the bare Not found");
   ok(bare[0] !== board.split('nonce="' + nonceOf({ body: board }) + '"').join(""), "and an open link is still its board, the control");
   ok(/<title>Link not open<\/title>/.test(bare[0]) && !/Price list/.test(bare[0]) && /<title>Price list<\/title>/.test(board),
     "the shut page's tab says the link is not open, never Price list, and the board's still says Price list");
@@ -24403,7 +24399,8 @@ await (async () => {
   const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
     ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
     ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Admin", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
-  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="(?:night|tide)"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+  /* 15 Nov 2026, the move to Ambient: no theme on the root, the device choosing light or dark */
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
   const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
   ok(pages.every(([, h]) => h.length > 1000) && !off.length,
     "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
@@ -25626,7 +25623,8 @@ await (async () => {
   /* 24 Sep 2026: the tab follows the mark alone, so an associate with no card yet still reaches their
      links; a panel with no card says when it comes and carries the links (behaviour: "S1 1.40") */
   /* S7 7.1: the tab is Rewards, a place on the bar and the rail, hidden on both until the account is an associate's */
-  ok(/id="tCard" data-t="card" hidden/.test(page6) && /class="salt-appbar__item" data-t="card" hidden/.test(page6) && /placeHide\('card',!assoc\);/.test(page6),
+  /* 15 Nov 2026, the move to Ambient: one tab bar, so one button */
+  ok(/<button type="button" class="amb-tab" id="tCard" data-t="card" hidden/.test(page6) && (page6.match(/data-t="card"/g) || []).length === 1 && /placeHide\('card',!assoc\);/.test(page6),
     "the place starts hidden and is shown to an associate alone");
   ok(/card:pCard\}/.test(page6) && /PANEL\[k\]\.hidden=k!==t;/.test(page6), "and its panel is switched with the other places");
   ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
@@ -40130,13 +40128,14 @@ await (async () => {
     return { W, D };
   };
   const shown = (D) => ["pHome", "pPrices", "pOrder", "pStmt", "pCard"].filter((id) => !D.getElementById(id).hidden).join(",");
-  const current = (D) => [...D.querySelectorAll('#tabs button[aria-current="page"]')].map((b) => (b.closest(".salt-appbar") ? "bar:" : "rail:") + b.getAttribute("data-t")).sort().join(",");
+  /* 15 Nov 2026, the move to Ambient: the bar and the rail are one tab bar, which stands up as the rail from 960px */
+  const current = (D) => [...D.querySelectorAll('#tabs button[aria-current="page"]')].map((b) => (b.closest(".amb-tabbar") ? "tab:" : "other:") + b.getAttribute("data-t")).sort().join(",");
   const a = await open({});
   try {
     const { W, D } = a, head = () => D.getElementById("placeT").textContent;
-    ok(shown(D) === "pHome" && current(D) === "bar:home,rail:home" && /^Good (morning|afternoon|evening)$/.test(head())
+    ok(shown(D) === "pHome" && current(D) === "tab:home" && /^Good (morning|afternoon|evening)$/.test(head())
       && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u,
-      "signed in, Home opens first, marked on the bar and the rail, greeted, with the username once, in the header (the rail's foot that repeated it went on 18 Oct 2026): "
+      "signed in, Home opens first, marked on the tab bar, greeted, with the username once, in the header (the rail's foot that repeated it went on 18 Oct 2026): "
       + JSON.stringify([shown(D), current(D), head()]));
     /* S7 merge: Home's To pay now is stage 6's (#payHead), its Pay #payNow */
     /* the words, not the drawing: a mark's letter (Step 1a.2) is aria-hidden */
@@ -40153,17 +40152,18 @@ await (async () => {
       && /Waiting for us to confirm/.test(D.getElementById("hComing").textContent),
       "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay and when, by the way it comes: "
       + JSON.stringify([rows("hNeeds"), rows("hComing"), D.getElementById("hComing").textContent]));
-    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3,3" && !D.querySelector('#tabs [data-n="home"]').textContent,
-      "the Orders place counts the three orders that need them, as a numeral on the bar and the rail");
-    ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
+    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3" && !D.querySelector('#tabs [data-n="home"]').textContent
+      && D.getElementById("tOrder").getAttribute("aria-label") === "Orders, 3 waiting",
+      "the Orders place counts the three orders that need them, a numeral on its tab, the tab's name saying it");
+    ok(D.getElementById("tCard").hidden && D.querySelector('.amb-tabbar button[data-t="card"]').hidden
       && D.querySelector("#pStmt #thisDevice #lock") && /^Sign out this /.test(D.getElementById("lock").textContent) && !D.querySelector("#barw #lock"),
       "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");
-    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
-    ok(shown(D) === "pOrder" && current(D) === "bar:order,rail:order" && head() === "Orders" && W.location.hash === "#orders",
+    D.querySelector('.amb-tabbar button[data-t="order"]').click();
+    ok(shown(D) === "pOrder" && current(D) === "tab:order" && head() === "Orders" && W.location.hash === "#orders",
       "a tap on Orders shows that place, marks it on both, names it in the header and writes its address: " + JSON.stringify([shown(D), current(D), head(), W.location.hash]));
-    D.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    D.querySelector('.amb-tabbar button[data-t="home"]').click();
     D.querySelector('#hNeeds [data-row="oR"]').click();
-    ok(shown(D) === "pOrder" && !!D.querySelector('#pOrder .oscreen[data-order="oR"]') && current(D) === "bar:order,rail:order",
+    ok(shown(D) === "pOrder" && !!D.querySelector('#pOrder .oscreen[data-order="oR"]') && current(D) === "tab:order",
       "a row on Home opens its order, in Orders: " + JSON.stringify(shown(D)));
   } finally { a.W.close(); }
   const b = await open({ hash: "#prices" });
@@ -40200,19 +40200,20 @@ await (async () => {
   let depth = 0, to = from;
   for (let i = from; i >= 0 && i < css.length; i++) { if (css[i] === "{") depth++; else if (css[i] === "}" && --depth === 0) { to = i; break; } }
   const wide = from >= 0 ? css.slice(from, to + 1) : "";
-  ok(/\.cshell\{display:flex;/.test(wide) && /\.cmain\{flex:1 1 auto;min-width:0\}/.test(wide)
+  /* 15 Nov 2026, the move to Ambient: the shell is Ambient's, which stands its dock up as the rail from 960px by its own width; the page's 1080px
+     block lays out the places alone */
+  ok(!/\.cshell|\.cmain/.test(wide)
     && /\.home\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide)
     && /@media \(min-width:1080px\)\{\s*\.acct\{max-width:1060px;display:grid;grid-template-columns:minmax\(0,620px\) minmax\(300px,1fr\);/.test(css)
     && /\.pgrid\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide),
-    "from 1080px the shell stands the rail beside the main column, and Home, Account and Prices take two columns: " + JSON.stringify(wide.slice(0, 160)));
-  ok(/@media \(min-width: 1080px\) \{\s*\.salt-appbar \{ display: none; \}/.test(css) && /@media \(max-width: 1079\.98px\) \{\s*\.salt-rail\.salt-appbar__rail \{ display: none; \}/.test(css)
-    && /@media \(min-width: 1080px\) \{\s*\.salt-sheet \{\s*top: 0;\s*left: auto;/.test(css),
-    "and the page carries the recipes' own switch: the bar below 1080px, the rail from it, and the sheet a drawer on the right");
+    "from 1080px Home, Account and Prices take two columns, and the page's block lays out no shell of its own: " + JSON.stringify(wide.slice(0, 160)));
+  ok(/@container amb \(min-width: 960px\) \{\s*\.amb-shell--rail > \.amb-dock \{/.test(css) && !/\.salt-appbar|\.salt-rail/.test(css),
+    "and the page carries Ambient's own switch, the dock standing up as the rail from 960px of the shell, and no salt-ds bar or rail");
   ok(!/100vw - 64px/.test(css), "the orders place no longer breaks out of a 620px column to stand wide: the column is wide itself");
   const D = new JD72(page, { url: "https://site.test/" }).window.document;
   const kids = [...D.getElementById("tabs").children].map((n) => n.tagName.toLowerCase() + "." + n.className.split(" ")[0]).join(" ");
-  ok(kids === "nav.salt-rail div.cmain nav.salt-appbar" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
-    "the markup it lays out: the rail, the main column and the bar; Home's two columns; This device beside the statement: " + kids);
+  ok(kids === "div.amb-appbar main.amb-screen div.amb-dock" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
+    "the markup it lays out: the app bar, the screen and the dock; Home's two columns; This device beside the statement: " + kids);
   /* Prices, driven: the books stand in their grid */
   const u = "abcd-efgh", pass = "fixture-pass-72", ck = await C72.contentKey("test-secret", u);
   const body = { ok: true, wrap: await C72.wrapKey(pass, ck), session: "",
@@ -40258,7 +40259,7 @@ await (async () => {
       + '<div class="hcol"><div>d</div></div></div><div class="olist"><button class="salt-inbox-row">e</button><button class="salt-inbox-row">f</button></div>';
     d.body.appendChild(x);
     const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".hcol");
-    const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q(".cshell"), "padding-bottom"),
+    const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q("#tabs"), "padding-bottom"),
       door: cs(q("#gate"), "padding-left") + "|" + cs(q("#gate"), "padding-right"),
       roster: q("#roster") ? cs(q("#roster"), "margin-top") + "|" + cs(q("#roster"), "padding-bottom") : "",
       hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].firstElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
@@ -40270,18 +40271,21 @@ await (async () => {
   const cust = lp("abcd-efgh", "npf", null), own = lp("", "npo", { master: "mpf", accounts: [] });
   const phone = read(cust, 375), phoneOwn = read(own, 375), desk = read(cust, 1280), deskOwn = read(own, 1280);
   const sides = ["top", "right", "bottom", "left"];
-  ok(phone.body.every((v, i) => v === "calc(16px + env(safe-area-inset-" + sides[i] + ", 0px))") && phone.shell === "var(--salt-bar-h)" && phone.door === "0px|0px",
-    "on a phone the body keeps 16px on every side with that side's safe area added, the shell keeps only the App bar's height under it, and the door adds nothing beside: "
-    + JSON.stringify(phone));
-  ok(phoneOwn.roster === "0px|var(--salt-bar-h)" && phoneOwn.body.join() === phone.body.join(),
-    "and Salt Admin's shell, whose own rule comes after the Counter's block, starts at the body's edge and clears the bar by the same 16px: " + JSON.stringify(phoneOwn));
+  /* 15 Nov 2026, THE MOVE TO AMBIENT: the shell is the screen, Ambient's, so the body keeps no gutter of the page's and neither shell any room for a bar:
+     Ambient's screen keeps the safe areas, its stacks the 16px gutter, and its dock clears itself (amb-screen--docked) */
+  void sides;
+  const nil = (v) => /^0(px)?$/.test(v);
+  ok(phone.body.every(nil) && nil(phone.shell) && phone.door === "0px|0px",
+    "on a phone the body keeps no gutter of the page's own, the Counter's shell no room of its own for a bar, and the door adds nothing beside: " + JSON.stringify(phone));
+  ok(phoneOwn.roster.split("|").every(nil) && phoneOwn.body.join() === phone.body.join(),
+    "and Salt Admin's shell starts at the body's edge with no room of its own for a bar either: " + JSON.stringify(phoneOwn));
   ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
     "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
   /* 5 Nov 2026 (the frame): from 1080px Salt Admin's shell is the frame, the screen tall, no padding under it (its 24px margin is the frame's height) */
-  ok(desk.body.join() === "22px,18px,60px,18px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "0px|0px"
+  ok(desk.body.every(nil) && nil(desk.shell) && desk.door === "4px|4px" && deskOwn.roster.split("|").every(nil)
     && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
-    "from 1080px nothing moves: the desk keeps its own frame, 22px from the top as the Desk is since 18 Oct 2026, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+    "from 1080px nothing moves: the body keeps no gutter, the shells none of their own, the door its 4px, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
 
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
@@ -40431,11 +40435,11 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelector("#pOrder [data-olist]"));
-    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('.amb-tabbar button[data-t="order"]').click();
     d.querySelector('#pOrder [data-row="' + A + '"]').click();
     ok(d.querySelector("#pOrder .oscreen").getAttribute("data-order") === A && !waits() && !onHome(),
       "opened in Orders, the first reply is shown and so no longer waits");
-    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    d.querySelector('.amb-tabbar button[data-t="home"]').click();
     phase = 1;
     await until(() => onHome() && waits());
     ok(onHome() && waits(), "a second reply to the order left open, come while Home shows, waits on Home and on its row");
@@ -40445,7 +40449,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 300));
     ok(waits(), "and the order left open, never drawn again, still has its reply waiting on its row: "
       + JSON.stringify((d.querySelector('#pOrder [data-row="' + A + '"]') || {}).textContent));
-    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    d.querySelector('.amb-tabbar button[data-t="home"]').click();
     ok(onHome() && [...d.querySelectorAll('#tabs [data-n="order"]')].every((c) => c.textContent === "1"),
       "and on Home, and in the Orders count");
   } finally { w.close(); }
@@ -40985,7 +40989,7 @@ await (async () => {
     D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
-    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    D.querySelector('.amb-tabbar button[data-t="order"]').click();
     D.querySelector('#pOrder [data-row="' + A + '"]').click();
     const s1 = shape();
     ok(s1.first && s1.headFirst && s1.beside && s1.open === A,
@@ -41235,7 +41239,7 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
     /* S7 7.1: Home opens first, and Orders is the payment page (S7 merge: Home's Pay opens the pay sheet, S6 6.4) */
-    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('.amb-tabbar button[data-t="order"]').click();
     const payPage = () => !d.getElementById("pOrder").hidden && /Payment due/.test((d.querySelector("#pOrder h2") || {}).textContent || "");
     ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && payPage(),
       "the fixture's Orders is the payment page, with its two orders below");
@@ -41595,11 +41599,13 @@ await (async () => {
        author rules say, so that check stayed green with the page's [hidden] rule removed (tried, 24 Sep 2026) */
     /* S7 7.1: THE TABS ARE PLACES NOW, on the system's App bar, a grid whose five columns share the width (the recipe
        sizes each word to its column, measured at 320 and 150%), and on its rail from 1080px */
-    const D = dom.window.document, bar = D.querySelector("#tabs nav.salt-appbar"), rail = D.querySelector("#tabs nav.salt-rail.salt-appbar__rail");
+    /* 15 Nov 2026, THE MOVE TO AMBIENT: the places are one Ambient tab bar in the shell's dock, five tabs whose labels it cuts rather than lays over
+       a neighbour, which the shell stands up as the rail from 960px; so the rail is the same five buttons */
+    const D = dom.window.document, bar = D.querySelector("#tabs > .amb-dock > nav.amb-tabbar"), rail = bar;
     const ids = (n) => n ? [...n.querySelectorAll("button[data-t]")].map((b) => b.getAttribute("data-t")).join(",") : "";
-    ok(bar && rail && ids(bar) === "home,prices,order,stmt,card" && ids(rail) === ids(bar)
-      && bar.querySelectorAll("button.salt-appbar__item").length === 5 && rail.querySelectorAll("button.salt-rail__tab").length === 5,
-      "the places are the system's App bar and its rail, the same five on each: " + ids(bar) + " | " + ids(rail));
+    ok(bar && ids(bar) === "home,prices,order,stmt,card" && D.querySelectorAll("#tabs button[data-t]").length === 5
+      && bar.querySelectorAll("button.amb-tab").length === 5,
+      "the places are one Ambient tab bar, the five on it, which stands up as the rail from 960px: " + ids(bar));
     ok(bar.querySelector('button[data-t="card"]').hidden && rail.querySelector('button[data-t="card"]').hidden && !bar.querySelector('button[data-t="stmt"]').hidden,
       "and Rewards is hidden until an associate's account opens");
   } finally { dom.window.close(); }
@@ -41972,7 +41978,7 @@ await (async () => {
       && home.needs.join() === "20260926020000-v2cc:Ready to collect, since " + kl(-1).slice(8) + " " + MON3[+kl(-1).slice(5, 7) - 1] + " " + kl(-1).slice(0, 4),
       "an order at Ready still owing leaves Coming up, one paid in full stays, and Needs you still says what is ready to collect: " + JSON.stringify([home.coming, home.needs]));
     /* the order's own screen: due now, cash on handover or not, less what the account's money reaches on it */
-    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('.amb-tabbar button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="20260920010000-v2rr"]'));
     d.querySelector('#pOrder [data-row="20260920010000-v2rr"]').click();
     const scr = d.querySelector("#pOrder .oscreen");
@@ -41995,7 +42001,7 @@ await (async () => {
     d.getElementById("payX").click();
     ok(kWays === "transfer,qr,cod", "an order not yet Ready keeps cash as its third way: " + kWays);
     /* the pay sheet from Home: the same invoice, whole */
-    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    d.querySelector('.amb-tabbar button[data-t="home"]').click();
     d.getElementById("payNow").click();
     const sb = d.getElementById("payBody"), si = sb.querySelector(".inv");
     const lines = si ? [...si.querySelectorAll(":scope > .salt-ledger__row")].map((r) => ({ row: [".salt-ledger__label", ".salt-ledger__value"].map((q) => t(r.querySelector(":scope > .salt-ledger__line " + q))).join("|"),
@@ -43492,15 +43498,16 @@ await (async () => {
     const html = await r.text();
     const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
     const urls = [...css.matchAll(/url\(\s*['"]?([^'")\s]+)/g)].map((m) => m[1]);
-    if (r.status !== 200 || urls.length < 2) { bad.push(path + ": status " + r.status + ", " + urls.length + " urls"); continue; }
+    /* 15 Nov 2026, the move to Ambient: no face is loaded (the device's own), so a page served names none, and any url() it did name must still resolve */
+    if (r.status !== 200 || urls.length) { bad.push(path + ": status " + r.status + ", " + urls.length + " urls"); continue; }
     for (const u of urls) {
       const f = await stmtWorker.fetch(new Request(new URL(u, at).href), env);
       fetched++;
       if (f.status !== 200 || f.headers.get("content-type") !== "font/woff2") bad.push(path + " asks " + new URL(u, at).pathname + ": " + f.status);
     }
   }
-  ok(!!ref && fetched >= 6 && !bad.length,
-    "every face named by the door at /s/, a guest board at /g/ and the root resolves to a font the Worker serves ("
+  ok(!!ref && fetched === 0 && !bad.length,
+    "no face is named by the door at /s/, a guest board at /g/ or the root, each served Ambient, which loads none ("
     + fetched + " fetched)" + (bad.length ? ": " + bad.join("; ") : ""));
 })();
 
@@ -43694,16 +43701,18 @@ await (async () => {
   ok(!/url\(/.test(genY.SITE_RECIPES) && !/salt-field__input\.salt-field__select/.test(genY.SITE_RECIPES) && /\.salt-field__select option \{/.test(genY.SITE_RECIPES),
     "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients, while its open list is the system's slate (18 Oct 2026)");
   const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok((pgY.match(/STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
-    "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
+  /* 15 Nov 2026, the move to Ambient: both pages carry Ambient (SITE_STYLE: its tokens and parts and the site's layer) before the page's own layer, and no recipe */
+  ok((pgY.match(/SITE_STYLE \+ PAGE_CSS \+ COIN_CSS/g) || []).length === 2 && !/STATEMENT_CSS \+ SITE_RECIPES/.test(pgY),
+    "both pages the Worker serves carry Ambient between the head and the page's own layer, and no salt-ds recipe");
   /* S13 13.3: the door's words are the table's, keyed on the element (data-w), so it is read off the page as served */
   const doorY = (await import("../stmt/page.js")).landingPage("", "n22y", null);
   ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit" data-w="door.go">/.test(doorY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   /* S7 7.1: the tabs are places on the system's App bar and rail, and the open one carries aria-current, which both draw */
-  ok(/'<button type="button" class="salt-appbar__item"' \+ placeAttrs\(t\)/.test(pgY) && /class="salt-rail__tab salt-rail__tab--solo"' \+ placeAttrs\(t, true\)/.test(pgY)
+  /* 15 Nov 2026, the move to Ambient: one Ambient tab bar */
+  ok(/'<button type="button" class="amb-tab"' \+ placeAttrs\(t, true\)/.test(pgY) && !/salt-appbar__item|salt-rail__tab/.test(pgY)
     && /b\.setAttribute\('aria-current','page'\); else b\.removeAttribute\('aria-current'\)/.test(pgY),
-    "the places are the system's, and a tap moves aria-current with the open one");
+    "the places are Ambient's tabs, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
      1a.2) stood it beside the head's card; Counter Batch A P4 put an aria-hidden glyph before the word, so the word is a text node after it */
   ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /t\.appendChild\(stateChip\(o\)\)/.test(pgY) && /top\.appendChild\(stateChip\(o\)\)/.test(pgY) && /oBandOf\(o,\{aria:tw\('oh\.order'\), chip:stateChip\(o\), when:/.test(pgY) && /top\.appendChild\(b\.chip\)/.test(pgY) && !/oband__state/.test(pgY),
@@ -43821,8 +43830,9 @@ await (async () => {
   const genF = await import("../stmt/statement-css.js");
   const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   /* the vendored file's comment is left out of what a customer is served (06 Nov 2026); the rules are the file's to the character */
-  ok(genF.FONT_FACE_CSS === fcss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s+/, "").split("url(fonts/").join("url(/fonts/") &&(pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
-    "the page carries the same @font-face rules, first, on both pages the Worker serves");
+  /* 15 Nov 2026, the move to Ambient: the faces stay generated for the sealed statements, and no page of the site carries them (the device's own face) */
+  ok(genF.FONT_FACE_CSS === fcss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s+/, "").split("url(fonts/").join("url(/fonts/") && !/FONT_FACE_CSS/.test(pgF.replace(/\/\*[\s\S]*?\*\//g, "")),
+    "the faces are generated as the vendored file holds them, and no page of the site carries them");
 })();
 
 section("C5: the Counter decodes each face and icon once per isolate, never at import");

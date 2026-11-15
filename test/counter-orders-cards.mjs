@@ -83,12 +83,13 @@ export async function run({ ok }) {
     ok(JSON.stringify(pay) === JSON.stringify(want([B, R])) && JSON.stringify(done) === JSON.stringify(want([D, E, F])) && JSON.stringify(opn) === JSON.stringify(want([A, B, R])),
       "a tab shows its own orders and no other: " + JSON.stringify({ pay, done, opn }));
 
-    /* ---- 6 (P6): the shell from 1080px: the rail names whose account it is by the username, and Salt Counter is the one brand on the page ---- */
-    const who = S.d.querySelector(".cshell .salt-rail [data-whorail]"), brand = who && who.closest(".salt-rail__brand");
+    /* ---- 6 (P6): the shell names whose account it is by the username, and Salt Counter is the one brand on the page. 15 Nov 2026, the move to
+       Ambient: the rail's brand went with the rail; the hero's line under the place says it, at every width ---- */
+    const who = S.d.querySelector("#tabs > .amb-screen > header.amb-hero > .amb-hero__sub[data-wholine] [data-who]"), brand = who && who.closest("[data-wholine]");
     const seen = (() => { const out = [], w = S.d.createTreeWalker(S.d.body, 4); while (w.nextNode()) { const n = w.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName)) out.push(n.nodeValue); } return out.join(" "); })();
     const brands = (seen.match(/Salt [A-Z][a-z]+/g) || []).filter((x, i, l) => l.indexOf(x) === i);
     ok(!!who && who.textContent === u && !brand.hidden && JSON.stringify(brands) === JSON.stringify(["Salt Counter"]),
-      "the rail says the username under Signed in as, and the only brand the page draws is Salt Counter: " + JSON.stringify({ who: who && who.textContent, brands }));
+      "the hero says the username under the place, and the only brand the page draws is Salt Counter: " + JSON.stringify({ who: who && who.textContent, brands }));
     /* ---- 3: the card ---- */
     await pick(S, "all");
     S.d.querySelector("#pOrder .olater").click(); await until(() => ids(list(S)).length === 6);

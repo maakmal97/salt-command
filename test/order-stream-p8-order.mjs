@@ -14,10 +14,10 @@ export async function run({ ok, pageWork }) {
   try {
     /* ---- 8a: the place ---- */
     const p = await K.open({ ok, pageWork }); pages.push(p);
-    const bar = [...p.d.querySelectorAll("#tabs button[data-t]")].filter((b) => !b.closest(".salt-rail"));
-    const rail = [...p.d.querySelectorAll(".salt-rail button[data-t]")];
-    ok([bar, rail].every((l) => l.length >= 4 && l[0].getAttribute("data-t") === "home" && l[1].getAttribute("data-t") === "prices" && K.txt(l[1]) === "Shop"),
-      "8a Prices is named Shop (Order until 11 Nov 2026, his word) and stands second after Home, on the bar and the rail: " + JSON.stringify(rail.map(K.txt)));
+    /* 15 Nov 2026, the move to Ambient: the bar and the rail are one tab bar, which Ambient stands up as the rail from 960px */
+    const bar = [...p.d.querySelectorAll("#tabs .amb-tabbar button[data-t]")];
+    ok(bar.length >= 4 && p.d.querySelectorAll("#tabs button[data-t]").length === bar.length && bar[0].getAttribute("data-t") === "home" && bar[1].getAttribute("data-t") === "prices" && K.txt(bar[1]) === "Shop",
+      "8a Prices is named Shop (Order until 11 Nov 2026, his word) and stands second after Home, on the one tab bar: " + JSON.stringify(bar.map(K.txt)));
     ok(!p.d.body.innerHTML.includes(">Prices<"), "8a no place is named Prices any more");
     /* a fresh account: Home's start tiles and its Collect and Deliver */
     const tile = p.d.querySelector("#pHome .htile");

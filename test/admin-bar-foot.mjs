@@ -11,7 +11,7 @@
  *   3  Ambient holds the shell to the screen's height (100dvh) and the screen scrolls inside it
  *   4  no head script marks the root or sets a height, on his page or the customer's, which stand in the same shell */
 import { richOwnerPage } from "./maker-act.mjs";
-import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { landingPage, SITE_STYLE, AMB_STYLE } from "../stmt/page.js";
 import { AMB_CSS, SITE_CSS } from "../stmt/statement-css.js";
 
 const strip = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -27,7 +27,7 @@ export async function run({ ok, pageWork }) {
       "his places are one Ambient dock, the shell's last child, its tab bar the five places, and no other bar of places stands");
     /* 2: the page's own layers, read as served after Ambient */
     const html = landingPage("", "nfoot", { master: "", accounts: [] });
-    const style = (/<style nonce="nfoot">([\s\S]*?)<\/style>/.exec(html) || [, ""])[1], own = strip(style.slice(SITE_STYLE.length - SITE_CSS.length));
+    const style = (/<style nonce="nfoot">([\s\S]*?)<\/style>/.exec(html) || [, ""])[1], own = strip(style.slice(AMB_STYLE.length));
     const shellSel = /(^|[\s,>+~])(html|body|:root|\.amb-shell|\.amb-screen|\.amb-dock|\.amb-tabbar|\.amb-tab|#roster|#tabs)(?=[\s,{.:[#>]|$)/;
     const hits = [...own.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim()).filter((sel) => sel.split(",").some((x) => shellSel.test(" " + x.trim())))
       /* the site ground, the ended page and print (which hides the dock and the app bar) are the page's to say */

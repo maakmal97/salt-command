@@ -11,13 +11,12 @@
  *   3  the order sheet's tiles are two columns, in the 560px dialog at 768px (not the 364px each had in a sheet as wide as the screen) and in the drawer at 861px
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE as PG_SITE_STYLE } from "../stmt/page.js";
 import { startAt } from "./counter-b-kit.mjs";
 
 export async function run({ ok }) {
   const html = landingPage("abcd-efgh", "tablet-nonce", null);
-  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice(PG_SITE_STYLE.length);   /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's and the site's */
   const sheet = new JSDOM("<style>" + all + "</style>").window.document.styleSheets[0];
   const sel = (r) => r.selectorText.replace(/\s*,\s*/g, ",");
   const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => ({ sel: sel(x), css: x.style.cssText })) }));
@@ -39,7 +38,8 @@ export async function run({ ok }) {
     ["below 860px the open order is the whole tab and takes the list's place", BELOW, "#pOrder.o-open>:not(.oplace)", [/display: none/]],
     ["and the list is not drawn beside it", BELOW, ".oplace.o-open>.olistcol", [/display: none/]],
     ["between 860 and 1080px, where the App bar is still fixed, the order's height gives up the bar's", DRAWER, ".oscreen", [/max-height: calc\(100vh - 48px - var\(--salt-bar-h\)/, /env\(safe-area-inset-bottom/]],
-    ["and Orders alone takes the page's width there, its heading with it", DRAWER, "#pOrder,.cshell[data-place=order] .chead", [/max-width: none/]]
+    /* 15 Nov 2026, the move to Ambient: the place's heading is the shell's hero, which no rule of the page sizes */
+    ["and Orders alone takes the page's width there", DRAWER, "#pOrder", [/max-width: none/]]
   ];
   const missing = WANT.filter(([, q, s, res]) => { const css = at(q, s); return !css || !res.every((re) => re.test(css)); }).map((w) => w[0]);
   /* the page's own script follows the style: the list is beside an order from 860px, so one is open by itself from there (it was 1080px), and the shell says which place it shows */
@@ -73,7 +73,7 @@ export async function run({ ok }) {
     const WIDTHS = [375, 768, 861, 1000, 1280], owner = landingPage("", "tablet-nonce", { master: "fixture-master", accounts: [] });
     const rows = WIDTHS.map((px) => {
       const a = new JSDOM(atWidth(html, px)), b = new JSDOM(atWidth(owner, px));
-      const r = { px, customer: placed(a.window, a.window.document.getElementById("paySheet")), his: placed(b.window, b.window.document.getElementById("lookSheet")) };
+      const r = { px, customer: placed(a.window, a.window.document.getElementById("paySheet")), his: placed(b.window, b.window.document.getElementById("vaultSheet")) };   /* 15 Nov 2026: his look Sheet is gone; the unlock Sheet is his */
       a.window.close(); b.window.close();
       return r;
     });

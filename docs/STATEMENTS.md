@@ -2849,22 +2849,17 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.restore-card` | Links, a withdrawn link's card (key: the link id) | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
-| `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
-| `look.sheet-night` | Same Sheet | Chooses Night, keeps it and closes the Sheet. |
-| `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
-| `look.tide` | Shop, This device, Tide theme | The Switch: Tide on or off for Salt Admin on this device; greyed while Tide is off (19 Oct 2026). |
 | `more.test-accounts` | Shop, Practice, Practice accounts | The Switch: on makes the missing test accounts; off deletes all three once its Sheet is answered Remove. |
 | `more.test-password` | Shop, Practice, while any is made | Copies the test accounts' one password. |
 | `vault.switch` | Shop, This device, Show names | On asks for the password in the one Sheet; off locks names, places and slips again. |
 | `alerts.switch` | Shop, This device | Notifications on or off; it presses Turn on or Turn off, which stay hidden. |
 | `more.test-page` | Shop, Practice, while all three are made | The row that opens the test surface, `/all/test`. |
-| `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
-| `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
-| `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
-| `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
-| `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
-| `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Entry. |
-| `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
+| `nav.add` | New entry, the + circle in the shell's app bar (15 Nov 2026, the move to Ambient; it was the orb below 1080px and the rail's `rail.add` above), on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
+| `nav.customers` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Customers, on its Accounts. |
+| `nav.needs` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Needs you. |
+| `nav.orders` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
+| `nav.record` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Record, on Entry. |
+| `nav.shop` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Shop, on Hours. |
 | `need.agree` | Needs you card for an order placed | Opens that order's full card in Orders, where the delivery charge and the window are asked. Books nothing. |
 | `need.reply` | Needs you card for a message asked | Opens that thread (an order's question, the order's card). Sends nothing. |
 | `need.review` | Needs you card for an order with several payments waiting, or a step to send again | Opens that order's card. Books nothing. |
@@ -2899,11 +2894,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
 | `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
-| `bar.hours` | The bar heading every place, its shop hours chip | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
-| `bar.needs` | The bar heading every place, its Needs you chip (21 Oct 2026) | Goes to Needs you; its figure is the rail's. |
-| `bar.orders` | Same bar, its Orders chip | Goes to Orders; its figure is the rail's, the orders still open. |
-| `bar.customers` | Same bar, its Customers chip | Goes to Customers > Messages; its figure is the rail's. |
-| `bar.approve` | Same bar, Approve, brass with the rows to approve | Goes to Orders > Approve; its badge counts the rows as their cards do, a trip's as one. |
+| `bar.hours` | Needs you's hero, its glass hours chip (the bar's until 15 Nov 2026) | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
+| `bar.approve` | Orders' hero, Approve, its one main action (the bar's until 15 Nov 2026), named with the rows to approve | Goes to Orders > Approve; its name counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.habit` | Needs you card for the regulars who are due, late or lapsed | Opens the first one's account on Customers (the card's why names the rest). |

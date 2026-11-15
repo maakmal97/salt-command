@@ -280,8 +280,15 @@ first, a fresh Opus reviewer may gate the first version while Fable is rate-limi
   copies with the lock (CI has no ambient-ds) and, on a laptop with a clean ambient-ds main beside it, fails once that main has moved on.
   A carried file is never edited here.
 - **To the Worker.** `tools/stmt-style.mjs` writes the four as JSON strings into `stmt/statement-css.js` (`AMB_TOKENS`, `AMB_CSS`,
-  `AMB_JS`, `AMB_ICONS`) with Salt Admin's own layer `design/admin.css` (`ADMIN_CSS`, tokens only; the generator refuses a colour).
-  The page interpolates them and never pastes them into a template literal, where a backslash in `ambient.js` would be eaten.
+  `AMB_JS`, `AMB_ICONS`) with the site's own layer `design/site.css` (`SITE_CSS`, tokens only; the generator refuses a colour; it was
+  Salt Admin's `design/admin.css` until 15 Nov 2026), the browser bar's two colours `AMB_THEME` (Lagoon's base in light and dark, read
+  out of the tokens) and the maintenance page's rules `AMB_MAINT_CSS` (cut whole out of ambient.css). The page interpolates them and
+  never pastes them into a template literal, where a backslash in `ambient.js` would be eaten.
+- **The head and the shell (15 Nov 2026, the kit).** Every page of the statements site opens on one head (`stmt/page.js` `DOC_OPEN`,
+  `SITE_STYLE`, `BODY_OPEN`, `ambScript`): no `data-theme`, light and dark following the device, Ambient's rules served without
+  their notes (they name Salt QR and Salt Admin). Salt Admin and the Counter each stand in one `.amb-shell.amb-shell--rail` (app
+  bar, a hero a place, one dock that stands up as the rail from 960px). Night and Tide, the Aurora, the faces and the salt-ds
+  recipes are no longer served there. The guide for the place builders is the kit's notes (kit.md).
 - **The heat.** The snapshot engine's `marketHeat` reads the day's supply step of the salt market move: tight at 7 days of cover or
   under, soft past 14, neutral between, and neutral switched off, before the rule's since and on a book with no market. The stock
   document (`STOCK.books[p].heat`) carries it to Salt Admin, which polls it already. It prices nothing.

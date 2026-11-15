@@ -122,20 +122,20 @@
  {
   "name": "Orders keeps its 620px column between 860 and 1080px",
   "file": "stmt/page.js",
-  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "find": "  #pOrder{max-width:none}\n",
   "replace": ""
  },
  {
-  "name": "the heading of Orders stays in the 620px column",
+  "name": "Orders is held to 620px between 860 and 1080px",
   "file": "stmt/page.js",
-  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
-  "replace": "  #pOrder{max-width:none}\n"
+  "find": "  #pOrder{max-width:none}\n",
+  "replace": "  #pOrder{max-width:620px}\n"
  },
  {
   "name": "a rule of Orders is also written under .adm, every wanted one still there",
   "file": "stmt/page.js",
-  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
-  "replace": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n  .adm .oscreen{top:0}\n"
+  "find": "  #pOrder{max-width:none}\n",
+  "replace": "  #pOrder{max-width:none}\n  .adm .oscreen{top:0}\n"
  },
  {
   "name": "the script opens an order beside the list only from 1080px",

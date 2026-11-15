@@ -11,9 +11,7 @@
  {"name":"the tablet dialog paints a ground of its own","file":"stmt/page.js","find":"  .adm.asheet{top:50%;right:auto;","replace":"  .adm.asheet{background:var(--salt-obsidian);top:50%;right:auto;"},
  {"name":"the Yes or No sheet carries no .adm or .asheet","file":"stmt/owner.js","find":"  sheetOwn=function(box){ box.classList.add('adm','asheet'); };","replace":""},
  {"name":"the sign-in code sheet carries neither .adm nor .asheet","file":"stmt/owner.js","find":"el('div','salt-sheet ho adm asheet')","replace":"el('div','salt-sheet ho')"},
- {"name":"the choice sheet of Salt Admin carries neither .adm nor .asheet","file":"stmt/page.js","find":"class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"","replace":"class=\"salt-sheet\" role=\"dialog\""},
- {"name":"the customer's choice sheet carries .adm and .asheet","file":"stmt/page.js","find":"class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"","replace":"class=\"salt-sheet adm asheet\" role=\"dialog\""},
- {"name":"the portrait tablet's column is 600px","file":"stmt/page.js","find":"  .gate.adm{max-width:620px}\n","replace":"  .gate.adm{max-width:600px}\n"},
+ {"name":"the portrait tablet sizes the shell again","file":"stmt/page.js","find":"@media (min-width:768px) and (max-width:859.98px){\n  .adm #unsentBar{max-width:none}","replace":"@media (min-width:768px) and (max-width:859.98px){\n  .gate.adm{max-width:620px}\n  .adm #unsentBar{max-width:none}"},
  {"name":"a form is one column on a portrait tablet","file":"stmt/page.js","find":"  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}\n","replace":""},
  {"name":"a short field is not marked","file":"stmt/owner.js","find":"    if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');","replace":""},
  {"name":"a text field is marked short","file":"stmt/owner.js","find":"    if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');","replace":"    wrap.classList.add('maker-field--short');"},
@@ -30,5 +28,7 @@
  {"name":"a form beside its menu lies two up from 860px","file":"stmt/page.js","find":"  .adm #nopen,.adm #aopen{overflow-y:auto}\n","replace":"  .adm #nopen,.adm #aopen{overflow-y:auto}\n  .adm .maker-input{display:grid}\n"},
  {"name":"the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's","file":"stmt/page.js","find":"EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S","replace":"EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"},
  {"name":"Needs you's empty pane says Tap a card","file":"stmt/page.js","find":"<div id=\"nopen\" class=\"salt-glass-card salt-glass-card--radius-lg salt-pane\" aria-label=\"The open card\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'","replace":"<div id=\"nopen\" class=\"salt-glass-card salt-glass-card--radius-lg salt-pane\" aria-label=\"The open card\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'"},
- {"name":"the week chart's times take 312px","file":"stmt/page.js","find":"grid-template-columns:40px minmax(0,1fr) 128px;","replace":"grid-template-columns:40px minmax(0,1fr) 312px;"}
+ {"name":"the week chart's times take 312px","file":"stmt/page.js","find":"grid-template-columns:40px minmax(0,1fr) 128px;","replace":"grid-template-columns:40px minmax(0,1fr) 312px;"},
+ {"name":"the unlock sheet loses .asheet","file":"stmt/page.js","find":"'<div id=\"vaultSheet\" class=\"salt-sheet adm asheet vaultsheet\"","replace":"'<div id=\"vaultSheet\" class=\"salt-sheet adm vaultsheet\""},
+ {"name":"a look Sheet comes back on his page","file":"stmt/page.js","find":"        + vaultSheet()\n","replace":"        + '<div id=\"lookSheet\" class=\"salt-sheet adm asheet\" hidden></div>' + vaultSheet()\n"}
 ]

@@ -209,7 +209,7 @@ export const OWNER_JS = `
       if(aOpen) openCard(aOpen);
       /* the count is of accounts on the book: the test account is not one (v689) */
       var real=sheetRows.filter(function(a){ return !a.test; }).length;
-      var mFootEl=document.getElementById('mFoot'); if(mFootEl) mFootEl.textContent=real+' accounts';   /* 15 Nov 2026: the rail's foot left with the rail; kept for a place that draws it */
+      document.getElementById('mFoot').textContent=real+' accounts';   /* 15 Nov 2026: the line under Customers' title (it was the rail's foot) */
     }catch(e){ nGot('sheet', e); if(quiet!==true) sayFail(e); }
     finally{ sheetBusy=false; }
   }
@@ -1994,7 +1994,7 @@ export const OWNER_JS = `
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   var chatMs=2000;   /* Speed Wave 2 L2: a minute while the live socket is up */
   /* 15 NOV 2026, THE MOVE TO AMBIENT: THE SCREEN SCROLLS. His page is one Ambient shell, the height of the display, and its screen is the one box
-     that scrolls (the salt-ds frame and paneFit's --salt-pane-h are gone); a split of panes (amb-split--panes) holds still and scrolls each pane
+     that scrolls (the salt-ds frame and the script that measured its panes are gone); a split of panes (amb-split--panes) holds still and scrolls each pane
      by itself from 960px, with no script. framed() is that width, read off the shell as Ambient reads it. */
   function frameEl(){ return document.querySelector('#roster > .amb-screen'); }
   function framed(){ var r=document.getElementById('roster'); return !!(r&&r.clientWidth>=960); }
