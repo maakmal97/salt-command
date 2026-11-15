@@ -156,7 +156,7 @@ export async function run({ ok, pageWork }) {
     await openRow(R); R.d.querySelector('#osheet [data-k="close"]').click(); await until(() => stateIs(R, 0));
     ok(R.push.length === 2 && R.w.history.length === R.len0 + 1, "and a second open and close is the same: two pushes, the second over the entry the first left, no entry added: " + R.push.length + " length " + R.w.history.length);
 
-    /* ---- 2: every other Sheet closes on Back, and gives the focus back where it has an opener */
+    /* ---- 2: every other Sheet closes on Back, and gives the focus back where it has an opener (16 Nov 2026, the move to Ambient: the thread row is the system's Row, found by its data-thread, and a Sheet's scrim is its dialog's own box) */
     const kinds = [];
     {
       const H = await open({ list: [part(0), part(1)] });
@@ -165,9 +165,9 @@ export async function run({ ok, pageWork }) {
     }
     {
       const T = await open();
-      tab(T, "stmt"); await until(() => T.d.querySelector("#aThread .throw"));
-      const tr = T.d.querySelector("#aThread .throw"); tr.focus(); tr.click();
-      kinds.push(["the thread", T, () => shown(T, "thSheet"), () => !!T.d.activeElement && T.d.activeElement.classList.contains("throw")]);
+      tab(T, "stmt"); await until(() => T.d.querySelector("#aThread [data-thread]"));
+      const tr = T.d.querySelector("#aThread [data-thread]"); tr.focus(); tr.click();
+      kinds.push(["the thread", T, () => shown(T, "thSheet"), () => !!T.d.activeElement && T.d.activeElement.hasAttribute("data-thread")]);
     }
     {
       const V = await open();
@@ -217,13 +217,13 @@ export async function run({ ok, pageWork }) {
     const ownRes = [];
     {
       const H = await open({ list: [part(0), part(1)] });
-      for (const [name, fn] of [["Pay, the close orb", (g) => g.d.getElementById("payX").click()], ["Pay, the scrim", (g) => g.d.getElementById("payScrim").click()], ["Pay, Escape", (g) => key(g, "Escape")]]) {
+      for (const [name, fn] of [["Pay, the close orb", (g) => g.d.getElementById("payX").click()], ["Pay, the scrim", (g) => g.d.getElementById("paySheet").dispatchEvent(new g.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))], ["Pay, Escape", (g) => key(g, "Escape")]]) {
         const pill = H.d.getElementById("payNow"); pill.focus(); pill.click(); const up = stateIs(H, 1); fn(H);
         ownRes.push([name, up, await until(() => !shown(H, "paySheet") && stateIs(H, 0))]);
       }
       const T = await open();
-      tab(T, "stmt"); await until(() => T.d.querySelector("#aThread .throw"));
-      T.d.querySelector("#aThread .throw").click(); const upT = stateIs(T, 1); T.d.getElementById("thX").click();
+      tab(T, "stmt"); await until(() => T.d.querySelector("#aThread [data-thread]"));
+      T.d.querySelector("#aThread [data-thread]").click(); const upT = stateIs(T, 1); T.d.getElementById("thX").click();
       ownRes.push(["the thread, its orb", upT, await until(() => !shown(T, "thSheet") && stateIs(T, 0))]);
       if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); const upL = stateIs(Lk, 1); Lk.d.getElementById("lookX").click();
@@ -252,7 +252,7 @@ export async function run({ ok, pageWork }) {
     {
       const H = await open({ list: [part(0), part(1)] }); H.d.getElementById("payNow").click(); H.d.getElementById("payX").click(); await until(() => stateIs(H, 0));
       await goBack(H); leaveRes.push(["Pay", await until(() => stateIs(H, null))]);
-      const T = await open(); tab(T, "stmt"); await until(() => T.d.querySelector("#aThread .throw")); T.d.querySelector("#aThread .throw").click(); T.d.getElementById("thX").click(); await until(() => stateIs(T, 0));
+      const T = await open(); tab(T, "stmt"); await until(() => T.d.querySelector("#aThread [data-thread]")); T.d.querySelector("#aThread [data-thread]").click(); T.d.getElementById("thX").click(); await until(() => stateIs(T, 0));
       await goBack(T); leaveRes.push(["the thread", await until(() => stateIs(T, null))]);
       if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); Lk.d.getElementById("lookX").click(); await until(() => stateIs(Lk, 0));

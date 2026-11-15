@@ -106,7 +106,7 @@ export async function run({ ok, pageWork }) {
 
     /* 4. a Sheet open holds it until the next poll after it shuts */
     const b = await open("ctab-cdef", "current");
-    const row = b.d.querySelector("#hThread .throw") || b.d.querySelector(".throw");
+    const row = b.d.querySelector("#hThread [data-thread]") || b.d.querySelector("[data-thread]");
     row.click(); await b.settle();
     const sheetOpen = !b.d.getElementById("thSheet").hidden;
     const b0 = b.n.account;

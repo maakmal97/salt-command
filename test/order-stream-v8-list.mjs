@@ -40,7 +40,7 @@ export async function run({ ok, pageWork }) {
   const doc = liveFor({ sales, customerRefunds: [{ party: U, since: d10, amount: 20, rid: "f1" }] }, U, now, "abcd-efgh");
   ok(!!doc && /data-lines="orders"/.test(doc.body), "the fixture: the real publish wrote a live statement of the invented book");
   const parsed = new (await import("jsdom")).JSDOM("<body>" + doc.body + "</body>").window.document;
-  const lineRows = [...parsed.querySelectorAll('.salt-lines[data-lines="orders"] > .salt-lines__row')];
+  const lineRows = [...parsed.querySelectorAll('table.amb-table[data-lines="orders"] > tbody > tr')   /* 16 Nov 2026, the move to Ambient: the live statement's lines are the system's Table, a line a row */];
   const dated = lineRows.filter((r) => r.hasAttribute("data-d"));
 
   /* ---- 7a ---- */
@@ -51,7 +51,7 @@ export async function run({ ok, pageWork }) {
   const r4 = lineRows.find((r) => r.getAttribute("data-g") === "80");
   ok(!!r4 && r4.getAttribute("data-dv") === "10" && r4.getAttribute("data-b") === String(SALT) && lineRows.find((r) => r.getAttribute("data-g") === "60").getAttribute("data-b") === String(OIL),
     "7a the delivery is the row's delivery and the book is the index in the page's own mark table (salt 0, oil 1)");
-  const refundRows = [...parsed.querySelectorAll(".salt-lines:not([data-lines]) .salt-lines__row")];
+  const refundRows = [...parsed.querySelectorAll("table.amb-table:not([data-lines]) > tbody > tr")];
   ok(refundRows.length === 1 && !refundRows[0].hasAttribute("data-g") && !refundRows[0].hasAttribute("data-d") && !refundRows[0].hasAttribute("data-b")
       && !parsed.querySelector(".tot [data-g], .tot [data-b]"),
     "7a a refund row and the money rows carry none of it");
@@ -137,15 +137,15 @@ export async function run({ ok, pageWork }) {
 
     /* ---- 7c ---- */
     const out = p.d.getElementById("out");
-    ok(!out.querySelector('[data-lines="orders"]') && !out.querySelector(".salt-lines__row[data-g]"), "7c Account has no order lines");
+    ok(!out.querySelector('[data-lines="orders"]') && !out.querySelector("tr[data-g]"), "7c Account has no order lines");
     ok(p.d.getElementById("mfil").hidden && !p.d.querySelector("#out select"), "7c Account has no month filter");
-    ok(!!out.querySelector(".tot") && /Refunds/.test(K.txt(out.querySelector("h3.whol"))) && out.querySelectorAll(".salt-lines__row").length === 1,
+    ok(!!out.querySelector(".tot") && /Refunds/.test(K.txt(out.querySelector("h3.amb-section"))) && out.querySelectorAll("table.amb-table > tbody > tr").length === 1,
       "7c Account keeps the money rows and Refunds");
     const fb = p.d.getElementById("fsOpen");
     ok(!!fb && K.txt(fb) === "Full statement" && p.d.getElementById("fsSheet").hidden, "7c one ghost button, Full statement, under the money; the Sheet is shut");
     fb.click(); await p.settle();
     const fs = p.d.getElementById("fsSheet"), fo = p.d.getElementById("fsOut");
-    ok(!fs.hidden && fo.querySelectorAll('[data-lines="orders"] > .salt-lines__row').length === sales.length && !!fo.querySelector(".tot"),
+    ok(!fs.hidden && fo.querySelectorAll('[data-lines="orders"] > tbody > tr').length === sales.length && !!fo.querySelector(".tot"),
       "7c Full statement opens the whole document, every order line and the money, in a Sheet");
     ok(fs.getAttribute("role") === "dialog" && fs.getAttribute("aria-modal") === "true" && p.d.activeElement === fs, "7c it is a modal Sheet and takes the focus");
     const fsel = p.d.querySelector("#fsMf select");
@@ -181,8 +181,8 @@ export async function run({ ok, pageWork }) {
 
     /* ---- 7d ---- */
     const m0 = K.kl(0).slice(0, 7);
-    const yb = (b) => '<div class="salt-lines" data-lines="orders"><div class="salt-lines__row" data-m="' + m0 + '"' + (b == null ? "" : ' data-b="' + b + '"')
-      + '><div class="salt-lines__what"><span class="mtile"><span class="mq">3</span></span></div></div></div>';
+    const yb = (b) => '<table class="amb-table" data-lines="orders"><tbody><tr data-m="' + m0 + '"' + (b == null ? "" : ' data-b="' + b + '"')
+      + '><td><span class="stm-q"><span class="stm-size">3</span></span></td></tr></tbody></table>';
     const units = async (b) => { const y = await K.open({ ok, pageWork, body: yb(b) }); pages.push(y); const u = y.d.querySelector("#hYear [data-year]"); return u ? u.innerHTML : ""; };   /* 16 Nov 2026: the units of a book are a Row of the year card (data-year), no .hyear__units */
     const units2 = async (body) => { const y = await K.open({ ok, pageWork, body }); pages.push(y); const u = y.d.querySelector("#hYear [data-year]"); return u ? u.innerHTML : ""; };   /* 16 Nov 2026: the units of a book are a Row of the year card (data-year), no .hyear__units */
     const [uSalt, uOil, uNone] = [await units(SALT), await units(OIL), await units(null)];

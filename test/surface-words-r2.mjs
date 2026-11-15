@@ -57,7 +57,8 @@ export async function run({ ok, pageWork }) {
   const page = new JSDOM(landingPage("", "r2-nonce", { master: "fixture-master", accounts: [] })).window.document;
   const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks .lead"));
   ok(sentence(group, 20) && sentence(links, 20), "W5: Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most: " + J([group, links]));
-  const vaultLead = t(page.querySelector("#vaultSheet .lead"));
+  /* 16 Nov 2026, the move to Ambient (place D): the names Sheet leads with the system's basis line */
+  const vaultLead = t(page.querySelector("#vaultSheet .amb-basis"));
   ok(/^One password/.test(vaultLead) && sentence(vaultLead, 14), "W19: Salt Admin's vault sheet leads with one sentence of fourteen words at most: " + J(vaultLead));
 
   /* ---- Salt Admin, drawn ---- */

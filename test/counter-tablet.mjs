@@ -26,12 +26,8 @@ export async function run({ ok }) {
   const DIALOG = "(min-width:768px)and(max-width:859.98px)", DRAWER = "(min-width:860px)and(max-width:1079.98px)", FROM = "(min-width:860px)", BELOW = "(max-width:859.98px)", SHEET = ".salt-sheet:not(.adm)";
 
   /* THE CUSTOMER'S TABLET RULES EXIST, EACH AT ITS WIDTH, AND NONE IS UNDER .adm */
+  /* 16 Nov 2026, the move to Ambient (place D): the Sheets are the system's dialog (a foot sheet, a card from 720px), so the page writes no tablet rule for one */
   const WANT = [
-    ["a sheet is a dialog in the middle of the screen from 768 to 859px", DIALOG, SHEET, [/top: 50%/, /left: 50%/, /width: min\(560px/, /max-height: calc\(100% - 64px\)/, /transform: translate\(-50%, ?-50%\)/, /animation-name: salt-sheet-fade/]],
-    ["the dialog draws no grabber", DIALOG, SHEET + " .salt-sheet__grab", [/display: none/]],
-    ["from 860px a sheet is the 460px drawer on the right", DRAWER, SHEET, [/top: 0/, /left: auto/, /width: min\(460px, ?100%\)/, /max-height: none/, /animation-name: salt-sheet-slide/]],
-    ["the drawer draws no grabber", DRAWER, SHEET + " .salt-sheet__grab", [/display: none/]],
-    ["the drawer's head is spaced as the system's own drawer is", DRAWER, SHEET + " .salt-sheet__head", [/padding-top: var\(--salt-space-5\)/]]
     /* 16 Nov 2026, the move to Ambient: Orders' list beside the open order is the system's split of panes, from the shell's 960px, and the page writes no rule for it (the
        rows that pinned .oplace, .oscreen, .oback and the 860px grid were the page's old layout; the checks below say the place is the system's and the script follows 960px) */
   ];
@@ -51,8 +47,8 @@ export async function run({ ok }) {
   const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859)[.]98px/.test(m.q)).flatMap((m) => m.rules.map((r) => r.sel));
   const ours = fam.flatMap((s) => s.split(",")).filter((s) => OURS.test(s) && !/\.adm\.asheet/.test(s));
   const under = ours.filter((s) => /\.adm\b/.test(s.replace(/:not\(\.adm\)/g, "")));
-  ok(!missing.length && !rail.length && ours.length >= 5 && !under.length,
-    "the customer's tablet rules are there, a centred 560px dialog from 768 to 859px, the 460px drawer and the list beside the open order from 860px, and none is under .adm (" + ours.length
+  ok(!missing.length && !rail.length && ours.length === 0 && !under.length,
+    "the customer's page writes no tablet rule: its Sheets are the system's dialog and the list beside the open order is the system's split of panes from 960px, and none is under .adm (" + ours.length
       + " rules; missing: " + (missing.join(" | ") || "none") + "; waiting for the rail: " + (rail.join(" | ") || "none") + "; under .adm: " + (under.join(" | ") || "none") + ")");
 
   /* THE CASCADE A WIDTH READS. jsdom applies no width query, so a page's html is rewritten so that every query that holds at a width reads `all` (the phone frame's section does the same),
@@ -60,7 +56,7 @@ export async function run({ ok }) {
   const holds = (q, px) => q.split(",").some((one) => { const fs = one.split(/\band\b/).map((s) => s.trim()).filter(Boolean);
     return fs.length > 0 && fs.every((f) => { const x = /^\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)$/.exec(f); return !!x && (x[1] === "min" ? px >= +x[2] : px <= +x[2]); }); });
   const atWidth = (h, px) => h.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, px) ? "@media all{" : m));
-  const PLACE = ["position", "top", "right", "bottom", "left", "width", "max-height", "transform", "animation-name", "border-radius"];
+  const PLACE = ["position", "top", "right", "bottom", "left", "width", "max-width", "max-height", "transform", "border-radius"];
   const placed = (win, el) => { const c = win.getComputedStyle(el); return PLACE.map((p) => p + ":" + c.getPropertyValue(p)).join(" "); };
 
   /* THE TWO PAGES PLACE A SHEET ALIKE: a sheet of the customer's and a sheet of his read the same placement at a phone, a portrait tablet, a landscape tablet and a laptop */
@@ -72,9 +68,10 @@ export async function run({ ok }) {
       a.window.close(); b.window.close();
       return r;
     });
-    const at768 = rows.find((r) => r.px === 768).customer, at861 = rows.find((r) => r.px === 861).customer;
-    ok(rows.every((r) => r.customer === r.his) && /top:50%/.test(at768) && /width:min\(560px/.test(at768) && /top:0px/.test(at861) && /width:min\(460px/.test(at861),
-      "a sheet of the customer's and one of his are placed alike at 375, 768, 861, 1000 and 1280px, a dialog 560px wide at 768 and the 460px drawer from 861: " + JSON.stringify(rows.filter((r) => r.customer !== r.his)));
+    /* 16 Nov 2026, the move to Ambient (place D): both pages' Sheets are the system's dialog, so they are placed alike by its own rule: from the foot of a phone, a card in the middle from 720px */
+    const at768 = rows.find((r) => r.px === 768).customer;
+    ok(rows.every((r) => r.customer === r.his) && /position:fixed/.test(at768) && /max-width:560px/.test(at768) && !/\.salt-sheet:not/.test(html),
+      "a sheet of the customer's and one of his are placed alike at 375, 768, 861, 1000 and 1280px, by the system's own dialog rule and no rule of the page's (the card from 720px is Ambient's, which jsdom does not read): " + JSON.stringify(rows.filter((r) => r.customer !== r.his)));
   }
 
   /* THE ORDER SHEET'S TILES ARE TWO UP, and at 768px a dialog holds them: in a sheet as wide as the screen each was 364px, in a dialog of 560px each is 280px at most */

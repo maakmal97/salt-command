@@ -127,18 +127,21 @@ export async function run({ ok }) {
       "Cancel this order opens a Sheet, a dialog labelled by its question with the focus in it, and nothing is sent yet: " + JSON.stringify({ title: t(titleOf), sends: sends(P), focusInSheet: P.d.activeElement === sh }));
 
     /* 3 and 4: what it says */
-    const mt = sh.querySelector(".mtile"), say = t(sh);
-    ok(!!mt && t(mt.querySelector(".sr")) === "Cube 2.5 units" && t(mt.querySelector(".mq")) === "2.5 units" && t(mt.querySelector(".salt-coin text.salt-coin__let")) === PLET.salt && !mt.querySelector("svg.psym"),
-      "the Sheet restates the order by its coin with its letter (plan version 10), the shape and the size read aloud, and the size alone under the mark (no shape word drawn, 12 Oct 2026): " + JSON.stringify(t(mt)));
-    ok(t(sh.querySelector(".salt-ledger__value")) === money(270) && /^Placed /.test(t(sh.querySelector(".salt-ledger__flag"))) && /Placed$/.test(t(sh.querySelector(".salt-ledger__label"))),
-      "and by its word and its figure and the day it was placed: " + JSON.stringify([t(sh.querySelector(".salt-ledger__label")), t(sh.querySelector(".salt-ledger__value")), t(sh.querySelector(".salt-ledger__flag"))]));
+/* 16 Nov 2026, the move to Ambient (place D): the Sheet restates the order as the system's Row: its mark thumb, the size, its state and day, its figure */
+    const say = t(sh), rowAt = (e) => e.querySelector(".amb-row"), rowId = (r) => t(r.querySelector(".amb-vh")) + " " + t(r.querySelector(".amb-row__title"));
+    const mt = sh.querySelector(".amb-thumb--mark");
+    ok(!!mt && rowId(rowAt(sh)) === "Cube 2.5 units" && t(mt.querySelector(".amb-thumb__word")) === PLET.salt && mt.getAttribute("aria-hidden") === "true" && !sh.querySelector(".mtile, .salt-coin, svg.psym"),
+      "the Sheet restates the order by its mark thumb with his letter, the shape and the size read aloud and the size drawn once (no shape word drawn, 12 Oct 2026): " + JSON.stringify(t(rowAt(sh))));
+    ok(t(sh.querySelector(".amb-row__amount")) === money(270) && /^Placed . Placed /.test(t(sh.querySelector(".amb-row__sub"))),
+      "and by its word and its figure and the day it was placed: " + JSON.stringify([t(sh.querySelector(".amb-row__sub")), t(sh.querySelector(".amb-row__amount"))]));
     ok(say.includes(W.EN["yn.orderLost"]) && say.includes(W.EN["yn.orderNone"]) && !say.includes("refunded"),
       "it says what is lost, and that nothing is paid on this one, so nothing is owed: " + JSON.stringify(say));
     const go = P.d.getElementById("ynGo"), keep = P.d.getElementById("ynKeep");
-    ok(sh.querySelectorAll(".salt-ghost--danger").length === 1 && go.classList.contains("salt-ghost--danger") && go.classList.contains("salt-ghost") && t(go) === W.EN["ord.cancel"]
-      && keep.classList.contains("salt-ghost") && !keep.classList.contains("salt-ghost--danger") && t(keep) === W.EN["yn.keepOrder"]
-      && sh.classList.contains("salt-sheet") && P.d.getElementById("ynScrim").classList.contains("salt-sheet-scrim") && !!P.d.getElementById("ynX").classList.contains("salt-orb"),
-      "one danger action, the system's danger ghost, and a ghost that keeps, on the system's Sheet with its scrim and its close orb: " + JSON.stringify([go.className, keep.className]));
+/* 16 Nov 2026, the move to Ambient (place D): one danger action of the system's, a pill that keeps, on the system's Sheet (a dialog, its backdrop its scrim) with its close circle */
+    ok(sh.querySelectorAll(".amb-action--danger").length === 1 && go.classList.contains("amb-action--danger") && t(go) === W.EN["ord.cancel"]
+      && keep.classList.contains("amb-pill") && !keep.classList.contains("amb-action--danger") && t(keep) === W.EN["yn.keepOrder"]
+      && sh.tagName === "DIALOG" && sh.classList.contains("amb-sheet") && !P.d.getElementById("ynScrim") && P.d.getElementById("ynX").classList.contains("amb-circle"),
+      "one danger action, the system's, and a pill that keeps, on the system's Sheet with its close circle: " + JSON.stringify([go.className, keep.className]));
     /* 19 Oct 2026: whole words over the sheet spaced at every tag, so encounter, frontier and levelled pass */
     const banned = /\b(salt|oil|candy|rice|gas|titanium|platinum|gold|silver|bronze|ambassador|tiers?|levels?|counter)\b/i;
     ok(!banned.test(sh.innerHTML.replace(/<[^>]*>/g, " ")) && !banned.test(go.textContent + " " + keep.textContent) && !P.d.getElementById("ynSheet").querySelector("[style]") && !/[A-Z]{2,}[0-9]-[A-Z]{3}/.test(say),
@@ -172,8 +175,8 @@ export async function run({ ok }) {
     const cancelB = await openOrder(P, B.id);
     cancelB.click();
     const shB = sheet(P), sayB = t(shB);
-    ok(!!shB && t(shB.querySelector(".salt-ledger__value")) === money(15) && sayB.includes(W.fill(W.EN["yn.orderPaid"], { rm: money(12) }, "en")) && !sayB.includes(W.EN["yn.orderNone"])
-      && /Confirmed$/.test(t(shB.querySelector(".salt-ledger__label"))) && t(shB.querySelector(".mtile .sr")) === "Lozenge 1 unit",
+    ok(!!shB && t(shB.querySelector(".amb-row__amount")) === money(15) && sayB.includes(W.fill(W.EN["yn.orderPaid"], { rm: money(12) }, "en")) && !sayB.includes(W.EN["yn.orderNone"])
+      && /^Confirmed/.test(t(shB.querySelector(".amb-row__sub"))) && rowId(rowAt(shB)) === "Lozenge 1 unit",
       "an order paid before anything moved says its figure with the delivery, and the refund and not that nothing is paid: " + JSON.stringify(sayB));
     P.d.getElementById("ynKeep").click();
 
@@ -204,21 +207,22 @@ export async function run({ ok }) {
     const L = await open({ orders: [A, B, Cc, D, E, F], fast: true });
     const lim = t(L.d.getElementById("oLimit")), wantLine = W.fill(W.EN["sh.limit"], { n: W.EN["num." + O.MAX_OPEN] }, "en");
     const cb = await openLimit(L);
-    const inSheet = t(L.d.querySelector("#osheet .salt-insight"));
+    const inSheet = t(L.d.querySelector("#osheet .amb-notice"));
     /* 1 Nov 2026: the limit line is one sentence, Five open orders is the most: cancel one, or wait for one to finish */
     ok(lim === wantLine && inSheet === wantLine && /^Five open orders is the most:/.test(lim) && O.MAX_OPEN === 5,
       "the limit is said in words off the code's own limit, in the Order tab and in the limit step, though six are open: " + JSON.stringify({ lim, inSheet }));
-    const limRows = [...L.d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({ shape: t(r.querySelector(".mtile .sr")), amount: t(r.querySelector(".salt-ledger__value")), cancel: !!r.querySelector("button") }));
+    const limRows = [...L.d.querySelectorAll("#osheet .amb-row")].map((r) => ({ shape: rowId(r), amount: t(r.querySelector(".amb-row__amount")), cancel: !!r.querySelector("button") }));
     ok(limRows.length === 6 && limRows[0].shape === "Cube 2.5 units" && limRows.map((r) => r.shape).join("|") === "Cube 2.5 units|Lozenge 1 unit|Droplet 3 units|Capsule 1 unit|Cube 1 unit|Droplet 1 unit"
       && limRows.map((r) => r.amount).join("|") === [270, 15, 115, 9, 100, 40].map(money).join("|") && limRows.filter((r) => r.cancel).length === 5 && !limRows[4].cancel,
       "the limit step lists the open orders by mark, shape and amount, each with its own Cancel where the goods have not moved: " + JSON.stringify(limRows));
     cb.focus(); cb.click();
     const shL = sheet(L), osh = L.d.getElementById("osheet");
-    const z = (e) => +L.w.getComputedStyle(e).zIndex, oz = z(osh.querySelector(".salt-sheet")), yScrim = z(L.d.getElementById("ynScrim")), yBox = z(shL);
-    ok(!!shL && sends(L) === 0 && L.d.activeElement === shL && !!osh && yScrim > oz && yBox > yScrim
-      && t(shL.querySelector(".mtile .sr")) === "Cube 2.5 units" && t(shL.querySelector(".salt-ledger__value")) === money(270),
-      "Cancel at the limit opens the Sheet, restating that order, its scrim above the order sheet and its body above its scrim so that it lies over it, and sends nothing: "
-      + JSON.stringify({ sends: sends(L), orderSheet: oz, scrim: yScrim, sheet: yBox }));
+/* 16 Nov 2026, the move to Ambient (place D): both Sheets are dialogs in the top layer, so the later one lies over the earlier */
+    const later = !!osh && (osh.compareDocumentPosition(shL) & 4) !== 0;
+    ok(!!shL && sends(L) === 0 && L.d.activeElement === shL && !!osh && later
+      && rowId(rowAt(shL)) === "Cube 2.5 units" && t(shL.querySelector(".amb-row__amount")) === money(270),
+      "Cancel at the limit opens the Sheet, restating that order, after the order sheet in the document so that it lies over it, and sends nothing: "
+      + JSON.stringify({ sends: sends(L), later }));
     key(L, "Escape");
     ok(!sheet(L) && !!L.d.getElementById("osheet") && L.d.getElementById("osheet") === osh && L.d.activeElement === cb && sends(L) === 0,
       "Escape closes the Sheet alone: the order sheet under it stays open, and the focus goes back to the Cancel that was tapped");
@@ -255,14 +259,14 @@ export async function run({ ok }) {
     const shK = sheet(K), sayK = t(shK);
     ok(!!shK && sends(K) === 0 && K.d.activeElement === shK && t(K.d.getElementById("ynT")) === W.EN["yn.linkH"] && shK.getAttribute("role") === "dialog",
       "Withdraw opens its Sheet, a dialog with the focus in it, and sends nothing yet: " + JSON.stringify({ sends: sends(K) }));
-    ok(sayK.includes(W.fill(W.EN["lnk.made"], { d: "18 Sep 2026" }, "en")) && /Open/.test(t(shK.querySelector(".salt-ledger__value"))) && sayK.includes("Opened 2 times, last 19 Sep 2026.")
+    ok(sayK.includes(W.fill(W.EN["lnk.made"], { d: "18 Sep 2026" }, "en")) && /Open/.test(t(shK.querySelector(".amb-row__amount"))) && sayK.includes("Opened 2 times, last 19 Sep 2026.")
       && sayK.includes(W.EN["yn.linkLost"]) && !sayK.includes(LINK.id) && !sayK.includes("https://") && t(K.d.getElementById("ynGo")) === W.EN["yn.linkGo"] && t(K.d.getElementById("ynKeep")) === W.EN["yn.keepLink"],
       "it restates the link by its day, its state and what it has done, says what is lost, and never repeats its address: " + JSON.stringify(sayK));
     K.d.getElementById("ynKeep").click();
     ok(!sheet(K) && sends(K) === 0 && K.d.activeElement === wd, "the ghost closes it, nothing is sent, and the focus goes back to Withdraw");
     const waitWd = K.d.querySelector('#pCard button[data-yn="link:' + WAIT.id + '"]');
     waitWd.click();
-    ok(/Waiting/.test(t(sheet(K).querySelector(".salt-ledger__value"))) && t(sheet(K)).includes(W.EN["lnk.lineWaiting"]), "a link waiting on him says so in its Sheet: " + JSON.stringify(t(sheet(K))));
+    ok(/Waiting/.test(t(sheet(K).querySelector(".amb-row__amount"))) && t(sheet(K)).includes(W.EN["lnk.lineWaiting"]), "a link waiting on him says so in its Sheet: " + JSON.stringify(t(sheet(K))));
     K.d.getElementById("ynKeep").click();
     const l3 = [];
     for (const [name, fn] of closers) { wd.focus(); wd.click(); const was = !!sheet(K); fn(K); l3.push([name, was && !sheet(K) && K.d.activeElement === wd]); }
@@ -316,13 +320,13 @@ export async function run({ ok }) {
     /* ---- 13 the cascade */
     const cs = (e) => P.w.getComputedStyle(e);
     cancelB.click();
-    const tap = { go: cs(P.d.getElementById("ynGo")).minHeight, keep: cs(P.d.getElementById("ynKeep")).minHeight, x: cs(P.d.getElementById("ynX")).width + "|" + cs(P.d.getElementById("ynX")).height };
-    /* 12 Oct 2026 (Phase 5): the danger ghost rests in the alarm in the SYSTEM's own recipe, and the sheet restates none of it */
+/* 16 Nov 2026, the move to Ambient (place D): the answers and the close circle take their 44px from the system's own token, and the danger action's tone is the system's, never restated by the sheet */
+    const tap = { go: P.d.getElementById("ynGo").className, keep: P.d.getElementById("ynKeep").className, x: P.d.getElementById("ynX").className };
     const sheetRules = [...P.d.styleSheets].flatMap((s) => [...s.cssRules]);
-    const rules = sheetRules.filter((r) => r.selectorText === ".salt-ghost--danger"), restated = sheetRules.filter((r) => /\.ynsheet[^{]*salt-ghost--danger/.test(r.selectorText || ""));
-    const tone = rules.length === 1 ? rules[0].style.getPropertyValue("--salt-ghost-tone") : "";
-    ok(tap.go === "var(--salt-tap)" && tap.keep === "var(--salt-tap)" && tap.x === "var(--salt-tap)|var(--salt-tap)" && tone === "var(--salt-alarm)" && restated.length === 0 && !/#[0-9a-f]{3,8}\b|rgb/i.test(rules.length ? rules[0].cssText : "#fff"),
-      "a tap is 44 px by the system's own token on both answers and the close orb, and the danger action's tone is the system's alarm, never a literal and never restated by the sheet: " + JSON.stringify({ tap, tone, restated: restated.length }));
+    const own = (re) => sheetRules.filter((r) => re.test(r.selectorText || "") && !/^\.amb/.test(r.selectorText || ""));
+    const restated = own(/\.ynsheet[^{]*(amb-action|amb-pill|amb-circle)/), pill = sheetRules.filter((r) => r.selectorText === ".amb-pill--sm").map((r) => r.style.getPropertyValue("min-height"));
+    ok(/amb-action--danger/.test(tap.go) && /amb-pill/.test(tap.keep) && /amb-circle/.test(tap.x) && pill.includes("var(--amb-tap)") && restated.length === 0,
+      "a tap is 44 px by the system's own token on both answers and the close circle, and the sheet restates none of it: " + JSON.stringify({ tap, pill, restated: restated.length }));
     P.d.getElementById("ynKeep").click();
 
     /* ---- 14 the practice accounts hold a case of each Sheet */

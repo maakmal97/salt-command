@@ -10347,7 +10347,7 @@ await (async () => {
       aug = await makeStatements(join(root, "2026-08"), "2026-08-01", { archive: true });
       try { await makeStatements(join(root, "2026-07"), "2026-07-01", { newIssue: true }); } catch (e) { noKey = e; }
       sep = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
-      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true, retry: true });   /* 16 Nov 2026, the move to Ambient: a same-date re-run over a sealed issue is a retry only when asked for */
     } finally { console.log = q; }
     ok(noKey && /STMT_KEY/.test(noKey.message) && !existsSync(join(root, "2026-07")),
       "a run with no key refuses before writing anything: a record wrapped under nothing opens nothing");
@@ -10403,7 +10403,7 @@ await (async () => {
     const bookL = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
-      const nRows = h => (h.match(/<td class="l dt">|<div class="salt-lines__date" role="cell">/g) || []).length;   // S7 7.3: a live row is a Statement line
+      const nRows = h => (h.match(/<td class="l dt">|<td data-label="Date">/g) || []).length;   // 16 Nov 2026: a live row is a row of the system's Table
       const issuedDoc = sep.sheets.find(s => s.who === afterIssue.customer);
       const lvA = liveStatement(afterIssue.customer, now);
       ok(issuedDoc && lvA && nRows(lvA.body) > nRows(issuedDoc.html),
@@ -19815,9 +19815,9 @@ await (async () => {
     const card = D.getElementById("thisDevice"), body = () => card.textContent;
     ok(await until(() => !card.hidden && /iPhone, Safari/.test(body()) && /Kept signed in/.test(body())) && D.getElementById("pStmt").contains(card),
       "signed in, the statement ends on This device: " + JSON.stringify(body()));
-    const rows = () => [...card.querySelectorAll(".salt-settings__row, .salt-ledger__row")].map((r) => r.textContent);
-    ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, EdgeThis oneKept signed in since/.test(t))
-      && rows().some((t) => /^iPhone, SafariSigned in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
+    const rows = () => [...card.querySelectorAll(".amb-setting")].map((r) => r.textContent);   /* 16 Nov 2026, the move to Ambient: a row of the system's settings */
+    ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, Edge ?This one ?Kept signed in since/.test(t))
+      && rows().some((t) => /^iPhone, Safari ?Signed in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
       "it lists notifications, this computer marked This one and kept signed in, and the iPhone for that visit: " + JSON.stringify(rows()));
     const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
 
@@ -21413,19 +21413,19 @@ await (async () => {
   let docs = 0, tabled = 0, untagged = 0, plural = 0, wrongWord = [];
   for (const p of parties) {
     const d = M.liveStatement(p, at, "abcd-efgh");
-    if (!d || !/salt-lines__row|<tr/.test(d.body)) continue;
+    if (!d || !/<tr/.test(d.body)) continue;
     docs++;
-    if (!/<div class="salt-lines salt-lines--list" role="table" aria-label="Your orders" data-lines="orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
-    const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?(?: data-d="\d{4}-\d{2}-\d{2}")? data-g="[^"]*" data-dv="[^"]*" data-b="-?\d+"><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
+    if (!/<table class="amb-table amb-table--stack" data-lines="orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body) || /salt-lines/.test(d.body)) tabled++;
+    const rows = [...d.body.split('<h3 class="amb-section">Refunds</h3>')[0].matchAll(/<tr(?: class="is-off")?( data-m="\d{4}-\d{2}")?(?: data-d="\d{4}-\d{2}-\d{2}")? data-g="[^"]*" data-dv="[^"]*" data-b="-?\d+"><td data-label="Date">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
     untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
     /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its size
        under the mark (no shape word drawn, 12 Oct 2026), and the words a reader hears carry the unit */
-    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="mtile"><span class="sr">[A-Z][a-z]+ ([\d.,]+) (units?)<\/span><svg[\s\S]*?<\/svg><span class="mq" aria-hidden="true">([\d.,]+) (units?)<\/span>/g)) {
+    for (const m of d.body.matchAll(/<span class="amb-vh">[A-Z][a-z]+<\/span><span class="stm-size">([\d.,]+) (units?)<\/span>/g)) {
       const q = +m[1].replace(/,/g, "");
-      if ((q > 1) !== (m[2] === "units") || m[3] !== m[1] || m[4] !== m[2]) wrongWord.push(p + " " + m[1] + " " + m[2] + " under " + m[3] + " " + m[4]); else if (q > 1) plural++;
+      if ((q > 1) !== (m[2] === "units")) wrongWord.push(p + " " + m[1] + " " + m[2]); else if (q > 1) plural++;
     }
   }
-  ok(docs > 10 && !tabled, "every live statement lists its orders as Statement lines, not a table: " + docs + " statements, " + tabled + " still a table");
+  ok(docs > 10 && !tabled, "every live statement lists its orders as the system's Table, each cell named by its heading, no salt- class left: " + docs + " statements, " + tabled + " still a table");
   ok(docs > 10 && !untagged, "and every dated line carries its month, an undated one none: " + untagged + " out of step");
   ok(plural > 0 && !wrongWord.length, "a quantity above one reads units, one or less unit (D11), and the card's figure is the size: " + plural + " plural" + (wrongWord.length ? "; wrong: " + wrongWord.slice(0, 3).join(", ") : ""));
 
@@ -21485,10 +21485,10 @@ await (async () => {
     /* plan version 7 (7c): Account keeps the money and Full statement holds the lines and the month filter, in a Sheet */
     ok(!D.querySelector('#out [data-lines="orders"]') && D.getElementById("mfil").hidden, "Account draws no order lines and no month filter");
     D.getElementById("fsOpen").click();
-    const strip = D.getElementById("fsMf"), note = D.getElementById("fsNote"), list = D.querySelector("#fsOut .salt-lines");
+    const strip = D.getElementById("fsMf"), note = D.getElementById("fsNote"), list = D.querySelector("#fsOut table.amb-table");
     const mopts = [...strip.querySelectorAll("select option")], msel = strip.querySelector("select");
     const pickM = (v) => { msel.value = v; msel.dispatchEvent(new W.Event("change", { bubbles: true })); };
-    const shown = () => [...D.querySelectorAll("#fsOut .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    const shown = () => [...D.querySelectorAll("#fsOut tr[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
     const months = [...new Set(shown())];
     ok(!strip.hidden && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
       && strip.nextElementSibling === note && note.nextElementSibling === D.getElementById("fsOut") && !!list && !D.getElementById("mos"),
@@ -21510,22 +21510,22 @@ await (async () => {
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
     /* 26 Oct 2026, his word: This device is a list of settings; Notifications is a Switch, on or off */
-    const row = (label) => [...dev.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === label);
-    const btnOf = (label) => row(label) && row(label).querySelector("button");
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "true") && !dev.hidden && st.subs === 1,
+    const row = (label) => [...dev.querySelectorAll(".amb-setting")].find((r) => r.querySelector(".amb-setting__name") && r.querySelector(".amb-setting__name").textContent === label);
+    const btnOf = (label) => row(label) && row(label).querySelector("input[role=switch]");   /* 16 Nov 2026: the Switch is the native checkbox */
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").checked === true) && !dev.hidden && st.subs === 1,
       "This device says the notifications are on, with Turn off beside them: " + JSON.stringify([st.subs, dev.textContent.slice(0, 120)]));
     btnOf("Notifications").click();
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "false") && st.unsub === 1 && !st.subbed
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").checked === false) && st.unsub === 1 && !st.subbed
       && /Off[.]/.test(row("Notifications").textContent),
       "Turn off drops this phone's subscription and says Off on the row tapped: " + JSON.stringify(row("Notifications").textContent));
     /* signing out is on the card, and signing in again does not turn them back on by itself */
     signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && dev.hidden, "Sign out of this device signs out, and the card goes with the account");
     ok(await signIn() && await until(() => st.rem === 2) && await new Promise((r) => setTimeout(() => r(true), 150))
-      && btnOf("Notifications").getAttribute("aria-checked") === "false" && st.key === 1 && st.subs === 1 && !st.subbed,
+      && btnOf("Notifications").checked === false && st.key === 1 && st.subs === 1 && !st.subbed,
       "and the next sign-in, run to its end, leaves them off, where the way in used to file the phone again: " + JSON.stringify([st.rem, st.key, st.subs, st.subbed]));
     btnOf("Notifications").click();
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "true") && st.subs === 2 && st.subbed,
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").checked === true) && st.subs === 2 && st.subbed,
       "and Turn on files it again: " + JSON.stringify([st.subs, st.subbed]));
     signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
@@ -21550,8 +21550,9 @@ await (async () => {
   for (const p of parties) {
     const d = M.liveStatement(p, at, "abcd-efgh");
     if (!d) continue; docs++;
-    const trs = [...d.body.slice(d.body.indexOf('<div class="tot')).matchAll(/<div class="tr( [a-z_ -]+)?"><span(?: class="salt-settings__label")?>((?:(?!<\/div>)[\s\S])*?)<\/span><span(?: class="salt-settings__value")?>([^<]*)<\/span><\/div>/g)]
-      .map((m) => [m[2].replace(/<[^>]+>/g, "").trim(), m[3]]);
+    const t0 = d.body.indexOf('class="amb-settings tot"');   /* 16 Nov 2026, the move to Ambient: the foot is a group of the system's settings, a name and its figure a row */
+    const trs = [...d.body.slice(t0, d.body.indexOf("</ul></div>", t0)).matchAll(/<div class="amb-setting[^"]*"><span class="amb-setting__name">((?:(?!<\/div>)[\s\S])*?)<\/span><span class="amb-setting__value[^"]*">([^<]*)<\/span><\/div>/g)]
+      .map((m) => [m[1].replace(/<[^>]+>/g, "").trim(), m[2]]);
     const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
     const del = sum(/^Delivery$/); if (del > 0) withDel++;
     const bal = (trs.find((t) => /^(Outstanding|Balance)$/.test(t[0])) || [0, "x"])[1];
@@ -21739,13 +21740,15 @@ await (async () => {
   const opt = (live) => ({ dates: true, brand: null, issued: "24 Sep 2026 12:00", live, user: live ? "abcd-efgh" : null, recon, refunds });
   const live = M.stmtDoc("ZZ9-TST", rows, opt(true)), issue = M.stmtDoc("ZZ9-TST", rows, opt(false));
   const text = (h) => h.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ");
-  const cells = (h, c) => [...h.matchAll(new RegExp('<div class="salt-lines__' + c + '[^"]*" role="cell">([\\s\\S]*?)</div>', "g"))].map((m) => text(m[1]).trim());
+  const cells = (h, c) => [...h.matchAll(new RegExp('<td data-label="' + c + '"[^>]*>([\\s\\S]*?)</td>', "g"))].map((m) => text(m[1]).trim());   /* 16 Nov 2026, the move to Ambient (place D): a cell of the system's Table, by its heading */
   /* C4: every fully paid row says the day it was paid under its state word, the same day as well as a later one; never in the date cell */
-  const st = cells(live, "state"), dt = cells(live, "date");
+  const st = cells(live, "Status"), dt = cells(live, "Date");
   ok(st.some((x) => /^settled paid 20 Sep 2026$/.test(x)) && st.some((x) => /^paid in full paid 07 Aug 2026 /.test(x)) && st.some((x) => /^RM 60\.00 due$/.test(x))
     && !dt.some((x) => /paid/.test(x)), "every fully paid row says when it was paid under its state word, the same day too, and the date cell carries the order's date alone (C4): " + JSON.stringify([st, dt]));
   /* C5: the live footer's every figure carries RM, as its lines do; an issue's footer is as it was sent */
-  const figs = (h) => [...h.slice(h.indexOf('<div class="tot')).matchAll(/<div class="tr[^"]*"><span[^>]*>(?:(?!<\/div>)[\s\S])*?<\/span><span[^>]*>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);   /* 28 Oct 2026: the live rows carry the settings classes */
+  const figs = (h) => h.includes('class="amb-settings tot"')
+      ? [...h.slice(h.indexOf('class="amb-settings tot"'), h.indexOf("</ul></div>", h.indexOf('class="amb-settings tot"'))).matchAll(/<span class="amb-setting__value[^"]*">([^<]*)<\/span>/g)].map((m) => m[1])   /* 16 Nov 2026: the live foot is a group of the system's settings */
+      : [...h.slice(h.indexOf('<div class="tot')).matchAll(/<div class="tr[^"]*"><span[^>]*>(?:(?!<\/div>)[\s\S])*?<\/span><span[^>]*>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);
   ok(figs(live).length >= 4 && figs(live).every((f) => /^RM [\d,]+\.\d\d$|^nil$/.test(f)) && figs(issue).some((f) => /^[\d,]+\.\d\d$/.test(f)),
     "the live footer's figures carry RM, as its lines do, and an issue's are as they were sent (C5): " + JSON.stringify([figs(live), figs(issue)]));
   /* C6 and C8: the live document describes itself as live, never by an issue date or the desk's approving */
@@ -21762,14 +21765,14 @@ await (async () => {
     && /How the 1\.5 unit is arrived at/.test(text(issue)) && /So the salt due to you is what you bought/.test(text(issue)),
     "and the goods are plural where the salt was not, the units counted as they read; an issue keeps its words (C7, C11)");
   /* C9: a refund row belongs to its month, so the month filter reaches it */
-  ok(/<div class="salt-lines__row" role="row" data-m="2026-08"><div class="salt-lines__date" role="cell">10 Aug 2026<\/div><div class="salt-lines__what" role="cell">Overpayment/.test(live),
+  ok(/<tr data-m="2026-08"><td data-label="Date">10 Aug 2026<\/td><td data-label="Reason">Overpayment/.test(live),
     "a refund row carries its month, so a month chosen filters it with the orders (C9)");
   /* C10: a live document with no orders says so without a period it does not have */
   const none = M.stmtDoc("ZZ9-TST", [], Object.assign(opt(true), { recon: [] })), noneI = M.stmtDoc("ZZ9-TST", [], Object.assign(opt(false), { recon: [] }));
   ok(/No orders yet\./.test(none) && !/period/.test(text(none)) && /No orders in this period\./.test(noneI), "a live document with no orders says No orders yet, never a period (C10)");
   /* C2 and C21: an h2 under the Counter's own h1, naming nobody a second time; its sections are h3; an issue is a page of its own */
   const heads = (h) => [...h.matchAll(/<(h[1-6])[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => m[1] + ":" + text(m[2]).trim());
-  ok(JSON.stringify(heads(live)) === JSON.stringify(["h2:Statement of account", "h3:Refunds", "h3:Still to collect"]) && !/class="who"|>Account</.test(live) && !live.includes("abcd-efgh")
+  ok(JSON.stringify(heads(live)) === JSON.stringify(["h2:Statement of account", "h3:Refunds", "h3:Still to collect", "h3:How the 1.5 units are arrived at", "h3:How your 05 Aug 2026 order was settled"]) && !/class="who"|>Account</.test(live) && !live.includes("abcd-efgh")
     && heads(issue)[0] === "h1:Statement of account", "the live document is an h2 with its sections h3 under it and names the account no second time; an issue opens on its own h1 (C2, C21): " + JSON.stringify(heads(live)));
   /* C25: a book's day is its own digits, wherever the tool runs */
   const here = M.stmtDoc("ZZ9-TST", rows, opt(true));
@@ -21786,12 +21789,13 @@ await (async () => {
   ok(hs(g).join() === "h1,h2" && hs(PG.shutPage("nC21")).join() === "h1" && /RM 150\.00/.test(g),
     "a guest board opens on its h1 with each mark an h2 under it, the shut page on its h1, and money is RM with two places (C21, C5): " + JSON.stringify([hs(g), hs(PG.shutPage("nC21"))]));
   const navs = [...PG.landingPage("aaaa-cccd", "nC22", null).matchAll(/<nav\b[^>]*aria-label="([^"]*)"/g)].map((m) => m[1]);
-  ok(navs.length === 2 && new Set(navs).size === 2 && navs.includes("Places"), "the rail and the bar are two landmarks with two names (C22): " + JSON.stringify(navs));
+  /* 16 Nov 2026, the move to Ambient: the rail and the bar are one dock, a single landmark named Places */
+  ok(navs.length === 1 && navs.includes("Places"), "the places are one landmark with a name (C22): " + JSON.stringify(navs));
   /* C23: the test account's own statement is a customer's live document in shape, dated DD Mon YYYY */
   const { testStatement } = await import("../stmt/worker.js");
   const tb = (await testStatement()).body;
-  ok(!/<h1|<table|September/.test(tb) && /^<h2 class="stmth">/.test(tb) && /class="salt-lines__row"[^>]*><div class="salt-lines__date" role="cell">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
-    "the test account's statement is Statement lines under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
+  ok(!/<h1|September|<th class="l">/.test(tb) && /^<h2 class="amb-section">/.test(tb) && /<tr[^>]*><td data-label="Date">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
+    "the test account's statement is the system's Table under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
 })();
 section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
 await (async () => {
@@ -23504,8 +23508,8 @@ await (async () => {
   for (const p of parties) {
     const doc = M.liveStatement(p, new Date("2026-09-24T04:00:00Z"));
     if (!doc) continue;
-    /* S7 7.3: a live statement's date cells are Statement lines */
-    const cells = [...doc.body.matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => x[1]);
+    /* 16 Nov 2026, the move to Ambient: a live statement's date cells are the system's Table cells */
+    const cells = [...doc.body.matchAll(/<td data-label="Date">([\s\S]*?)<\/td>/g)].map((x) => x[1]);
     sep += cells.filter((c) => /\d\d Sep 2026/.test(c)).length;
     four += cells.filter((c) => FOUR.test(c)).length + (FOUR.test(doc.body) ? 1 : 0);
   }
@@ -27041,7 +27045,7 @@ await (async () => {
       "the door says Sign in, what to sign in with, and how each field is written");
     const tick = D.getElementById("rem"), tickText = tick.closest("label").textContent;
     ok(tick.checked && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
-    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now */
+    const help = [...gate.querySelectorAll(".amb-field__hint")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now; 16 Nov 2026: the system's field hint under the form */
     ok(!!help && /ask us for a new sign-in link\./.test(help.textContent)
       && (help.compareDocumentPosition(D.getElementById("go")) & D.defaultView.Node.DOCUMENT_POSITION_PRECEDING) !== 0,
       "and beneath Sign in: Lost your password or your link? Ask us for a new sign-in link");
@@ -27265,8 +27269,8 @@ await (async () => {
     let opened = null;
     try { opened = JSON.parse(await C310.decryptWith(await C310.unwrapKey(ho.body.token, ho.body.wrap), env310)); } catch (e) { opened = null; }
     ok(!!opened && opened.statements[0].body === "<p>Mine</p>", "and the key it mints unwraps this account's own content key, which opens the statement");
-    ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".salt-code")
-      && D.getElementById("keepCode").classList.contains("salt-field__input--code"),
+    ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".amb-field")
+      && D.getElementById("keepCode").classList.contains("amb-input--code"),
       "the code is shown in the system's Code field, four and four, and Copy is ready");
     const sheetText = D.getElementById("keepCard").textContent;
     ok(D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3 && /Add to Home Screen/.test(sheetText)
@@ -28295,10 +28299,10 @@ await (async () => {
     } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
-  const order = () => [...D.getElementById("gate").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
+  const order = () => [...D.getElementById("gate").querySelector("main").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
   try {
     const before = order();
-    ok(/p\.lead \| doorBox$/.test(before), "the fixture: the heading, the lead, then the door's box: " + before);
+    ok(/header\.amb-hero \| doorBox$/.test(before), "the fixture: the hero (the heading and the lead), then the door's box: " + before);   /* 16 Nov 2026, the move to Ambient: the door is a shell, its hero holding the heading and the lead */
     const signIn = async () => { D.getElementById("rem").checked = false; D.getElementById("pw").value = passO;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true })); };
     await signIn();
@@ -28405,7 +28409,7 @@ await (async () => {
     st.dead.add(st.last);
     await until(() => !D.getElementById("outSheet").hidden);
     const sheet = D.getElementById("outSheet");
-    const toCode = D.getElementById("toCode"), help = [...sheet.querySelectorAll(".salt-insight")].find((p) => /new sign-in link/.test(p.textContent));
+    const toCode = D.getElementById("toCode"), help = [...sheet.querySelectorAll(".amb-field__hint")].find((p) => /new sign-in link/.test(p.textContent));
     ok(sheet.contains(toCode) && !!help && !toCode.hidden,
       "the Sheet carries I have a sign-in code and the help line under the form: " + JSON.stringify({ code: sheet.contains(toCode), help: !!help }));
     toCode.click();
@@ -39728,14 +39732,19 @@ await (async () => {
   ok(made && existsSync(join(root72, "2026-10", "_kv")),
     "with --new-issue it is sealed as it always was, for a dispute or a position on a day");
 
-  /* A RETRY IS NOT A NEW ISSUE: the folder already holds this issue, so it regenerates in place */
+  /* 16 Nov 2026, the move to Ambient (place D): A SEALED ISSUE IS NEVER WRITTEN AGAIN BY ACCIDENT. A re-run of the issue already in the folder is refused unless it is a retry
+     asked for in so many words, because the live document's markup moved that day and a past date's documents would be redrawn in today's code. */
+  let rerun = null;
+  console.log = () => {};
+  try { await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret" }); } catch (e) { rerun = String((e && e.message) || e); } finally { console.log = quiet72; }
+  ok(rerun && /refusing to write the sealed issue of 2026-10-01 again/.test(rerun) && /--retry/.test(rerun),
+    "a same-date re-run over a sealed issue is refused, and the refusal says how to ask for a retry: " + JSON.stringify(rerun));
   let retried = null;
   console.log = () => {};
-  try { retried = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret" }); }
+  try { retried = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret", retry: true }); }
   finally { console.log = quiet72; }
   ok(retried && existsSync(join(root72, "2026-10", "_kv")),
-    "a re-run of the issue already in the folder goes through without the flag, which is what a retry "
-    + "after a failure is");
+    "with a retry asked for it goes through, keeping the passwords already issued, which is what a retry after a failure is");
 
   /* AND AN ARCHIVE OF A PAST MONTH IS NOT AN ISSUE AT ALL: no record, no password, no QR */
   let arch = null;
@@ -39748,7 +39757,7 @@ await (async () => {
   /* THE COMMAND LINE SPELLS IT, and the doc says the routine is retired */
   const src72 = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
   ok(/const newIssue = process\.argv\.includes\('--new-issue'\)/.test(src72)
-    && /makeStatements\(outDir, issue, \{ archive, newIssue \}\)/.test(src72),
+    && /makeStatements\(outDir, issue, \{ archive, newIssue, retry \}\)/.test(src72) && /process\.argv\.includes\('--retry'\)/.test(src72),
     "the command line carries the flag through to the guard");
   const doc72 = readFileSync(join(REPO, "docs", "STATEMENTS.md"), "utf8");
   ok(/RETIRED/.test(doc72) && /21 Sep 2026/.test(doc72) && /--new-issue/.test(doc72),
@@ -41181,7 +41190,7 @@ await (async () => {
     if (!doc) continue;
     /* the orders alone: the Refunds list below them prints its own dates in the same cell class (S7 7.3: both are
        Statement lines on a live statement) */
-    const days = [...doc.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
+    const days = [...doc.body.split('<h3 class="amb-section">Refunds</h3>')[0].matchAll(/<td data-label="Date">([\s\S]*?)<\/td>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
     checked++;
     if (new Set(days).size > 1) multi++;
     for (let i = 1; i < days.length; i++) if (days[i] > days[i - 1]) { wrong.push(p + " " + days[i - 1] + " then " + days[i]); break; }
@@ -43292,7 +43301,7 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
   const html = lp(U, "nrr", null);
   const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
-  const pageRules = css.slice(css.indexOf(".paycheck{"));
+  const pageRules = css.slice(css.indexOf(".paycheck "));   /* 16 Nov 2026, the move to Ambient (place D): the site layer writes it */
   const who = (u) => { let h = 2166136261; for (let i = 0; i < u.length; i++) { h ^= u.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); };
   const list = [{ id: "oQ", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", total: 150, paid: 0, claimed: 0,
     payments: [], msgs: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }];
@@ -43323,11 +43332,11 @@ await (async () => {
     const h = d.querySelector("#payBody .paycheck h3");
     head = h ? { cls: h.className, text: h.textContent } : null;
     ring = !!d.querySelector("#payBody .payring");
-    mark = !!d.querySelector("#payBody .paycheck svg.glyph");
+    mark = !!d.querySelector("#payBody .paycheck svg.paycheck__mark");
   } finally { dom.window.close(); }
-  ok(head && head.cls === "salt-sheet__title" && head.text === "Did you send RM 150.00?" && !ring && mark
-    && !/\.payring/.test(css) && !/\.paycheck h3\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.salt-sheet__title\s*\{/.test(css),
-    "the question's heading is the Sheet's own title recipe, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
+  ok(head && head.cls === "amb-section" && head.text === "Did you send RM 150.00?" && !ring && mark
+    && !/\.payring/.test(css) && !/\.paycheck h3 ?\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.amb-section\s*\{/.test(css),
+    "the question's heading is the system's own section heading, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
 })();
 
 section("23 Sep 2026: an amount past its term makes the account a payment page, any amount since 28 Sep 2026");
@@ -43547,7 +43556,7 @@ await (async () => {
     docs++;
     /* C2 (29 Sep 2026): inside the Counter the place is the h1 and the header names the username, so the live document is an
        h2 and names the account no second time, by username or by code */
-    if (/class="who"|>Account<|<h1/.test(d.body) || d.body.includes("abcd-efgh") || d.body.includes(p) || !d.body.includes('<h2 class="stmth">Statement of account</h2>')) named.push(p);
+    if (/class="who"|>Account<|<h1/.test(d.body) || d.body.includes("abcd-efgh") || d.body.includes(p) || !d.body.includes('<h2 class="amb-section">Statement of account</h2>')) named.push(p);
     const why = siteWords(text(d.body));
     if (why) said.push(p + " " + why);
     const d0 = M.liveStatement(p, at);
@@ -43754,17 +43763,18 @@ await (async () => {
     row({ rid: "c3d", date: "2026-09-01", qty: 1, total: 90, paidCash: 40, got: 0, toGet: 0, cancelled: true, cancelledOn: "2026-09-03" }),
     row({ rid: "c3e", date: "2026-09-10", qty: 1, total: 80, paidCash: 80, got: 1, toGet: 0, paidOn: "2026-09-10", cover: true, inKindUnits: 0.5 })];
   const live = M.stmtDoc("ZZ9-TST", rows, { dates: true, brand: null, issued: "24 Sep 2026 12:00", live: true, user: "abcd-efgh", recon: [], refunds: [] });
-  const subs = [...live.matchAll(/<span class="(salt-lines__sub[^"]*)">([^<]*)<\/span>/g)].map((m) => [m[1], m[2]]);
-  const figs = subs.filter((s) => s[0] === "salt-lines__sub salt-lines__sub--figure").map((s) => s[1]), word = subs.filter((s) => s[0] === "salt-lines__sub").map((s) => s[1]);
-  ok(figs.some((t) => /^plus delivery RM 15\.00/.test(t)) && figs.some((t) => /^paid 20 Sep 2026$/.test(t)) && figs.some((t) => /^2 units still to collect$/.test(t)) && figs.some((t) => /^03 Sep 2026$/.test(t)),
-    "a delivery charge, a paid date, a unit figure and a cancelled date each carry salt-lines__sub--figure (C3): " + JSON.stringify(figs));
-  ok(word.some((t) => /on behalf of a friend/.test(t)) && word.some((t) => /to be collected and paid/.test(t)) && !figs.some((t) => /on behalf|to be collected and paid/.test(t)),
-    "a words-only sub-line keeps the plain class (C3): " + JSON.stringify(word));
-  ok(word.includes("Part paid from your reward") && !figs.includes("Part paid from your reward"), "a cover row's sub-line is words and stays plain (C3): " + JSON.stringify(word));
-  ok(figs.some((t) => /^0\.5 units? applied /.test(t)), "the in-kind units figure sub-line carries the figure class (C3): " + JSON.stringify(figs));
-  ok(figs.some((t) => /^RM 40\.00 paid, see Refunds$/.test(t)), "a cancelled row's paid-and-refunded sub-line carries the figure class (C3): " + JSON.stringify(figs));
-  const R = (await import("../stmt/statement-css.js")).SITE_RECIPES;
-  ok(/\.salt-lines__sub--figure \{ font-family: var\(--salt-font-mono\); font-variant-numeric: tabular-nums; \}/.test(R), "the shipped Counter CSS carries the system's figure recipe, pulled and never restated (C3)");
+  /* 16 Nov 2026, the move to Ambient (place D): a sub-line is the system's Table small line, figures and words alike; the table's own tabular figures set a date or a figure,
+     so the two classes of the old lines are one class and one rule of the system's */
+  const subs = [...live.matchAll(/<span class="(amb-table__sub)">([^<]*)<\/span>/g)].map((m) => m[2]);
+  ok(subs.some((t) => /^plus delivery RM 15\.00/.test(t)) && subs.some((t) => /^paid 20 Sep 2026$/.test(t)) && subs.some((t) => /^2 units still to collect$/.test(t)) && subs.some((t) => /^03 Sep 2026$/.test(t)),
+    "a delivery charge, a paid date, a unit figure and a cancelled date each stand as the system's small line (C3): " + JSON.stringify(subs));
+  ok(subs.some((t) => /on behalf of a friend/.test(t)) && subs.some((t) => /to be collected and paid/.test(t)) && !/salt-lines/.test(live),
+    "a words-only sub-line is the same small line (C3): " + JSON.stringify(subs));
+  ok(subs.includes("Part paid from your reward"), "a cover row's sub-line is words (C3): " + JSON.stringify(subs));
+  ok(subs.some((t) => /^0\.5 units? applied /.test(t)), "the in-kind units figure sub-line is the small line (C3): " + JSON.stringify(subs));
+  ok(subs.some((t) => /^RM 40\.00 paid, see Refunds$/.test(t)), "a cancelled row's paid-and-refunded sub-line is the small line (C3): " + JSON.stringify(subs));
+  const AMBCSS = (await import("../stmt/statement-css.js")).AMB_CSS;
+  ok(/\.amb-table \{[^}]*font-variant-numeric: tabular-nums/.test(AMBCSS), "the shipped Counter CSS carries the system's tabular figures for the table, pulled and never restated (C3)");
 })();
 section("S2 2.11: the Counter carries the recipes it will use, whole, in the system's order, and none of the system's notes");
 await (async () => {
@@ -45343,8 +45353,8 @@ await (async () => {
   const byRid = (rid) => rowsOf.find((x) => x.rid === rid);
   const docJson = JSON.stringify(doc);
   const figs = (t) => (String(t || "").match(/RM [0-9,]+\.\d\d/g) || []).map((x) => +x.slice(3).replace(/,/g, ""));
-  const lineOf = (d) => doc.body.split('<div class="salt-lines__row').find((x) => x.includes('role="cell">' + d)) || "";
-  const amtOf = (l) => (/salt-lines__amount" role="cell">([\s\S]*?)<\/div>/.exec(l) || [])[1] || "";
+  const lineOf = (d) => doc.body.split("<tr").find((x) => x.includes('<td data-label="Date">' + d)) || "";   /* 16 Nov 2026, the move to Ambient: a line is a row of the system's Table */
+  const amtOf = (l) => (/<td data-label="Amount"[^>]*>([\s\S]*?)<\/td>/.exec(l) || [])[1] || "";
 
   /* (b) OWED PLUS PAID ADDS UP TO THE ORDER AT GOODS PLUS DELIVERY, on every priced row (a pending order counts nowhere,
      the standing rule since v189, so rc03 is not one of these): the cover is never part of the arithmetic, Fable's case

@@ -107,7 +107,8 @@ export async function run({ ok, pageWork }) {
     /* ---- 4: the Pay opens the one sheet on the whole invoice */
     if (pill) pill.click();
     const sheet = D5.getElementById("paySheet"), sb = D5.getElementById("payBody");
-    const sheetRows = [...sb.querySelectorAll(".inv > .salt-ledger__row:not(.invt):not(.invtot)")].map((r) => t(r.querySelector(".salt-ledger__value")));
+    /* 16 Nov 2026, the move to Ambient: the pay sheet's lines are the system's rows, kept in the page and shown by What this pays */
+    const sheetRows = [...sb.querySelectorAll(".inv .amb-list > li")].map((r) => t(r.querySelector(".amb-row__amount")));
     ok(!sheet.hidden && t(D5.getElementById("payT")) === "Pay " + money(five.sum) && sheetRows.join() === "RM 100.00,RM 101.00,RM 102.00,RM 103.00,RM 104.00",
       "the Pay in the foot opens the pay sheet, which draws all five lines whole and not three: " + JSON.stringify({ open: !sheet.hidden, title: t(D5.getElementById("payT")), sheetRows }));
     D5.getElementById("payX").click();

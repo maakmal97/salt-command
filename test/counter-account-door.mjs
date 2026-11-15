@@ -34,7 +34,7 @@ export async function run({ ok }) {
   const prices = { at: new Date().toISOString(), week: { monday: "2026-10-05", label: "5 to 11 Oct 2026" }, soon: [],
     products: [{ product: "salt", unit: "unit", basis: "yours", rate: 100, orders: 3, sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] };
   const live = { at: "2026-10-11T08:00:00Z", owed: 0, pay: null,
-    body: '<h2 class="stmth">Statement of account</h2><p class="meta">Live statement</p><div class="salt-lines"><div class="salt-lines__row" data-m="2026-10">One line</div></div>' };
+    body: '<h2 class="amb-section">Statement of account</h2><p class="amb-basis">Live statement</p><table class="amb-table"><tbody><tr data-m="2026-10"><td>One line</td></tr></tbody></table>' };
   const body = { ok: true, assoc: false, wrap: await C.wrapKey(pass, ck), session: "sess-7d2-abcdefghij", liveStatus: "fixture",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
     live: Object.assign({ at: live.at }, await C.encryptWith(ck, JSON.stringify(live))),
@@ -84,7 +84,7 @@ export async function run({ ok }) {
     const w = dom.window, d = w.document;
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    await until(() => !d.getElementById("tabs").hidden && d.querySelector("#out .stmth"));
+    await until(() => !d.getElementById("tabs").hidden && d.querySelector("#out h2.amb-section"));
     d.querySelector('button[data-t="stmt"]').click();
     await until(() => !d.getElementById("thisDevice").hidden);
     return { w, d, st };
@@ -105,19 +105,19 @@ export async function run({ ok }) {
     /* ---- 1: Account's order, read from the rendered DOM */
     const P = await open();
     const { d } = P;
-    const thread = d.querySelector("#acct #aThread .throw"), dev = d.querySelector("#acct #thisDevice"), stmt = d.querySelector("#acct .acct__main"), head = d.querySelector("#acct .acct__main #out .stmth");
-    ok(!!thread && t(thread.querySelector(".salt-inbox-row__title")) === W.EN["th.row"] && !!dev && !dev.hidden && !!head && t(head) === "Statement of account"
+    const thread = d.querySelector("#acct #aThread [data-thread]"), dev = d.querySelector("#acct #thisDevice"), stmt = d.querySelector("#acct .acct__main"), head = d.querySelector("#acct .acct__main #out h2.amb-section");
+    ok(!!thread && t(thread.querySelector(".amb-row__title")) === W.EN["th.row"] && !!dev && !dev.hidden && !!head && t(head) === "Statement of account"
       && before(thread, dev) && before(dev, head) && before(dev, stmt) && dev.parentNode === d.getElementById("acct") && stmt.parentNode === d.getElementById("acct"),
       "Account reads Messages, then This device, then the statement under its own heading: " + JSON.stringify({ thread: !!thread, dev: !!dev, head: t(head) }));
     const parts = ["mfil", "mfnote", "out"].map((id) => d.getElementById(id));
     ok(parts.every((x) => x && stmt.contains(x)) && !dev.contains(d.getElementById("out")) && !d.getElementById("aThread").closest(".acct__main")
       && !d.getElementById("stmtFoot") && !d.getElementById("stmtBack"),
       "the statement's parts (the month filter and its note, the list) stay together after the card, Messages is not among them, and no earlier statement or way back to one is drawn (14 Oct 2026)");
-    const acctRules = [...d.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.selectorText === ".acct");
-    const rule = acctRules.length === 1 ? acctRules[0].cssText.replace(/\s+/g, "") : "";
+    /* 16 Nov 2026, the move to Ambient (place D): Account is one of the system's stacks, so its gap is the stack's own and no margin of the page's stands in for it */
+    const acctEl = d.getElementById("acct");
     const gapRules = [...d.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => /^\.(acct__main|devcard|acct)$/.test(r.selectorText || "") && /margin(-top)?:\s*[1-9]/.test(r.cssText));
-    ok(/display:flex/.test(rule) && /flex-direction:column/.test(rule) && /gap:28px/.test(rule) && gapRules.length === 0 && d.querySelector("#aThread:empty") === null,
-      "the gap between the parts is the container's own, 28px, so a part not drawn leaves none, and no margin stands in for it: " + rule);
+    ok(acctEl.classList.contains("amb-stack") && stmt.classList.contains("amb-stack") && gapRules.length === 0 && d.querySelector("#aThread:empty") === null,
+      "the gap between the parts is the system's stack's own, so a part not drawn leaves none, and no margin stands in for it");
 
     /* ---- 2: the card, compact and ordered, every control with its id */
     const card = d.getElementById("thisDevice");
@@ -132,9 +132,10 @@ export async function run({ ok }) {
       + JSON.stringify({ lock: t(d.getElementById("lock")), keep: d.getElementById("keepHead").tagName }));
 
     /* 28 Oct 2026 (his yes, the statement in the language): Sign out is the last row of This device's list, in ember, never a ghost */
-    ok(d.getElementById("lock").classList.contains("salt-settings__row--danger") && !d.getElementById("lock").classList.contains("salt-ghost")
-      && d.getElementById("lock").parentNode.classList.contains("devlist") && d.getElementById("lock") === d.querySelector("#thisDevice .devlist").lastElementChild,
-      "Sign out is the list's last row, in ember, and no ghost button");
+/* 16 Nov 2026, the move to Ambient (place D): Sign out is the system's danger action, the last list of This device, and no ghost */
+    ok(d.getElementById("lock").classList.contains("amb-action--danger") && !d.querySelector("#thisDevice .salt-ghost")
+      && d.getElementById("lock").closest("ul.amb-settings__list") === d.querySelector("#thisDevice .devlist").lastElementChild && !!d.getElementById("lock").closest("li"),
+      "Sign out is the group's last row, the system's danger action, and no ghost button");
 
     /* ---- 3: Sign out, a tap and a tap again */
     const lock = d.getElementById("lock"), asked = W.fill(W.EN["dev.outAsk"], { dev: "computer" }, "en");
@@ -179,14 +180,13 @@ export async function run({ ok }) {
     const door = new JSDOM(landingPage(u, "n7d2d", null), { url: "https://site.test/" });
     wins.push(door.window);
     const dd = door.window.document, gate = dd.getElementById("gate"), h1 = gate.querySelector("h1"), appName = gate.querySelector('[data-w="door.app"]');
-    ok(!!appName && t(appName) === "Salt Counter" && t(appName) === W.EN["door.app"] && appName.tagName === "P" && appName.classList.contains("salt-eyebrow")
-      && before(appName, h1) && t(h1) === W.EN["door.h"] && !!gate.querySelector(".appmark svg") && before(gate.querySelector(".appmark"), appName)
-      && gate.querySelector(".appmark svg").getAttribute("aria-hidden") === "true",
-      "the door names the app, Salt Counter, in its ring and one eyebrow line above Sign in, which stays the page's one heading: " + JSON.stringify({ name: t(appName), h1: t(h1) }));
+    ok(!!appName && t(appName) === "Salt Counter" && t(appName) === W.EN["door.app"] && appName.tagName === "SPAN" && appName.classList.contains("amb-chip--glass")
+      && before(appName, h1) && t(h1) === W.EN["door.h"] && h1.classList.contains("amb-hero__title") && gate.classList.contains("amb-shell") && !gate.classList.contains("gate"),
+      "the door is a shell of the system, its hero naming the app, Salt Counter, in one glass chip above Sign in, which stays the page's one heading: " + JSON.stringify({ name: t(appName), h1: t(h1) }));
     const ownerGate = new JSDOM(landingPage("", "n7d2e", { master: "fixture-master", accounts: [] }), { url: "https://counter.fixture.test/all" }).window.document.getElementById("gate");
     ok(!!ownerGate && !ownerGate.querySelector('[data-w="door.app"]') && !ownerGate.querySelector(".appmark"),
       "his own page, which is Salt Admin, carries no copy of the customer's door name");
-    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now (craft.md section 3); it read "Lost your password or your link? Ask us ..." */
+    const help = [...gate.querySelectorAll(".amb-field__hint")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now (craft.md section 3); it read "Lost your password or your link? Ask us ..." */
     ok(!!help && help.children.length === 0 && help.innerHTML === W.fillHtml(W.EN["door.help"], {}, "en") && !/[*]/.test(W.EN["door.help"]) && !/[*]/.test(gate.textContent)
       && gate.querySelectorAll("a, [role=link], b, strong").length === 0 && /ask us for a new sign-in link\./.test(t(help)),
       "the help line is a sentence: plain words with nothing bold, brass or linked in it, and the door holds no link at all: " + JSON.stringify(help && help.innerHTML));
@@ -265,7 +265,7 @@ export async function run({ ok }) {
     const askedFirst = !!S.d.getElementById("ynSheet");
     S.st.down = true;
     await until(() => !S.d.getElementById("outSheet").hidden, 300);
-    const lapseUp = !S.d.getElementById("ynSheet") && behindShut(S.d, ["outScrim", "outSheet"]);
+    const lapseUp = !S.d.getElementById("ynSheet") && behindShut(S.d, ["outSheet"]);
     S.d.getElementById("outX").click();
     ok(askedFirst && lapseUp && S.d.getElementById("outSheet").hidden && clean(S.d) && S.d.activeElement === S.d.getElementById("lapseGo"),
       "a lapse takes the question down and leaves the signed-out Sheet over a shut page, and closing it gives the page back, the focus on Continue: " + JSON.stringify({ askedFirst, lapseUp, clean: clean(S.d) }));
@@ -273,9 +273,9 @@ export async function run({ ok }) {
     S2.st.down = true;
     await until(() => !S2.d.getElementById("outSheet").hidden, 300);
     const wayRes = [];
-    for (const [name, fn] of [["the scrim", (pg) => pg.d.getElementById("outScrim").click()], ["Escape", (pg) => key(pg, "Escape")]]) {
+    for (const [name, fn] of [["the scrim", (pg) => pg.d.getElementById("outSheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))], ["Escape", (pg) => key(pg, "Escape")]]) {
       if (S2.d.getElementById("outSheet").hidden) { S2.d.getElementById("lapseGo").click(); await until(() => !S2.d.getElementById("outSheet").hidden, 200); }
-      const up = behindShut(S2.d, ["outScrim", "outSheet"]);
+      const up = behindShut(S2.d, ["outSheet"]);
       fn(S2);
       wayRes.push([name, up, S2.d.getElementById("outSheet").hidden && clean(S2.d)]);
     }
@@ -294,14 +294,14 @@ export async function run({ ok }) {
     const owed = ord("20261011090007-adog", { status: "acknowledged", unit: 150, total: 150 });
     const R = await open({ orders: [owed], payq: JSON.stringify({ who: who(u), at: Date.now(), kind: "order", id: owed.id, away: { amt: 150, rail: "transfer", acct: "maybank" } }) });
     await until(() => !R.d.getElementById("paySheet").hidden);
-    const backUp = !R.d.getElementById("paySheet").hidden && behindShut(R.d, ["payScrim", "paySheet"]);
+    const backUp = !R.d.getElementById("paySheet").hidden && behindShut(R.d, ["paySheet"]);
     R.d.getElementById("payX").click();
     const Pp = await open({ orders: [owed] });
     Pp.d.querySelector('button[data-t="order"]').click();
     await until(() => Pp.d.querySelector('#pOrder [data-row="' + owed.id + '"]')); Pp.d.querySelector('#pOrder [data-row="' + owed.id + '"]').click();
-    await until(() => [...Pp.d.querySelectorAll("#pOrder .oact button")].some((b) => /^Pay RM/.test(t(b))));
-    [...Pp.d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))).click();
-    const payUp = !Pp.d.getElementById("paySheet").hidden && behindShut(Pp.d, ["payScrim", "paySheet"]);
+    await until(() => [...Pp.d.querySelectorAll("#pOrder .amb-foot button")].some((b) => /^Pay RM/.test(t(b))));
+    [...Pp.d.querySelectorAll("#pOrder .amb-foot button")].find((b) => /^Pay RM/.test(t(b))).click();
+    const payUp = !Pp.d.getElementById("paySheet").hidden && behindShut(Pp.d, ["paySheet"]);
     Pp.d.getElementById("payX").click();
     ok(backUp && R.d.getElementById("paySheet").hidden && clean(R.d) && payUp && Pp.d.getElementById("paySheet").hidden && clean(Pp.d),
       "the pay Sheet shuts the page behind it, opened by an order's Pay or again on the return from the bank, and closing it gives the page back: " + JSON.stringify({ backUp, payUp, shut: [shutIds(R.d), shutIds(Pp.d)] }));
