@@ -141,6 +141,57 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .otick { width: 40px; height: 40px; color: var(--amb-pos); }
 .ofl { display: block; font-size: var(--amb-text-caption); color: var(--amb-ink-2); }
 
+/* ---- Customers (Salt Admin): accounts, messages, links and associates ---- */
+/* the find field, the filters and the notice stand in a stack of their own over the two panes; the panes' wrappers hold no place of their own, so a record's foot stays the last thing of its stack */
+#oAccts, .chatgrid { display: grid; gap: var(--amb-space-4); min-width: 0; }
+#aopen, .oacct, .amore, #makerChatOpen { display: contents; }
+.asec, .ahead, .agroup, .athreads, .glinks { display: grid; gap: var(--amb-space-3); min-width: 0; align-content: start; }
+.ahead__line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); margin: 0; }
+.ahead__code, .chathead__code { overflow-wrap: anywhere; }
+.ahead .un { font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); color: var(--amb-ink-2); overflow-wrap: anywhere; }
+.arow .acode[data-who], .athrow .acode[data-who] { font-family: var(--amb-font-mono); overflow-wrap: anywhere; }
+.amb-settings__foot:empty, .amb-field__hint:empty { display: none; }
+.amb-settings__list > li:has(> button[hidden]:only-child) { display: none; }
+/* a move's answer and a link's panel stand under their row, in the list's own line */
+.oask, .glpanel { list-style: none; display: grid; gap: var(--amb-space-3); justify-items: start; padding: 0 var(--amb-space-4) var(--amb-space-3); margin: 0; }
+.oask:empty { display: none; }
+.oask > p, .glpanel > p { margin: 0; }
+.oask .amb-codeframe, .glpanel .amb-codeframe, .amb-sheet .amb-codeframe { justify-self: center; }
+.oask .gu, .glpanel .gu { overflow-wrap: anywhere; font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); }
+.glpanel > .amb-settings { justify-self: stretch; }
+.glrow.off { opacity: .6; }
+.need-lead { color: var(--amb-ink-2); margin-inline-end: var(--amb-space-1); }
+/* a figure beside the account's head, a thread's amount owed */
+.ahead__fig { justify-self: start; }
+.chathead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--amb-space-3); min-width: 0; }
+.chathead__who { display: grid; gap: var(--amb-space-1); min-width: 0; }
+.chatmore { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }
+.chatnote:has(> #makerChatStatus:empty) { display: none; }
+/* the way back and the open thread's name show only where the list is not beside them */
+@container amb (min-width: 960px) { .aback { display: none; } }
+@container amb (max-width: 959px) {
+  #oAccts.open .afind, #oAccts.open #rlist, .chatgrid.open > .amb-stack:first-child, .chatgrid.open #makerChatList { display: none; }
+  #oAccts:not(.open) #aside, .chatgrid:not(.open) #chatside, #anone, #chatnone { display: none; }
+}
+/* what an account reads at a glance: the loyalty and reward meters, the spark of its rates */
+.acust__tiles { margin: 0; }
+.ameterrow { margin: 0; }
+.apct__prev:empty { display: none; }
+.apct__prev { display: grid; gap: var(--amb-space-2); }
+.apct__table .apct__at { font-weight: 600; }
+.apct__step .amb-input { text-align: center; font-variant-numeric: normal; }
+/* the associates' table: the reward's meter over its words */
+.ameter { display: grid; gap: var(--amb-space-1); min-width: 12rem; }
+.atable td:last-child, .atable th:last-child { padding-inline-start: var(--amb-space-5); }
+.atable tr.off { opacity: .6; }
+.aprodhead { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+/* the filters wrap onto a second line of chips and never narrow to the width a segment keeps (Ambient caps .amb-segment at 30rem; a gap for the parts session) */
+.amb-segment--wrap { max-width: none; }
+/* the links' and the associates' lists stand in their place's stack, the way the accounts' do */
+#glist, #jlist, #clist { display: contents; }
+/* a book's chip inside a pressed choice takes the choice's own ground and ink, its dot left as the chip draws it */
+.apct__books .amb-segment__opt > .amb-chip { background: transparent; color: inherit; border-color: transparent; padding-inline: 0; }
+
 /* ---- Counter: Orders and the order card, both readers' (the band, Steps, Bill, thread) ---- */
 /* the place is the shell's two panes (#pOrder is the split): a stack never insets a stack of its own; a list or a part stands level with its heading */
 .amb-stack .amb-stack { padding-inline: 0; }

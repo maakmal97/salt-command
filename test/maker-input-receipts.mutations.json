@@ -8,8 +8,8 @@
   {
     "name": "their % confirmed cache not released",
     "file": "stmt/owner.js",
-    "find": "    },false,function(){ at=null; sig=''; });\n    asRow(sendB);",
-    "replace": "    },false,function(){});\n    asRow(sendB);"
+    "find": "},function(){ at=null; sig=''; });\n    var use=aBtn(",
+    "replace": "},function(){});\n    var use=aBtn("
   },
   {
     "name": "house confirmed cache not released",
@@ -44,8 +44,8 @@
   {
     "name": "partner confirmed cache not released",
     "file": "stmt/owner.js",
-    "find": "},false,function(){ at=null; sig=''; });\n    b.classList.add('apart__go');",
-    "replace": "},false,function(){});\n    b.classList.add('apart__go');"
+    "find": "},function(){ at=null; sig=''; });\n    b.classList.add('apart__go');",
+    "replace": "},function(){});\n    b.classList.add('apart__go');"
   },
   {
     "name": "partner wrong generated body",
@@ -125,7 +125,7 @@
   {
     "name": "the refusal is said on the card",
     "file": "stmt/owner.js",
-    "find": "    acts.appendChild(answer); s.appendChild(acts);",
-    "replace": "    s.appendChild(acts); s.appendChild(answer);"
+    "find": "answer.className='amb-settings__foot anote aanswer apct__answer'; answer.setAttribute('role','status');",
+    "replace": "answer.className='amb-settings__foot anote aanswer apct__answer';"
   }
 ]

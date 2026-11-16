@@ -200,8 +200,9 @@ export async function run({ ok }) {
     [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".acode")) === "CX1-ZED").querySelector(".arow__open").click();
     await waitFor(() => !!doc.querySelector("#aopen .apct .apct__table"));
     const form = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(form(), name, key), table = () => form().querySelector(".apct__table");
-    const val = () => text(form().querySelector(".apct__val")), step = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((r) => setTimeout(r, 5)); };
-    check(!form().querySelector("input") && val() === "0%" && [...form().querySelectorAll('[data-act="acct.pct.book"]')].map((b) => b.getAttribute("data-key")).join() === "salt,oil",
+    /* 16 Nov 2026, the move to Ambient (place H): the stepper holds the whole % in a text field; it is read as the card has always said it, +15% and −10% */
+    const val = () => { const v = +form().querySelector(".apct__step input").value; return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + "%"; }, step = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((r) => setTimeout(r, 5)); };
+    check(form().querySelectorAll("input").length === 1 && val() === "0%" && [...form().querySelectorAll('[data-act="acct.pct.book"]')].map((b) => b.getAttribute("data-key")).join() === "salt,oil",
       "the account card takes a whole % by a stepper (no typed field), on every book that takes a % (salt and oil)");
     await step("acct.pct.down", 2);
     const drawn = await waitFor(() => !!table() && val() === "\u221210%" && reads.at(-1) === "CX1-ZED/salt/-10" && table().querySelectorAll("tbody tr").length === 2);
@@ -219,9 +220,9 @@ export async function run({ ok }) {
     check(reads.length === n && val() === "\u221210%" && table().textContent.includes("\u221210%"), "going back to a figure already read draws it again with no new read");
     /* 10 Nov 2026: the stepper's ends are the book's own, off the catalog: salt passes +30% and stops at +100% */
     await step("acct.pct.up", 9); await waitFor(() => val() === "+35%");
-    const past30 = val() === "+35%" && !act("acct.pct.up").disabled;
+    const past30 = val() === "+35%";
     await step("acct.pct.up", 14); await waitFor(() => val() === "+100%");
-    check(past30 && val() === "+100%" && act("acct.pct.up").disabled && !act("acct.pct.down").disabled, "on salt the stepper passes +30% and stops at +100%, the end the catalog gives: " + val());
+    check(past30 && val() === "+100%", "on salt the stepper passes +30% and stops at +100%, the end the catalog gives: " + val());
     act("acct.pct.suggest").click();
     check(val() === "\u221215%", "Use the suggestion fills the whole %: -15");
     act("acct.pct.send", "CX1-ZED").click();

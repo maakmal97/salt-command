@@ -55,7 +55,7 @@ export async function run({ ok, pageWork }) {
 
   /* ---- Salt Admin's two leads, written in the page ---- */
   const page = new JSDOM(landingPage("", "r2-nonce", { master: "fixture-master", accounts: [] })).window.document;
-  const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks .lead"));
+  const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks > .amb-field__hint"));
   ok(sentence(group, 20) && sentence(links, 20), "W5: Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most: " + J([group, links]));
   /* 16 Nov 2026, the move to Ambient (place D): the names Sheet leads with the system's basis line */
   const vaultLead = t(page.querySelector("#vaultSheet .amb-basis"));
@@ -81,7 +81,7 @@ export async function run({ ok, pageWork }) {
     enter(d, "customers", "accounts"); await p.work.quiet();
     /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
     const acct = (code) => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === code);
-    await click(acct("CX1-ZED"));
+    await click(acct("CX1-ZED").querySelector(".amb-row__main"));
     const a = d.querySelector("#aopen .oacct"), key = "CX1-ZED:" + SINCE + ":40:";
     const paid = byAct(a, "acct.refund", key + "refundPaid"), stale = byAct(a, "acct.refund", key + "refundRemove"), out = byAct(a, "acct.signout-all");
     const named = [t(paid), t(stale), t(out)];
@@ -91,13 +91,13 @@ export async function run({ ok, pageWork }) {
       && asked.length === 1 && /^Sign out everywhere\?/.test(asked[0]) && t(out) === "Sign out everywhere",
       "W6: a refund's two buttons read Tap again to confirm once tapped, and Sign out everywhere asks on the Sheet: " + J({ named, armed: [t(paid), t(stale), t(out)], asked }));
     /* 3 Nov 2026 (the account on Shop's grid): the refund's line is the text row of its own list */
-    const note = t(a.querySelector(".arefund__row .salt-settings__row--text .salt-settings__label"));
-    ok(/^RM 40[.]00 to CX1-ZED, .*Paid marks it returned[.]$/.test(note) && nw(note) <= 14 && !/Remove as stale|money received/.test(note),
+    const note = t(a.querySelector(".arefund__line"));
+    ok(/^RM 40[.]00 to CX1-ZED, .*Paid marks it returned$/.test(note) && nw(note) <= 14 && !/Remove as stale|money received/.test(note),
       "W7: a refund's line is its figure and what Paid does, with no second explanation: " + J(note));
 
     /* the account thread: a No reply needed that did not go through */
     enter(d, "customers", "messages"); await p.work.quiet();
-    await click(d.querySelector('[data-thread="abcd-efgh"]'));
+    await click(d.querySelector('[data-thread="abcd-efgh"] .amb-row__main'));
     p.fail.add("/all/maker/threads/abcd-efgh");
     const chat = d.getElementById("makerChatOpen"), chatBtn = (label) => [...chat.querySelectorAll("button")].find((b) => t(b) === label);
     const before = !!chatBtn("No reply needed");

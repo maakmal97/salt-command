@@ -1,37 +1,212 @@
 [
- {"name":"C3 the account's code link is a small target","file":"stmt/page.js","find":".adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}","replace":".adm .salt-table--rows tbody th a{display:inline}"},
- {"name":"C1 Customers is not a Segment","file":"stmt/page.js","find":"const ADMIN_SLIDERS = [\"customers\"];","replace":"const ADMIN_SLIDERS = [];"},
- {"name":"C1 the old address #cards lands nowhere","file":"stmt/owner.js","find":"cards:['customers','associates']","replace":"cards:['customers','']"},
- {"name":"C2 a group head is not a settings head","file":"stmt/owner.js","find":"sec.appendChild(el('h2','salt-settings__head',g.head));","replace":"sec.appendChild(el('h2','nsev',g.head));"},
- {"name":"C2 a late row is not ember","file":"stmt/owner.js","find":"(s.late?' salt-settings__sub--late':s.sev==='now'?' salt-settings__sub--why':'')","replace":"''"},
- {"name":"C2 a row waiting on him is not copper","file":"stmt/owner.js","find":":s.sev==='now'?' salt-settings__sub--why':'')","replace":":'')"},
- {"name":"C2 the way is the filled pill","file":"stmt/owner.js","find":"b.classList.add('salt-ghost','salt-ghost--lit','salt-ghost--tight'); return b; }\n  function rowTail","replace":"return b; }\n  function rowTail"},
- {"name":"C2 a group stands in a glass card","file":"stmt/owner.js","find":"var sec=el('section',null), list=el('div','salt-settings');","replace":"var sec=el('section',null), list=el('div','salt-settings salt-glass-card');"},
- {"name":"C2 an empty tail is shown","file":"stmt/owner.js","find":"tail.box.hidden=!on;","replace":"tail.box.hidden=false;"},
- {"name":"C4 an answer does not make the row wrap","file":"stmt/owner.js","find":"row.classList.toggle('arow--ask',on&&!wide);","replace":""},
- {"name":"C3 the table has no colgroup","file":"stmt/owner.js","find":"widths.forEach(function(w){ var c=el('col');","replace":"[].forEach(function(w){ var c=el('col');"},
- {"name":"C3 the table is not the rows table","file":"stmt/owner.js","find":"tb=el('table','salt-table salt-table--plain salt-table--rows');\n    var cg=el('colgroup')","replace":"tb=el('table','salt-table salt-table--plain');\n    var cg=el('colgroup')"},
- {"name":"C3 a username is not left","file":"stmt/owner.js","find":"row.appendChild(el('td','salt-table__left',a.username));","replace":"row.appendChild(el('td',null,a.username));"},
- {"name":"C3 a group has no head row","file":"stmt/owner.js","find":"tableGroup(t,g.head).setAttribute('data-sev',g.sev);","replace":""},
- {"name":"C3 the move is not in the act cell","file":"stmt/owner.js","find":"var go=el('td'), act=el('div','salt-table__act');","replace":"var go=el('td'), act=el('div','x');"},
- {"name":"C3 the code is not a link","file":"stmt/owner.js","find":"open=el('a','arow__open',who); whoTag(open,who);","replace":"open=el('span','arow__open',who); whoTag(open,who);"},
- {"name":"C4 Show opens nothing","file":"stmt/owner.js","find":"sh.addEventListener('click', openSilver);","replace":""},
- {"name":"C4 Send makes no link","file":"stmt/owner.js","find":"try{ m.j=await mintLink(a);","replace":"try{ m.j={msg:''}; void a;"},
- {"name":"C4 Message opens no thread","file":"stmt/owner.js","find":"ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); });","replace":""},
- {"name":"C4 Open opens nothing","file":"stmt/owner.js","find":"op.addEventListener('click', function(){ openCard(a.username); });","replace":""},
- {"name":"C5 the invitation is back beside the table","file":"stmt/page.js","find":"<div id=\"aopen\" class=\"salt-pane\" hidden></div></div>","replace":"<div id=\"aopen\" class=\"salt-pane\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>"},
- {"name":"C5 the list shares its column from the start","file":"stmt/page.js","find":".adm .nsplit,.adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}","replace":".adm .nsplit,.adm .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}"},
- {"name":"C6 the back is a text link","file":"stmt/owner.js","find":"var b=el('button','salt-orb'); b.type='button'; b.setAttribute('data-back',way);","replace":"var b=el('button','aback'); b.type='button'; b.setAttribute('data-back',way);"},
- {"name":"C6 the back has no name","file":"stmt/owner.js","find":"b.setAttribute('aria-label',label);\n    var g=svgEl(","replace":"var g=svgEl("},
- {"name":"C6 the back has no chevron","file":"stmt/owner.js","find":"g.appendChild(svgEl('path',{d:'M15 6 L9 12 L15 18'})); b.appendChild(g); return b;","replace":"return b;"},
- {"name":"C6 the back does not return","file":"stmt/owner.js","find":"if(way==='accounts') openCard(null);","replace":"if(way==='accounts') void 0;"},
- {"name":"C6 Record's back is named for nothing","file":"stmt/owner.js","find":"amb.circle('All forms','back',{'data-back':'form'})","replace":"amb.circle('Back','back',{'data-back':'form'})"},
- {"name":"C6 the account's back is named for nothing","file":"stmt/owner.js","find":"backOrb('accounts','All accounts')","replace":"backOrb('accounts','Back')"},
- {"name":"C7 the Accounts tab does not return","file":"stmt/owner.js","find":"if(t&&aOpen&&t.parentNode.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);","replace":""},
- {"name":"C8 the lead is two sentences","file":"stmt/owner.js","find":"bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });","replace":"bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('. ')); box.appendChild(n); });"},
- {"name":"C8 the lead is not copper","file":"stmt/page.js","find":"<p class=\"salt-insight salt-insight--copper alead\"","replace":"<p class=\"salt-insight alead\""},
- {"name":"C9 Associates is not the rows table","file":"stmt/owner.js","find":"table=el('table','salt-table salt-table--plain salt-table--rows'), hr=el('tr'), body=el('tbody'), tiered=","replace":"table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody'), tiered="},
- {"name":"C9 an Associates word column keeps the Desk's l","file":"stmt/owner.js","find":"var th=el('th',i<2||i===5?'salt-table__left':null,h);","replace":"var th=el('th',i<2||i===5?'l':null,h);"},
- {"name":"C9 Their % is not the rows table","file":"stmt/owner.js","find":"table=el('table','salt-table salt-table--plain salt-table--rows'), hr=el('tr'), body=el('tbody');","replace":"table=el('table','salt-table salt-table--plain'), hr=el('tr'), body=el('tbody');"},
- {"name":"C9 Their % first column keeps the Desk's l","file":"stmt/owner.js","find":"var th=el('th',i?null:'salt-table__left',t);","replace":"var th=el('th',i?null:'l',t);"}
+  {
+    "name": "C3 the row's text is not the row's main",
+    "file": "stmt/owner.js",
+    "find": "var open=actOn(el('button','amb-row__main arow__open'),",
+    "replace": "var open=actOn(el('button','arow__open'),"
+  },
+  {
+    "name": "C1 Customers is not a Segment",
+    "file": "stmt/page.js",
+    "find": "p === \"shop\" || p === \"record\" || p === \"customers\"",
+    "replace": "p === \"shop\" || p === \"record\""
+  },
+  {
+    "name": "C1 the old address #cards lands nowhere",
+    "file": "stmt/owner.js",
+    "find": "cards:['customers','associates']",
+    "replace": "cards:['customers','']"
+  },
+  {
+    "name": "C2 a group head is not a settings head",
+    "file": "stmt/owner.js",
+    "find": "sec.appendChild(el('h2','amb-section',g.head));",
+    "replace": "sec.appendChild(el('h2','nsev',g.head));"
+  },
+  {
+    "name": "a state word is not ember",
+    "file": "stmt/owner.js",
+    "find": "sub.appendChild(el('span',s.sev==='now'||s.late?'amb-neg':null,s.word));",
+    "replace": "sub.appendChild(el('span',null,s.word));"
+  },
+  {
+    "name": "a row waiting on him is not ember",
+    "file": "stmt/owner.js",
+    "find": "sub.appendChild(el('span',s.sev==='now'||s.late?'amb-neg':null,s.word));",
+    "replace": "sub.appendChild(el('span',s.late?'amb-neg':null,s.word));"
+  },
+  {
+    "name": "C2 the way is the large pill",
+    "file": "stmt/owner.js",
+    "find": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm';",
+    "replace": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill';"
+  },
+  {
+    "name": "C2 a group stands in a glass card",
+    "file": "stmt/owner.js",
+    "find": "var sec=el('section','agroup'), list=el('ul','amb-list amb-list--ruled');",
+    "replace": "var sec=el('section','agroup'), list=el('ul','amb-list amb-list--ruled salt-glass-card');"
+  },
+  {
+    "name": "C2 an empty tail is shown",
+    "file": "stmt/owner.js",
+    "find": "tail.hidden=!tail.textContent&&!tail.querySelector('figure');",
+    "replace": "tail.hidden=false;"
+  },
+  {
+    "name": "the answer is not under its row",
+    "file": "stmt/owner.js",
+    "find": "    return [li, tail];\n  }\n  /* Show, for an ID",
+    "replace": "    return [tail, li];\n  }\n  /* Show, for an ID"
+  },
+  {
+    "name": "C3 a row names no account",
+    "file": "stmt/owner.js",
+    "find": "    li.setAttribute('data-u',a.username);\n    if(s.act==='message'",
+    "replace": "    if(s.act==='message'"
+  },
+  {
+    "name": "C3 a row is not Ambient's row",
+    "file": "stmt/owner.js",
+    "find": "li=el('li','amb-row arow'), mv=null;",
+    "replace": "li=el('li','arow'), mv=null;"
+  },
+  {
+    "name": "the move is not in the trail",
+    "file": "stmt/owner.js",
+    "find": "if(mv){ var tr=el('span','amb-row__trail'); tr.appendChild(mv); li.appendChild(tr); }",
+    "replace": "if(mv){ li.appendChild(mv); }"
+  },
+  {
+    "name": "the sum is not in the second line",
+    "file": "stmt/owner.js",
+    "find": "if(+s.rm>0.004){ sub.appendChild(document.createTextNode(', ')); sub.appendChild(el('span',s.mine?'amb-neg':null,rmShort(s.rm))); }",
+    "replace": ""
+  },
+  {
+    "name": "the guest code is not in the system's frame",
+    "file": "stmt/owner.js",
+    "find": "fld.appendChild(img); box.appendChild(fld);\n      cap.appendChild(el('code','gu',r.url)); box.appendChild(cap);",
+    "replace": "box.appendChild(img);\n      cap.appendChild(el('code','gu',r.url)); box.appendChild(cap);"
+  },
+  {
+    "name": "the way back names no destination",
+    "file": "stmt/owner.js",
+    "find": "b.setAttribute('data-back','accounts');",
+    "replace": ""
+  },
+  {
+    "name": "C4 Show opens nothing",
+    "file": "stmt/owner.js",
+    "find": "c._body.insertBefore(cp, note); c._body.insertBefore(box, cp); sh.disabled=true;",
+    "replace": "sh.disabled=true;"
+  },
+  {
+    "name": "C4 Send makes no link",
+    "file": "stmt/owner.js",
+    "find": "try{ m.j=await mintLink(a);",
+    "replace": "try{ m.j={msg:''}; void a;"
+  },
+  {
+    "name": "C4 Message opens no thread",
+    "file": "stmt/owner.js",
+    "find": "ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); });",
+    "replace": ""
+  },
+  {
+    "name": "C4 Open opens nothing",
+    "file": "stmt/owner.js",
+    "find": "op.addEventListener('click', function(){ openCard(a.username); });",
+    "replace": ""
+  },
+  {
+    "name": "the prompt beside the list is never shown",
+    "file": "stmt/page.js",
+    "find": "<p class=\"amb-empty\" id=\"anone\">Choose an account.</p>",
+    "replace": "<p class=\"amb-empty\" id=\"anone\" hidden>Choose an account.</p>"
+  },
+  {
+    "name": "the second pane has another name",
+    "file": "stmt/page.js",
+    "find": "<div id=\"aside\" class=\"amb-stack\">",
+    "replace": "<div id=\"asid\" class=\"amb-stack\">"
+  },
+  {
+    "name": "C6 the back is a text link",
+    "file": "stmt/owner.js",
+    "find": "var b=aBtn('','amb-pill amb-pill--quiet amb-pill--sm aback','acct.back');",
+    "replace": "var b=aBtn('','aback','acct.back');"
+  },
+  {
+    "name": "C6 the back has no name",
+    "file": "stmt/owner.js",
+    "find": "b.setAttribute('aria-label','All accounts'); return b;",
+    "replace": "return b;"
+  },
+  {
+    "name": "C6 the back has no glyph",
+    "file": "stmt/owner.js",
+    "find": "b.appendChild(ambIcon('back','amb-icon--sm')); ",
+    "replace": ""
+  },
+  {
+    "name": "C6 the back does not return",
+    "file": "stmt/owner.js",
+    "find": "if(way==='accounts') openCard(null);",
+    "replace": "if(way==='accounts') void 0;"
+  },
+  {
+    "name": "C6 Record's back is named for nothing",
+    "file": "stmt/owner.js",
+    "find": "amb.circle('All forms','back',{'data-back':'form'})",
+    "replace": "amb.circle('Back','back',{'data-back':'form'})"
+  },
+  {
+    "name": "C6 the account's back is named for nothing",
+    "file": "stmt/owner.js",
+    "find": "b.appendChild(document.createTextNode(' All accounts')); b.setAttribute('aria-label','All accounts'); return b;",
+    "replace": "b.appendChild(document.createTextNode(' Back')); b.setAttribute('aria-label','Back'); return b;"
+  },
+  {
+    "name": "C7 the Accounts tab does not return",
+    "file": "stmt/owner.js",
+    "find": "if(t&&aOpen&&t.parentNode.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);",
+    "replace": ""
+  },
+  {
+    "name": "C8 the lead is two sentences",
+    "file": "stmt/owner.js",
+    "find": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });",
+    "replace": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('. ')); box.appendChild(n); });"
+  },
+  {
+    "name": "the lead is not a notice",
+    "file": "stmt/page.js",
+    "find": "<div class=\"amb-notice alead\" id=\"alead\" hidden>",
+    "replace": "<div class=\"alead\" id=\"alead\" hidden>"
+  },
+  {
+    "name": "Associates is not the stacking table",
+    "file": "stmt/owner.js",
+    "find": "var table=el('table','amb-table amb-table--stack atable')",
+    "replace": "var table=el('table','amb-table atable')"
+  },
+  {
+    "name": "an Associates figure column is not right",
+    "file": "stmt/owner.js",
+    "find": "var th=el('th',num[i]?'is-num':null,h); th.setAttribute('scope','col'); hr.appendChild(th); });\n    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);\n    p.rows",
+    "replace": "var th=el('th',null,h); th.setAttribute('scope','col'); hr.appendChild(th); });\n    table.appendChild(el('thead')).appendChild(hr); table.appendChild(body);\n    p.rows"
+  },
+  {
+    "name": "Their % is not the stacking table",
+    "file": "stmt/owner.js",
+    "find": "table=el('table','amb-table amb-table--stack apct__table')",
+    "replace": "table=el('table','amb-table apct__table')"
+  },
+  {
+    "name": "Their % first column is a figure",
+    "file": "stmt/owner.js",
+    "find": "var th=el('th',i?'is-num':null,t);",
+    "replace": "var th=el('th','is-num',t);"
+  }
 ]

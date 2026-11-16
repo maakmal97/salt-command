@@ -23,7 +23,7 @@ const onCard = async (doc, work) => {
   enter(doc, "customers", "accounts"); await work.quiet();
   /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
   const card = [...doc.querySelectorAll("#rlist [data-u]")].find((c) => c.querySelector(".acode").textContent === "CX1-ZED");
-  card.click(); await work.quiet(); await work.quiet();
+  card.querySelector(".amb-row__main").click(); await work.quiet(); await work.quiet();
 };
 const cases = [
   { label: "Record the count", path: "stock-count",
@@ -36,7 +36,7 @@ const cases = [
   { label: "Send +20%", path: "tier-set", card: true, find: (doc) => byAct(doc.getElementById("aopen"), "acct.pct.send", "CX1-ZED"), within: ".apct",
     body: { code: "CX1-ZED", product: "salt", tier: 0.2, unit: "pct" },
     edit(root, changed) {   // a whole % by the stepper, in steps of 5
-      const out = root.querySelector(".apct__val"), want = changed ? 30 : 20, now = () => parseInt(out.textContent.replace("−", "-"), 10);
+      const out = root.querySelector(".apct__step input"), want = changed ? 30 : 20, now = () => parseInt(out.value, 10);   /* 16 Nov 2026 (place H): the stepper is a field holding the whole % */
       while (now() !== want) root.querySelector('[data-act="' + (now() < want ? "acct.pct.up" : "acct.pct.down") + '"]').click();
       return out;
     } },

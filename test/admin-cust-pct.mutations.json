@@ -8,8 +8,8 @@
   {
     "name": "1 the suggestion's why",
     "file": "stmt/owner.js",
-    "find": "sug!=null&&card.why?card.why.charAt(0)",
-    "replace": "false?card.why.charAt(0)"
+    "find": "if(sug!=null&&card.why) L.foot(",
+    "replace": "if(false) L.foot("
   },
   {
     "name": "1 Send off while unchanged",
@@ -18,22 +18,22 @@
     "replace": "sendB.textContent='Send '+pctWord(whole); sendB.disabled=false;"
   },
   {
-    "name": "2 a step is 5",
+    "name": "a step is 5",
     "file": "stmt/owner.js",
-    "find": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(lim.min, Math.ceil(st.pct[st.book]/5)*5-5); pctPaint(); });",
-    "replace": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(lim.min, Math.ceil(st.pct[st.book]/5)*5-10); pctPaint(); });"
+    "find": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);",
+    "replace": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=10) list.push(v);"
   },
   {
-    "name": "2 stops at the book's low end",
+    "name": "the list starts at the book's low end",
     "file": "stmt/owner.js",
-    "find": "down.disabled=whole<=lim.min;",
-    "replace": "down.disabled=false;"
+    "find": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);",
+    "replace": "for(v=Math.ceil(lim.min/5)*5+5;v<=lim.max;v+=5) list.push(v);"
   },
   {
     "name": "2 the low end is the book's, not -30",
     "file": "stmt/owner.js",
-    "find": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(lim.min,",
-    "replace": "down.addEventListener('click', function(){ st.pct[st.book]=Math.max(-30,"
+    "find": "lim={min:typeof pbook.driftMin==='number'?pbook.driftMin:-30,",
+    "replace": "lim={min:-30,"
   },
   {
     "name": "2 the preview at the new %",
@@ -62,8 +62,8 @@
   {
     "name": "4 no Set back to 0 with nothing set",
     "file": "stmt/owner.js",
-    "find": "    if(card.held){\n      clr=makerButton(",
-    "replace": "    if(true){\n      clr=makerButton("
+    "find": "    if(card.held){\n      var clr=aActBtn(",
+    "replace": "    if(true){\n      var clr=aActBtn("
   },
   {
     "name": "5 This customer by code",
@@ -74,8 +74,8 @@
   {
     "name": "5 the loyalty meter",
     "file": "stmt/owner.js",
-    "find": "var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr); m.style.setProperty('--salt-fill',String(share));",
-    "replace": "var tr=el('div','salt-meter__track'); tr.appendChild(el('div','salt-meter__fill')); m.appendChild(tr);"
+    "find": "units, they see '+share+'%', share));",
+    "replace": "units, they see '+share+'%', 0));"
   },
   {
     "name": "5 the reward by code",

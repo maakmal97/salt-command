@@ -12,16 +12,16 @@
     "replace": "isAssoc(r)?'Made by ':''"
   },
   {
-    "name": "2 opens under Opens",
+    "name": "the opens are not said",
     "file": "stmt/owner.js",
-    "find": "fig.appendChild(el('span','salt-eyebrow salt-eyebrow--mist nfig__k','Opens'));",
-    "replace": ""
+    "find": "sub.appendChild(document.createTextNode(', '+age+(shut?'':', opened '+(r.opens||0)+(+r.opens===1?' time':' times')))); tx.appendChild(sub);",
+    "replace": "sub.appendChild(document.createTextNode(', '+age)); tx.appendChild(sub);"
   },
   {
-    "name": "2 nothing for a shut link",
+    "name": "a shut link says its opens",
     "file": "stmt/owner.js",
-    "find": "      if(!shut){ fig.classList.add('nfig--opens');",
-    "replace": "      if(true){ fig.classList.add('nfig--opens');"
+    "find": "(shut?'':', opened '+(r.opens||0)",
+    "replace": "(false?'':', opened '+(r.opens||0)"
   },
   {
     "name": "2 the last open's day",
@@ -32,19 +32,19 @@
   {
     "name": "3 Restore once withdrawn",
     "file": "stmt/owner.js",
-    "find": "else if(r.revoked){ go=pill(['Restore','link.restore-card',r.id]);",
-    "replace": "else if(false){ go=pill(['Restore','link.restore-card',r.id]);"
+    "find": "else if(r.revoked){ go=aPill('Restore','link.restore-card',r.id,true);",
+    "replace": "else if(false){ go=aPill('Restore','link.restore-card',r.id,true);"
   },
   {
     "name": "3 Approve moves the link",
     "file": "stmt/owner.js",
-    "find": "if(pending){ go=pill(['Approve','link.approve-card',r.id]); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }",
-    "replace": "if(pending){ go=pill(['Approve','link.approve-card',r.id]); }"
+    "find": "if(pending){ go=aPill('Approve','link.approve-card',r.id,true); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }",
+    "replace": "if(pending){ go=aPill('Approve','link.approve-card',r.id,true); }"
   },
   {
     "name": "4 a tap opens it",
     "file": "stmt/owner.js",
-    "find": "open:true, onTap:function(){ card.open=!card.open; card.hidden=!card.open;",
-    "replace": "open:true, onTap:function(){ card.open=!card.open;"
+    "find": "main.addEventListener('click', function(){ card.open=!card.open; card.hidden=!card.open;",
+    "replace": "main.addEventListener('click', function(){ card.open=!card.open;"
   }
 ]

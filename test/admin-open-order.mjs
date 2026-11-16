@@ -70,11 +70,12 @@ export async function run({ ok, pageWork }) {
       const acct = d.querySelector("#aopen [data-acct]");
       ok(!!acct && acct.getAttribute("data-acct") === "abcd-efgh" && shown(acct), "V6: This customer opens their account on Customers: " + (acct && acct.getAttribute("data-acct")));
       /* V8: the open account */
-      const pills = [...acct.querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
-      const end = acct.querySelector(":scope > .salt-settings.aend"), acts = end ? [...end.children].map((b) => b.getAttribute("data-act")) : [];
+      /* 16 Nov 2026, the move to Ambient (place H): the one filled pill is the pane's foot, the ends a settings group of two danger actions with the answer as its foot */
+      const pills = [...acct.querySelectorAll(".amb-pill--block")].filter((b) => !b.hidden);
+      const end = acct.querySelector(":scope > .amb-settings.aend"), acts = end ? [...end.querySelectorAll("button")].map((b) => b.getAttribute("data-act")) : [];
       ok(pills.length === 1 && pills[0].getAttribute("data-act") === "acct.signin-link" && J(acts) === J(["acct.password", "acct.signout-all"])
-        && [...end.children].every((b) => b.matches(".salt-settings__row--danger")) /* 5 Nov 2026 (the pane): after the ends' list and its answer comes only the pinned foot, Send a sign-in link */
-        && !!end && end.nextElementSibling.matches("p.anote") && end.nextElementSibling.nextElementSibling === acct.lastElementChild && acct.lastElementChild.matches(".salt-pane__foot.afoot"),
+        && [...end.querySelectorAll("button")].every((b) => b.matches(".amb-action--danger")) /* 5 Nov 2026 (the pane): after the ends' list and its answer comes only the pinned foot, Send a sign-in link */
+        && !!end && end.lastElementChild.matches("p.anote") && end.nextElementSibling === acct.lastElementChild && acct.lastElementChild.matches(".amb-foot.afoot"),
         "V8: the account holds one filled pill, Send a sign-in link, and Copy password and Sign out everywhere are ember rows in its last list: " + J([pills.map(t), acts]));
       const asked = []; let yes = false; answerSheets(p.w, asked, () => yes);
       const so = byAct(acct, "acct.signout-all"), n0 = p.posts.length;

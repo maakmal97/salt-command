@@ -67,9 +67,10 @@ export async function run({ ok, pageWork }) {
     ok(has("#roster", "amb-shell") && has("#roster", "amb-shell--rail") && has("#roster > main", "amb-screen") && has("#roster > main", "amb-screen--docked")
       && !d.querySelector("#roster.salt-frame, .salt-frame__main, .salt-frame__bar") && d.querySelector("#roster > .amb-dock > nav.amb-tabbar") !== null,
       "F2.1 his shell is Ambient's: its screen the one scroll box, docked, and its dock the places; no salt-ds frame");
-    /* 16 Nov 2026, the move to Ambient (places F and I): Needs you's card (#nopen) is drawn in the record's column #nrecord of Ambient's split, and Shop's open day is the second stack of Ambient's panes; neither carries salt-pane */
-    const panes = ["#aopen", "#makerReview", "#makerChatOpen"].filter((s) => !has(s, "salt-pane"));
-    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (an account, an order, a thread) for its builder's split, Needs you's card has its column in Ambient's split and Shop's open day is a stack of Ambient's panes; not: " + J(panes));
+    /* 16 Nov 2026, the move to Ambient (places F, H and I): Needs you's card (#nopen) is drawn in the record's column #nrecord of Ambient's split, an account and a thread are the second stack of Ambient's panes (#aside, #chatside), and Shop's open day is the second stack of its panes; none carries salt-pane */
+    const panes = ["#makerReview"].filter((s) => !has(s, "salt-pane"));
+    ok(["#aside", "#chatside"].every((q) => !!d.querySelector(q) && d.querySelector(q).classList.contains("amb-stack") && !!d.querySelector(q).closest(".amb-split--panes")) && d.querySelector("#aside").previousElementSibling.id === "rlist" && d.querySelector("#chatside").previousElementSibling.id === "makerChatList", "F2.2b an account and a thread are the second pane of a split, their list the first");
+    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an order, Shop's open day) for its builder's split; not: " + J(panes));
     const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
     ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),
       "F3.1 nothing sizes a frame any more: no --salt-frame-h, no frame column, no .gate.adm");
@@ -90,12 +91,14 @@ export async function run({ ok, pageWork }) {
       /* 15 Nov 2026: his shell's screen is what scrolls */
       const box = scrollBox(d.querySelector("#roster > .amb-screen"), d, 400, 2000);
       enter(d, "customers", "messages"); await p.work.quiet(); await p.work.quiet();
-      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] a').click(); await p.work.quiet();
+      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] .amb-row__main').click(); await p.work.quiet();
       const pane = d.getElementById("makerChatOpen"), kids = [...pane.children];
       const head = kids[0], foot = kids[kids.length - 1];
-      ok(head.classList.contains("salt-pane__head") && !!head.querySelector('[data-act="chat.close"]') && kids[1].id === "makerChatLines"
-        && foot.classList.contains("salt-pane__foot") && !!foot.querySelector('textarea[data-act="chat.reply"]') && !!foot.querySelector('[data-act="chat.send"].salt-pill')
-        && !foot.querySelector('[data-act="chat.no-reply"]') && !!kids[kids.length - 2].querySelector('[data-act="chat.no-reply"]'),
+      /* 16 Nov 2026, the move to Ambient (place H): the head is the code and what they owe, the lines Ambient's Thread, Close among what else he may do, and the foot Ambient's compose box, last */
+      const more = kids.find((k) => k.classList.contains("chatmore"));
+      ok(head.classList.contains("chathead") && !!more.querySelector('[data-act="chat.close"]') && kids[1].id === "makerChatLines"
+        && foot.classList.contains("amb-foot") && !!foot.querySelector('form.amb-compose textarea[data-act="chat.reply"]') && !!foot.querySelector('[data-act="chat.send"].amb-circle')
+        && !foot.querySelector('[data-act="chat.no-reply"]') && !!more.querySelector('[data-act="chat.no-reply"]'),
         "F5 an open thread: its head with Close, its lines, then No reply needed, then the foot, last, his box and Send: " + J(kids.map((k) => k.className || k.id)));
       ok(box.at() === box.end() && box.end() > 0, "F6.1 on a phone a thread opens at its newest line (the screen scrolled to its end): " + J([box.at(), box.end()]));
       const poll = async () => { const f = p.intervals.filter((x) => x.ms === 2000 && !x.off).pop(); if (f) f.f(); await p.work.quiet(); await p.work.quiet(); };
@@ -112,7 +115,7 @@ export async function run({ ok, pageWork }) {
       const d = p.d; await p.work.quiet();
       const page = scrollBox(d.documentElement, d, 400), box = scrollBox(d.querySelector("#roster > .amb-screen"), d, 300);
       enter(d, "customers", "messages"); await p.work.quiet(); await p.work.quiet();
-      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] a').click(); await p.work.quiet();
+      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] .amb-row__main').click(); await p.work.quiet();
       ok(box.at() === box.end() && box.end() > 0 && page.at() === 0, "F6.4 from 1180px a thread opens at its newest line in his screen, the window unmoved: " + J([box.at(), box.end(), page.at()]));
     } finally { p.w.close(); }
   }
@@ -125,7 +128,7 @@ export async function run({ ok, pageWork }) {
       enter(d, "customers", "accounts"); await p.work.quiet();
       await click(d.querySelector('#rlist [data-act="acct.open"]'));
       const card = d.querySelector("#aopen > *:not([data-back])"), afoot = card && card.lastElementChild;
-      ok(!!afoot && afoot.classList.contains("salt-pane__foot") && !!afoot.querySelector('[data-act="acct.signin-link"].salt-pill') && !!afoot.querySelector('[role="status"]')
+      ok(!!afoot && afoot.classList.contains("amb-foot") && !!afoot.querySelector('[data-act="acct.signin-link"].amb-pill--block') && !!card.querySelector('.asign [role="status"]')
         && !afoot.querySelector('[data-act="acct.signout-all"]') && !!card.querySelector('.aend [data-act="acct.signout-all"]'),
         "F7 an account's Send a sign-in link and its answer are the card's foot, last; Sign out everywhere stays in the ends: " + (afoot ? afoot.className : "no card"));
       enter(d, "orders", "todo"); await p.work.quiet();

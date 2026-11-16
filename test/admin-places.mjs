@@ -104,9 +104,9 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
     /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
     /* 2 Nov 2026: Orders' four parts are one Segment, as Customers' */
-    const recipe = (s) => (["customers", "orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record"].includes(s.getAttribute("data-place")) ? ["amb-segment", "amb-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
+    const recipe = (s) => (["orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record", "customers"].includes(s.getAttribute("data-place")) ? ["amb-segment", "amb-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
     /* 16 Nov 2026, the move to Ambient (place I): Record's three and Shop's six are Ambient's Segment, a group of pressed buttons, not a tablist */
-    const ambStrip = (s) => ["shop", "record"].includes(s.getAttribute("data-place"));
+    const ambStrip = (s) => ["shop", "record", "customers"].includes(s.getAttribute("data-place"));
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === (ambStrip(s) ? "group" : "tablist") && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && (ambStrip(s) ? !b.hasAttribute("role") : b.getAttribute("role") === "tab")))
       && !d.querySelector("#mHome .aparts"),
