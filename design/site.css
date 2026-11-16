@@ -104,6 +104,15 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 #today > span:not(.amb-icon) { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--amb-space-2); }
 #today .hblock, #today .hline { display: block; }
 #today .hnote { display: grid; gap: var(--amb-space-1); justify-items: start; }
+/* 17 Nov 2026 (Fable's review): in one column Home's two stacks stand one measure, centred, so the tile, the rows, the card and the Pay share their two edges;
+   a list in one of the boxes takes the stack's edge and not a second inset */
+@container amb (max-width: 959px) {
+  #pHome > .amb-stack { width: 100%; max-width: calc(36rem + 2 * var(--amb-space-4)); justify-self: center; }
+  /* the first stack stands empty in one column (its parts are in the last, over which the Pay stays pinned) and leaves no gap */
+  #pHome > .amb-stack:not(:has(*)) { display: none; }
+  #pHome > .amb-stack + .amb-stack { margin-top: 0; }
+}
+#pHome .amb-stack .amb-list { margin-inline: 0; }
 /* a book's mark alone heads its block */
 .hbook { margin: 0; }
 /* the live order is the dock's mini bar, a tap anywhere on it opening the order */

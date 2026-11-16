@@ -953,10 +953,12 @@ export function landingPage(user, nonce, owner, bulletin, test) {
        and put on the page only where it reads differently, and the box takes no place of its own (display: contents in the site layer). The
        foot is the one Pay, the last thing in the first stack, where Ambient keeps it above the dock; their latest open order is the dock's
        mini bar (hLive, in placesDock). */
-    + '<div id="pHome" class="amb-split"><div class="amb-stack">' + noticeCard(bulletin)
+    /* 17 Nov 2026 (Fable's review): Home stands in a place of its own, so Ambient's ground under the dock follows its foot; in one column the foot is the
+       last thing of the last stack (footPlace), over the dock, and from 960px the first stack's. */
+    + '<div class="amb-place"><div id="pHome" class="amb-split"><div class="amb-stack">' + noticeCard(bulletin)
     + '<div id="payHead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div>'
     + '<div id="homeFoot" class="amb-foot" hidden></div></div>'
-    + '<div class="amb-stack"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div></div>'
+    + '<div class="amb-stack"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
        statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
@@ -2137,6 +2139,8 @@ const CLIENT_JS = `
     tab=t; tabs.setAttribute('data-place',t);
     [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
+    /* 17 Nov 2026 (Fable's review): Home's place is shown with Home and hidden with every other, as Ambient reads only the place shown */
+    var hp=pHome.parentNode; if(hp&&hp.classList.contains('amb-place')) hp.hidden=pHome.hidden;
     liveShow();
     placeTitle();
     if(tapped&&(!location.hash||placeOf(location.hash))){
@@ -5451,9 +5455,25 @@ const CLIENT_JS = `
     f.appendChild(pb);
     return f;
   }
+  /* 17 Nov 2026 (Fable's review): in one column Home is ONE stack, the last, with the Pay its last thing: Ambient pins a foot only inside the stack that holds it, so a Pay in the
+     first of two stacks was pinned for the first stack alone and stood mid-page; in the last stack it stays over the dock from the top of Home to its end, and the first stack stands
+     empty. From 960px, where Home is two columns, the first stack's parts go back to it and the Pay is its foot. The width is the shell's, which is the window's. */
+  var HOME1=['today','payHead','hNeeds','hRate','hThread','hSupply','hStart'];
+  function footPlace(){
+    var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(!f||!h) return;
+    var st=h.querySelectorAll(':scope > .amb-stack'); if(st.length<2) return;
+    var one=window.innerWidth<960, a=st[0], b=st[1], to=one?b:a;
+    (one?HOME1.slice().reverse():HOME1).forEach(function(id){
+      var n=document.getElementById(id); if(!n||n.parentNode===to) return;
+      if(one) to.insertBefore(n,to.firstChild); else to.appendChild(n);
+    });
+    if(to.lastElementChild!==f) to.appendChild(f);
+  }
+  window.addEventListener('resize',footPlace);
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    footPlace();
     cBar();
     glanceDraw();
   }
@@ -6198,7 +6218,7 @@ const CLIENT_JS = `
     var o=orders.filter(function(x){ return !oClosed(x); }).sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); })[0];
     if(!o) return box;
     box.className='amb-mini'; box.setAttribute('data-live',o.id); box.hidden=tab!=='home';
-    var th=markThumb(o.product,'sm'); box.appendChild(th);
+    var th=markThumb(o.product,'md'); box.appendChild(th);   /* 17 Nov 2026 (Fable's review): the mini bar's coin is the shape alone, never a letter cut at its edge */
     var tx=el('span','amb-mini__text'), waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
     tx.appendChild(el('span','amb-vh',pshape(o.product))); tx.appendChild(el('span','amb-mini__title',stateWord(o)));
     tx.appendChild(el('span','amb-mini__sub',stepWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));

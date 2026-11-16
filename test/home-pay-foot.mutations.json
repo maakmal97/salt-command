@@ -1,6 +1,6 @@
 [
  {"name":"the foot is drawn shown, with nothing in it","file":"stmt/page.js","find":"+ '<div id=\"homeFoot\" class=\"amb-foot\" hidden></div></div>'","replace":"+ '<div id=\"homeFoot\" class=\"amb-foot\"></div></div>'"},
- {"name":"the foot is drawn twice, once in the second stack","file":"stmt/page.js","find":"<div id=\"hAgain\"></div><div id=\"hReward\"></div><div id=\"hYear\"></div></div></div>'","replace":"<div id=\"hAgain\"></div><div id=\"hReward\"></div><div id=\"hYear\"></div><div id=\"homeFoot\" class=\"amb-foot\" hidden></div></div></div>'"},
+ {"name":"the foot is drawn twice, once in the second stack","file":"stmt/page.js","find":"<div id=\"hAgain\"></div><div id=\"hReward\"></div><div id=\"hYear\"></div></div></div></div>'","replace":"<div id=\"hAgain\"></div><div id=\"hReward\"></div><div id=\"hYear\"></div><div id=\"homeFoot\" class=\"amb-foot\" hidden></div></div></div></div>'"},
  {"name":"the Pay is not in the foot","file":"stmt/page.js","find":"    f.appendChild(pb);","replace":"    document.body.appendChild(pb);"},
  {"name":"the foot is never drawn","file":"stmt/page.js","find":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);","replace":"f.hidden=true;"},
  {"name":"a foot is drawn whatever is owed","file":"stmt/page.js","find":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);","replace":"f.hidden=!bundle;"},
