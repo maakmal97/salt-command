@@ -344,7 +344,7 @@
  {
   "name": "a shared rule is moved under .adm (the customer's lead)",
   "file": "stmt/page.js",
-  "find": ".gate p.lead{color:var(--salt-mist-bright);",
+  "find": ".panel p.lead{color:var(--salt-mist-bright);",
   "replace": ".adm p.lead{color:var(--salt-mist-bright);"
  },
  {

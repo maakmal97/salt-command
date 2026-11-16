@@ -812,8 +812,8 @@ rounded up, so the page never promises a time before the guard lifts. `MAINTENAN
 default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-store`, JSON for a request that is not HTML, the machine routes in `MACHINE` passing.
 `test/counter-maintenance.mjs`, its mutations in `test/counter-maintenance.mutations.json`; the guard's own section is "Maintenance guard on both Workers".
 
-**The shut page and the site's 404 stand on the door's frame with the ring** (`onePage` in `stmt/page.js`: the app's ring in `.appmark`, one `h1` and one line, from
-`shut.*` and `nf.*` in the table). Both are Tide and run no script, under the guest board's policy (`guestHtml`: `default-src 'none'`, styles by nonce,
+**The shut page and the site's 404 stand on one Ambient shell in Slate** (`onePage` in `stmt/page.js`: a hero holding one `h1` and one line, from
+`shut.*` and `nf.*` in the table; the ring over them went on 16 Nov 2026 with the door's, see Place E below). Both follow the device and run no script, under the guest board's policy (`guestHtml`: `default-src 'none'`, styles by nonce,
 `script-src 'none'`). **Every shut id still answers ONE page**, byte for byte the same but its nonce, status 404. The 404 is the plain `Not found` only for a request
 that does not ask for a page: `notFound()` marks its answer, and the Worker's door (the last lines of `stmt/worker.js`) swaps a marked answer for `lost()`, the
 styled page, when the request's Accept names `text/html` (a browser's address bar). A page's own fetch, a machine and a route that answers a 404 of its own in JSON keep
@@ -3311,3 +3311,21 @@ it.
 - **Acts and ids kept**: every `data-act`, every id the page's script or a check reads, and every request body. Gone with the scrims: `outScrim`, `payScrim`, `devScrim`,
   `bellScrim`, `thScrim`, `fsScrim`, `vaultScrim` (the dialog's own backdrop took their place). Salt Admin's names Sheet (`vaultSheet`) is the same dialog.
 - **Said, not drawn**: the pay ways' lead glyphs (the Options part has no lead slot); the door's ring (its one name is a glass chip in the hero).
+
+## Place E, the Counter's small pages and the test surface on Ambient (16 Nov 2026)
+
+- **Drawn in the system's parts, no class of the older layer**: every page a guest or a stranger sees is `guestPage(mood, hero, inner, nonce, title)`, one `amb-shell` with its hero first,
+  carrying `SITE_STYLE` alone (no `PAGE_CSS`, no coins' CSS) and no script of the system's. **The guest board** (`boardPage`): the heading over the week in the hero, one notice for
+  what the prices cover, a settings list a book headed by the book's mark as the system's thumb (`markThumbHtml`, named by its shape, no product word), each size a row and its price
+  the row's value, side by side where the screen has room (`.gboard`), and the one next step as the last notice. **The shut page and the 404** (`onePage`): a hero in Slate. **The join page**
+  (`joinPage`): a hero, a form of two `amb-field`s, one solid Send, and a notice holding what the script says (`#jm`, drawn only while it holds words).
+- **The screens between the door and the account** are shells like the door: the sign-in link page (`#link`: its hero, a settings list of what is inside, a warning notice for an app's own
+  browser, a quiet Copy, one solid Continue), the one-step code screen (`#codeBox`: one solid Paste, the system's one-time code field `amb-input--code`, the other way in a quiet pill, the
+  help a basis line) and the remembered phone's opening (`#opening`: the app's name a glass chip over its one line). In the signed-out Sheet the code screen gives up its hero and its
+  screen height (site.css), so the Sheet's title stands above the form alone. The system takes spaces and hyphens out of the field as a code is typed, so the eight symbols show unspaced.
+- **The test surface** (`/all/test`, `stmt/testsurface.js`): one shell in Slate; the account is a wrapping Segment, the moves are quiet pills, the two views are the real `landingPage` in
+  frames, side by side from 1080px and two tabs (a Segment) under it. The script listens to `amb:change` for an account and a view.
+- **Acts and ids kept**: every id a script or a check reads (`jf`, `jn`, `jp`, `js`, `jm`, `jw`, `link`, `linkGo`, `linkCopy`, `linkInapp`, `inappIos`, `inappDroid`, `linkLead`, `linkMsg`,
+  `linkOnce`, `codeBox`, `codeIn`, `codePaste`, `codeDoor`, `codeHelp`, `codeH`, `codeLead`, `codeHint`, `codeMsg`, `opening`, `tsC`, `tsA`, `tsReset`, `tsAll`, `tsEmpty`, `tsMake`, `tsSay`).
+  No `data-act` changed. **Gone**: the app's ring (`.appmark`) on the shut page, the 404, the join page, the link page, the code screen and the opening; the `.gate` rules; `.gh`, `.pane`
+  and the board's table on the guest board; `.panel h2` and `.gs`.

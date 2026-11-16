@@ -6,16 +6,15 @@
    3. Reset asks once: the first tap clears nothing and says so on the control, a second within four seconds resets that account and
       both views read it again, and left alone it lets go;
    4. Reset all resets every test account, and Start empty asks once and starts the fresh one empty;
-   5. every control is 44px both ways;
+   5. every control is 44px both ways (16 Nov 2026, the move to Ambient: the system's own, a Segment's choice 44px and a pill 48px);
    6. the two views stand side by side from 1080px with no tabs, and below it are two tabs showing one view at a time;
-   7. its text holds 4.5:1 on Night's and Tide's ground and slate;
+   7. its own rules read the system's tokens alone, so its text keeps the system's contrast (16 Nov 2026: Night and Tide are gone);
    8. it carries no brand but Salt Counter, no product word and no roster code. */
 import { surface } from "./test-surface-harness.mjs";
 
 export async function run({ ok }) {
   const T = await import("../stmt/testsurface.js");
   const { TS } = await import("../stmt/words.js");
-  const { STATEMENT_CSS } = await import("../stmt/statement-css.js");
   const O = await import("../src/orders.js");
   const { JSDOM } = await import("jsdom");
   const until = async (f, n = 100) => { for (let i = 0; i < n && !f(); i++) await new Promise((r) => setTimeout(r, 10)); return f(); };
@@ -38,7 +37,7 @@ export async function run({ ok }) {
   const open = (state, width) => {
     const posts = [], timers = [];
     let page = T.testShell("ns", state);
-    if (width) page = page.replace(/@media\s*\(min-width:(\d+)px\)\s*\{/g, (m, px) => (width >= +px ? "@media all{" : m));
+    if (width) page = page.replace(/@media\s*\(min-width:\s*(\d+)px\)\s*\{/g, (m, px) => (width >= +px ? "@media all{" : m));
     const dom = new JSDOM(page, { url: "https://site.test/all/test", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       win.fetch = async (path, init) => { posts.push([String(path), JSON.parse(init.body)]); return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
       const st = win.setTimeout.bind(win);
@@ -54,7 +53,8 @@ export async function run({ ok }) {
   try {
     const cSrc = () => A.d.getElementById("tsC").getAttribute("src"), aSrc = () => A.d.getElementById("tsA").getAttribute("src");
     const first = [cSrc(), aSrc(), A.d.getElementById("tsMake").hidden, A.d.getElementById("tsEmpty").hidden];
-    const pickU = (u) => { const r = A.d.querySelector('input[name="tsAcct"][value="' + u + '"]'); r.checked = true; r.dispatchEvent(new A.w.Event("change", { bubbles: true })); };
+    /* 16 Nov 2026, the move to Ambient: an account is a choice of a Segment, which presses it and says so (amb:change) */
+    const pickU = (u) => A.d.querySelector('[name="tsAcct"][value="' + u + '"]').click();
     pickU("0000-0001");
     const locked = [cSrc(), A.d.getElementById("tsMake").hidden, A.d.getElementById("tsEmpty").hidden, A.d.getElementById("tsSay").textContent];
     pickU("0000-0000");
@@ -79,7 +79,7 @@ export async function run({ ok }) {
     /* ---- 4: Reset all and Start empty */
     A.d.getElementById("tsAll").click(); A.d.getElementById("tsAll").click();
     await until(() => A.posts.length === 2);
-    const pickF = A.d.querySelector('input[name="tsAcct"][value="0000-0002"]'); pickF.checked = true; pickF.dispatchEvent(new A.w.Event("change", { bubbles: true }));
+    A.d.querySelector('[name="tsAcct"][value="0000-0002"]').click();
     A.d.getElementById("tsEmpty").click();
     const emptyArmed = A.posts.length;
     A.d.getElementById("tsEmpty").click();
@@ -88,10 +88,13 @@ export async function run({ ok }) {
       "Reset all resets every test account, and Start empty asks once and starts the fresh one empty: " + JSON.stringify(A.posts.map((p) => p[1])));
 
     /* ---- 5: 44px */
-    const tap = (/--salt-tap:\s*([^;]+);/.exec(STATEMENT_CSS) || [])[1];
-    const controls = [...A.d.querySelectorAll("button, a, .salt-option__face")];
-    const short = controls.filter((e) => { const c = A.w.getComputedStyle(e); return c.minHeight !== "var(--salt-tap)" || c.minWidth !== "var(--salt-tap)"; }).map((e) => e.id || e.textContent);
-    ok(tap === "44px" && controls.length >= 9 && short.length === 0, "Every control is 44px both ways: " + JSON.stringify([tap, controls.length, short]));
+    /* 16 Nov 2026, the move to Ambient: every control is the system's own, and its height is a token no smaller than 44px (a Segment's choice the least any control
+       measures, a pill the primary pill's); the widths follow from the words and the pills' padding, measured in a browser at 390 and 1440 in the shots */
+    const tok = (n) => +((new RegExp("--amb-" + n + ":\\s*(\\d+)px").exec(html) || [])[1] || 0);
+    const controls = [...A.d.querySelectorAll("button, a")];
+    const hOf = (e) => { const m = /^var\(--amb-([\w-]+)\)$/.exec(A.w.getComputedStyle(e).minHeight); return m ? tok(m[1]) : 0; };
+    const short = controls.filter((e) => hOf(e) < 44).map((e) => e.id || e.textContent);
+    ok(tok("tap") === 44 && controls.length >= 9 && short.length === 0, "Every control is 44px at least: " + JSON.stringify([tok("tap"), tok("pill-h"), controls.length, short]));
   } finally { A.close(); }
 
   /* ---- 6: the layout */
@@ -100,25 +103,18 @@ export async function run({ ok }) {
     const cs = (x, sel) => x.w.getComputedStyle(x.d.querySelector(sel));
     const phone = [cs(P6, ".ts-tabs").display, cs(P6, "#tsC").display, cs(P6, "#tsA").display];
     P6.d.querySelector('.ts-tabs [data-view="a"]').click();
-    const phoneA = [cs(P6, "#tsC").display, cs(P6, "#tsA").display, P6.d.querySelector('.ts-tabs [data-view="a"]').getAttribute("aria-selected")];
+    const phoneA = [cs(P6, "#tsC").display, cs(P6, "#tsA").display, P6.d.querySelector('.ts-tabs [data-view="a"]').getAttribute("aria-pressed")];
     const desk = [cs(D, ".ts-tabs").display, cs(D, ".ts-views").display, cs(D, ".ts-views").gridTemplateColumns, cs(D, "#tsC").display, cs(D, "#tsA").display];
     ok(phone[0] === "flex" && phone[1] !== "none" && phone[2] === "none" && phoneA[0] === "none" && phoneA[1] !== "none" && phoneA[2] === "true"
       && desk[0] === "none" && desk[1] === "grid" && desk[2] === "1fr 1fr" && desk[3] !== "none" && desk[4] !== "none",
       "The two views stand side by side from 1080px with no tabs, and below it two tabs show one view at a time: " + JSON.stringify([phone, phoneA, desk]));
   } finally { P6.close(); D.close(); }
 
-  /* ---- 7: contrast */
-  const strip = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
-  const toks = (re) => Object.fromEntries([...((strip(STATEMENT_CSS).match(re) || ["", ""])[1]).matchAll(/--salt-([\w-]+):\s*([^;]+);/g)].map((x) => [x[1], x[2].trim()]));
-  const NIGHT = toks(/:root\s*\{([^}]*)\}/), TIDE = { ...NIGHT, ...toks(/:root\[data-theme="tide"\]\s*\{([^}]*)\}/) };
-  const resolve = (Tk, k) => { let v = Tk[k]; for (let i = 0; i < 6 && /^var\(--salt-([\w-]+)\)$/.test(v || ""); i++) v = Tk[/^var\(--salt-([\w-]+)\)$/.exec(v)[1]]; return v; };
-  const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
-  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-  const shellCss = (/(body\{margin:0;[\s\S]*)$/.exec((html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || ["", ""])[1]) || ["", ""])[1];
-  const used = [...new Set([...shellCss.matchAll(/(?:^|[;{\s])color\s*:\s*var\(--salt-([\w-]+)\)/g)].map((m) => m[1]))];
-  const low = (Tk) => Math.min(...used.flatMap((k) => [Tk.obsidian, Tk.slate].map((g) => /^#[0-9a-f]{6}$/i.test(resolve(Tk, k) || "") ? ratio(resolve(Tk, k), g) : 0)));
-  ok(used.length >= 2 && used.includes("mist") && low(NIGHT) >= 4.5 && low(TIDE) >= 4.5,
-    "Its text holds 4.5:1 on Night's and Tide's ground and slate: " + JSON.stringify([used, low(NIGHT).toFixed(2), low(TIDE).toFixed(2)]));
+  /* ---- 7: the shell's own rules read the system's tokens alone (16 Nov 2026: Night and Tide are gone, and the system proves its tokens' contrast; a literal or a --salt token here would not be) */
+  const own = (/\.ts-acts[\s\S]*$/.exec((html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || ["", ""])[1]) || [""])[0];
+  const colours = [...own.matchAll(/(?:color|background|border)[\w-]*\s*:[^;{}]*/g)].map((m) => m[0]);
+  ok(own.length > 200 && colours.length >= 2 && colours.every((c) => /var\(--amb-[\w-]+\)/.test(c) && !/#[0-9a-f]{3,8}|rgba?\(|--salt-/i.test(c)),
+    "Its own rules read the system's tokens alone, so its text and edges keep the system's contrast: " + JSON.stringify(colours));
 
   /* ---- 8: words */
   const text = Object.values(TS).join(" ") + " " + new JSDOM(html).window.document.body.textContent;

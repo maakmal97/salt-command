@@ -10,11 +10,14 @@
  {"name":"the views are not read again after a reset","file":"stmt/testsurface.js","find":"if(r.ok&&j&&j.ok){ note(W[done]); reload(); }","replace":"if(r.ok&&j&&j.ok){ note(W[done]); }"},
  {"name":"Reset all names one account","file":"stmt/testsurface.js","find":"function(){ return {all:true}; }","replace":"function(){ return {u:cur}; }"},
  {"name":"Start empty resets in full","file":"stmt/testsurface.js","find":"function(){ return {u:FRESH, empty:true}; }","replace":"function(){ return {u:FRESH}; }"},
- {"name":"an account face is short of 44px","file":"stmt/testsurface.js","find":".ts-accts .salt-option__face{min-width:var(--salt-tap);box-sizing:border-box}","replace":".ts-accts .salt-option__face{box-sizing:border-box}"},
- {"name":"the views never stand side by side","file":"stmt/testsurface.js","find":".ts-views{display:grid;grid-template-columns:1fr 1fr;gap:16px}","replace":".ts-views{display:block}"},
- {"name":"the desk shows one view","file":"stmt/testsurface.js","find":".ts-views iframe[hidden]{display:block!important}","replace":".ts-views iframe[hidden]{}"},
+ {"name":"an account choice is not the system's","file":"stmt/testsurface.js","find":"class=\"amb-segment__opt\" name=\"tsAcct\"","replace":"class=\"ts-opt\" name=\"tsAcct\""},
+ {"name":"the views never stand side by side","file":"stmt/statement-css.js","find":".ts-views { grid-template-columns: 1fr 1fr; gap: var(--amb-space-4); }","replace":".ts-views { gap: var(--amb-space-4); }"},
+ {"name":"the desk shows one view","file":"stmt/statement-css.js","find":".ts-views iframe[hidden] { display: block !important; }","replace":".ts-views iframe[hidden] { }"},
  {"name":"a tab does not switch the view","file":"stmt/testsurface.js","find":"cv.hidden=!c; av.hidden=c;","replace":"cv.hidden=false; av.hidden=true;"},
- {"name":"the lead is drawn in a faint colour","file":"stmt/testsurface.js","find":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-mist);","replace":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-obsidian);"},
+ {"name":"a frame's edge is a colour of its own","file":"stmt/statement-css.js","find":"min-height: 520px; border: 1px solid var(--amb-line-field);","replace":"min-height: 520px; border: 1px solid #888;"},
  {"name":"the shell names Salt Admin","file":"stmt/words.js","find":"  \"ts.make\": \"Make the practice accounts\",","replace":"  \"ts.make\": \"Make it in Salt Admin\","},
- {"name":"the shell names a product","file":"stmt/words.js","find":"  \"ts.open\": \"0000-0000, every case\",","replace":"  \"ts.open\": \"0000-0000, every case of salt\","}
+ {"name":"the shell names a product","file":"stmt/words.js","find":"  \"ts.open\": \"0000-0000, every case\",","replace":"  \"ts.open\": \"0000-0000, every case of salt\","},
+ {"name":"choosing an account does not move the view","file":"stmt/testsurface.js","find":"b.addEventListener('amb:change', function(){ pick(b.value); });","replace":"b.addEventListener('amb:change', function(){});"},
+ {"name":"the tabs stay on the desk","file":"stmt/statement-css.js","find":".amb-segment.ts-tabs { display: none; }","replace":".amb-segment.ts-tabs { }"},
+ {"name":"a move is not the system's pill","file":"stmt/testsurface.js","find":"'<button type=\"button\" class=\"amb-pill amb-pill--quiet\" id=\"tsAll\">'","replace":"'<button type=\"button\" class=\"ts-pill\" id=\"tsAll\">'"}
 ]

@@ -572,20 +572,20 @@
  {
   "name": "the guest board carries a number",
   "file": "stmt/page.js",
-  "find": "wd(\"board.next\") + \"</p>\", nonce, esc(EN[\"board.h\"]));",
-  "replace": "wd(\"board.next\") + \" 55501234</p>\", nonce, esc(EN[\"board.h\"]));"
+  "find": "note(wd(\"board.next\")) + \"</div>\", nonce, esc(EN[\"board.h\"]));",
+  "replace": "note(wd(\"board.next\") + \" 55501234\") + \"</div>\", nonce, esc(EN[\"board.h\"]));"
  },
  {
   "name": "the shut page carries a number",
   "file": "stmt/page.js",
-  "find": "wd(k + \".p\") + \"</p>\", nonce, esc(EN[k + \".title\"]));",
-  "replace": "wd(k + \".p\") + \" 55501234</p>\", nonce, esc(EN[k + \".title\"]));"
+  "find": "wd(k + \".p\") + \"</p>\", \"\", nonce",
+  "replace": "wd(k + \".p\") + \" 55501234</p>\", \"\", nonce"
  },
  {
   "name": "a guest page carries a script",
   "file": "stmt/page.js",
-  "find": "<div class=\"panel\">' + inner + \"</div></body></html>\";",
-  "replace": "<div class=\"panel\">' + inner + \"</div><script></script></body></html>\";"
+  "find": "inner + \"</main></div></body></html>\";",
+  "replace": "inner + \"</main></div><script></script></body></html>\";"
  },
  {
   "name": "a guest page admits script",

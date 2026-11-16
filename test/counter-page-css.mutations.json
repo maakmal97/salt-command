@@ -60,12 +60,6 @@
   "replace": "--salt-mist: #3a4048;"
  },
  {
-  "name": "a size is under the 11px floor",
-  "file": "stmt/page.js",
-  "find": ".glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);",
-  "replace": ".glink .gs{margin:8px 0 0;font-size:10px;"
- },
- {
   "name": "a control is sized under 44px",
   "file": "stmt/page.js",
   "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
@@ -124,12 +118,6 @@
   "file": "stmt/owner.js",
   "find": "var row=el('div','salt-metrics salt-metrics--sm');",
   "replace": "var row=el('div','maker-facts');"
- },
- {
-  "name": "the door heading goes back to 24px",
-  "file": "stmt/page.js",
-  "find": ".gate h1{font-size:1.75rem;",
-  "replace": ".gate h1{font-size:var(--salt-text-xl);"
  },
  {
   "name": "the open list is the well again",
@@ -194,8 +182,8 @@
  {
   "name": "the page pads the body",
   "file": "stmt/page.js",
-  "find": "@media (max-width:1079.98px){\n  .gate{padding:0}",
-  "replace": "@media (max-width:1079.98px){\n  body{padding:16px}\n  .gate{padding:0}"
+  "find": "@media (min-width:1080px){\n.panel{max-width:none}",
+  "replace": "body{padding:16px}\n@media (min-width:1080px){\n.panel{max-width:none}"
  },
  {
   "name": "the page styles the hero",
@@ -268,5 +256,11 @@
   "file": "stmt/owner.js",
   "find": "var td=el('td',num[i]?'is-num':null); td.setAttribute('data-label',heads[i]);",
   "replace": "var td=el('td',num[i]?'is-num':null);"
+ },
+ {
+  "name": "the page's layer styles a heading again",
+  "file": "stmt/page.js",
+  "find": ".panel{max-width:620px;margin:0 auto}\n",
+  "replace": ".panel{max-width:620px;margin:0 auto}\nh1{font-size:1.75rem}\n"
  }
 ]
