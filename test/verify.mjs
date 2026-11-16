@@ -277,9 +277,12 @@ const req = (path, opts = {}) => new Request("https://salt-command.example" + pa
 /* PHASE 1b: Needs you's cards are the Action recipe; their words are the body's, the kind word and the age being the recipe's */
 /* 22 Oct 2026 (Needs you on the canvas): a card holds its kind, age, code and one pill; its words and every way of its row stand in the open card beside the
    list from 860px. wideNeeds(w) in beforeParse makes a page wide; needFull(D, key) opens that card beside the list and returns the open card (#nopen). */
-const wideNeeds = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
+/* 16 Nov 2026, the move to Ambient (the red fix): Ambient lays two panes from 960px, so the page's width reads 960 where it read 860 */
+const wideNeeds = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*960px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 const needFull = (D, key) => { const c = D.querySelector('#nlist [data-need="' + key + '"]'), n = D.getElementById("nopen"); if (c && n.getAttribute("data-key") !== key) c.querySelector(".need-tap").click(); return n; };
 /* 22 Oct 2026 (Needs you on the canvas): a card's title is its code, and a reader hears the whole of it, its kind first; the older checks read that whole */
+/* 16 Nov 2026, the move to Ambient (the red fix): the open record's one main action stands last in its column, Ambient's foot (.npane__go), beside #nopen and not in it */
+const needGo = (D) => D.getElementById("nopen").parentNode.querySelector(":scope > .npane__go");
 const needText = (c) => { const t = c.querySelector(".need-tap[aria-label]"); return t ? t.getAttribute("aria-label").replace(/^[^:]+: /, "") + " " + (c.querySelector(".salt-action__body") || c).textContent : (c.querySelector(".salt-action__body") || c).textContent; };
 const postQ = (body, extraHeaders = {}) => req("/queue", {
   method: "POST", headers: { "content-type": "application/json", ...extraHeaders }, body: JSON.stringify(body)
@@ -17020,22 +17023,23 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 100 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
     /* 26 OCT 2026: a link is Needs you's card (data-glink) with its panel (.glink[data-link]) under it; the moves are in the panel */
-    const tap = (label) => { const card = D.querySelector('#glist .glink[data-link="' + id + '"]');
-      const b = card && [...card.querySelectorAll("button")].find((x) => x.textContent === label); if (b) b.click(); return !!b; };
+    /* 16 Nov 2026, the move to Ambient (the red fix): a link is Ambient's row (li.glrow, its one way a small pill) with its panel beside it (li.glpanel, the moves and the answer to a move), both in the group list */
+    const tap = (label) => { const parts = [D.querySelector('#glist .glrow[data-glink="' + id + '"]'), D.querySelector('#glist .glpanel[data-link="' + id + '"]')].filter(Boolean);
+      const b = parts.flatMap((c) => [...c.querySelectorAll("button")]).find((x) => x.textContent === label); if (b) b.click(); return !!b; };
     D.querySelector('button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
-    ok(await until(() => !!D.querySelector('#glist .glink[data-link="' + id + '"]') && !!D.querySelector('#glist [data-glink="' + id + '"]')),
+    ok(await until(() => !!D.querySelector('#glist .glpanel[data-link="' + id + '"]') && !!D.querySelector('#glist .glrow[data-glink="' + id + '"]')),
       "the associate's link is drawn on his Links panel, as a card with its panel");
     ok(tap("Approve") && await until(async () => (await stored()).approved === true)
       && (await site("/g/" + id)).status === 200,
       "a tap on Approve opens the link, and the guest door answers 200: " + JSON.stringify({ approved: (await stored()).approved, msg: D.getElementById("rmsg").textContent }));
     /* UX8: the tap is answered on the card it moved, and the link stays the associate's: its own group, who minted
        it, what it quotes */
-    const cardOf = () => D.querySelector('#glist .glink[data-link="' + id + '"]');
+    const cardOf = () => D.querySelector('#glist .glpanel[data-link="' + id + '"]');
     const noteOf = () => { const c = cardOf(), n = c && c.querySelector('[role="status"]'); return n ? n.textContent : ""; };
     await until(() => /Approved/.test(noteOf()));
-    const headOf = (c) => { const g = c && c.closest(".ngroup"); const h = g && g.querySelector(".nsev"); return h ? h.textContent : ""; };
-    const ac = cardOf(), acH = ac && ac.querySelector("h4").textContent;
-    const nc = D.querySelector('#glist [data-glink="' + id + '"]'), acT = nc ? [...nc.querySelector(".salt-action__title").children].map((x) => x.textContent.trim()).join(" ") : "";
+    const headOf = (c) => { const g = c && c.closest(".agroup"); const h = g && g.querySelector(".ghead"); return h ? h.textContent : ""; };
+    const ac = cardOf(), acH = ac && ac.querySelector(".gwho").textContent;
+    const nc = D.querySelector('#glist .glrow[data-glink="' + id + '"]'), acT = nc ? [...nc.querySelector(".amb-row__title").children].map((x) => x.textContent.trim()).join(" ") : "";
     ok(noteOf() === "Approved. It opens now." && headOf(ac) === "Made by associates"
       && acH === "Made by " + u && acT === "Via " + u,
       "an approved link says it is open on its own card, and stays under Made by associates, minted by its associate, never Tier 2 with no label: "
@@ -17464,14 +17468,14 @@ await (async () => {
       } }).window;
       wins.push(w);
       w.document.querySelector('button[data-m="customers"]').click(); w.document.querySelector('[data-act="part.customers.links"]').click();
-      await until(() => w.document.querySelectorAll("#glist .glink").length > 0);
+      await until(() => w.document.querySelectorAll("#glist .glrow").length > 0);   /* 16 Nov 2026, the move to Ambient (the red fix): a link is Ambient's row (li.glrow) with its panel (li.glpanel) beside it */
       return w.document;
     };
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/\b(five|titanium|platinum|gold|silver|bronze)\b/i.test(D1.getElementById("glist").innerHTML.replace(/<[^>]*>/g, " ")) && !/Only \d/.test(text1),
-      "the panel opens on the one standing link, named by no level and with nothing said to be missing: " + JSON.stringify({ heads1, n: D1.querySelectorAll("#glist .glink").length }));
+    ok(D1.querySelectorAll("#glist .glrow").length === 1 && heads1.join() === "Standing link" && !/\b(five|titanium|platinum|gold|silver|bronze)\b/i.test(D1.getElementById("glist").innerHTML.replace(/<[^>]*>/g, " ")) && !/Only \d/.test(text1),
+      "the panel opens on the one standing link, named by no level and with nothing said to be missing: " + JSON.stringify({ heads1, n: D1.querySelectorAll("#glist .glrow").length }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
     /* a link as the store held it before the levels went: a level, a tier and a standing mark, its label the level's name */
@@ -17483,17 +17487,17 @@ await (async () => {
     ok((await my("/my/refs/" + gone + "/revoke")).status === 200, "the associate withdraws one of their two pending links");
     const D2 = await panel();
     /* 26 Oct 2026: a link is Needs you's card under its group's section, its panel (address and moves) a sibling */
-    const cardOf = (id) => D2.querySelector('#glist .glink[data-link="' + id + '"]');
-    const groupOf = (id) => { const n = D2.querySelector('#glist [data-glink="' + id + '"]'), h = n && n.closest(".ngroup") && n.closest(".ngroup").querySelector(".nsev"); return h ? h.textContent : null; };
+    const cardOf = (id) => D2.querySelector('#glist .glpanel[data-link="' + id + '"]'), rowOf = (id) => D2.querySelector('#glist .glrow[data-glink="' + id + '"]');
+    const groupOf = (id) => { const n = rowOf(id), h = n && n.closest(".agroup") && n.closest(".agroup").querySelector(".ghead"); return h ? h.textContent : null; };
     await until(() => cardOf(gone) && cardOf(still) && cardOf(bronze.id));
-    const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector("h4").textContent : "";
+    const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector(".gwho").textContent : "";
     ok(cardOf(bronze.id) && !/Bronze/.test(cardOf(bronze.id).textContent) && /For strangers/.test(bh4),
       "a link that still carries a level is listed as a standing link and names no level: " + JSON.stringify(bh4));
     ok(groupOf(still) === "Waiting on you" && groupOf(gone) !== "Waiting on you",
       "a pending link its associate withdrew is not waiting on him, while the one still pending is: " + JSON.stringify([groupOf(still), groupOf(gone)]));
-    ok(cardOf(gone) && ![...cardOf(gone).querySelectorAll("button")].some((b) => /Approve|Decline/.test(b.textContent))
-      && [...cardOf(gone).querySelectorAll("button")].some((b) => b.textContent === "Restore"),
-      "and it carries no Approve or Decline, Restore being the way back: " + JSON.stringify(cardOf(gone) && [...cardOf(gone).querySelectorAll("button")].map((b) => b.textContent)));
+    const goneBtns = () => [rowOf(gone), cardOf(gone)].filter(Boolean).flatMap((n) => [...n.querySelectorAll("button")].map((b) => b.textContent));
+    ok(cardOf(gone) && !goneBtns().some((t) => /Approve|Decline/.test(t)) && goneBtns().some((t) => t === "Restore"),
+      "and it carries no Approve or Decline, Restore being the way back: " + JSON.stringify(goneBtns()));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.35: Salt Admin's Copy and Sign-in link say what really happened when the clipboard or the share sheet refuses");
@@ -18015,12 +18019,12 @@ await (async () => {
     const order = cards().map((x) => x.getAttribute("data-need"));
     ok(order.length === 4 && order[0] === "s" && order[3] === "n:" + uN && order.slice(1, 3).sort().join(",") === ["k:" + uL, "l:" + lid].sort().join(",") && cards().every((x) => x.getAttribute("data-sev") === "now"),
       "a card each, all To do and the oldest first: to send, then the link and the locked account, no account last: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
-    ok(cards().every((x) => x.classList.contains("salt-action") && x.querySelector(".salt-action__kind") && x.querySelector(".need-who")),
-      "each drawn on the system's Action recipe, with its kind word and who");
+    ok(cards().every((x) => x.classList.contains("amb-task") && x.querySelector(".amb-task__kind") && x.querySelector(".need-who")),
+      "each drawn on the system's Task recipe, with its kind word and who");
 
     /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
     const lc = card("l:" + lid);
-    ok(/CX1-AS/.test(lc.textContent) && !lc.querySelector("select") && btn(lc, "Approve") && !btn(lc, "Decline") && btn(needFull(D, "l:" + lid), "Approve") && btn(needFull(D, "l:" + lid), "Decline"),
+    ok(/CX1-AS/.test(lc.textContent) && !lc.querySelector("select") && btn(lc, "Approve") && !btn(lc, "Decline") && btn(needGo(D, needFull(D, "l:" + lid)), "Approve") && btn(needFull(D, "l:" + lid), "Decline"),
       "the link's card names the associate by code, offers no price level to pick, and carries Approve, its Decline in the open card beside it");
     btn(lc, "Approve").click();
     ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
@@ -18043,9 +18047,9 @@ await (async () => {
     const hc = btn(needFull(D, "k:" + uL), "Show a code");
     if (hc) hc.click();
     ok(!!hc && await until(() => D.getElementById("hoC") && D.getElementById("hoC").value.length === 9)
-      && /For /.test((D.querySelector(".salt-sheet .ho-for") || {}).textContent || "") && D.querySelector(".salt-sheet .ho-for").textContent.includes(uL),
+      && /For /.test((D.querySelector(".amb-sheet .ho-for") || {}).textContent || "") && D.querySelector(".amb-sheet .ho-for").textContent.includes(uL),
       "the refused card's open card carries Show a code, whose Sheet shows a code for that account: " + JSON.stringify(D.getElementById("hoC") && D.getElementById("hoC").value));
-    const hx = D.querySelector(".salt-sheet__close");
+    const hx = D.querySelector('.amb-sheet [data-act="code.close"]');
     if (hx) hx.click();
 
     /* the code with no account: Send is off, and the stranger's link is there to show */
@@ -18301,11 +18305,11 @@ await (async () => {
     ok(await until(() => btn("Share") && !btn("Share").disabled) && /^1 of 3/.test(needText(card())) && /CX0-A1: their link is made/.test(needText(card()))
       && (await minted()) === 1 && shared.length === 0,
       "the first turn opens with its link already made and nothing shared: " + JSON.stringify({ text: card().textContent.slice(0, 120), minted: await minted() }));
-    ok(btn("Share").classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1, "Share is the one filled control");
+    ok(btn("Share").classList.contains("amb-pill") && !btn("Share").classList.contains("amb-pill--quiet") && card().querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1, "Share is the one filled control");
     btn("Share").click();
     ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(needText(card()))) && shared.length === 1 && /[/]s[/]/.test(shared[0]),
       "Share hands over their sign-in link and ticks them sent before the next turn opens");
-    ok([...card().querySelectorAll(".salt-status")].some((x) => x.textContent === "CX0-A1, sent"), "and the card shows them ticked");
+    ok([...card().querySelectorAll(".amb-chip")].some((x) => x.textContent === "CX0-A1, sent"), "and the card shows them ticked");
     await until(() => btn("Share") && !btn("Share").disabled);
     share.refuse = true;
     btn("Share").click();
@@ -19412,7 +19416,7 @@ await (async () => {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       if (!w.TextEncoder) w.TextEncoder = TextEncoder;
       if (!w.TextDecoder) w.TextDecoder = TextDecoder;
-      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*860px/.test(q) && view.wide, addListener() {}, removeListener() {} });
+      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*960px/.test(q) && view.wide, addListener() {}, removeListener() {} });
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
       work = pageWork(w);
@@ -19559,7 +19563,8 @@ await (async () => {
     ok(await until(() => pill() && !pill().disabled && hits.includes("GET /all/account/" + u)) && await work.quiet()
       && hits.filter((x) => !/^GET /.test(x)).length === 0 && await links() === 0 && pill().textContent === "Send a sign-in link",
       "an account opened sends no request that writes and files no link: " + JSON.stringify(hits.filter((x) => !/^GET /.test(x))));
-    ok(pill().classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1,
+    /* 16 Nov 2026, the move to Ambient (the red fix): the filled control is Ambient's pill, the others its quiet pills */
+    ok(pill().classList.contains("amb-pill") && !pill().classList.contains("amb-pill--quiet") && card().querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1,
       "Send a sign-in link is the account's one filled control");
     const signins = () => hits.filter((x) => x === "POST /all/signin/" + u).length;
     pill().click();
@@ -20882,8 +20887,9 @@ await (async () => {
       /* S9 9.2: Send is Accounts now, and an account's card opens from its row */
       D88.querySelector('button[data-m="customers"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
+      /* 16 Nov 2026, the move to Ambient (the red fix): an account is Ambient's row, its tap the row's main button (arow__open) */
       const open88 = (code) => { const r = [...D88.querySelectorAll("#rlist [data-u]")].find((x) => x.textContent.includes(code));
-        if (r) r.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
+        const m = r && r.querySelector(".arow__open"); if (m) m.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
       const bare = open88("CX0-BB");
       const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
@@ -20894,12 +20900,12 @@ await (async () => {
         "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
       const cardEl = open88("CX0-AA");
       /* 25 OCT 2026: the head carries the code (its h2) and the sum (its figure); the older totals line is no longer drawn */
-      const headCode = cardEl && (cardEl.querySelector(".ahead h2") || {}).textContent, headFig = cardEl && (cardEl.querySelector(".ahead__rm") || {}).textContent;
+      const headCode = cardEl && (cardEl.querySelector(".ahead h2") || {}).textContent, headFig = cardEl && (cardEl.querySelector(".ahead__fig .amb-stat__value") || {}).textContent;   /* 16 Nov 2026, the move to Ambient (the red fix): the sum is Ambient's Stat in the head */
       ok(!!cardEl && headCode === "CX0-AA" && /^RM [0-9]/.test(headFig || ""),
         "an account's card carries its figure and its code in the head: " + JSON.stringify([headCode, headFig]));
       /* S9 9.3: Copy message left with the Send card; the account's one filled control is Send a sign-in link */
       const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
-      ok(!!liveLink && liveLink.classList.contains("salt-pill") && cardEl.querySelectorAll(".salt-pill").length === 1,
+      ok(!!liveLink && liveLink.classList.contains("amb-pill") && !liveLink.classList.contains("amb-pill--quiet") && cardEl.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1,
         "and an account's Send a sign-in link is its one filled control");
       const buttons = [...cardEl.querySelectorAll("button")];
       const pwBtn = buttons.find((b) => b.textContent === "Copy password");
@@ -22063,32 +22069,34 @@ await (async () => {
       D91.querySelector('[data-act="part.customers.associates"]').dispatchEvent(new W91.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
       const list91 = D91.getElementById("clist");
-      const drawn = list91.querySelectorAll(".acard").length;
+      /* 16 Nov 2026, the move to Ambient (the red fix): a book is a head (h2.aprodhead: its typed Product tag as a chip in the book's hue, then how many associates) over ONE table that
+         stacks under 720px (amb-table--stack), a row an associate whose cells are labelled, the reward a meter in the row; there is no card an associate any more */
+      const drawn = list91.querySelectorAll(".atable tbody tr").length;
       const rowsAll = snap91.products.reduce((a, p) => a + p.rows.length, 0);
-      /* 26 Oct 2026 (Salt Admin Customers, P7): a book is a head (the typed Product tag, then how many associates), its cards in .aclist, then one plain table */
-      const lab91 = new Set([...list91.querySelectorAll(".acard .salt-metrics__label")].map((x) => x.textContent));
-      ok(drawn === rowsAll && list91.querySelectorAll("h2.aprodtag").length === snap91.products.length && list91.querySelectorAll(".aclist").length === snap91.products.length
-        && list91.querySelectorAll(".atable table").length === snap91.products.length
+      const lab91 = new Set([...list91.querySelectorAll(".atable thead th")].map((x) => x.textContent));
+      ok(drawn === rowsAll && list91.querySelectorAll("h2.aprodhead").length === snap91.products.length
+        && list91.querySelectorAll("table.amb-table--stack.atable").length === snap91.products.length
         && lab91.has("Bought") && lab91.has("Sold") && lab91.has("Introduced"),
-        "the panel draws a card an associate under each book: " + drawn + " cards");
+        "the panel draws a row an associate under each book: " + drawn + " rows");
       /* F9 revised: a book with no reward draws the progress alone, every card of it, with no reward line and no bar */
       /* a book's heading is its typed Product tag on Salt Admin (his word of 22 Oct 2026, reversing 12 Oct for Salt Admin alone), then how many associates; a book is found by its place in the list */
       const tx91 = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
       const books91 = [...list91.querySelectorAll(".aprodhead")].map((hd, i) => {
         const p = snap91.products[i], name = String(p.product).toLowerCase().replace(/[^a-z]/g, ""), list = hd.nextElementSibling;
-        return { h: i, alone: tx91(hd.querySelector("h2.aprodtag .salt-producttag")) === name.charAt(0).toUpperCase() + name.slice(1)
-          && !!hd.querySelector("h2.aprodtag .salt-producttag--" + name) && tx91(hd.querySelector(".salt-status")) === p.rows.length + (p.rows.length === 1 ? " associate" : " associates"),
-          cards: list && list.classList.contains("aclist") ? [...list.querySelectorAll(".acard")] : [] }; });
+        return { h: i, alone: tx91(hd.querySelector(".aprodtag .amb-chip")) === name.charAt(0).toUpperCase() + name.slice(1)
+          && !!hd.querySelector(".aprodtag .amb-chip[class*='amb-kind-']") && tx91(hd.querySelector(".amb-section__note")) === p.rows.length + (p.rows.length === 1 ? " associate" : " associates"),
+          cards: list && list.classList.contains("atable") ? [...list.querySelectorAll("tbody tr")] : [] }; });
       const bare91 = snap91.products.map((p, i) => [p, i]).filter(([p]) => p.rows.length && p.rows.every((r) => !r.reward)).map(([, i]) => i);
       const drawnBare91 = books91.filter((b) => bare91.includes(b.h));
       ok(books91.length === snap91.products.length && books91.every((b) => b.alone), "each book's heading on the report card is its typed Product tag and its count of associates: " + JSON.stringify(books91.map((b) => b.alone)));
       ok(!/margin/i.test(list91.textContent) && bare91.length >= 1 && drawnBare91.length === bare91.length
-        && drawnBare91.every((b) => b.cards.length && b.cards.every((c) => /Bought/.test(c.textContent)
-          && !/Reward|reward/.test(c.textContent) && !c.querySelector(".salt-meter") && !c.querySelector(".pbar"))),
+        && drawnBare91.every((b) => b.cards.length && b.cards.every((c) => !!c.querySelector('[data-label="Bought"]')
+          && !/Reward|reward/.test(c.textContent) && !c.querySelector(".amb-meter") && !c.querySelector(".pbar"))),
         "it never says margin, and a book with no reward draws its progress alone, no reward line and no bar: " + JSON.stringify(bare91));
-      const meters91 = [...list91.querySelectorAll(".acard .salt-meter")];
-      ok(meters91.length > 0 && !list91.querySelector(".pbar") && meters91.every((m) => /^Reward [\d.]+ left ?\d+% to next$/.test(tx91(m.querySelector(".salt-meter__line"))))
-        && meters91.every((m) => !!m.querySelector(".salt-meter__track .salt-meter__fill")),
+      const meters91 = [...list91.querySelectorAll(".atable .ameter")];
+      ok(meters91.length > 0 && !list91.querySelector(".pbar") && meters91.every((m) => /^Reward, [\d.]+ units? left, \d+% of the way to the next$/.test(m.querySelector("progress.amb-meter").getAttribute("aria-label")))
+        && meters91.every((m) => { const pr = m.querySelector("progress.amb-meter"); return pr.getAttribute("max") === "100" && pr.getAttribute("aria-label").includes(pr.getAttribute("value") + "%"); })
+        && meters91.every((m) => /left, .*% to next$/.test(tx91(m.querySelector(".amb-field__hint")))),
         "and the part-unit is the system's Meter, Reward X left and N% to next over a filled track, never a bar: " + meters91.length);
     } finally { try { W91.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch91; }
@@ -22980,7 +22988,8 @@ await (async () => {
     /* S9 9.2: Send is Accounts now, and an account's card opens from its row, once the sheet is read so no second read redraws it */
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
-    const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
+    /* 16 Nov 2026, the move to Ambient (the red fix): an account is Ambient's row, and its tap is the row's main button (arow__open), not the row */
+    const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.querySelector(".arow__open").click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
     const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => /^Show a code/.test(b.textContent)); };
     ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
@@ -22988,18 +22997,19 @@ await (async () => {
     const btn = btnOf(u);
     btn.click();
     /* the hand-over Sheet is the one with .ho: his page also carries the look Sheet and its scrim, hidden, from the first paint */
-    const sheet = () => D.querySelector(".salt-sheet.ho[role=dialog]"), scrim = () => D.querySelector(".salt-sheet-scrim:not(#lookScrim):not(#vaultScrim):not(#fsScrim)");
+    /* 16 Nov 2026, the move to Ambient (the red fix): the Sheet is a native dialog (amb-sheet), its scrim the dialog's own backdrop and its close Ambient's circle */
+    const sheet = () => D.querySelector("dialog.amb-sheet.ho[role=dialog]"), scrim = () => (sheet() && sheet().tagName === "DIALOG" ? sheet() : null);
     ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
-      && !!scrim() && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
+      && !!scrim() && !!sheet().querySelector("button.amb-circle[aria-label=Close]")
       && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
       "the tap opens the system's Sheet at once, saying a code is being made, with focus inside it");
     ok(await until(() => !!D.getElementById("hoC")), "and the code is drawn once it is made");
     const inp = D.getElementById("hoC"), code = inp.value;
-    ok(inp.readOnly && inp.classList.contains("salt-field__input--code") && inp.closest(".salt-code") && /^[a-z2-9]{4} [a-z2-9]{4}$/.test(code)
+    ok(inp.readOnly && inp.classList.contains("amb-input--code") && inp.closest(".amb-field") && /^[a-z2-9]{4} [a-z2-9]{4}$/.test(code)
       && seen.handover && code === seen.handover.code.replace("-", " ") && /Works once, until [0-9]{2}:[0-9]{2}[.]/.test(sheet().textContent),
       "the eight symbols are shown in the Code field, grouped four and four, with when they stop working: " + code);
     /* the QR is rectangles drawing the matrix of <site>/app#<key>, the saved app's own page */
-    const rects = [...sheet().querySelectorAll(".salt-qr .salt-qr__code svg rect")];
+    const rects = [...sheet().querySelectorAll(".amb-codeframe svg.amb-codeframe__code rect")];
     const want = QR.qrMatrix(seen.handover.url);
     const drawn = want.map((row) => row.map(() => 0));
     let off = false;
@@ -23018,7 +23028,7 @@ await (async () => {
       "the code on his screen opens their account on their phone, once");
     /* Escape closes it and hands focus back */
     sheet().dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    ok(!sheet() && !scrim() && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
+    ok(!sheet() && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
   } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
 })();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
@@ -43641,7 +43651,8 @@ await (async () => {
   const who = many[0];
   const b = bodyOf(who), t = text(b);
   /* the footer's first line, the orders and their quantities (F8, Step 1a.2: a card a book, no comma after the count) */
-  const totLine = (h) => { const i = h.indexOf('<div class="tot'); if (i < 0) return ""; const e = h.indexOf('<div class="tr big', i); return h.slice(i, e > 0 ? e : h.indexOf("</div>", i + 17)); };   /* 28 Oct 2026: the live footer is a settings list, its orders and its marks two rows, read up to the balance */
+  /* 16 Nov 2026, the move to Ambient (the red fix): the live footer is Ambient's settings list (amb-settings tot), its orders row then a row a book (the mark thumb, its hidden book word, the size), read up to the balance row */
+  const totLine = (h) => { const i = h.indexOf('<div class="amb-settings tot'); if (i < 0) return ""; const e = h.indexOf('<div class="amb-setting stm-big', i); return h.slice(i, e > 0 ? e : h.indexOf("</ul>", i + 17)); };
   const foot = text(totLine(b));
 
   /* the footer keeps them apart: one figure a book, and their sum is NOT printed. A figure is read whole, so 5 unit is not
@@ -43689,7 +43700,7 @@ await (async () => {
   const one = (bk.roster || []).find((c) => booksOf(c).size === 1);
   if (one) {
     const tr1 = totLine(bodyOf(one));
-    ok(/^ ?\d+ orders? /.test(text(tr1)) && (tr1.match(/class="mtile"/g) || []).length === 1, `a single-book account still foots to one figure, one card (${one}): ` + text(tr1).slice(0, 60));
+    ok(/^ ?\d+ orders? /.test(text(tr1)) && (tr1.match(/amb-thumb--mark/g) || []).length === 1, `a single-book account still foots to one figure, one card (${one}): ` + text(tr1).slice(0, 60));
   }
 })();
 
