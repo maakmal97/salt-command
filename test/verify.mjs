@@ -19428,7 +19428,7 @@ await (async () => {
        the column beside the list says Choose a card to see it in full (a first card picked for him opened an account he had not asked for, and read its story) */
     ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN)) && await work.quiet()
       && pane.hidden && pane.textContent === "" && !D.getElementById("mHome").classList.contains("open") && !D.querySelector("#nlist [aria-current]")
-      && !hits.some((x) => /^GET \/all\/account\//.test(x)) && /^Choose a card to see it in full[.]$/.test((D.querySelector("#mHome .panenone") || {}).textContent || ""),
+      && !hits.some((x) => /^GET \/all\/account\//.test(x)) && /^Choose a card to see it in full[.]$/.test((D.querySelector("#mHome .panenone .amb-setting__name") || {}).textContent || "") /* 17 Nov 2026, the move to Ambient (Fable's review): the empty pane is a head over a one-row card, the words the row's */,
     "on a desk, Needs you draws its cards and opens nothing by itself: the pane is empty, no card is marked current, no account is read, and the column says Choose a card to see it in full: "
       + JSON.stringify([pane.hidden, pane.textContent, !!D.querySelector("#nlist [aria-current]"), hits.filter((x) => /account/.test(x))]));
     /* his decision 7 of 11 Oct 2026: LOOKING MAKES NO LINK. The account a tap opens is drawn beside the list, and its story read is the
@@ -51030,6 +51030,11 @@ await (async () => {
 section("12 Nov 2026: Salt Admin's Approve, leaner: a card says what it sets, approvals go on Confirm, one count");
 await (async () => {
   await (await import("./admin-approve-lean.mjs")).run({ ok, pageWork });
+})();
+
+section("17 Nov 2026: Fable's review of Salt Admin, the panes reach the foot, the glance and the find head the queue, the empty pane, one filled pill");
+await (async () => {
+  await (await import("./admin-fable-fix.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");

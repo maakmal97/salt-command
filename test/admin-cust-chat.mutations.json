@@ -38,7 +38,7 @@
   {
     "name": "Reply a large pill",
     "file": "stmt/owner.js",
-    "find": "aPill('Reply','chat.reply-open',th.u,true)",
+    "find": "aPill('Reply','chat.reply-open',th.u,true,true)",
     "replace": "aPill('Reply','chat.reply-open',th.u,false)"
   },
   {

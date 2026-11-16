@@ -32,14 +32,14 @@
   {
     "name": "3 Restore once withdrawn",
     "file": "stmt/owner.js",
-    "find": "else if(r.revoked){ go=aPill('Restore','link.restore-card',r.id,true);",
-    "replace": "else if(false){ go=aPill('Restore','link.restore-card',r.id,true);"
+    "find": "else if(r.revoked){ go=aPill('Restore','link.restore-card',r.id,true,true);",
+    "replace": "else if(false){ go=aPill('Restore','link.restore-card',r.id,true,true);"
   },
   {
     "name": "3 Approve moves the link",
     "file": "stmt/owner.js",
-    "find": "if(pending){ go=aPill('Approve','link.approve-card',r.id,true); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }",
-    "replace": "if(pending){ go=aPill('Approve','link.approve-card',r.id,true); }"
+    "find": "if(pending){ go=aPill('Approve','link.approve-card',r.id,true,true); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }",
+    "replace": "if(pending){ go=aPill('Approve','link.approve-card',r.id,true,true); }"
   },
   {
     "name": "4 a tap opens it",

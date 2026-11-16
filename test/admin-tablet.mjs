@@ -64,9 +64,10 @@ export async function run({ ok, pageWork }) {
     ok(/\.panenone \{ display: none; margin: 0;/.test(SITE_CSS) && /@media \(min-width: 960px\) \{ \.panenone \{ display: block; \} #nopen:not\(\[hidden\]\) ~ \.panenone \{ display: none; \} \}/.test(SITE_CSS),
       "the invitation is not drawn on a phone, drawn beside the list from 960px (Ambient's split), and not drawn beside a card that is open");
     const kids = (id) => [...d.getElementById(id).parentElement.children].map((c) => c.id || c.className).join("|");
-    const words = [...d.querySelectorAll(".panenone")].map((p) => p.textContent);
+    /* 17 Nov 2026, the move to Ambient (Fable's review): the invitation is Shop's empty pane, a head over a one-row card; its words are the row's */
+    const words = [...d.querySelectorAll(".panenone .amb-setting__name")].map((p) => p.textContent);
     /* 2 Nov 2026 (Customers on the canvas): Customers' column holds the list and the account's pane and no invitation, so the table takes the width until an account is open */
-    ok(kids("nopen") === "nopen|rnone panenone" && kids("aopen") === "anone|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
+    ok(kids("nopen") === "nopen|amb-settings rnone panenone" && kids("aopen") === "anone|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
       "Needs you's column holds the list, the card's pane and then the invitation, which says Choose a card to see it in full, and Customers' holds the list and the account's pane alone: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
   }
 

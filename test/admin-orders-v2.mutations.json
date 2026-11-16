@@ -66,10 +66,10 @@
   "replace": ""
  },
  {
-  "name": "a move is a quiet pill",
+  "name": "a move is a filled pill (17 Nov 2026: the move is quiet since Fable's review)",
   "file": "stmt/owner.js",
-  "find": "var g=aPill(f.move,'order.move',e.id,true);",
-  "replace": "var g=aPill(f.move,'order.move',e.id,true,true);"
+  "find": "var g=aPill(f.move,'order.move',e.id,true,true);",
+  "replace": "var g=aPill(f.move,'order.move',e.id,true);"
  },
  {
   "name": "a move sends without asking",

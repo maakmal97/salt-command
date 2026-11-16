@@ -38,7 +38,7 @@
   {
     "name": "C2 the way is the large pill",
     "file": "stmt/owner.js",
-    "find": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm';",
+    "find": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm amb-pill--quiet';",
     "replace": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill';"
   },
   {
@@ -122,8 +122,8 @@
   {
     "name": "the prompt beside the list is never shown",
     "file": "stmt/page.js",
-    "find": "<p class=\"amb-empty\" id=\"anone\">Choose an account.</p>",
-    "replace": "<p class=\"amb-empty\" id=\"anone\" hidden>Choose an account.</p>"
+    "find": "<div class=\"amb-settings\" id=\"anone\">",
+    "replace": "<div class=\"amb-settings\" id=\"anone\" hidden>"
   },
   {
     "name": "the second pane has another name",

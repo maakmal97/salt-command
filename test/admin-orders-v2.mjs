@@ -93,7 +93,8 @@ export async function run({ ok, pageWork }) {
     await p.enter("todo");
     const leadTodo = t(d.getElementById("makerReviewStatus"));
     const mv = byAct(d, "order.move", "ord-p4");
-    ok(!!mv && t(mv) === "Withdraw" && ["amb-pill", "amb-pill--sm"].every((c) => mv.classList.contains(c)) && !mv.classList.contains("amb-pill--quiet")
+    ok(!!mv && t(mv) === "Withdraw" && ["amb-pill", "amb-pill--sm"].every((c) => mv.classList.contains(c)) && mv.classList.contains("amb-pill--quiet")
+      /* 17 Nov 2026, the move to Ambient (Fable's review, item 5): a row's move is a small QUIET pill, so the record's foot is the one filled pill on screen */
       && d.querySelectorAll("#makerOrderList [class*='salt-']").length === 0 && mv.getAttribute("data-key") === "ord-p4",
     "a move is Ambient's small pill, with its act and key, and no salt class stands in the list: " + (mv && mv.className));
     mv.click(); await p.work.quiet();
