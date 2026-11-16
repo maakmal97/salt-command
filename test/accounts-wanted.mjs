@@ -5,10 +5,15 @@
  *   A3  a code the map holds asks nothing, and a newer approval starts the rungs again
  *   A4  a newer approval bound while an older one waits does not start the rungs again (Fable's review of 17 Nov 2026)
  *   A5  the laptop's pool top-up refuses while an approved Add ID waits for the day's export (tools/stmt-account.mjs poolHold)
+ *   A6  a top-up never changes "the next" spare: new spares carry a later batch and the pool sorts batch first (tools/stmt-pool.mjs freeSpares)
  * The cron's wiring and a run GitHub never started are driven in section "Publish on change" 5c and 5d (test/verify.mjs).
  * Every assertion is red under its own mutation (test/accounts-wanted.mutations.json). */
 import { codesWaiting, accountsWanted, ACCOUNT_WANTED_KEY } from "../src/accounts-wanted.js";
-import { poolHold } from "../tools/stmt-account.mjs";
+import { poolHold, nextBatch } from "../tools/stmt-account.mjs";
+import { freeSpares } from "../tools/stmt-pool.mjs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const J = JSON.stringify;
 class MiniKV {
@@ -66,4 +71,19 @@ export async function run({ ok }) {
   const none = poolHold([]), one = poolHold([{ row: J({ code: "CA9-NEW", kind: "customer" }) }]);
   ok(none === "" && /^refused: CA9-NEW is booked but not yet in git's statements\/_users\.json/.test(one) && /gh workflow run cloud-commit\.yml -f export=true/.test(one),
     "A5 the pool top-up refuses while an Add ID waits for the export, naming it and the way on; with none waiting it goes: " + J({ none, one }));
+
+  /* A6 */
+  const root = mkdtempSync(join(tmpdir(), "pool-")), kvDir = join(root, "2026-09", "_kv");
+  try {
+    mkdirSync(kvDir, { recursive: true });
+    const put = (u, extra) => writeFileSync(join(kvDir, u + ".json"), J(Object.assign({ u, spare: true }, extra || {})));
+    put("mmmm-mmmm"); put("pppp-pppp");
+    const before = freeSpares(root, {}), b1 = nextBatch(kvDir);
+    put("aaaa-aaaa", { batch: b1 }); put("zzzz-zzzz", { batch: b1 });
+    const after = freeSpares(root, {}), b2 = nextBatch(kvDir);
+    put("bbbb-bbbb", { batch: b2 });
+    const later = freeSpares(root, { CQ1: "mmmm-mmmm" });
+    ok(before[0] === "mmmm-mmmm" && b1 === 1 && J(after) === J(["mmmm-mmmm", "pppp-pppp", "aaaa-aaaa", "zzzz-zzzz"]) && b2 === 2 && J(later) === J(["pppp-pppp", "aaaa-aaaa", "zzzz-zzzz", "bbbb-bbbb"]),
+      "A6 spares minted later always come after, whatever their usernames, so a top-up never changes the next spare: " + J({ before, b1, after, b2, later }));
+  } finally { rmSync(root, { recursive: true, force: true }); }
 }

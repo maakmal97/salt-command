@@ -9,5 +9,8 @@
  {"name":"A2 asks every minute","file":"src/accounts-wanted.js","find":"  if (age < ACCOUNT_RUNGS_MIN[tries]) return { codes, tries };\n","replace":""},
  {"name":"A3 a newer approval does not restart","file":"src/accounts-wanted.js","find":"const tries = mark && typeof mark.newest === \"string\" && newest <= mark.newest ? (mark.tries || 0) : 0;","replace":"const tries = mark ? (mark.tries || 0) : 0;"},
  {"name":"A4 any change of the newest restarts","file":"src/accounts-wanted.js","find":"const tries = mark && typeof mark.newest === \"string\" && newest <= mark.newest ? (mark.tries || 0) : 0;","replace":"const tries = mark && mark.newest === newest ? (mark.tries || 0) : 0;"},
- {"name":"A5 the top-up never waits","file":"tools/stmt-account.mjs","find":"  return codes.length ? \"refused: \"","replace":"  return false ? \"refused: \""}
+ {"name":"A5 the top-up never waits","file":"tools/stmt-account.mjs","find":"  return codes.length ? \"refused: \"","replace":"  return false ? \"refused: \""},
+ {"name":"A6 the pool sorts by username alone","file":"tools/stmt-pool.mjs","find":"a.batch - b.batch || (a.u","replace":"0 || (a.u"},
+ {"name":"A6 a top-up takes batch 1 again","file":"tools/stmt-account.mjs","find":"  return top + 1;\n}","replace":"  return 1;\n}"},
+ {"name":"A6 an old spare reads as batch 1","file":"tools/stmt-pool.mjs","find":"Number.isInteger(rec.batch) ? rec.batch : 0 }","replace":"Number.isInteger(rec.batch) ? rec.batch : 1 }"}
 ]

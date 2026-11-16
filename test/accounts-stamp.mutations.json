@@ -1,0 +1,3 @@
+[
+ {"name":"a top-up stamps no batch","file":"tools/stmt-account.mjs","find":"{ spare: true, batch: out.batch }","replace":"{ spare: true }"}
+]

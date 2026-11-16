@@ -25770,6 +25770,10 @@ await (async () => {
     ok(again.wrote === 0 && again.free === 3 && kvCount() === 4, "the same line again mints nothing, the pool being full: " + JSON.stringify(again));
     const more = await mintPool(root142, { count: 5 });
     ok(more.wrote === 2 && more.free === 5 && kvCount() === 6, "and a larger count tops it up by the difference: " + JSON.stringify({ wrote: more.wrote, free: more.free }));
+    const batchOf = (u) => JSON.parse(readFileSync(join(dir142, "_kv", u + ".json"), "utf8")).batch;
+    const order = freeSpares(root142, JSON.parse(usersText));
+    ok(did.minted.every((u) => batchOf(u) === 1) && more.minted.every((u) => batchOf(u) === 2) && JSON.stringify(order.slice(3).sort()) === JSON.stringify(more.minted.slice().sort()),
+      "17 Nov 2026: each top-up stamps its spares one batch past the last, and the later batch comes after the earlier in the pool, whatever the usernames: " + JSON.stringify({ first: did.minted.map(batchOf), then: more.minted.map(batchOf) }));
 
     /* A DRY PUBLISH CARRIES THEM, apart from the accounts */
     const out142 = join(root142, "out");

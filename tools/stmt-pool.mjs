@@ -46,7 +46,7 @@ export function oneCodeEach(users) {
   return users;
 }
 
-/** The free spares in the newest issue, sorted by username, so "the next" is the same on every machine. */
+/** The free spares in the newest issue, sorted by batch and then username, so "the next" is the same on every machine. */
 export function freeSpares(root, users) {
   const issue = newestIssue(root);
   if (!issue) return [];
@@ -57,7 +57,11 @@ export function freeSpares(root, users) {
   for (const f of readdirSync(dir).filter((x) => x.endsWith(".json")).sort()) {
     let rec = null;
     try { rec = JSON.parse(readFileSync(join(dir, f), "utf8")); } catch (e) { continue; }
-    if (isSpare(rec, byUser)) out.push(rec.u);
+    if (isSpare(rec, byUser)) out.push({ u: rec.u, batch: Number.isInteger(rec.batch) ? rec.batch : 0 });
   }
-  return out;
+  /* BATCH FIRST, then username (17 Nov 2026, Fable's re-check). Every publish binds a new ID to the first of these, from git's _users.json and the
+     export's watermark, so a spare that sorted ahead of one already bound and not yet exported would move that customer to another username.
+     A top-up's spares carry a batch past every older one (tools/stmt-account.mjs nextBatch), so they always come after: no top-up changes
+     "the next" spare. A spare from before carries none and is batch 0, so the order of the spares that were there is unchanged. */
+  return out.sort((a, b) => a.batch - b.batch || (a.u < b.u ? -1 : a.u > b.u ? 1 : 0)).map((x) => x.u);
 }
