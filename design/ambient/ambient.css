@@ -1434,10 +1434,11 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
    the screen leaves its height clear; from 960px, where the dock is the rail, it stands at the screen's foot
    beside the rail, on the content's edge, and the screen keeps that room clear, panes and all. Its status
    line is one line, cut short rather than grown into the room kept for it */
-.amb-shell:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen--docked { padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); scroll-padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); }
+/* the room is kept only while the save bar shows: a bar carrying hidden keeps none */
+.amb-shell:has(> .amb-dock > .amb-savebar:not([hidden]) + .amb-tabbar) > .amb-screen--docked { padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); scroll-padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); }
 @container amb (min-width: 960px) {
   .amb-shell--rail > .amb-dock > .amb-savebar { position: absolute; bottom: 0; left: calc(100% + var(--amb-rail-gap) + var(--amb-space-4)); width: min(520px, calc(100cqi - 100% - 2 * var(--amb-dock-inset) - var(--amb-rail-gap) - 2 * var(--amb-space-4) - var(--amb-safe-left) - var(--amb-safe-right))); }
-  .amb-shell.amb-shell--rail:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); }
+  .amb-shell.amb-shell--rail:has(> .amb-dock > .amb-savebar:not([hidden]) + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); }
 }
 
 /* ---- Toast: a capsule from the top. A popover where the browser has them, so it shows over an open sheet. ---- */
