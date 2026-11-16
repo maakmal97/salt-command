@@ -37,9 +37,10 @@ export async function run({ ok, pageWork }) {
       const card = await p.order("ord-p1", "todo");
       ok(!!card && shown(card) && card.getAttribute("data-in") === "orders.todo", "V1: an order opened from To do stands in view, in To do's part: " + (card && card.getAttribute("data-in")));
       const band = card.querySelector(":scope > .oband"), bill = card.querySelector(":scope > .obill");
-      ok(!!band && band.matches(".salt-band.salt-band--grid.ohead") && !card.classList.contains("salt-glass-card") && !!bill
-        && bill.querySelector(":scope > .salt-settings__head") && t(bill.querySelector(".salt-settings__head")) === "Bill" && bill.querySelector(":scope > .salt-settings.ordmoney")
-        && bill.querySelector("[data-total]").classList.contains("salt-settings__row--total") && !card.querySelector(".salt-ledger"),
+      /* 16 Nov 2026, the move to Ambient: the shared band is plain classes on the site's layer (oband), the Bill the system's read-only Settings */
+      ok(!!band && band.matches(".oband.ohead") && !card.classList.contains("salt-glass-card") && !!bill
+        && bill.querySelector(":scope > .amb-settings__head") && t(bill.querySelector(".amb-settings__head")) === "Bill" && bill.querySelector(":scope > ul.amb-settings__list.ordmoney")
+        && bill.querySelector("[data-total]").classList.contains("obill__total") && !card.querySelector(".salt-ledger"),
         "V2: his card is the shared band and the Bill as a settings list, no glass card around it and no ledger: " + t(bill));
       const agree = card.querySelector(".oagreesec"), rows = agree ? [...agree.querySelectorAll(".salt-settings > .salt-settings__row .salt-settings__label")].map(t) : [];
       const pills = [...card.querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
@@ -52,7 +53,7 @@ export async function run({ ok, pageWork }) {
         && ctl.parentElement.querySelectorAll("button:not([hidden])").length === 1, "V4: Decline the order is the card's last control, an ember row alone in its list: " + t(ctl));
       const before = p.posts.length; ctl.click(); await p.work.quiet();
       ok(asked.length === 1 && /Decline this order/.test(asked[0]) && p.posts.length === before, "V4: and it asks on the Sheet first, sending nothing on Keep: " + J(asked));
-      const field = card.querySelector('.omsgs form.salt-composer [data-act="order.reply-text"]'), send = card.querySelector('.omsgs form.salt-composer [data-act="order.reply"]');
+      const field = card.querySelector('.omsgs form.amb-compose [data-act="order.reply-text"]'), send = card.querySelector('.omsgs form.amb-compose [data-act="order.reply"]');
       const n0 = p.posts.length; send.click(); await p.work.quiet();
       const empty = p.posts.length === n0;
       field.value = "  On my way  "; send.click(); await p.work.quiet();
@@ -108,11 +109,11 @@ export async function run({ ok, pageWork }) {
     try {
       c.d.querySelector('[data-row="cs-1"]').click(); await c.settle();
       const scr = c.d.querySelector(".oscreen"), band = scr && scr.querySelector('.oband[data-part="head"]'), bill = scr && scr.querySelector('.obill[data-part="money"]');
-      const last = bill && bill.querySelector(".ordmoney > .salt-settings__row:last-child");
-      ok(!!scr && !scr.classList.contains("salt-glass-card") && !!band && band.matches(".salt-band.salt-band--grid") && !band.classList.contains("ohead")
-        && !!bill && bill.querySelector(":scope > .salt-settings__head") && bill.querySelector(":scope > .salt-settings.ordmoney"),
+      const last = bill && bill.querySelector(".ordmoney > li:last-child > .amb-setting");
+      ok(!!scr && !scr.classList.contains("salt-glass-card") && !!band && band.matches(".oband") && !band.classList.contains("ohead")
+        && !!bill && bill.querySelector(":scope > .amb-settings__head") && bill.querySelector(":scope > ul.amb-settings__list.ordmoney"),
         "V2: the customer's card draws the same band and Bill, with no card around it: " + t(bill));
-      ok(!!last && last.matches(".salt-settings__row--total") && /RM 200\.00/.test(t(last.querySelector(".salt-settings__value"))) && last.querySelector(".salt-settings__value--due"),
+      ok(!!last && last.matches(".obill__total") && /RM 200\.00/.test(t(last.querySelector(".amb-setting__value"))) && last.querySelector(".obill__due"),
         "V9: their still to pay closes the Bill, its figure in ember while owed: " + t(last));
     } finally { c.close(); }
   }

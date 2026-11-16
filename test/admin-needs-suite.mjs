@@ -28,12 +28,12 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     const s = card("x:suite"), title = s && s.querySelector(".need-who");
     ok(!!s && all.filter((k) => k === "x:suite").length === 1 && s.getAttribute("data-sev") === "watch" && /^Tests/.test(s.querySelector(".nkind").textContent)
-      && title.textContent === "Desk tests red after v1297" && s.querySelectorAll("button.salt-pill, button.nbtn").length === 0 && !s.querySelector(".need-tap")
+      && title.textContent === "Desk tests red after v1297" && s.querySelectorAll("button.amb-pill").length === 0 && !s.querySelector(".need-tap")
       && !all.some((k) => /^x:[0-2]$/.test(k)),
       "the red suite is one FYI card, Tests, after its newest version, with no button and no tap on a phone, and no Entry card for any suite row: " + J([all, s && s.textContent]));
     /* 2 */
     const e = card("x:3"), et = e && e.querySelector(".need-who");
-    ok(!!e && e.getAttribute("data-sev") === "now" && et.textContent === "Not taken: add the date" && e.querySelectorAll("button.nbtn").length === 1,
+    ok(!!e && e.getAttribute("data-sev") === "now" && et.textContent === "Not taken: add the date" && e.querySelectorAll(".amb-task__acts button").length === 1,
       "a real refusal keeps its Entry card and Fix, its reason the title, so the card never reads Desk alone: " + J(e && e.textContent));
     /* 3 */
     const root = d.getElementById("makerDrafts");
@@ -41,14 +41,14 @@ export async function run({ ok, pageWork }) {
   } finally { p.w.close(); }
 
   /* 4 */
-  p = await richOwnerPage({ pageWork, review, before: (win) => { win.matchMedia = (mq) => ({ matches: /min-width:\s*860px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); } });
+  p = await richOwnerPage({ pageWork, review, before: (win) => { win.matchMedia = (mq) => ({ matches: /min-width:\s*960px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); } });
   try {
     await p.work.quiet();
     const d = p.d;
     byAct(d, "nav.needs").click(); await p.work.quiet();
     byAct(d, "need.open", "x:suite").click(); await p.work.quiet();
     const pane = d.querySelector("#nopen .npane");
-    ok(!!pane && /tests failed after v1297 went live/.test(pane.textContent) && /Earlier red runs: 2/.test(pane.textContent) && pane.querySelectorAll(".npane__go button").length === 0,
-      "from 860px the red suite opens beside the list with the Desk's reason in full and nothing to tap: " + J(pane && pane.textContent));
+    ok(!!pane && /tests failed after v1297 went live/.test(pane.textContent) && /Earlier red runs: 2/.test(pane.textContent) && d.querySelectorAll("#nrecord > .npane__go button, #nopen .npane__acts button").length === 0,
+      "from 960px the red suite opens beside the list with the Desk's reason in full and nothing to tap: " + J(pane && pane.textContent));
   } finally { p.w.close(); }
 }

@@ -15,6 +15,7 @@
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct, drawEverything } from "./maker-act.mjs";
 import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { SITE_CSS } from "../stmt/statement-css.js";
 
 /* the owner page's own stylesheet, read as rules, by query (spaces taken out) and selector (a list is written "a,b"). It starts where PAGE_CSS says the owner page's rules begin: what
    comes before is the customer's, which has its own rules at 768px and 860px (test/counter-tablet.mjs) */
@@ -40,38 +41,32 @@ export async function run({ ok, pageWork }) {
     const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859|371)\.98px/.test(m.q));
     const sels = fam.flatMap((m) => m.rules.map((r) => r.sel));
     const loose = sels.filter((s) => s.split(",").some((x) => !/\.adm\b/.test(x)));
-    ok(from > 0 && sels.length >= 30 && !loose.length,
+    ok(from > 0 && sels.length >= 10 && !loose.length,   /* 16 Nov 2026, the merge of places F and H: both retired rules of the 860px widths, 14 are left */
       "every rule of his page at 768px, 860px, 372px and the widths below them is under .adm, which the customer's page shares this stylesheet without (the rules before the one that marks where his begin are the customer's own, test/counter-tablet.mjs): "
         + sels.length + " rules, outside .adm: " + (loose.join(" | ") || "none") + ", marker found: " + (from > 0));
   }
 
   /* 2. NEEDS YOU AND CUSTOMERS: A LIST AND A DETAIL FROM 860px */
   {
-    /* 16 Nov 2026, the move to Ambient (place H): Customers is Ambient's two panes (the list and the open account), the layer hiding the list while an account is open below 960px and the way back from 960px;
-       Needs you's rules are Needs you's own */
-    const grid = at("(min-width:860px)", ".adm .nsplit"), cols = at("(min-width:860px)", ".adm .nsplit");
-    ok(/display: grid/.test(grid) && /grid-template-columns: minmax\(0,1fr\) minmax\(0,440px\)/.test(cols) && !at("(min-width:860px)", ".adm .asplit") && d.querySelector("#oAccts > .asplit").classList.contains("amb-split--panes"),
-      "from 860px Needs you stands its list and card side by side, and Customers' list and account are Ambient's two panes, the page keeping no rule of its own for them: " + [grid, cols].join(" | "));
-    /* Needs you's card beside its list: sticky 24px down only to 1080px, its height giving up the bar's, not drawn on a phone (the page's rules for #nopen, unmoved) */
-    const pane = at("(min-width:860px)", ".adm #nopen"), band2 = at("(min-width:860px)and(max-width:1079.98px)", ".adm #nopen"), phone = at("(max-width:859.98px)", ".adm #nopen");
-    ok(/overflow-y: auto/.test(pane) && /position: sticky/.test(band2) && /top: 24px/.test(band2) && /max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band2) && /display: none/.test(phone) && d.getElementById("nopen").classList.contains("salt-pane"),
-      "Needs you's card is sticky and scrolls inside itself from 860px, its height giving up the bar's to 1080px, and is not drawn on a phone: " + pane + " | " + band2 + " | " + phone);
+    /* 16 Nov 2026, the move to Ambient (place H): Customers is Ambient's two panes (the list and the open account); Needs you's card is drawn by place F */
+    ok(d.querySelector("#oAccts > .asplit").classList.contains("amb-split--panes") && !at("(min-width:860px)", ".adm .asplit") && !at("(min-width:860px)", ".adm #aopen"),
+      "Customers' list and account are Ambient's two panes, the page keeping no rule of its own for them");
     const css = SITE_STYLE.replace(/\s+/g, " ");
     ok(/@container amb \(min-width: 960px\) \{ \.aback \{ display: none; \} \}/.test(css) && /@container amb \(max-width: 959px\) \{ #oAccts\.open \.afind, #oAccts\.open #rlist,[^}]*display: none; \}/.test(css),
       "from 960px the way back is not drawn; below it an account open takes the list's place");
+    ok(/@media \(max-width: 959px\) \{ #nrecord:not\(:has\(> #nopen:not\(\[hidden\]\)\)\) \{ display: none; \} \}/.test(SITE_CSS), "Needs you draws no column for a card that is not open, below 960px");
     const rail = media.filter((m) => /1080px|1079[.]98px/.test(m.q) && !/860px/.test(m.q)).flatMap((m) => m.rules.map((r) => r.sel)).filter((s) => /nopen|aopen|nsplit|asplit|oAccts/.test(s));
     ok(!rail.some((s) => /aopen|asplit|oAccts/.test(s)), "Needs you's pane waits for nothing at 1080px, and the page keeps no Customers rule there: " + (rail.join(" | ") || "none"));
   }
 
   /* 3. NOTHING OPENS BY ITSELF: TAP A CARD */
   {
-    const base = top(".adm .panenone"), wide = at("(min-width:860px)", ".adm .panenone"), open = at("(min-width:860px)", ".adm #nopen:not([hidden])~.panenone");
-    ok(/display: none/.test(base) && /display: block/.test(wide) && /display: none/.test(open),
-      "the invitation is not drawn on a phone, drawn beside the list from 860px, and not drawn beside an account that is open: " + [base, wide, open].join(" | "));
+    ok(/\.panenone \{ display: none; margin: 0;/.test(SITE_CSS) && /@media \(min-width: 960px\) \{ \.panenone \{ display: block; \} #nopen:not\(\[hidden\]\) ~ \.panenone \{ display: none; \} \}/.test(SITE_CSS),
+      "the invitation is not drawn on a phone, drawn beside the list from 960px (Ambient's split), and not drawn beside a card that is open");
     const kids = (id) => [...d.getElementById(id).parentElement.children].map((c) => c.id || c.className).join("|");
     const words = [...d.querySelectorAll(".panenone")].map((p) => p.textContent);
     /* 2 Nov 2026 (Customers on the canvas): Customers' column holds the list and the account's pane and no invitation, so the table takes the width until an account is open */
-    ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "anone|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
+    ok(kids("nopen") === "nopen|rnone panenone" && kids("aopen") === "anone|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
       "Needs you's column holds the list, the card's pane and then the invitation, which says Choose a card to see it in full, and Customers' holds the list and the account's pane alone: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
   }
 
@@ -148,12 +143,11 @@ export async function run({ ok, pageWork }) {
   /* 6. FROM 1080px, THE LAPTOP: Shop is one column of 760px, the rows to approve lie two up, and Messages stands the thread beside the thread list */
   {
     const q = "(min-width:1080px)";
-    const shop = at(q, ".adm #oShop"), wide = at(q, ".adm #oOrders>.abody>#oApprove"), narrow = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove");
-    ok(!shop && /max-width: none/.test(wide) && /max-width: 600px/.test(narrow),
-      "from 1080px the page sizes no Shop column (Ambient's panes lay it out) and the rows to approve have the width for two, and from 860px they keep their 600px column: " + [shop, wide, narrow].join(" | "));
-    const two = at(q, ".adm #makerDrafts"), card = at(q, ".adm #makerDrafts>.maker-card"), note = at(q, ".adm #makerDrafts>.rnone");
-    ok(/display: grid/.test(two) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(two) && /margin: 0/.test(card) && /grid-column: 1 ?\/ ?-1/.test(note),
-      "and the rows to approve lie two up, a row's own margin giving way to the grid's gap and the line that says none wait across both: " + [two, card, note].join(" | "));
+    const shop = at(q, ".adm #oShop");
+    ok(!shop, "from 1080px the page sizes no Shop column (Ambient's panes lay it out): " + shop);
+    /* 16 Nov 2026, the move to Ambient (place F): the rows to approve are Ambient's stack (one column, the gutter the stack's), the page keeping no width or grid of its own for them */
+    ok(!at(q, ".adm #makerDrafts") && !at(q, ".adm #oOrders>.abody>#oApprove") && /\.apstack \{ display: grid; gap: var\(--amb-space-3\); \}/.test(SITE_CSS) && !!d.querySelector("#oApprove.amb-stack #makerDrafts.apstack"),
+      "and the rows to approve are Ambient's stack, a card one under the other, the page setting no width or grid for them");
     /* 16 Nov 2026, the move to Ambient (place H): Messages is a notice over Ambient's two panes, the threads and the open thread, the page keeping no rule of its own for them */
     ok(!at(q, ".adm .chatgrid") && !at(q, ".adm #makerChatList") && !at(q, ".adm #makerChatOpen") && !!d.querySelector('[data-in="customers.messages"] > .amb-split--panes'),
       "Messages' threads and thread are Ambient's two panes, and the page writes no column of its own for them");

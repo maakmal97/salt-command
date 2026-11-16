@@ -66,12 +66,6 @@
     "replace": "--salt-mist: #3a4048;"
   },
   {
-    "name": "a size is under the 11px floor",
-    "file": "stmt/page.js",
-    "find": ".rlcount{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);",
-    "replace": ".rlcount{font-family:var(--salt-font-mono);font-size:10px;"
-  },
-  {
     "name": "a control is sized under 44px",
     "file": "stmt/page.js",
     "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
@@ -132,54 +126,6 @@
     "replace": "var row=el('div','maker-facts');"
   },
   {
-    "name": "Copy link is not a ghost (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "var copy=aBtn('Copy link','amb-action','link.copy');",
-    "replace": "var copy=aBtn('Copy link','','link.copy');"
-  },
-  {
-    "name": "Withdraw is not the danger ghost (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "'amb-action'+(r.revoked?'':' amb-action--danger'),r.revoked?",
-    "replace": "'amb-action',r.revoked?"
-  },
-  {
-    "name": "Decline is not the danger ghost (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "var de=aBtn('Decline','amb-action amb-action--danger','link.decline');",
-    "replace": "var de=aBtn('Decline','amb-action','link.decline');"
-  },
-  {
-    "name": "a guest link is not the glass card (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "var fig=el('figure','amb-codeframe'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cap=el('figcaption'",
-    "replace": "var fig=el('figure','x'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cap=el('figcaption'"
-  },
-  {
-    "name": "a head over the links is not the eyebrow (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "group.appendChild(el('h2','amb-section ghead',heads[i]));",
-    "replace": "group.appendChild(el('h3','ghead',heads[i]));"
-  },
-  {
-    "name": "the report card is not the glass card (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "var table=el('table','amb-table amb-table--stack atable')",
-    "replace": "var table=el('table','atable')"
-  },
-  {
-    "name": "the report card's figures are not the Metric row (Ambient)",
-    "file": "stmt/owner.js",
-    "find": "var td=el('td',num[i]?'is-num':null); td.setAttribute('data-label',heads[i]);",
-    "replace": "var td=el('td',num[i]?'is-num':null);"
-  },
-  {
-    "name": "his page sets a bold of its own again",
-    "file": "stmt/page.js",
-    "find": ".adm .apbang{font-weight:500}",
-    "replace": ".adm .apbang{font-weight:700}"
-  },
-  {
     "name": "the door heading goes back to 24px",
     "file": "stmt/page.js",
     "find": ".gate h1{font-size:1.75rem;",
@@ -192,10 +138,10 @@
     "replace": ".salt-field__select option { background: var(--salt-well);"
   },
   {
-    "name": "the list keeps half the width with nothing open",
+    "name": "a rule for the open order comes back",
     "file": "stmt/page.js",
-    "find": "  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}\n",
-    "replace": ""
+    "find": ".pcover{display:block;margin-top:2px}",
+    "replace": ".pcover{display:block;margin-top:2px}\n.oscreen{position:sticky}"
   },
   {
     "name": "the Pin recipe is left out of the recipes the page carries",
@@ -280,5 +226,47 @@
     "file": "stmt/page.js",
     "find": "    + \"</main>\" + placesDock() + \"</div>\"",
     "replace": "    + \"</main>\" + placesDock() + '<nav class=\"salt-rail\"><div class=\"salt-rail__foot\"></div></nav>' + \"</div>\""
+  },
+  {
+    "name": "Copy link is not a ghost (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "var copy=aBtn('Copy link','amb-action','link.copy');",
+    "replace": "var copy=aBtn('Copy link','','link.copy');"
+  },
+  {
+    "name": "Withdraw is not the danger ghost (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "'amb-action'+(r.revoked?'':' amb-action--danger'),r.revoked?",
+    "replace": "'amb-action',r.revoked?"
+  },
+  {
+    "name": "Decline is not the danger ghost (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "var de=aBtn('Decline','amb-action amb-action--danger','link.decline');",
+    "replace": "var de=aBtn('Decline','amb-action','link.decline');"
+  },
+  {
+    "name": "a guest link is not the glass card (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "var fig=el('figure','amb-codeframe'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cap=el('figcaption'",
+    "replace": "var fig=el('figure','x'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cap=el('figcaption'"
+  },
+  {
+    "name": "a head over the links is not the eyebrow (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "group.appendChild(el('h2','amb-section ghead',heads[i]));",
+    "replace": "group.appendChild(el('h3','ghead',heads[i]));"
+  },
+  {
+    "name": "the report card is not the glass card (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "var table=el('table','amb-table amb-table--stack atable')",
+    "replace": "var table=el('table','atable')"
+  },
+  {
+    "name": "the report card's figures are not the Metric row (Ambient)",
+    "file": "stmt/owner.js",
+    "find": "var td=el('td',num[i]?'is-num':null); td.setAttribute('data-label',heads[i]);",
+    "replace": "var td=el('td',num[i]?'is-num':null);"
   }
 ]

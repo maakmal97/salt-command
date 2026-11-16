@@ -8,6 +8,7 @@
  *   4  after the answer, the decided are counted at the head, and a refused card stays with Refused, why and how to fix it
  *   5  44px targets and the light's tokens in the page's styles */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { AMB_CSS } from "../stmt/statement-css.js";
 
 const J = JSON.stringify;
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
@@ -72,12 +73,11 @@ export async function run({ ok, pageWork }) {
     "the decided cards (a trip one card) are counted at the head and a refused card stays with Refused, why and how to fix it: " + J([t(done), t(why)]));
     /* 5 */
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.aphead \.salt-ghost,\.adm \.apticks button,\.adm \.apbar button,\.adm \.apmore\{min-height:44px\}/.test(css)
-      && /\.adm \.ap--a\{border-color:var\(--salt-verdigris\)\}\.adm \.ap--r\{border-color:var\(--salt-ember\)\}/.test(css)
-      && /\.salt-pill--danger \{ background: var\(--salt-ember\);/.test(css),
-    "44px targets, and the choice lit in the system's verdigris and ember, a ticked Reject the system's danger pill");
-    ok(/(^| )salt-pill( |$)/.test(rTicked) && / salt-pill--danger( |$)/.test(rTicked) && !/salt-ghost/.test(rTicked),
-      "a ticked Reject is filled, the danger pill, with the weight of a ticked Approve: " + rTicked);
+    /* 16 Nov 2026, the move to Ambient (place F): the small pills are Ambient's (44px by its tap token), and the choice lights the card's edge, Approve in its positive tone and Reject in its negative */
+    ok(/\.amb-pill--sm \{ min-height: var\(--amb-tap\);/.test(AMB_CSS) && /\.apcard\.ap--a \{ border-color: var\(--amb-pos\); \}/.test(css) && /\.apcard\.ap--r \{ border-color: var\(--amb-neg\); \}/.test(css),
+    "44px targets, and the choice lit in the system's positive and negative tones");
+    ok(/(^| )amb-pill( |$)/.test(rTicked) && /amb-pill--sm/.test(rTicked) && !/amb-pill--quiet/.test(rTicked),
+      "a ticked Reject is filled, a small pill with the weight of a ticked Approve (the card says To reject in its chip): " + rTicked);
   } catch (e) { ok(false, "admin-decide-many stopped on an error: " + (e && e.stack)); }
   finally { p.w.close(); }
 }

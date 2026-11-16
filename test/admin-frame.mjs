@@ -67,11 +67,10 @@ export async function run({ ok, pageWork }) {
     ok(has("#roster", "amb-shell") && has("#roster", "amb-shell--rail") && has("#roster > main", "amb-screen") && has("#roster > main", "amb-screen--docked")
       && !d.querySelector("#roster.salt-frame, .salt-frame__main, .salt-frame__bar") && d.querySelector("#roster > .amb-dock > nav.amb-tabbar") !== null,
       "F2.1 his shell is Ambient's: its screen the one scroll box, docked, and its dock the places; no salt-ds frame");
-    const panes = ["#nopen", "#makerReview"].filter((s) => !has(s, "salt-pane"));
-    /* 16 Nov 2026, the move to Ambient (place H): an account and a thread are the second stack of Ambient's panes, #aside and #chatside, their records wrappers that hold no place */
+    /* 16 Nov 2026, the move to Ambient (places F, H and I): Needs you's card (#nopen) is drawn in the record's column #nrecord of Ambient's split, an account and a thread are the second stack of Ambient's panes (#aside, #chatside), and Shop's open day is the second stack of its panes; none carries salt-pane */
+    const panes = ["#makerReview"].filter((s) => !has(s, "salt-pane"));
     ok(["#aside", "#chatside"].every((q) => !!d.querySelector(q) && d.querySelector(q).classList.contains("amb-stack") && !!d.querySelector(q).closest(".amb-split--panes")) && d.querySelector("#aside").previousElementSibling.id === "rlist" && d.querySelector("#chatside").previousElementSibling.id === "makerChatList", "F2.2b an account and a thread are the second pane of a split, their list the first");
-    /* 16 Nov 2026, the move to Ambient (place I): Shop's open day is the second stack of Ambient's panes, no salt-pane */
-    ok(!panes.length && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an account, an order, a thread, Shop's open day) for its builder's split; not: " + J(panes));
+    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an order, Shop's open day) for its builder's split; not: " + J(panes));
     const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
     ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),
       "F3.1 nothing sizes a frame any more: no --salt-frame-h, no frame column, no .gate.adm");
@@ -159,8 +158,8 @@ export async function run({ ok, pageWork }) {
       const of2 = d.querySelector("#nopen .maker-card > .ofoot");
       const keys = [...d.querySelectorAll("#nlist [data-need]")].map((x) => x.getAttribute("data-need")), mine = keys.filter((k) => !/^[op]:/.test(k))[0];
       if (mine) await click(d.querySelector('#nlist [data-need="' + mine + '"] .need-tap'));
-      const go = d.querySelector("#nopen .npane__go");
-      ok(!!of2 && of2.classList.contains("salt-pane__foot") && !!of2.querySelector(".salt-pill") && !!go && go.classList.contains("salt-pane__foot") && go.parentElement.lastElementChild === go,
+      const go = d.querySelector("#nrecord > .npane__go");
+      ok(!!of2 && of2.classList.contains("salt-pane__foot") && !!of2.querySelector(".salt-pill") && !!go && go.classList.contains("amb-foot") && go.parentElement.lastElementChild === go,
         "F10.2 Needs you's open card: an order's stage pill is its card's foot, and a card with ways of its own has them as its foot, last: " + J([!!of2, mine, go && go.className]));
     } finally { p.w.close(); }
   }

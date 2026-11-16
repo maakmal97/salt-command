@@ -348,13 +348,12 @@ export async function run({ ok, pageWork }) {
   {
     const { html, media, at } = ownerCss();
     /* 16 Nov 2026, the move to Ambient (place I): Record's menu and its form are Ambient's panes (two columns from 960px, the pane scrolling by itself), the page adding only the invitation's and the way back's stand-down */
-    const approve = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove")[0] || "";
-    ok(!/\.adm \.recgrid|\.adm \.recpane|\.adm \.reclist/.test(html.replace(/<script[\s\S]*?<\/script>/g, "")),
+        ok(!/\.adm \.recgrid|\.adm \.recpane|\.adm \.reclist/.test(html.replace(/<script[\s\S]*?<\/script>/g, "")),
       "the page lays out none of Record's menu and form open: Ambient's panes stand them side by side from 960px (the grid is read below)");
     ok(/@container amb \(max-width: 959px\) \{ \.recgrid\.open \.reclist, \.recnone \{ display: none; \}/.test(html) && /\.recgrid\.open \.recnone \{ display: none; \}/.test(html),
       "below 960px a form open takes the menu's place, and the pane's invitation to choose one is not drawn once one is open");
-    ok(/@container amb \(min-width: 960px\) \{ #makerFormBack \{ display: none; \} \}/.test(html) && !/\.adm #oRecord\{/.test(html) && /max-width: 600px/.test(approve),
-      "from 960px the way back is not drawn (the menu is beside the form) and the rows to approve keep their column: " + approve);
+    ok(/@container amb \(min-width: 960px\) \{ #makerFormBack \{ display: none; \} \}/.test(html) && !/\.adm #oRecord\{/.test(html) && !/#oApprove\{/.test(html),
+      "from 960px the way back is not drawn (the menu is beside the form) and the rows to approve are Ambient's stack (place F), the page keeping no rule for them");
     const d = new JSDOM(html).window.document;
     ok(!!d.querySelector("#makerInputs") && d.querySelector("#makerInputs").getAttribute("data-in") === "record.entry record.customers record.pricing",
       "the forms stand in Record's one section, which Entry, Customers and Pricing show");

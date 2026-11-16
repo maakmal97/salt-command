@@ -1,128 +1,23 @@
 [
-  {
-    "name": "the head is no band",
-    "file": "stmt/page.js",
-    "find": "var h=el('section','oband salt-band salt-band--grid'), top=",
-    "replace": "var h=el('section','oband'), top="
-  },
-  {
-    "name": "the reference leaves the band's corner",
-    "file": "stmt/page.js",
-    "find": "var ref=el('span','salt-band__ref oref',orderRef(o.id)); ref.setAttribute('data-ref',''); top.appendChild(ref);\n    h.appendChild(top);\n    var when",
-    "replace": "var ref=el('span','oref',orderRef(o.id)); ref.setAttribute('data-ref',''); top.appendChild(ref);\n    h.appendChild(top);\n    var when"
-  },
-  {
-    "name": "the band's units say the raw status",
-    "file": "stmt/owner.js",
-    "find": "el('span','salt-settings__value salt-settings__value--lg ogoods__units',units(order.qty))",
-    "replace": "el('span','salt-settings__value salt-settings__value--lg ogoods__units',String(order.status))"
-  },
-  {
-    "name": "a collection says no point",
-    "file": "stmt/owner.js",
-    "find": "return order.point?'Collect at '+order.point:'Collection';",
-    "replace": "return 'Collection';"
-  },
-  {
-    "name": "a delivery says no place",
-    "file": "stmt/owner.js",
-    "find": "if(order.mode==='deliver') return (order.place||'Their place')+' · '",
-    "replace": "if(order.mode==='deliver') return 'Delivery'+' · '"
-  },
-  {
-    "name": "no pin at the point",
-    "file": "stmt/owner.js",
-    "find": "if(waits&&order.pointAt&&isFinite(order.pointAt.lat)&&isFinite(order.pointAt.lng)){",
-    "replace": "if(false){"
-  },
-  {
-    "name": "the pin stays once handed over",
-    "file": "stmt/owner.js",
-    "find": "var act=ordAction(order), waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004, wayNode;",
-    "replace": "var act=ordAction(order), waits=order.point&&order.status==='ready'&&order.mode==='collect', wayNode;"
-  },
-  {
-    "name": "one Paid line for every payment",
-    "file": "stmt/owner.js",
-    "find": "if(paid>0&&conf.length&&Math.abs(csum-paid)<0.005) conf.forEach(function(x){",
-    "replace": "if(false) conf.forEach(function(x){"
-  },
-  {
-    "name": "a payment loses its way",
-    "file": "stmt/owner.js",
-    "find": "R.push({k:'Paid', v:rm(+x.amount), sub:(x.method?methodWord(x.method,x.account)+', ':'')+fmtWhen(x.at), at:['data-pay','']});",
-    "replace": "R.push({k:'Paid', v:rm(+x.amount), sub:fmtWhen(x.at), at:['data-pay','']});"
-  },
-  {
-    "name": "Owed is not the due row",
-    "file": "stmt/owner.js",
-    "find": "R.push({k:'Owed', v:rm(owed), due:true, vcls:'odue', cls:'obill--due'});",
-    "replace": "R.push({k:'Owed', v:rm(owed), vcls:'odue', cls:'obill--due'});"
-  },
-  {
-    "name": "no Settled when paid",
-    "file": "stmt/owner.js",
-    "find": "else if(agreed||order.status==='done') R.push({k:'Settled', v:rm(0), vcls:'osettled'});",
-    "replace": "else if(agreed) R.push({k:'Owed', v:rm(0)});"
-  },
-  {
-    "name": "no Paid step",
-    "file": "stmt/page.js",
-    "find": "pli.setAttribute('data-step','paid'); ol.insertBefore(pli,ol.lastChild);",
-    "replace": "void pli;"
-  },
-  {
-    "name": "Paid says no part paid",
-    "file": "stmt/page.js",
-    "find": "stepWhen(pays.length?pays[pays.length-1].at:''):paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'',false);",
-    "replace": "stepWhen(pays.length?pays[pays.length-1].at:''):'',false);"
-  },
-  {
-    "name": "Paid never done",
-    "file": "stmt/page.js",
-    "find": "var pli=step(settled?' salt-steps__step--done':'',",
-    "replace": "var pli=step('',"
-  },
-  {
-    "name": "Paid done only once the goods go",
-    "file": "stmt/page.js",
-    "find": "var due=(+o.total||0)+(+o.delivery||0), paid=(+o.paid||0)+(+o.credit||0), settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004;\n    var pays",
-    "replace": "var due=(+o.total||0)+(+o.delivery||0), paid=(+o.paid||0)+(+o.credit||0), settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004&&cur>=3;\n    var pays"
-  },
-  {
-    "name": "no Bill heading",
-    "file": "stmt/owner.js",
-    "find": "    return oBillOf('Bill',R);",
-    "replace": "    return oBillOf('',R);"
-  },
-  {
-    "name": "the delivery row keeps its old word",
-    "file": "stmt/owner.js",
-    "find": "R.push({k:'Delivery cost', v:rm(order.delivery||0), sub:km});",
-    "replace": "R.push({k:'Delivery', v:rm(order.delivery||0), sub:km});"
-  },
-  {
-    "name": "no Total",
-    "file": "stmt/owner.js",
-    "find": "R.push({k:'Total', v:rm((+order.total||0)+(+order.delivery||0)), total:true, cls:'abtotal', at:['data-total','']});",
-    "replace": "void 0;"
-  },
-  {
-    "name": "the Total leaves out the delivery",
-    "file": "stmt/owner.js",
-    "find": "R.push({k:'Total', v:rm((+order.total||0)+(+order.delivery||0)), total:true,",
-    "replace": "R.push({k:'Total', v:rm(+order.total||0), total:true,"
-  },
-  {
-    "name": "goods all out still says To hand over",
-    "file": "stmt/owner.js",
-    "find": "if(s==='ready'&&(+order.qty||0)>0&&(+order.moved||0)>=(+order.qty||0)-0.0005) return ['verdigris',dl?'Delivered':'Collected','ticks'];",
-    "replace": ""
-  },
-  {
-    "name": "Ended's line leaves out what closed on the book",
-    "file": "stmt/owner.js",
-    "find": "rest?rest+' closed on the book':''",
-    "replace": "''"
-  }
+ {"name":"the head is no band","file":"stmt/page.js","find":"var h=el('section','oband'), top=el('p','oband__head');","replace":"var h=el('section','oband0'), top=el('p','oband__head');"},
+ {"name":"the reference leaves the band's corner","file":"stmt/page.js","find":"var ref=el('span','amb-chip oref',orderRef(o.id)); ref.setAttribute('data-ref',''); top.appendChild(ref);\n    h.appendChild(top);","replace":"var ref=el('span','amb-chip oref',orderRef(o.id)); ref.setAttribute('data-ref',''); h.appendChild(ref);\n    h.appendChild(top);"},
+ {"name":"the band's units say the raw status","file":"stmt/owner.js","find":"el('span','salt-settings__value salt-settings__value--lg ogoods__units',units(order.qty))","replace":"el('span','salt-settings__value salt-settings__value--lg ogoods__units',String(order.status))"},
+ {"name":"a collection says no point","file":"stmt/owner.js","find":"return order.point?'Collect at '+order.point:'Collection';","replace":"return 'Collection';"},
+ {"name":"a delivery says no place","file":"stmt/owner.js","find":"if(order.mode==='deliver') return (order.place||'Their place')+' · '","replace":"if(order.mode==='deliver') return 'Delivery'+' · '"},
+ {"name":"no pin at the point","file":"stmt/owner.js","find":"if(waits&&order.pointAt&&isFinite(order.pointAt.lat)&&isFinite(order.pointAt.lng)){","replace":"if(false){"},
+ {"name":"the pin stays once handed over","file":"stmt/owner.js","find":"var act=ordAction(order), waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004, wayNode;","replace":"var act=ordAction(order), waits=order.point&&order.status==='ready'&&order.mode==='collect', wayNode;"},
+ {"name":"one Paid line for every payment","file":"stmt/owner.js","find":"if(paid>0&&conf.length&&Math.abs(csum-paid)<0.005) conf.forEach(function(x){","replace":"if(false) conf.forEach(function(x){"},
+ {"name":"a payment loses its way","file":"stmt/owner.js","find":"R.push({k:'Paid', v:rm(+x.amount), sub:(x.method?methodWord(x.method,x.account)+', ':'')+fmtWhen(x.at), at:['data-pay','']});","replace":"R.push({k:'Paid', v:rm(+x.amount), sub:fmtWhen(x.at), at:['data-pay','']});"},
+ {"name":"Owed is not the due row","file":"stmt/owner.js","find":"R.push({k:'Owed', v:rm(owed), due:true, vcls:'odue', cls:'obill--due'});","replace":"R.push({k:'Owed', v:rm(owed), vcls:'odue', cls:'obill--due'});"},
+ {"name":"no Settled when paid","file":"stmt/owner.js","find":"else if(agreed||order.status==='done') R.push({k:'Settled', v:rm(0), vcls:'osettled'});","replace":"else if(agreed) R.push({k:'Owed', v:rm(0)});"},
+ {"name":"no Paid step","file":"stmt/page.js","find":"pli.setAttribute('data-step','paid'); ol.insertBefore(pli,ol.lastChild);","replace":"void pli;"},
+ {"name":"Paid says no part paid","file":"stmt/page.js","find":"paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'','');","replace":"'','');"},
+ {"name":"Paid never done","file":"stmt/page.js","find":"var pli=step(settled?'done':'',names.paid,","replace":"var pli=step('',names.paid,"},
+ {"name":"Paid done only once the goods go","file":"stmt/page.js","find":"var due=(+o.total||0)+(+o.delivery||0), paid=(+o.paid||0)+(+o.credit||0), settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004;\n    var pays","replace":"var due=(+o.total||0)+(+o.delivery||0), paid=(+o.paid||0)+(+o.credit||0), settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004&&cur>=3;\n    var pays"},
+ {"name":"no Bill heading","file":"stmt/owner.js","find":"    return oBillOf('Bill',R);","replace":"    return oBillOf('',R);"},
+ {"name":"the delivery row keeps its old word","file":"stmt/owner.js","find":"R.push({k:'Delivery cost', v:rm(order.delivery||0), sub:km});","replace":"R.push({k:'Delivery', v:rm(order.delivery||0), sub:km});"},
+ {"name":"no Total","file":"stmt/owner.js","find":"R.push({k:'Total', v:rm((+order.total||0)+(+order.delivery||0)), total:true, cls:'abtotal', at:['data-total','']});","replace":"void 0;"},
+ {"name":"the Total leaves out the delivery","file":"stmt/owner.js","find":"R.push({k:'Total', v:rm((+order.total||0)+(+order.delivery||0)), total:true,","replace":"R.push({k:'Total', v:rm(+order.total||0), total:true,"},
+ {"name":"goods all out still says To hand over","file":"stmt/owner.js","find":"if(s==='ready'&&(+order.qty||0)>0&&(+order.moved||0)>=(+order.qty||0)-0.0005) return ['verdigris',dl?'Delivered':'Collected','ticks'];","replace":""},
+ {"name":"Ended's line leaves out what closed on the book","file":"stmt/owner.js","find":"rest?rest+' closed on the book':''","replace":"''"}
 ]

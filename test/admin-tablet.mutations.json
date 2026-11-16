@@ -1,45 +1,9 @@
 [
   {
-    "name": "a rule of the 860px width is not under .adm",
-    "file": "stmt/page.js",
-    "find": "  .adm .nsplit{display:grid;gap:20px;align-items:start}\n",
-    "replace": "  .nsplit{display:grid;gap:20px;align-items:start}\n"
-  },
-  {
-    "name": "the account beside Needs you stops scrolling inside itself",
-    "file": "stmt/page.js",
-    "find": "  .adm #nopen{overflow-y:auto}\n",
-    "replace": "  .adm #nopen{}\n"
-  },
-  {
-    "name": "the account's height forgets the App bar between 860 and 1080px",
-    "file": "stmt/page.js",
-    "find": "  .adm #nopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
-    "replace": "  .adm #nopen{position:sticky;top:24px}\n"
-  },
-  {
-    "name": "the two panes wait for the rail",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:860px){\n  .adm .nsplit{display:grid;gap:20px;align-items:start}",
-    "replace": "@media (min-width:1080px){\n  .adm .nsplit{display:grid;gap:20px;align-items:start}"
-  },
-  {
-    "name": "the invitation is drawn beside an account that is open",
-    "file": "stmt/page.js",
-    "find": "  .adm #nopen:not([hidden])~.panenone{display:none}\n",
-    "replace": ""
-  },
-  {
     "name": "the invitation is drawn on a phone",
-    "file": "stmt/page.js",
-    "find": ".adm .panenone{display:none;margin:0}\n",
-    "replace": ".adm .panenone{margin:0}\n"
-  },
-  {
-    "name": "Customers second pane does not say Choose an account",
-    "file": "stmt/page.js",
-    "find": "<p class=\"amb-empty\" id=\"anone\">",
-    "replace": "<p class=\"amb-empty\" id=\"anonx\">"
+    "file": "stmt/statement-css.js",
+    "find": ".panenone { display: none; margin: 0;",
+    "replace": ".panenone { margin: 0;"
   },
   {
     "name": "the tablet dialog is a rule for every Sheet, the customer's too",
@@ -66,24 +30,6 @@
     "replace": ""
   },
   {
-    "name": "the sign-in code is not in the system's frame",
-    "file": "stmt/owner.js",
-    "find": "fld.appendChild(qrRects(j.qr||[])); fig.appendChild(fld);",
-    "replace": "fig.appendChild(qrRects(j.qr||[]));"
-  },
-  {
-    "name": "the portrait tablet sizes the shell again",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:768px) and (max-width:859.98px){\n  .adm #unsentBar{max-width:none}",
-    "replace": "@media (min-width:768px) and (max-width:859.98px){\n  .gate.adm{max-width:620px}\n  .adm #unsentBar{max-width:none}"
-  },
-  {
-    "name": "a form is laid in two columns by the page again",
-    "file": "stmt/page.js",
-    "find": "  .adm #unsentBar{max-width:none}\n}\n/* 16 Nov 2026, the move to Ambient: Record's menu",
-    "replace": "  .adm #unsentBar{max-width:none}\n  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}\n}\n/* 16 Nov 2026, the move to Ambient: Record's menu"
-  },
-  {
     "name": "a short field is not marked",
     "file": "stmt/owner.js",
     "find": "    if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');",
@@ -96,28 +42,82 @@
     "replace": "    wrap.classList.add('maker-field--short');"
   },
   {
-    "name": "Needs you cards lie two up on a portrait tablet",
-    "file": "stmt/page.js",
-    "find": "  .adm #unsentBar{max-width:none}\n",
-    "replace": "  .adm #unsentBar{max-width:none}\n  .adm .nlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}\n"
-  },
-  {
     "name": "the page sizes Shop again on a laptop",
     "file": "stmt/page.js",
     "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
     "replace": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n@media (min-width:1080px){\n  .adm #oShop{max-width:760px}\n}\n"
   },
   {
-    "name": "the rows to approve are one column on a laptop",
-    "file": "stmt/page.js",
-    "find": "  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}\n",
-    "replace": ""
+    "name": "a thread opens hidden",
+    "file": "stmt/owner.js",
+    "find": "var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';",
+    "replace": "var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"
   },
   {
-    "name": "the rows to approve keep a 600px section on a laptop",
+    "name": "Messages opens the first thread by itself",
+    "file": "stmt/owner.js",
+    "find": "      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);",
+    "replace": "      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"
+  },
+  {
+    "name": "the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's",
     "file": "stmt/page.js",
-    "find": "  .adm #oOrders>.abody>#oApprove{max-width:none}\n",
-    "replace": ""
+    "find": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
+    "replace": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"
+  },
+  {
+    "name": "Needs you's empty pane says Tap a card",
+    "file": "stmt/page.js",
+    "find": "<p class=\"rnone panenone\">Choose a card to see it in full.</p>",
+    "replace": "<p class=\"rnone panenone\">Tap a card</p>"
+  },
+  {
+    "name": "the week's name column takes 312px",
+    "file": "stmt/statement-css.js",
+    "find": "grid-template-columns: var(--amb-week-name) minmax(0, 1fr)",
+    "replace": "grid-template-columns: 312px minmax(0, 1fr)"
+  },
+  {
+    "name": "the unlock sheet loses .asheet",
+    "file": "stmt/page.js",
+    "find": "'<div id=\"vaultSheet\" class=\"salt-sheet adm asheet vaultsheet\"",
+    "replace": "'<div id=\"vaultSheet\" class=\"salt-sheet adm vaultsheet\""
+  },
+  {
+    "name": "a look Sheet comes back on his page",
+    "file": "stmt/page.js",
+    "find": "        + vaultSheet()\n",
+    "replace": "        + '<div id=\"lookSheet\" class=\"salt-sheet adm asheet\" hidden></div>' + vaultSheet()\n"
+  },
+  {
+    "name": "the invitation is drawn beside a card that is open",
+    "file": "stmt/statement-css.js",
+    "find": "#nopen:not([hidden]) ~ .panenone { display: none; }",
+    "replace": "#nopen:not([hidden]) ~ .panenone { display: block; }"
+  },
+  {
+    "name": "the rows to approve lie two up",
+    "file": "stmt/statement-css.js",
+    "find": ".apstack { display: grid; gap: var(--amb-space-3); }",
+    "replace": ".apstack { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--amb-space-3); }"
+  },
+  {
+    "name": "the rows to approve are not Ambient's stack",
+    "file": "stmt/page.js",
+    "find": "<section id=\"oApprove\" class=\"amb-stack\"",
+    "replace": "<section id=\"oApprove\""
+  },
+  {
+    "name": "Customers second pane does not say Choose an account",
+    "file": "stmt/page.js",
+    "find": "<p class=\"amb-empty\" id=\"anone\">",
+    "replace": "<p class=\"amb-empty\" id=\"anonx\">"
+  },
+  {
+    "name": "the sign-in code is not in the system's frame",
+    "file": "stmt/owner.js",
+    "find": "fld.appendChild(qrRects(j.qr||[])); fig.appendChild(fld);",
+    "replace": "fig.appendChild(qrRects(j.qr||[]));"
   },
   {
     "name": "the thread is not the second pane",
@@ -142,53 +142,5 @@
     "file": "stmt/page.js",
     "find": "<div id=\"makerChatOpen\" hidden></div>",
     "replace": "<div id=\"makerChatOpen\"></div>"
-  },
-  {
-    "name": "a thread opens hidden",
-    "file": "stmt/owner.js",
-    "find": "var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';",
-    "replace": "var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"
-  },
-  {
-    "name": "Messages opens the first thread by itself",
-    "file": "stmt/owner.js",
-    "find": "      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);",
-    "replace": "      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"
-  },
-  {
-    "name": "a form beside its menu lies two up from 860px",
-    "file": "stmt/page.js",
-    "find": "  .adm #nopen{overflow-y:auto}\n",
-    "replace": "  .adm #nopen{overflow-y:auto}\n  .adm .maker-input{display:grid}\n"
-  },
-  {
-    "name": "the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's",
-    "file": "stmt/page.js",
-    "find": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
-    "replace": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"
-  },
-  {
-    "name": "Needs you's empty pane says Tap a card",
-    "file": "stmt/page.js",
-    "find": "<div id=\"nopen\" class=\"salt-glass-card salt-glass-card--radius-lg salt-pane\" aria-label=\"The open card\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'",
-    "replace": "<div id=\"nopen\" class=\"salt-glass-card salt-glass-card--radius-lg salt-pane\" aria-label=\"The open card\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'"
-  },
-  {
-    "name": "the week's name column takes 312px",
-    "file": "stmt/statement-css.js",
-    "find": "grid-template-columns: var(--amb-week-name) minmax(0, 1fr)",
-    "replace": "grid-template-columns: 312px minmax(0, 1fr)"
-  },
-  {
-    "name": "the unlock sheet loses .asheet",
-    "file": "stmt/page.js",
-    "find": "'<div id=\"vaultSheet\" class=\"salt-sheet adm asheet vaultsheet\"",
-    "replace": "'<div id=\"vaultSheet\" class=\"salt-sheet adm vaultsheet\""
-  },
-  {
-    "name": "a look Sheet comes back on his page",
-    "file": "stmt/page.js",
-    "find": "        + vaultSheet()\n",
-    "replace": "        + '<div id=\"lookSheet\" class=\"salt-sheet adm asheet\" hidden></div>' + vaultSheet()\n"
   }
 ]

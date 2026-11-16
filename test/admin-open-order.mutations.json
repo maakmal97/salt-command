@@ -6,10 +6,10 @@
     "replace": "card.setAttribute('data-in',orderPartsOf(order));"
   },
   {
-    "name": "V2 his band leaves the 16px line",
+    "name": "V2 his band is no band",
     "file": "stmt/page.js",
-    "find": "var h=el('section','oband salt-band salt-band--grid'), top=",
-    "replace": "var h=el('section','oband salt-band'), top="
+    "find": "var h=el('section','oband'), top=el('p','oband__head');",
+    "replace": "var h=el('section','oband0'), top=el('p','oband__head');"
   },
   {
     "name": "V2 his card is a glass card again",
@@ -20,13 +20,13 @@
   {
     "name": "V2 the Bill is a ledger again",
     "file": "stmt/page.js",
-    "find": "var s=el('section','obill'), L=el('div','salt-settings ordmoney');",
-    "replace": "var s=el('section','obill'), L=el('div','salt-ledger ordmoney');"
+    "find": "var s=el('section','obill amb-settings'), L=el('ul','amb-settings__list ordmoney');",
+    "replace": "var s=el('section','obill amb-settings'), L=el('ul','salt-ledger ordmoney');"
   },
   {
     "name": "V2 the total's row is not heavier",
     "file": "stmt/page.js",
-    "find": "(r.total?' salt-settings__row--total':'')",
+    "find": "(r.total?' obill__total':'')",
     "replace": "''"
   },
   {
@@ -110,7 +110,7 @@
   {
     "name": "V9 the customer's screen is a glass card again",
     "file": "stmt/page.js",
-    "find": "    var s=el('section','oscreen'); s.setAttribute('data-order',o.id);",
-    "replace": "    var s=el('section','oscreen salt-glass-card'); s.setAttribute('data-order',o.id);"
+    "find": "    var s=el('section','amb-stack oscreen'); s.setAttribute('data-order',o.id);",
+    "replace": "    var s=el('section','amb-stack oscreen salt-glass-card'); s.setAttribute('data-order',o.id);"
   }
 ]

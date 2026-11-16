@@ -82,7 +82,7 @@ export async function run({ ok, pageWork }) {
     const done = ord("o-done", "done", ago(400)), conf = ord("o-conf", "acknowledged", ago(200)),
       ready = ord("o-ready", "ready", ago(50), { point: "A2", pointAt: { lat: 3.14786, lng: 101.69369 } }), ended = ord("o-new-end", "cancelled", ago(5));
     const A = await open({ orders: [done, conf, ready, ended] });
-    const live = A.d.getElementById("hLive"), pin = live && live.querySelector("a.salt-pin");
+    const live = A.d.getElementById("hLive"), pin = live && live.querySelector("a.opin");
     const L = { id: live && live.getAttribute("data-live"), n: A.d.querySelectorAll("[data-live]").length, chip: t(live && live.querySelector(".amb-mini__title")),
       sub: t(live && live.querySelector(".amb-mini__sub")), pin: pin ? pin.getAttribute("href") : "", kind: !!(live && live.querySelector(".amb-thumb--mark.amb-kind-1")) };
     ok(L.id === "o-ready" && L.n === 1 && L.chip === "Ready to collect" && /^(\d\d:\d\d|\d\d \w{3} \d{4}), At Point A2$/.test(L.sub) && /3\.14786,101\.69369/.test(L.pin) && L.kind,

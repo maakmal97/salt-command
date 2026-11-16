@@ -380,7 +380,7 @@
   {
     "name": "the card keeps its old bar track, not the Counter marked steps",
     "file": "stmt/page.js",
-    "find": "var ol=el('ol','salt-steps salt-steps--marks'); ol.setAttribute('aria-label',names.aria);",
+    "find": "var ol=el('ol','amb-steps'); ol.setAttribute('aria-label',names.aria);",
     "replace": "var ol=el('ol','salt-steps'); ol.setAttribute('aria-label',names.aria);"
   },
   {
