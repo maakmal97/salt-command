@@ -1,0 +1,140 @@
+[
+ {
+  "name": "the Confirm bar carries the save-bar class at rest again",
+  "file": "stmt/page.js",
+  "find": "<div id=\"apBar\" class=\"apbar\" hidden></div>",
+  "replace": "<div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div>"
+ },
+ {
+  "name": "the Confirm bar never takes the save-bar class when it shows",
+  "file": "stmt/owner.js",
+  "find": "bar.classList.toggle('amb-savebar',!bar.hidden);",
+  "replace": ""
+ },
+ {
+  "name": "the Confirm bar keeps the save-bar class when it is hidden",
+  "file": "stmt/owner.js",
+  "find": "bar.classList.toggle('amb-savebar',!bar.hidden);",
+  "replace": "bar.classList.add('amb-savebar');"
+ },
+ {
+  "name": "the empty status line holds its room again",
+  "file": "stmt/statement-css.js",
+  "find": "#rmsg:empty { margin: 0; min-height: 0; }",
+  "replace": "#rmsg:empty { margin: 16px 0 0; min-height: 1.4em; }"
+ },
+ {
+  "name": "Record's place is no amb-place",
+  "file": "stmt/page.js",
+  "find": "<div id=\"oRecord\" class=\"aplace amb-place\" data-in=\"record\" hidden>",
+  "replace": "<div id=\"oRecord\" class=\"aplace\" data-in=\"record\" hidden>"
+ },
+ {
+  "name": "Record's forms are no amb-place",
+  "file": "stmt/page.js",
+  "find": "<section id=\"makerInputs\" class=\"amb-place\"",
+  "replace": "<section id=\"makerInputs\""
+ },
+ {
+  "name": "the glance stands before the split again",
+  "file": "stmt/page.js",
+  "find": "<div class=\"nglancebox\" id=\"nGlanceBox\" hidden>",
+  "replace": "<div class=\"nglancebox\" id=\"nGlanceBx\" hidden>"
+ },
+ {
+  "name": "Receivables stands in one column of the glance",
+  "file": "stmt/statement-css.js",
+  "find": ".nglancebox > .amb-tiles > .nkpi--owed { grid-column: 1 / -1; }",
+  "replace": ".nglancebox > .amb-tiles > .nkpi--owed { }"
+ },
+ {
+  "name": "the glance is three tiles across",
+  "file": "stmt/statement-css.js",
+  "find": ".nglancebox > .amb-tiles { padding-inline: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }",
+  "replace": ".nglancebox > .amb-tiles { padding-inline: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }"
+ },
+ {
+  "name": "the find head is no head of the accounts' pane",
+  "file": "stmt/page.js",
+  "find": "<div class=\"afhead\">",
+  "replace": "<div class=\"afhd\">"
+ },
+ {
+  "name": "a draw of the accounts removes the pane's head",
+  "file": "stmt/owner.js",
+  "find": "if(!c.classList.contains('afhead')) rlist.removeChild(c);",
+  "replace": "rlist.removeChild(c);"
+ },
+ {
+  "name": "an account row's Message is a filled pill",
+  "file": "stmt/owner.js",
+  "find": "aPill('Message','acct.message',a.username,true,true)",
+  "replace": "aPill('Message','acct.message',a.username,true)"
+ },
+ {
+  "name": "an account row's Send is a filled pill",
+  "file": "stmt/owner.js",
+  "find": "mv.className='amb-pill amb-pill--sm amb-pill--quiet'; }",
+  "replace": "mv.className='amb-pill amb-pill--sm'; }"
+ },
+ {
+  "name": "an account row's Show is a filled pill",
+  "file": "stmt/owner.js",
+  "find": "aPill('Show','acct.show-link',null,true,true)",
+  "replace": "aPill('Show','acct.show-link',null,true)"
+ },
+ {
+  "name": "an order row's move is a filled pill",
+  "file": "stmt/owner.js",
+  "find": "aPill(f.move,'order.move',e.id,true,true)",
+  "replace": "aPill(f.move,'order.move',e.id,true)"
+ },
+ {
+  "name": "the hero's Approve is a filled pill",
+  "file": "stmt/page.js",
+  "find": "class=\"amb-pill amb-pill--quiet\" id=\"aApprove\"",
+  "replace": "class=\"amb-pill\" id=\"aApprove\""
+ },
+ {
+  "name": "Needs you's empty pane is a bare line again",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-settings rnone panenone\"><h3 class=\"amb-settings__head\">No card open</h3><ul class=\"amb-settings__list\"><li><div class=\"amb-setting\"><span class=\"amb-setting__name\">Choose a card to see it in full.</span></div></li></ul></div>",
+  "replace": "<p class=\"rnone panenone\">Choose a card to see it in full.</p>"
+ },
+ {
+  "name": "Customers' empty pane is a bare line again",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-settings\" id=\"anone\"><h3 class=\"amb-settings__head\">No account open</h3><ul class=\"amb-settings__list\"><li><div class=\"amb-setting\"><span class=\"amb-setting__name\">Choose an account.</span></div></li></ul></div>",
+  "replace": "<p class=\"amb-empty\" id=\"anone\">Choose an account.</p>"
+ },
+ {
+  "name": "Record's empty pane is a bare line again",
+  "file": "stmt/owner.js",
+  "find": "var none=sGroup('No form open','rnone recnone'); none.list.appendChild(sLi(sRead('Choose a form to open it here.'))); pane.appendChild(none);",
+  "replace": "pane.appendChild(el('p','amb-prose rnone recnone','Choose a form to open it here.'));"
+ },
+ {
+  "name": "the hours chip is no 44px hit area",
+  "file": "stmt/statement-css.js",
+  "find": "#aBarHours { min-height: var(--amb-tap); min-width: var(--amb-tap); }",
+  "replace": "#aBarHours { }"
+ },
+ {
+  "name": "what stands before the split keeps its own inset",
+  "file": "stmt/statement-css.js",
+  "find": ":has(~ .amb-place:not([hidden]) .amb-split--panes:not([hidden]))) { padding-inline: 0; }",
+  "replace": ":has(~ .amb-place:not([hidden]) .amb-split--panes:not([hidden]))) { }"
+ },
+ {
+  "name": "the second pane's group and foot keep the 36rem measure",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-split--panes > .amb-stack:last-child .amb-settings, .amb-split--panes > .amb-stack:last-child .amb-foot > .amb-pill { max-width: none; }",
+  "replace": ".amb-split--panes > .amb-stack:last-child .amb-settings, .amb-split--panes > .amb-stack:last-child .amb-foot > .amb-pill { }"
+ },
+ {
+  "name": "a part of his decision is tight under the Steps",
+  "file": "stmt/statement-css.js",
+  "find": ".odecide__part { min-width: 0; margin-top: var(--amb-space-3); }",
+  "replace": ".odecide__part { min-width: 0; }"
+ }
+]

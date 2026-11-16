@@ -78,7 +78,7 @@ export async function run({ ok, pageWork }) {
     const chainOf = (sp) => { const out = []; let e = sp.parentElement; while (e && !e.classList.contains("amb-screen")) { out.push(e); e = e.parentElement; } return out; };
     const splits = [...d.querySelectorAll("#roster .amb-split--panes")], bad = splits.filter((sp) => { const c = chainOf(sp); return !c.length || c.length > 3 || c.some((e) => !e.classList.contains("amb-place")) || sp.classList.contains("amb-place"); }).map((sp) => sp.id || sp.className);
     const after = splits.filter((sp) => [...sp.parentElement.children].slice([...sp.parentElement.children].indexOf(sp) + 1).some((x) => !x.hidden && !x.hasAttribute("data-in"))).map((sp) => sp.id || sp.className);
-    ok(splits.length === 6 && !bad.length && !after.length && d.querySelector("#nlist").parentElement.contains(d.getElementById("nStock")) && !d.querySelector("#oRecord").classList.contains("amb-place"),
+    ok(splits.length === 6 && !bad.length && !after.length && d.querySelector("#nlist").parentElement.contains(d.getElementById("nStock")) && d.querySelector("#oRecord").classList.contains("amb-place"),   /* 17 Nov 2026, the move to Ambient (Fable's review, item 1): Record is a place of the chain too, so its forms' panes take the screen */
       "F2.3 every split of panes on his page (Needs you, Orders, Payments, accounts, messages, Shop's hours) stands in a chain of places from the screen, none a place itself, nothing shown after it: " + J({ n: splits.length, bad, after }));
     const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
     ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),

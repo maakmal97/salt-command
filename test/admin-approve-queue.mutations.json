@@ -368,7 +368,7 @@
  {
   "name": "the Confirm bar stands in the tab bar, not before it",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-dock\"><div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\">",
-  "replace": "<div class=\"amb-dock\"><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\"><div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div>"
+  "find": "<div class=\"amb-dock\"><div id=\"apBar\" class=\"apbar\" hidden></div><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\">",
+  "replace": "<div class=\"amb-dock\"><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\"><div id=\"apBar\" class=\"apbar\" hidden></div>"
  }
 ]

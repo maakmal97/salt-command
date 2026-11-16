@@ -68,8 +68,8 @@
  {
   "name": "Needs you's empty pane says Tap a card",
   "file": "stmt/page.js",
-  "find": "<p class=\"rnone panenone\">Choose a card to see it in full.</p>",
-  "replace": "<p class=\"rnone panenone\">Tap a card</p>"
+  "find": "<span class=\"amb-setting__name\">Choose a card to see it in full.</span>",
+  "replace": "<span class=\"amb-setting__name\">Tap a card</span>"
  },
  {
   "name": "the week's name column takes 312px",
@@ -110,8 +110,8 @@
  {
   "name": "Customers second pane does not say Choose an account",
   "file": "stmt/page.js",
-  "find": "<p class=\"amb-empty\" id=\"anone\">",
-  "replace": "<p class=\"amb-empty\" id=\"anonx\">"
+  "find": "<div class=\"amb-settings\" id=\"anone\">",
+  "replace": "<div class=\"amb-settings\" id=\"anonx\">"
  },
  {
   "name": "the sign-in code is not in the system's frame",
