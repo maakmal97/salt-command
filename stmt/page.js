@@ -942,11 +942,10 @@ body.ended>*:not(#aEnded){display:none}
      takes back 36px of the body's 60px foot, so the page is exactly the screen tall (22 + frame + 24 = the screen) */
   /* 15 Nov 2026, his word: one page width everywhere, salt-ds's --salt-page-max (1376px), at every screen from 1080px (it was 1180px, and
      1376px from 1440px) */
-  .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-36px;--salt-frame-h:calc(100dvh - 46px)}
-  .adm .amain{padding-bottom:24px}
-  /* a pane holds to the column's very top (the frame's own scroll), not 24px under the screen's */
-  .adm .salt-frame__main .salt-pane{top:0}
-  .adm .abar{grid-column:1/-1;margin-bottom:0}
+  /* 16 Nov 2026: the frame runs to the screen's foot and takes back the body's whole 60px foot, so what scrolls leaves at the foot as a page does; the
+     rail stands 24px above it (salt-ds 1.33.0, --salt-frame-foot), and a pane holds under the bar (the recipe) */
+  .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-60px;--salt-frame-h:calc(100dvh - 22px)}
+  .adm .abar{margin-bottom:0}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
 }
@@ -2180,15 +2179,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" + AURORA
     + (owner
-      ? '<div id="roster" class="gate adm salt-frame">'
-        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
-        + '<header class="salt-deskbar salt-frame__bar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="clk" data-clock></span></div></div>'
-        /* 22 Oct 2026 (canvas Needs you): the hours are a glowing status chip at the bar's top right, a 44px button to Shop hours (barDraw in stmt/owner.js) */
-        + '<button type="button" class="salt-status ashop" id="aBarHours" data-act="bar.hours" hidden></button></div>'
-        /* 21 Oct 2026, his word: the bar was bare. What waits, as the Desk's bar: each a chip to its place, Approve brass with its rows (barLive in
-           stmt/owner.js). 22 Oct 2026, his comment: no where-you-are on Salt Admin, "not required"; the rail and the App bar say it */
-        + '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
+      ? '<div id="roster" class="gate adm salt-frame salt-frame--side">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
@@ -2200,6 +2191,16 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + (test ? "" : '<div class="salt-rail__group arailadd"><button type="button" class="salt-rail__tab salt-rail__tab--solo" id="oAddRail" data-act="rail.add">'
           + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico("add") + "</span><span>New entry</span></span></button></div>")
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
+        + '<div class="acol salt-frame__col">'
+        /* 16 Nov 2026, his word (one way on every Salt surface): the bar heads the column right of the rail, as on the Desk and the Counter, and from
+           1080px what scrolls slides under it (salt-frame--side, salt-ds 1.33.0); it spanned the rail too from 20 Oct 2026 (canvas V32) */
+        + '<header class="salt-deskbar salt-frame__bar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="clk" data-clock></span></div></div>'
+        /* 22 Oct 2026 (canvas Needs you): the hours are a glowing status chip at the bar's top right, a 44px button to Shop hours (barDraw in stmt/owner.js) */
+        + '<button type="button" class="salt-status ashop" id="aBarHours" data-act="bar.hours" hidden></button></div>'
+        /* 21 Oct 2026, his word: the bar was bare. What waits, as the Desk's bar: each a chip to its place, Approve brass with its rows (barLive in
+           stmt/owner.js). 22 Oct 2026, his comment: no where-you-are on Salt Admin, "not required"; the rail and the App bar say it */
+        + '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
         + '<div class="amain salt-frame__main">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
            under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
@@ -2341,7 +2342,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="salt-settings adevice">' + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</div>"
         + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
         + "</div></div>"
-        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
+        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div></div>'
         + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
           '<span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + (p ? "" : '<span class="salt-appbar__count" data-count="' + m + '"></span>'))).join("") + "</nav>"

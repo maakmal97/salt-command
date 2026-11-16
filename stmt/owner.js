@@ -2000,16 +2000,24 @@ export const OWNER_JS = `
   function paneFit(){
     fitAsked=false;
     var m=frameEl(); if(!m) return;
-    var on=framed(), mr=on?m.getBoundingClientRect():null, pad=on?parseFloat(window.getComputedStyle(m).paddingBottom)||0:0;
+    /* 16 Nov 2026 (salt-ds 1.33.0): the column runs to the screen's foot, so a pane ends where the rail does, --salt-frame-foot above it */
+    var on=framed(), mr=on?m.getBoundingClientRect():null, rail=on?document.querySelector('.adm .salt-rail'):null, end=on?(rail&&rail.getClientRects().length?rail.getBoundingClientRect().bottom:mr.bottom-(parseFloat(window.getComputedStyle(m).paddingBottom)||0)):0;
     [].forEach.call(document.querySelectorAll('.adm .salt-pane'), function(p){
       if(!on||!p.getClientRects().length){ p.style.removeProperty('--salt-pane-h'); return; }
       var top=Math.max(p.getBoundingClientRect().top, mr.top);
-      p.style.setProperty('--salt-pane-h', Math.max(240, Math.floor(mr.bottom-pad-top))+'px');
+      p.style.setProperty('--salt-pane-h', Math.max(240, Math.floor(end-top))+'px');
     });
     var footed=!on&&[].some.call(document.querySelectorAll('.adm .salt-pane__foot'), function(f){ return f.getClientRects().length>0; });
     var g=document.getElementById('roster'); if(g){ if(footed) g.setAttribute('data-footed',''); else g.removeAttribute('data-footed'); }
   }
   function fitSoon(){ if(fitAsked) return; fitAsked=true; if(window.requestAnimationFrame) window.requestAnimationFrame(paneFit); else setTimeout(paneFit,16); }
+  /* 16 Nov 2026, his word ("slide under the bar", salt-ds 1.33.0): the bar lies over the column's top, so the column opens one bar down; the bar's
+     height is kept on the column as --salt-frame-bar-h, read again whenever the bar's size changes */
+  (function(){
+    var b=document.querySelector('.adm .salt-frame__bar'), col=b&&b.parentElement; if(!col) return;
+    function keep(){ try{ col.style.setProperty('--salt-frame-bar-h', Math.ceil(b.getBoundingClientRect().height)+'px'); fitSoon(); }catch(e){} }
+    keep(); try{ new ResizeObserver(keep).observe(b); }catch(e){ window.addEventListener('resize', keep); }
+  })();
   (function(){
     var m=frameEl(); if(!m) return;
     m.addEventListener('scroll', fitSoon, {passive:true});
