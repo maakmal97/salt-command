@@ -54,7 +54,8 @@ export async function run({ ok, pageWork }) {
     /* 5 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.rowcard \{ display: grid; gap: var\(--amb-space-1\); \}/.test(css) && !/\.adm \.rowcard/.test(css)
-      && /\.adm \[data-form="correct-a-row"\] \.undomove>\.maker-facts\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css),
-      "the card is an Ambient pane laid out by one token rule, and a move of History one line with its Undo at the right");
+      /* 16 Nov 2026, the move to Ambient (place G): a move of History is a Journal entry, its Undo under it, and the page keeps no rule of its own for it */
+      && /\.undohist \.amb-journal__entry > \.amb-pill \{ justify-self: start; margin-top: var\(--amb-space-2\); \}/.test(css) && !/undomove/.test(css),
+      "the card is an Ambient pane laid out by one token rule, and a move of History a Journal entry with its Undo under it");
   } finally { p.w.close(); }
 }

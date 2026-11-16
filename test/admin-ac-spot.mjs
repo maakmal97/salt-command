@@ -97,7 +97,7 @@ export async function run({ ok, pageWork }) {
     geoFail = true;
     const geoN = () => p.wire.filter((x) => /\/all\/maker\/geo\/open/.test(typeof x === "string" ? x : x.route || x.url || "")).length;
     C = await open("ord-sm");
-    const SM = C && C.querySelector("[data-pin-gate] [data-maker-pin]"), firstGeo = geoN();
+    const SM = C && C.querySelector("[data-pin-gate]:has([data-maker-pin])"), firstGeo = geoN();
     await click(byAct(d, "order.open", "ord-sm")); await click(byAct(d, "order.open", "ord-sm"));
     ok(!!SM && /could not be opened to a point just now/.test(t(SM)) && !SM.querySelector("a[data-spot-maps]") && firstGeo === 2 && geoN() === 2,
       "7 a link that will not open says so with no Maps, and a redraw does not open it again: " + t(SM) + " geo " + firstGeo + "/" + geoN());

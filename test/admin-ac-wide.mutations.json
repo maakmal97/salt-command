@@ -1,74 +1,68 @@
 [
-  {
-    "name": "the first order opens itself at any width",
-    "file": "stmt/owner.js",
-    "find": "    if(!e&&placeNow==='orders'&&ordSide()){",
-    "replace": "    if(!e&&placeNow==='orders'&&window.matchMedia('(min-width:860px)').matches){"
-  },
-  {
-    "name": "the split kept from 1080",
-    "file": "stmt/page.js",
-    "find": "@media (max-width:859.98px),(min-width:1080px){\n  .adm #oSplit.open .ordlist",
-    "replace": "@media (max-width:859.98px){\n  .adm #oSplit.open .ordlist"
-  },
-  {
-    "name": "the side grid kept from 1080",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:860px) and (max-width:1079.98px){\n  .adm .ordgrid{display:grid",
-    "replace": "@media (min-width:860px){\n  .adm .ordgrid{display:grid"
-  },
-  {
-    "name": "no columns drawn",
-    "file": "stmt/owner.js",
-    "find": "    ordLayout();\n    focusOrderAt();",
-    "replace": "    focusOrderAt();"
-  },
-  {
-    "name": "one column at 1440",
-    "file": "stmt/owner.js",
-    "find": "var mm=window.matchMedia, n=mm&&mm('(min-width:1180px)').matches?2:1;",
-    "replace": "var mm=window.matchMedia, n=mm&&mm('(min-width:1440px)').matches?1:mm&&mm('(min-width:1180px)').matches?2:1;"
-  },
-  {
-    "name": "the record left in the decision",
-    "file": "stmt/owner.js",
-    "find": "      cols[x.getAttribute('data-ocol')==='record'?1:0].appendChild(x);",
-    "replace": "      cols[0].appendChild(x);"
-  },
-  {
-    "name": "the messages left in the decision",
-    "file": "stmt/owner.js",
-    "find": "var sec=oThreadOf('Messages',lines,'Messages on this order'); sec.setAttribute('data-ocol','record');",
-    "replace": "var sec=oThreadOf('Messages',lines,'Messages on this order'); sec.setAttribute('data-ocol','decision');"
-  },
-  {
-    "name": "the foot in a column",
-    "file": "stmt/owner.js",
-    "find": "      if(x===foot||x===ofoot) return;\n",
-    "replace": "      if(x===ofoot) return;\n"
-  },
-  {
-    "name": "the columns 20px apart",
-    "file": "stmt/page.js",
-    "find": ".adm .ordcols{display:grid;gap:24px;align-items:start}",
-    "replace": ".adm .ordcols{display:grid;gap:20px;align-items:start}"
-  },
-  {
-    "name": "a change of width moves nothing",
-    "file": "stmt/owner.js",
-    "find": "if(colMq&&colMq.addEventListener) colMq.addEventListener('change', ordLayout);",
-    "replace": "if(colMq&&colMq.addEventListener) void 0;"
-  },
-  {
-    "name": "a change of width draws the card again",
-    "file": "stmt/owner.js",
-    "find": "if(colMq&&colMq.addEventListener) colMq.addEventListener('change', ordLayout);",
-    "replace": "if(colMq&&colMq.addEventListener) colMq.addEventListener('change', drawOrderPane);"
-  },
-  {
-    "name": "the rail Orders keeps it open",
-    "file": "stmt/owner.js",
-    "find": "if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; }",
-    "replace": "if(false){ closeOrder(); return; }"
-  }
+ {
+  "name": "the first order opens itself at any width",
+  "file": "stmt/owner.js",
+  "find": "    if(!e) ordOpened=null;\n    if(split) split.classList.toggle('open', !!e);",
+  "replace": "    if(!e&&placeNow==='orders'){ var first=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(x){ return ordInPart(x); })[0]; if(first){ e=first; ordOpened=first.id; } }\n    if(!e) ordOpened=null;\n    if(split) split.classList.toggle('open', !!e);"
+ },
+ {
+  "name": "the queue keeps its place beside an open order",
+  "file": "stmt/statement-css.js",
+  "find": "#oSplit.open .ordqueue, #oSplit:not(.open) .ordrecord, #makerClaims.open > .amb-stack:first-child",
+  "replace": "#makerClaims.open > .amb-stack:first-child"
+ },
+ {
+  "name": "the split is not panes",
+  "file": "stmt/page.js",
+  "find": "<div id=\"oSplit\" class=\"amb-split amb-split--panes\"",
+  "replace": "<div id=\"oSplit\" class=\"amb-split\""
+ },
+ {
+  "name": "the record ends in no foot",
+  "file": "stmt/owner.js",
+  "find": "      card.appendChild(lead);\n      if(quoteStart) quoteStart();",
+  "replace": "      if(quoteStart) quoteStart();"
+ },
+ {
+  "name": "the invitation stays beside an open order",
+  "file": "stmt/owner.js",
+  "find": "var none=document.getElementById('ordnone'); if(none) none.hidden=!!e;",
+  "replace": ""
+ },
+ {
+  "name": "the Steps are dropped",
+  "file": "stmt/owner.js",
+  "find": "{ var st=ordSteps(order); card.appendChild(st); }",
+  "replace": "{ var st=ordSteps(order); }"
+ },
+ {
+  "name": "the messages are dropped",
+  "file": "stmt/owner.js",
+  "find": "      ordMessages(card,order);\n      /* plan 4:",
+  "replace": "      /* plan 4:"
+ },
+ {
+  "name": "the foot is not Ambient's",
+  "file": "stmt/owner.js",
+  "find": "lead=el('div','amb-foot ofoot ordlead')",
+  "replace": "lead=el('div','ofoot ordlead')"
+ },
+ {
+  "name": "the record's wrappers are boxes",
+  "file": "stmt/statement-css.js",
+  "find": "#makerReview, #makerReview > .maker-card { display: contents; }",
+  "replace": "#makerReview, #makerReview > .maker-card { display: block; }"
+ },
+ {
+  "name": "a change of width redraws the card",
+  "file": "stmt/owner.js",
+  "find": "function ordPanes(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }",
+  "replace": "function ordPanes(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }\n  if(window.matchMedia){ var pq=window.matchMedia('(min-width:960px)'); if(pq&&pq.addEventListener) pq.addEventListener('change',function(){ drawOrderPane(); }); }"
+ },
+ {
+  "name": "a change of width closes the order",
+  "file": "stmt/owner.js",
+  "find": "function ordPanes(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }",
+  "replace": "function ordPanes(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }\n  if(window.matchMedia){ var pq=window.matchMedia('(min-width:960px)'); if(pq&&pq.addEventListener) pq.addEventListener('change',function(){ ordOpened=null; drawOrderPane(); }); }"
+ }
 ]

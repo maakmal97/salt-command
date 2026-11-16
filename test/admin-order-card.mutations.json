@@ -108,10 +108,10 @@
   "replace": "[].forEach.call(card.querySelectorAll('.ordlead button,.ordlead input,.ordlead select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')"
  },
  {
-  "name": "the foot does not stick",
-  "file": "stmt/statement-css.js",
-  "find": ".ofoot:not(:has(button:not([hidden])",
-  "replace": ".ofoot.amb-foot { position: static; } .ofoot:not(:has(button:not([hidden])"
+  "name": "the answer line stands outside the foot",
+  "file": "stmt/owner.js",
+  "find": "if(mfoot) lead.insertBefore(mfoot,lead.firstChild);",
+  "replace": ""
  },
  {
   "name": "the foot is not Ambient's",
@@ -366,10 +366,10 @@
   "replace": "c.appendChild(document.createTextNode(st[1])); return c;"
  },
  {
-  "name": "Salt Admin's placed order takes a tick",
+  "name": "Salt Admin's stage chip carries no tone",
   "file": "stmt/owner.js",
-  "find": "['copper','To agree','dot']",
-  "replace": "['copper','To agree','tick']"
+  "find": "function stageChip(st){\n    var c=chip(st[0],null);",
+  "replace": "function stageChip(st){\n    var c=chip('',null);"
  },
  {
   "name": "Salt Admin's chip loses its tone",
@@ -390,10 +390,10 @@
   "replace": "var tfd=el('details'); tfd.setAttribute('data-fold','terms'); tfd.appendChild(form); agreeSec.appendChild(tfd);"
  },
  {
-  "name": "the terms stand under Agree",
+  "name": "the terms leave the decision",
   "file": "stmt/owner.js",
-  "find": "if(!lead.parentNode) card.appendChild(lead); p.appendChild(stageRows); }",
-  "replace": "if(!lead.parentNode) card.appendChild(lead); p.insertBefore(lead,p.children[1]||null); p.appendChild(stageRows); }"
+  "find": "agreeSec.appendChild(form);",
+  "replace": "card.appendChild(form);"
  },
  {
   "name": "the band draws no book thumb",
@@ -420,10 +420,10 @@
   "replace": "var got=aActBtn(dec.querySelector('.ostagerows')||claims,[onBook?"
  },
  {
-  "name": "the main action stands below the stage's rows",
+  "name": "a placed card has no Steps",
   "file": "stmt/owner.js",
-  "find": "if(!lead.parentNode) card.appendChild(lead); p.appendChild(stageRows); }",
-  "replace": "p.appendChild(stageRows); p.appendChild(lead); }"
+  "find": "{ var st=ordSteps(order); card.appendChild(st); }",
+  "replace": "{ var st=ordSteps(order); }"
  },
  {
   "name": "Decline goes back beside Agree",

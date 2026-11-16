@@ -233,7 +233,7 @@ export async function run({ ok, pageWork }) {
     /* 16 Nov 2026, the move to Ambient (place G): the card's foot is Ambient's, the record's last child and the one that stands at its pane's foot; the older sticky foot is gone */
     await part("todo"); await p.tapRow("ord-p1");
     const styles = [...d.querySelectorAll("style")].map((x) => x.textContent).join("\n");
-    ok(p.cardOf("ord-p1").lastElementChild.matches(".amb-foot.ofoot") && /\.amb-foot \{ position: sticky/.test(styles) && !/\.maker-foot\.has\{/.test(styles),
+    ok(p.cardOf("ord-p1").lastElementChild.matches(".amb-foot.ofoot") && p.cardOf("ord-p1").lastElementChild.contains(foot()) && /\.amb-foot \{ position: sticky/.test(styles) && !/\.maker-foot\.has\{/.test(styles),
       "the foot of the open order is Ambient's, sticky at its pane's foot, and the page's own sticky foot rule is gone");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 

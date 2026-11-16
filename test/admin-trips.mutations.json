@@ -152,8 +152,8 @@
  {
   "name": "a line names its book in words",
   "file": "stmt/owner.js",
-  "find": "      p.appendChild(productTag(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)",
-  "replace": "      p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"
+  "find": "p.appendChild(bookChip(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)",
+  "replace": "p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"
  },
  {
   "name": "every line of Handover all is sent under one moment",
@@ -230,7 +230,7 @@
  {
   "name": "an order of several books has no +N",
   "file": "stmt/owner.js",
-  "find": "if(f.tags.length>1) into.appendChild(el('span','salt-producttag salt-producttag--more','+'+(f.tags.length-1)));",
+  "find": "if(f.tags.length>1) into.appendChild(el('span','amb-chip omore','+'+(f.tags.length-1)));",
   "replace": ""
  },
  {

@@ -1,122 +1,122 @@
 [
-  {
-    "name": "Admin's read keeps the spot",
-    "file": "stmt/maker.js",
-    "find": "const pin = env.STMT ? await readPin(env, op.u, op.id, false) : null;",
-    "replace": "const pin = env.STMT ? await readPin(env, op.u, op.id) : null;"
-  },
-  {
-    "name": "no route for a spot",
-    "file": "stmt/maker.js",
-    "find": "  if (spot) return { kind: \"pin\", u: spot[1], id: spot[2] };",
-    "replace": "  if (false) return { kind: \"pin\", u: spot[1], id: spot[2] };"
-  },
-  {
-    "name": "a spot not kept answers ok",
-    "file": "stmt/maker.js",
-    "find": "return pin ? json({ ok: true, pin }) : json({ ok: false, error: \"that location is not kept\" }, 404);\n    }\n    if (op.kind === \"slip\"",
-    "replace": "return json({ ok: true, pin });\n    }\n    if (op.kind === \"slip\""
-  },
-  {
-    "name": "no read keeps the spot",
-    "file": "stmt/pin.js",
-    "find": "  if (v && keep) try {",
-    "replace": "  if (false) try {"
-  },
-  {
-    "name": "no spot card",
-    "file": "stmt/owner.js",
-    "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(dec,order);",
-    "replace": "      if(false) makerSpotControl(dec,order);"
-  },
-  {
-    "name": "a practice spot offers Unlock",
-    "file": "stmt/owner.js",
-    "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(dec,order);",
-    "replace": "      if(order.mode==='deliver'&&order.pin) makerSpotControl(dec,order);"
-  },
-  {
-    "name": "sealed says no Sealed",
-    "file": "stmt/owner.js",
-    "find": "      if(sealed) top.appendChild(chip('mist','Sealed'));",
-    "replace": "      void sealed;"
-  },
-  {
-    "name": "the sealed card reads the spot",
-    "file": "stmt/owner.js",
-    "find": "    box._draw=function(){ if(!box.isConnected) return; if(!makerVault) sealedDraw(); else adSpotOpen(); };",
-    "replace": "    box._draw=function(){ if(!box.isConnected) return; if(!makerVault){ sealedDraw(); refs('/all/maker/pins/'+order.u+'/'+order.pin).catch(function(){}); } else adSpotOpen(); };"
-  },
-  {
-    "name": "the unlock redraws no spot",
-    "file": "stmt/owner.js",
-    "find": "    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });",
-    "replace": "    void 0;"
-  },
-  {
-    "name": "opened under the slip's info",
-    "file": "stmt/owner.js",
-    "find": "        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-pin v1');",
-    "replace": "        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-slip v1');"
-  },
-  {
-    "name": "no spot name",
-    "file": "stmt/owner.js",
-    "find": "      if(label) led.appendChild(ordLine('Name',label));",
-    "replace": "      void label;"
-  },
-  {
-    "name": "no floor or unit",
-    "file": "stmt/owner.js",
-    "find": "      if(unit) led.appendChild(ordLine('Floor or unit',unit));",
-    "replace": "      void unit;"
-  },
-  {
-    "name": "Maps off the point",
-    "file": "stmt/owner.js",
-    "find": "a.href=spotHref(+p.lat,+p.lng);",
-    "replace": "a.href=spotHref(+p.lng,+p.lat);"
-  },
-  {
-    "name": "a unit alone gets Maps",
-    "file": "stmt/owner.js",
-    "find": "      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){",
-    "replace": "      }else if(true){"
-  },
-  {
-    "name": "the opened part unmarked",
-    "file": "stmt/owner.js",
-    "find": "      part.setAttribute('data-maker-pin','');",
-    "replace": "      part.setAttribute('data-x','');"
-  },
-  {
-    "name": "every redraw opens it again",
-    "file": "stmt/owner.js",
-    "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){ adSpotPaint(held); return; }",
-    "replace": "      if(false){ adSpotPaint(held); return; }"
-  },
-  {
-    "name": "a shared short link is never opened on Salt Admin (4 Nov 2026)",
-    "file": "stmt/owner.js",
-    "find": "          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n",
-    "replace": ""
-  },
-  {
-    "name": "a link that will not open is opened on every redraw (4 Nov 2026)",
-    "file": "stmt/owner.js",
-    "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){",
-    "replace": "      if(held&&!held.missAt){"
-  },
-  {
-    "name": "a typed address not drawn",
-    "file": "stmt/owner.js",
-    "find": "      if(addr) led.appendChild(ordLine('Address',addr));\n",
-    "replace": ""
-  },
-  {
-    "name": "no Maps for a typed address",
-    "file": "stmt/owner.js",
-    "find": "      if(p.src==='addr'&&addr){",
-    "replace": "      if(false){"
-  }
+ {
+  "name": "Admin's read keeps the spot",
+  "file": "stmt/maker.js",
+  "find": "const pin = env.STMT ? await readPin(env, op.u, op.id, false) : null;",
+  "replace": "const pin = env.STMT ? await readPin(env, op.u, op.id) : null;"
+ },
+ {
+  "name": "no route for a spot",
+  "file": "stmt/maker.js",
+  "find": "  if (spot) return { kind: \"pin\", u: spot[1], id: spot[2] };",
+  "replace": "  if (false) return { kind: \"pin\", u: spot[1], id: spot[2] };"
+ },
+ {
+  "name": "a spot not kept answers ok",
+  "file": "stmt/maker.js",
+  "find": "return pin ? json({ ok: true, pin }) : json({ ok: false, error: \"that location is not kept\" }, 404);\n    }\n    if (op.kind === \"slip\"",
+  "replace": "return json({ ok: true, pin });\n    }\n    if (op.kind === \"slip\""
+ },
+ {
+  "name": "no read keeps the spot",
+  "file": "stmt/pin.js",
+  "find": "  if (v && keep) try {",
+  "replace": "  if (false) try {"
+ },
+ {
+  "name": "no spot card",
+  "file": "stmt/owner.js",
+  "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(dec,order);",
+  "replace": "      if(false) makerSpotControl(dec,order);"
+ },
+ {
+  "name": "a practice spot offers Unlock",
+  "file": "stmt/owner.js",
+  "find": "      if(order.mode==='deliver'&&order.pin&&!order.test) makerSpotControl(dec,order);",
+  "replace": "      if(order.mode==='deliver'&&order.pin) makerSpotControl(dec,order);"
+ },
+ {
+  "name": "sealed says no Sealed",
+  "file": "stmt/owner.js",
+  "find": "if(sealed) h.appendChild(chip('mist','Sealed'));",
+  "replace": "void sealed;"
+ },
+ {
+  "name": "the sealed card reads the spot",
+  "file": "stmt/owner.js",
+  "find": "    box._draw=function(){ if(!box.isConnected) return; if(!makerVault) sealedDraw(); else adSpotOpen(); };",
+  "replace": "    box._draw=function(){ if(!box.isConnected) return; if(!makerVault){ sealedDraw(); refs('/all/maker/pins/'+order.u+'/'+order.pin).catch(function(){}); } else adSpotOpen(); };"
+ },
+ {
+  "name": "the unlock redraws no spot",
+  "file": "stmt/owner.js",
+  "find": "    [].forEach.call(document.querySelectorAll('[data-pin-gate]'),function(b){ if(b._draw) b._draw(); });",
+  "replace": "    void 0;"
+ },
+ {
+  "name": "opened under the slip's info",
+  "file": "stmt/owner.js",
+  "find": "        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-pin v1');",
+  "replace": "        var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-slip v1');"
+ },
+ {
+  "name": "no spot name",
+  "file": "stmt/owner.js",
+  "find": "if(label) row(aLine('Name',label));",
+  "replace": "void label;"
+ },
+ {
+  "name": "no floor or unit",
+  "file": "stmt/owner.js",
+  "find": "if(unit) row(aLine('Floor or unit',unit));",
+  "replace": "void unit;"
+ },
+ {
+  "name": "Maps off the point",
+  "file": "stmt/owner.js",
+  "find": "a.href=spotHref(+p.lat,+p.lng);",
+  "replace": "a.href=spotHref(+p.lng,+p.lat);"
+ },
+ {
+  "name": "a unit alone gets Maps",
+  "file": "stmt/owner.js",
+  "find": "      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){",
+  "replace": "      }else if(true){"
+ },
+ {
+  "name": "the opened part unmarked",
+  "file": "stmt/owner.js",
+  "find": "body.setAttribute('data-maker-pin','');",
+  "replace": "body.setAttribute('data-x','');"
+ },
+ {
+  "name": "every redraw opens it again",
+  "file": "stmt/owner.js",
+  "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){ adSpotPaint(held); return; }",
+  "replace": "      if(false){ adSpotPaint(held); return; }"
+ },
+ {
+  "name": "a shared short link is never opened on Salt Admin (4 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "          if(lp) p=Object.assign({},p,{lat:lp.lat, lng:lp.lng});\n",
+  "replace": ""
+ },
+ {
+  "name": "a link that will not open is opened on every redraw (4 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "      if(held&&!(held.missAt&&Date.now()-held.missAt>300000)){",
+  "replace": "      if(held&&!held.missAt){"
+ },
+ {
+  "name": "a typed address not drawn",
+  "file": "stmt/owner.js",
+  "find": "if(addr) row(aLine('Address',addr));",
+  "replace": ""
+ },
+ {
+  "name": "no Maps for a typed address",
+  "file": "stmt/owner.js",
+  "find": "      if(p.src==='addr'&&addr){",
+  "replace": "      if(false){"
+ }
 ]

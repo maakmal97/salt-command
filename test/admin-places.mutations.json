@@ -98,14 +98,14 @@
  {
   "name": "the group orders show under Ready",
   "file": "stmt/page.js",
-  "find": "<section data-in=\"orders.group\" aria-labelledby=\"makerPoolsTitle\">",
-  "replace": "<section data-in=\"orders.ready\" aria-labelledby=\"makerPoolsTitle\">"
+  "find": "<section class=\"amb-stack\" data-in=\"orders.group\" aria-labelledby=\"makerPoolsTitle\">",
+  "replace": "<section class=\"amb-stack\" data-in=\"orders.ready\" aria-labelledby=\"makerPoolsTitle\">"
  },
  {
   "name": "the claims show in every part of Orders",
   "file": "stmt/page.js",
-  "find": "<section data-in=\"orders.payments\" aria-labelledby=\"makerClaimsTitle\">",
-  "replace": "<section data-in=\"orders\" aria-labelledby=\"makerClaimsTitle\">"
+  "find": "<section class=\"amb-stack\" data-in=\"orders.payments\" aria-labelledby=\"makerClaimsTitle\">",
+  "replace": "<section class=\"amb-stack\" data-in=\"orders\" aria-labelledby=\"makerClaimsTitle\">"
  },
  {
   "name": "the Desk's rows show under Entry",
@@ -314,8 +314,8 @@
  {
   "name": "the order card's rule loses .adm",
   "file": "stmt/page.js",
-  "find": ".adm .maker-card{margin:14px 0}",
-  "replace": ".maker-card{margin:14px 0}"
+  "find": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}",
+  "replace": ".achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}"
  },
  {
   "name": "the guest link row loses .adm",
@@ -380,7 +380,7 @@
  {
   "name": "an Orders part is no tab",
   "file": "stmt/page.js",
-  "find": "<button type=\"button\" role=\"tab\" class=\"salt-segment__opt\" data-part=\"",
-  "replace": "<button type=\"button\" class=\"salt-segment__opt\" data-part=\""
+  "find": "class=\"amb-segment__opt\" data-part=\"' + k + '\" data-act=\"part.orders.",
+  "replace": "class=\"amb-pill\" data-part=\"' + k + '\" data-act=\"part.orders."
  }
 ]

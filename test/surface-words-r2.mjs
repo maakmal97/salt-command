@@ -55,7 +55,7 @@ export async function run({ ok, pageWork }) {
 
   /* ---- Salt Admin's two leads, written in the page ---- */
   const page = new JSDOM(landingPage("", "r2-nonce", { master: "fixture-master", accounts: [] })).window.document;
-  const group = t(page.querySelector('[data-in="orders.group"] .lead')), links = t(page.querySelector("#oLinks > .amb-field__hint"));
+  const group = t(page.querySelector('[data-in="orders.group"] > .amb-field__hint')), links = t(page.querySelector("#oLinks > .amb-field__hint"));
   ok(sentence(group, 20) && sentence(links, 20), "W5: Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most: " + J([group, links]));
   /* 16 Nov 2026, the move to Ambient (place D): the names Sheet leads with the system's basis line */
   const vaultLead = t(page.querySelector("#vaultSheet .amb-basis"));
@@ -118,15 +118,15 @@ export async function run({ ok, pageWork }) {
     const agree = cardOf(d, "ord-p2");
     await p.work.quiet();
     /* 2 Nov 2026 (his Orders canvas, page 2): the line is the grey line under Agree's settings list */
-    const chosen = t(agree && agree.querySelector(".oagree > .salt-settings__foot"));
+    const chosen = t(agree && agree.querySelector(".oagree > .amb-field__hint"));
     ok(/^They chose 08:00 to 12:00/.test(chosen) && sentence(chosen, 14), "W10: the Agree card's line on the window they chose is one sentence: " + J(chosen));
-    const refundLine = (card) => [...(card ? card.querySelectorAll(".salt-insight") : [])].map(t).find((s) => / refund (here|on this order) /.test(s)) || "";
+    const refundLine = (card) => [...(card ? card.querySelectorAll(".amb-field__hint") : [])].map(t).find((s) => / refund (here|on this order) /.test(s)) || "";
     const rowFp = cardOf(d, "row:fp1");
     await p.work.quiet();
-    const forRow = refundLine(rowFp), chipFp = t(rowFp && rowFp.querySelector("p.lead"));
+    const forRow = refundLine(rowFp), chipFp = t(rowFp && rowFp.querySelector("p.oband__head"));
     const rowFz = cardOf(d, "row:fz1");
     await p.work.quiet();
-    const chipFz = t(rowFz && rowFz.querySelector("p.lead"));
+    const chipFz = t(rowFz && rowFz.querySelector("p.oband__head"));
     const order = cardOf(d, OWED.id);
     await p.work.quiet();
     const lines = [forRow, refundLine(order)];
