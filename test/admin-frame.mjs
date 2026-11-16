@@ -54,7 +54,8 @@ export async function run({ ok, pageWork }) {
     ok(/position: absolute;/.test(rule(".amb-screen")) && /overflow-y: auto;/.test(rule(".amb-screen")) && /position: absolute;/.test(rule(".amb-dock")),
       "F1.2 its screen is the one box that scrolls, and the dock (the rail from 960px) stands still over it");
     /* 16 Nov 2026, the move to Ambient (end pass): a screen holds still for a split that is its own child or the last of a place, Ambient's nested places (0.7.7) */
-    ok(/\.amb-screen:has\(> \.amb-split--panes(, > \.amb-place:not\(\[hidden\]\) > \.amb-split--panes)?\) \{ display: flex; flex-direction: column; overflow-y: hidden; \}/.test(amb) && /overflow-y: auto;/.test(rule(".amb-split--panes > .amb-stack")),
+    /* 16 Nov 2026 (0.7.8): the screen holds still for a split at the end of a chain of shown places, up to three deep */
+    ok(/\.amb-screen:is\(:has\(> \.amb-split--panes:not\(\[hidden\]\)[^{]*> \.amb-place:not\(\[hidden\]\) > \.amb-place:not\(\[hidden\]\) > \.amb-place:not\(\[hidden\]\) > \.amb-split--panes:not\(\[hidden\]\)\)\)\) \{ display: flex; flex-direction: column; overflow-y: hidden; \}/.test(amb) && /overflow-y: auto;/.test(rule(".amb-split--panes > .amb-stack")),
       "F1.3 from 960px a split of panes holds the screen still and each stack scrolls by itself: " + rule(".amb-split--panes > .amb-stack").replace(/\s+/g, " "));
     ok(/position: sticky;/.test(rule(".amb-foot")) && /background: linear-gradient\(to bottom, transparent, var\(--amb-base\)/.test(rule(".amb-foot")) && !/border|backdrop-filter/.test(rule(".amb-foot")),
       "F1.4 a record's foot is held at its foot over a fade of the ground, seamless: no box and no edge behind the pill");
@@ -72,6 +73,13 @@ export async function run({ ok, pageWork }) {
     const panes = [...d.querySelectorAll(".salt-pane")].map((e) => e.id || e.className);   /* 16 Nov 2026 (end pass): no record carries the older pane; each is a stack of Ambient's split */
     ok(["#aside", "#chatside"].every((q) => !!d.querySelector(q) && d.querySelector(q).classList.contains("amb-stack") && !!d.querySelector(q).closest(".amb-split--panes")) && d.querySelector("#aside").previousElementSibling.id === "rlist" && d.querySelector("#chatside").previousElementSibling.id === "makerChatList", "F2.2b an account and a thread are the second pane of a split, their list the first");
     ok(!panes.length && !!d.querySelector("#makerReview") && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an order, Shop's open day) for its builder's split; not: " + J(panes));
+    /* 16 Nov 2026, the move to Ambient (0.7.8, nested places): every split of panes stands in a chain of places straight from the screen, every link an
+       amb-place, at most three deep; a split that is a part is never a place itself; after a split stand only hidden places, so Stock by book closes the queue */
+    const chainOf = (sp) => { const out = []; let e = sp.parentElement; while (e && !e.classList.contains("amb-screen")) { out.push(e); e = e.parentElement; } return out; };
+    const splits = [...d.querySelectorAll("#roster .amb-split--panes")], bad = splits.filter((sp) => { const c = chainOf(sp); return !c.length || c.length > 3 || c.some((e) => !e.classList.contains("amb-place")) || sp.classList.contains("amb-place"); }).map((sp) => sp.id || sp.className);
+    const after = splits.filter((sp) => [...sp.parentElement.children].slice([...sp.parentElement.children].indexOf(sp) + 1).some((x) => !x.hidden && !x.hasAttribute("data-in"))).map((sp) => sp.id || sp.className);
+    ok(splits.length === 6 && !bad.length && !after.length && d.querySelector("#nlist").parentElement.contains(d.getElementById("nStock")) && !d.querySelector("#oRecord").classList.contains("amb-place"),
+      "F2.3 every split of panes on his page (Needs you, Orders, Payments, accounts, messages, Shop's hours) stands in a chain of places from the screen, none a place itself, nothing shown after it: " + J({ n: splits.length, bad, after }));
     const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
     ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),
       "F3.1 nothing sizes a frame any more: no --salt-frame-h, no frame column, no .gate.adm");

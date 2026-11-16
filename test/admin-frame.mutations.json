@@ -136,5 +136,47 @@
   "file": "stmt/owner.js",
   "find": "go=el('div','amb-foot npane__go')",
   "replace": "go=el('div','npane__go')"
+ },
+ {
+  "name": "F2.3 Orders' body is no place",
+  "file": "stmt/page.js",
+  "find": "        + '<div class=\"abody amb-place\">'\n        /* 16 Nov 2026, the move to Ambient (place G)",
+  "replace": "        + '<div class=\"abody\">'\n        /* 16 Nov 2026, the move to Ambient (place G)"
+ },
+ {
+  "name": "F2.3 Payments is no place",
+  "file": "stmt/page.js",
+  "find": "'<section class=\"amb-place\" data-in=\"orders.payments\"",
+  "replace": "'<section class=\"amb-stack\" data-in=\"orders.payments\""
+ },
+ {
+  "name": "F2.3 the accounts are no place",
+  "file": "stmt/page.js",
+  "find": "'<div id=\"oAccts\" class=\"amb-place\" data-in=\"customers.accounts\">'",
+  "replace": "'<div id=\"oAccts\" data-in=\"customers.accounts\">'"
+ },
+ {
+  "name": "F2.3 Needs you is no place",
+  "file": "stmt/page.js",
+  "find": "'<div id=\"mHome\" class=\"amb-place\" data-in=\"needs\">'",
+  "replace": "'<div id=\"mHome\" data-in=\"needs\">'"
+ },
+ {
+  "name": "F2.3 Needs you's queue and card are no panes",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-split amb-split--panes nsplit\">",
+  "replace": "'<div class=\"amb-split nsplit\">"
+ },
+ {
+  "name": "F2.3 Stock by book follows the split",
+  "file": "stmt/page.js",
+  "find": "<div id=\"nlist\" class=\"nlist\"></div>'\n        + '<section id=\"nStock\" class=\"amb-stack nstock\" aria-label=\"Stock by book\" hidden></section></div>'",
+  "replace": "<div id=\"nlist\" class=\"nlist\"></div></div>'\n        + '<section id=\"nStock\" class=\"amb-stack nstock\" aria-label=\"Stock by book\"></section>'"
+ },
+ {
+  "name": "F2.3 Shop's hours split is a place itself",
+  "file": "stmt/page.js",
+  "find": "class=\"amb-split amb-split--panes hsplit\"",
+  "replace": "class=\"amb-split amb-split--panes amb-place hsplit\""
  }
 ]

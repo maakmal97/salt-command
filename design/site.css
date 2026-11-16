@@ -143,7 +143,7 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 
 /* ---- Customers (Salt Admin): accounts, messages, links and associates ---- */
 /* the find field, the filters and the notice stand in a stack of their own over the two panes; the panes' wrappers hold no place of their own, so a record's foot stays the last thing of its stack */
-#oAccts, .chatgrid { display: grid; gap: var(--amb-space-4); min-width: 0; }
+/* 16 Nov 2026 (0.7.8): the accounts and the messages are places of their own (amb-place, no box), so their filters and their panes stand in the screen's own flow */
 #aopen, .oacct, .amore, #makerChatOpen { display: contents; }
 .asec, .ahead, .agroup, .athreads, .glinks { display: grid; gap: var(--amb-space-3); min-width: 0; align-content: start; }
 .ahead__line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); margin: 0; }
@@ -485,7 +485,7 @@ body.ended > *:not(#aEnded) { display: none; }
 .adm .aplace { min-width: 0; }
 .adm .aparts { margin: 0 0 20px; }
 .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin: 0 0 16px; }
-.adm .abody { display: flex; flex-direction: column; gap: 28px; }
+.adm .abody:not(.amb-place) { display: flex; flex-direction: column; gap: 28px; }
 .adm .aplace input { max-width: 100%; }
 .adm .maker-input.unsent { display: flex; flex-direction: column; gap: 10px; margin: 0 0 10px; }
 .adm #makerBulletinCurrent { overflow-wrap: anywhere; }

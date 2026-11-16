@@ -744,7 +744,10 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            ("orders" is every part of Orders, "orders.group" that part alone). The owner's script hides the rest (stmt/owner.js, go),
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
-        + '<div id="mHome" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
+        /* 16 Nov 2026, the move to Ambient (0.7.8, nested places): each place is an amb-place, and so is a place's body and each part that holds a split
+           with filters before it, so the shown chain reaches the split and its two panes take the screen and scroll apart; a split that is itself a part
+           (Orders' stages, Shop's hours) is never an amb-place. The parts segment stays before the body (his call, asked) */
+        + '<div id="mHome" class="amb-place" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice), the glance (Ambient's tiles, each a link
            to Orders: Ready, To approve, Receivables with its meter) and the kinds (counted filters, one chosen). Under it the queue and the open card, two columns from
@@ -755,17 +758,18 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nkopt" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nkopt__n"></span></button>').join("") + "</div>"
         + "</div>"
-        + '<div class="amb-split nsplit"><div class="amb-stack"><div id="nlist" class="nlist"></div></div>'
+        /* 16 Nov 2026 (0.7.8): the queue and the card are panes; Stock by book closes the queue's pane, since only hidden places may follow a split */
+        + '<div class="amb-split amb-split--panes nsplit"><div class="amb-stack"><div id="nlist" class="nlist"></div>'
+        + '<section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden></section></div>'
         + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div></div>'
-        + '<section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden></section>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
-        + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
+        + '<div id="oOrders" class="aplace amb-place" data-in="orders" hidden>'
         + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, approve: !test })
         + adminParts("orders", test)
-        + '<div class="abody">'
+        + '<div class="abody amb-place">'
         /* 16 Nov 2026, the move to Ambient (place G): the orders are two panes, the queue (its groups, then More) and the record, which ends in its one main action as its foot;
            from 960px they stand side by side, below it the open order takes the list's place and has its way back */
         + '<div id="oSplit" class="amb-split amb-split--panes" data-in="orders.todo orders.open orders.done orders.ended" role="region" aria-label="Orders">'
@@ -780,7 +784,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerQueueReview" class="apstack" aria-live="polite"></div></details></section>'
         /* 16 Nov 2026, the move to Ambient (place G): Payments is a list of rows and the open claim's card in two panes (drawMakerClaims draws both into #makerClaims), Group orders a form and its pools
            in one stack, and the mini ledger Ambient's tables, which stack by the shell's width and never scroll sideways */
-        + '<section class="amb-stack" data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 class="amb-section" id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" class="amb-split amb-split--panes" aria-live="polite"></div></section>'
+        + '<section class="amb-place" data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 class="amb-vh" id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" class="amb-split amb-split--panes" aria-live="polite"></div></section>'
         + '<section class="amb-stack" data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 class="amb-section" id="makerPoolsTitle">Group orders</h2>'
         + '<p class="amb-field__hint">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
         + '<div id="makerPools" class="amb-stack" aria-live="polite"></div></section>'
@@ -792,11 +796,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + "</div></div>"
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
-        + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
+        + '<div id="oCustomers" class="aplace amb-place" data-in="customers" hidden>'
         + aHero("Customers", '<p class="amb-hero__sub" id="mFoot"></p>', { heat: true })   /* the count of accounts, the rail's foot until 15 Nov 2026 */
         + adminParts("customers", test)
-        + '<div class="abody">'
-        + '<div id="oAccts" data-in="customers.accounts">'
+        + '<div class="abody amb-place">'
+        + '<div id="oAccts" class="amb-place" data-in="customers.accounts">'
         /* 16 Nov 2026, the move to Ambient (place H): a notice leads, money first, then the find field and the filters, counted, as Ambient's Search and Filters; the accounts are
            rows in the first pane and the open account the second, which holds its one main action at its foot */
         + '<div class="amb-stack afind">'
@@ -813,7 +817,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<p class="amb-empty" id="anone">Choose an account.</p><div id="aopen" hidden></div></div></div>'
         + "</div>"
         /* 16 Nov 2026, the move to Ambient (place H): Messages is a notice and two panes, the threads and the one open, which ends in its compose box as its foot */
-        + '<div class="chatgrid" data-in="customers.messages"><div class="amb-stack"><h2 id="makerChatTitle" class="amb-vh">Messages</h2>'
+        + '<div class="chatgrid amb-place" data-in="customers.messages"><div class="amb-stack"><h2 id="makerChatTitle" class="amb-vh">Messages</h2>'
         + '<div class="amb-notice chatnote">' + AMB.glyph("info") + '<span id="makerChatStatus" role="status" aria-live="polite"></span></div></div>'
         + '<div class="amb-split amb-split--panes chatsplit"><div id="makerChatList" class="amb-stack"></div><div id="chatside" class="amb-stack">'
         + '<p class="amb-empty" id="chatnone">Choose a thread.</p><div id="makerChatOpen" hidden></div></div></div></div>'
@@ -849,11 +853,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
-        + '<div id="oShop" class="aplace" data-in="shop" hidden>'
+        + '<div id="oShop" class="aplace amb-place" data-in="shop" hidden>'
         + aHero("Shop", "")
         + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
-        + '<div class="abody">'
+        + '<div class="abody amb-place">'
         /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the week; 26 Oct 2026 (his word): every part of Hours a group of settings.
            16 Nov 2026, the move to Ambient (place I): Hours is Ambient's panes, Now, the week of spans, the points and Help in the first stack, the open day in the second, its one foot Done */
         + '<div class="amb-split amb-split--panes hsplit" data-in="shop.hours"><div class="amb-stack">'

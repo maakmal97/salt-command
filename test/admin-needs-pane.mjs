@@ -116,7 +116,8 @@ export async function run({ ok, pageWork }) {
   /* 16 Nov 2026, the move to Ambient (place F): the columns are Ambient's split (two from 960px); the page says the list's stack and the record's, the record empty until a tap with its words, its one main action its foot */
   const page = (await import("../stmt/page.js")).landingPage("", "pane-nonce", { master: "", accounts: [] });
   const css = page.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
-  ok(/<div class="amb-split nsplit"><div class="amb-stack"><div id="nlist" class="nlist"><\/div><\/div><div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden><\/div><p class="rnone panenone">Choose a card to see it in full\.<\/p><\/div><\/div>/.test(page)
+  /* 16 Nov 2026, the move to Ambient (0.7.8, nested places): the queue and the card are Ambient's panes, Stock by book closing the queue's pane */
+  ok(/<div class="amb-split amb-split--panes nsplit"><div class="amb-stack"><div id="nlist" class="nlist"><\/div><section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden><\/section><\/div><div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden><\/div><p class="rnone panenone">Choose a card to see it in full\.<\/p><\/div><\/div>/.test(page)
     && /\.panenone \{ display: none; margin: 0; color: var\(--amb-ink-2\); \}/.test(css) && /@media \(min-width: 960px\) \{ \.panenone \{ display: block; \} #nopen:not\(\[hidden\]\) ~ \.panenone \{ display: none; \} \}/.test(css)
     && /\.ntask \.need-tap/.test(css),
     "the open card stands in the record's column of Ambient's split from 960px, the column saying Choose a card to see it in full until a tap");

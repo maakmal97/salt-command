@@ -38,7 +38,8 @@ export async function run({ ok, pageWork }) {
     /* 1 */
     const r = A.read();
     const before = r.s && r.s.previousElementSibling;
-    ok(!!r.s && !r.s.hidden && !!before && before.classList.contains("nsplit") && r.s.querySelector("h2.amb-section").firstChild.textContent === "Stock by book" && t(r.s.querySelector("h2 .amb-section__note")) === "Units · measured 22 Oct"
+    /* 16 Nov 2026, the move to Ambient (0.7.8, nested places): Stock by book closes the queue pane, under the cards, since only hidden places may follow a split */
+    ok(!!r.s && !r.s.hidden && !!before && before.id === "nlist" && !!r.s.closest(".nsplit") && r.s.querySelector("h2.amb-section").firstChild.textContent === "Stock by book" && t(r.s.querySelector("h2 .amb-section__note")) === "Units · measured 22 Oct"
       && J(r.rows.map((x) => x.book)) === J(["candy", "salt", "rice", "oil", "gas"]) && J(r.rows.map((x) => x.tag)) === J(["Candy", "Salt", "Rice", "Oil", "Gas"])
       && r.rows.map((x) => x.word).join("|") === "Out of stock|Selling fast|Available|Available|"
       && ["amb-chip--neg", "amb-chip", "amb-chip--pos", "amb-chip--pos"].every((c, i) => r.rows[i].st.split(" ").includes(c)) && !/amb-chip--(pos|neg|warn)/.test(r.rows[1].st) && r.rows[4].st === "" && r.rows.every((x) => x.st === "" || /amb-chip__dot/.test(x.st) === false)
