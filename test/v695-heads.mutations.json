@@ -1,0 +1,4 @@
+[
+ {"name": "a book's head on Prices is an h3", "file": "stmt/page.js", "find": "var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));", "replace": "var h=el('h3','pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));"},
+ {"name": "a book's head carries no mark", "file": "stmt/page.js", "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));", "replace": "h.setAttribute('aria-label',pshape(product));"}
+]

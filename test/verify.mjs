@@ -23650,7 +23650,8 @@ await (async () => {
     d95.getElementById("f").dispatchEvent(new dom95.window.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 150 && !d95.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
     const marks95 = [...d95.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label"));
-    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark").length === 3 && !d95.querySelector("#pPrices h3"),
+    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark").length === 3 && !d95.querySelector("#pPrices h3.pmark, #pPrices h3 .amb-thumb--mark"),
+      /* 17 Nov 2026, the move to Ambient (the third red fix): Prices by size's fold carries its own h3 title (below the h2s); no book's mark is headed by an h3 */
       "the price list heads each block with its mark, an h2 under the place's h1 (C21), the one still waiting for a price included: " + JSON.stringify(marks95));
     d95.querySelector('button[data-t="order"]').click();
     /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
