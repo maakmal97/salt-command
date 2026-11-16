@@ -133,7 +133,7 @@ export async function run({ ok, pageWork }) {
     await until(() => calls.length >= 3); await awork.quiet();
     const places = [...ad.querySelectorAll(".amb-tabbar .place")].map((b) => b.textContent.trim());
     /* 2 Nov 2026 (Orders on the canvas): Orders' parts are the Segment of four and, under More, the Payments row */
-    const parts = [...ad.querySelectorAll(".aparts [data-part], .amore__list [data-part]")].map((b) => b.parentNode.getAttribute("data-place") + "." + b.getAttribute("data-part"));
+    const parts = [...ad.querySelectorAll(".aparts [data-part], .amore__list [data-part]")].map((b) => b.closest("[data-place]").getAttribute("data-place") + "." + b.getAttribute("data-part"));   /* 17 Nov 2026, the move to Ambient (the second red fix): a More row's place is on its list (the li is the parent), as owner.js reads it with closest */
     adm.window.location.hash = "#record"; await tick();
     const onRecord = [...ad.querySelectorAll('.amb-tabbar .place[aria-current="page"]')].map((b) => b.textContent.trim());
     ok(JSON.stringify(places) === JSON.stringify(["Needs you", "Orders", "Payments", "Chat"]) && !ad.getElementById("oAdd")

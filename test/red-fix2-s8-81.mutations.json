@@ -1,0 +1,32 @@
+[
+ {
+  "name": "a link's state word leaves its row (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "s.appendChild(el('span',tone,stateWordText));",
+  "replace": "s.appendChild(el('span',tone,''));"
+ },
+ {
+  "name": "the state is said twice (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "&&!/[a-z]/i.test(line.charAt(stateWordText.length))) line=line.slice(",
+  "replace": "&&false) line=line.slice("
+ },
+ {
+  "name": "the QR frame is never hidden (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "fig.hidden=!qrShown[r.id]; row.appendChild(fig);",
+  "replace": "fig.hidden=false; row.appendChild(fig);"
+ },
+ {
+  "name": "the reward bar loses its meter class (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "m=el('progress','amb-meter'); m.max=100;",
+  "replace": "m=el('progress','amb-meter2'); m.max=100;"
+ },
+ {
+  "name": "the links no longer open the place (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "    drawMyLinks(box);\n    if(!card||",
+  "replace": "    if(!card||"
+ }
+]

@@ -21852,15 +21852,18 @@ await (async () => {
     ok(await until(() => box.querySelectorAll(".glink").length === 4), "the associate's place draws their four links");
     const kids = [...box.children];
     ok(kids[0].classList.contains("rlinks") && /Your links/.test(kids[0].textContent)
-      && kids.findIndex((k) => /Your card/.test(k.textContent)) > 0 && kids.findIndex((k) => k.querySelector(".salt-meter")) > 0,
+      && kids.findIndex((k) => /Your card/.test(k.textContent)) > 0 && kids.findIndex((k) => k.querySelector(".amb-meter")) > 0,   /* 17 Nov 2026, the move to Ambient (the second red fix): the bar is Ambient's progress.amb-meter */
       "it opens on the links, with the card and its reward after them: " + JSON.stringify(kids.map((k) => k.className || k.tagName)));
     const rows = [...box.querySelectorAll(".glink")];
-    const words = rows.map((r) => r.querySelector(".gstate").textContent);
-    ok(words.join("|") === "Open|Waiting|Not approved|Withdrawn" && rows.every((r) => r.querySelector(".gstate").classList.contains("salt-status")),
-      "each link says its state in a word, in the system's chip: " + JSON.stringify(words));
-    ok(/Opened 3 times, last 22 Sep 2026[.]/.test(rows[0].textContent) && /Shut until we approve it/.test(rows[1].textContent)
-      && /did not approve/.test(rows[2].textContent) && /Withdrawn[.] Nothing opens it now/.test(rows[3].textContent),
-      "and what it has done, or why it is shut, in words: " + JSON.stringify(rows.map((r) => r.querySelector(".gs").textContent)));
+    /* 17 Nov 2026, the move to Ambient (the second red fix): the state is the first word of the row's second line (amb-row__sub), not a chip */
+    const stOf = (r) => r.querySelector(".amb-row__sub > span > span:first-child");
+    const words = rows.map((r) => stOf(r) && stOf(r).textContent);
+    ok(words.join("|") === "Open|Waiting|Not approved|Withdrawn" && rows.every((r) => !!stOf(r)),
+      "each link says its state in a word, the second line of its row: " + JSON.stringify(words));
+    /* 17 Nov 2026, the move to Ambient (the second red fix): the line follows the state's word in lower case, and the word is said once */
+    ok(/opened 3 times, last 22 Sep 2026[.]/.test(rows[0].textContent) && /shut until we approve it/.test(rows[1].textContent)
+      && /did not approve/.test(rows[2].textContent) && /^Withdrawn, nothing opens it now/.test(rows[3].querySelector(".amb-row__sub").textContent),
+      "and what it has done, or why it is shut, in words: " + JSON.stringify(rows.map((r) => r.querySelector(".amb-row__sub").textContent)));
     const shares = [...box.querySelectorAll("button")].filter((b) => b.textContent === "Share");
     ok(shares.length === 1 && rows[0].contains(shares[0]), "only the open link can be shared");
     const before = st.fetches;
@@ -21869,19 +21872,20 @@ await (async () => {
     ok(sync === 1 && st.shared[0].url === "https://site.test/g/aaaa-bbbb" && st.fetches === before,
       "Share hands the address to the share sheet as the tap's first act, with nothing fetched between: " + JSON.stringify([sync, st.shared[0], st.fetches - before]));
     const img = rows[0].querySelector("img"), qb = [...rows[0].querySelectorAll("button")].find((b) => /the QR/.test(b.textContent));
-    ok(!!img && img.hidden && !!qb && qb.getAttribute("aria-expanded") === "false" && !rows[1].querySelector("img"),
+    const qfig = img && img.closest("figure");   /* 17 Nov 2026, the move to Ambient (the second red fix): the code frame is the figure that hides */
+    ok(!!img && !!qfig && qfig.hidden && !!qb && qb.getAttribute("aria-expanded") === "false" && !rows[1].querySelector("img"),
       "the open link's QR waits behind Show the QR, and a shut link has none");
     qb.click();
-    ok(!img.hidden && qb.textContent === "Hide the QR" && qb.getAttribute("aria-expanded") === "true", "and one tap shows it");
+    ok(!qfig.hidden && qb.textContent === "Hide the QR" && qb.getAttribute("aria-expanded") === "true", "and one tap shows it");
     const mk = [...box.querySelectorAll("button")].find((b) => b.textContent === "Make a link");
     const next = mk && mk.previousElementSibling;
     /* 1 Nov 2026: the line is the first sentence alone (it went on: Once it is open it shows ... you share it from here) */
     ok(!!mk && !!next && next.textContent === "A new link stays shut until we approve it, then shows a price list.",   /* 1 Nov 2026: one sentence that keeps what the link shows */
       "Make a link says what happens next, before it is tapped: " + JSON.stringify(next && next.textContent));
-    const mtr = box.querySelector(".salt-meter");
-    ok(!!mtr && mtr.style.getPropertyValue("--salt-fill") === "42" && /42%/.test(mtr.textContent)
-      && /Reward: 0[.]6 unit to take .*Ask on any order to take it[.]/.test(mtr.closest(".pane").textContent),
-      "the reward is in units with its bar, the system's Meter, and says how to take it: " + JSON.stringify(mtr && mtr.style.getPropertyValue("--salt-fill")));
+    const mtr = box.querySelector(".amb-meter");   /* 17 Nov 2026, the move to Ambient (the second red fix): progress.amb-meter, its value the fill, the figure in the row */
+    ok(!!mtr && +mtr.value === 42 && /42%/.test(mtr.closest(".amb-row").textContent)
+      && /Reward: 0[.]6 unit to take .*Ask on any order to take it[.]/.test(mtr.closest(".hprod").textContent),
+      "the reward is in units with its bar, the system's Meter, and says how to take it: " + JSON.stringify(mtr && mtr.value));
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v690: a customer's statement is not bound to a month; it shows everything, and a month is one tap (v769)");
@@ -42453,7 +42457,8 @@ await (async () => {
         rows: pane ? [...pane.querySelectorAll(".amb-setting")].map((r) => [".amb-setting__name > span:first-child", ".amb-setting__value", ".obill__sub"].map((q) => t(r.querySelector(q))).join("|")) : [],
         form: !!d.getElementById("oNew"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")),
         /* V2: the invoice's Less sent says what was sent against the account and that it waits */
-        sent: [...d.querySelectorAll("#payHead .inv .salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")).filter((x) => /^Less sent/.test(x)).join() };
+        /* 17 Nov 2026, the move to Ambient (the second red fix): Less sent is the invoice's row [data-inv="sent"] (title, amount, then its second line) */
+        sent: [...d.querySelectorAll('#payHead [data-inv="sent"]')].map((r) => [".amb-row__title", ".amb-row__amount", ".amb-row__sub"].map((q) => t(r.querySelector(q))).join("|")).filter((x) => /^Less sent/.test(x)).join() };
       d.getElementById("tPrices").click();
       out.prices = !d.getElementById("pPrices").hidden && /100/.test(t(d.getElementById("pPrices")));
       return out;

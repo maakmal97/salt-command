@@ -2605,7 +2605,8 @@ const CLIENT_JS = `
     var tx=el('span','amb-plate__text'); tx.appendChild(el('span','amb-plate__label',tw('lnk.yours'))); tx.appendChild(el('span','amb-plate__value gu',url));
     b.appendChild(tx); b.appendChild(el('span','amb-plate__act',tw('lnk.copy'))); pl.appendChild(b); return pl;
   }
-  function hLinkSub(stateWordText,tone,line){ var s=el('span'); s.appendChild(el('span',tone,stateWordText)); if(line) s.appendChild(document.createTextNode(', '+lcFirst(line))); return s; }
+  function hLinkSub(stateWordText,tone,line){ var s=el('span'); s.appendChild(el('span',tone,stateWordText)); if(line&&line.toLowerCase().indexOf(stateWordText.toLowerCase())===0&&!/[a-z]/i.test(line.charAt(stateWordText.length))) line=line.slice(stateWordText.length).replace(/^[ ,.]+/,'');   /* 17 Nov 2026 (the second red fix): a line that opens with the state's own word says it once */
+    if(line) s.appendChild(document.createTextNode(', '+lcFirst(line))); return s; }
   function drawMyLinks(into){
     var box=el('div','rlinks');
     var live=(myLinks||[]).filter(function(r){ return r.state!=='withdrawn'; }).length;

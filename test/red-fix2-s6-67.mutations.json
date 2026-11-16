@@ -1,0 +1,20 @@
+[
+ {
+  "name": "Less sent loses its row marker (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "attrs:{'data-inv':'sent'}",
+  "replace": "attrs:{'data-inv':'sentx'}"
+ },
+ {
+  "name": "Less sent drops its waiting word (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "sub:wait?tw('om.waiting'):'', amount:rm(sent)",
+  "replace": "sub:'', amount:rm(sent)"
+ },
+ {
+  "name": "Less sent drops its figure (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "title:tw('inv.lessSent'), sub:wait?tw('om.waiting'):'', amount:rm(sent)",
+  "replace": "title:tw('inv.lessSent'), sub:wait?tw('om.waiting'):''"
+ }
+]

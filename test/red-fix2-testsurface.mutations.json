@@ -1,0 +1,14 @@
+[
+ {
+  "name": "More's list loses its place (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "<ul class=\"amb-settings__list amore__list\" data-place=\"orders\">",
+  "replace": "<ul class=\"amb-settings__list amore__list\" data-place=\"ordersx\">"
+ },
+ {
+  "name": "Payments leaves the test surface's More (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "(k) => !test || TEST_PARTS.orders.includes(k)).map(",
+  "replace": "(k) => false).map("
+ }
+]
