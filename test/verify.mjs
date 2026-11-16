@@ -42734,7 +42734,8 @@ await (async () => {
       "the order says when: before we hand it over, and due now once it is ready: " + JSON.stringify([money, ready]));
     const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
     const cod = d.querySelector('#payBody input[name="payHow"][value="cod"]');
-    const why = cod ? t(cod.closest(".salt-option").querySelector(".salt-option__detail")) : "";
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a way is label.amb-option, its reason the option's sub line */
+    const why = cod ? t(cod.closest(".amb-option").querySelector(".amb-option__sub")) : "";
     ok(!!payO && !!cod && cod.disabled && why === "Not offered: this order is paid in advance.",
       "its pay sheet offers no cash, the tile dashed with the reason: " + JSON.stringify([!!payO, cod && cod.disabled, why]));
     d.getElementById("payX").click();

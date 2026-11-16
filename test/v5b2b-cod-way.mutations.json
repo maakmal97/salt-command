@@ -1,0 +1,4 @@
+[
+ {"name": "an order paid in advance still offers cash on handover", "file": "stmt/page.js", "find": "return {v:'cod', label:d?'pay.cashArrives':'pay.cashCollect', g:'cash', off:no,", "replace": "return {v:'cod', label:d?'pay.cashArrives':'pay.cashCollect', g:'cash', off:false,"},
+ {"name": "the cash way gives no reason when paid in advance", "file": "stmt/page.js", "find": "detail:pre?'pay.cashPrepay':no?'pay.cashOff':'pay.cashOn'};", "replace": "detail:no?'pay.cashOff':'pay.cashOn'};"}
+]
