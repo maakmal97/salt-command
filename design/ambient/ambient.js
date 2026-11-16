@@ -15,7 +15,11 @@
  *   .amb-contents           a document's contents: a link takes the reader to its section, and the
  *                           link of the section on screen carries aria-current
  *   .amb-stepper            data-amb-step="-1|1" takes its field one step down or up, held between the
- *                           field's min and max; at either end that control carries aria-disabled
+ *                           field's min and max; at either end that control carries aria-disabled. With
+ *     data-amb-values="a b c" on the field, the steps walk that list (any figures, in order) instead: to the
+ *                           next value above the figure, or the last below it, so a typed figure between two
+ *                           stands and the next step lands on a value; the up and down arrow keys walk it too.
+ *                           Either way the field then fires input, change and amb:change (detail.value)
  *   .amb-input--code        a one-time code: spaces and hyphens in what is typed or pasted are taken out
  *
  * Nothing here waits on a transition or an animation ending: reduced motion sets both durations
@@ -167,11 +171,7 @@
     if ((el = t.closest("[data-amb-step]"))) {
       var box = el.closest(".amb-stepper"), field = box && box.querySelector("input");
       if (!field || el.getAttribute("aria-disabled") === "true") return;
-      var b = ends(field), by = parseFloat(el.getAttribute("data-amb-step")) < 0 ? -1 : 1;
-      field.value = String(Math.min(b.hi, Math.max(b.lo, (parseFloat(field.value) || 0) + by * b.step)));
-      field.dispatchEvent(new Event("input", { bubbles: true }));
-      field.dispatchEvent(new Event("change", { bubbles: true }));
-      say(field.value);
+      stepBy(field, parseFloat(el.getAttribute("data-amb-step")) < 0 ? -1 : 1);
       return;
     }
     if ((el = t.closest("[data-amb-move]"))) {
@@ -179,6 +179,7 @@
       return;
     }
     if ((el = t.closest(".amb-segment__opt"))) {
+      if (el.getAttribute("aria-disabled") === "true") return;
       var seg = el.closest(".amb-segment"), opts = seg ? seg.querySelectorAll(".amb-segment__opt") : [];
       for (var i = 0; i < opts.length; i++) opts[i].setAttribute("aria-pressed", opts[i] === el ? "true" : "false");
       if (el.hasAttribute("data-amb-mood")) mood(el.getAttribute("data-amb-mood"), el.closest(".amb-shell") || root);
@@ -246,11 +247,43 @@
   });
 
   /* ---- a file dragged over a drop zone ---- */
-  /* a stepper's field and its two ends; a control at an end says so, and is still there to find */
+  /* a stepper's field and its two ends; a control at an end says so, and is still there to find. A field
+     with data-amb-values walks that list, and its ends are the list's first and last */
+  function values(field) {
+    var raw = field.getAttribute("data-amb-values");
+    if (!raw) return null;
+    var list = raw.trim().split(/[\s,]+/).map(parseFloat).filter(function (n) { return !isNaN(n); }).sort(function (a, b) { return a - b; });
+    return list.length ? list : null;
+  }
   function ends(field) {
+    var list = values(field);
+    if (list) return { lo: list[0], hi: list[list.length - 1], list: list };
     var lo = parseFloat(field.min), hi = parseFloat(field.max);
     return { lo: isNaN(lo) ? -Infinity : lo, hi: isNaN(hi) ? Infinity : hi, step: parseFloat(field.step) || 1 };
   }
+  /* one step down (-1) or up (1): along the list to the nearest value past the figure, or by the step */
+  function stepBy(field, by) {
+    var b = ends(field), v = parseFloat(field.value), next;
+    if (b.list) {
+      if (isNaN(v)) next = b.lo;
+      else if (by > 0) next = b.list.filter(function (n) { return n > v + 1e-9; })[0];
+      else next = b.list.filter(function (n) { return n < v - 1e-9; }).pop();
+      if (next === undefined) next = by > 0 ? b.hi : b.lo;
+    } else next = Math.min(b.hi, Math.max(b.lo, (isNaN(v) ? 0 : v) + by * b.step));
+    if (String(next) === field.value) return;
+    field.value = String(next);
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+    field.dispatchEvent(new CustomEvent("amb:change", { bubbles: true, detail: { value: field.value } }));
+    say(field.value);
+  }
+  /* the arrow keys on a field that walks a list: the list's next or last value, never the browser's step */
+  document.addEventListener("keydown", function (e) {
+    var f = e.target;
+    if (!f || !f.hasAttribute || !f.hasAttribute("data-amb-values") || (e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    stepBy(f, e.key === "ArrowUp" ? 1 : -1);
+  });
   function bounds(box) {
     var field = box.querySelector("input"); if (!field) return;
     var b = ends(field), v = parseFloat(field.value) || 0;

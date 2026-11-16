@@ -40,24 +40,23 @@ export async function run({ ok, pageWork }) {
       "G1: every group of the open account is a section with no glass card: " + J(want.map((k, i) => groups[i] ? groups[i].tagName + "." + groups[i].className : null)));
     /* G2 */
     const heads = groups.map((g) => g && g.firstElementChild);
-    ok(heads.every((h) => h && h.tagName === "H2" && h.classList.contains("salt-settings__head")) && !a.querySelector(".asec:not(.ahead) h3, .asec:not(.ahead) .salt-eyebrow--copper"),
-      "G2: each group is headed by the mist settings head and no copper eyebrow heads any: " + J(heads.map((h) => h && h.tagName + "." + h.className + ":" + t(h))));
+    /* 16 Nov 2026, the move to Ambient (place H): a group is headed by Ambient's section head */
+    ok(heads.every((h) => h && h.tagName === "H2" && h.classList.contains("amb-section")) && !a.querySelector(".asec:not(.ahead) .salt-eyebrow--copper"),
+      "G2: each group is headed by the section head and no copper eyebrow heads any: " + J(heads.map((h) => h && h.tagName + "." + h.className + ":" + t(h))));
     /* G3 */
-    const row = (e) => !!e && e.classList.contains("salt-settings__row--action") && !!e.closest(".salt-settings");
-    const ember = (e) => row(e) && e.classList.contains("salt-settings__row--danger");
+    const row = (e) => !!e && (e.classList.contains("amb-action") || e.classList.contains("amb-setting")) && !!e.closest(".amb-settings");
+    const ember = (e) => row(e) && e.classList.contains("amb-action--danger");
     const mk = a.querySelector('[data-act="acct.partner"]'), loan = a.querySelector('[data-act="acct.repay"]'), dev = a.querySelector('[data-act="acct.device-signout"]');
     const paid = a.querySelector('[data-act="acct.refund"][data-key$=":refundPaid"]'), stale = a.querySelector('[data-act="acct.refund"][data-key$=":refundRemove"]');
     const ghosts = [...a.querySelectorAll(".salt-ghost")].filter((g) => !g.hidden).map(t);
-    ok(!ghosts.length && row(mk) && row(loan) && row(paid) && !ember(paid) && ember(stale) && ember(dev),
-      "G3: no ghost on the card; Make partner, a loan and a refund's moves are rows, Remove as stale and a device's Sign out in ember: " + J({ ghosts, mk: !!mk && mk.className, loan: !!loan && loan.className, stale: !!stale && stale.className, dev: !!dev && dev.className }));
+    ok(!ghosts.length && row(mk) && row(loan) && row(paid) && !ember(paid) && ember(stale) && !!dev && dev.classList.contains("amb-pill") && !!dev.closest("li.amb-row"),
+      "G3: no ghost on the card; Make partner, a loan and a refund's moves are rows, Remove as stale in ember and a device's Sign out a small pill in its row: " + J({ ghosts, mk: !!mk && mk.className, loan: !!loan && loan.className, stale: !!stale && stale.className, dev: !!dev && dev.className }));
     /* G4 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.oacct\{display:flex;flex-direction:column;gap:24px\}/.test(css) && /\.adm \.amore\{display:flex;flex-direction:column;gap:24px\}/.test(css)
-      && /\.adm #aopen \.oacct\{display:block;column-count:2;column-gap:24px\}/.test(css)
-      && /\.adm #aopen \.oacct>\*,\.adm #aopen \.oacct \.amore>\*\{break-inside:avoid;margin:0 0 24px\}/.test(css),
-      "G4: the groups stand 24px apart in one column and in two, 24px between the columns");
+    ok(/#aopen, \.oacct, \.amore, #makerChatOpen \{ display: contents; \}/.test(css) && /\.asec, \.ahead, \.agroup[^{]*\{ display: grid; gap: var\(--amb-space-3\)/.test(css) && !/column-count/.test(css.split("#aopen, .oacct")[1] || ""),
+      "G4: the account's wrappers hold no place of their own, so the groups stand in the pane's stack, one column, at the stack's own gap");
     /* G5 */
-    const sub = t(dev && dev.previousElementSibling && dev.previousElementSibling.querySelector(".salt-settings__sub"));
+    const sub = t(dev && dev.closest("li.amb-row") && dev.closest("li.amb-row").querySelector(".amb-row__sub"));
     ok(/^(Kept since [0-9]{2} [A-Z][a-z]{2} [0-9]{4}, used |Not kept, signed in )/.test(sub) && sub.length <= 40 && !/[.]$/.test(sub),
       "G5: a device's second line is its kept day and last use, short, no sentence: " + J(sub));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }

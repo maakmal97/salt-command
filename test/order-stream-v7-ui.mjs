@@ -67,7 +67,8 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); }, posts = (re) => p.posts.filter((x) => re.test(x.route));
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links"));
     const jc = (id) => d.querySelector('#jlist [data-join="' + id + '"]'), act = (a, id) => byAct(d, a, "jl:" + id);
-    const word = (id) => t(jc(id) && jc(id).querySelector(".nkind")).split(" · ")[0];
+    /* 16 Nov 2026, the move to Ambient (place H): a join link is Ambient's row, its state the second line's first word, its answer the item under it */
+    const word = (id) => t(jc(id) && jc(id).querySelector(".amb-row__sub")).split(", ")[0], said = (id) => t(jc(id)) + " " + (jc(id) && jc(id).nextElementSibling && jc(id).nextElementSibling.classList.contains("oask") ? t(jc(id).nextElementSibling) : "");
     ok(Object.keys(state).every((id) => !!jc(id)) && word("jwaiting1") === "Waiting" && word("jdeclin01") === "Declined" && word("jopen0001") === "Open" && word("jsent0001") === "Sent"
       && /Join link from CX1-ZED/.test(t(jc("jwaiting1"))),
       "A1 the Links part lists every join link beside the guest links, who asked (their code) and where it stands: " + J(Object.keys(state).map(word)));
@@ -76,10 +77,10 @@ export async function run({ ok, pageWork }) {
       && !!act("join.withdraw", "jsent0001") && !!act("join.withdraw", "jaddedw01") && !act("join.withdraw", "jspent001") && word("jspent001") === "Used",
       "A2 Approve and Decline are on a waiting link alone; Withdraw on an approved link in any state but used, so an added link whose account never comes can be shut; a declined one has none");
     await click(act("join.approve", "jwaiting1"));
-    ok(posts(/\/all\/joins\/jwaiting1\/approve$/).length === 1 && word("jwaiting1") === "Open" && /^Approved, and it opens now[.]/.test(t(jc("jwaiting1")).replace(/^.*?(Approved)/, "$1")) && !!act("join.withdraw", "jwaiting1") && !act("join.approve", "jwaiting1"),
+    ok(posts(/\/all\/joins\/jwaiting1\/approve$/).length === 1 && word("jwaiting1") === "Open" && /^Approved, and it opens now[.]/.test(said("jwaiting1").replace(/^.*?(Approved)/, "$1")) && !!act("join.withdraw", "jwaiting1") && !act("join.approve", "jwaiting1"),
       "A3 Approve posts its own route once, the link reads Open and offers Withdraw: " + J(p.posts.map((x) => x.route)));
     await click(act("join.decline", "jwaiting2"));
-    ok(posts(/\/all\/joins\/jwaiting2\/decline$/).length === 1 && word("jwaiting2") === "Declined" && /stays shut/.test(t(jc("jwaiting2"))) && !act("join.approve", "jwaiting2"),
+    ok(posts(/\/all\/joins\/jwaiting2\/decline$/).length === 1 && word("jwaiting2") === "Declined" && /stays shut/.test(said("jwaiting2")) && !act("join.approve", "jwaiting2"),
       "A4 Decline posts its own route and the link reads Declined, shut");
     await click(act("join.withdraw", "jopen0001"));
     ok(posts(/\/all\/joins\/jopen0001\/revoke$/).length === 1 && word("jopen0001") === "Withdrawn" && !act("join.withdraw", "jopen0001"),
@@ -93,7 +94,7 @@ export async function run({ ok, pageWork }) {
     ok(posts(/\/all\/joins\/jaddedw01\/revoke$/).length === 1 && posts(/\/all\/joins\/jsentw001\/revoke$/).length === 1 && !inNeeds("js:jaddedw01") && !inNeeds("j:jsentw001"),
       "A6 a sent or an added join is withdrawn through the same route and leaves Needs you: " + J(p.posts.map((x) => x.route).slice(-3)));
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links"));
-    ok(/^Withdrawn, so they need a new link[.]/.test(t(jc("jaddedw01")).replace(/^.*?(Withdrawn, so)/, "$1")) && /need a new link/.test(t(jc("jsentw001"))) && /Withdrawn[.]$/.test(t(jc("jopen0001"))) && !/need a new link/.test(t(jc("jopen0001"))),
+    ok(/^Withdrawn, so they need a new link[.]/.test(said("jaddedw01").replace(/^.*?(Withdrawn, so)/, "$1")) && /need a new link/.test(said("jsentw001")) && /Withdrawn[.]$/.test(said("jopen0001").trim()) && !/need a new link/.test(said("jopen0001")),
       "A7 withdrawing a link already used says a new one is needed: " + t(jc("jaddedw01")));
     await click(byAct(d, "nav.needs"));
 
@@ -283,7 +284,8 @@ export async function run({ ok, pageWork }) {
     D.getElementById("tCard").click();
     const box = () => D.querySelector("#pCard [data-joins]"), row = (id) => box() && box().querySelector('[data-join="' + id + '"]');
     ok(await until(() => box() && row(idWait)), "B0 an associate's links card draws their join links");
-    const state1 = (id) => t(row(id) && row(id).querySelector(".gstate"));
+    /* 16 Nov 2026, the move to Ambient: a join link is a row, its state the word of the second line, Copy link a quiet pill */
+    const state1 = (id) => t(row(id) && row(id).querySelector(".amb-row__sub"));
     ok(state1(idWait) === "Waiting for us" && state1(idOpen) === "Ready to share" && state1(idUsed) === "Used" && state1(idNo) === "Not approved" && state1(idGone) === "Withdrawn",
       "B1 each join link says where it stands: waiting for us, ready to share, used, not approved, withdrawn: " + J([idWait, idOpen, idUsed, idNo, idGone].map(state1)));
     const copies = (id) => [...row(id).querySelectorAll("button")].filter((b) => b.textContent === "Copy link");
@@ -300,7 +302,7 @@ export async function run({ ok, pageWork }) {
     ok(await until(async () => (await count1()) === count0 + 1) && await until(() => box() && box().querySelectorAll('[data-join]').length === 6),
       "B6 Ask for a join link mints one and lists it: " + J([count0, await count1()]));
     const newest = [...box().querySelectorAll("[data-join]")].find((r) => ![idWait, idOpen, idUsed, idNo, idGone].includes(r.getAttribute("data-join")));
-    ok(!!newest && t(newest.querySelector(".gstate")) === "Waiting for us" && !newest.querySelector("button"), "B7 the new link waits for us and cannot be copied yet");
+    ok(!!newest && t(newest.querySelector(".amb-row__sub")) === "Waiting for us" && !newest.querySelector("button"), "B7 the new link waits for us and cannot be copied yet");
     /* B8: Log out lets the previous associate's join links go, so a read that fails for the next never shows them */
     failJoins = true;
     const lock = D.getElementById("lock"); lock.click(); lock.click();

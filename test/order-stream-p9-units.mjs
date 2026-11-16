@@ -14,11 +14,12 @@ export async function run({ ok, pageWork }) {
   const K = await import("./counter-b-kit.mjs");
   const pane = (p, shape) => [...p.d.querySelectorAll("#pPrices .pane")].find((x) => ((x.querySelector(".pmark") || {}).getAttribute("aria-label") || "").startsWith(shape));
   const st = (p, shape) => { const pn = pane(p, shape); const q = (s) => pn && pn.querySelector('[data-st="' + s + '"]');
-    return { pn, less: q("less"), more: q("more"), val: q("val"), add: q("add"), fig: pn && pn.querySelector(".stfig"), say: pn && pn.querySelector('.sr[aria-live="polite"]'),
-      usual: pn && pn.querySelector(".strow .salt-status"), why: pn && pn.querySelector(".salt-stepper__why"), line: pn && pn.querySelector(".bkline") }; };
-  const units = (s) => K.txt(s.val);
-  const type = async (p, s, v) => { s.val.click(); const i = s.pn.querySelector('[data-st="input"]'); i.value = v;
-    i.dispatchEvent(new p.w.KeyboardEvent("keydown", { key: "Enter", bubbles: true })); await p.settle(); };
+    return { pn, less: q("less"), more: q("more"), val: q("val"), add: q("add"), fig: pn && pn.querySelector(".stfig"), say: pn && pn.querySelector('.amb-vh[aria-live="polite"]'),
+      usual: pn && pn.querySelector(".strow .amb-chip"), why: pn && pn.querySelector(".amb-field__error"), line: pn && pn.querySelector(".bkline"), q: q("q") }; };
+  /* 16 Nov 2026, the move to Ambient: the stepper is the system's (data-amb-values over a number field): its units are the hint under it, a size is typed into the
+     field and read on change, and a book walked and never typed is a read-only field */
+  const units = (s) => K.txt(s.q);
+  const type = async (p, s, v) => { const i = s.val; i.value = v; i.dispatchEvent(new p.w.Event("change", { bubbles: true })); await p.settle(); };
   const pages = [];
   try {
     const p = await K.open({ ok, pageWork }); pages.push(p);
@@ -28,7 +29,7 @@ export async function run({ ok, pageWork }) {
     s.more.click(); await p.settle(); s = st(p, "Cube");
     ok(units(s) === "0.75 unit" && K.txt(s.fig) === "RM 75.00" && K.txt(s.say) === "0.75 unit, RM 75.00", "9b plus walks the grid's next point, its figure read off the list and said aloud: " + K.txt(s.say));
     /* a typed size: on the walk, off it, past the top */
-    ok(s.val.tagName === "BUTTON", "9b a grid walked freely is a tap to type");
+    ok(s.val.tagName === "INPUT" && !s.val.readOnly && !!s.val.getAttribute("data-amb-values"), "9b a grid walked freely is typed into the field, and the stepper is handed the walk");
     await type(p, s, "7"); s = st(p, "Cube");
     ok(units(s) === "7 units" && K.txt(s.fig) === "RM 686.00" && s.why.hidden, "9b a typed size on the walk is set at its own figure: " + units(s) + " " + K.txt(s.fig));
     await type(p, s, "7.1"); s = st(p, "Cube");
@@ -38,8 +39,8 @@ export async function run({ ok, pageWork }) {
     s.less.click(); await p.settle(); s = st(p, "Cube");
     ok(units(s) === "25 units", "9b minus from an ask steps back onto the walk's top: " + units(s));
     /* the fold */
-    const row10 = s.pn.querySelector('details.sfold .szrow[data-q="10"]');
-    ok(!!row10 && /Prices by size/.test(K.txt(s.pn.querySelector("details.sfold summary"))), "9b the sizes stand one fold under the stepper, named Prices by size");
+    const row10 = s.pn.querySelector('.sfold .szrow[data-q="10"]');
+    ok(!!row10 && /Prices by size/.test(K.txt(s.pn.querySelector(".amb-more"))) && s.pn.querySelector(".amb-more").getAttribute("aria-controls") === s.pn.querySelector(".sfold").id, "9b the sizes stand one fold under the stepper, named Prices by size");
     row10.click(); await p.settle(); s = st(p, "Cube");
     ok(units(s) === "10 units" && row10.getAttribute("aria-pressed") === "true" && [...s.pn.querySelectorAll(".szrow[aria-pressed=true]")].length === 1, "9b a size in the fold sets the stepper and is the one pressed");
     /* Add sets the line */
@@ -51,7 +52,7 @@ export async function run({ ok, pageWork }) {
     ok(/9\.75 units/.test(K.txt(s.line)) && !/19/.test(K.txt(s.line)), "9b Add sets the line, never adds to it: " + K.txt(s.line));
     /* a board alone is walked by its sizes, never typed */
     let o = st(p, "Droplet");
-    ok(!!o.val && o.val.tagName === "OUTPUT" && units(o) === "1 unit", "9b a board alone is not typed and starts at its smallest");
+    ok(!!o.val && o.val.readOnly && units(o) === "1 unit", "9b a board alone is not typed and starts at its smallest");
     if (o.more) { o.more.click(); await p.settle(); o = st(p, "Droplet"); }
     ok(!!o.val && units(o) === "3 units" && o.more.disabled && K.txt(o.fig) === "RM 115.00", "9b it walks its board sizes and stops at the last: " + units(o));
     /* an ask in the basket */
@@ -72,14 +73,14 @@ export async function run({ ok, pageWork }) {
     const u = await K.open({ ok, pageWork, list, orders: [K.done("u1", K.ago(48), { qty: 2, total: 200 }), K.done("u2", K.ago(30), { qty: 2, total: 200 })] }); pages.push(u);
     let v = st(u, "Cube");
     ok(units(v) === "2 units" && !v.usual.hidden && /usual/i.test(K.txt(v.usual)), "9b with no basket it starts at their usual, the chip shown: " + units(v));
-    ok(v.val.tagName === "OUTPUT", "9b a grid with only is not typed");
+    ok(v.val.readOnly, "9b a grid with only is not typed");
     v.more.click(); await u.settle(); v = st(u, "Cube");
     ok(units(v) === "2.5 units" && v.usual.hidden, "9b only's sizes and the board's are the walk (2 then the board's 2.5), the chip gone off the usual: " + units(v));
     v.more.click(); await u.settle(); v = st(u, "Cube");
     ok(units(v) === "5 units", "9b a grid point only leaves out is skipped (3, 4 and 4.5 never stepped on): " + units(v));
     /* the start tile */
     const fresh = await K.open({ ok, pageWork }); pages.push(fresh);
-    const tile = [...fresh.d.querySelectorAll("#pHome .htile")][1];
+    const tile = [...fresh.d.querySelectorAll("#pHome [data-hagain]")][1];
     tile.click(); await fresh.settle();
     const f = st(fresh, "Cube");
     ok(units(f) === "2.5 units" && fresh.d.activeElement === f.val, "9b a start tile sets its book's stepper to its size and focuses it: " + units(f));

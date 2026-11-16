@@ -1,27 +1,27 @@
 [
   {
-    "name": "1 how many on the book",
+    "name": "how many on the book is not said",
     "file": "stmt/owner.js",
-    "find": "hd.appendChild(el('span','salt-status salt-status--mist',p.rows.length+(p.rows.length===1?' associate':' associates')));",
+    "find": "hd.appendChild(el('span','amb-section__note',p.rows.length+(p.rows.length===1?' associate':' associates')));",
     "replace": ""
   },
   {
-    "name": "2 the short labels",
+    "name": "the long labels",
     "file": "stmt/owner.js",
-    "find": "[['Bought',rm(r.bought)],['Sold',rm(r.soldFor)],['Introduced',rm(r.introduced)]]",
-    "replace": "[['Bought from you',rm(r.bought)],['Sold for you',rm(r.soldFor)],['Introduced',rm(r.introduced)]]"
+    "find": "heads=['Associate','Standing','Bought','Sold','Introduced','Resales','Referred','Share',",
+    "replace": "heads=['Associate','Standing','Bought from you','Sold for you','Introduced','Resales','Referred','Share',"
   },
   {
-    "name": "2 the reward a Meter",
+    "name": "the reward is not a meter",
     "file": "stmt/owner.js",
-    "find": "    if(r.reward&&r.reward.next!=null) c.appendChild(assocMeter(r.reward));",
-    "replace": ""
+    "find": "if(r.reward&&r.reward.next!=null) td.appendChild(assocMeter(r.reward)); else if",
+    "replace": "if(false) td.appendChild(assocMeter(r.reward)); else if"
   },
   {
-    "name": "2 the meter's fill",
+    "name": "the meter's fill",
     "file": "stmt/owner.js",
-    "find": "    m.style.setProperty('--salt-fill', String(Math.max(0, Math.min(100, Math.round(w.next*100)))));",
-    "replace": ""
+    "find": "m.max=100; m.value=Math.max(0, Math.min(100, Math.round(w.next*100)));",
+    "replace": "m.max=100; m.value=0;"
   },
   {
     "name": "3 the table",
@@ -30,10 +30,10 @@
     "replace": ""
   },
   {
-    "name": "3 the table from 860px",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}",
-    "replace": "@media (min-width:860px){.adm .aclist{display:none}}"
+    "name": "the table does not stack",
+    "file": "stmt/owner.js",
+    "find": "var table=el('table','amb-table amb-table--stack atable')",
+    "replace": "var table=el('table','amb-table atable')"
   },
   {
     "name": "4 the code opens the account",

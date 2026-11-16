@@ -32,7 +32,9 @@
 /* The GENERATED stylesheet, not tools/stmt-style.mjs. That module reads design/salt-ds.css
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
-import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
+/* 15 Nov 2026, the move to Ambient: the page wears Ambient whole (its tokens, ambient.css, ambient.js and the icon sprite) and the site's own
+   layer, design/site.css; the salt-ds stylesheet, its recipes and the faces are no longer served on any page of the site */
+import { AMB_TOKENS, AMB_CSS, AMB_JS, AMB_ICONS, AMB_THEME, SITE_CSS } from "./statement-css.js";
 import { PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
@@ -56,17 +58,6 @@ export const TEST_POLL_MS = 2000;
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
-/* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
-/* Counter Batch A: the Today card, and the notice in it */
-.today{display:flex;flex-direction:column;gap:12px}
-/* Home's Today card holds the clock, so the header does not say the time twice there */
-.cshell[data-place=home] .chead .cclock{display:none}
-.today__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap);margin:-8px 0 -4px}
-.today__clock{margin-left:auto;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-mist-bright)}
-.today__line{margin:0;font-size:var(--salt-text-md);line-height:1.45;color:var(--salt-salt)}
-.today__when{color:var(--salt-brass)}
-.today .salt-notice{border-top:1px solid var(--salt-line-faint);padding-top:12px}
-.today .salt-notice__head{min-height:20px}
 /* The gate, in the same material as the document behind it. One filled control, the
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
@@ -75,8 +66,6 @@ const PAGE_CSS = `
 .gate p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 24px}
 /* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
 .appmark{display:block;margin:0 0 14px}
-/* the door's name, the one line over Sign in (11 Oct 2026) */
-#gate>.salt-eyebrow{margin:0 0 8px}
 .gate .salt-glass-card{margin:0 0 4px}
 .gate .salt-ledger__label{display:flex;align-items:center;gap:10px}
 .gate .salt-ledger__row:last-child{border-bottom:0}
@@ -86,9 +75,6 @@ const PAGE_CSS = `
 #codeBox .salt-code{margin-top:22px;display:flex;flex-direction:column;gap:8px}
 #codePaste .glyph{margin-right:8px;color:inherit}
 #toCode,#codeDoor{margin-top:14px}
-/* S3 3.8: the question sits where the tapped control was */
-.ask .lead{margin:18px 0 0}
-.ask .nocase{text-transform:none}
 /* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
 .mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
 /* 12 OCT 2026 (PHASE 5): a form's label is the system's Field label (salt-field__label, or the Option legend's label modifier), set beside lbl in the markup; what is left
@@ -98,38 +84,15 @@ const PAGE_CSS = `
 /* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
    44px tall; a code or a figure takes --mono and a sentence stays in the display face */
 .fld{display:block}
-/* S3 3.7: the door's two fields, the password beside its Show */
-#doorBox .salt-field{margin-top:14px}
-.pwrow{display:flex;gap:8px;align-items:stretch}
-.pwrow .fld{flex:1 1 auto;min-width:0}
-.pwrow .salt-ghost{flex:none}
 .gate .salt-insight,#doorBox .salt-insight{margin:22px 0 0}
 /* S3 fix: the code screen, carried into the signed-out Sheet, under the Sheet's own title */
 #outForm #codeBox{margin:0}
 #outForm .appmark{display:none}
-/* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
-   draws a white list of black words under a dark field, which is the colour he called bizarre.
-   color-scheme tells the system the page is dark and the list follows it; option is named too, for
-   the platforms that take the colour rather than the scheme: the system's own .salt-field__select option, slate under salt
-   ink as on the Desk (18 Oct 2026; this page had set the well, black at 28%, which a native list draws near-black), so every
-   select carries salt-field__select. The chevron is drawn out of two
-   gradients because appearance:none took the system's away and left nothing to say it opens. */
-select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme:dark;cursor:pointer;
-  padding-right:42px;background-repeat:no-repeat;background-size:6px 6px,6px 6px;
-  background-image:linear-gradient(45deg,transparent 50%,var(--salt-brass) 50%),linear-gradient(135deg,var(--salt-brass) 50%,transparent 50%);
-  background-position:calc(100% - 22px) calc(50% - 2px),calc(100% - 17px) calc(50% - 2px)}
+/* 15 Nov 2026, the move to Ambient: a select is the device's own list in light and dark alike, so its forced dark colour scheme and chevron went (Ambient's Select draws one) */
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
-h3.pmark,.pmark{margin:0 0 4px;line-height:1}
-/* F4: the light is a coloured border round the mark; the three colours are the system's own tokens (yellow is --salt-amber, the warning; brass is the mark's own colour and the focus ring) */
-/* 22 Oct 2026 (his word, the outline alone was missed): the light in words is the system's status, in the light's own token */
-.hsup{min-height:44px;align-items:center}
-/* plan version 10 (03 Nov 2026): a book's head is its coin with the light beside it, a dot and its word (salt-light), never a border */
-.pane>.pmark{display:inline-block;vertical-align:middle;margin:0}
-.pane>.supline{display:inline-flex;vertical-align:middle;margin:0 0 0 12px}
-.hsup .pmark{margin:0}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS CAPTION UNDER IT. The pressed ghost's edge and glass, the mark at
    28px, the caption in the mono face: the size in words, "2.5 units" (12 Oct 2026, his word: the mark stands alone, so no shape word
@@ -137,25 +100,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .mtile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;
   min-width:64px;padding:10px 10px 8px;border:1px solid var(--salt-edge-field);border-radius:var(--salt-radius-sm);
   background:var(--salt-glass);color:var(--salt-brass);line-height:1;vertical-align:middle}
-.mtile .psym,.mstack .psym{display:block}
+.mtile .psym{display:block}
+
 .mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
   color:var(--salt-text);white-space:nowrap;line-height:1.2}
-.mhero{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
-.salt-inbox-row>.mtile{align-self:center}
 .mlab{display:inline-flex;align-items:center;gap:12px}
-.mstack{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
-.htile{justify-content:center}
-.salt-lines__row--cancelled .mq{color:var(--salt-prose);text-decoration:line-through;text-decoration-thickness:1px}
-.tot .mtiles{display:inline-flex;flex-wrap:wrap;gap:8px;vertical-align:middle;margin-left:6px}
-.owed .mtiles{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-.owed .mq{font-size:var(--salt-text-xl);color:var(--salt-verdigris)}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-/* v694: the order's own figures, typed in the same well as everything else. payamt, not amt (24 Sep 2026):
-   the statement's own Amount cells are td.amt, and a bare .amt laid every one of them out as a flex row */
-.payamt{display:flex;gap:8px;align-items:center;margin-top:10px}
-.payamt .fld{flex:1 1 0;min-width:0;text-align:right}
-.payamt .cur{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist)}
 /* the confirmation, one plain list of what is about to be ordered */
 .conf{margin:10px 0 0;padding:0;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .conf li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--salt-line)}
@@ -165,71 +116,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* S4, 24 SEP 2026: ORDERING, IN TODAY'S PLACES (stage 4 of the Counter's redesign). The look is the system's: the
    Sheet, Option tiles, pressed ghosts, the plain ledger, the insight and the glass card. What is here is where those
    pieces sit inside the osh; no colour of its own. */
-.osheet .salt-sheet__title{flex:1 1 auto}
-.osheet .salt-sheet__close{margin-left:auto}
-.osheet .salt-sheet__body > * + *{margin-top:18px}
-.osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
 /* New order stands where the order form's pane stood, and keeps the pane's gap to what follows it */
 #oNew{margin-bottom:14px}
-.ototal{flex:1 1 0;min-width:0}
-.ototal .salt-kpi__value{margin-top:0}
-.ototal .sub2{display:block;margin-top:2px}
-.osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
-/* 11 Oct 2026: a yes or no in a Sheet. The look is the system's; here is where its pieces sit: the answers run the width, the danger
-   one first and in the alarm (the system's danger ghost), the ghost that keeps below it */
-/* at the limit it lies over the order sheet, so its scrim covers that sheet and its body is above the scrim (the system's own Sheet is 70 and 71) */
-#ynScrim{z-index:72}
-.ynsheet{z-index:73}
-.ynsheet .salt-sheet__title{flex:1 1 auto}
-.ynsheet .salt-sheet__close{margin-left:auto}
-.ynsheet .salt-sheet__body > * + *{margin-top:14px}
-.ynsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
-.ynsheet .salt-sheet__foot .salt-ghost{width:100%}
-.thsheet .salt-sheet__foot{display:block}
-.thsheet .salt-sheet__foot .msg{margin:8px 0 0}
-.thempty{margin:0}
-.szrow{display:block;width:100%;min-height:52px;padding-left:0;padding-right:0;background:none;border-style:none none solid;
-  font:inherit;color:inherit;text-align:left;cursor:pointer}
-.szrow:last-child{border-bottom-style:none}
-.szrow:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-.ochev{flex:0 0 auto;color:var(--salt-prose)}
-.osent{text-align:center}
-.otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
-.olim{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:6px}
-.olim .salt-ghost{flex:0 0 auto}
-/* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
-   this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* Optional install guide under This device; its steps draw the browser's own marks. */
-.keeppage{margin:20px 0 0;padding:0}
-/* the guide is a part of the compact This device card, so its heading is the card's own third level and not a page's first (11 Oct 2026) */
-.keeppage h3{margin:0 0 10px;font-family:var(--salt-font-display);font-size:var(--salt-text-lg);font-weight:500;line-height:1.2}
-.keeppage .kline{margin:14px 0 0}
-.keeppage b{color:var(--salt-text);font-weight:500}
-.keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
-.keepsteps .glyph,.keeppage .glyph{vertical-align:-0.3em;margin:0 3px}
-/* THE BELL (Step 1b), at the head of every view of the saved app: marked, with its call beside it, until notifications
-   are on; both 44px taps */
-.chead{display:flow-root}
-.cbell{float:right;display:flex;align-items:center;gap:8px;margin:0 0 6px 10px}
-.cbell__orb{position:relative}
-.cbell__dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--salt-brass);display:none}
-.cbell--off .cbell__dot{display:block}
-.cbell--off .cbell__orb{border-color:var(--salt-brass)}
-/* S9 9.9: in This device (S7 7.3, below), its phones and computers with this one marked, and the two quiet ways, each
-   answered on the line under them */
-.devcard .dacts{margin-top:10px}
-.devcard .dnote{margin:8px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.devcard .dnote:empty{display:none}
-.devcard .dnote.bad{color:var(--salt-ember)}
-#devQr{width:min(240px,100%);margin:4px auto 20px}
-#devQrImg{display:block;width:100%;height:auto}
-/* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
-.rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
-  font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.rem input{width:18px;height:18px;accent-color:var(--salt-brass);cursor:pointer}
+/* 15 Nov 2026, the move to Ambient: the bell is a circle in the shell's app bar, its call a glass chip; Ambient places both */
 .msg{margin:16px 0 0;font-size:var(--salt-text-sm);line-height:1.6;min-height:1.4em;
   color:var(--salt-text-muted)}
 .msg.bad{color:var(--salt-ember)}
@@ -240,59 +132,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .rdet .salt-ledger{margin:8px 0 0}
 .adm .rdet .salt-ledger__value{white-space:normal;overflow-wrap:anywhere;text-align:right}
 .adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
-/* a veil is obsidian 86%, decision 4 */
-/* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
-   had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines.
-   UX2: IT STICKS UNDER THE STATUS BAR. The page draws under it (viewport-fit=cover, black-translucent), so at
-   top:0 a saved iPhone app held Log out behind the clock, as the desk's bar was until v392 */
-#barw{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
-  gap:12px;margin:0 auto;max-width:620px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);
-  font-family:var(--salt-font-mono)}
-/* S7 7.1: the veil is drawn by what the bar holds, his view line or a lapse, so a customer's bar, whose Log out is This
-   device's now, takes no room until it has something to say */
-.vbar,.lapse{padding:0 16px;margin-bottom:14px;background:var(--salt-veil);border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-sm);backdrop-filter:blur(10px)}
-.vbar .lapse{padding:0;margin:0;background:none;border:0;backdrop-filter:none}
-/* 04 OCT 2026: HIS VIEW LINE SHARES ITS ROW WITH BACK TO ACCOUNTS. On a phone the line took the row's width, so the
-   button fell to a second row and the line sat a pixel under the veil's top edge; the line now wraps beside the button,
-   centred on its 44px, and a lapse still takes the next row */
-.vbar>span{flex:1 1 0;min-width:0;padding:10px 0;line-height:1.5}
-.vbar b{white-space:nowrap}
-.bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
-.lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.lapse[hidden]{display:none}
-/* UX4, 24 Sep 2026: Log out and Continue are taps like any other, 44px both ways (they were 55 and 62 by 21,
-   and Continue is the one way back after a lapse); the bar gives up its own padding, so it is no taller */
-.bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
-  padding:0;text-decoration:underline;min-height:var(--salt-tap);min-width:var(--salt-tap);
-  display:inline-flex;align-items:center;justify-content:center;flex:none}
-/* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, which were three tabs and a fourth. The system's App bar at the foot of a
-   phone and its rail from 1080px draw them, and the recipe decides which shows; this page keeps the bar's height clear
-   at the foot, names the place in the header and lays Home out. */
-.cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
-.chead{max-width:620px;margin:0 auto 18px}
-.chead h1{margin:0;font-size:1.75rem;line-height:1.15}
-/* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
-.cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
-.cclock:empty{display:none}
-.cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-/* 21 Oct 2026, his word: THE HEADER IS THE BAR, on every place, in the Desk's glass: the time, the place and whose account on the left, what
-   waits on them (cBarChips) and the bell beside; under 820px of bar what waits takes its own row, as the Desk's does */
-.cbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0;align-items:center;top:calc(env(safe-area-inset-top) + 8px)}
-.cbar>.cclock,.cbar>h1,.cbar>.cwho{grid-column:1}
-.cbar>h1{font-size:1.375rem}
-.cbar>.cbell{grid-column:3;grid-row:1/span 3;float:none;margin:0 0 0 12px}
-.cbar>.salt-deskbar__live{grid-column:1/-1;grid-row:4}
-.cbar>.salt-deskbar__live:not(:has(.salt-deskbar__chip)){display:none}
-@container salt-deskbar (min-width:820px){.cbar>.salt-deskbar__live{grid-column:2;grid-row:1/span 3;margin-left:14px}}
+/* 15 Nov 2026, the move to Ambient: the bar of lines (#barw), the header (.chead, .cbar), the rail and the App bar went: the shell's hero names the place, his read-only
+   line and a lapse are notices under it, and the places are one dock, which Ambient stands up as the rail from 960px */
 /* a username is a credential, so the rail's capitals never reach it */
-.home{max-width:620px;margin:0 auto}
-.home .hcol>div{margin:0 0 24px}
-.home .hcol>:empty{display:none}
-.hfill{width:100%;margin-top:14px}
-.hlab{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px}
-.home .salt-inbox-row{margin:0 0 8px}
 /* 28 SEP 2026 (his instruction, with pay terms V2's C2): ON A PHONE THE SCREEN'S MARGINS ARE EQUAL AND THE PAGE USES ALL
    OF IT. The body kept the statement's 44px above, 20px beside and 60px below, and the shell 24px over the App bar
    besides, so a page began under a saved app's status bar and ended 84px above the bar. Under 1080px: 16px on every side,
@@ -300,121 +142,22 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    a list's last row included (its 8px stood inside Coming up, so the gap after it read 32px). The rows' resets are
    shorthands, as the rules they undo are. */
 @media (max-width:1079.98px){
-  body{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
-  /* 12 OCT 2026 (HIS IPHONE): IN THE SAVED APP A FIXED BAR STANDS AT THE FOOT OF THE DOCUMENT WHEN THE DOCUMENT IS SHORTER THAN THE SCREEN. Measured on his phone,
-     393x852, each page at its top: Orders (long) had the bar on the screen's foot, Record (one short card) 20pt above it and Needs you ("Nothing here.") 55pt above it,
-     the page ground showing under it; Safari never did. So the document is the whole screen tall at least in the saved app: the head script marks the root data-app and
-     sets --app-h to the screen's height (the viewport units are not trusted there, none being known to reach the screen's foot), and the body's min-height is that.
-     The body's box is border-box, so its padding adds no scroll. Only the saved app, and under 1080px, where the bar shows. */
-  html[data-app] body{min-height:100vh;min-height:var(--app-h,100vh)}
-  .cshell{padding-bottom:var(--salt-bar-h)}
   .gate{padding:0}
-  .home .hcol{display:flex;flex-direction:column;gap:24px}
-  .home .hcol>div{margin:0}
-  .home .hcol+.hcol{margin-top:24px}
-  .home .salt-inbox-row:last-child,.olist .salt-inbox-row:last-child{margin:0}
-  .olist>:last-child{margin-bottom:0}
 }
-/* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
-   Home its money and what needs them beside what is coming, Account the statement beside This device (S7 7.3's .acct,
-   below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
-   the right. */
+
 @media (min-width:1080px){
-  /* 15 Nov 2026, his word: the shell is salt-ds's one page width (--salt-page-max), as every surface stands (it was 1240px) */
-  .cshell{display:flex;gap:28px;align-items:flex-start;max-width:var(--salt-page-max);margin:0 auto;padding-bottom:48px}
-  .cmain{flex:1 1 auto;min-width:0}
-  .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
-  .chead .cclock{display:none}
-  /* Counter Batch A: the rail says whose account it is, so the header does not say it twice */
-  .chead [data-whoas]{display:none}
-  .crtitle{display:block;margin:0 12px 16px;font-size:1.375rem;line-height:1;letter-spacing:0.04em;white-space:nowrap}
-  .crbrand{flex-direction:column;align-items:flex-start;gap:2px}
-  .crbrand .mono{font-size:var(--salt-text-sm);color:var(--salt-salt);text-transform:none;letter-spacing:0}
-  .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
-  .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
+.panel{max-width:none}
 }
+
 .panel{max-width:620px;margin:0 auto}
 .panel h2:not(.salt-settings__head),.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
-/* Counter Batch B: the basket's + beside each size, its minus and its count once tallied, and the pane's line of what is in it */
-/* plan version 9 (03 Nov 2026): a book's stepper (salt-stepper), its figure and Add on one row, the sizes one fold under it */
-.pane .salt-stepper{margin-top:8px}
-.strow{display:flex;align-items:center;gap:12px;margin-top:12px}
-.stfig{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);color:var(--salt-salt);font-variant-numeric:tabular-nums}
-.strow .salt-status[hidden]{display:none}
-.stadd{margin-left:auto}
-.sfold{margin-top:8px}
-.sfold>summary{min-height:var(--salt-tap);display:flex;align-items:center;cursor:pointer;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--salt-brass)}
-.sfold>summary::-webkit-details-marker{display:none}
-.sfold>summary:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-.szrow[aria-pressed="true"] .salt-ledger__value{color:var(--salt-brass)}
-.bkline[hidden]{display:none}
-.bkline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
-.bkline__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
-.bkrm{margin-top:6px}
-/* the bar: the pay foot's pattern under 1080px, sticking above the App bar on the bar's own slate; from 1080px, where the bar is the rail,
-   a card that sticks to the foot of the list's column */
-.bkbar[hidden]{display:none}
-.bkbar{z-index:10;position:sticky;margin-top:24px;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);
-  display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
-.bkbar .salt-kpi{flex:1 1 8.5rem;padding:9px 14px 8px 18px}
-.bkbar .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px;min-height:var(--salt-tap)}
-@media (min-width:1080px){
-  .bkbar{bottom:0;padding:12px 16px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-lg)}
-}
-/* Counter Batch B: the way on Prices, its words and Change on one line while they fit */
-.pway[hidden]{display:none}
-.pway{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:-6px 0 18px}
-.pway__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
    inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
 .mos{max-width:620px;margin:0 0 22px}
 .mos .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
-/* THE MONTH FILTER (v690): the same pill vocabulary as the issue strip, a step quieter, because it
-   sits inside a statement rather than choosing between statements. The note under it says what the
-   filter does and does not do, so a reader never takes a month's rows for the whole account. */
-.mfil{margin-bottom:10px}
-.mfnote{max-width:620px;margin:0 auto 18px;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
-  font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
-.mfnote:empty{display:none}
-/* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
-   no earlier statement follows it (14 Oct 2026). 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
-   compact This device card, then the statement under a gap of its own (28px, a gap and never a margin, so a part that is not drawn
-   leaves none); from 1080px This device stands beside, as it did */
-.acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
-#aThread:empty{display:none}
-#aGlance:empty{display:none}
-.aglance .salt-glance__value{overflow-wrap:anywhere}
 
-.devcard{margin:0}
-.devcard .devlist{margin-top:8px}
-.devcard .devrows{display:contents}
-.devcard .devrows>.salt-settings__row:first-child{border-top:0}
-.devcard .devnote{margin:8px 4px 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.devcard .devnote:empty{display:none}
-.devcard .salt-ledger{margin-top:6px}
-.devcard .salt-ledger__row:last-child{border-bottom:0}
-.devcard .salt-ledger__label{flex:1 1 auto}
-.devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
-.ospots{display:flex;flex-direction:column;gap:var(--salt-space-2)}
-.ospot{display:flex;align-items:stretch;gap:var(--salt-space-2)}
-.ospot .salt-option{flex:1 1 auto;min-width:0}
-.ospot__edit{flex:0 0 auto;min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.ospot__add{align-self:flex-start;min-height:var(--salt-tap)}
-.spsave{flex-direction:row;align-items:flex-start;gap:12px;min-height:var(--salt-tap)}
-.spsave input{width:22px;height:22px;margin:11px 0 0;flex:0 0 auto;accent-color:var(--salt-brass)}
-.spsave__t{display:flex;flex-direction:column;gap:2px}
-.spremove{min-height:var(--salt-tap);margin-top:var(--salt-space-2)}
-.ahelp{margin:0}
-.ahelp__q{border-top:1px solid var(--salt-line-faint)}
-.ahelp__q:first-of-type{margin-top:6px}
-.ahelp__sum{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:var(--salt-tap);cursor:pointer;list-style:none}
-.ahelp__sum::-webkit-details-marker{display:none}
-.ahelp__sum .glyph{flex:0 0 auto;color:var(--salt-prose);transition:transform .2s}
-.ahelp__q[open] .ahelp__sum .glyph{transform:rotate(90deg)}
-.ahelp__a{margin:0 0 14px;color:var(--salt-prose)}
-@media (prefers-reduced-motion:reduce){.ahelp__sum .glyph{transition:none}}
 @media (min-width:1080px){
   .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
   /* Counter Batch A: the glance runs across both columns, This device beside Messages and the statement under it */
@@ -423,111 +166,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .devcard{grid-column:2;grid-row:2 / span 2}
   .ahelp{grid-column:2}
 }
-/* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
-.payhead[hidden]{display:none}
-.payhead .btn{margin-top:12px}
-.payhead .salt-insight{margin:12px 0 0}
 .salt-ledger--plain .salt-ledger__value{white-space:nowrap}
-/* V2 (28 Sep 2026): To pay now is an invoice, a line a thing due, on the plain Ledger list; on the pay sheet each line's goods,
-   delivery and what is paid stand beneath it, then the totals and the Total */
-.inv{margin-top:12px}
-.inv .invd{margin-top:6px;padding-left:22px}
-.inv .invd .salt-ledger__line,.inv .invt .salt-ledger__line{padding:2px 0}
-.inv .invd .salt-ledger__label,.inv .invd .salt-ledger__value{font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.inv .invt .salt-ledger__label,.inv .invt .salt-ledger__value{font-size:var(--salt-text-sm)}
-.inv .invt .salt-ledger__flag{margin:0 0 4px}
-.inv .invtot{border-top:1px solid var(--salt-line-strong);border-bottom:0}
-.inv .invtot .salt-ledger__label{color:var(--salt-text);font-weight:500}
-.inv .invtot .salt-ledger__value{color:var(--salt-brass);font-weight:500}
-/* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
-.payseg{display:flex;gap:8px;margin-top:12px}
-.payseg .salt-ghost{flex:1 1 0;min-width:0}
-.payhow,.payinto,.payref{margin-top:18px}
-.payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px;flex-wrap:nowrap}
-/* Phase 7b: the account number in fours, mono and tabular so the groups line up, on one line with its Copy (the label gives way and
-   wraps); his banks stand over the figure with the page's own gap; What this pays is the Plan recipe's fold, shut */
-.payref .acctno{font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.payinto+.salt-kpi{margin-top:18px}
-/* 06 Nov 2026: the code is the QR panel's, drawn on the sheet; Save the code is one full-width ghost under it, its hint under that */
-.paycode{margin-top:18px}
-#paySave{width:100%;margin-top:12px}
-.paywhat{margin:14px 0 0}
-.paywhat>summary .salt-plan__title{grid-column:1 / -1}
-.paywhat .inv{margin-top:0}
-.paywhat .salt-ledger__row:last-child{border-bottom:0}
-.paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
-#payFoot .salt-pill{flex:1 1 auto}
-/* S6 6.5: the one question on return, centred as the mockup draws it. S6 fix (rule 6): its heading is the Sheet's title
-   recipe, and the mockup's ring round the mark waits for a recipe in salt-ds, never restated here */
-.paycheck{text-align:center;padding-top:6px}
-.paycheck h3{margin:14px 0 4px}
-.paycheck .glyph{color:var(--salt-steel)}
-.payagain{width:100%;margin-top:16px}
-.paysaid{flex-basis:100%;margin:0}
-.payslip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:16px}
-.payslip p{flex-basis:100%;margin:0}
-.slipthumb{border-radius:6px;border:1px solid var(--salt-line)}
-.payhead .msg{margin:10px 0 0}
-/* PHASE 7A (his yes of 11 Oct 2026): HOME LEADS WITH THE ONE ACTION. To pay now's tile and its one filled Pay stand in a foot that
-   sticks above the App bar, the way the order sheet's foot holds its one action: last in Home, so it stays down the whole way,
-   on the bar's own slate so what scrolls under it is covered, its bottom edge the bar's height plus the safe area clear of the
-   screen (less the bar's own 1px edge, which it slides under, so no sliver of the page shows between them). The bar is fixed,
-   4rem (--salt-bar-h) above the safe area, so the pill is never under it. The tile and the pill share a row while the figure
-   fits, and the pill takes a row of its own, the width of the foot, when it does not. The Plan recipe's fold carries the lines
-   past the third. The look is the recipes' (KPI tile, Pill, Plan); this lays them out. */
-.payfoot[hidden]{display:none}
-.payfoot{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);z-index:10;margin-top:24px;
-  display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
-.payfoot .salt-kpi{flex:1 1 8.5rem;padding:9px 14px 8px 18px}
-.payfoot .salt-kpi__value{margin-top:2px}
-.payfoot .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px}
-/* from 1080px the bar is the rail, so there is nothing to clear: the foot heads the first column in the flow, above the notice
-   (the second column spans both rows beside it), where a column that runs long can never push it below the fold */
-/* Counter Batch A: their latest open order. Under 1080px a pill sticking above the App bar and the pay foot (--hfoot, the foot's own height,
-   set by the script); from 1080px a banner in the first column under To pay now. One element, so never both */
-#hLive:empty{display:none}
-.hlive{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) + var(--hfoot,0px) + 8px);z-index:11;
-  display:flex;align-items:center;gap:4px;margin:16px 0 0;padding:0 4px 0 0;border-radius:999px}
-.hlive__go{flex:1 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;min-height:var(--salt-tap);padding:0 14px;
-  border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;justify-content:center}
-.hlive__h{display:none}
-.hlive__row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.hlive__when{font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.hlive__point{font-size:var(--salt-text-sm);color:var(--salt-salt)}
-.hreward{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;color:inherit;font:inherit}
-.hreward__top{display:flex;align-items:center;gap:12px}
-.hreward__left{font-size:var(--salt-text-md);line-height:1.45}
-.hreward .salt-meter__track{display:block}
-.hreward__see{font-size:var(--salt-text-sm);color:var(--salt-brass)}
-.hyear{display:flex;flex-direction:column;gap:16px}
-.hyear__top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-.hyear__n{font-family:var(--salt-font-display);font-size:var(--salt-text-xl)}
-.hyear__units{display:flex;flex-wrap:wrap;gap:12px}
-.hyear__bars{display:flex;align-items:flex-end;gap:6px;height:88px}
-.hyear__col{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%}
-.hyear__bar{width:100%;max-width:22px;min-height:2px;height:calc(var(--h,0) * 0.64px);border-radius:3px 3px 0 0;background:var(--salt-brass)}
-.hyear__mon{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-@media (min-width:1080px){
-  .home{grid-template-rows:auto auto 1fr;row-gap:0}
-  .home>.hcol{grid-column:1;grid-row:3}
-  .home>.hcol+.hcol{grid-column:2;grid-row:1 / span 3}
-  .payfoot{position:static;grid-column:1;grid-row:1;margin:0 0 28px}
-  .hlive{position:static;grid-column:1;grid-row:2;margin:0 0 28px;padding:6px 8px 6px 4px;border-radius:var(--salt-radius-lg)}
-  .hlive__go{padding:10px 14px}
-  .hlive__h{display:block}
-}
-.invmore{margin:8px 0 0}
-.invmore>summary .salt-plan__title{grid-column:1 / -1}
-.invmore .inv{margin-top:0}
-.invmore .salt-ledger__row:last-child{border-bottom:0}
-/* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
-   statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
-   window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
-   the osh the customer opens and the osh he was sent were different documents. */
-#out{max-width:620px;margin:0 auto}
 /* a pane is the system's glass card (12 Oct 2026, Phase 5: salt-glass-card beside pane in the markup); here is its padding and its gap */
-.pane{padding:16px 18px;margin:0 0 14px}
-.pane h3,.pane .pmark{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
@@ -539,131 +179,30 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .row2{display:flex;gap:8px}
 .row2 .fld{flex:1}
 .seg{display:flex;gap:8px;margin-top:6px}
-.pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-.pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
-.pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
-/* S5, 24 SEP 2026: THE ORDERS PLACE. Needs you, then Open, then the earlier orders folded and not drawn. A row
-   is the system's Inbox row and opens the order's own screen: the goods on Steps, the money on the plain Ledger
-   list, one filled Pay, the thread on Bubble and thread, what happened on Plan, folded. The look is the
-   recipes'; this block lays them out and nothing else. On a phone the open order is the whole tab; from 1080px
-   the list stands beside it with its messages in view, wider than the reading column. */
-/* S7-R3 of the review: what stood above the orders (the lead, New order or the limit, the Pay page) is the
-   head of the list's column, so from 1080px the open order stands level with it at the top of the place */
-.otop{margin:0 0 18px}
-.olab{margin:18px 0 8px}
-.olist .olab:first-child{margin-top:4px}
-.olist .salt-inbox-row{margin:0 0 8px}
-.olater{width:100%;margin-top:10px}
-.oearlier{margin-top:16px}
-/* Counter Batch A (18 Oct 2026): the order card, the phone's filter row and the desk's two columns */
-.ocard{display:flex;flex-direction:column;gap:12px;width:100%;margin:0 0 12px;padding:20px;text-align:left;font:inherit}
-.ocard[aria-current]{border-color:var(--salt-brass)}
-.ocard__top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.ocard__when{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright);white-space:nowrap}
-.ocard__main{display:flex;align-items:center;gap:12px;min-height:var(--salt-tap)}
-.ocard__main .mtile{flex:none}
-.ocard__what{flex:1;min-width:0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.ocard__what.odue{color:var(--salt-ember)}
-.ocard__total{font-family:var(--salt-font-mono);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ocard--ended .ocard__total{color:var(--salt-mist-bright)}
-.otabs{margin:0 0 16px}
-.oempty{margin:0 0 12px}
-.oempty .salt-ghost{min-height:var(--salt-tap)}
-.ocols{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 24px;align-items:start}
-@media (min-width:860px){.olist{container-type:inline-size}}
-@container (min-width:620px){.ocols{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.ocol{min-width:0}
-.ocol__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap)}
-.ocol__head .olab{margin:0;display:inline-flex;align-items:center;gap:8px}
-.ocol__n{color:var(--salt-mist-bright)}
-.ocol__pay{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.12em;text-transform:uppercase;color:var(--salt-ember);white-space:nowrap}
-.oback{margin:0 0 12px}
+/* 16 NOV 2026, THE MOVE TO AMBIENT: the Orders place is drawn in the system's parts and laid out in design/site.css (the orders' own section); what is left here is
+   his page's, which reads a settled figure in the book's colour, and the note under a part that their reward paid (coverTo) */
 .adm .osettled{color:var(--salt-verdigris)}
-.odue{color:var(--salt-ember)}
-/* the part of an order their reward paid: a line of its own under the part it belongs to (coverTo) */
 .pcover{display:block;margin-top:2px}
-.oact{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
-.oact .salt-pill,.oact>.salt-ghost{width:100%;margin:0;min-height:var(--salt-tap)}
-/* Counter Batch B: Order again, a Pill and today's figure on the order's screen, a ghost under the card in the list */
-.oagain{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
-.oagain .salt-pill{min-height:var(--salt-tap)}
-.oagain p{margin:0}
-.oagainrow{display:flex;flex-direction:column;gap:8px}
-.oagainrow__go{align-self:flex-start;min-height:var(--salt-tap)}
-.oact>.msg{grid-column:1/-1}
-/* Counter Batch A: the band, the marked steps, Details. 2 Nov 2026 (his Orders canvas, page 2): the open order is its parts on Shop's grid, no card
-   around them, 24px apart; the band and the Bill one recipe on both sides (oBandOf, oBillOf) */
-.oscreen{display:flex;flex-direction:column;gap:24px;min-width:0}
-.oscreen>.oback{align-self:flex-start;margin:0}
-.oscreen>[data-part=act]{margin-top:-8px}
-.oscreen>[data-part=say]{margin-top:-12px}
-.oband .salt-band__foot .mtile{flex:none}
-.oband__what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.oband__what .sub2{margin:0}
-.oband__point{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-.salt-steps--marks{margin:0;--salt-steps-n:5}
-.salt-steps--marks .salt-steps__name,.salt-steps--marks .salt-steps__time{white-space:nowrap}
-.odet__sum{display:flex;align-items:center;min-height:var(--salt-tap);cursor:pointer;list-style:none}
-.odet__sum::-webkit-details-marker{display:none}
-.omsgs .salt-bubble__text{white-space:pre-wrap}
-/* F10: the stars, each a 44px target; a rating given is five marks, the given ones filled */
-.orate h4{margin:0 0 6px}
-.rstars{display:flex;gap:4px;flex-wrap:wrap}
-.rstars .rstar{min-width:var(--salt-tap);min-height:var(--salt-tap);padding:0;display:inline-flex;align-items:center;justify-content:center}
-.rgave{display:flex;align-items:center;gap:2px;margin:0}
-.rgave .rtx{margin-left:8px}
-.ohist ul{margin:0;padding:0;list-style:none}
-.ofoot .salt-ghost{width:100%}
-/* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): THE LIST STANDS BESIDE THE OPEN ORDER FROM 860px, as Orders do on his page, and not from the rail's 1080px. Below 860px the open order is the
-   whole tab. Between 860px and 1079px the App bar still stands fixed along the foot, so the order's own height gives up the bar's and its foot stays above it (it was 40px under it at 1024x768
-   on his page), and the place takes the page's width where the other places keep their 620px column: Orders alone, which the shell marks on itself (data-place) */
-@media (max-width:859.98px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
-@media (min-width:860px){
-  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
-  /* with no order to open beside it, the list takes the width (18 Oct 2026: the right column stood empty) */
-  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}
-  .oback{display:none}
-  /* the open order stands still while the list scrolls beside it, its thread in reach inside it */
-  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
-}
-@media (min-width:860px) and (max-width:1079.98px){
-  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  #pOrder,.cshell[data-place=order] .chead{max-width:none}
-}
-/* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px, so on a tablet
-   a sheet ran edge to edge (a 1000px window drew a 1000px sheet). Here it is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px, the width the lists
-   and panes turn on. Only placement is written (position, inset, width, how it arrives); colour, type, corners and surface stay the system's. The rules name .salt-sheet:not(.adm):
-   the sheets of his page carry .adm and take the placement written for them further down. CANDIDATE FOR salt-ds: a dialog variant between 768 and 859px and the drawer's
-   breakpoint at 860px, which would take this block out of the page. */
-@media (min-width:768px) and (max-width:859.98px){
-  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}
-  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}
-}
-@media (min-width:860px) and (max-width:1079.98px){
-  .salt-sheet:not(.adm){top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}
-  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}
-  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}
-}
-
-@media print{.bar,.mos,.salt-appbar,.salt-rail{display:none}}
+@media print{.mos,.amb-dock,.amb-appbar{display:none}}
 /* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S, AND SITS UNDER .adm, THE ROOT OF HIS PAGE (#roster).
    This stylesheet is the customer's and a guest board's too, so a rule of his with no .adm in front of it is a rule the customer's
    page is handed and the suite refuses it (the Counter's own stylesheet check). What stays outside .adm is what his page shares
    with the customer's: the system's recipes, the rail's name and place, the ring, the guest link's card, and the bar over an
    account he views as them, which stands in the customer's shell and not in his roster. */
 .adm .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
-.adm .amain h1{margin-top:0}
 /* FIVE PLACES (his decision of 11 Oct 2026): Needs you, Orders, Customers, Record, Shop. A place is a head (the eyebrow, its name,
    a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
    a part has hidden leaves no gap behind it. */
 .adm .aplace{min-width:0}
-.adm #oOrders,.adm #oRecord{max-width:760px}
+.adm #oOrders{max-width:760px}
 .adm .aparts{margin:0 0 20px}
+.adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
+.adm .nkinds{margin:0 0 16px;padding:0;gap:0}
+.adm #makerBulletinCurrent{overflow-wrap:anywhere}
 .adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 2 Nov 2026 (his Orders canvas): the Segment of four stands 16px over the lead, the lead 24px over the list and the list 24px over More, Shop's grid */
 .adm .aparts[data-place="orders"],.adm .aparts[data-place="customers"]{margin:0 0 16px}
-.adm .olead{margin:0 0 24px}
 .adm #oOrders>.abody{gap:24px}
 .adm .ordlead{display:flex;flex-direction:column;gap:12px;margin-top:16px}
 .adm .ordlead:empty{display:none}
@@ -695,8 +234,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-foot .maker-say{margin:0}
 @media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
 @media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
-.adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+.adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}
 /* 22 Oct 2026 (canvas Needs you): the Agree inputs two by two, Goods and Delivery, then When and Other across both */
 /* 2 Nov 2026 (his Orders canvas, page 2, "The open order, both sides"): the open order on Shop's grid, no card around it: its parts 24px apart, every glass
    edge on the column's edge, the stage's pill 16px under its group, the figures two by two (four across in a column of their own) */
@@ -712,7 +250,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .obillnote{margin:12px 0 0}
 .adm .oagree .salt-settings__row>.salt-field__input,.adm .oagree .salt-settings__row>.salt-field__select{flex:0 1 168px;min-width:0;text-align:right}
 .adm .ofigs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.adm .ogoods__units,.oband__sum{margin-left:auto}
+.adm .ogoods__units{margin-left:auto}
 .adm .ofigsec .salt-insight{margin:6px 16px 12px}
 .adm .oquick{display:flex;flex-wrap:wrap;gap:8px}
 .adm .oquick:empty{display:none}
@@ -722,55 +260,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-field .lbl{margin-top:0}
 /* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
    The recipe sets the tile, its 44px and its chosen edge; the page only gives the group the row to itself in a row of fields. */
-.adm .maker-tiles{flex:1 1 100%;min-width:0}
-.adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
-.adm .maker-row--3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.adm .maker-row .salt-option__face{justify-content:center;padding-inline:8px}
-.adm .maker-row .salt-option__label,.adm .maker-tiles .salt-options__grid--2 .salt-option__label{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm .maker-marks .salt-option__face{justify-content:center}
-.adm .maker-sizes{flex:1 1 100%;min-width:0}
-.adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
-.adm .maker-sizes .salt-option__label{flex-wrap:nowrap;white-space:nowrap}
-.adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
-.adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
-.adm .maker-cover-row{display:flex;align-items:center;gap:10px}
-.adm .maker-cover__said{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
-.adm .maker-cover__words,.adm .maker-cover__held{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .maker-cover__held:empty{display:none}
-.adm .maker-cover__fig{flex:none;white-space:nowrap;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
-.adm .reading-head{margin:12px 0 0}
 /* 25 Oct 2026 (Record redesign P5): the row chosen is a card of one height, its reference and when on line one, its typed book and who on line two, its total at the
    right; the changes made ready a ledger; a move of its History one line, its Undo at the right */
-.adm .rowcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;box-sizing:border-box;height:76px;padding:12px 14px;margin:12px 0 0}
-.adm .rowcard[hidden]{display:none}
 /* 25 Oct 2026 (Record redesign P6): a reward held or an offset offered stacks as cards; what is left on a loan one ledger line, its figure at the right */
 .adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column;gap:10px}
 .adm .maker-reward .salt-action__go,.adm .maker-offer .salt-action__go{flex-direction:column;align-items:stretch;gap:6px}
-.adm .repay-left{grid-column:1/-1}
-.adm .repay-left[hidden]{display:none}
 /* 25 Oct 2026 (Record redesign P7): the code a new customer gets, and a changed one's code after, one ledger line, the code in mono at the right */
-.adm .codeline{grid-column:1/-1;margin:8px 0 0}
-.adm .codeline[hidden]{display:none}
-.adm .codeline .salt-ledger__value{white-space:nowrap}
-.adm .codeline .codeline__code{font-family:var(--salt-font-mono)}
-.adm .repay-left .salt-ledger__value{white-space:nowrap}
-.adm .rowcard__kind{grid-column:1;grid-row:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
-.adm .rowcard__rid{color:var(--salt-brass)}
-.adm .rowcard__who{grid-column:1;grid-row:2;display:flex;align-items:center;gap:8px;min-width:0}
-.adm .rowcard__code{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--salt-font-mono)}
-.adm .rowcard__fig{grid-column:2;grid-row:1/3;white-space:nowrap;font-family:var(--salt-font-mono);font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums}
-.adm .maker-changes{grid-column:1/-1;flex:1 1 100%}
-.adm .maker-changes .salt-ledger__value{white-space:nowrap}
 .adm [data-form="correct-a-row"] .undomove{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;border-bottom:1px solid var(--salt-line-faint)}
 .adm [data-form="correct-a-row"] .undomove>.maker-facts{flex:1 1 auto;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm [data-form="correct-a-row"] .undomove>button{flex:none;margin:0}
-.adm .reading-rows .salt-ledger__line{align-items:baseline}
-.adm .reading-rows .salt-ledger__label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .reading-rows .salt-ledger__value{flex:none;white-space:nowrap;text-align:right}
-.adm .reading-rows .salt-ledger__flag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .reading-rows .reading-bad{color:var(--salt-ember)}
-.adm .maker-cover-row .maker-cover{flex:1 1 auto;min-width:0}
-.adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 /* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
 .adm #oLedger{display:flex;flex-direction:column;gap:24px}
 .adm #oLedger .lead{margin:0}
@@ -790,84 +288,18 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
-.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 128px;align-items:center;gap:12px;padding:0 8px}
 /* 25 Oct 2026 (his Shop canvas): a date's name is wider than a weekday's, so the dates keep their own column */
-.adm .maker-dates .maker-day{grid-template-columns:84px minmax(0,1fr) 128px}
-.adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
-.adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
-.adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
-.adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
-.adm .maker-bar{background:var(--salt-brass)}
-.adm .maker-tail{background:color-mix(in srgb,var(--salt-brass) 45%,transparent)}
-.adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .maker-day-times.off{color:var(--salt-mist-bright)}
-.adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
-.adm .aparts--nav{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:0 4px;margin:0}
-.adm .aparts--nav .nktab{padding:0 8px;white-space:nowrap}
-@media (min-width:860px){.adm .aparts--nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}}
 /* 25 Oct 2026 (his Shop canvas): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
-.adm .apoints-save{display:flex;margin:8px 0 0}
 /* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
-.adm #oLook .adev-note{margin:8px 4px 0}
-.adm #oLook .adev-note:empty{display:none}
-/* 25 Oct 2026 (his Shop canvas): WIDE. Below 860px one column as drawn; from 860px Shop takes the whole column: the glance in one row, the open
-   day in a pane beside the week (380px, 420px from 1440px), the points beside Help, Notice's two parts and Practice's actions a column each */
-.adm .hpane{display:none}
-@media (min-width:860px){
-  .adm .amain>#oShop{max-width:none}
-  .adm #makerConfirm .shconfirm{grid-column:auto}
-  .adm .hsplit{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
-  .adm .hpane{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px;padding:20px;box-sizing:border-box;margin-top:calc(0.75rem * 1.4 + 10px)}
-}
-@media (min-width:1440px){.adm .hsplit{grid-template-columns:minmax(0,1fr) 420px}}
 /* 26 Oct 2026, his word ("the same design language", iPad and Mac included): Practice, Notice and This device are lists of settings; from
    860px one readable column, as a Mac's settings, never spread across the width */
-.adm #mTest{display:flex;flex-direction:column}
-.adm .atest-u,.adm .atest-pwv{font-family:var(--salt-font-mono)}
-@media (min-width:860px){.adm #mTest,.adm #makerBulletin,.adm #oLook{max-width:640px}}
-.adm .apoints-save>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
-.adm #makerBulletinCurrent{overflow-wrap:anywhere}
-.adm #makerBulletin{display:flex;flex-direction:column}
-.adm .anotice-lines{display:contents}
 /* 26 Oct 2026 (his word): Hours in the same language. The week and the dates are lists, a row a day; the open day's rows and Now's hold are
    rows of a list; a group after a group stands 24px down; from 860px every part of Shop is one 640px column, the open day beside the week */
-.adm #makerNowCard{margin:0 0 24px}
-.adm #makerNowCard>.msg:empty{display:none}
-.adm .anow-hold{display:contents}
 .adm .anow-src{color:var(--salt-mist-bright)}
 .adm .ahold-seg{flex:0 0 180px}
 /* 27 Oct 2026: a choice of two or three words in a row of Record's forms, as Hold as is on Hours */
-.adm .mseg{flex:1 1 220px;max-width:260px;min-width:0}
-.adm .anow-set,.adm .maker-done,.adm .apoints-save{display:flex;margin:16px 0 0}
-.adm .anow-set>.salt-pill,.adm .maker-done>.salt-pill{flex:1 1 auto;box-sizing:border-box;height:48px;min-height:48px;padding:0 16px}
-.adm .maker-week .maker-day{padding:0;min-height:52px;border-top:1px solid var(--salt-line-faint);border-radius:0}
-.adm .maker-week .maker-week-scale{padding:0;min-height:36px}
-.adm .maker-day[aria-expanded=true] .maker-day-name{color:var(--salt-brass)}
-.adm .maker-dayedit{margin:24px 0 0}
-.adm .maker-dayedit select{flex:0 0 120px;min-height:44px}
-.adm .maker-dayedit-times .maker-plus1{flex:none}
-.adm .maker-dayedit-acts,.adm .maker-copy,.adm .maker-keep{margin-top:16px}
-.adm .maker-dates .salt-settings__row>.salt-field__input{flex:0 1 180px}
-.adm .apoints-sec,.adm #mHelp{margin:24px 0 0}
-.adm .apoints-code{font-family:var(--salt-font-mono)}
-.adm .apoints-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;color:var(--salt-mist-bright);cursor:pointer}
-.adm .apoints-x:hover,.adm .apoints-x:focus-visible{color:var(--salt-ember)}
-.adm .apoints-add .salt-field__input{flex:0 1 240px}
-.adm .apoints-found{display:contents}
-.adm .apoints-hit .salt-settings__value{min-width:0;max-width:55%;overflow:hidden;text-overflow:ellipsis}
-.adm .apoints-hit[aria-selected=true]{outline:2px solid var(--salt-brass);outline-offset:-2px}
-.adm .ahelp-list .ahelp__q:first-of-type{margin-top:0;border-top:0}
-.adm .ahelp-list .ahelp__sum{min-height:56px}
-@media (min-width:860px){
-  .adm #makerNowCard,.adm .apoints-sec,.adm #mHelp{max-width:640px}
-  .adm .hsplit{grid-template-columns:minmax(0,640px) minmax(300px,380px)}
-  .adm .hpane{padding:0;margin-top:0}
-  .adm .hpane .maker-dayedit{margin:0}
-}
-.adm .anotice-set{box-sizing:border-box;width:100%;height:48px;min-height:48px;padding:0 16px;margin:0}
-.adm .anotice-foot{margin-top:16px}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
 /* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
    that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
@@ -890,104 +322,17 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-slipbox.open .maker-slip-open .maker-slip{max-height:none;width:100%}
 /* 12 OCT 2026 (PHASE 4b): THE ONE UNLOCK. A place that needs it says Locked in the page's small line with the one Unlock beside it (44px, the ghost's own); a name put beside
    a code is quieter than the code and wraps under it when the row is narrow */
-.adm .maker-lock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.adm .maker-lock .msg{margin:0;min-height:0}
 .adm .maker-name{margin-left:8px;font-weight:400;color:var(--salt-text-muted)}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}
-/* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
-   system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
-   open account stands: beside the list on a desk, in its place on a phone, with a way back. */
-.gate.adm{max-width:600px;margin-top:32px;padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}
-.adm .amain .salt-eyebrow{margin:0 0 6px}
-.adm .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
-  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
-.adm .aring svg{width:22px;height:22px}
-/* 18 Oct 2026: no rail of his carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
-.adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
-/* 22 Oct 2026 (canvas Needs you, his words "a status with colour at the top end", "more vibrant glowing"): THE HOURS ARE A GLOWING STATUS CHIP at the
-   bar's top right, a 44px button to Shop hours: verdigris Open, ember Closed, brass Paused (an override for now). Its dot breathes, and stands still
-   under reduced motion. The bar is 12px all round, and under 820px what waits takes its row inside that padding. */
-.adm .abar{padding:12px}
-.adm .abar .salt-deskbar__brand{flex-wrap:nowrap;min-width:0}
-.adm .abar .salt-deskbar__name{white-space:nowrap}
-@container salt-deskbar (max-width:820px){.adm .abar .salt-deskbar__live{margin:0;padding:12px 0 0}}
-.adm .ashop{--salt-status-tone:var(--salt-verdigris);flex:none;align-self:flex-start;margin:0 0 0 auto;display:inline-flex;align-items:center;min-height:var(--salt-tap);padding:0 12px;white-space:nowrap;cursor:pointer;
-  background:color-mix(in srgb,var(--salt-status-tone) 16%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--salt-status-tone) 50%,transparent),inset 0 0 8px color-mix(in srgb,var(--salt-status-tone) 22%,transparent)}
-.adm .ashop[hidden]{display:none}
-.adm .ashop--closed{--salt-status-tone:var(--salt-ember)}
-.adm .ashop--paused{--salt-status-tone:var(--salt-brass)}
-.adm .ashop svg{fill:currentColor;filter:drop-shadow(0 0 4px var(--salt-status-tone));animation:ashopglow 2.4s ease-in-out infinite}
-@keyframes ashopglow{50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){.adm .ashop svg{animation:none}}
-.salt-rail__tab .salt-appbar__place{color:inherit}
-.adm #mFoot:empty{display:none}
-.adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
-/* 25 Oct 2026 (the Customers canvas, P1): the filters are Needs you's tab row, three across on a phone and six wide; the accounts are Needs you's
-   cards under To do, Pending and FYI, the username quiet beside the code, a sum he owes back in ember */
-.adm .afilnav{margin:0}
-.adm .afil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 4px}
-.adm .afil .nktab{padding:0 4px;gap:6px;text-overflow:ellipsis}
-@media (min-width:860px){.adm .afil{grid-template-columns:repeat(6,minmax(0,1fr));gap:0 12px}}
-.adm .alead{margin:0 0 24px}
-.adm .alead[hidden]{display:none}
-.adm .alist{display:flex;flex-direction:column;gap:24px}
+/* 15 Nov 2026, the move to Ambient: his shell is Ambient's (the app bar, the screen, the dock that stands up as the rail from 960px); the salt-ds frame, the Desk bar
+   and the rail went, with their rules */
+/* 15 Nov 2026, the move to Ambient: the hours are a glass chip in Needs you's hero, said in its word (barDraw) */
+
+
 .adm .ncard .need-who--code{flex:none}
-.adm .nfig--mine{color:var(--salt-ember)}
-.adm .alist .salt-inbox-row__title{gap:6px}
+
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-@media (min-width:1080px){
-  /* 5 Nov 2026, his word ("like Mail or Messages on a Mac"): THE FRAME (salt-frame). The bar and the rail never move and the column right of the
-     rail is the one box that scrolls, so the page itself never does: the frame is the screen less the body's 22px top and a 24px margin under it, and it
-     takes back 36px of the body's 60px foot, so the page is exactly the screen tall (22 + frame + 24 = the screen) */
-  /* 15 Nov 2026, his word: one page width everywhere, salt-ds's --salt-page-max (1376px), at every screen from 1080px (it was 1180px, and
-     1376px from 1440px) */
-  .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-36px;--salt-frame-h:calc(100dvh - 46px)}
-  .adm .amain{padding-bottom:24px}
-  /* a pane holds to the column's very top (the frame's own scroll), not 24px under the screen's */
-  .adm .salt-frame__main .salt-pane{top:0}
-  .adm .abar{grid-column:1/-1;margin-bottom:0}
-  .adm .amain{flex:1 1 auto;min-width:0}
-  .adm #oShop{max-width:760px}
-}
-@media (min-width:1440px){.adm .nsplit{grid-template-columns:minmax(0,1fr) 420px}}
-@media (max-width:1079.98px){
-  /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
-     after the shell's own rule, or that rule would win */
-  .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h);--salt-pane-foot-at:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px))}
-}
-/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
-   (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
-   column says Choose a card to see it in full (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
-   (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
-.adm .panenone{display:none;margin:0}
-/* 22 Oct 2026 (canvas Needs you): the open card beside the list is one glass, starting level with the first card (under the group's heading), 360px wide
-   and 420px from 1440px, where the shell widens to 1376px as the canvas draws it */
-.adm .npane{display:flex;flex-direction:column;gap:12px}
-.adm .npane__title{margin:0;font-size:1.375rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .npane__what{display:flex;align-items:center;gap:8px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .npane__why{margin:0}
-.adm .npane__body:empty{display:none}
-.adm .npane__go{display:flex;gap:10px}
-.adm .npane__go .nbtn{flex:1 1 0;min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .npane-x:empty{display:none}
-@media (max-width:859.98px){
-  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
-  .adm #nopen{display:none}
-}
-@media (min-width:860px){
-  .adm #oLinks,.adm #oCards{max-width:600px}
-  .adm .nsplit,.adm .asplit{display:grid;gap:20px;align-items:start}
-  .adm .nsplit,.adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr) minmax(0,440px)}
-  .adm .asplit{grid-template-columns:minmax(0,1fr)}
-  .adm #nopen,.adm #aopen{overflow-y:auto}
-  .adm #aopen [data-back]{display:none}
-  .adm .nsplit{grid-template-columns:minmax(0,1fr) 360px}
-  .adm #nopen{margin-top:calc(0.75rem * 1.4 + 10px);padding:20px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
-  .adm #nopen[hidden]{display:none}
-  .adm .panenone{display:block}
-  .adm #nopen:not([hidden])~.panenone{display:none}
-}
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
    and has its way back. From 860px up to the rail's 1080 the page widens for Orders alone, the other places keeping their 600px column. */
@@ -1013,97 +358,35 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
-  .adm #nopen,.adm #aopen,.adm #makerReview,.adm .recpane{--salt-pane-foot-at:0px}
-  .gate.adm{max-width:none}
-  .adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
    short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
    columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
-@media (min-width:768px) and (max-width:859.98px){
-  .gate.adm{max-width:620px}
-  .adm #unsentBar{max-width:none}
-  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
-  .adm .maker-input>*{grid-column:1/-1}
-  .adm .maker-input>.maker-field--short{grid-column:auto}
-}
-/* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
-   #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
-   the menu's place and has its way back, and the pane's invitation is not drawn. From 860px up to the rail's 1080 the page widens for Record's forms
-   as it does for Orders, the rows to approve keeping their 600px column. */
-.adm .recgrid{display:block}
-.adm .recpane>.rnone{margin:0}
-@media (max-width:859.98px){
-  .adm .recgrid.open .reclist,.adm .recnone{display:none}
-}
-@media (min-width:860px){
-  .adm #oRecord{max-width:none}
-  .adm #oOrders>.abody>#oApprove{max-width:600px}
-  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
-  .adm .recgrid.open .recnone{display:none}
-  .adm .recpane{overflow-y:auto}
-  .adm #makerFormBack{display:none}
-}
-@media (min-width:860px) and (max-width:1079.98px){
-  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-}
+/* 16 Nov 2026, the move to Ambient: Record's menu and its form are Ambient's panes (design/site.css lays only the invitation's and the way back's stand-down); the rows to approve keep their 600px column from 860px */
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): FROM 1080px THE PAGE USES THE LAPTOP'S WIDTH. Shop is one column of 760px (it was 600), the rows to approve lie two up (the
    queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
    beside its list. Nothing opens by itself: the column beside the threads is empty until a tap. */
 @media (min-width:1080px){
-  .adm #oOrders>.abody>#oApprove{max-width:none}
-  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
-  .adm #makerDrafts>.maker-card{margin:0}
-  .adm #makerDrafts>.rnone{grid-column:1/-1}
-  .adm #makerDrafts>.aphead,.adm #makerDrafts>.apdone{grid-column:1/-1}
   /* 5 Nov 2026: with no thread open the list is one 640px column, as Shop's lists are; a thread opened stands beside a 280 to 360px list */
-  .adm .chatgrid{display:grid;grid-template-columns:minmax(0,640px);gap:0 20px;align-items:start}
-  .adm .chatgrid.open{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}
-  .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
-  .adm #makerChatList{display:flex;flex-direction:column;gap:24px}
 }
-/* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
-   the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
-   orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
-.adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
-@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
-/* 5 Nov 2026 (the frame and the pane): under 1080px the page scrolls, so a record's one main action, its foot, rides the screen's foot over the
-   bar of places (--salt-pane-foot-at, set on the shell above); while one shows the + orb stands down, as it would stand on the foot (data-footed,
-   set by the page's script) */
-@media (max-width:1079.98px){.adm[data-footed] #oAdd{display:none}.adm .salt-pane__head{position:static}}
+/* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, so the orb's corner, the room kept for it and its
+   stand-down under a foot went with the frame */
 /* the order's stage pill in its foot: no gap above it, and an empty foot is not drawn; across two columns it keeps the decision's width */
 .adm .ofoot>.ordlead{margin:0}
 .adm .ofoot:has(>.ordlead:empty){display:none}
 @media (min-width:1180px){.adm .ordcols--2~.ofoot>.ordlead{width:calc(50% - 12px)}}
 /* a form's foot: its pill, Discard beside it while an entry is half sent */
-.adm .mfoot{flex-direction:row;flex-wrap:wrap;align-items:center}
-/* 21 Oct 2026 (P10): from 1080px the + is the rail's own button under his places, and no orb floats over the page */
-@media (min-width:1080px){.adm #oAdd{display:none}}
-.adm .arailadd{margin-top:8px;padding-top:8px;border-top:1px solid var(--salt-line)}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 /* 25 Oct 2026 (Record redesign P1): the parts a text tab row of three, and a form's row one shape and one height: its name and one line in the display face, a count of
    what it holds at the right where its read has one, then the way in; nothing on it wraps */
-.adm .rparts{margin:0 0 20px;padding:0;gap:0}
-.adm .rparts>.aparts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;margin:0;flex:1 1 auto}
 /* 27 Oct 2026: a form's row is the system's settings row (Shop's This device), one list a group, and the page adds nothing to it */
 /* 25 Oct 2026 (Record redesign P2): an unsent entry is Needs you's card, its pill the phone's size beside the menu at every width; opened, its sentence and its
    second choices two up under it */
-.adm .reclist .ncard{grid-template-columns:minmax(0,1fr) 72px 88px;gap:6px 8px;padding:12px;height:76px}
-.adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}
 /* 25 Oct 2026 (Record redesign P3): A FORM IS TWO COLUMNS AT EVERY WIDTH, a short field (a number, a date, a time, and the sale's Who) beside the next, all else across;
    a label one line, a figure in mono set right, and the form's one pill across the foot on a phone, 240px at its right edge beside the menu */
-.adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;align-items:start}
-.adm .maker-input>*{grid-column:1/-1;min-width:0}
-.adm .maker-input>.maker-field--short{grid-column:auto;min-width:0}
 .adm .maker-field>.lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .maker-input input[type=number]{text-align:right}
 /* 5 Nov 2026 (the pane): the pill is in the form's pinned foot; it crosses the foot on a phone and stands 240px at its right edge from 860px, as before */
-.adm .maker-input>.mfoot{margin-top:16px}
-.adm .maker-input>.mfoot>.btn.salt-pill{flex:1 1 auto;width:auto;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (min-width:860px){.adm .maker-input>.mfoot{justify-content:flex-end}.adm .maker-input>.mfoot>.btn.salt-pill{flex:0 1 auto;min-width:240px;max-width:100%}}
-.adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .unsent-open{display:flex;flex-direction:column;gap:10px}
 .adm .unsent-card .need-tap{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-width:0;cursor:pointer;font:inherit;color:inherit}
 .adm .unsent-card .need-tap::after{content:"";position:absolute;inset:0}
@@ -1112,33 +395,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm .unsent-open[hidden]{display:none}
 .adm .unsent-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .adm .unsent-ways>button{min-width:0;height:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .apphead{min-height:44px;align-items:center}
-.adm .aplink{min-height:44px;background:none;border:0;padding:0 4px;text-decoration:underline;color:var(--salt-brass)}
-.adm .apverb{margin:0}
-.adm .apnow{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.adm .apnow th,.adm .apnow td{text-align:right;padding:4px 0 4px 12px;font-weight:400}
-.adm .apnow th:first-child{text-align:left;padding-left:0;color:var(--salt-text-muted)}
-.adm .apnow thead th{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
-.adm .apnow .apchg strong{font-weight:500;color:var(--salt-text)}
-.adm .apflag{white-space:normal}
-.adm .apbang{font-weight:500}
-.adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
-.adm .apcard .rdet--row{margin:0}
 .adm .maker-offers__head{margin:16px 0 4px}
 .adm .maker-offers{display:flex;flex-direction:column}
 .adm .maker-offer .salt-ghost[hidden],.adm .maker-reward .salt-ghost[hidden]{display:none}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
-.adm #mHome .salt-eyebrow{margin:0 0 6px}
-.adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
-.adm .nlist .glink{margin:0}
-.adm .ngroup{display:flex;flex-direction:column;gap:10px}
-.adm #mHome .nlist .nsev{margin:0;line-height:1.4}
 /* 22 Oct 2026 (canvas Needs you): the kinds' tab row, the Nav bar's link laid out as equal 48px tabs, the count in brass beside the word */
-.adm .nkinds{margin:0 0 16px;padding:0;gap:0}
-.adm .nkinds .nchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
-@media (min-width:860px){.adm .nkinds .nchips{grid-template-columns:repeat(6,minmax(0,1fr))}}
 .adm .nktab{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:48px;margin:0;padding:0 12px;background:none;border:0;border-bottom:2px solid transparent;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;overflow:hidden}
 .adm .nktab__n{color:var(--salt-brass)}
 .adm .nktab:hover:not(:disabled),.adm .nktab:focus-visible{background:var(--salt-glass-hover);color:var(--salt-salt)}
@@ -1147,57 +410,12 @@ body.ended>*:not(#aEnded){display:none}
 /* 22 Oct 2026 (canvas Needs you, his "some of these cards are using unnecessary space"): THE GLANCE IS SINGLE-LINE KPI TILES, the label at the left and the
    figure at the right, no note, the value with no top margin so the row centres: Ready and To approve side by side, Receivables under them with the
    meter of what is paid of what is agreed between its label and its figure; from 860px one row of three, 56px tall. The Insight leads them. */
-.adm .nlead{margin:0 0 12px}
-.adm .nglance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
-.adm .nglance[hidden]{display:none}
 /* the tile is the system's one-line KPI tile (salt-kpi--line, 1.14.0); the page sets only that it is a link and where Receivables and its meter stand */
-.adm .nkpi{box-sizing:border-box;text-decoration:none;color:inherit}
-.adm .nkpi:hover,.adm .nkpi:focus-visible{border-color:var(--salt-line-strong)}
-.adm .nkpi--owed{grid-column:1/-1;gap:16px}
-.adm .nkpi .salt-meter{flex:1 1 auto;min-width:40px}
-.adm .nkpi .salt-meter__track{display:block}
-@media (min-width:860px){
-  .adm .nglance{grid-template-columns:1fr 1fr 2.4fr;gap:12px}
-  .adm .nkpi--owed{grid-column:auto}
-}
 /* 22 Oct 2026: the multi-tick Approve: a card's choice lights its edge, Reject in ember; the bar sticks above the app bar */
-.adm .aphead{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.adm .aphead .salt-ghost,.adm .apticks button,.adm .apbar button,.adm .apmore{min-height:44px}
-.adm .apticks{display:flex;gap:8px}.adm .apticks button{flex:1 1 0;padding:0 12px}
-.adm .ap--a{border-color:var(--salt-verdigris)}.adm .ap--r{border-color:var(--salt-ember)}
-.adm .aprefused{padding:12px;border-radius:12px;background:var(--salt-slate);border:1px solid var(--salt-ember);display:flex;flex-direction:column;gap:4px}
-.adm .aprefused p{margin:0}
-.adm .apdone{padding:16px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--salt-verdigris)}
-.adm .apdone__head{color:var(--salt-verdigris)}
-.adm .apsheet--a{color:var(--salt-verdigris)}.adm .apsheet--r{color:var(--salt-ember)}
-.adm .apbar{position:sticky;bottom:92px;z-index:5;margin-top:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;border:1px solid var(--salt-line-strong)}
-.adm .apbar[hidden]{display:none}
-.adm .apbar__line{flex:1 1 auto;min-width:0}
-@media (min-width:1080px){.adm .apbar{bottom:16px}}
 /* 22 Oct 2026 (canvas Needs you): STOCK BY BOOK UNDER THE CARDS. On a phone one row a book on one glass: its typed tag and its light, Cover at the right;
    the meter of what is agreed of the shelf, ember once promised past it; Next lot alone on its line. From 860px a plain table on one glass, the columns
    in proportion and no sideways scroll. Nothing wraps. */
-.adm .nstock{display:flex;flex-direction:column;gap:8px;margin:0 0 16px}
-.adm .nstock[hidden]{display:none}
-.adm .nstock__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.adm .nstock__head .salt-eyebrow{margin:0}
-.adm .nstock__list{padding:0 16px}
-.adm .nstock__row{display:flex;flex-direction:column;gap:8px;padding:14px 0;min-width:0}
-.adm .nstock__row+.nstock__row{border-top:1px solid var(--salt-line-faint)}
-.adm .nstock__top{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
-.adm .nstock__who{display:inline-flex;align-items:center;gap:8px;min-width:0}
-.adm .nstock__cover,.adm .nstock__lot{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm .nstock__cover b,.adm .nstock__lot b{color:var(--salt-salt);font-weight:500}
-.adm .nstock .salt-meter__line{white-space:nowrap}
-.adm .nstock .salt-meter__track{display:block}
-.adm .nstock__table{display:none;padding:4px 6px;overflow:hidden}
-.adm .nfree--neg{color:var(--salt-ember)}
-@media (min-width:860px){.adm .nstock__list{display:none}.adm .nstock__table{display:block}}
-.adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
-.adm .nfail[hidden]{display:none}
-.adm .nfail__what{margin:0;flex:1 1 12em}
 .adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
-.adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
 .adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
 /* 22 OCT 2026 (canvas Needs you): THE CARD IS ONE SHAPE ON FIXED COLUMNS, the kind and age over the title in the first, the one pill in the second, the figure
@@ -1232,31 +450,15 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ncard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
 .adm .need .salt-action__money{width:4.5rem;justify-self:end;padding-top:0}
 @media (max-width:860px){.adm .need .salt-action__kind{grid-column:1 / 2}}
-.adm .nfold{display:flex;flex-direction:column;gap:12px}
-.adm .nfold>summary.nsev{display:flex;align-items:center;min-height:var(--salt-tap);margin:0;cursor:pointer;list-style:none}
-.adm .nfold>summary.nsev::-webkit-details-marker{display:none}
-.adm .nfold>summary.nsev::before{content:"+";display:inline-block;width:1.2em}
-.adm .nfold[open]>summary.nsev::before{content:"-"}
-.adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
-.adm .ordcard--ask,.adm .arow--ask{flex-wrap:wrap}
+.adm .ordcard--ask{flex-wrap:wrap}
 /* 2 Nov 2026: the code in a table row is a link that fills its cell's height, so the 44px target holds in the table of Orders and of Customers alike */
 .adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}
 .adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .adm div.oask{flex:1 1 100%;padding-bottom:8px}
 .adm .oask__q{flex:1 1 100%}
-/* 14 Oct 2026: the live clock beside his page's name */
-.adm .clk{font-variant-numeric:tabular-nums}
-.adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
-/* 19 Oct 2026, his word: THE BAR SAYS WHERE THINGS STAND, as the Desk's line does: a dot and Live or Offline, then Open or Closed off /hours, then the clock; a gap after the dot, as on the Desk */
-.adm .abarlive{display:inline-flex;align-items:center;gap:6px;margin-right:12px}
-.adm .abarlive i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
-.adm .abarlive.on{color:var(--salt-verdigris)}
-.adm .abarlive.off{color:var(--salt-brass)}
-/* 22 Oct 2026 (canvas Needs you): the quiet line keeps Live and the clock on a phone too */
-@media (max-width:560px){.adm .abarlive{margin-right:8px}.adm .clk:not(:empty)::before{margin:0 6px}}
+/* 15 Nov 2026, the move to Ambient: the live line and the clock are the hero's time line, a word and the digits in the ink, the mesh carrying no other */
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
-.adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
@@ -1280,16 +482,12 @@ body.ended>*:not(#aEnded){display:none}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
-.adm .acard{padding:14px 16px;margin:12px 0 0}
-.adm .acard.off{opacity:.55}
+
 /* V5 (his answer of 29 Sep 2026): a locked account still sees Home and Rewards, greyed out and not to be tapped */
 .lockd{opacity:.45;pointer-events:none;user-select:none}
-.adm .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
-.adm .acard .acell{min-width:0}
-.adm #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
+
 /* v696: the five stand above anything minted against a customer, each under its own line */
-.adm .ghead{margin:18px 0 6px}
-.adm .ghead:first-child{margin-top:4px}
+
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
@@ -1298,117 +496,45 @@ body.ended>*:not(#aEnded){display:none}
    S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
    after it, took that Account's two columns from 1080px when the stages were merged */
 /* 2 Nov 2026 (his Orders canvas, page 2): the open account on Shop's grid, its parts 24px apart, the one pill 16px under its rows */
-.adm .oacct{display:flex;flex-direction:column;gap:24px}
+
 /* 25 Oct 2026 (the Customers canvas, P2): an account is glass cards, its head first: the state and age, the code and username, the figure large at the
    right; a ledger of the standing; their waiting line with Reply. Sign-in two by two, Sign out everywhere the width of the card. Nothing wraps. */
 /* 3 Nov 2026 (the account on Shop's grid): every part a group with no glass of its own, its mist head 6px over its list (the recipe's), a second list or a
    table 12px under the first, the groups 24px apart; in columns from 1080px each group keeps 24px under it, the answer of the last list 6px under it */
-.adm .oacct .asec{display:flex;flex-direction:column;margin:0;min-width:0}
-.adm .oacct .asec>.salt-settings+.salt-settings,.adm .oacct .asec>nav+.salt-settings,.adm .apct__prev:not(:empty),.adm .apct__prev+.apct__acts{margin-top:12px}
-.adm .oacct .ahead2{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.adm .oacct .salt-settings>.aanswer{padding:10px 0}
-.adm .apct__step .apct__val{flex:none;min-width:5ch}
-.adm .acust__sparkrow,.adm .ameterrow{display:block;padding:12px 0}
-.adm .ahead__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
-.adm .ahead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
-.adm .ahead__kind,.adm .ahead__fig .salt-eyebrow{margin:0;white-space:nowrap}
-.adm .oacct .ahead h2.ahead__code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
-.adm .ahead__fig{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
-.adm .ahead__rm{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;line-height:1.2;white-space:nowrap;color:var(--salt-salt)}
-.adm .ahead__rm--hot{color:var(--salt-ember)}
-.adm .asign{display:flex;flex-direction:column;min-width:0}
-.adm .asign>.apill{min-height:48px;margin-top:16px}
-.adm .oacct>.anote{margin:-18px 16px 0}
+
+
 /* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
    between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
-.adm .amore{display:flex;flex-direction:column;gap:24px}
+
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
-.adm #makerChatList{display:flex;flex-direction:column;gap:24px}
+
 /* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
-.adm #glist{display:flex;flex-direction:column;gap:16px}
+
 /* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
-.adm .aprodhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 8px}
-.adm .aprodtag{margin:0;font-size:inherit}
-.adm .aclist{display:flex;flex-direction:column;gap:0}
-.adm .acard .agrid .acell{align-items:flex-end;text-align:right}
-.adm .acard .salt-metrics__label,.adm .acard .salt-metrics__value{white-space:nowrap}
-.adm .acard .srow{flex-wrap:nowrap}
-.adm .acard .srow .un{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.adm .apick{min-height:44px;padding:0;background:none;border:0;color:inherit;font:inherit;font-weight:500;cursor:pointer;text-align:left}
-.adm .apick:hover{color:var(--salt-brass)}
-.adm .ameter{margin-top:10px}
-.adm .ameter .salt-meter__line{white-space:nowrap}
-.adm .ameter .salt-meter__track{display:block}
-.adm .atable{display:none}
-.adm .atable .ameter{margin:0}
-.adm .atable td,.adm .atable th{white-space:nowrap}
-@media (min-width:860px){.adm .aclist{display:none}.adm .atable{display:block}}
+
 /* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px the accounts are one plain table (his Customers canvas, 2 Nov 2026); an account opened fills
    the page in columns, two and three from 1440px, as an open order does, the list and its way back as on a phone; Links and Associates use the width */
-@media (min-width:1080px){
-  .adm #oLinks,.adm #oCards{max-width:none}
-  .adm #oAccts.open .asplit{grid-template-columns:minmax(0,1fr)}
-  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead{display:none}
-  .adm #oAccts.open #aopen{position:static;max-height:none;overflow:visible}
-  .adm #oAccts.open #aopen [data-back]{display:grid}
-  .adm #aopen .oacct{display:block;column-count:2;column-gap:24px}
-  .adm #aopen .oacct .amore{display:contents}
-  .adm #aopen .oacct>*,.adm #aopen .oacct .amore>*{break-inside:avoid;margin:0 0 24px}
-  .adm #aopen .oacct>.anote{margin:-18px 16px 24px}
-}
-@media (min-width:1440px){.adm #aopen .oacct{column-count:3}}
-.adm .glinks{gap:10px}
-.adm .glinks .glink[hidden]{display:none}
+
 .adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}
 .adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
-.adm .nfig__k{margin:0;line-height:1}
 .adm .ncard.off{opacity:.7}
 .adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
-.adm .chathead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
-.adm .chathead__who{display:flex;flex-direction:column;gap:4px;min-width:0}
-.adm .chathead__who .salt-eyebrow{margin:0}
-.adm .chathead__code{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm #makerChatOpen{display:flex;flex-direction:column;gap:12px}
+
 /* 5 Nov 2026 (the pane): the head holds the code, what they owe and Close; the lines; what else he may do; the foot his box and Send */
-.adm #makerChatOpen .salt-ghost{min-height:48px}
-.adm .chathead.salt-pane__head{padding:4px 0 8px}
-.adm .chathead>.salt-ghost{flex:none}
-.adm .chatmore{display:flex;flex-wrap:wrap;gap:8px}
-.adm .chatfoot .maker-field{margin:0;flex:none}
-.adm .chatfoot>.msg:empty{display:none}
-.adm .amore[hidden],.adm .amore .asec[hidden]{display:none}
-.adm .apct__books{margin:0}
-.adm .apct__tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 4px}
-.adm .apct__tabs .nktab{padding:0 2px}
-.adm .apct__btn{flex:none;width:48px;min-width:48px;height:48px;padding:0;font-size:1.25rem;letter-spacing:0}
-.adm .apct__val{flex:1 1 auto;min-width:0;text-align:center;font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-salt);white-space:nowrap}
-.adm .apct__at{font-weight:500;color:var(--salt-salt)}
-.adm .apct__floor{color:var(--salt-mist-bright)}
-.adm .acust__spark{display:block;width:100%;height:36px;color:var(--salt-brass)}
-.adm .amore .salt-meter__line{white-space:nowrap}
-.adm .amore .salt-meter__track{display:block}
-.adm .oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
-.adm .oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
-  letter-spacing:.06em;color:var(--salt-text-muted)}
-.adm .oacct .achips{margin:0}
-.adm .oacct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.adm .oacct .apill{width:100%}
-.adm .agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.adm .agrid .salt-ghost{width:100%;text-align:center}
+
 .adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
-.adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
+
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
-.adm .amain .salt-orb[data-back]{margin:0 0 16px}
+#roster .salt-orb[data-back]{margin:0 0 16px}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
 /* #glist as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is more specific than .glink alone */
-.glink,.adm #glist .glink{padding:14px 16px;margin:12px 0 0}
+.glink{padding:14px 16px;margin:12px 0 0}
 .glink.off{opacity:.5}
 .glink h4{margin:0;font-size:var(--salt-text-md);font-weight:500}
 .glink .gt{margin:0 0 6px}
@@ -1420,52 +546,13 @@ body.ended>*:not(#aEnded){display:none}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
 /* 14 OCT 2026 (the layout rework): a guest link is one row (summary), the address, QR and moves under it once opened; accounts are rows with one state; an associate's
    code has room beside its marks and its figures stand in a ledger; a customer's loans stand on their card as rows of figures */
-.adm #glist .glink{padding:0;margin:8px 0 0}
-.adm #glist .glink>*:not(summary){margin-left:16px;margin-right:16px}
-.adm #glist .glink>.grow,.adm #glist .glink>.msg{margin-bottom:14px}
-.adm #glist .glink>.gu{margin-top:0}
-.adm #glist .glink>.gwho{margin-top:0;margin-bottom:0;font-size:var(--salt-text-sm);font-weight:400;color:var(--salt-text-muted)}
-.adm #glist .glink img{width:150px;height:150px}
-.adm #glist .glink{position:relative}
-.adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.adm #glist select{margin-top:12px}
-.adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
-.adm .alist .arow .astate{margin-left:auto;text-align:right}
-.adm .alist .arow .salt-inbox-row__what{overflow-wrap:anywhere}
-.adm .acard .srow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
-.adm .acard .srow .un{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
-.adm .acard .aled{margin-top:8px}
-.adm .acard .aled .salt-ledger__line{padding:4px 0}
-.adm .acard .acell{display:flex;flex-direction:column;justify-content:space-between;gap:4px}
-.adm .acard .aled .salt-ledger__value{text-align:right;white-space:nowrap}
-/* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
-   has done, and the system's ghosts; the Meter is the reward's bar */
-.rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.rlcount{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;color:var(--salt-text-muted)}
-.rlinks .gtop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 12px}
+
 .rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
 .rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
-.racts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.racts .salt-ghost{flex:1 1 auto}
 .rlinks .msg:empty{display:none}
 .rlinks .rlnext{margin:16px 0 10px}
-.rmeter{margin:10px 0 14px}
-.adm .grow{display:flex;gap:8px;margin-top:12px}
-.adm .grow .salt-ghost{flex:1}
-/* 11 Oct 2026: THE LOOK, Night or Tide, chosen on each device. The sheet's two tiles are the system's Option face as a tap, each with a
-   swatch of ITS OWN ground and accent, so a tile reads true under the other theme: these are the system's four swatch tokens (--salt-swatch-*, its
-   obsidian and brass at Night and at Tide, the same under either theme and held equal to them by its contrast check), so this page writes no colour.
-   The setting under Account is two of the system's ghosts, 44px both ways. */
-.look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px}
-.look-swatch{display:block;height:56px;border-radius:var(--salt-radius-sm);border:1px solid var(--salt-edge-field)}
-.look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-night-accent) 0 13px,transparent 14px),var(--salt-swatch-night-ground)}
-.look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-tide-accent) 0 13px,transparent 14px),var(--salt-swatch-tide-ground)}
-.look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.lookset{width:min(100%,15rem)}
+
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
-.adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
-.adm.vaultsheet .salt-sheet__foot .btn,.adm.vaultsheet .salt-sheet__foot .salt-ghost{width:100%}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px; on his page
    a sheet is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px (a landscape iPad). Only placement is written here (position, inset, width,
    how it arrives), and the colour, type, corners and surface stay the system's (the dialog keeps the bottom sheet's rounded top and square foot). The sheets of this page carry .adm beside
@@ -1588,6 +675,16 @@ export function mtileSvg(product, said, px) {
     + "</span>" + psymSvg(product, px || 28) + '<span class="mq" aria-hidden="true">' + esc(said) + "</span></span>";
 }
 
+/** 16 Nov 2026, the move to Ambient (place D): THE MARK AS THE SYSTEM'S THUMB, as markup, for a document that runs no script (the live
+ *  statement's lines). The book's hue is its index in PSYM's order less the Ring (amb-kind-N), the shape in ink and his letter beside it, as the
+ *  page's markThumb draws it; the shape is named by whatever holds it (an .amb-vh), never by a product word. */
+export function markThumbHtml(product, size) {
+  const k = String(product || "").toLowerCase(), b = Object.keys(PSYM).filter((x) => x !== "_").indexOf(k), L = pletOf(k);
+  return '<span class="amb-thumb amb-thumb--ring amb-thumb--mark' + (size ? " amb-thumb--" + size : "") + (b >= 0 && b < 6 ? " amb-kind-" + (b + 1) : "")
+    + '" aria-hidden="true"><svg class="amb-thumb__shape" viewBox="0 0 24 24" focusable="false"><path d="' + (L ? L.d : PSYM[k] || RING) + '"/></svg>'
+    + (L && L.l ? '<span class="amb-thumb__word">' + esc(L.l) + "</span>" : "") + "</span>";
+}
+
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
  *  script is served its source, so the two cannot drift apart. */
 export function unitsOf(q, u) { return unitsIn(EN["unit.one"], EN["unit.many"], q, u); }
@@ -1649,46 +746,49 @@ const wl = (k) => ' aria-label="' + esc(EN[k]) + '" data-wl="' + k + '"';
 /* whose account it is: the username is a slot, filled by the script (data-who) */
 const whoAs = () => '<span data-whoas data-w="who.as">' + fillHtml(EN["who.as"], Object.assign(slotsAt(22), { u: '<span class="mono" data-who></span>' }), "en") + "</span>";
 
+/* 16 Nov 2026, THE MOVE TO AMBIENT (place D): every Sheet of the Counter's account is the system's, a native dialog with the shell's mood and a close circle;
+   the page's script shows and hides it (sheetUp, sheetDown: `hidden` stays the page's own word for shut, as it was with the scrim), and its own back-stack
+   closes it. ambSheet writes one: its id, its title's id and words, its close's id, the body, and a class. */
+const ambSheet = (id, tid, cid, titleHtml, body, cls) => '<dialog id="' + id + '" class="amb-sheet' + (cls ? " " + cls : "") + '" data-mood="lagoon" role="dialog" aria-modal="true" aria-labelledby="' + tid
+  + '" tabindex="-1" hidden><div class="amb-sheet__head">' + titleHtml + '<button type="button" class="amb-circle" id="' + cid + '"' + wl("x.close") + ">" + AMB.glyph("close") + "</button></div>"
+  + body + "</dialog>";
+const sheetTitle = (tid, k) => wt("h2", 'class="amb-sheet__title" id="' + tid + '"', k);
 /* S3 3.5: A REMEMBERED PHONE DRAWS THIS, NOT THE DOOR, while it opens; and when a session lapses with nothing
    remembered, a Sheet says so over whatever they were doing, and the door's own form moves into it. */
 function signedOutSheet() {
   return '<div id="opening" class="gate" hidden><span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("p", 'class="lead" role="status"', "open.lead") + "</div>"
-    + '<div id="outScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="outSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="outT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="outT"', "out.h")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="outX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body">' + wt("p", "", "out.p") + '<div id="outForm"></div></div>'
-    + "</div>";
+    + ambSheet("outSheet", "outT", "outX", sheetTitle("outT", "out.h"), '<div class="amb-sheet__body">' + wt("p", "", "out.p") + '<div id="outForm"></div></div>');
 }
 
 /* S3 3.8: ONE PHONE, ONE REMEMBERED ACCOUNT. Signing in as another account over a remembered one asks first,
    beside the control that was tapped, which moves here when asked. */
 function replaceAsk() {
-  return '<div id="askRep" class="ask" role="group" aria-labelledby="askRepT" hidden>'
-    + '<p class="lead" id="askRepT"></p>'
-    + wt("button", 'class="btn salt-pill salt-pill--md" id="askYes" type="button"', "rep.yes")
-    + '<button class="btn salt-ghost" id="askNo" type="button"></button></div>';
+  /* 16 Nov 2026, the move to Ambient (place D): a notice with its words, then the two answers as the system's pills, Replace the solid one */
+  return '<div id="askRep" class="ask amb-stack" role="group" aria-labelledby="askRepT" hidden>'
+    + '<div class="amb-notice">' + AMB.glyph("info") + '<span id="askRepT"></span></div>'
+    + wt("button", 'class="amb-pill amb-pill--block" id="askYes" type="button"', "rep.yes")
+    + '<button class="amb-pill amb-pill--quiet amb-pill--block" id="askNo" type="button"></button></div>';
 }
 
 /* S3 3.10: OPTIONAL HOME SCREEN INSTALL. A browser session can be used as-is. In Account > This device,
    the optional install guide carries an iPhone's sign-in across to the app's separate storage. */
 function keepPage() {
+  /* 16 Nov 2026, the move to Ambient: the guide is the system's parts, its code a field of its own and Copy a quiet pill */
   return '<section id="keepCard" class="keeppage" aria-labelledby="keepHead" hidden>'
-    + wt("h3", 'id="keepHead"', "keep.h")
-    + wt("p", 'class="lead" id="keepLead"', "keep.lead")
+    + wt("h3", 'class="amb-section" id="keepHead"', "keep.h")
+    + wt("p", 'class="amb-basis" id="keepLead"', "keep.lead")
     + '<div id="keepIos" hidden><ol class="keepsteps">'
     + "<li>" + wt("span", "", "keep.s1", 22) + "</li>"
     + "<li>" + wt("span", "", "keep.s2", 22) + "</li>"
     + "<li>" + wt("span", "", "keep.s3", 22) + "</li></ol>"
-    + '<div class="salt-code">' + wt("label", 'class="salt-code__label" for="keepCode"', "keep.code")
-    + '<input class="fld salt-field__input salt-field__input--code" id="keepCode" type="text" readonly value="" aria-describedby="keepHint">'
-    + wt("span", 'class="salt-code__hint" id="keepHint"', "keep.small") + "</div>"
-    + wt("button", 'class="btn salt-pill salt-pill--md" id="keepCopy" type="button" disabled', "code.copy")
+    + '<label class="amb-field" for="keepCode">' + wt("span", 'class="amb-field__label"', "keep.code")
+    + '<input class="amb-input amb-input--code" id="keepCode" type="text" readonly value="" aria-describedby="keepHint">'
+    + wt("span", 'class="amb-field__hint" id="keepHint"', "keep.small") + "</label>"
+    + wt("button", 'class="amb-pill amb-pill--quiet" id="keepCopy" type="button" disabled', "code.copy")
     + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
     /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
-    + wt("button", 'class="btn salt-pill salt-pill--md" id="keepInstall" type="button" hidden', "keep.install")
+    + wt("button", 'class="amb-pill amb-pill--quiet" id="keepInstall" type="button" hidden', "keep.install")
     + wt("p", 'class="kline" id="keepSam" hidden', "keep.sam", 22)
     + wt("p", 'class="kline" id="keepDesk" hidden', "keep.desk", 22)
     /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
@@ -1705,44 +805,32 @@ function keepPage() {
    customer's Account, the test accounts' included; never on Salt Admin's Account.
    21 Oct 2026 (Salt Admin A to C, P8): owner true draws the same four, read only, on Salt Admin's Shop > Hours, so he reads what the
    customer is told beside the hours that answer it; the words are the same keys, nothing there edits them. */
+/* 16 Nov 2026, the move to Ambient (0.7.4): on Salt Admin each question is Ambient's disclosure row in the settings list, one open at a time
+   (the group's own name, shop-help), its chevron turning; the old classes stay beside Ambient's as the checks' hooks. The customer's card is place D's. */
 function helpCard(owner) {
-  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">" + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
-    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
-  /* 26 Oct 2026 (his word): on Salt Admin the four are a list of settings under a grey head, one grey line under it */
-  const head = owner ? '<h2 id="mHelpH" class="salt-settings__head">Help</h2>'
-    : wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h");
+  /* 16 Nov 2026 (place D): the customer's four are the same disclosure rows in a settings list, one open at a time, in a group of their own (account-help) */
+  const g = owner ? "shop-help" : "account-help";
+  const row = (k) => '<li><details class="amb-disclose ahelp__q" name="' + g + '"><summary class="amb-setting ahelp__sum"' + (owner ? ' data-act="shop.help.' + k + '"' : "") + ">"
+    + wt("span", 'class="amb-setting__name ahelp__t"', "help." + k)
+    + '<svg class="amb-icon amb-icon--sm amb-disclose__mark" aria-hidden="true"><use href="#amb-chevron"/></svg></summary>'
+    + wt("p", 'class="amb-disclose__text ahelp__a"', "help." + k + "A") + "</details></li>";
   const rows = ["pay", "deliv", "coll", "change"].map(row).join("");
-  return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp' + (owner ? "" : " salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm")
-    + '" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
-    + head + (owner ? '<div class="salt-settings ahelp-list">' + rows + '</div><p class="salt-settings__foot">What a customer reads under Account, Help.</p>' : rows) + "</section>";
+  return '<section id="' + (owner ? "mHelp" : "aHelp") + '" class="ahelp" aria-labelledby="' + (owner ? "mHelpH" : "helpH") + '"' + (owner ? ' data-in="shop.hours"' : "") + ">"
+    + (owner ? '<h2 id="mHelpH" class="amb-section">Help</h2>' : wt("h2", 'class="amb-section" id="helpH"', "help.h"))
+    + '<div class="amb-settings"><ul class="amb-settings__list">' + rows + "</ul>"
+    + (owner ? '<p class="amb-settings__foot">What a customer reads under Account, Help.</p>' : "") + "</div></section>";
 }
 function thisDevice() {
-  return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
-    + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
-    + '<div class="salt-settings devlist"><div id="devRows" class="devrows"></div>' + lookRow()
-    /* 28 Oct 2026 (his yes): Sign out is the list's last row, in ember, still a tap and a tap again on the one control */
-    + '<button type="button" class="salt-settings__row salt-settings__row--action salt-settings__row--danger" id="lock" aria-live="polite">'
-    + wt("span", 'class="salt-settings__label" id="lockT"', "dev.out") + "</button></div>"
+  /* 16 Nov 2026 (place D): This device is a group of settings, a name and one control a row; Sign out is the group's last row, the system's danger action,
+     and still a tap and a tap again on the one control. The rows are drawn into #devRows (notifications, the saved app), then the other devices into #devSlot. */
+  return '<section id="thisDevice" class="devcard" aria-labelledby="devH" hidden>'
+    + wt("h2", 'class="amb-section" id="devH"', "dev.h")
+    + '<div class="amb-settings devlist"><ul class="amb-settings__list" id="devRows"></ul>'
+    + '<ul class="amb-settings__list devout"><li><button type="button" class="amb-action amb-action--danger" id="lock" aria-live="polite">'
+    + wt("span", 'id="lockT"', "dev.out") + "</button></li></ul></div>"
     + '<p class="msg devnote" id="devNote" role="status"></p>'
     + '<div id="devSlot"></div>' + keepPage()
     + "</section>";
-}
-/* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
-   held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
-function lookRow(owner) {
-  /* 26 Oct 2026, his word on This device ("like settings on an iPhone"), on his page and then the customer's: the look is one Switch, Tide on
-     or off, greyed while Tide is off; the acts on his page alone */
-  return '<div id="lookRow" class="salt-settings__row">' + wt("span", 'class="salt-settings__label" id="lookH"', "look.switch")
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="lookH" data-look="tide" disabled' + (owner ? ' data-act="look.tide"' : "") + "></button></div>";
-  /* 11 Oct 2026: Salt Admin draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
-     control by (docs/STATEMENTS.md); the customer's row is drawn as it was, with none */
-  const act = (a) => (owner ? ' data-act="' + a + '"' : "");
-  return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
-    + wt("span", 'class="salt-ledger__label" id="lookH"', "look.h")
-    + '<span class="salt-ledger__value lookset salt-segment" role="group" aria-labelledby="lookH">'
-    + wt("button", 'type="button" class="salt-segment__opt salt-segment__opt--active" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
-    + wt("button", 'type="button" class="salt-segment__opt" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
-    + "</span></div>" + (owner ? '<span class="salt-ledger__flag adev-line"><b>Night.</b> Tide is off for now.</span>' : "") + "</div></div>";
 }
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
@@ -1750,78 +838,54 @@ function vaultRow() {
   /* 26 Oct 2026, his word on This device, second look ("learn from how iPhone designs app"): every row the same shape, a name and one control.
      Show names is a Switch like the others: turned on it asks for the password in the one Sheet, as a phone asks for its code; on, the names
      show; turned off, they lock again */
-  return '<div id="vaultRow" class="salt-settings__row"><span class="salt-settings__label" id="vaultH">Show names</span>'
-    + '<span id="vaultState" class="sr" role="status">Locked</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></button></div>';
+  return '<li><label id="vaultRow" class="amb-setting"><span class="amb-setting__name" id="vaultH">Show names</span>'
+    + '<span id="vaultState" class="amb-vh" role="status">Locked</span>'
+    + '<input type="checkbox" class="amb-switch" role="switch" aria-labelledby="vaultH" id="vaultSwitch" data-act="vault.switch"></label></li>';
 }
 /* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
    browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
 function alertRow() {
   /* 26 Oct 2026, his word: one Switch, coloured when on; Turn on and Turn off stay, hidden, and the Switch presses the one that applies */
-  return '<div id="alertRow" class="salt-settings__row"><span class="salt-settings__label" id="alertH">Notifications</span>'
-    + '<span id="alertState" class="sr" role="status">Off</span>'
-    + '<button type="button" class="salt-switch" role="switch" aria-checked="false" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></button>'
+  return '<li id="alertRow"><label class="amb-setting"><span class="amb-setting__name" id="alertH">Notifications</span>'
+    + '<span id="alertState" class="amb-vh" role="status">Off</span>'
+    + '<input type="checkbox" class="amb-switch" role="switch" aria-labelledby="alertH" id="alertSwitch" data-act="alerts.switch"></label>'
     + '<button type="button" id="alertOn" data-act="alerts.on" hidden>Turn on</button>'
-    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></div>';
+    + '<button type="button" id="alertOff" data-act="alerts.off" hidden>Turn off</button></li>';
 }
 function vaultSheet() {
-  return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="vaultSheet" class="salt-sheet adm asheet vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="vaultT">Unlock names and places</h2>'
-    + '<button type="button" class="salt-orb salt-sheet__close" id="vaultX" data-act="vault.close"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body"><p class="lead">One password shows names, places and slips on this phone until the page hides.</p>'
-    + '<label class="maker-field"><span class="lbl salt-field__label">Password for names and places</span>'
-    + '<input class="fld salt-field__input" id="vaultPass" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-act="vault.passphrase"></label>'
-    + '<p class="msg" id="vaultSay" role="status" aria-live="polite"></p></div>'
-    + '<div class="salt-sheet__foot"><button type="button" class="btn salt-pill salt-pill--md" id="vaultGo" data-act="vault.open">Unlock</button>'
-    + '<button type="button" class="salt-ghost" id="vaultKeep" data-act="vault.cancel">Not now</button></div></div>';
-}
-/* The choice Sheet, over a signed-in page on a device that has chosen nothing: the system's Sheet, its two tiles the Option face as a
-   tap, each with a swatch of its own ground and accent, and one line saying where to change it. The script opens it (lookAsk). */
-function lookSheet(owner) {
-  const act = (a) => (owner ? ' data-act="' + a + '"' : "");
-  const tile = (k) => '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="' + k + '"' + act("look.sheet-" + k) + ">"
-    + '<span class="look-swatch look-swatch--' + k + '" aria-hidden="true"></span><span class="salt-option__text">'
-    + wt("span", 'class="salt-option__label"', "look." + k) + "</span></button></div>";
-  return '<div id="lookScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="lookSheet" class="salt-sheet' + (owner ? " adm asheet" : "") + '" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="lookT"', "look.sheetH")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + act("look.sheet-close") + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body"><div class="salt-options__grid salt-options__grid--2">' + tile("night") + tile("tide") + "</div>"
-    + (owner ? '<p class="look-note">You can change this later under Shop, in This device.</p>' : wt("p", 'class="look-note"', "look.note")) + "</div></div>";
+  /* 16 Nov 2026 (place D): the names Sheet is the system's, a field and its two answers, Unlock the solid one */
+  const body = '<div class="amb-sheet__body"><p class="amb-basis">One password shows names, places and slips on this phone until the page hides.</p>'
+    + '<label class="amb-field" for="vaultPass"><span class="amb-field__label">Password for names and places</span>'
+    + '<input class="amb-input" id="vaultPass" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-act="vault.passphrase"></label>'
+    + '<p class="msg" id="vaultSay" role="status" aria-live="polite"></p>'
+    + '<button type="button" class="amb-pill amb-pill--block" id="vaultGo" data-act="vault.open">Unlock</button>'
+    + '<button type="button" class="amb-pill amb-pill--quiet amb-pill--block" id="vaultKeep" data-act="vault.cancel">Not now</button></div>';
+  return ambSheet("vaultSheet", "vaultT", "vaultX", '<h2 class="amb-sheet__title" id="vaultT">Unlock names and places</h2>', body, "asheet vaultsheet").replace('id="vaultX"', 'id="vaultX" data-act="vault.close"');
 }
 /* Step 1b (his Q3, his sentences 3.1 and 3.3): THE BELL, in the saved app's header on every view. Until notifications
    are on it is marked and its call sits beside it; a tap on either asks (the ask is still a tap: iOS requires one).
    Once on, the call goes and the bell stays, plain, opening This device's notifications row */
+/* 15 Nov 2026, the move to Ambient: the bell is a circle in the shell's app bar and its call a glass chip beside it, the app bar's only
+   two parts; Ambient has no bell glyph yet, so the circle draws its info glyph until one is added (asked of Ambient). The ids and the words are kept.
+   16 Nov 2026, Ambient 0.7.3: the circle draws Ambient's bell, and the call is the app bar's own call (amb-pill--bar), first, its words two
+   ("Turn on", bell.short) and its name the whole sentence (bell.call); it is hidden once notifications are on, so the bell stands alone. */
 function bellBox() {
-  return '<div id="bellBox" class="cbell" hidden>'
-    + wt("button", 'type="button" class="salt-pill salt-pill--sm" id="bellCall"', "bell.call")
-    + '<button type="button" class="salt-orb cbell__orb" id="bell"' + wl("bell.off") + ">" + glyphSvg("bell", 22)
-    + '<span class="cbell__dot" aria-hidden="true"></span></button></div>';
+  return '<div id="bellBox" class="amb-appbar__group" hidden>'
+    + wt("button", 'type="button" class="amb-pill amb-pill--bar" id="bellCall"' + wl("bell.call"), "bell.short")
+    + '<button type="button" class="amb-circle" id="bell"' + wl("bell.off") + ">" + AMB.glyph("bell") + "</button></div>";
 }
 /* refused on this phone: its own Settings steps, and the bell to tap again once they are on */
 function bellSheet() {
-  return '<div id="bellScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="bellSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="bellT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="bellT"', "bell.h")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="bellX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body">' + wt("p", "", "bell.lead")
-    + wt("p", 'id="bellIos" hidden', "bell.ios") + wt("p", 'id="bellDroid" hidden', "bell.droid") + wt("p", 'id="bellDesk" hidden', "bell.desk") + "</div>"
-    + '<div class="salt-sheet__foot">' + wt("button", 'class="btn salt-pill salt-pill--md" id="bellDone" type="button"', "bell.done") + "</div>"
-    + "</div>";
+  return ambSheet("bellSheet", "bellT", "bellX", sheetTitle("bellT", "bell.h"),
+    '<div class="amb-sheet__body">' + wt("p", "", "bell.lead")
+    + wt("p", 'id="bellIos" hidden', "bell.ios") + wt("p", 'id="bellDroid" hidden', "bell.droid") + wt("p", 'id="bellDesk" hidden', "bell.desk")
+    + wt("button", 'class="amb-pill amb-pill--block" id="bellDone" type="button"', "bell.done") + "</div>");
 }
 
 /* S6 6.4: THE PAY SHEET (his D8 as amended). One Sheet for every Pay; the script fills its body and its foot. */
 function paySheet() {
-  return '<div id="payScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="paySheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="payT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="payT"', "pay.h")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="payX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body" id="payBody"></div><div class="salt-sheet__foot" id="payFoot"></div></div>';
+  /* 16 Nov 2026 (place D): the body and the foot are the script's; the foot is the Sheet's last child, the one solid action */
+  return ambSheet("paySheet", "payT", "payX", sheetTitle("payT", "pay.h"), '<div class="amb-sheet__body" id="payBody"></div><div class="amb-sheet__foot" id="payFoot"></div>', "paysheet");
 }
 /* S9 9.9, HIS D2: the Sheet that signs in another device from This device, its code minted as it opens so Copy is a tap
    of its own, and a QR that opens Salt Counter on the other device's camera, where the code is typed. The QR carries the
@@ -1829,45 +893,31 @@ function paySheet() {
    customer sends another never signs the other in. */
 /* Step 7: THE ACCOUNT'S THREAD, in a Sheet of its own: the lines as a log, the composer at its foot */
 function threadSheet() {
-  return '<div id="thScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="thSheet" class="salt-sheet thsheet" role="dialog" aria-modal="true" aria-labelledby="thT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="thT"', "th.title")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="thX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body" id="thBody"><div class="salt-thread"><div class="salt-thread__lines" id="thLog" role="log"' + wl("th.aria") + "></div></div></div>"
-    + '<div class="salt-sheet__foot"><form class="salt-composer" id="thForm">'
-    + '<input class="salt-field__input salt-composer__field" id="thIn" type="text" maxlength="200" autocomplete="off" enterkeyhint="send"'
+  /* 16 Nov 2026 (place D): the account's thread is the system's Thread and Compose, the lines drawn in #thLog (an ol.amb-thread), the composer under them */
+  return ambSheet("thSheet", "thT", "thX", sheetTitle("thT", "th.title"),
+    '<div class="amb-sheet__body" id="thBody"><ol class="amb-thread" id="thLog" role="log"' + wl("th.aria") + "></ol>"
+    + '<form class="amb-compose" id="thForm">'
+    + '<input class="amb-input" id="thIn" type="text" maxlength="200" autocomplete="off" enterkeyhint="send"'
     + ' placeholder="' + esc(EN["th.ph"]) + '" data-wp="th.ph"' + wl("th.ph") + ">"
-    + wt("button", 'class="salt-ghost salt-ghost--lit salt-composer__send" type="submit"', "msg.send") + "</form>"
-    + '<p class="msg" id="thSaid" role="status" hidden></p></div>'
-    + "</div>";
+    + '<button type="submit" class="amb-circle amb-circle--lg"' + wl("msg.send") + ">" + AMB.glyph("send") + wt("span", 'class="amb-vh"', "msg.send") + "</button></form>"
+    + '<p class="msg" id="thSaid" role="status" hidden></p></div>', "thsheet");
 }
 /* plan version 7 (7c): THE FULL STATEMENT, the live document whole in a Sheet of its own; Account keeps the money and this button */
 function fullSheet() {
-  return '<div id="fsScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="fsSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="fsT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="fsT"', "acct.full")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="fsX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body" id="fsBody"><div id="fsMf" class="salt-settings mfil" hidden></div><p class="mfnote" id="fsNote" role="status"></p><div id="fsOut"></div></div>'
-    + "</div>";
+  return ambSheet("fsSheet", "fsT", "fsX", sheetTitle("fsT", "acct.full"),
+    '<div class="amb-sheet__body" id="fsBody"><div id="fsMf" class="mfil" hidden></div><p class="mfnote" id="fsNote" role="status"></p><div id="fsOut" class="amb-stack"></div></div>', "amb-sheet--full");
 }
 function devSheet() {
-  return '<div id="devScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="devSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="devT" tabindex="-1" hidden>'
-    + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="devT"', "dev.another")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="devX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body">'
-    + wt("p", "", "dev.scan")
-    + '<div class="salt-qr" id="devQr" hidden><div class="salt-qr__code"><img id="devQrImg" alt="' + esc(EN["dev.qrAlt"]) + '" data-wa="dev.qrAlt" width="180" height="180"></div>'
-    + '<div class="salt-qr__meta">' + wt("span", 'class="salt-qr__caption"', "dev.qrCap") + "</div></div>"
-    + '<div class="salt-code">' + wt("label", 'class="salt-code__label" for="devCode"', "dev.code")
-    + '<input class="fld salt-field__input salt-field__input--code" id="devCode" type="text" readonly value="" aria-describedby="devHint">'
-    + wt("span", 'class="salt-code__hint" id="devHint"', "code.once") + "</div>"
-    + '<p class="msg" id="devMsg" role="status" aria-live="polite"></p></div>'
-    + '<div class="salt-sheet__foot">' + wt("button", 'class="btn salt-pill salt-pill--md" id="devCopy" type="button" disabled', "code.copy") + "</div>"
-    + "</div>";
+  /* 16 Nov 2026 (place D): the hand-over is the system's code frame (the QR the Worker minted, framed and never redrawn) and a field holding the eight symbols */
+  return ambSheet("devSheet", "devT", "devX", sheetTitle("devT", "dev.another"),
+    '<div class="amb-sheet__body">' + wt("p", "", "dev.scan")
+    + '<figure class="amb-codeframe" id="devQr" hidden><div class="amb-codeframe__field"><img id="devQrImg" alt="' + esc(EN["dev.qrAlt"]) + '" data-wa="dev.qrAlt" width="180" height="180"></div>'
+    + wt("figcaption", 'class="amb-codeframe__caption"', "dev.qrCap") + "</figure>"
+    + '<label class="amb-field" for="devCode">' + wt("span", 'class="amb-field__label"', "dev.code")
+    + '<input class="amb-input amb-input--code" id="devCode" type="text" readonly value="" aria-describedby="devHint">'
+    + wt("span", 'class="amb-field__hint" id="devHint"', "code.once") + "</label>"
+    + '<p class="msg" id="devMsg" role="status" aria-live="polite"></p>'
+    + wt("button", 'class="amb-pill amb-pill--block" id="devCopy" type="button" disabled', "code.copy") + "</div>");
 }
 
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
@@ -1994,33 +1044,86 @@ export function joinPage(nonce, id) {
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
    the customer's, a guest board, a shut link and Salt Admin. */
-/* 11 OCT 2026, HIS WORD: TWO THEMES, NIGHT AND TIDE, ON EVERY SURFACE, KEPT ON EACH DEVICE, TIDE UNTIL ONE IS CHOSEN. Night is
-   the design system's :root and Tide its :root[data-theme="tide"], both carried in the page's stylesheet (tools/stmt-style.mjs).
-   Every page opens Tide: data-theme="tide" is on the root as served and the browser bar starts at Tide's ground. A page that
-   runs script then reads localStorage salt-look before its stylesheet and first paint (LOOK_HEAD, a nonce'd script at the top of
-   the head, every read in a try), and a page that cannot run one (a guest board, the shut page) stays Tide, since no device's
-   choice can be read there. The two grounds are the system's obsidian at each theme; the suite holds them equal to it. */
-const GROUND = { night: "#05080a", tide: "#03141a" };
-export const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
-  + "document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'" + GROUND.night + "':'" + GROUND.tide + "');return t;}"
-  + "(function(){saltLook('night');})();"   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
-  /* the iPhone's saved app marks the root before first paint (navigator.standalone is that app's alone; Android's installed pages have a viewport the screen is not) and
-     gives it the screen's height, the longer side of the screen upright and the shorter lying down; --app-h feeds the body's min-height under 1080px */
-  + "(function(){try{if(navigator.standalone===true){var r=document.documentElement,f=function(){var a=Math.max(screen.width,screen.height),b=Math.min(screen.width,screen.height);"
-  + "r.style.setProperty('--app-h',(window.innerWidth>window.innerHeight?b:a)+'px');};r.setAttribute('data-app','1');f();window.addEventListener('resize',f);}}catch(e){}})();";
-/* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Admin. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
-const AURORA = '<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div>'
-  + '<div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>';
-export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="night"><head><meta charset="utf-8">'
+/* 15 NOV 2026, THE MOVE TO AMBIENT: THE KIT'S HELPERS, one source for both faces. Each returns Ambient markup as a string, its words escaped
+   (a value given as {html} is put in as it is), so every place builder draws a part the same way. The page's server uses AMB; his page's
+   script is handed the same function (spliced as its source beside OWNER_JS, as `amb`), with esch and the books in PSYM's order, and adds
+   amb.node(html) to make an element of one. Written without arrows or template literals, since it travels as source. The guide:
+   kit.md in the notes of the move. */
+export function ambKit(esc, books) {
+  var kH = function (x) { return x && typeof x === "object" && x.html != null ? String(x.html) : esc(x == null ? "" : x); };
+  var kAt = function (a) { var o = ""; if (typeof a === "string") return a ? " " + a : ""; for (var k in a || {}) { if (a[k] === false || a[k] == null) continue; o += " " + k + (a[k] === true ? "" : '="' + esc(a[k]) + '"'); } return o; };
+  var kGlyph = function (name, size) { return '<svg class="amb-icon' + (size ? " amb-icon--" + size : "") + '" aria-hidden="true"><use href="#amb-' + name + '"/></svg>'; };
+  var kChip = function (word, tone) { return '<span class="amb-chip' + (tone ? " amb-chip--" + tone : "") + '">' + kH(word) + "</span>"; };
+  var kStat = function (label, value) { return '<div class="amb-stat"><span class="amb-stat__label">' + kH(label) + '</span><span class="amb-stat__value">' + kH(value) + "</span></div>"; };
+  return {
+    glyph: kGlyph, chip: kChip, stat: kStat,
+    kindChip: function (book, word) { var n = books.filter(function (b) { return b !== "_"; }).indexOf(book) + 1; return '<span class="amb-chip' + (n > 0 && n <= 6 ? " amb-kind-" + n : "") + '"><span class="amb-chip__dot"></span>' + kH(word) + "</span>"; },
+    pill: function (word, attrs, o) { o = o || {}; return '<button type="button" class="amb-pill' + (o.sm ? " amb-pill--sm" : "") + (o.quiet ? " amb-pill--quiet" : "") + (o.block ? " amb-pill--block" : "") + '"' + kAt(attrs) + ">" + kH(word) + "</button>"; },
+    circle: function (label, name, attrs) { return '<button type="button" class="amb-circle" aria-label="' + esc(label) + '"' + kAt(attrs) + ">" + kGlyph(name) + "</button>"; },
+    setting: function (name, value, attrs) {
+      if (value && value.control) return '<label class="amb-setting"' + kAt(attrs) + '><span class="amb-setting__name">' + kH(name) + "</span>" + value.control + "</label>";
+      if (attrs) return '<button type="button" class="amb-setting"' + kAt(attrs) + '><span class="amb-setting__name">' + kH(name) + '</span><span class="amb-setting__value">' + kH(value) + "</span>" + kGlyph("next", "sm") + "</button>";
+      return '<div class="amb-setting"><span class="amb-setting__name">' + kH(name) + '</span><span class="amb-setting__value">' + kH(value) + "</span></div>";
+    },
+    settings: function (head, rows, foot) { return '<div class="amb-settings">' + (head ? '<h3 class="amb-settings__head">' + kH(head) + "</h3>" : "") + '<ul class="amb-settings__list">' + (rows || []).map(function (r) { return "<li>" + r + "</li>"; }).join("") + "</ul>" + (foot ? '<p class="amb-settings__foot">' + kH(foot) + "</p>" : "") + "</div>"; },
+    task: function (t) {
+      return '<article class="amb-task' + (t.tone ? " amb-task--" + t.tone : "") + '"><div class="amb-task__head"><span class="amb-task__kind">' + kH(t.kind) + "</span>" + (t.state ? kChip(t.state, t.tone) : "") + "</div>"
+        + '<h3 class="amb-task__title">' + kH(t.title) + "</h3>"
+        + (t.figures && t.figures.length ? '<div class="amb-task__figures">' + t.figures.map(function (f) { return kStat(f[0], f[1]); }).join("") + "</div>" : "")
+        + (t.text ? '<p class="amb-task__text">' + kH(t.text) + "</p>" : "")
+        + (t.flags && t.flags.length ? '<ul class="amb-task__flags">' + t.flags.map(function (f) { return "<li>" + kChip(f[0], f[1]) + "</li>"; }).join("") + "</ul>" : "")
+        + (t.acts && t.acts.length ? '<div class="amb-task__acts">' + t.acts.join("") + "</div>" : "") + "</article>";
+    },
+    row: function (r) {
+      return '<button type="button" class="amb-row"' + kAt(r.attrs) + ">" + (r.thumb != null ? '<span class="amb-thumb" aria-hidden="true">' + kH(r.thumb) + "</span>" : "")
+        + '<span class="amb-row__text"><span class="amb-row__title">' + kH(r.title) + "</span>" + (r.sub != null ? '<span class="amb-row__sub">' + kH(r.sub) + "</span>" : "") + "</span>"
+        + (r.age != null || r.act != null ? '<span class="amb-row__trail amb-row__trail--stack">' + (r.age != null ? '<span class="amb-row__age">' + kH(r.age) + "</span>" : "") + (r.act != null ? '<span class="amb-row__act">' + kH(r.act) + "</span>" : "") + "</span>" : "") + "</button>";
+    },
+    notice: function (text, warn, title) { return '<div class="amb-notice' + (warn ? " amb-notice--warn" : "") + '">' + kGlyph("info") + "<span>" + (title ? '<span class="amb-notice__title">' + kH(title) + "</span>" : "") + kH(text) + "</span></div>"; },
+    section: function (word) { return '<h2 class="amb-section">' + kH(word) + "</h2>"; },
+    node: function (html) { var t = document.createElement("template"); t.innerHTML = html; return t.content.firstElementChild; }
+  };
+}
+export const AMB = ambKit(esc, Object.keys(PSYM));
+/* Salt Admin's place opens with this hero: its name the title, its lead line under it, then the time and the live line (barDraw). heat draws the
+   mood's chip, hidden until salt's supply is tight (moodSet); hours the bar's hours chip, Needs you's alone; approve Orders' Approve. */
+function aHero(title, sub, o) {
+  o = o || {};
+  return '<header class="amb-hero amb-hero--compact amb-mesh">'
+    + (o.heat ? '<span class="amb-chip amb-chip--glass" data-heat hidden>Supply tight</span>' : "")
+    + '<h1 class="amb-hero__title">' + esc(title) + "</h1>" + (sub || "")
+    + '<p class="amb-hero__time"><span class="abarlive" data-barlive' + (o.live ? ' id="aBarLive"' : "") + '></span><span class="clk" data-clock></span></p>'
+    + (o.hours ? '<button type="button" class="amb-chip amb-chip--glass" id="aBarHours" data-act="bar.hours" hidden></button>' : "")
+    /* Orders' one main action: Approve, the rows that wait (barLive names it with their count); its act is the bar's of 21 Oct 2026 */
+    + (o.approve ? '<div class="amb-cluster"><button type="button" class="amb-pill" id="aApprove" data-act="bar.approve">Approve</button></div>' : "")
+    + "</header>";
+}
+/* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026: light and dark follow each device). ONE HEAD FOR EVERY PAGE THE SITE SERVES:
+   no data-theme on the root, so Ambient follows the device; the page says it is drawn for both schemes, and the browser bar takes Lagoon's
+   base in each (AMB_THEME, read out of the carried tokens by tools/stmt-style.mjs, never typed). The Night and Tide head script, its store
+   (salt-look), the iPhone saved app's height script and the Aurora are gone: Ambient's shell is the screen's height by itself (100dvh).
+   DOC_OPEN is the head's first half; SITE_STYLE the stylesheet every page carries under its nonce (Ambient's tokens and parts, the site's
+   layer, then the page's own older layer, which shrinks as each place is redrawn); BODY_OPEN the body with the icon sprite first. A page
+   that runs script carries AMB_JS under its nonce before its own script; a guest page runs none. */
+export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">'
-  + '<meta name="theme-color" content="' + GROUND.night + '">';
+  + '<meta name="color-scheme" content="light dark">'
+  + '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + AMB_THEME.light + '">'
+  + '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + AMB_THEME.dark + '">';
+/* THE NOTES STAY UPSTREAM (as the salt-ds recipes' did, 24 Sep 2026): Ambient's notes name its other apps (Salt QR, Salt Admin) and the site's
+   layer names both faces, and a customer is served this; the rules are carried to the character, the comments are not */
+const noNotes = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
+export const AMB_STYLE = noNotes(AMB_TOKENS + AMB_CSS);
+export const SITE_STYLE = AMB_STYLE + noNotes(SITE_CSS);
+export const BODY_OPEN = '<body class="amb">' + AMB_ICONS;
+export const ambScript = (nonce) => '<script nonce="' + nonce + '">' + AMB_JS + "</script>";
 function guestPage(inner, nonce, title) {
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>" + title + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" 
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + PAGE_CSS + COIN_CSS + "</style></head>" + BODY_OPEN
     + '<div class="panel">' + inner + "</div></body></html>";
 }
 
@@ -2040,15 +1143,13 @@ function guestPage(inner, nonce, title) {
    that changes is never read out unasked. Drawn at first paint with the notice's lines; the open or closed line waits for /hours. */
 function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  return '<section id="today" class="today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm"' + wl("today.aria") + ">"
-    + '<div class="today__head"><span id="todayOpen" class="today__open" hidden></span><span class="today__clock" data-clock></span></div>'
-    + '<p id="todayLine" class="today__line" hidden></p>'
-    + '<div id="bull" class="salt-notice hnote"' + (lines.length ? "" : " hidden") + ">"
-    + '<div class="salt-notice__head">' + wt("span", 'class="salt-eyebrow salt-eyebrow--copper"', "bull.h")
-    + '<span class="salt-notice__tools"><span class="salt-notice__dots" aria-hidden="true"></span>'
-    + '<button type="button" class="salt-notice__pause" aria-pressed="false" hidden' + wl("bull.pause") + ">" + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M9 6 V18 M15 6 V18\"></path></svg>" + "</button></span></div>"
-    + '<div class="salt-notice__lines">' + lines.map((l, i) => '<p class="salt-notice__line' + (i ? "" : " salt-notice__line--on") + '">' + esc(l) + "</p>").join("") + "</div></div>"
-    + "</section>";
+  /* 16 Nov 2026, THE MOVE TO AMBIENT: the card is one notice. Whether the Counter is open is its title and the line under it follows, then his
+     notice, a line at a time, with Pause. The clock is the hero's own time line now, so the card does not say the time twice. */
+  return '<div id="today" class="amb-notice"' + (lines.length ? "" : " hidden") + wl("today.aria") + ">" + AMB.glyph("info")
+    + '<span><span id="todayOpen" class="amb-notice__title" hidden></span><span id="todayLine" class="hblock" hidden></span>'
+    + '<span id="bull" class="hnote hblock"' + (lines.length ? "" : " hidden") + ">" + wt("span", 'class="amb-notice__title"', "bull.h")
+    + '<span class="hlines">' + lines.map((l, i) => '<span class="hline"' + (i ? " hidden" : "") + ">" + esc(l) + "</span>").join("") + "</span>"
+    + '<button type="button" class="amb-pill amb-pill--quiet amb-pill--sm hpause" aria-pressed="false" hidden' + wl("bull.pause") + ">" + wd("bull.pause") + "</button></span></span></div>";
 }
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
@@ -2061,7 +1162,7 @@ const TEST_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["orders", "P
 const TEST_PARTS = { orders: ["todo", "open", "done", "ended", "payments"], customers: ["messages"] };
 /* a place's rail button: data-p names the part a test place opens */
 const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
-  + ' data-act="nav.' + (p || m) + '">' + inner(m, w, p) + "</button>";
+  + ' data-act="nav.' + (p || m) + '" aria-label="' + w + '" data-word="' + w + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
@@ -2095,57 +1196,36 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? ordSegment()
   /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
-  : p === "shop"
-  ? '<nav class="salt-nav nkinds" aria-label="Shop"><div class="salt-nav__links aparts aparts--nav" role="tablist" aria-label="Shop" data-place="shop">'
-    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="salt-nav__link nktab" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
-    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div></nav>"
+  /* 16 Nov 2026, the move to Ambient (place I): Record's three parts and Shop's six are Ambient's Segment (three or four, one row; six, wrapping), a part pressed not selected, the count of what
+     waits unsent beside Record's; the acts, ids and addresses as every strip's */
+  : p === "shop" || p === "record" || p === "customers"
+  ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
+    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div></div>"
   : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account"]];
-const ADMIN_ICONS = {
-  needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
-  orders: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
-  customers: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
-  record: '<path d="M4.6 19.4 L5.4 15.4 L15.4 5.4 A1.6 1.6 0 0 1 17.7 5.4 L18.6 6.3 A1.6 1.6 0 0 1 18.6 8.6 L8.6 18.6 Z M13.4 7.4 L16.6 10.6"/>',
-  shop: '<path d="M4 9.6 L5.6 4.6 H18.4 L20 9.6 M4 9.6 A2.67 2.67 0 0 0 9.33 9.6 A2.67 2.67 0 0 0 14.67 9.6 A2.67 2.67 0 0 0 20 9.6 M5.6 12.4 V19.4 H18.4 V12.4 M10 19.4 V15 H14 V19.4"/>',
-  add: '<path d="M12 5.5 V18.5 M5.5 12 H18.5"/>',
-  key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
-};
-const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
-  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (ADMIN_ICONS[n] || PLACE_ICONS[n]) + "</svg>";
+/* 15 Nov 2026, the move to Ambient (0.7.2): each place is an Ambient glyph and its word on the tab bar */
+const ADMIN_GLYPH = { needs: "inbox", orders: "doc", customers: "people", record: "edit", shop: "store" };
 /* S7 7.1 (his D11 of 24 Sep 2026): THE CUSTOMER'S PLACES, in the order the bar draws them. Each is [the id its panel and
    its buttons carry, its word, its address]: Home opens first, and Rewards is an associate's alone. The ids are the
    tabs' own (stmt, order, card), so every road that named a tab still names its place. */
 export const PLACES = [["home", EN["place.home"], "home"], ["prices", EN["place.prices"], "prices"], ["order", EN["place.order"], "orders"],
   ["stmt", EN["place.stmt"], "account"], ["card", EN["place.card"], "rewards"]];
-const PLACE_ICONS = {
-  home: '<path d="M4 11.2 L12 4.6 L20 11.2 M6.2 9.4 V19.4 H10 V14.4 H14 V19.4 H17.8 V9.4"/>',
-  prices: '<path d="M12.6 3.8 H19.4 A0.8 0.8 0 0 1 20.2 4.6 V11.4 L11.4 20.2 L3.8 12.6 Z"/><circle cx="16.2" cy="7.8" r="1.4"/>',
-  order: '<path d="M6 3.8 H18 V20.2 L15.6 18.8 L13.2 20.2 L10.8 18.8 L8.4 20.2 L6 18.8 Z M9 8.4 H15 M9 11.8 H15 M9 15.2 H12.6"/>',
-  stmt: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20 C5.6 16.2 8.4 14.2 12 14.2 C15.6 14.2 18.4 16.2 19.2 20"/>',
-  card: '<circle cx="12" cy="9.2" r="5.2"/><path d="M9 13.6 L7.6 20.2 L12 18 L16.4 20.2 L15 13.6"/>'
-};
-/* a place as a button, on the rail or on the bar; both carry data-t, and Rewards starts hidden. The rail's keeps the tab's
-   old id (tPrices, tOrder, tCard), so what found a tab by its id finds its place */
+/* Home, Shop, Orders, Account and Rewards, each its Ambient glyph (0.7.2) */
+const PLACE_GLYPH = { home: "home", prices: "tag", order: "doc", stmt: "person", card: "star" };
+/* a place as a button on the tab bar, data-t; Rewards starts hidden. It keeps the rail's old id (tPrices, tOrder, tCard), so what found a
+   tab by its id finds its place */
 const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
-/* COUNTER BATCH A (his decisions of 18 Oct 2026): FROM 1080PX THE APP'S NAME STANDS OVER THE RAIL, the one brand on the page, and the rail's
-   brand slot says whose account it is: Signed in as, then the username (never a roster code), which the header then leaves to the rail. The
-   Desk bar that stood across the top from 18 Oct 2026 went with it, and came back on 21 Oct 2026 (his word) as the header itself, the place
-   and what waits on them (cBar); the name stays over the rail. */
-function placesRail() {
-  return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
-    + '<p class="salt-title crtitle" aria-hidden="true">Salt Counter</p>'
-    + '<div class="salt-rail__brand crbrand" data-wholine>' + wt("span", 'class="salt-eyebrow salt-eyebrow--mist"', "who.rail") + '<span class="mono" data-whorail></span></div>'
-    + '<div class="salt-rail__group">' + PLACES.map(([t, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo"' + placeAttrs(t, true) + ">"
-      + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", "", "place." + t) + "</span>"
-      + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div></nav>";
-}
-function placesBar() {
-  /* C22 (29 Sep 2026): the bar is Places, so two landmarks never share one name */
-  return '<nav class="salt-appbar"' + wl("place.bar") + '>' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
-    + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
-    + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
+/* 15 Nov 2026, THE MOVE TO AMBIENT: ONE DOCK. The rail (Batch A's, with the app's name over it and whose account it is) and the App bar at a
+   phone's foot were two sets of the same buttons; Ambient's dock is one tab bar, which the shell stands up as the rail from 960px. A tab's
+   count is Ambient's (0.7.2, amb-tab__count, data-n: the orders that need them): drawn from 1, hidden from the reader, the tab's own name
+   saying it (placeCounts writes "Orders, 3 waiting"). */
+function placesDock() {
+  return '<div class="amb-dock"><div id="hLive" hidden></div><nav class="amb-tabbar"' + wl("place.bar") + ">" + PLACES.map(([t]) => '<button type="button" class="amb-tab"' + placeAttrs(t, true)
+    + ' aria-label="' + esc(EN["place." + t]) + '" data-word="' + esc(EN["place." + t]) + '">'
+    + AMB.glyph(PLACE_GLYPH[t]) + wt("span", "", "place." + t) + '<span class="amb-tab__count" data-n="' + t + '" aria-hidden="true" hidden></span></button>').join("") + "</nav></div>";
 }
 /* THE TEST SURFACE (his answers of 18 Oct 2026). `test` is null on every real page, which is then the page it always was; under /all/test
    it is {base, u}: the page's every request goes under the base, its storage under salt-test:, and it registers no service worker, manifest,
@@ -2154,7 +1234,6 @@ function placesBar() {
 export function landingPage(user, nonce, owner, bulletin, test) {
   const u = esc(user || "");
   return DOC_OPEN
-    + '<script nonce="' + nonce + '">' + LOOK_HEAD + "</script>"
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
@@ -2178,79 +1257,57 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
     + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + COIN_CSS + "</style></head><body>" + AURORA
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + PAGE_CSS + COIN_CSS + "</style></head>" + BODY_OPEN
     + (owner
-      ? '<div id="roster" class="gate adm salt-frame">'
-        /* 20 Oct 2026 (canvas V32): the bar heads the whole shell, the rail and the column under it, so from 1080px it spans both */
-        + '<header class="salt-deskbar salt-frame__bar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="clk" data-clock></span></div></div>'
-        /* 22 Oct 2026 (canvas Needs you): the hours are a glowing status chip at the bar's top right, a 44px button to Shop hours (barDraw in stmt/owner.js) */
-        + '<button type="button" class="salt-status ashop" id="aBarHours" data-act="bar.hours" hidden></button></div>'
-        /* 21 Oct 2026, his word: the bar was bare. What waits, as the Desk's bar: each a chip to its place, Approve brass with its rows (barLive in
-           stmt/owner.js). 22 Oct 2026, his comment: no where-you-are on Salt Admin, "not required"; the rail and the App bar say it */
-        + '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="aBarChips" role="group" aria-label="Waiting"></div></div></header>'
-        /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
-           system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
-           place is what waits there. */
-        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Admin">'
-        + '<div class="salt-rail__group">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-rail__tab salt-rail__tab--solo", (m, w, p) =>
-          '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + "</span><span>" + w + "</span></span>"
-          + (p ? "" : '<span class="salt-rail__count" data-count="' + m + '"></span>'))).join("") + "</div>"
-        /* 21 Oct 2026 (P10): the + as a rail button, which the orb gives way to from 1080px; none on the test surface */
-        + (test ? "" : '<div class="salt-rail__group arailadd"><button type="button" class="salt-rail__tab salt-rail__tab--solo" id="oAddRail" data-act="rail.add">'
-          + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico("add") + "</span><span>New entry</span></span></button></div>")
-        + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
-        + '<div class="amain salt-frame__main">'
-        /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
-           under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
+      /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026): HIS PAGE IS ONE AMBIENT SHELL. The app bar holds the New entry circle
+         (the + orb's id and act, shown where it was shown); the screen holds each place as before, each opening with its compact hero, the
+         place's name its title, its lead line under it and the time and the live line (barDraw) under that; one dock of the five places,
+         which Ambient stands up as the rail from 960px. The mood is the market's heat off STOCK (moodSet in stmt/owner.js): Flare and Supply
+         tight while salt's supply is tight, Lagoon otherwise, Slate on Shop. .adm stays on the root, where every older rule of his page is
+         scoped until its place is redrawn. */
+      ? '<div id="roster" class="amb-shell amb-shell--rail amb-shell--page adm" data-mood="lagoon">'
+        + '<div class="amb-appbar"><span></span><div class="amb-appbar__group">'
+        + (test ? "" : '<button type="button" class="amb-circle" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + AMB.glyph("plus") + "</button>")
+        + "</div></div>"
+        + '<main class="amb-screen amb-screen--docked">'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
-        + '<div id="unsentBar" hidden></div>'
+        + '<div id="unsentBar" class="amb-stack" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
            ("orders" is every part of Orders, "orders.group" that part alone). The owner's script hides the rest (stmt/owner.js, go),
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
-        + '<div id="mHome" data-in="needs">'
+        + '<div id="mHome" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
-        + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
-        /* 20 Oct 2026 (canvas V65, his word: every page starts the same way): no title is drawn on any place; the rail's lit tab or the App bar
-           names it, and the heading stays for a reader */
-        + '<h1 class="sr">Needs you</h1>'
-        /* 22 Oct 2026 (canvas Needs you): the lead is one Insight, what waits on his tap in money and the books that need stock (stmt/owner.js drawLead) */
-        + '<p class="salt-insight salt-insight--copper nlead" id="nCount">Reading what needs you.</p>'
-        /* the glance: Ready, To approve and Receivables, single-line KPI tiles read off the orders the page holds (stmt/owner.js drawGlance) */
-        + '<section id="nGlance" class="nglance" aria-label="At a glance" hidden></section>'
-        /* 22 Oct 2026 (canvas Needs you, his "something else that is not just pill styles"): the kinds are a text tab row on the system's Nav bar, the count
-           beside each word, the chosen one on glass with a brass underline, an empty one dimmed; three across on a phone, six wide. Jump to is gone */
-        + '<nav class="salt-nav nkinds" aria-label="Show"><div class="salt-nav__links nchips" role="tablist">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-nav__link nktab'
-          + (i ? "" : " salt-nav__link--active") + '" role="tab" data-chip="' + k + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w
-          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
-        /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
-        + '<div class="nsplit"><div>'
-        + '<div id="nlist" class="nlist"></div>'
-        + '</div><div id="nopen" class="salt-glass-card salt-glass-card--radius-lg salt-pane" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div>'
-        /* 22 Oct 2026 (his word, the restock light made plain; canvas Needs you): every book's light and figures, under the cards (stmt/owner.js drawStockBooks) */
-        + '<section id="nStock" class="nstock" aria-label="Stock by book" hidden></section>'
+        /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice), the glance (Ambient's tiles, each a link
+           to Orders: Ready, To approve, Receivables with its meter) and the kinds (counted filters, one chosen). Under it the queue and the open card, two columns from
+           960px, the card's one main action the foot of its column (stmt/owner.js needPane, nFoot); Stock by book under both, a table that stacks on a phone. */
+        + '<div class="amb-stack">'
+        + '<div id="nFail" class="amb-notice amb-notice--warn nfail" role="alert" hidden></div>'
+        + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section>'
+        + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nkopt" data-chip="' + k
+          + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nkopt__n"></span></button>').join("") + "</div>"
+        + "</div>"
+        + '<div class="amb-split nsplit"><div class="amb-stack"><div id="nlist" class="nlist"></div></div>'
+        + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div></div>'
+        + '<section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden></section>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + '<h1 class="sr">Orders</h1>'
+        + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, approve: !test })
         + adminParts("orders", test)
         + '<div class="abody">'
         + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
-        + '<p class="salt-insight salt-insight--copper olead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen salt-pane"></div></div></section>'
         + ordMore(test)
-        + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
-        + '<p class="lead" id="makerDraftStatus"></p>'
-        + '<div id="makerDrafts"></div>'
-        /* 22 Oct 2026: the multi-tick Approve's bar, drawn by stmt/owner.js apBarDraw once a card is chosen */
-        + '<div id="apBar" class="apbar salt-glass-card salt-glass-card--radius-lg" hidden></div>'
-        /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
-        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
-        + '<div class="salt-plan__body">'
-        + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
+        /* 16 Nov 2026 (the move to Ambient, place F): Approve is one stack of Ambient's approvals (stmt/owner.js drawDeskRows), a save bar over them once a card is
+           chosen (apBarDraw), and the queue a fold shut by default, titled and counted */
+        + '<section id="oApprove" class="amb-stack" data-in="orders.approve" aria-label="Rows to approve">'
+        + '<p class="amb-prose" id="makerDraftStatus" role="status"></p>'
+        + '<div id="makerDrafts" class="apstack"></div>'
+        + '<details id="makerQueue" class="nfold"><summary class="amb-section" data-act="record.queue-toggle"><span id="makerQueueCount">0</span> <span id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
+        + '<div id="makerQueueReview" class="apstack" aria-live="polite"></div></details></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
@@ -2264,178 +1321,185 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + '<h1 class="sr">Customers</h1>'
+        + aHero("Customers", '<p class="amb-hero__sub" id="mFoot"></p>', { heat: true })   /* the count of accounts, the rail's foot until 15 Nov 2026 */
         + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'
-        /* 25 Oct 2026 (the Customers canvas, P1): an Insight leads, money first, then the find field and the filters as Needs you's text tab row */
-        + '<p class="salt-insight salt-insight--copper alead" id="alead" hidden></p>'
-        + '<div class="afind">'
-        + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
-        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find">'
-        + '<nav class="salt-nav nkinds afilnav" aria-label="Show only"><div class="salt-nav__links afil" id="afil" role="tablist">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="salt-nav__link nktab' + (k ? "" : " salt-nav__link--active") + '" role="tab" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-selected="' + (k ? "false" : "true") + '">' + w
-          + '<span class="nktab__n"></span></button>').join("") + "</div></nav>"
-        + '<p class="lead" id="scount"></p>'
+        /* 16 Nov 2026, the move to Ambient (place H): a notice leads, money first, then the find field and the filters, counted, as Ambient's Search and Filters; the accounts are
+           rows in the first pane and the open account the second, which holds its one main action at its foot */
+        + '<div class="amb-stack afind">'
+        + '<div class="amb-notice alead" id="alead" hidden>' + AMB.glyph("info") + '<span id="aleadT"></span></div>'
+        + '<div class="amb-search">' + AMB.glyph("search", "sm")
+        + '<input class="amb-input" id="rq" type="search" autocapitalize="none" autocorrect="off" '
+        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>'
+        + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
+          '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
+          + '<span class="amb-segment__count"></span></button>').join("") + "</div>"
+        + '<p class="amb-field__hint" id="scount"></p>'
         + "</div>"
-        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" class="salt-pane" hidden></div></div>'
+        + '<div class="amb-split amb-split--panes asplit"><div id="rlist" class="amb-stack alist"></div><div id="aside" class="amb-stack">'
+        + '<p class="amb-empty" id="anone">Choose an account.</p><div id="aopen" hidden></div></div></div>'
         + "</div>"
-        + '<section class="chatgrid" data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
-        + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
-        + '<div id="makerChatList"></div><div id="makerChatOpen" class="salt-pane" hidden></div></section>'
-        + '<div id="oLinks" data-in="customers.links">'
-        + "<h2>Guest links</h2>"
-        + '<p class="lead">A guest link opens the +30% list for everybody; naming whose friend it is stays your note.</p>'
-        + '<label class="lbl salt-field__label" for="gintro">Whose friend?</label>'
-        + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
-        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'
-        + '<label class="lbl salt-field__label" for="glabel">A note for you</label>'
-        + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
-        + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label">'
-        + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
+        /* 16 Nov 2026, the move to Ambient (place H): Messages is a notice and two panes, the threads and the one open, which ends in its compose box as its foot */
+        + '<div class="chatgrid" data-in="customers.messages"><div class="amb-stack"><h2 id="makerChatTitle" class="amb-vh">Messages</h2>'
+        + '<div class="amb-notice chatnote">' + AMB.glyph("info") + '<span id="makerChatStatus" role="status" aria-live="polite"></span></div></div>'
+        + '<div class="amb-split amb-split--panes chatsplit"><div id="makerChatList" class="amb-stack"></div><div id="chatside" class="amb-stack">'
+        + '<p class="amb-empty" id="chatnone">Choose a thread.</p><div id="makerChatOpen" hidden></div></div></div></div>'
+        /* Links: the guest links and the join links, a row each, its address, code and moves under it once opened */
+        + '<div id="oLinks" class="amb-stack" data-in="customers.links">'
+        + '<h2 class="amb-section">Guest links</h2>'
+        + '<p class="amb-field__hint">A guest link opens the +30% list for everybody; naming whose friend it is stays your note.</p>'
+        + '<label class="amb-field"><span class="amb-field__label">Whose friend?</span>'
+        + '<input class="amb-input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
+        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer"></label>'
+        + '<label class="amb-field"><span class="amb-field__label">A note for you</span>'
+        + '<input class="amb-input" id="glabel" type="text" maxlength="60" '
+        + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label"></label>'
+        + '<button class="amb-pill amb-pill--block" type="button" id="gmake" data-act="link.make">Make a link</button>'
         /* 13 Oct 2026 (stress): the answer to Make a link stands under it, where it went to the page's one line at the foot of Customers */
-        + '<p class="msg osaid" id="gmsg" role="status" aria-live="polite"></p>'
-        + '<div id="glist"></div>'
-        + '<div id="jlist"></div>'
+        + '<p class="amb-field__hint osaid" id="gmsg" role="status" aria-live="polite"></p>'
+        + '<div id="glist" class="amb-stack"></div>'
+        + '<div id="jlist" class="amb-stack"></div>'
         + "</div>"
-        + '<div id="oCards" data-in="customers.associates">'
-        + "<h2>Associates report card</h2>"
-        + '<p class="lead" id="ccount"></p>'
-        + '<div id="clist"></div>'
+        + '<div id="oCards" class="amb-stack" data-in="customers.associates">'
+        + '<h2 class="amb-section">Associates report card</h2>'
+        + '<p class="amb-field__hint" id="ccount"></p>'
+        + '<div id="clist" class="amb-stack"></div>'
         + "</div>"
         + "</div></div>"
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + '<h1 class="sr">Record</h1>'
-        + '<p class="sr">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
+        + aHero("Record", "")
+        + '<p class="amb-vh">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody">'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + '<h1 class="sr">Shop</h1>'
-        + '<p class="sr">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
+        + aHero("Shop", "")
+        + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody">'
-        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle" class="sr">Shop hours</h2>'
-        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the glance, then the week */
-        /* 26 Oct 2026, his word (Hours "the same change" as Notice and Practice): every part of Hours a group of settings, in one column */
-        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="salt-settings__foot" id="makerHoursStatus">Reading.</p></div>'
+        /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the week; 26 Oct 2026 (his word): every part of Hours a group of settings.
+           16 Nov 2026, the move to Ambient (place I): Hours is Ambient's panes, Now, the week of spans, the points and Help in the first stack, the open day in the second, its one foot Done */
+        + '<div class="amb-split amb-split--panes hsplit" data-in="shop.hours"><div class="amb-stack">'
+        + '<h2 id="makerHoursTitle" class="amb-vh">Shop hours</h2>'
+        + '<section id="makerNowCard" class="anow" aria-label="Now"><div id="makerNow"><p class="amb-settings__foot" id="makerHoursStatus">Reading.</p></div>'
         + '<p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div class="hsplit"><div id="makerSchedule"></div><aside id="makerDayPane" class="hpane salt-pane" aria-label="The open day"></aside></div></section>'
-        + '<section class="apoints-sec" data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="salt-settings__head">Collection points</h2>'
-        + '<p class="msg" id="makerPointsStatus">Reading.</p>'
+        + '<div id="makerSchedule"></div>'
+        + '<section class="apoints-sec" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle" class="amb-section">Collection points</h2>'
+        + '<p class="amb-settings__foot" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'
         /* 21 Oct 2026 (P8): the customer's Help, read only, under the hours and the points it speaks of */
         + helpCard(true)
-        + '<section data-in="shop.market" aria-labelledby="makerMarketTitle"><h2 id="makerMarketTitle" class="sr">Market</h2><div id="makerMarket"></div></section>'
-        + '<section data-in="shop.calendar" aria-labelledby="makerCalTitle"><h2 id="makerCalTitle" class="sr">Calendar</h2><div id="makerCalendar"></div></section>'
-        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle" class="sr">Notice</h2>'
-        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
-        /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
-           shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
-        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle" class="sr">This device</h2>'
-        + '<div class="salt-settings adevice">' + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</div>"
-        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</section>"
+        + '</div><div class="amb-stack" id="makerDayPane" aria-label="The open day"></div></div>'
+        + '<div class="amb-stack" data-in="shop.market"><h2 id="makerMarketTitle" class="amb-vh">Market</h2><div id="makerMarket"></div></div>'
+        + '<div class="amb-stack" data-in="shop.calendar"><h2 id="makerCalTitle" class="amb-vh">Calendar</h2><div id="makerCalendar"></div></div>'
+        + '<div class="amb-stack" data-in="shop.notice"><h2 id="makerBulletinTitle" class="amb-vh">Notice</h2>'
+        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></div>'
+        + '<div id="mTest" class="mtest amb-stack" data-in="shop.practice"></div>'
+        /* 15 Nov 2026: This device holds the one unlock and his notifications; light and dark follow the device (his answer of 14 Nov 2026) */
+        + '<div id="oLook" class="amb-stack" data-in="shop.device"><h2 id="oLookTitle" class="amb-vh">This device</h2>'
+        + '<div class="amb-settings adevice"><ul class="amb-settings__list">' + vaultRow() + (test ? "" : alertRow()) + "</ul></div>"
+        + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</div>"
         + "</div></div>"
-        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
-        + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
-          '<span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + '</span><span class="salt-appbar__label">' + w + "</span>"
-          + (p ? "" : '<span class="salt-appbar__count" data-count="' + m + '"></span>'))).join("") + "</nav>"
-        /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script); none on the test surface */
-        + (test ? "" : '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>")
+        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
+        + '<div class="amb-dock"><div id="apBar" class="amb-savebar apbar" hidden></div><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
+          AMB.glyph(ADMIN_GLYPH[p === "messages" ? "customers" : m]) + "<span>" + w + "</span>"
+          + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("") + "</nav></div>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
-        + '<div id="aEnded" class="gate" hidden><h1>Your sign-in has ended</h1>'
-        + '<p class="lead">Sign in again to carry on.</p>'
-        + '<a class="salt-pill salt-pill--md btn" href="/all" data-act="ended.sign-in">Sign in again</a></div>'
-        /* the first-open choice Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded
-           alone (body.ended), and the owner's script takes this down first (stmt/owner.js, ended) */
-        + lookSheet(true) + vaultSheet()
+        + '<div id="aEnded" class="amb-shell" data-mood="slate" hidden><main class="amb-screen"><header class="amb-hero amb-mesh">'
+        + '<h1 class="amb-hero__title">Your sign-in has ended</h1><p class="amb-hero__sub">Sign in again to carry on.</p>'
+        + '<div class="amb-cluster"><a class="amb-pill" href="/all" data-act="ended.sign-in">Sign in again</a></div></header></main></div>'
+        /* the names Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded alone (body.ended) */
+        + vaultSheet()
       : "")
-    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
-    /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Admin and carries none */
-    + (owner ? "" : '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + wt("p", 'class="salt-eyebrow salt-eyebrow--copper"', "door.app"))
-    + wt("h1", "", "door.h")
-    + wt("p", 'class="lead"', "door.lead")
+    /* 16 Nov 2026, THE MOVE TO AMBIENT (place D): THE DOOR is one shell of the system, the hero naming the app (its one name, a glass chip) over Sign in,
+       and the lock screen's own form: a field for each secret, the password's Show a quiet pill beside it, one solid Sign in, then the other ways in under
+       "or". His own page carries the door hidden (Access is his door) and no app name. */
+    + '<div id="gate" class="amb-shell" data-mood="lagoon"' + (owner ? " hidden" : "") + '><main class="amb-screen">'
+    + '<header class="amb-hero amb-hero--compact amb-mesh">' + (owner ? "" : wt("span", 'class="amb-chip amb-chip--glass"', "door.app"))
+    + wt("h1", 'class="amb-hero__title"', "door.h") + wt("p", 'class="amb-hero__sub"', "door.lead") + "</header>"
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
        fill the door; the six boxes of 16 Sep could not be filled by anything but fingers */
-    + '<div id="doorBox"><form id="f" novalidate>'
-    + '<div class="salt-field">' + wt("label", 'class="salt-field__label" for="un"', "door.un")
-    + '<input class="fld salt-field__input salt-field__input--mono" id="un" name="username" type="text" value="' + u + '" '
+    + '<div id="doorBox" class="amb-stack"><form id="f" class="amb-form" novalidate>'
+    + '<label class="amb-field" for="un">' + wt("span", 'class="amb-field__label"', "door.un")
+    + '<input class="amb-input" id="un" name="username" type="text" value="' + u + '" '
     + 'autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="unHint">'
-    + wt("span", 'class="salt-field__hint" id="unHint"', "door.unHint") + "</div>"
-    + '<div class="salt-field">' + wt("label", 'class="salt-field__label" for="pw"', "door.pw")
-    + '<div class="pwrow"><input class="fld salt-field__input salt-field__input--mono" id="pw" name="password" type="password" '
-    + 'autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pwHint">'
-    + wt("button", 'class="salt-ghost" id="pwShow" type="button" aria-pressed="false" aria-controls="pw"', "door.show") + "</div>"
-    + wt("span", 'class="salt-field__hint" id="pwHint"', "door.pwHint") + "</div>"
-    /* v692: remembering, in the words the link uses (S3 3.7) */
-    + '<label class="rem" for="rem"><input type="checkbox" id="rem" checked>'
-    + wt("span", "", "door.rem") + "</label>"
-    + wt("button", 'class="btn salt-pill salt-pill--md" id="go" type="submit"', "door.go")
-    + "</form>"
+    + wt("span", 'class="amb-field__hint" id="unHint"', "door.unHint") + "</label>"
+    + '<div class="pwrow"><label class="amb-field" for="pw">' + wt("span", 'class="amb-field__label"', "door.pw")
+    + '<input class="amb-input" id="pw" name="password" type="password" '
+    + 'autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pwHint"></label>'
+    + wt("button", 'class="amb-pill amb-pill--quiet" id="pwShow" type="button" aria-pressed="false" aria-controls="pw"', "door.show") + "</div>"
+    + wt("p", 'class="amb-field__hint" id="pwHint"', "door.pwHint")
+    /* v692: remembering, in the words the link uses (S3 3.7): a row of settings with its switch */
+    + '<div class="amb-settings"><ul class="amb-settings__list"><li><label class="amb-setting" for="rem">'
+    + wt("span", 'class="amb-setting__name"', "door.rem") + '<input type="checkbox" role="switch" class="amb-switch" id="rem" checked></label></li></ul></div>'
+    + wt("button", 'class="amb-pill amb-pill--block" id="go" type="submit"', "door.go")
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
     /* S3 fix: a remembered phone the site could not open just now tries again from here, which a saved app with no
        reload needs */
-    + (owner ? "" : wt("button", 'class="btn salt-ghost" id="remAgain" type="button" hidden', "door.again"))
+    + (owner ? "" : wt("button", 'class="amb-pill amb-pill--quiet amb-pill--block" id="remAgain" type="button" hidden', "door.again"))
     /* S3 3.11: a code from another device, or from Salt Admin at the counter. S3 fix: both inside the form's box, so
        the signed-out Sheet carries them with it */
-    + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
+    + (owner ? "" : wt("button", 'class="amb-pill amb-pill--quiet amb-pill--block" id="toCode" type="button"', "door.toCode"))
     /* Step 6 (his decisions of 29 Sep 2026): a passkey saved on the account opens it; drawn where the browser has passkeys */
-    + (owner ? "" : wt("button", 'class="btn salt-ghost" id="pkGo" type="button" hidden', "door.pk"))
-    + wt("p", 'class="salt-insight"', "door.help")
-    + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet() + lookSheet())
+    + (owner ? "" : wt("button", 'class="amb-pill amb-pill--quiet amb-pill--block" id="pkGo" type="button" hidden', "door.pk"))
+    + "</form>" + wt("p", 'class="amb-field__hint"', "door.help")
+    + "</div></main></div>"
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
     /* plan version 7 (Fable's review): Full statement on his View as them and Order as them too, the owner page being theirs read in his hands */
     + fullSheet()
-    /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
-       the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
-       and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
-    + '<div id="tabs" class="cshell" hidden>' + placesRail() + '<div class="cmain">'
-    + '<div id="barw" hidden><div class="bar' + (owner ? " vbar" : "") + '">'
-    /* S9 9.5: on his page an account is viewed, never signed into, so the bar says whose it is and that it is
-       read only, and its one control takes him back to that account on Accounts. A customer's Log out is This
-       device's, on Account (S7 7.1), so their bar holds nothing until it has a lapse to say */
-    + (owner ? '<span><b id="whoacct"></b><span id="cd"></span><span id="vas">Viewing as <b id="vasU"></b>, read only</span></span>'
-      + '<button type="button" id="lock" data-act="view.back">Back to accounts</button>' : "")
-    /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
-    + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span>' + wt("button", 'type="button" id="lapseGo"', "link.go") + "</div>"
-    + "</div></div>"
-    /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
-       sits in it, on every view of the saved app */
-    + '<header class="chead' + (owner ? "" : " salt-deskbar cbar") + '">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
-    + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p>'
-    /* 21 Oct 2026, his word: the Counter's header is the bar again, on every place: where they are, then what waits on them (cBar) */
-    + (owner ? "" : '<div class="salt-deskbar__live"><div class="salt-deskbar__chips" id="cBarChips" role="group"' + wl("place.bar") + '></div></div>') + '</header>'
+    /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, Home first. 15 Nov 2026, THE MOVE TO AMBIENT: one Ambient shell, always Lagoon for now (the
+       heat reaches the Counter only after Fable's review, and a customer sees the mood alone, never told); the app bar holds the bell; the
+       screen opens on the place's hero, its name the title, whose account it is under it and the time under that; then his read-only line
+       on View as them and Order as them, or a lapsed session's, each a notice with its one quiet pill; then the places; then one dock. */
+    + '<div id="tabs" class="amb-shell amb-shell--rail amb-shell--page" data-mood="lagoon" hidden>'
+    + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
+    + '<main class="amb-screen amb-screen--docked">'
+    + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")
+    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p><p class="amb-hero__time" data-clock></p></header>'
+    + '<div id="barw" class="amb-stack" hidden>'
+    /* S9 9.5: on his page an account is viewed, never signed into, so the line says whose it is and that it is read only, and its one
+       control takes him back to that account on Accounts. A customer's Log out is This device's, on Account (S7 7.1) */
+    + (owner ? '<div class="amb-notice">' + AMB.glyph("info") + '<span><b class="amb-notice__title" id="whoacct"></b><span id="cd"></span><span id="vas">Viewing as <b id="vasU"></b>, read only</span></span>'
+      + '<button type="button" class="amb-pill amb-pill--quiet amb-pill--sm" id="lock" data-act="view.back">Back to accounts</button></div>' : "")
+    /* S1 1.5: a lapsed session says so where the reader is, with the one way back */
+    + '<div id="lapse" class="amb-notice amb-notice--warn" role="alert" hidden>' + AMB.glyph("info") + '<span id="lapseT"></span>'
+    + wt("button", 'type="button" class="amb-pill amb-pill--quiet amb-pill--sm" id="lapseGo"', "link.go") + "</div>"
+    + "</div>"
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
-    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
-    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div></div>'
-    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div>'
-    /* Counter Batch A: their latest open order, a pill over the App bar and the pay foot on a phone and a banner under To pay now from
-       1080px: one element, so the two are never both shown */
-    + '<div id="hLive"></div>'
-    /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
-    + '<div id="homeFoot" class="payfoot" hidden></div></div>'
+    /* 16 Nov 2026, THE MOVE TO AMBIENT: Home is a split of two stacks (two columns from 960px). Each part stands in its own box, drawn afresh
+       and put on the page only where it reads differently, and the box takes no place of its own (display: contents in the site layer). The
+       foot is the one Pay, the last thing in the first stack, where Ambient keeps it above the dock; their latest open order is the dock's
+       mini bar (hLive, in placesDock). */
+    + '<div id="pHome" class="amb-split"><div class="amb-stack">' + noticeCard(bulletin)
+    + '<div id="payHead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div>'
+    + '<div id="homeFoot" class="amb-foot" hidden></div></div>'
+    + '<div class="amb-stack"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
        statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
-    + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aGlance"></div><div id="aThread"></div>'
+    /* 16 Nov 2026, THE MOVE TO AMBIENT (place D): ACCOUNT is one stack of the system's parts: the glance and the thread row, This device and Help, then the
+       statement (its Month field beside the lines it filters and nothing after it); the order is the phone's, This device above the statement, and from 960px
+       the device and its help stand in a second column. The statement is drawn into #out as the system's own parts (tools/make_statements.mjs). */
+    + '<div id="pStmt" hidden><div id="acct" class="acct amb-stack"><div id="aGlance"></div><div id="aThread"></div>'
     + (owner ? "" : thisDevice() + helpCard())
-    + '<div class="acct__main">'
-    + '<div id="mfil" class="salt-settings mfil" hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
-    + '<div id="out"></div>'
+    + '<div class="acct__main amb-stack">'
+    + '<div id="mfil" class="mfil" hidden></div><p class="mfnote amb-basis" id="mfnote" role="status"></p>'
+    + '<div id="out" class="amb-stack"></div>'
     + '</div>'
     + "</div></div>"
-    + '<div id="pPrices" class="panel" hidden></div>'
-    + '<div id="pOrder" class="panel" hidden></div>'
+    + '<div id="pPrices" class="amb-stack" hidden></div>'
+    + '<div id="pOrder" hidden><div id="oPanes" class="amb-split amb-split--panes"></div></div>'
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
-    + '<div id="pCard" class="panel" hidden></div>'
-    + "</div>" + placesBar() + "</div>"
+    + '<div id="pCard" class="amb-stack" hidden></div>'
+    + "</main>" + placesDock() + "</div>"
+    + ambScript(nonce)
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(test ? TEST_POLL_MS : POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
       /* Speed Wave 2 L2: the live socket is the real site's; the test surface keeps its two-second poll and opens none */
@@ -2472,7 +1536,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
       /* 20 Oct 2026: and with it the one distance (stmt/geo.js, engine/geo.mjs), carried as it is, so no customer's page carries it (Fable) */
-      .replace("/*__OWNER_JS__*/", () => (owner ? String(GEO_ENGINE.haversineKm) + "\n" + OWNER_JS : ""))
+      /* 15 Nov 2026: and the kit's helpers, the server's own function as its source (amb, stmt/page.js ambKit) */
+      .replace("/*__OWNER_JS__*/", () => (owner ? String(GEO_ENGINE.haversineKm) + "\nvar amb=(" + String(ambKit) + ")(esch,Object.keys(PSYM));\n" + OWNER_JS : ""))
       /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Salt Admin's practice mode;
          on a real page each marker is taken out, leaving the script it always was */
       .replace("/*__TS__*/", () => (test ? TEST_SHIM.replace("__TCFG__", JSON.stringify({ base: String(test.base || ""), owner: !!owner, u: test.u || "", pw: TEST_PASS })) : ""))
@@ -2514,7 +1579,7 @@ const TEST_SHIM = `
       var s=null; try{ s=window[name]; }catch(e){ s=null; }
       function keys(){ var out=[]; for(var i=0;i<s.length;i++){ var k=s.key(i); if(k&&k.indexOf(P)===0) out.push(k.slice(P.length)); } return out; }
       var api={
-        getItem:function(k){ var v=s.getItem(P+k); if(v==null&&k==='salt-look') v=s.getItem(k); return v; },
+        getItem:function(k){ return s.getItem(P+k); },
         setItem:function(k,v){ s.setItem(P+k,String(v)); },
         removeItem:function(k){ s.removeItem(P+k); },
         key:function(i){ var a=keys(); return i<a.length?a[i]:null; },
@@ -2565,38 +1630,39 @@ const CLIENT_JS = `
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
   /* THE NOTICE (20 Sep 2026): drawn from what the page was served with, read again every sixth poll. Counter Batch A (his decision of
-     18 Oct 2026): one line at a time, the next every BULL_MS, a dot a line and Pause to hold it; under reduced motion every line stands
-     and neither the dots, Pause nor a timer is drawn. The card is never a live region. */
-  var BULL=__BULL__, bullN=0, BULL_MS=6000, bullAt=0, bullHeld=false, bullTimer=null;
+     18 Oct 2026): one line at a time, the next every BULL_MS, and Pause to hold it; under reduced motion every line stands and neither
+     Pause nor a timer is drawn. 16 Nov 2026, the move to Ambient: the lines are spans of the one notice, the others hidden while it turns,
+     and the dots are gone (Ambient has no part for them). The card is never a live region. */
+  var BULL=__BULL__, bullN=0, BULL_MS=6000, bullAt=0, bullHeld=false, bullTimer=null, bullAll=true;
   function bullStill(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   function bullShow(){
     var box=document.getElementById('bull'); if(!box) return;
-    [].forEach.call(box.querySelectorAll('.salt-notice__line'),function(p,i){ p.classList.toggle('salt-notice__line--on',i===bullAt); });
-    [].forEach.call(box.querySelectorAll('.salt-notice__dot'),function(d,i){ d.classList.toggle('salt-notice__dot--on',i===bullAt); });
+    [].forEach.call(box.querySelectorAll('.hline'),function(p,i){ p.hidden=!bullAll&&i!==bullAt; });
   }
+  /* the card stands only while it has something to say: the hours read, or a notice */
+  function todayShow(){ var t=document.getElementById('today'), o=document.getElementById('todayOpen'), b=document.getElementById('bull'); if(t&&o&&b) t.hidden=o.hidden&&b.hidden; }
   function bullTurn(){ var n=(BULL.lines||[]).length; if(bullHeld||n<2) return; bullAt=(bullAt+1)%n; bullShow(); }
   function bullDraw(b){
     BULL=b||{lines:[]};
     var box=document.getElementById('bull'); if(!box) return;
     var lines=BULL.lines||[], still=bullStill(), turns=lines.length>1&&!still;
-    box.hidden=!lines.length;
-    var ls=box.querySelector('.salt-notice__lines'), dots=box.querySelector('.salt-notice__dots'), pz=box.querySelector('.salt-notice__pause');
-    ls.textContent=''; dots.textContent='';
+    box.hidden=!lines.length; todayShow();
+    var ls=box.querySelector('.hlines'), pz=box.querySelector('.hpause');
+    ls.textContent='';
     if(bullAt>=lines.length) bullAt=0;
-    lines.forEach(function(l,i){
-      var p=document.createElement('p'); p.className='salt-notice__line'; p.textContent=l; ls.appendChild(p);
-      if(turns){ var d=document.createElement('span'); d.className='salt-notice__dot'; dots.appendChild(d); }
-    });
-    dots.hidden=!turns; pz.hidden=!turns;
+    bullAll=!turns;
+    lines.forEach(function(l){ var p=document.createElement('span'); p.className='hline'; p.textContent=l; ls.appendChild(p); });
+    pz.hidden=!turns;
     bullShow();
     if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
     if(turns) bullTimer=setInterval(bullTurn,BULL_MS);
   }
   (function(){
-    var bx=document.getElementById('bull'), pz=bx&&bx.querySelector('.salt-notice__pause'); if(!pz) return;
+    var bx=document.getElementById('bull'), pz=bx&&bx.querySelector('.hpause'); if(!pz) return;
     pz.addEventListener('click',function(){
       bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');
       pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause')); pz.setAttribute('data-wl',bullHeld?'bull.play':'bull.pause');
+      pz.textContent=tw(bullHeld?'bull.play':'bull.pause');
     });
   })();
   /* the open or closed line, off /hours: Open until the next change, or Closed and when it opens; nothing while the hours are not read */
@@ -2605,11 +1671,11 @@ const CLIENT_JS = `
   function todayDraw(){
     var chip=document.getElementById('todayOpen'), line=document.getElementById('todayLine'); if(!chip||!line) return;
     var h=counterHours, known=!!h&&!hoursError&&typeof h.open==='boolean';
-    chip.hidden=!known; line.hidden=!known;
+    chip.hidden=!known; line.hidden=!known; todayShow();
     if(!known){ chip.textContent=''; line.textContent=''; return; }
-    chip.className='today__open salt-status salt-status--'+(h.open?'verdigris':'mist'); chip.textContent=tw(h.open?'today.open':'today.closed');
+    chip.textContent=tw(h.open?'today.open':'today.closed');
     line.textContent='';
-    var at=h.open?h.nextChange:h.nextOpen, lead=el('span','today__when');
+    var at=h.open?h.nextChange:h.nextOpen, lead=el('span');
     if(at) lead.textContent=h.open?tw(sameDay(at)?'today.until':'today.untilOn',{t:hhmm(at), d:stamp(at)}):tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)});
     if(lead.textContent){ line.appendChild(lead); line.appendChild(document.createTextNode(' ')); }
     line.appendChild(document.createTextNode(tw(h.open?'today.openB':'today.closedB')));
@@ -2798,30 +1864,12 @@ const CLIENT_JS = `
     }
     return svg;
   }
-  /* PLAN VERSION 10: the coin (coinSvg's twin): the ring in the book's hue by its index, the shape, his letter under it; hidden from a reader */
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: a book's mark standing alone is the mark thumb (markThumb, below): the ring in the book's hue by its index here, the
+     app's own drawing and his letter, never a product word. The coin of plan version 10 (the salt- ring and its stylesheet rules) is gone from the page. */
   var COINB=Object.keys(PSYM).filter(function(k){ return k!=='_'; });
-  function coin(product,size){
-    var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k);
-    var L=b>=0&&Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k].l:'';
-    var w=el('span','salt-coin salt-coin--'+(size||'md')); if(b>=0) w.setAttribute('data-b',String(b)); w.setAttribute('aria-hidden','true');
-    var svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 48 48'); svg.setAttribute('aria-hidden','true'); svg.setAttribute('focusable','false');
-    var c=document.createElementNS(NS,'circle'); c.setAttribute('class','salt-coin__ring'); c.setAttribute('cx','24'); c.setAttribute('cy','24'); c.setAttribute('r','22.5'); svg.appendChild(c);
-    var g=document.createElementNS(NS,'g'); g.setAttribute('transform','translate(13.8,6.3)scale(0.85)');
-    var d=document.createElementNS(NS,'path'); d.setAttribute('class','salt-coin__shape'); d.setAttribute('d',b>=0?PSYM[k]:PSYM._); g.appendChild(d); svg.appendChild(g);
-    if(L){ var t=document.createElementNS(NS,'text'); t.setAttribute('class','salt-coin__let'); t.setAttribute('x','24'); t.setAttribute('y','39.5'); t.setAttribute('text-anchor','middle');
-      t.setAttribute('font-size',String(L.length<=1?13:L.length<=3?12:11)); t.textContent=L; svg.appendChild(t); }
-    w.appendChild(svg); return w;
-  }
-  /* a size and its mark, as one phrase: "2.5 unit" then the cube; outside a card alone (his note of 28 Sep 2026) */
-  function withMark(product,text,px){
-    var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
-    w.appendChild(psym(product,px||20));
-    w.appendChild(el('span','sr',pshape(product)));
-    return w;
-  }
   /* a book's heading: its mark alone, named by the shape (and by its light, where it has one); no shape word is drawn (his word of 12 Oct 2026) */
   function pmarkHead(tag,product){
-    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md'));
+    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));
     return h;
   }
   /* a mark leading a note: the lines of a sheet that several products share; a reader is told the shape and nothing but the mark is drawn */
@@ -2833,7 +1881,7 @@ const CLIENT_JS = `
      once (mtileSvg's twin). The shape word is never drawn (his word of 12 Oct 2026). */
   function mtile(product,q,u,px){
     var w=el('span','mtile'), words=unitsOf(q,u); w.appendChild(el('span','sr',pshape(product)+' '+words));
-    w.appendChild(px&&px<28?psym(product,px):coin(product,'sm'));
+    w.appendChild(px&&px<28?psym(product,px):markThumb(product,'md'));
     var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);
     return w;
   }
@@ -2860,10 +1908,10 @@ const CLIENT_JS = `
       var cd=ev.clipboardData||window.clipboardData, got=shaped(cd&&cd.getData('text'), f[1]);
       if(!got) return;
       ev.preventDefault();
-      f[0].value=got; f[0].removeAttribute('aria-invalid'); f[0].classList.remove('salt-field__input--error');
+      f[0].value=got; f[0].removeAttribute('aria-invalid'); f[0].parentNode.classList.remove('is-error');
       if(f[0]===un) try{ pw.focus(); }catch(e){}
     });
-    f[0].addEventListener('input', function(){ f[0].removeAttribute('aria-invalid'); f[0].classList.remove('salt-field__input--error'); });
+    f[0].addEventListener('input', function(){ f[0].removeAttribute('aria-invalid'); f[0].parentNode.classList.remove('is-error'); });
   });
   var pwShow=document.getElementById('pwShow');
   function showPw(on){ pw.type=on?'text':'password'; pwShow.setAttribute('aria-pressed',on?'true':'false'); setW(pwShow,on?'door.hide':'door.show'); }
@@ -3236,16 +2284,16 @@ const CLIENT_JS = `
      code is a tap of its own. Every answer is on the line under the controls. Notifications are drawDevice's row, above.
      His read-only view has none of it: those are not his devices. */
   var devSlot=document.getElementById('devSlot'), devN=0, devSaid={t:'',bad:false};
-  var devSheetEl=document.getElementById('devSheet'), devScrim=document.getElementById('devScrim'), devCode=document.getElementById('devCode'),
+  var devSheetEl=document.getElementById('devSheet'), devCode=document.getElementById('devCode'),
       devCopy=document.getElementById('devCopy'), devMsg=document.getElementById('devMsg'), devQr=document.getElementById('devQr'), devHo='', devM=0;
   /* a device's line: its name, This one beside it, and how it is signed in under it (devRow is drawDevice's) */
   function devLine(label, value, flag){
-    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
-    l.appendChild(el('span','salt-ledger__label',label));
-    if(value) v.appendChild(value);
-    l.appendChild(v); r.appendChild(l);
-    if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
-    return r;
+    /* 16 Nov 2026 (place D): a device is a row of the system's settings: its name (and This one beside it), how it is signed in under it */
+    var li=el('li'), r=el('div','amb-setting'), nm=el('span','amb-setting__name',label);
+    if(value){ nm.appendChild(document.createTextNode(' ')); nm.appendChild(value); }
+    if(flag) nm.appendChild(el('span','obill__sub',flag));
+    r.appendChild(nm); li.appendChild(r);
+    return li;
   }
   function devDay(iso,L){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month&&p.year===q.year?p.hour+':'+p.minute:dmyOf(p,L); }catch(e){ return ''; } }
   /* S13 13.4: a device as the site filed it ("Android phone, Chrome", deviceOf), its kind in the reader's words; a maker's
@@ -3256,8 +2304,8 @@ const CLIENT_JS = `
   }
   /* 28 Oct 2026 (his yes, the statement in the language): This device's three buttons are rows of its list, the name at the left and no
      pill, as his page's are; each keeps its request, and a word changed while it is held goes to the row's label, never over it */
-  function devQuiet(t){ var b=el('button','salt-settings__row salt-settings__row--action'); b.type='button'; b.appendChild(el('span','salt-settings__label',t)); return b; }
-  function devSet(b,t){ var l=b.querySelector('.salt-settings__label'); (l||b).textContent=t; }
+  function devQuiet(t){ var li=el('li'), b=el('button','amb-action'); b.type='button'; b.appendChild(el('span','amb-action__label',t)); li.appendChild(b); li.button=b; return li; }
+  function devSet(b,t){ var l=(b.button||b).querySelector('.amb-action__label'); (l||b).textContent=t; }
   async function drawDev(){
     if(!devSlot) return;
     if(!session||view||OWNER){ devN++; devSlot.textContent=''; return; }
@@ -3273,22 +2321,22 @@ const CLIENT_JS = `
     /* the list is drawn afresh: a control in it that holds focus (Sign in another device, as its Sheet closes) is given it again */
     var held=document.activeElement&&devSlot.contains(document.activeElement)?document.activeElement.getAttribute('data-back')||'':'';
     devSlot.textContent='';
-    var list=el('div','salt-ledger salt-ledger--plain');
+    var list=el('ul','amb-settings__list');
     var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
     devs.forEach(function(d){
       list.appendChild(devLine(devName(d.label)||tw('dev.aDevice'), d.here?chipEl('verdigris',tw('dev.thisOne')):null,
         d.passkey?tw('dev.pkKept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):d.kept?tw('dev.kept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):tw('dev.visit',{a:Dd(devDay,d.at)})));
     });
     if(!r.body.ok) list.appendChild(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
-    devSlot.appendChild(list);
-    var acts=el('div','salt-settings dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
-    var another=devQuiet(tw('dev.another')); another.setAttribute('data-back','dev:another'); another.addEventListener('click', function(){ openDevSheet(another); });
+    var lw=el('div','amb-settings'); lw.appendChild(list); devSlot.appendChild(lw);
+    var acts=el('ul','amb-settings__list dacts'), note=el('p','msg devnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
+    var another=devQuiet(tw('dev.another')), anb=another.button; anb.setAttribute('data-back','dev:another'); anb.addEventListener('click', function(){ openDevSheet(anb); });
     acts.appendChild(another);
     if(others){
       var so=devQuiet(tw('dev.outOthers')), armed=null;
-      so.addEventListener('click', async function(){
+      so.button.addEventListener('click', async function(){
         if(!armed){ devSet(so,tw('dev.outAgain')); armed=setTimeout(function(){ armed=null; devSet(so,tw('dev.outOthers')); }, 4000); return; }
-        clearTimeout(armed); armed=null; so.disabled=true; devSet(so,tw('dev.outGoing'));
+        clearTimeout(armed); armed=null; so.button.disabled=true; devSet(so,tw('dev.outGoing'));
         var s2=null; try{ s2=await phoneSub(); }catch(e){}
         var rr=remGet(), pm2=pkMine(), x=await api('/devices/signout',{token:rr&&rr.u===user?rr.t||null:null, passkey:pm2?pm2.c:null, endpoint:s2?s2.endpoint:null});
         devSaid=x.body.ok?{t:x.body.devices?tw(x.body.devices===1?'dev.outOne':'dev.outMany',{n:x.body.devices}):tw('dev.outNone'),bad:false}
@@ -3302,24 +2350,24 @@ const CLIENT_JS = `
       var pmine=pkMine();
       if(pmine){
         var pr=devQuiet(tw('dev.pkRemove')), parmed=null;
-        pr.addEventListener('click', function(){
+        pr.button.addEventListener('click', function(){
           if(!parmed){ devSet(pr,tw('dev.pkAgain')); parmed=setTimeout(function(){ parmed=null; devSet(pr,tw('dev.pkRemove')); }, 4000); return; }
-          clearTimeout(parmed); parmed=null; pr.disabled=true; pkRemove();
+          clearTimeout(parmed); parmed=null; pr.button.disabled=true; pkRemove();
         });
         acts.appendChild(pr);
       }else{
         var pn=await pkPrep();
         if(n!==devN||!session) return;
         var has=!!pn&&pn.has.length>0;
-        if(has){ var pu=devQuiet(tw('dev.pkUse')); pu.addEventListener('click', function(){ pkSave(pu, true); }); acts.appendChild(pu); }
-        var ps=devQuiet(tw(has?'dev.pkNew':'dev.pkSave')); ps.addEventListener('click', function(){ pkSave(ps, false); }); acts.appendChild(ps);
+        if(has){ var pu=devQuiet(tw('dev.pkUse')); pu.button.addEventListener('click', function(){ pkSave(pu.button, true); }); acts.appendChild(pu); }
+        var ps=devQuiet(tw(has?'dev.pkNew':'dev.pkSave')); ps.button.addEventListener('click', function(){ pkSave(ps.button, false); }); acts.appendChild(ps);
       }
     }
-    devSlot.appendChild(acts); devSlot.appendChild(note);
+    var aw=el('div','amb-settings'); aw.appendChild(acts); devSlot.appendChild(aw); devSlot.appendChild(note);
     if(held&&(!document.activeElement||document.activeElement===document.body)) focusBack(null,backFind(held));
     devSaid={t:'',bad:false};
   }
-  function chipEl(tone, t){ return el('span','salt-status salt-status--'+tone,t); }
+  function chipEl(tone, t){ return el('span','amb-chip'+(tone==='verdigris'?' amb-chip--pos':''),t); }
   function dsay(t,cls){ devMsg.textContent=t||''; devMsg.className='msg'+(cls?' '+cls:''); }
   async function mintDev(){
     var n=++devM;
@@ -3341,19 +2389,19 @@ const CLIENT_JS = `
   var devFrom=null;
   function openDevSheet(from){
     if(!devSheetEl||!curCk) return;
-    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false; behind(); bkOpen('dev',closeDevSheet);
+    devFrom=from; sheetUp(devSheetEl); behind(); bkOpen('dev',closeDevSheet);
     try{ devSheetEl.focus(); }catch(e){}
     mintDev();
   }
   function closeDevSheet(){
     if(!devSheetEl||devSheetEl.hidden) return;
-    devSheetEl.hidden=true; devScrim.hidden=true; behind(); bkDrop('dev'); devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
+    sheetDown(devSheetEl); behind(); bkDrop('dev'); devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
     focusBack(devFrom,backFind('dev:another'));
     drawDev();   /* S9 fix: the device the code signed in is on the list as the Sheet closes */
   }
   if(devSheetEl){
     document.getElementById('devX').addEventListener('click', closeDevSheet);
-    devScrim.addEventListener('click', closeDevSheet);
+    sheetWire(devSheetEl,function(){ closeDevSheet(); });
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeDevSheet(); });
     devCopy.addEventListener('click', function(){
       if(!devHo) return;
@@ -3484,11 +2532,11 @@ const CLIENT_JS = `
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; AMF.pick=null; mfnote.textContent='';
-    pPrices.textContent=''; pOrder.textContent=''; drawHome();
+    pPrices.textContent=''; spl().textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
     keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
-    closeDevSheet(); fsClose(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
+    closeDevSheet(); fsClose(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(history.state,'',location.pathname); }catch(e){}
@@ -3543,7 +2591,7 @@ const CLIENT_JS = `
      carrying the door's own form, and a sign-in there keeps the draft. The bar keeps a line with the way back,
      for a Sheet that was closed, or a site that could not be reached to reopen. */
   var lapse=document.getElementById('lapse'), opening=document.getElementById('opening'),
-      outSheet=document.getElementById('outSheet'), outScrim=document.getElementById('outScrim'),
+      outSheet=document.getElementById('outSheet'),
       doorBox=document.getElementById('doorBox');
   var reopening=null;
   /* S3 fix, 24 Sep 2026: THE PHONE REOPENS ONLY THE ACCOUNT ON SCREEN. It remembers one account, and another can be
@@ -3573,28 +2621,28 @@ const CLIENT_JS = `
     lapse.hidden=false;
     if(!kept) openSignedOut();
   }
-  var doorNext=null, codeHome=null;
+  var doorNext=null, doorHome=null, codeHome=null;
   function openSignedOut(){
     if(OWNER||!outSheet||!outSheet.hidden) return;
-    doorNext=doorBox.nextSibling;
+    doorNext=doorBox.nextSibling; doorHome=doorBox.parentNode;
     document.getElementById('outForm').appendChild(doorBox);
     if(user) un.value=user;
     say('');
-    outScrim.hidden=false; outSheet.hidden=false; behind(); bkOpen('out',closeSignedOut);
+    sheetUp(outSheet); behind(); bkOpen('out',closeSignedOut);
     try{ pw.focus(); }catch(e){}
   }
   /* quiet (=== true) when the page is leaving it, a sign-in done or a log out: focus has nowhere to go back to. Otherwise back to the bar's Sign in, whichever way it closed */
   function closeSignedOut(quiet){
     if(!outSheet||outSheet.hidden) return;
-    outSheet.hidden=true; outScrim.hidden=true; behind(); bkDrop('out');
+    sheetDown(outSheet); behind(); bkDrop('out');
     /* S3 fix: back where it came from, and the code screen too if the Sheet took it */
-    gate.insertBefore(doorBox, doorNext); doorBox.hidden=false;
+    (doorHome||gate).insertBefore(doorBox, doorNext&&doorNext.parentNode===(doorHome||gate)?doorNext:null); doorBox.hidden=false;
     if(codeHome&&outSheet.contains(codeBox)){ codeHome.p.insertBefore(codeBox, codeHome.n); codeBox.hidden=true; }
     if(quiet!==true) focusBack(null,function(){ return document.getElementById('lapseGo'); });
   }
   if(outSheet){
     document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); });
-    outScrim.addEventListener('click', function(){ closeSignedOut(); });
+    sheetWire(outSheet,function(){ closeSignedOut(); });
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeSignedOut(); });
   }
   document.getElementById('lapseGo').addEventListener('click', async function(){
@@ -3620,12 +2668,15 @@ const CLIENT_JS = `
     tab=t; tabs.setAttribute('data-place',t);
     [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
+    liveShow();
     placeTitle();
     if(tapped&&(!location.hash||placeOf(location.hash))){
       var p=PLACES.filter(function(x){ return x[0]===t; })[0];
       try{ history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
     }
     window.scrollTo(0,0);
+    /* 15 Nov 2026: the shell's screen is what scrolls now, so a place opens at its top */
+    var scr=tabs.querySelector('.amb-screen'); if(scr) scr.scrollTop=0;
     /* S5: an order drawn open while the place was elsewhere is seen when they turn to the place themselves. Only a tap:
        a road aimed at another order (a row on Home, a banner, See the order, Pay) passes here before drawing it, and
        the order left open would be marked seen without ever being shown */
@@ -3656,17 +2707,20 @@ const CLIENT_JS = `
     var then=klBits(new Date(readAt).toISOString()), now=klBits(new Date().toISOString());
     return then.day===now.day&&then.month===now.month&&then.year===now.year?then.hour+':'+then.minute:then.day+' '+mon3()[+then.month-1];
   }
+  /* 16 Nov 2026, the move to Ambient: what could not be read is a notice that needs care, its Try again a quiet pill beside it */
   function staleNode(){
-    var box=el('div','panel unread'); box.setAttribute('data-stale','');
-    var p=el('p','lead',tw('read.since',{t:readSince()})); p.setAttribute('role','status'); box.appendChild(p);
+    var box=el('div','amb-notice amb-notice--warn'); box.setAttribute('data-stale','');
+    box.appendChild(ambIcon('info'));
+    var p=el('span',null,tw('read.since',{t:readSince()})); p.setAttribute('role','status'); box.appendChild(p);
     return box;
   }
   function liveBad(){ var s=bundle&&bundle.statements.filter(function(x){ return x.live&&x.bad; })[0]; return s?s.bad:''; }
   function unreadNode(key,go){
-    var box=el('div','panel unread'); box.setAttribute('data-unread',key);
-    var p=el('p','lead',tw(key)); p.setAttribute('role','status'); box.appendChild(p);
+    var box=el('div','amb-notice amb-notice--warn'); box.setAttribute('data-unread',key);
+    box.appendChild(ambIcon('info'));
+    var p=el('span',null,tw(key)); p.setAttribute('role','status'); box.appendChild(p);
     if(go&&session&&!view&&!OWNER){
-      var b=el('button','btn salt-ghost',tw('door.again')); b.type='button';
+      var b=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('door.again')); b.type='button';
       b.addEventListener('click',async function(){ b.disabled=true; try{ await go(); }finally{ b.disabled=false; } });
       box.appendChild(b);
     }
@@ -3714,30 +2768,30 @@ const CLIENT_JS = `
     if(ol){
       ol.remove();
       mfil.textContent=''; mfil.hidden=true; mfnote.textContent=''; AMF.pick=null;
-      var fb=el('button','btn quiet salt-ghost',tw('acct.full')); fb.type='button'; fb.id='fsOpen'; fb.setAttribute('data-back','fs:open');
+      var fb=el('button','amb-pill amb-pill--quiet',tw('acct.full')); fb.type='button'; fb.id='fsOpen'; fb.setAttribute('data-back','fs:open');
       fb.addEventListener('click',function(){ fsOpen(fb); });
       out.appendChild(fb);
     } else drawMonths();
     window.scrollTo(0,0);
   }
   /* ---- THE FULL STATEMENT (plan version 7, 7c): the live document whole, the month filter working inside it, in the page's Sheet ---- */
-  var fsEl=document.getElementById('fsSheet'), fsScrim=document.getElementById('fsScrim'), fsOut=document.getElementById('fsOut'), fsFrom=null,
+  var fsEl=document.getElementById('fsSheet'), fsOut=document.getElementById('fsOut'), fsFrom=null,
       FSMF={root:fsOut, fil:document.getElementById('fsMf'), note:document.getElementById('fsNote'), pick:null, onPick:null};
   function liveDoc(){ return bundle&&bundle.statements.filter(function(x){ return x.live&&!x.bad&&x.body; })[0]||null; }
   function fsOpen(from){
     var lv=liveDoc(); if(!fsEl||!lv) return;
     fsFrom=from||null; fsOut.innerHTML=lv.body; FSMF.pick=null; mfBuild(FSMF);
-    fsScrim.hidden=false; fsEl.hidden=false; behind(); bkOpen('fs',fsClose);
+    sheetUp(fsEl); behind(); bkOpen('fs',fsClose);
     try{ fsEl.focus(); }catch(e){}
   }
   function fsClose(){
     if(!fsEl||fsEl.hidden) return;
-    fsEl.hidden=true; fsScrim.hidden=true; behind(); bkDrop('fs'); fsOut.textContent='';
+    sheetDown(fsEl); behind(); bkDrop('fs'); fsOut.textContent='';
     focusBack(fsFrom,backFind('fs:open'));
   }
   if(fsEl){
     document.getElementById('fsX').addEventListener('click', fsClose);
-    fsScrim.addEventListener('click', fsClose);
+    sheetWire(fsEl,function(){ fsClose(); });
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') fsClose(); });
   }
 
@@ -3762,9 +2816,9 @@ const CLIENT_JS = `
       rows[i].style.display=(!c.pick||m===c.pick)?'':'none';
     }
     /* C9: a list the month leaves empty goes with its heading, Refunds with nothing of that month under it */
-    var ls=c.root.querySelectorAll('.salt-lines');
+    var ls=c.root.querySelectorAll('table.amb-table');
     for(var j=0;j<ls.length;j++){
-      var rs=ls[j].querySelectorAll('.salt-lines__row'), any=false;
+      var rs=ls[j].querySelectorAll('tbody > tr'), any=false;
       for(var q=0;q<rs.length;q++) if(rs[q].style.display!=='none') any=true;
       var gone=rs.length>0&&!any, hd=ls[j].previousElementSibling;
       ls[j].style.display=gone?'none':'';
@@ -3784,15 +2838,8 @@ const CLIENT_JS = `
     months.sort().reverse();
     if(c.pick&&months.indexOf(c.pick)<0) c.pick=null;
     if(months.length<2){ c.pick=null; c.fil.hidden=true; if(c.note) c.note.textContent=''; return false; }
-    /* 28 Oct 2026 (his yes to the statement in the language): four or more choices are a select in a settings row, All first */
-    var mrow=el('label','salt-settings__row'), msel=document.createElement('select');
-    mrow.appendChild(el('span','salt-settings__label',tw('acct.month')));
-    msel.className='fld salt-field__input'; msel.setAttribute('data-mf-select','');
-    [''].concat(months).forEach(function(m){
-      var o=document.createElement('option'); o.value=m; o.textContent=m?monthLabel(m):tw('acct.allPill'); msel.appendChild(o);
-    });
-    msel.addEventListener('change', function(){ c.pick=msel.value||null; if(c.onPick) c.onPick(c.pick); mfApply(c); });
-    mrow.appendChild(msel); c.fil.appendChild(mrow);
+    /* 16 Nov 2026 (place D): the system's Select, All first (the one Orders' Earlier uses) */
+    c.fil.appendChild(ambMonthSelect(months,c.pick,function(p){ c.pick=p; if(c.onPick) c.onPick(p); mfApply(c); }));
     c.fil.hidden=false;
     mfApply(c);
     return true;
@@ -3803,7 +2850,7 @@ const CLIENT_JS = `
     AMF.pick=null;   /* v769: the whole account, and a month is one tap */
     if(!mfBuild(AMF)) return;
     /* beside the list it filters, not above the document's heading */
-    var first=out.querySelector('[data-m]'), list=first&&first.closest('.salt-lines, .tblw, table');
+    var first=out.querySelector('[data-m]'), list=first&&first.closest('table');
     /* above the heading of a list that has one (C9: an account whose first dated rows are its refunds) */
     if(list&&list.previousElementSibling&&list.previousElementSibling.tagName==='H3') list=list.previousElementSibling;
     if(list&&list.parentNode){ list.parentNode.insertBefore(mfil,list); list.parentNode.insertBefore(mfnote,list); }
@@ -3826,12 +2873,14 @@ const CLIENT_JS = `
   /* 26 Oct 2026, his word ("like settings on an iPhone", fewer words): a row of This device's list is its name and its control; what it
      holds is said to a reader, never drawn, and the control is a Switch or a short value */
   function devRow(label,flag,btn){
-    var r=el('div','salt-settings__row');
-    r.appendChild(el('span','salt-settings__label',label));
-    var f=el('span','sr'); if(typeof flag==='string') f.textContent=flag; else f.appendChild(flag);
+    /* 16 Nov 2026 (place D): a row of the system's settings, the name and its one control; what the row holds is said to a reader (a status), never drawn */
+    var li=el('li'), r=el(btn&&btn.tagName==='INPUT'?'label':'div','amb-setting');
+    r.appendChild(el('span','amb-setting__name',label));
+    var f=el('span','amb-vh'); if(typeof flag==='string') f.textContent=flag; else f.appendChild(flag);
     f.setAttribute('role','status'); r.appendChild(f);
     if(btn) r.appendChild(btn);
-    return r;
+    li.appendChild(r);
+    return li;
   }
   /* ---- THE BELL (Step 1b, his Q3 of 28 Sep 2026; his sentences 3.1 and 3.3) ------------------------------------------
      On every view of the saved app, in the header. While notifications are not on (not granted, no subscription filed, or
@@ -3841,7 +2890,7 @@ const CLIENT_JS = `
      that cannot receive them shows no bell: This device says why. It replaces Sent's "A buzz when it is confirmed?" and
      the Order tab's Notify me, the bell covering both. */
   var bellBoxEl=document.getElementById('bellBox'), bellEl=document.getElementById('bell'), bellCall=document.getElementById('bellCall'),
-      bellSheetEl=document.getElementById('bellSheet'), bellScrim=document.getElementById('bellScrim'), bellBusy=false;
+      bellSheetEl=document.getElementById('bellSheet'), bellBusy=false;
   function pushOn(){ return !!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone&&!pushOff()); }
   function drawBell(){
     if(!bellBoxEl) return;
@@ -3865,12 +2914,12 @@ const CLIENT_JS = `
     document.getElementById('bellIos').hidden=!IOS;
     document.getElementById('bellDroid').hidden=IOS||!ANDROID;
     document.getElementById('bellDesk').hidden=IOS||ANDROID;
-    bellScrim.hidden=false; bellSheetEl.hidden=false; behind(); bkOpen('bell',closeBell);
+    sheetUp(bellSheetEl); behind(); bkOpen('bell',closeBell);
     try{ bellSheetEl.focus(); }catch(e){}
   }
   function closeBell(){
     if(!bellSheetEl||bellSheetEl.hidden) return;
-    bellSheetEl.hidden=true; bellScrim.hidden=true; behind(); bkDrop('bell');
+    sheetDown(bellSheetEl); behind(); bkDrop('bell');
     focusBack(bellEl);
   }
   if(bellBoxEl){
@@ -3878,13 +2927,13 @@ const CLIENT_JS = `
     bellCall.addEventListener('click', bellTap);
     document.getElementById('bellX').addEventListener('click', closeBell);
     document.getElementById('bellDone').addEventListener('click', closeBell);
-    bellScrim.addEventListener('click', closeBell);
+    sheetWire(bellSheetEl,function(){ closeBell(); });
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeBell(); });
   }
-  function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
-  /* the Switch: on or off, its name the row's, free unless a tap for this account is still in flight */
-  function devSwitch(on,label,go){ var b=el('button','salt-switch'); b.type='button'; b.setAttribute('role','switch'); b.setAttribute('aria-checked',String(!!on)); b.setAttribute('aria-label',label); b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
-  function devValue(t){ return el('span','salt-settings__value',t); }
+  function devBtn(t,go){ var b=el('button','amb-pill amb-pill--quiet',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
+  /* the Switch: on or off, its name the row's, free unless a tap for this account is still in flight; a native checkbox, so a tap flips it and the page answers */
+  function devSwitch(on,label,go){ var b=el('input','amb-switch'); b.type='checkbox'; b.setAttribute('role','switch'); b.checked=!!on; b.setAttribute('aria-label',label); b.disabled=devBusy===ticket; b.addEventListener('change',go); return b; }
+  function devValue(t){ return el('span','amb-setting__value',t); }
   function drawDevice(){
     drawBell();
     if(!devEl) return;
@@ -3922,59 +2971,8 @@ const CLIENT_JS = `
     drawDevice(); drawOrder();
   }
 
-  /* ---- THE LOOK (11 Oct 2026, his word: Night or Tide, kept on each device, Tide until one is chosen) ---------------------
-     The head script set data-theme before the first paint. lookSet is the change: saltLook writes the attribute and the browser
-     bar's colour, the choice is kept in localStorage salt-look, and the setting under Account is marked; nothing reloads. The
-     first time a signed-in page opens on a device that has kept nothing, a Sheet asks (lookAsk, from enter): choosing keeps it and
-     closes the Sheet, and closing it any other way keeps Tide and stores nothing, so the next open asks again. A store that cannot
-     be read is never asked, because the answer could not be kept. His page asks once when it opens, on the same terms (stmt/owner.js
-     calls lookAsk with own set; landingPage draws its Sheet and its row in Shop > This device, and its choice is kept in the Counter
-     origin's store, shared with the customer's pages on that device), and a read-only view of an account on it asks nothing. A test account's sealed bundle says look:'asked', so it
-     asks at every sign-in and the Sheet can be tried again whatever the device holds. Every read and write of the store is guarded. */
-  var LOOK_KEY='salt-look', lookAsked=false, lookBack=null,
-      lookSheetEl=document.getElementById('lookSheet'), lookScrim=document.getElementById('lookScrim'), lookRow=document.getElementById('lookRow');
-  function lookNow(){ return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide'; }
-  function lookStore(){ try{ var v=localStorage.getItem(LOOK_KEY); return v==='night'||v==='tide'?v:''; }catch(e){ return null; } }   /* '' nothing chosen, null unreadable */
-  function lookMark(){
-    if(!lookRow) return;
-    [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ if(b.getAttribute('role')==='switch'){ b.setAttribute('aria-checked',String(lookNow()==='tide')); return; } b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
-    segSync(lookRow.querySelector('.lookset'));
-  }
-  function lookSet(t){
-    if(t!=='night') return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
-    if(typeof saltLook==='function') saltLook(t); else document.documentElement.setAttribute('data-theme',t);
-    try{ localStorage.setItem(LOOK_KEY,t); }catch(e){ /* for this visit only */ }
-    lookMark();
-  }
-  function lookShut(){
-    if(!lookSheetEl||lookSheetEl.hidden) return;
-    lookSheetEl.hidden=true; lookScrim.hidden=true; behind(); bkDrop('look');
-    focusBack(lookBack);
-  }
-  function lookAsk(b, own){
-    return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
-    if((OWNER&&!own)||view||lookAsked||!lookSheetEl) return;
-    var kept=lookStore();
-    if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;
-    lookAsked=true; lookBack=document.activeElement; bkOpen('look',lookShut);
-    lookScrim.hidden=false; lookSheetEl.hidden=false; behind();
-    try{ lookSheetEl.focus(); }catch(e){}
-  }
-  if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('role')==='switch'?(t.getAttribute('aria-checked')==='true'?'night':'tide'):t.getAttribute('data-look')); });
-  if(lookSheetEl){
-    lookSheetEl.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t){ lookSet(t.getAttribute('data-look')); lookShut(); } });
-    document.getElementById('lookX').addEventListener('click',lookShut);
-    lookScrim.addEventListener('click',lookShut);
-    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') lookShut(); });
-    /* Tab stays inside the Sheet: the last control wraps to the first, and Shift+Tab from the first to the last */
-    lookSheetEl.addEventListener('keydown',function(ev){
-      if(ev.key!=='Tab') return;
-      var f=[].slice.call(lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);
-      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }
-      else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
-    });
-  }
-  lookMark();
+  /* 15 Nov 2026, THE MOVE TO AMBIENT (his answer of 14 Nov 2026): light and dark follow each device. The look's store on the device, its row under
+     This device and the first-open Sheet are gone, on this page and on his; nothing here reads or writes a theme. */
 
   /* the statements a customer has: the first opens, the rest are at the foot */
   function show(b){
@@ -3983,7 +2981,6 @@ const CLIENT_JS = `
     barw.hidden=false; tabs.hidden=false; drawKeep(); drawBell();
     /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
     [].forEach.call(tabs.querySelectorAll('[data-whoas]'),function(x){ setW(x,'who.as',{u:'<span class="mono" data-who>'+esch(user)+'</span>'}); });
-    [].forEach.call(tabs.querySelectorAll('[data-whorail]'),function(x){ x.textContent=user; });
     [].forEach.call(tabs.querySelectorAll('[data-wholine]'),function(x){ x.hidden=view; });
     /* v706: Rewards (the card, until S7) is an associate's alone, and nobody else is shown the place at all. It waited on
        a sealed card as well, so an associate the publish had not yet written one for had no way to
@@ -4023,67 +3020,54 @@ const CLIENT_JS = `
     var box=rewardsEl;
     box.textContent='';
     drawMyLinks(box);
-    if(!card||!card.products||!card.products.length){ box.appendChild(el('p','lead',tw('rew.later'))); return; }
-    box.appendChild(el('h2',null,tw('rew.h')));
-    box.appendChild(el('p','lead',tw('rew.lead')));
+    if(!card||!card.products||!card.products.length){ box.appendChild(hSay(tw('rew.later'))); return; }
+    box.appendChild(hHead(tw('rew.h')));
+    box.appendChild(hSay(tw('rew.lead')));
     card.products.forEach(function(p){
-      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
-      var h3=pmarkHead('h3',p.product);
-      pane.appendChild(h3);
-      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane. No ringgit of margin anywhere near it. The bar is
-         the system's Meter, its fill set from this nonce'd script, which the page's style policy allows. */
-      if(p.reward){
-        var rw=p.reward;
+      var pane=el('div','hprod');
+      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane: a meter row, the book's mark its thumb. No ringgit of margin anywhere
+         near it. A book with no reward is headed by its mark alone, named by the shape. 16 Nov 2026: in Ambient's parts. */
+      var rw=p.reward, led=false;
+      if(rw){
         /* S8 8.3: and how to take it, which the line never said; only where there is some to take. S13: a sentence a case */
-        pane.appendChild(el('p','sub2',tw('rew.'+(rw.held?'held':rw.left>0?'ask':'none')+(rw.earned!==rw.left?'P':''),
-          {left:Uq(rw.left,p.unit), earned:Uq(rw.earned,p.unit), taken:Uq(rw.taken,p.unit)})));
-        if(rw.next!=null){
-          var pc=Math.round(rw.next*100), mtr=el('div','salt-meter rmeter'), ln=el('div','salt-meter__line');
-          ln.appendChild(el('span',null,tw('rew.next'))); ln.appendChild(el('b',null,pc+'%'));
-          var tr=el('div','salt-meter__track'), fill=el('div','salt-meter__fill');
-          mtr.style.setProperty('--salt-fill',String(pc));
-          tr.appendChild(fill); mtr.appendChild(ln); mtr.appendChild(tr);
-          tr.setAttribute('role','img'); tr.setAttribute('aria-label',tw('rew.nextAria',{p:pc}));
-          pane.appendChild(mtr);
-        }
+        var said=tw('rew.'+(rw.held?'held':rw.left>0?'ask':'none')+(rw.earned!==rw.left?'P':''),
+          {left:Uq(rw.left,p.unit), earned:Uq(rw.earned,p.unit), taken:Uq(rw.taken,p.unit)});
+        var pc=rw.next!=null?Math.round(rw.next*100):null;
+        var rr=hRow({tag:'li', meter:pc!=null, attrs:{'data-reward-book':p.product}, thumb:markThumb(p.product), title:pc!=null?tw('rew.next'):said, sub:pc!=null?said:'', amount:pc!=null?pc+'%':''});
+        if(pc!=null) rr.appendChild(hMeter(pc));
+        var ru=el('ul','amb-list amb-list--ruled'); ru.appendChild(rr); pane.appendChild(ru); led=true;
         /* R3 (plan version 6): the first-week orders of people they brought in that counted toward it, a count and nothing else */
-        if(+rw.r3>0) pane.appendChild(el('p','sub2',tw(+rw.r3===1?'rew.r3One':'rew.r3',{n:String(rw.r3)})));
+        if(+rw.r3>0) pane.appendChild(hSay(tw(+rw.r3===1?'rew.r3One':'rew.r3',{n:String(rw.r3)})));
       }
-      var sm=p.summary||{};
-      var ul=el('ul','conf');
+      if(!led){ var h3=el('h3','hbook'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(markThumb(p.product,'lg')); pane.insertBefore(h3,pane.firstChild); }
+      var sm=p.summary||{}, st=el('div','amb-settings'), sl=el('ul','amb-settings__list');
       [[tw('rew.bought'),rm(sm.bought||0)],
        [tw('rew.sold'),rm(sm.soldFor||0)],
        [tw('rew.onward'),String(sm.onward||0)],
        [tw('rew.brought'),rm(sm.introduced||0)],
        [tw('rew.people'),String(sm.referred||0)]].forEach(function(r){
-        var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li);
+        var li=el('li'), d=el('div','amb-setting'); d.appendChild(el('span','amb-setting__name',r[0])); d.appendChild(el('span','amb-setting__value',r[1])); li.appendChild(d); sl.appendChild(li);
       });
-      pane.appendChild(ul);
-      /* the lines, with their own month strip */
+      st.appendChild(sl); pane.appendChild(st);
+      /* the lines, with their own month select (more than five months, a list that grows: a Select) */
       var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
-        var strip=el('div','salt-tabs mos mfil');
-        months.concat(['']).forEach(function(m){
-          var b=el('button','salt-tabs__pill'+(m===pick?' salt-tabs__pill--active':'')); b.type='button'; b.setAttribute('aria-pressed',m===pick?'true':'false');
-          b.textContent=m?monthLabel(m):tw('acct.allPill');
-          b.addEventListener('click',function(){ cardMonth=m; drawCard(); });
-          strip.appendChild(b);
-        });
-        pane.appendChild(strip);
+        var fl=el('label','amb-field mos'), sw=el('span','amb-select'), sel=el('select','amb-input');
+        fl.appendChild(el('span','amb-field__label',tw('acct.month')));
+        months.concat(['']).forEach(function(m){ var o=el('option',null,m?monthLabel(m):tw('acct.allPill')); o.value=m; o.selected=m===pick; sel.appendChild(o); });
+        sel.addEventListener('change',function(){ cardMonth=sel.value; drawCard(); });
+        sw.appendChild(sel); sw.appendChild(ambIcon('chevron','amb-icon--sm')); fl.appendChild(sw); pane.appendChild(fl);
       }
       var shown=(p.lines||[]).filter(function(l){ return !pick||(l.date||'').slice(0,7)===pick; });
-      if(!shown.length) pane.appendChild(el('p','sub2',tw('rew.noMonth')));
+      if(!shown.length) pane.appendChild(hSay(tw('rew.noMonth')));
       else {
-        var t=el('table'), th=el('thead'), tr=el('tr');
-        [[tw('rew.date'),'l'],[tw('rew.what'),'l'],[tw('sh.size'),''],['RM','']].forEach(function(c){ tr.appendChild(el('th',c[1]||null,c[0])); });
+        var t=el('table','amb-table amb-table--stack'), th=el('thead'), tr=el('tr');
+        [[tw('rew.date'),''],[tw('rew.what'),''],[tw('sh.size'),'is-num'],['RM','is-num']].forEach(function(c){ tr.appendChild(el('th',c[1]||null,c[0])); });
         th.appendChild(tr); t.appendChild(th);
         var tb=el('tbody');
         shown.forEach(function(l){
-          var row=el('tr');
-          row.appendChild(el('td','l',l.date||''));
-          row.appendChild(el('td','l',tw(l.kind==='own'?'rew.bought':'rew.through')));
-          row.appendChild(el('td',null,unitsOf(l.qty,p.unit)));
-          row.appendChild(el('td',null,rm(l.rm)));
+          var row=el('tr'), cells=[[tw('rew.date'),l.date||'',''],[tw('rew.what'),tw(l.kind==='own'?'rew.bought':'rew.through'),''],[tw('sh.size'),unitsOf(l.qty,p.unit),'is-num'],['RM',rm(l.rm),'is-num']];
+          cells.forEach(function(c){ var td=el('td',c[2]||null,c[1]); td.setAttribute('data-label',c[0]); row.appendChild(td); });
           tb.appendChild(row);
         });
         t.appendChild(tb); pane.appendChild(t);
@@ -4119,32 +3103,37 @@ const CLIENT_JS = `
     if(r.state==='withdrawn') return tw('lnk.lineWithdrawn');
     return r.opens?tw('lnk.opened'+(r.opens===1?'1':'N')+(r.last?'Last':''),{n:r.opens, d:Dd(linkDay,r.last)}):tw('lnk.notOpened');
   }
+  /* 16 Nov 2026, the move to Ambient: a link is a row (its state a word of the second line), the address a plate that copies, the QR in a code
+     frame, its controls quiet pills; a join link is the same. */
+  function hIconThumb(name){ var t=el('span','amb-thumb'); t.setAttribute('aria-hidden','true'); t.appendChild(ambIcon(name)); return t; }
+  function hLinkPlate(url){
+    var pl=el('div','amb-plate'), b=el('button','amb-plate__row'); b.type='button'; b.setAttribute('data-amb-copy',url);
+    var tx=el('span','amb-plate__text'); tx.appendChild(el('span','amb-plate__label',tw('lnk.yours'))); tx.appendChild(el('span','amb-plate__value gu',url));
+    b.appendChild(tx); b.appendChild(el('span','amb-plate__act',tw('lnk.copy'))); pl.appendChild(b); return pl;
+  }
+  function hLinkSub(stateWordText,tone,line){ var s=el('span'); s.appendChild(el('span',tone,stateWordText)); if(line) s.appendChild(document.createTextNode(', '+lcFirst(line))); return s; }
   function drawMyLinks(into){
-    var box=el('div','pane rlinks salt-glass-card salt-glass-card--radius-md');
-    var head=el('div','rlhead'); head.appendChild(el('h3',null,tw('lnk.h')));
+    var box=el('div','rlinks');
     var live=(myLinks||[]).filter(function(r){ return r.state!=='withdrawn'; }).length;
-    if(myLinks&&myMax) head.appendChild(el('span','rlcount',tw('lnk.count',{n:live, m:myMax})));
-    box.appendChild(head);
-    if(myLinks===null){ box.appendChild(el('p','sub2',tw('lnk.reading'))); into.appendChild(box); if(!view) loadMyLinks(); return; }
-    if(!myLinks.length) box.appendChild(el('p','sub2',tw('lnk.none')));
+    box.appendChild(hHead(tw('lnk.h'),myLinks&&myMax?tw('lnk.count',{n:live, m:myMax}):''));
+    if(myLinks===null){ box.appendChild(hSay(tw('lnk.reading'))); into.appendChild(box); if(!view) loadMyLinks(); return; }
+    if(!myLinks.length) box.appendChild(hSay(tw('lnk.none')));
     myLinks.forEach(function(r){
-      var row=el('div','glink salt-glass-card salt-glass-card--radius-md');
-      var top=el('div','gtop'), st=LINK_STATE[r.state]||LINK_STATE.open;
-      top.appendChild(el('p','gh',r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours')));
-      /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
-      top.appendChild(el('span','gstate salt-status salt-status--'+st[1],tw(st[0])));
-      row.appendChild(top);
-      row.appendChild(el('p','gs',linkLine(r)));
+      var row=el('div','glink');
+      row.appendChild(hList([hRow({tag:'li', thumb:hIconThumb('share'), title:r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours'),
+        /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
+        sub:hLinkSub(tw((LINK_STATE[r.state]||LINK_STATE.open)[0]),r.state==='open'?'amb-pos':null,linkLine(r))})]));
       if(r.state==='open'){
-        row.appendChild(el('code','gu',r.url));
-        var img=document.createElement('img');
+        row.appendChild(hLinkPlate(r.url));
+        var fig=el('figure','amb-codeframe'), fld=el('div','amb-codeframe__field'), img=document.createElement('img');
         img.src=r.qr; img.alt=tw('lnk.qrAlt'); img.width=160; img.height=160;
-        img.hidden=!qrShown[r.id]; row.appendChild(img);
+        fld.appendChild(img); fig.appendChild(fld); fig.appendChild(el('figcaption','amb-codeframe__caption',tw('lnk.qrAlt')));
+        fig.hidden=!qrShown[r.id]; row.appendChild(fig); img.hidden=false;
       }
-      var acts=el('div','racts'), said=el('p','msg'); said.setAttribute('role','status');
+      var acts=el('div','amb-cluster'), said=el('p','msg'); said.setAttribute('role','status');
       if(r.state==='open'){
         if(navigator.share){
-          var sh=el('button','salt-ghost',tw('lnk.share')); sh.type='button';
+          var sh=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.share')); sh.type='button';
           sh.addEventListener('click', function(){
             /* the tap's first act: the address is already here, so nothing waits between the tap and the sheet */
             var done; try{ done=navigator.share({url:r.url}); }catch(e){ done=Promise.reject(e); }
@@ -4152,23 +3141,15 @@ const CLIENT_JS = `
               function(e){ said.textContent=e&&e.name==='AbortError'?'':tw('lnk.notShared'); });
           });
           acts.appendChild(sh);
-        } else {
-          var cp=el('button','salt-ghost',tw('lnk.copy')); cp.type='button';
-          /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
-          cp.addEventListener('click', async function(){
-            try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }
-            setTimeout(function(){ cp.textContent=tw('lnk.copy'); },1500);
-          });
-          acts.appendChild(cp);
         }
-        var qb=el('button','salt-ghost',tw(qrShown[r.id]?'lnk.qrHide':'lnk.qrShow')); qb.type='button';
+        var qb=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw(qrShown[r.id]?'lnk.qrHide':'lnk.qrShow')); qb.type='button';
         qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false');
-        qb.addEventListener('click', function(){ qrShown[r.id]=!qrShown[r.id]; img.hidden=!qrShown[r.id];
+        qb.addEventListener('click', function(){ qrShown[r.id]=!qrShown[r.id]; fig.hidden=!qrShown[r.id];
           qb.textContent=tw(qrShown[r.id]?'lnk.qrHide':'lnk.qrShow'); qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false'); });
         acts.appendChild(qb);
       }
       if(r.state!=='withdrawn'&&!view){
-        var wd=el('button','salt-ghost',tw('lnk.withdraw')); wd.type='button';
+        var wd=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.withdraw')); wd.type='button';
         wd.setAttribute('data-yn','link:'+r.id);
         wd.addEventListener('click', function(){
           /* 11 Oct 2026: asked in a Sheet that says what the link is, not by the browser's confirm; a yes sends what it always sent */
@@ -4187,10 +3168,10 @@ const CLIENT_JS = `
       box.appendChild(row);
     });
     if(view){ /* his read-only view makes nothing */ }
-    else if(live>=myMax) box.appendChild(el('p','sub2',tw('lnk.max',{n:live})));
+    else if(live>=myMax) box.appendChild(hSay(tw('lnk.max',{n:live})));
     else {
-      box.appendChild(el('p','sub2 rlnext',tw('lnk.next')));
-      var mk=el('button','btn salt-pill salt-pill--md',tw('lnk.make')); mk.type='button';
+      box.appendChild(hSay(tw('lnk.next'),'','rlnext'));
+      var mk=el('button','amb-pill',tw('lnk.make')); mk.type='button';
       mk.addEventListener('click', async function(){
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
@@ -4200,16 +3181,16 @@ const CLIENT_JS = `
       });
       box.appendChild(mk);
     }
-    if(myNote) box.appendChild(el('p','msg',myNote));
+    if(myNote) box.appendChild(hSay(myNote,'','','live'));
     if(!view&&myJoins!==null) drawMyJoins(box);
     into.appendChild(box);
   }
   /* a join link is for one person: ask for one, and see where each stands; an open one is copied to send, and nothing else is shown of who it is for */
   function drawMyJoins(box){
     var sec=el('div'); sec.setAttribute('data-joins','');
-    sec.appendChild(el('h3',null,tw('jn.h')));
-    sec.appendChild(el('p','sub2',tw('jn.note')));
-    var ask=el('button','salt-ghost',tw('jn.ask')); ask.type='button';
+    sec.appendChild(hHead(tw('jn.h')));
+    sec.appendChild(hSay(tw('jn.note')));
+    var ask=el('button','amb-pill amb-pill--quiet',tw('jn.ask')); ask.type='button';
     ask.addEventListener('click', async function(){
       ask.disabled=true; var mine=ticket;
       var r=await api('/my/joins',{});
@@ -4219,13 +3200,12 @@ const CLIENT_JS = `
     });
     sec.appendChild(ask);
     myJoins.forEach(function(r){
-      var row=el('div','glink salt-glass-card salt-glass-card--radius-md'), top=el('div','gtop');
+      var row=el('div','glink');
       row.setAttribute('data-join', r.id);
-      top.appendChild(el('p','gh',r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours')));
-      top.appendChild(el('span','gstate salt-status salt-status--'+(r.state==='open'?'verdigris':r.state==='waiting'?'steel salt-status--dashed':'mist'),tw(JOIN_STATE[r.state]||'jn.used')));
-      row.appendChild(top);
+      row.appendChild(hList([hRow({tag:'li', thumb:hIconThumb('person'), title:r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours'),
+        sub:hLinkSub(tw(JOIN_STATE[r.state]||'jn.used'),r.state==='open'?'amb-pos':null,'')})]));
       if(r.state==='open'){
-        var acts=el('div','racts'), cp=el('button','salt-ghost',tw('lnk.copy')); cp.type='button';
+        var acts=el('div','amb-cluster'), cp=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.copy')); cp.type='button';
         cp.addEventListener('click', async function(){
           try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }
           setTimeout(function(){ cp.textContent=tw('lnk.copy'); },1500);
@@ -4234,7 +3214,7 @@ const CLIENT_JS = `
       }
       sec.appendChild(row);
     });
-    if(myJoinNote) sec.appendChild(el('p','msg',myJoinNote));
+    if(myJoinNote) sec.appendChild(hSay(myJoinNote,'','','live'));
     box.appendChild(sec);
   }
   async function loadMyLinks(){
@@ -4273,39 +3253,44 @@ const CLIENT_JS = `
      set, "More by DD Mon" under it (04 Nov 2026, his four steps: Available, Selling fast, Low on stock, Out of stock). Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
   function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
   function supLit(p){ var s=p&&p.supply; return s&&(s.light==='green'||s.light==='yellow'||s.light==='amber'||s.light==='red')?s:null; }
-  function supWord(l){ return el('span','salt-light'+(l==='green'?'':' salt-light--'+l),tw('sup.'+l)); }
-  /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands under the mark too, the status in the light's colour */
+  /* 22 Oct 2026 (his word, the outline alone was missed): the light's word stands with the mark too, the status in the light's colour.
+     16 Nov 2026, THE MOVE TO AMBIENT: the light is Home's chip (hLight: its dot and its word), the one function both places call; beside the book's
+     mark in the heading, which says it once, so the chip itself is hidden from a reader */
   function supplyMark(h,pane,p){
     var s=supLit(p); if(!s) return;
     h.setAttribute('aria-label',pshape(p.product)+', '+tw('sup.'+s.light));
-    var ln=pane.appendChild(el('p','supline')); ln.setAttribute('aria-hidden','true'); ln.appendChild(supWord(s.light));   /* the heading says it once */
-    if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
+    var c=hLight(s.light); c.setAttribute('aria-hidden','true'); h.appendChild(c);
+    if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','amb-muted sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
   }
+  /* a plain line of words under the place's title, and a notice (the system's Notice: its icon, then the words) */
+  function pLine(t){ return el('p','amb-muted',t); }
+  function pNote(t,id,warn){ var n=el('div','amb-notice'+(warn?' amb-notice--warn':'')); if(id) n.id=id; n.appendChild(ambIcon('info')); n.appendChild(el('span',null,t)); return n; }
+  var stN=0, szN=0;
   function drawPrices(){
     pPrices.textContent='';
     /* V5: from pay.hide after the handover the prices are hidden until the overdue amount is paid */
-    if(hidePrices){ pPrices.appendChild(el('p','lead',tw('pr.hidden',{rm:rm(odLeft())}))); return; }
+    if(hidePrices){ pPrices.appendChild(pNote(tw('pr.hidden',{rm:rm(odLeft())}),'',true)); return; }
     var soon=((prices&&prices.soon)||[]).concat(((prices&&prices.products)||[]).filter(function(x){ return !(x.sizes&&x.sizes.length); }));
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
-      pPrices.appendChild(el('p','lead',tw('pr.none')));
+      pPrices.appendChild(pLine(tw('pr.none')));
       return;
     }
     /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
        of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
     var tapTo=!ro()&&!hold;
     bsPanes=[]; supPanes={}; stPanes={};
-    pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
+    pPrices.appendChild(pLine(tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
-    pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
+    pPrices.appendChild(pLine(tw('pr.goods',{deliv:Wk('deliv')})));
     /* 27 Oct 2026: the prices stay as they are, and their credit is said once, here */
-    var crl=el('p','salt-insight'); crl.id='prCredit'; crl.hidden=true; pPrices.appendChild(crl); creditDraw();
+    var crl=pNote('','prCredit'); crl.hidden=true; pPrices.appendChild(crl); creditDraw();
     var pw=el('div','pway'); pw.id='pWay'; pPrices.appendChild(pw); wayDraw();
-    if(tapTo){ var bl=el('p','salt-insight salt-insight--copper',limitLine()); bl.id='bkLim'; bl.hidden=true; pPrices.appendChild(bl); }
-    if(prices.since) pPrices.appendChild(el('p','sub2',tw('pr.since',{m:Dd(monthOf,prices.since)})));
-    /* S7 7.2: the books stand in a grid, two across from 1080px */
+    if(tapTo){ var bl=pNote(limitLine(),'bkLim',true); bl.hidden=true; pPrices.appendChild(bl); }
+    if(prices.since) pPrices.appendChild(pLine(tw('pr.since',{m:Dd(monthOf,prices.since)})));
+    /* S7 7.2: the books stand in a grid, two across from 960px (the system's own width for two columns) */
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
-      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
+      var pane=el('div','pane amb-pane');
       /* C21: a board's mark is an h2 under the place's h1, never an h3 with nothing between */
       var h3=pmarkHead('h2',p.product);
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
@@ -4313,26 +3298,25 @@ const CLIENT_JS = `
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
       pane.appendChild(h3); supplyMark(h3,pane,p); supPanes[p.product]=pane;
       /* PLAN VERSION 9: the units are chosen here, on the book's stepper; its sizes stand one fold under it, each a tap that sets the stepper.
-         Where nothing is ordered from here (his read-only view, the overdue gate) the sizes are the plain ledger, as before */
+         Where nothing is ordered from here (his read-only view, the overdue gate) the sizes are the plain list, as before */
       if(tapTo) stepBox(p,pane);
-      var L=el('div','salt-ledger salt-ledger--plain');
-      p.sizes.forEach(function(r){
-        var row=el(tapTo?'button':'div','salt-ledger__row szrow'), line=el('span','salt-ledger__line');
-        line.appendChild(el('span','salt-ledger__label',unitsOf(r.q,p.unit)));
-        line.appendChild(el('span','salt-ledger__value',rm(r.price))); row.appendChild(line);
-        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); row.setAttribute('aria-pressed','false');
-          row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); }); }
-        L.appendChild(row);
-      });
-      if(tapTo&&stPanes[p.product]){ var fd=el('details','sfold'); fd.appendChild(el('summary',null,tw('st.sizes'))); fd.appendChild(L); pane.appendChild(fd); stepPatch(p.product,false); }
-      else pane.appendChild(L);
+      var L=hList(p.sizes.map(function(r){
+        var row=hRow({tag:tapTo?'button':'div', attrs:tapTo?{'data-q':String(r.q),'aria-pressed':'false'}:null, title:unitsOf(r.q,p.unit), amount:rm(r.price)});
+        row.classList.add('szrow');
+        if(tapTo) row.addEventListener('click',function(){ stepTo(p.product,+r.q,true); });
+        return row;
+      }));
+      if(tapTo&&stPanes[p.product]){
+        var id='sz'+(szN++), mo=el('button','amb-more',tw('st.sizes')); mo.type='button'; mo.setAttribute('aria-controls',id); mo.setAttribute('aria-expanded','false');
+        var fd=el('div','sfold'); fd.id=id; fd.hidden=true; fd.appendChild(L); pane.appendChild(mo); pane.appendChild(fd); stepPatch(p.product,false);
+      } else pane.appendChild(L);
       grid.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
-      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
-      var sh=pmarkHead('h2',p.product); pane.appendChild(sh);
-      pane.appendChild(el('p','sub2',tw('pr.soon')));
+      var pane=el('div','pane amb-pane');
+      pane.appendChild(pmarkHead('h2',p.product));
+      pane.appendChild(el('p','amb-muted sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
     bsPatch();
@@ -4340,18 +3324,21 @@ const CLIENT_JS = `
 
   /* COUNTER BATCH B: THE WAY ON PRICES, "Delivering to {place}" or "Collecting", with Change opening the sheet at How it reaches you. Patched
      in place (a sheet closed, the orders read again), never by drawing the list again. None with no way yet, and no Change where nothing is
-     ordered from here (his read-only view, the overdue gate) */
+     ordered from here (his read-only view, the overdue gate). 16 Nov 2026: one setting row of the system's Settings, opening the sheet where it is tapped */
   function wayDraw(){
     var pw=document.getElementById('pWay'); if(!pw) return;
     var w=wayNow(), tapTo=!ro()&&!hold;
     pw.textContent=''; pw.hidden=!w; if(!w) return;
-    var pl=w.place.trim();
-    pw.appendChild(el('span','pway__t',w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl')));
-    if(!tapTo) return;
-    var ch=el('button','salt-ghost pway__go',tw('pr.wayChange')); ch.type='button'; ch.id='pWayGo';
-    ch.addEventListener('click',function(){ pickBasket(); sheetOpen(null,null,ch);
-      var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
-    pw.appendChild(ch);
+    var pl=w.place.trim(), words=w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl');
+    var st=el('div','amb-settings'), ul=el('ul','amb-settings__list'), li=el('li'), row=el(tapTo?'button':'div','amb-setting');
+    if(tapTo){ row.type='button'; row.id='pWayGo'; }
+    row.appendChild(el('span','amb-setting__name pway__t',words));
+    if(tapTo){
+      row.appendChild(el('span','amb-setting__value',tw('pr.wayChange'))); row.appendChild(ambIcon('next','amb-icon--sm'));
+      row.addEventListener('click',function(){ pickBasket(); sheetOpen(null,null,row);
+        var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
+    }
+    li.appendChild(row); ul.appendChild(li); st.appendChild(ul); pw.appendChild(st);
   }
   /* COUNTER BATCH B (his answers of 18 Oct 2026): THE BASKET. A + beside each size adds it to what they will order of that mark, and taps
      on one mark SUM into one line, priced at the summed amount's own figure off the list: two taps on 5 units are 10 units at the 10-unit
@@ -4372,8 +3359,8 @@ const CLIENT_JS = `
       var p=B.P.product, a=bsOf(p), t=bsTapsOf(p), N=B.node; N.textContent=''; N.hidden=!(a>0)||!bsOn(); if(N.hidden) return;
       var parts=t?Object.keys(t).sort(function(x,y){ return +y-(+x); }).reduce(function(s,q){ for(var i=0;i<t[q];i++) s.push(String(+q)); return s; },[]):[];
       N.appendChild(el('span','bkline__t',parts.length>1?tw('bk.inTaps',{q:unitsOf(a,B.P.unit), t:parts.join(' + ')}):tw('bk.in',{q:unitsOf(a,B.P.unit)})));
-      if(priceAt(B.P,a)==null&&!overMax(B.P,a)){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
-      var rb=el('button','salt-ghost bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
+      if(priceAt(B.P,a)==null&&!overMax(B.P,a)){ var g=gridOf(B.P); N.appendChild(el('span','amb-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?offWhy(g,a):tw('bk.noPrice'))); }
+      var rb=el('button','amb-pill amb-pill--quiet amb-pill--sm bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
       rb.appendChild(el('span','sr',' '+pshape(p)));
       rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var S=stPanes[p]; if(S) try{ S.val.focus({preventScroll:true}); }catch(e){} });
       N.appendChild(rb);
@@ -4393,10 +3380,12 @@ const CLIENT_JS = `
     var sum=0, open=ls.some(function(x){ return x.t==null&&!x.over; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });
     var w=wayNow();
     var bco=creditOff(+sum.toFixed(2));
-    bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
-    var go=el('button','salt-pill salt-pill--md',tw('bk.go')); go.type='button'; go.id='bkGo'; go.disabled=open;
+    var st=hStat(tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)));
+    st.appendChild(el('span','amb-stat__label',bco.any?tw('sh.creditOff',{c:rm(bco.c), p:rm(bco.pay)}):tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
+    bar.appendChild(st);
+    var ft=el('div','amb-foot'), go=el('button','amb-pill amb-pill--block',tw('bk.go')); go.type='button'; go.id='bkGo'; go.disabled=open;
     go.addEventListener('click',function(){ bsReview(go); });
-    bar.appendChild(go);
+    ft.appendChild(go); bar.appendChild(ft);
     if(had) try{ go.focus({preventScroll:true}); }catch(e){}
   }
   function bsReview(go){
@@ -4433,32 +3422,39 @@ const CLIENT_JS = `
   function stepBox(P,pane){
     var W=stepWalk(P), k=P.product; if(!W.length) return;
     draft.stq=draft.stq||{}; if(!stepOk(P,+draft.stq[k])) draft.stq[k]=stepStart(P,W);
-    var S={P:P, W:W, pane:pane, typing:false}, w=pshape(k);
-    var g=el('div','salt-stepper'); g.setAttribute('role','group'); g.setAttribute('aria-label',tw('st.how',{w:w}));
-    S.less=el('button','salt-orb'); S.less.type='button'; S.less.setAttribute('data-st','less'); S.less.setAttribute('aria-label',tw('st.less',{w:w})); S.less.appendChild(oGlyph('minus'));
-    S.more=el('button','salt-orb'); S.more.type='button'; S.more.setAttribute('data-st','more'); S.more.setAttribute('aria-label',tw('st.more',{w:w})); S.more.appendChild(oGlyph('plus'));
-    S.val=el(stepTyped(P)?'button':'output','salt-stepper__value'); if(S.val.tagName==='BUTTON') S.val.type='button'; else S.val.tabIndex=-1; S.val.setAttribute('data-st','val');
-    S.q=el('span','salt-stepper__q'); S.val.appendChild(S.q);
-    g.appendChild(S.less); g.appendChild(S.val); g.appendChild(S.more); pane.appendChild(g);
-    S.why=el('p','salt-stepper__why'); S.why.setAttribute('role','alert'); S.why.hidden=true; pane.appendChild(S.why);
-    S.say=el('p','sr'); S.say.setAttribute('aria-live','polite'); pane.appendChild(S.say);
-    var row=el('div','strow'); S.fig=el('span','stfig'); S.usual=el('span','salt-status salt-status--brass',tw('sh.usual'));
-    S.add=el('button','salt-ghost salt-ghost--lit stadd'); S.add.type='button'; S.add.setAttribute('data-st','add');
+    var S={P:P, W:W, pane:pane}, w=pshape(k), typed=stepTyped(P), id='stv'+(stN++), g0=gridOf(P);
+    /* 16 Nov 2026, THE MOVE TO AMBIENT: the system's Stepper over values (data-amb-values): its script walks the list the page supplies and fires change; a typed size
+       (a grid walked freely) is typed into the same field and read on change, and a grid with only or multiples is walked and never typed (the field is read only) */
+    var f=el('div','amb-field'), lb=el('label','amb-field__label amb-vh',tw(typed?'st.typeIn':'st.how',{w:w})); lb.htmlFor=id; f.appendChild(lb);
+    var g=el('div','amb-stepper');
+    S.less=el('button','amb-circle amb-circle--lg'); S.less.type='button'; S.less.setAttribute('data-st','less'); S.less.setAttribute('data-amb-step','-1');
+    S.less.setAttribute('aria-label',tw('st.less',{w:w})); S.less.appendChild(ambIcon('minus'));
+    S.more=el('button','amb-circle amb-circle--lg'); S.more.type='button'; S.more.setAttribute('data-st','more'); S.more.setAttribute('data-amb-step','1');
+    S.more.setAttribute('aria-label',tw('st.more',{w:w})); S.more.appendChild(ambIcon('plus'));
+    S.val=el('input','amb-input'); S.val.id=id; S.val.type='number'; S.val.step='any'; S.val.min=String(W[0]); S.val.setAttribute('data-st','val');
+    S.val.setAttribute('data-amb-values',W.join(' ')); S.val.autocomplete='off'; S.val.readOnly=!typed;
+    S.val.setAttribute('inputmode',g0&&g0.step%1===0&&g0.min%1===0?'numeric':'decimal');
+    g.appendChild(S.less); g.appendChild(S.val); g.appendChild(S.more); f.appendChild(g);
+    S.q=el('span','amb-field__hint'); S.q.setAttribute('data-st','q'); f.appendChild(S.q); pane.appendChild(f);
+    S.why=el('p','amb-field__error'); S.why.setAttribute('role','alert'); S.why.hidden=true; pane.appendChild(S.why);
+    S.say=el('p','amb-vh'); S.say.setAttribute('aria-live','polite'); pane.appendChild(S.say);
+    var row=el('div','strow'); S.fig=el('span','stfig'); S.usual=el('span','amb-chip',tw('sh.usual'));
+    S.add=el('button','amb-pill amb-pill--sm stadd'); S.add.type='button'; S.add.setAttribute('data-st','add');
     row.appendChild(S.fig); row.appendChild(S.usual); row.appendChild(S.add); pane.appendChild(row);
-    S.less.addEventListener('click',function(){ stepBy(k,-1); });
-    S.more.addEventListener('click',function(){ stepBy(k,1); });
-    if(S.val.tagName==='BUTTON') S.val.addEventListener('click',function(){ stepType(k); });
+    S.val.addEventListener('change',function(){ stepFrom(k); });
     S.add.addEventListener('click',function(){ stepAdd(k); });
     var bkl=el('div','bkline'); bkl.hidden=true; pane.appendChild(bkl); bsPanes.push({P:P, node:bkl});
     stPanes[k]=S;
   }
-  function stepBy(k,d){
+  /* a size the field now holds, from the script's step or from typing: one the walk takes is set; one it does not is refused with why, in one sentence, and the field goes back */
+  function stepFrom(k){
     var S=stPanes[k]; if(!S||!bsOn()) return;
-    var q=+draft.stq[k], i=stepIx(S,q), n=-1;
-    if(i>=0) n=i+d;
-    else for(var j=0;j<S.W.length;j++){ if(d>0&&S.W[j]>q){ n=j; break; } if(d<0&&S.W[j]<q) n=j; }
-    if(n<0||n>=S.W.length) return;
-    stepTo(k,S.W[n],false);
+    var P=S.P, g=gridOf(P), v=String(S.val.value||'').trim(), q=+v, was=+draft.stq[k];
+    if(v===''){ S.val.value=String(was); return; }
+    if(Math.abs(q-was)<1e-9) return;
+    if(q>0&&stepOk(P,q)){ stepTo(k,+q.toFixed(6),false); return; }
+    S.val.value=String(was);
+    S.why.textContent=!(q>0)?tw('bk.noPrice'):q>ASK_CAP?tw('st.cap',{m:ASK_CAP}):g?sentence(offWhy(g,q)):tw('bk.noPrice'); S.why.hidden=false;
   }
   function stepTo(k,q,focus){
     var S=stPanes[k]; if(!S) return;
@@ -4472,7 +3468,8 @@ const CLIENT_JS = `
     if(!(draft.stTouch&&draft.stTouch[k])) draft.stq[k]=stepStart(S.P,S.W);
     var P=S.P, q=+draft.stq[k], i=stepIx(S,q), t=priceAt(P,q), over=t==null&&overMax(P,q), b=bsOf(k), u=unitsOf(q,P.unit);
     S.q.textContent=u;
-    if(S.val.tagName==='BUTTON') S.val.setAttribute('aria-label',tw('st.type',{q:u}));
+    if(document.activeElement!==S.val||+S.val.value!==q) S.val.value=String(q);
+    S.val.disabled=!bsOn();
     S.less.disabled=!bsOn()||i===0||(i<0&&!S.W.some(function(x){ return x<q; }));
     S.more.disabled=!bsOn()||i<0&&!S.W.some(function(x){ return x>q; })||i===S.W.length-1;
     S.fig.textContent=t!=null?rm(t):over?tw('st.ask'):'';
@@ -4480,7 +3477,7 @@ const CLIENT_JS = `
     var inB=b>0, same=inB&&Math.abs(b-q)<1e-6;
     S.add.textContent=tw(!inB?'st.add':same?'st.in':'st.update');
     S.add.disabled=same||!bsOn()||(t==null&&!over);
-    [].forEach.call(S.pane.querySelectorAll('.szrow[data-q]'),function(r){ r.setAttribute('aria-pressed',String(Math.abs(+r.getAttribute('data-q')-q)<1e-6)); });
+    [].forEach.call(S.pane.querySelectorAll('.szrow[data-q]'),function(r){ var on=Math.abs(+r.getAttribute('data-q')-q)<1e-6; r.setAttribute('aria-pressed',String(on)); if(on) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
     if(say) S.say.textContent=u+', '+(t!=null?rm(t):tw('st.ask'));
   }
   function stepAdd(k){
@@ -4493,27 +3490,6 @@ const CLIENT_JS = `
     S.say.textContent=tw('bk.in',{q:unitsOf(q,S.P.unit)});
     try{ S.val.focus({preventScroll:true}); }catch(e){}
   }
-  /* a typed size: Return or leaving the field sets it, Escape keeps the last; a size the walk does not take is refused with why, in one sentence */
-  function stepType(k){
-    var S=stPanes[k]; if(!S||S.typing||!bsOn()) return;
-    var P=S.P, g=gridOf(P); S.typing=true;
-    var inp=el('input','salt-stepper__input'); inp.type='text'; inp.autocomplete='off'; inp.setAttribute('data-st','input');
-    inp.inputMode=g&&g.step%1===0&&g.min%1===0?'numeric':'decimal'; inp.setAttribute('enterkeyhint','done');
-    inp.setAttribute('aria-label',tw('st.typeIn',{w:pshape(k)})); inp.value=String(+draft.stq[k]);
-    S.val.hidden=true; S.val.parentNode.insertBefore(inp,S.val);
-    var done=false;
-    var end=function(keep){
-      if(done) return; done=true;
-      var v=keep?'':String(inp.value||'').trim(), q=+v;
-      inp.remove(); S.val.hidden=false; S.typing=false;
-      if(v!==''&&stepOk(P,q)) stepTo(k,+q.toFixed(6),false);
-      else if(v!==''){ S.why.textContent=!(q>0)?tw('bk.noPrice'):q>ASK_CAP?tw('st.cap',{m:ASK_CAP}):sentence(offWhy(g,q)); S.why.hidden=false; }
-      try{ S.val.focus({preventScroll:true}); }catch(e){}
-    };
-    inp.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); end(false); } else if(ev.key==='Escape'){ ev.stopPropagation(); end(true); } });
-    inp.addEventListener('blur',function(){ end(false); });
-    try{ inp.focus(); inp.select(); }catch(e){}
-  }
   /* the basket's priced lines as the sheet's, or none: the sheet never holds a size the page did not choose */
   function pickBasket(){
     var ls=bsOn()?bsLines().filter(function(x){ return x.t!=null||x.over; }):[];
@@ -4524,13 +3500,11 @@ const CLIENT_JS = `
      and the units change on Order. With no line it sets the way alone */
   function sheetLines(B){
     var qs=quotes();
-    if(!qs.length){ B.appendChild(el('p','lead',tw('sh.wayOnly'))); return; }
-    var L=el('div','salt-settings'); L.setAttribute('data-sheet-lines','');
-    qs.forEach(function(x){ var r=el('div','salt-settings__row'), lb=el('span','salt-settings__label');
-      lb.appendChild(withMark(x.p.product,unitsOf(x.q,x.p.unit),22)); r.appendChild(lb);
-      r.appendChild(el('span','salt-settings__value',x.over?'':rm(x.total))); L.appendChild(r); });
+    if(!qs.length){ B.appendChild(el('p','amb-muted',tw('sh.wayOnly'))); return; }
+    var L=hList(qs.map(function(x){ return hRow({tag:'div', thumb:markThumb(x.p.product,'md'), title:unitsOf(x.q,x.p.unit), amount:x.over?'':rm(x.total)}); }));
+    L.setAttribute('data-sheet-lines','');
     B.appendChild(L);
-    B.appendChild(el('p','salt-field__hint',tw('sh.unitsOn')));
+    B.appendChild(el('p','amb-field__hint',tw('sh.unitsOn')));
   }
   /* the sheet opened from the basket writes what changes in it back, so the two never differ; a tally that no longer adds up is dropped */
   function bsFromPick(){
@@ -4615,7 +3589,7 @@ const CLIENT_JS = `
     return Math.max(0,+c.toFixed(2));
   }
   /* the line on Prices, drawn again when the orders are read, since an order's credit may not be in the sealed figure yet */
-  function creditDraw(){ var e=document.getElementById('prCredit'); if(!e) return; var c=creditNow(); e.hidden=!(c>0.004); e.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):''; }
+  function creditDraw(){ var e=document.getElementById('prCredit'); if(!e) return; var c=creditNow(); e.hidden=!(c>0.004); var sp=e.querySelector('span'); if(sp) sp.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):''; }
   function creditOff(sum){ var c=creditNow(); return {c:Math.min(c,sum), pay:Math.max(0,+(sum-c).toFixed(2)), any:c>0.004}; }
   /* an agreed order is on the statement once a sealed part is its row: to pay now by its day, side and whole (as nowOf
      matches), coming up by its day, side and product. Accepted and not yet published, it is counted from the order */
@@ -4647,15 +3621,6 @@ const CLIENT_JS = `
   function oLive(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   /* V4b: a sheet counts once, as the Worker counts it (stmt/orders.js, openCount) */
   function openN(){ var k={}; oLive().forEach(function(o){ k[o.sheet||o.id]=1; }); return Object.keys(k).length; }
-  var GLYPH={plus:'M8 3 V13 M3 8 H13', minus:'M3 8 H13', close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
-  function oGlyph(k,cls,px){
-    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
-    s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('width',px||16); s.setAttribute('height',px||16);
-    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false'); if(cls) s.setAttribute('class',cls);
-    var d=document.createElementNS(NS,'path'); d.setAttribute('d',GLYPH[k]); d.setAttribute('fill','none'); d.setAttribute('stroke','currentColor');
-    d.setAttribute('stroke-width','1.5'); d.setAttribute('stroke-linecap','round'); d.setAttribute('stroke-linejoin','round');
-    s.appendChild(d); return s;
-  }
   /* the size they order most, read off their own orders on this page; the later order breaks a tie */
   function oUsual(){
     var n={}, best=null;
@@ -4677,6 +3642,36 @@ const CLIENT_JS = `
     return !!P&&(q==null||priceAt(P,q)!=null); }
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
   function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
+  /* a sheet of the system: a native dialog carrying the Counter's mood, named by its title; shown modal, or open where the browser has no modal. A tap on the
+     scrim (the dialog's own box, outside what it holds) and Escape are the page's own dismissal, never the script's close, so a sheet that must wait can */
+  /* 16 Nov 2026 (place D): the account's own Sheets are native dialogs the page's HTML carries (ambSheet), put up and away here: hidden stays the
+     page's word for shut (what the back-stack, behind() and the lapse read), the dialog's own scrim and Escape go to the page's dismissal as sheetShow's do */
+  function sheetWire(d,dismiss){
+    d.addEventListener('click',function(ev){
+      if(ev.target!==d) return;
+      ev.stopPropagation();
+      var r=d.getBoundingClientRect();
+      if(ev.clientX<r.left||ev.clientX>r.right||ev.clientY<r.top||ev.clientY>r.bottom) dismiss();
+    });
+    d.addEventListener('cancel',function(ev){ ev.preventDefault(); dismiss(); });
+  }
+  function sheetUp(d){ d.hidden=false; try{ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }catch(e){ d.setAttribute('open',''); } }
+  function sheetDown(d){ try{ if(d.close) d.close(); else d.removeAttribute('open'); }catch(e){ d.removeAttribute('open'); } d.hidden=true; }
+  function sheetNode(id,cls,titleId){
+    var d=el('dialog','amb-sheet'+(cls?' '+cls:'')); d.id=id; d.setAttribute('data-mood','lagoon'); d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true');
+    d.setAttribute('aria-labelledby',titleId); d.tabIndex=-1; return d;
+  }
+  function sheetShow(d,dismiss){
+    d.addEventListener('click',function(ev){
+      if(ev.target!==d) return;
+      ev.stopPropagation();
+      var r=d.getBoundingClientRect();
+      if(ev.clientX<r.left||ev.clientX>r.right||ev.clientY<r.top||ev.clientY>r.bottom) dismiss();
+    });
+    d.addEventListener('cancel',function(ev){ ev.preventDefault(); dismiss(); });
+    document.body.appendChild(d);
+    try{ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }catch(e){ d.setAttribute('open',''); }
+  }
   function sheetOpen(product,q,opener,amend,pool,againOf){
     var sp=startPlace; startPlace='';   /* 3 Nov 2026 (Fable): spent before any early return, so a tap the lapse sheet stopped carries no place into a later sheet */
     draft.now=false; draft.on=''; draft.buyer='';   /* plan version 3 (Fable's review): Handed over and paid now is asked afresh on every sheet; version 4: its day and their customer too */
@@ -4713,19 +3708,17 @@ const CLIENT_JS = `
     if(draft.place==null){ draft.place=''; draft.placeWas=''; }
     draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null; draft.qSheet=''; draft.qSig='';
     if(!osh){
-      var wrap=el('div'); wrap.id='osheet';
-      var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
-      var box=el('div','salt-sheet osheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
-      box.setAttribute('aria-labelledby','oshT'); box.tabIndex=-1;
-      var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
-      var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
-      box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
+      /* 16 Nov 2026, THE MOVE TO AMBIENT: the sheet is the system's native dialog (head, body, and the foot as a second body under it), opened modal; its own
+         scrim, Escape and tap outside go through the page's dismissal, which waits while Place is on its way */
+      var box=sheetNode('osheet','osheet','oshT');
+      var head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body'), foot=el('div','amb-sheet__body osheet__foot');
+      box.appendChild(head); box.appendChild(body); box.appendChild(foot);
       box.addEventListener('keydown',sheetKeys);
-      wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
-      osh={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      sheetShow(box,sheetDismiss);
+      osh={wrap:box, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
       behind();
       bkOpen('o',sheetDismiss);
-      try{ box.focus({preventScroll:true}); }catch(e){}
+      try{ osh.box.focus({preventScroll:true}); }catch(e){}
     }
     sheetDraw();
   }
@@ -4758,7 +3751,7 @@ const CLIENT_JS = `
   function sheetDismiss(){ if(draft.busy) return false; sheetClose(); }
   /* the sheet keeps focus while it is open: Escape closes it, and Tab wraps at its own first and last controls */
   function sheetKeys(ev){
-    if(ev.key==='Escape'){ ev.stopPropagation(); sheetDismiss(); return; }
+    if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); sheetDismiss(); return; }
     if(ev.key!=='Tab'||!osh) return;
     var all=[].filter.call(osh.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
       if(x.type==='radio'&&x.name){ var g=[].filter.call(osh.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
@@ -4780,11 +3773,8 @@ const CLIENT_JS = `
     if(OWNER) return;
     var open=[].filter.call(document.querySelectorAll('[role=dialog][aria-modal=true]'),function(d){ return !d.hidden; }), keep=[];
     var ask=document.getElementById('ynSheet');
-    (ask&&!ask.hidden?[ask]:open).forEach(function(d){
-      if(d.parentNode!==document.body){ keep.push(d.parentNode); return; }   /* a built Sheet: its wrapper, scrim and all */
-      keep.push(d);
-      var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);   /* a drawn Sheet: itself and its scrim */
-    });
+    /* 16 Nov 2026 (place D): every Sheet is a dialog at the root of the body (a drawn one or a built one), its own backdrop its scrim */
+    (ask&&!ask.hidden?[ask]:open).forEach(function(d){ keep.push(d); });
     [].forEach.call(document.body.children,function(c){
       if(c.tagName==='SCRIPT'||c.tagName==='STYLE') return;
       if(open.length&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }
@@ -4890,22 +3880,20 @@ const CLIENT_JS = `
      focus back to), again (finds it afresh if a redraw took it away) and shut (told when the Sheet comes down, however) */
   function ynOpen(q){
     ynShut(true);
-    var wrap=el('div'); wrap.id='ynWrap';
-    var scrim=el('div','salt-sheet-scrim'); scrim.id='ynScrim'; scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',function(){ ynShut(); });
-    var box=el('div','salt-sheet ynsheet'); box.id='ynSheet'; if(sheetOwn) sheetOwn(box); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
-    box.setAttribute('aria-labelledby','ynT'); box.tabIndex=-1;
-    var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
-    var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
-    var h=el('h2','salt-sheet__title',q.title); h.id='ynT'; head.appendChild(h);
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.id='ynX'; x.setAttribute('aria-label',tw('x.close'));
-    x.appendChild(oGlyph('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
+    /* 16 Nov 2026: a yes or no is the system's dialog too (it lies over the order sheet, both in the top layer, the later on top): the title and its close, the
+       restated lines, the danger action first and the answer that keeps last */
+    var box=sheetNode('ynSheet','ynsheet','ynT'); if(sheetOwn) sheetOwn(box); var wrap=box;
+    var head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body');
+    var h=el('h2','amb-sheet__title',q.title); h.id='ynT'; head.appendChild(h);
+    var x=el('button','amb-circle'); x.type='button'; x.id='ynX'; x.setAttribute('aria-label',tw('x.close'));
+    x.appendChild(ambIcon('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
     q.body.forEach(function(n){ body.appendChild(n); });
-    var go=el('button','salt-ghost salt-ghost--danger',q.go); go.type='button'; go.id='ynGo';
+    var go=el('button','amb-action amb-action--danger',q.go); go.type='button'; go.id='ynGo';
     go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });
-    var keep=el('button','salt-ghost',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
-    foot.appendChild(go); foot.appendChild(keep);
-    box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
-    wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
+    var keep=el('button','amb-pill amb-pill--block',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
+    body.appendChild(go); body.appendChild(keep);
+    box.appendChild(head); box.appendChild(body);
+    sheetShow(box,function(){ ynShut(); });
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
     yn.shut=q.shut||null;
     bkOpen('yn',function(){ ynShut(); });
@@ -4917,19 +3905,12 @@ const CLIENT_JS = `
   function ynFind(key){ return function(){ return [].filter.call(document.querySelectorAll('[data-yn]'),function(x){ return x.getAttribute('data-yn')===key; })[0]||null; }; }
   /* the order as the limit list draws it: its mark with the size under it, its word, its figure and the day it was placed */
   function ynOrderRow(o){
-    var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
-    lab.appendChild(mtile(o.product,o.qty,oUnit(o))); lab.appendChild(el('span',null,stateWord(o)));
-    l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm((+o.total||0)+(+o.delivery||0)))); r.appendChild(l);
-    r.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
-    L.appendChild(r); return L;
+    return hList([hRow({tag:'div', thumb:markThumb(o.product,'md'), title:unitsOf(o.qty,oUnit(o)), sub:stateWord(o)+DOT+tw('sh.placed',{t:Dd(stamp,o.at)}), amount:rm((+o.total||0)+(+o.delivery||0))})]);
   }
   /* the link by what it is: the day it was made, its state, and what it has done; its address is never repeated */
   function ynLinkRow(r){
-    var L=el('div','salt-ledger salt-ledger--plain'), row=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), st=LINK_STATE[r.state]||LINK_STATE.open;
-    l.appendChild(el('span','salt-ledger__label',r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours')));
-    l.appendChild(el('span','salt-ledger__value',tw(st[0]))); row.appendChild(l);
-    row.appendChild(el('span','salt-ledger__flag',linkLine(r)));
-    L.appendChild(row); return L;
+    var st=LINK_STATE[r.state]||LINK_STATE.open;
+    return hList([hRow({tag:'div', title:r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours'), sub:linkLine(r), amount:tw(st[0])})]);
   }
   /* Cancel this order: the order, what is lost and what becomes of the money; send is the call the old confirm let through */
   function ynCancel(o,opener,key,send){
@@ -4957,28 +3938,29 @@ const CLIENT_JS = `
     if(inside&&!osh.box.contains(document.activeElement)) try{ osh.box.focus({preventScroll:true}); }catch(e){}
   }
   function sheetHead(title,back){
-    if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label',tw('sh.change')); b.setAttribute('data-k','back'); b.disabled=!!draft.busy;
-      b.appendChild(oGlyph('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
-    if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label',tw('x.close')); x.setAttribute('data-k','close'); x.disabled=!!draft.busy;
-    x.appendChild(oGlyph('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
+    if(back){ var b=el('button','amb-circle'); b.type='button'; b.setAttribute('aria-label',tw('sh.change')); b.setAttribute('data-k','back'); b.disabled=!!draft.busy;
+      b.appendChild(ambIcon('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
+    if(title!=null){ var h=el('h2','amb-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
+    var x=el('button','amb-circle'); x.type='button'; x.setAttribute('aria-label',tw('x.close')); x.setAttribute('data-k','close'); x.disabled=!!draft.busy;
+    x.appendChild(ambIcon('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
   }
-  /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
-  /* 5 Nov 2026 (his report: two grey answers read as nothing to do): a question with no answer yet carries Choose one beside it */
+  /* a question answered by the system's Segment (two to four short answers) or, past four (a delivery's windows), its wrapping Segment, as a row of filters is: the chosen
+     one is pressed, and a question with no answer yet carries Choose one beside it (5 Nov 2026, his report: two grey answers read as nothing to do). data-k by position:
+     a product's word never reaches the page */
   function oChoice(legend,opts,cur,key,pick,need){
-    var fs=el('fieldset','salt-options');
-    if(legend){ var lg=el('legend','salt-options__legend',legend);
-      if(need){ lg.appendChild(document.createTextNode(' ')); lg.appendChild(el('span','salt-status salt-status--brass',tw('sh.choose'))); }
+    var fs=el('fieldset','amb-field');
+    if(legend){ var lg=el('legend','amb-field__label',legend);
+      if(need){ lg.appendChild(document.createTextNode(' ')); lg.appendChild(el('span','amb-chip amb-chip--warn',tw('sh.choose'))); }
       fs.appendChild(lg); }
-    var g=el('div','salt-options__grid salt-options__grid--2');
-    /* data-k by position: a product's word never reaches the page, an attribute included */
+    var g=el('div','amb-segment'+(opts.length>4?' amb-segment--wrap':'')); g.setAttribute('role','group');
     opts.forEach(function(o,i){
-      var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('data-k',key+':'+i); b.setAttribute('aria-pressed',o[0]===cur?'true':'false');
+      var b=el('button','amb-segment__opt'); b.type='button'; b.setAttribute('data-k',key+':'+i); b.setAttribute('aria-pressed',o[0]===cur?'true':'false');
       if(typeof o[1]==='string') b.textContent=o[1]; else { b.appendChild(o[1]); b.setAttribute('aria-label',o[2]); }
       b.addEventListener('click',function(){ pick(o[0]); });
       g.appendChild(b);
     });
-    fs.appendChild(g); return fs;
+    fs.appendChild(g);
+    return fs;
   }
   /* what the sheet still needs, and the control that asks it (5 Nov 2026: Review's tap takes them there) */
   function formMiss(){
@@ -5073,55 +4055,58 @@ const CLIENT_JS = `
     draft.spotEdit={id:s?s.id:'', label:s?s.label:'', addr:s?s.addr||'':'', once:!!(s&&s.once)};
     draft.pin=s&&s.pt||null; draft.pinMsg=''; draft.step='spot'; sheetDraw();
   }
+  /* a field of the system: its label, the native control carrying the system's class, and its hint */
+  function ambField(label,id,input,hint){
+    var f=el('div','amb-field'), l=el('label','amb-field__label',label); l.htmlFor=id; f.appendChild(l); f.appendChild(input); if(hint) f.appendChild(hint); return f;
+  }
   function spotList(L){
-    var fs=el('fieldset','salt-options ospots'); fs.appendChild(el('legend','salt-options__legend',tw('sh.whereTo')));
+    var fs=el('fieldset','amb-options ospots'); fs.appendChild(el('legend','amb-field__label',tw('sh.whereTo')));
     var cur=draft.spot&&draft.spot.id, rows=L.slice();
     if(draft.spot&&draft.spot.once) rows.push(draft.spot);
     rows.forEach(function(s,i){
-      var row=el('div','ospot'), lab=el('label','salt-option'), r=el('input','salt-option__input');
+      var row=el('div','ospot'), lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input');
       r.type='radio'; r.name='ospot'; r.value=s.id; r.checked=cur===s.id; r.setAttribute('data-k','spot:'+i);
       r.addEventListener('change',function(){ spotPick(s); sheetDraw(); });
-      var face=el('span','salt-option__face salt-option__face--tap'), tx=el('span','salt-option__text');
-      tx.appendChild(el('span','salt-option__label',s.label)); tx.appendChild(el('span','salt-option__detail',s.once&&!act?spotDetail(s)+DOT+tw('sp.once'):spotDetail(s)));
-      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); row.appendChild(lab);
-      var ed=el('button','salt-ghost ospot__edit',tw('sp.edit')); ed.type='button'; ed.setAttribute('aria-label',tw('sp.editOf',{n:s.label})); ed.setAttribute('data-k','spotedit:'+i);
+      var mk=el('span','amb-option__mark'); mk.setAttribute('aria-hidden','true');
+      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',s.label));
+      lab.appendChild(el('span','amb-option__sub',s.once&&!act?spotDetail(s)+DOT+tw('sp.once'):spotDetail(s))); row.appendChild(lab);
+      var ed=el('button','amb-pill amb-pill--quiet amb-pill--sm ospot__edit',tw('sp.edit')); ed.type='button'; ed.setAttribute('aria-label',tw('sp.editOf',{n:s.label})); ed.setAttribute('data-k','spotedit:'+i);
       ed.addEventListener('click',function(){ spotOpen(s); }); row.appendChild(ed); fs.appendChild(row);
     });
-    if(rows.length<SPOT_MAX||act){ if(!(act&&draft.spot)){ var add=el('button','salt-ghost ospot__add',tw('sp.add')); add.type='button'; add.id='spAdd'; add.setAttribute('data-k','spotadd');
+    if(rows.length<SPOT_MAX||act){ if(!(act&&draft.spot)){ var add=el('button','amb-pill amb-pill--quiet ospot__add',tw('sp.add')); add.type='button'; add.id='spAdd'; add.setAttribute('data-k','spotadd');
       add.addEventListener('click',function(){ spotOpen(null); }); fs.appendChild(add); } }
-    else { var full=el('p','salt-field__hint',tw('sp.full')); full.id='spFull'; fs.appendChild(full); }
+    else { var full=el('p','amb-field__hint',tw('sp.full')); full.id='spFull'; fs.appendChild(full); }
     return fs;
   }
   function spotWhy(E){ return spotCut(E.label,24).length<2?tw('sp.whyName'):!draft.pin&&spotCut(E.addr,200).length<5?tw('sp.whyAddr'):''; }
   function drawSpot(){
     var E=draft.spotEdit, B=osh.body;
     sheetHead(tw(E.id?'sp.editH':'sp.addH'),function(){ draft.step='form'; draft.pin=draft.spot?draft.spot.pt:null; draft.spotEdit=null; sheetDraw(); });
-    var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sp.name')); nl.htmlFor='spName';
-    var ni=el('input','salt-field__input'); ni.id='spName'; ni.type='text'; ni.maxLength=24; ni.value=E.label; ni.autocomplete='off'; ni.placeholder=tw('sp.namePh'); ni.setAttribute('data-k','spname');
+    var ni=el('input','amb-input'); ni.id='spName'; ni.type='text'; ni.maxLength=24; ni.value=E.label; ni.autocomplete='off'; ni.placeholder=tw('sp.namePh'); ni.setAttribute('data-k','spname');
     ni.addEventListener('input',function(){ E.label=ni.value; spotFoot(); });
-    nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+    B.appendChild(ambField(tw('sp.name'),'spName',ni));
     slipKeyLoad();
-    var af=el('div','salt-field opin'), al=el('label','salt-field__label',tw('sp.addr')); al.htmlFor='spAddr'; af.appendChild(al);
+    var af=el('div','amb-field opin'), al=el('label','amb-field__label',tw('sp.addr')); al.htmlFor='spAddr'; af.appendChild(al);
     if(draft.pin){
       /* either-or: a point taken stands in the address's place, with Remove to type one instead */
-      af.appendChild(el('span','salt-field__hint',tw(draft.pin.src==='gps'?'sh.pinOk':draft.pin.src==='pin'?'sh.pinOkFigures':'sh.pinOkLink')));
-      var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
+      af.appendChild(el('span','amb-field__hint',tw(draft.pin.src==='gps'?'sh.pinOk':draft.pin.src==='pin'?'sh.pinOkFigures':'sh.pinOkLink')));
+      var off=el('button','amb-pill amb-pill--quiet',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
       off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; sheetDraw(); });
       af.appendChild(off);
     } else {
-      var ai=el('textarea','salt-field__input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=200; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
+      var ai=el('textarea','amb-input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=200; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
       ai.addEventListener('input',function(){
         var p=pinRead(ai.value);
         if(p){ draft.pin=p; draft.pinMsg=''; E.addr=''; sheetDraw(); return; }
         E.addr=ai.value; spotFoot(); });
       ai.addEventListener('change',function(){ var v=String(ai.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); var h=document.getElementById('spHint'); if(h) h.textContent=draft.pinMsg; } });
       af.appendChild(ai);
-      var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
+      var here=el('button','amb-pill amb-pill--quiet',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
       here.addEventListener('click',pinHere); af.appendChild(here);
     }
-    var hint=el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint')); hint.id='spHint'; af.appendChild(hint);
+    var hint=el('span','amb-field__hint',draft.pinMsg||tw('sh.pinHint')); hint.id='spHint'; af.appendChild(hint);
     B.appendChild(af);
-    if(E.id&&!E.once){ var rm=el('button','salt-ghost spremove',tw('sp.remove')); rm.type='button'; rm.id='spRemove'; rm.setAttribute('data-k','spremove');
+    if(E.id&&!E.once){ var rm=el('button','amb-action amb-action--danger spremove',tw('sp.remove')); rm.type='button'; rm.id='spRemove'; rm.setAttribute('data-k','spremove');
       rm.addEventListener('click',function(){ var L=spotsRead()||[]; spotsWrite(L.filter(function(s){ return s.id!==E.id; }));
         if(draft.spot&&draft.spot.id===E.id){ draft.spot=null; draft.place=''; }
         draft.pin=draft.spot?draft.spot.pt:null; draft.spotEdit=null; draft.step='form'; sheetDraw(); });
@@ -5130,8 +4115,8 @@ const CLIENT_JS = `
   }
   function spotFoot(){
     var E=draft.spotEdit, F=osh.foot; F.textContent='';
-    var why=spotWhy(E), t=el('div','ototal'); t.appendChild(el('span','sub2',why||tw('sh.pinHint'))); F.appendChild(t);
-    var go=el('button','salt-pill salt-pill--md',tw('sp.use')); go.type='button'; go.id='spUse'; go.disabled=!!why; go.setAttribute('data-k','spuse');
+    var why=spotWhy(E); F.appendChild(el('p','amb-field__hint ototal',why||tw('sh.pinHint')));
+    var go=el('button','amb-pill amb-pill--block',tw('sp.use')); go.type='button'; go.id='spUse'; go.disabled=!!why; go.setAttribute('data-k','spuse');
     go.addEventListener('click',function(){
       if(spotWhy(E)) return;
       var pt=draft.pin&&spotPt(draft.pin)?draft.pin:null;
@@ -5176,13 +4161,13 @@ const CLIENT_JS = `
        or Not named; never on their own page, which knows no code */
     if(act&&assoc&&draft.forFriend&&!draft.amend&&!draft.pool){
       if(actBuyers===null&&typeof actParties==='function'){ actBuyers=[]; actParties().then(function(l){ actBuyers=l||[]; if(draft.step==='form') sheetDraw(); }); }
-      var bf=el('div','salt-field'), bl=el('label','salt-field__label',tw('sh.buyer')); bl.htmlFor='oBuyer';
-      var bs=el('select','salt-field__input salt-field__select'); bs.id='oBuyer'; bs.setAttribute('data-k','buyer');
+      var bs=el('select','amb-input'); bs.id='oBuyer'; bs.setAttribute('data-k','buyer');
       var bn=el('option',null,tw('sh.buyerNone')); bn.value=''; bs.appendChild(bn);
       (actBuyers||[]).forEach(function(code){ var op=el('option',null,code); op.value=code; bs.appendChild(op); });
       bs.value=(actBuyers||[]).indexOf(draft.buyer)>=0?draft.buyer:'';
       bs.addEventListener('change',function(){ draft.buyer=bs.value; });
-      bf.appendChild(bl); bf.appendChild(bs); B.appendChild(bf);
+      var bw=el('span','amb-select'); bw.appendChild(bs); bw.appendChild(ambIcon('chevron','amb-icon--sm'));
+      var bf=el('label','amb-field'); bf.appendChild(el('span','amb-field__label',tw('sh.buyer'))); bf.appendChild(bw); B.appendChild(bf);
     }
     /* a group order asks nothing more: its size and its way are fixed, and Review follows the answer an associate gives */
     if(draft.pool){ formFoot(); return; }
@@ -5191,46 +4176,43 @@ const CLIENT_JS = `
     var U=oUsual();
     if(!draft.amend) sheetLines(B);
     else S.forEach(function(P,i){
-      var fs=el('fieldset','salt-options'), lg=el('legend','salt-options__legend'), cur=draft.pick[P.product];
-      lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg);
-      var grid=el('div','salt-options__grid salt-options__grid--2');
+      var fs=el('fieldset','amb-options'), lg=el('legend','amb-field__label'), cur=draft.pick[P.product];
+      lg.appendChild(markThumb(P.product,'sm')); lg.appendChild(el('span','amb-vh',pshape(P.product))); fs.appendChild(lg);
       P.sizes.forEach(function(x){
-        var lab=el('label','salt-option'), r=el('input','salt-option__input'), on=cur!=null&&String(x.q)===String(cur);
+        var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), on=cur!=null&&String(x.q)===String(cur);
         /* by position: a product's word never reaches the page, an attribute included */
         r.type='radio'; r.name=i?'osize'+i:'osize'; r.value=String(x.q); r.checked=on;
         r.setAttribute('data-k',(i?'size'+i:'size')+':'+x.q);
         r.addEventListener('change',function(){ draft.pick[P.product]=String(x.q); sheetDraw(); });
         /* a tap on the size already chosen takes the line off; one product on the list always keeps its size */
         r.addEventListener('click',function(){ if(on&&S.length>1){ delete draft.pick[P.product]; sheetDraw(); } });
-        var face=el('span','salt-option__face'), tx=el('span','salt-option__text'), lb=el('span','salt-option__label',unitsOf(x.q,P.unit));
-        if(U&&U.product===P.product&&String(U.q)===String(x.q)) lb.appendChild(el('span','salt-status salt-status--brass',tw('sh.usual')));
-        tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
-        face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
+        var mk=el('span','amb-option__mark'); mk.setAttribute('aria-hidden','true'); var ti=el('span','amb-option__title',unitsOf(x.q,P.unit));
+        lab.appendChild(r); lab.appendChild(mk); lab.appendChild(ti);
+        if(U&&U.product===P.product&&String(U.q)===String(x.q)) lab.appendChild(el('span','amb-option__sub',tw('sh.usual')));
+        lab.appendChild(el('span','amb-option__figure',rm(x.price))); fs.appendChild(lab);
       });
-      fs.appendChild(grid);
       if(gridOf(P)&&!draft.amend) fs.appendChild(anyField(P,i,cur));
       B.appendChild(fs);
     });
     /* V5b2: the sheet picked so far, one verdict, said once under the sizes */
-    var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ var lk=el('p','salt-insight',tw('sh.prepay',{c:rm(ceilingRM())})); lk.id='advLikely'; B.appendChild(lk); }
+    var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ B.appendChild(pNote(tw('sh.prepay',{c:rm(ceilingRM())}),'advLikely')); }
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); },!draft.mode));
     /* plan version 3: HANDED OVER AND PAID NOW, his alone on Order as them, for a collected order: a settings row with its switch, as This device's */
     if(act&&draft.mode==='collect'&&!draft.amend&&!draft.pool){
-      var nl=el('div','salt-settings'), nr=el('div','salt-settings__row'), nh=el('span','salt-settings__label',tw('sh.actNow')); nh.id='oNowH';
-      var nw=el('button','salt-switch'); nw.type='button'; nw.id='oNow'; nw.setAttribute('role','switch'); nw.setAttribute('aria-checked',String(!!draft.now));
+      var nl=el('div','amb-settings'), nu=el('ul','amb-settings__list'), ni0=el('li'), nr=el('label','amb-setting'), nh=el('span','amb-setting__name',tw('sh.actNow')); nh.id='oNowH';
+      var nw=el('input','amb-switch'); nw.type='checkbox'; nw.id='oNow'; nw.setAttribute('role','switch'); nw.checked=!!draft.now; nw.setAttribute('aria-checked',String(!!draft.now));
       nw.setAttribute('aria-labelledby','oNowH'); nw.setAttribute('data-k','now');
       nw.addEventListener('click',function(){ draft.now=!draft.now; sheetDraw(); });
-      nr.appendChild(nh); nr.appendChild(nw); nl.appendChild(nr); B.appendChild(nl);
+      nr.appendChild(nh); nr.appendChild(nw); ni0.appendChild(nr); nu.appendChild(ni0); nl.appendChild(nu); B.appendChild(nl);
       /* plan version 4, part 3c (Fable's F2): THE DAY OF THE SALE, only with it on, so its handover and payment take the same day: today, or a day
          back to 30 days and 21 Oct 2026 at the earliest; the Desk holds it to the book's newest lot too */
       if(draft.now){
-        var of=el('div','salt-field'), ol=el('label','salt-field__label',tw('sh.actOn')); ol.htmlFor='oOn';
-        var oi=el('input','salt-field__input'); oi.id='oOn'; oi.type='date'; oi.max=todayKL(); oi.min=klPlus(-30)>'2026-10-21'?klPlus(-30):'2026-10-21';
+        var oi=el('input','amb-input'); oi.id='oOn'; oi.type='date'; oi.max=todayKL(); oi.min=klPlus(-30)>'2026-10-21'?klPlus(-30):'2026-10-21';
         oi.value=draft.on||todayKL(); oi.setAttribute('data-k','on');
         var onSet=function(){ draft.on=oi.value; };
         oi.addEventListener('input',onSet); oi.addEventListener('change',onSet);
-        of.appendChild(ol); of.appendChild(oi); of.appendChild(el('span','salt-field__hint',tw('sh.actOnHint'))); B.appendChild(of);
+        B.appendChild(ambField(tw('sh.actOn'),'oOn',oi,el('span','amb-field__hint',tw('sh.actOnHint'))));
       }
     }
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
@@ -5243,14 +4225,13 @@ const CLIENT_JS = `
     if(SL&&draft.startPlace){ var hit=!draft.spot?SL.filter(function(s){ return s.label===draft.startPlace; }):[]; if(hit.length===1) spotPick(hit[0]); draft.startPlace=''; }
     if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a spot's address or point is sealed at Place, so the key is asked for here too */
     else if(draft.mode==='deliver'){
-      var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sh.whereTo')); wl.htmlFor='oWhere';
-      var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
+      var wi=el('input','amb-input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
       wi.placeholder=tw('sh.wherePh'); wi.setAttribute('data-k','where');
-      var wh=el('span','salt-field__hint',whereHint());
+      var wh=el('span','amb-field__hint',whereHint());
       wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
-      wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
+      B.appendChild(ambField(tw('sh.whereTo'),'oWhere',wi,wh));
       /* an amendment keeps the spot the order was placed with */
-      if(draft.amend&&draft.pinKept) B.appendChild(el('p','salt-field__hint',tw('sh.pinKept')));
+      if(draft.amend&&draft.pinKept) B.appendChild(el('p','amb-field__hint',tw('sh.pinKept')));
     }
     /* 10 Oct 2026: A DELIVERY asks for a time: as soon as it can, or one of the windows open now, each its next occurrence;
        a window no longer open (the clock moved, or the hours) leaves the choice at as soon as it can */
@@ -5263,29 +4244,27 @@ const CLIENT_JS = `
       WO.forEach(function(n){ var w=+n.slot.slice(11,13); opts.push([n.slot,tw('sh.winAt',{d:ymdDay(winDay(n.slot)), a:winHm(w), b:winHm(w+4)})]); });
       B.appendChild(oChoice(tw('sh.when'),opts,draft.slot||'','win',function(v){ draft.slot=v; sheetDraw(); }));
       var cho=WO.filter(function(n){ return n.slot===draft.slot; })[0];
-      B.appendChild(el('p','salt-field__hint',cho?tw('sh.winSpan',{a:winPart(cho.span,0), b:winPart(cho.span,1), d:ymdDay(winDay(cho.slot))}):tw('sh.winHint')));
+      B.appendChild(el('p','amb-field__hint',cho?tw('sh.winSpan',{a:winPart(cho.span,0), b:winPart(cho.span,1), d:ymdDay(winDay(cho.slot))}):tw('sh.winHint')));
     } else
     /* 29 Sep 2026: when they want it, as soon as it can come unless they pick a day */
     B.appendChild(oChoice(tw('sh.when'),[['soon',tw('sh.soon')],['day',tw('sh.onDay')]],draft.when==='day'?'day':'soon','when',
       function(v){ draft.when=v; sheetDraw(); }));
     if(draft.mode!=='deliver'&&draft.when==='day'){
-      var df=el('div','salt-field'), dl=el('label','salt-field__label',tw('sh.wantBy')); dl.htmlFor='oWant';
-      var di=el('input','salt-field__input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
+      var di=el('input','amb-input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
       di.setAttribute('data-k','want');
       di.addEventListener('input',function(){ draft.wantBy=di.value; formFoot(); });
       di.addEventListener('change',function(){ draft.wantBy=di.value; formFoot(); });
-      df.appendChild(dl); df.appendChild(di); df.appendChild(el('span','salt-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))); B.appendChild(df);
+      B.appendChild(ambField(tw('sh.wantBy'),'oWant',di,el('span','amb-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))));
     }
     /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
     if(act){ /* his words reach them on the order's thread, which the Desk checks */ }
     else if(!draft.amend&&(draft.noteOpen||String(draft.say||'').trim())){
-      var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sh.note')); nl.htmlFor='oSay';
-      var ni=el('input','salt-field__input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
+      var ni=el('input','amb-input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
       ni.placeholder=tw('sh.notePh'); ni.setAttribute('data-k','say');
       ni.addEventListener('input',function(){ draft.say=ni.value; });
-      nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+      B.appendChild(ambField(tw('sh.note'),'oSay',ni));
     } else if(!draft.amend) {
-      var an=el('button','salt-ghost ofull',tw('sh.addNote')); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
+      var an=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('sh.addNote')); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
       an.addEventListener('click',function(){ draft.noteOpen=true; sheetDraw(); var f=document.getElementById('oSay'); if(f) try{ f.focus(); }catch(e){} });
       B.appendChild(an);
     }
@@ -5302,31 +4281,31 @@ const CLIENT_JS = `
     return offWhy(g,q); }
   function anyField(P,i,cur){
     var onB=cur!=null&&(P.sizes||[]).some(function(x){ return String(x.q)===String(cur); }), g=gridOf(P);
-    var af=el('div','salt-field oany'), al=el('label','salt-field__label',tw('sh.any')); al.htmlFor='oAny'+i;
-    var ai=el('input','salt-field__input salt-field__input--mono'); ai.id='oAny'+i; ai.type='number'; ai.inputMode='decimal';
+    var ai=el('input','amb-input'); ai.id='oAny'+i; ai.type='number'; ai.inputMode='decimal';
     ai.min=String(g.min); ai.step=String(g.step); ai.autocomplete='off'; ai.setAttribute('data-k','any:'+i);
     ai.value=cur!=null&&!onB?String(cur):'';
-    var ah=el('span','salt-field__hint',anyHint(P,ai.value));
+    var ah=el('span','amb-field__hint',anyHint(P,ai.value));
     ai.addEventListener('input',function(){ var v=String(ai.value||'').trim(), q=+v;
       if(v!==''&&q>0&&(priceAt(P,q)!=null||overMax(P,q))) draft.pick[P.product]=String(+q.toFixed(6));
       else if(draft.pick[P.product]!=null&&!(P.sizes||[]).some(function(x){ return String(x.q)===String(draft.pick[P.product]); })) delete draft.pick[P.product];
       ah.textContent=anyHint(P,v); formFoot(); });
     ai.addEventListener('change',function(){ sheetDraw(); });
-    af.appendChild(al); af.appendChild(ai); af.appendChild(ah); return af;
+    var af=ambField(tw('sh.any'),'oAny'+i,ai,ah); af.className+=' oany'; return af;
   }
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
     bsFromPick();
     var F=osh.foot; F.textContent='';
-    if(!draft.amend&&!draft.pool&&!quotes().length){ var dn=el('button','salt-ghost',tw('sh.done')); dn.type='button'; dn.id='oDone'; dn.setAttribute('data-k','done');
+    if(!draft.amend&&!draft.pool&&!quotes().length){ var dn=el('button','amb-pill amb-pill--block',tw('sh.done')); dn.type='button'; dn.id='oDone'; dn.setAttribute('data-k','done');
       dn.addEventListener('click',sheetDismiss); F.appendChild(dn); F.hidden=false; return; }
     var qs=quotes(), why=formWhy(), t=el('div','ototal'), sum=0;
     qs.forEach(function(x){ sum+=x.total; });
-    t.appendChild(el('b','salt-kpi__value',qs.length?rm(+sum.toFixed(2)):''));
     var fco=creditOff(+sum.toFixed(2));
-    t.appendChild(el('span','sub2',why||(fco.any&&qs.length?tw('sh.creditOff',{c:rm(fco.c), p:rm(fco.pay)}):tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect'))));
+    var st=hStat(why||(fco.any&&qs.length?tw('sh.creditOff',{c:rm(fco.c), p:rm(fco.pay)}):tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')),qs.length?rm(+sum.toFixed(2)):'');
+    /* the figure leads, the words under it (the stat's label stands above its value, so the two swap places) */
+    st.insertBefore(st.lastChild,st.firstChild); t.appendChild(st);
     F.appendChild(t);
-    var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='oGo'; go.setAttribute('data-k','review');
+    var go=el('button','amb-pill amb-pill--block',tw('sh.review')); go.type='button'; go.id='oGo'; go.setAttribute('data-k','review');
     /* 5 Nov 2026: never greyed; not ready, it says so to a reader and a tap goes to what is missing */
     if(why) go.setAttribute('aria-disabled','true');
     go.addEventListener('click',function(){ if(formWhy()) formShow(); else reviewSheet(); });
@@ -5411,26 +4390,23 @@ const CLIENT_JS = `
   function drawLimit(){
     sheetHead(tw('sh.new'));
     var B=osh.body, open=oLive();
-    var say=el('p','salt-insight salt-insight--copper',limitLine()); say.setAttribute('role','status'); B.appendChild(say);
-    var L=el('div','salt-ledger salt-ledger--plain');
-    open.forEach(function(o){
-      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
-      /* the order as a card: its mark a button, its caption under it (his notes of 28 Sep and 11 Oct 2026) */
-      lab.appendChild(mtile(o.product,o.qty,oUnit(o)));
-      /* the order's own word, stage 5's (stateWord, over oWord), as its row under Your orders says it; goods handed over in
-         part keep an order open at ready, so they read as the banner's part word, never Ready over "part of it is with you" */
+    var say=pNote(limitLine(),'',true); say.setAttribute('role','status'); B.appendChild(say);
+    var rows=open.map(function(o){
+      /* the order as a row: its mark, its size, its own word (stage 5's stateWord over oWord) and its figure; goods handed over in part keep an order open at
+         ready, so they read as the banner's part word, never Ready over "part of it is with you" */
       var mv=+o.moved||0, part=mv>0&&!movedAll(o), dl=o.mode==='deliver';
-      lab.appendChild(el('span',null,part?tw(dl?'st.partDelivered':'st.partCollected'):stateWord(o)));
-      l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
+      var sub=el('span'); sub.appendChild(document.createTextNode((part?tw(dl?'st.partDelivered':'st.partCollected'):stateWord(o))+DOT));
+      sub.appendChild(document.createTextNode(+o.moved>0?tw(!part?'sh.withYou':(+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?'sh.partOwed':'sh.part'):tw('sh.placed',{t:Dd(stamp,o.at)})));
+      var r=hRow({tag:'li', thumb:markThumb(o.product,'md'), title:unitsOf(o.qty,oUnit(o)), sub:sub, amount:rm(o.total+(+o.delivery||0))});
       if(!(+o.moved>0)){
-        var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
-        var cb=el('button','salt-ghost',tw('ord.cancel')); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id); cb.setAttribute('data-yn','limit:'+o.id);
-        cb.addEventListener('click',function(){ limitCancel(o,cb); }); row.appendChild(cb); r.appendChild(row);
-      } else r.appendChild(el('span','salt-ledger__flag',tw(!part?'sh.withYou'
-        :(+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?'sh.partOwed':'sh.part')));
-      if(draft.limTap&&draft.limTap.id===o.id) r.appendChild(statusLine(draft.limTap.t));
-      L.appendChild(r);
+        var tr=r.querySelector('.amb-row__trail')||r.appendChild(el('span','amb-row__trail'));
+        var cb=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('ord.cancel')); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id); cb.setAttribute('data-yn','limit:'+o.id);
+        cb.addEventListener('click',function(){ limitCancel(o,cb); }); tr.appendChild(cb);
+      }
+      return r;
     });
+    var L=hUl(rows);
+    open.forEach(function(o,i){ if(draft.limTap&&draft.limTap.id===o.id) L.children[i].appendChild(statusLine(draft.limTap.t)); });
     B.appendChild(L);
   }
   /* 11 Oct 2026: each Cancel here asks in a Sheet over the list, restating that order; its yes is the request it always sent */
@@ -5459,34 +4435,35 @@ const CLIENT_JS = `
     /* V5b2: one forecast for the sheet, every line still on the list counted at its goods */
     var lk=advanceLikely(c.lines.filter(function(l){ return !l.gone; }).map(function(l){ return l.total; }));
     sheetHead(tw(c.pool?'hp.h':c.amend?'ord.amendReview':'sh.check'),c.pool&&!assoc?sheetDismiss:toForm);
-    if(c.amend) B.appendChild(el('p','salt-insight',tw('ord.amendAsk')));
-    if(c.pool) B.appendChild(el('p','salt-insight',tw('hp.ask',{q:unitsOf(a.q,a.unit)})));
+    if(c.amend) B.appendChild(pNote(tw('ord.amendAsk')));
+    if(c.pool) B.appendChild(pNote(tw('hp.ask',{q:unitsOf(a.q,a.unit)})));
     if(c.amend&&(hoursError||counterHours&&!counterHours.open))
-      B.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
-    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and its caption under it, in
-       place of a What line that set the mark beside its size; V4b: a card a line */
-    var H=el('div','mhero'); c.lines.forEach(function(l){ H.appendChild(mtile(l.product,l.q,l.unit)); }); B.appendChild(H);
-    var L=el('div','salt-ledger salt-ledger--plain');
-    function row(k,v,flag){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label'), val=el('span','salt-ledger__value');
-      if(typeof k==='string') lab.textContent=k; else lab.appendChild(k);
-      l.appendChild(lab); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
-      l.appendChild(val); r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag)); L.appendChild(r); }
+      B.appendChild(pNote(tw(hoursError?'hours.unavailable':'hours.closed')));
+    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check, each line its mark and size; V4b: a row a line. 16 Nov 2026: the system's Row and Settings; a line
+       placed says so, a price in advance says so, and a basket's line can come off */
+    var rmOk=!one&&draft.src==='basket'&&!c.amend&&!c.pool&&!draft.busy&&!c.lines.some(function(l){ return l.placed; });
+    var LR=hUl(c.lines.map(function(l){
+      var r=hRow({tag:'li', thumb:markThumb(l.product,'md'), title:unitsOf(l.q,l.unit), sub:one?'':l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):'', amount:one?'':rm(l.total)});
+      if(rmOk){ var tr=r.querySelector('.amb-row__trail')||r.appendChild(el('span','amb-row__trail'));
+        var rb=el('button','amb-pill amb-pill--quiet amb-pill--sm bkrm',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-k','rm:'+c.lines.indexOf(l));
+        rb.appendChild(el('span','amb-vh',' '+pshape(l.product)+' '+unitsOf(l.q,l.unit)));
+        rb.addEventListener('click',function(){ if(draft.busy||c.lines.some(function(x){ return x.placed; })) return;
+          if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();
+          if(picked()&&!formWhy()) reviewSheet(); else toForm(); });
+        tr.appendChild(rb); }
+      return r; }));
+    B.appendChild(LR);
+    var SL=el('ul','amb-settings__list');
+    function row(k,v,flag){ var li=el('li'), r=el('div','amb-setting'), val=el('span','amb-setting__value');
+      r.appendChild(el('span','amb-setting__name',k));
+      if(typeof v==='string') val.textContent=v; else val.appendChild(v);
+      if(flag) val.appendChild(el('span','ofl',flag));
+      r.appendChild(val); li.appendChild(r); SL.appendChild(li); }
     if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
     if(c.buyer) row(tw('sh.buyer'),c.buyer);   /* plan version 4: his alone */
     if(c.on) row(tw('sh.actOn'),ymdDay(c.on));
     if(one) row(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
-    else {
-      /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
-      var rmOk=draft.src==='basket'&&!c.amend&&!c.pool&&!draft.busy&&!c.lines.some(function(l){ return l.placed; });
-      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):'');
-        if(rmOk){ var rb=el('button','salt-ghost bkrm',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-k','rm:'+c.lines.indexOf(l));
-          rb.appendChild(el('span','sr',' '+pshape(l.product)+' '+unitsOf(l.q,l.unit)));
-          rb.addEventListener('click',function(){ if(draft.busy||c.lines.some(function(x){ return x.placed; })) return;
-            if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();
-            if(picked()&&!formWhy()) reviewSheet(); else toForm(); });
-          L.lastChild.appendChild(rb); } });
-      row(tw('sh.total'),rm(sheetSum(c)));
-    }
+    else row(tw('sh.total'),rm(sheetSum(c)));
     /* 27 Oct 2026: the goods, then their credit, then what they pay, never under RM 0; a delivery set at confirmation comes off it too */
     var cco=c.pool?{any:false}:creditOff(sheetSum(c));
     if(cco.any){ row(tw('sh.credit'),'- '+rm(cco.c)); row(tw('sh.youPay'),rm(cco.pay),c.mode==='deliver'?tw('sh.youPayDeliv'):''); }
@@ -5497,34 +4474,34 @@ const CLIENT_JS = `
     else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
     if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
-    B.appendChild(L);
+    var SG=el('div','amb-settings'); SG.appendChild(SL); B.appendChild(SG);
     /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure;
        V4b: a line at a time, its mark leading when there are several */
     c.lines.forEach(function(l){
-      if(l.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
-        setW(mv,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.insertBefore(markLead(l.product,20),mv.firstChild); B.appendChild(mv); }
-      if(l.gone){ var gn=el('p','salt-insight salt-insight--copper',tw(one?'sh.gone':'sh.goneLine'));
-        gn.setAttribute('role','status'); if(!one) gn.insertBefore(markLead(l.product,20),gn.firstChild); B.appendChild(gn); }
+      if(l.was!=null){ var mv=pNote('','',true); mv.setAttribute('role','status');
+        setW(mv.lastChild,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.lastChild.insertBefore(markLead(l.product,20),mv.lastChild.firstChild); B.appendChild(mv); }
+      if(l.gone){ var gn=pNote(tw(one?'sh.gone':'sh.goneLine'),'',true);
+        gn.setAttribute('role','status'); if(!one) gn.lastChild.insertBefore(markLead(l.product,20),gn.lastChild.firstChild); B.appendChild(gn); }
     });
     /* V5b2: a sheet likely paid in advance is checked beside what that means, and that the desk confirms it */
-    if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
+    if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(pNote(tw('sh.prepayP')));
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
-    if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
+    if(c.mode==='deliver') B.appendChild(pNote(tw('deliv')));
     /* NEGOTIATE (05 Oct 2026): one line, for themselves, asks for a price instead of placing at the list's. The check holds
        nothing to type into, so the figure of their own, optional, is its own step (drawAsk) */
-    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(el('p','salt-insight',tw('sh.actNowCheck')));   /* plan version 3: said before Place */
+    if(act&&draft.now&&c.mode==='collect'&&!c.amend&&!c.pool) B.appendChild(pNote(tw('sh.actNowCheck')));   /* plan version 3: said before Place */
     var canAsk=one&&!act&&!c.amend&&!c.pool&&!c.forFriend&&!a.placed&&!c.sheet;
-    if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(el('p','salt-insight salt-insight--copper',tw('sh.askOne')));
+    if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(pNote(tw('sh.askOne'),'',true));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
-    var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
-    bk.addEventListener('click',c.pool&&!assoc?sheetDismiss:toForm); F.appendChild(bk);
-    var pl=el('button','salt-pill salt-pill--md',c.pool?tw('hp.join'):c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
     var over=c.lines.some(function(l){ return l.over; });
+    var pl=el('button','amb-pill amb-pill--block',c.pool?tw('hp.join'):c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
     pl.disabled=!!draft.busy||gone||!!c.shut||over; pl.setAttribute('data-k','place');
     pl.addEventListener('click',function(){ oPlaceIt(false); }); if(!over) F.appendChild(pl);
-    if(canAsk){ var ng=el('button',over?'salt-pill salt-pill--md':'salt-ghost',tw('sh.ask')); ng.type='button'; ng.id='oAskGo';
+    if(canAsk){ var ng=el('button','amb-pill amb-pill--block'+(over?'':' amb-pill--quiet'),tw('sh.ask')); ng.type='button'; ng.id='oAskGo';
       ng.disabled=!!draft.busy||gone||!!c.shut; ng.setAttribute('data-k','askgo');
       ng.addEventListener('click',function(){ draft.step='ask'; draft.snote=''; sheetDraw(); }); F.appendChild(ng); }
+    var bk=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
+    bk.addEventListener('click',c.pool&&!assoc?sheetDismiss:toForm); F.appendChild(bk);
     /* the answer is drawn beside Place, which is what was tapped */
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
@@ -5535,17 +4512,17 @@ const CLIENT_JS = `
     var c=draft.check, B=osh.body, a=c&&c.lines[0];
     if(!a){ toForm(); return; }
     sheetHead(tw('sh.askT'),toCheck);
-    var H=el('div','mhero'); H.appendChild(mtile(a.product,a.q,a.unit)); B.appendChild(H);
-    B.appendChild(el('p','salt-insight',tw('sh.askHint')));
-    var kf=el('div','salt-field'), kl=el('label','salt-field__label',tw('sh.askFig')); kl.htmlFor='oAsk';
-    var ki=el('input','salt-field__input salt-field__input--mono'); ki.id='oAsk'; ki.type='number'; ki.inputMode='decimal'; ki.min='0'; ki.step='0.01';
-    ki.value=c.propose||''; ki.autocomplete='off'; ki.setAttribute('data-k','ask');
+    B.appendChild(hList([hRow({tag:'div', thumb:markThumb(a.product,'md'), title:unitsOf(a.q,a.unit)})]));
+    B.appendChild(pNote(tw('sh.askHint')));
+    var ki=el('input','amb-input amb-input--amount'); ki.id='oAsk'; ki.type='number'; ki.inputMode='decimal'; ki.min='0'; ki.step='0.01';
+    ki.value=c.propose||''; ki.placeholder='0.00'; ki.autocomplete='off'; ki.setAttribute('data-k','ask');
     ki.addEventListener('input',function(){ c.propose=ki.value; });
-    kf.appendChild(kl); kf.appendChild(ki); B.appendChild(kf);
-    var F=osh.foot, bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oAskBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','askback');
-    bk.addEventListener('click',toCheck); F.appendChild(bk);
-    var go=el('button','salt-pill salt-pill--md',tw('sh.askSend')); go.type='button'; go.id='oAskSend'; go.disabled=!!draft.busy; go.setAttribute('data-k','asksend');
+    B.appendChild(ambField(tw('sh.askFig'),'oAsk',ki));
+    var F=osh.foot;
+    var go=el('button','amb-pill amb-pill--block',tw('sh.askSend')); go.type='button'; go.id='oAskSend'; go.disabled=!!draft.busy; go.setAttribute('data-k','asksend');
     go.addEventListener('click',function(){ oPlaceIt(true); }); F.appendChild(go);
+    var bk=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('sh.change')); bk.type='button'; bk.id='oAskBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','askback');
+    bk.addEventListener('click',toCheck); F.appendChild(bk);
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
   /* V4b: PLACE SENDS ONE ORDER A LINE, in order, each under its own request id and the sheet's; a line placed stays placed,
@@ -5632,13 +4609,13 @@ const CLIENT_JS = `
   function drawSent(){
     sheetHead(null);
     var B=osh.body, top=el('div','osent');
-    top.appendChild(oGlyph('tick','otick',40));
-    var h=el('h2','salt-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
-    top.appendChild(el('p',null,tw(draft.asked?'sh.askedP':'sh.sentP')));
-    if(act&&draft.actSaid){ var as=el('p','salt-insight',draft.actSaid); as.id='oActSaid'; top.appendChild(as); }
+    top.appendChild(ambIcon('check','otick'));
+    var h=el('h2','amb-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
+    top.appendChild(el('p','amb-muted',tw(draft.asked?'sh.askedP':'sh.sentP')));
+    if(act&&draft.actSaid) top.appendChild(pNote(draft.actSaid,'oActSaid'));
     B.appendChild(top);
     /* Step 1b: Sent's ask retired; the bell in the saved app's header asks, on every view, until notifications are on */
-    var see=el('button','salt-ghost ofull',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
+    var see=el('button','amb-pill amb-pill--block',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
     /* stage 5's own screen for it; an order the list has not brought back yet opens on the next draw that has it */
     see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); placeShow('order');
       if(id&&oFind(id)) oOpen(id); else { wantOrder=id||''; drawOrder(); } });
@@ -5657,32 +4634,36 @@ const CLIENT_JS = `
        mid-sentence; the line is kept per order in draft.says, and the box that had the caret gets it back */
     var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
         sel=keep?[fo.selectionStart,fo.selectionEnd]:null;
-    pOrder.textContent='';
+    spl().textContent='';
     /* S7-R3 of the review: all of this is the head of the list's column (oPlace puts it there), so on a desk the open
        order beside it starts at the top of the place, its money, Pay and messages in view */
-    var top=el('div','otop'); top.id='oTop'; oTopEl=top;
+    var top=el('div','otop amb-stack'); top.id='oTop'; oTopEl=top;
     /* S7 7.1: the header names the place, Orders; over the line the page below it still says what it is */
-    if(hold) top.appendChild(el('h2',null,tw('ord.due')));
-    if(view) top.appendChild(el('p','lead',tw(act?'ord.act':'ord.view')));
+    if(hold) top.appendChild(el('h2','amb-section',tw('ord.due')));
+    if(view) top.appendChild(el('p','onote',tw(act?'ord.act':'ord.view')));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
-      var dueBox=el('div','pane salt-glass-card salt-glass-card--radius-md'), od=odNow(), left=odLeft();
-      dueBox.appendChild(kpiTile('ember',tw('pay.overdue'),rm(left),odNote(od)));
-      dueBox.appendChild(el('p','lead',tw('pay.hold',{rm:rm(left)})));
+      var dueBox=el('div','ohold amb-stack'), od=odNow(), left=odLeft();
+      dueBox.appendChild(ambTile(tw('pay.overdue'),rm(left),odNote(od)));
+      dueBox.appendChild(el('p','onote',tw('pay.hold',{rm:rm(left)})));
       if(od.parts.length>1){
-        var L=el('div','salt-ledger salt-ledger--plain');
-        od.parts.forEach(function(x){ L.appendChild(coverTo(lrowN(partSpan(x),rm(x.rm),dueWords(x),'odue'),x)); });
-        dueBox.appendChild(L);
+        var L=el('div','amb-settings'), ul=el('ul','amb-settings__list');
+        od.parts.forEach(function(x){
+          var li=el('li'), r=el('div','amb-setting'), nm=el('span','amb-setting__name');
+          nm.appendChild(partSpan(x)); nm.appendChild(el('span','obill__sub',dueWords(x))); coverTo(nm,x);
+          r.appendChild(nm); r.appendChild(el('span','amb-setting__value odue',rm(x.rm))); li.appendChild(r); ul.appendChild(li);
+        });
+        L.appendChild(ul); dueBox.appendChild(L);
       }
       /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links, each naming a place to pay */
       if(!view){
-        var hp=el('button','btn salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(left)})); hp.type='button';
+        var hp=el('button','amb-pill amb-pill--sm',tw('pay.payRm',{rm:rm(left)})); hp.type='button';
         hp.setAttribute('data-back','pay:od');
         hp.addEventListener('click',function(){ openPay({kind:'acct', fig:left, label:'pay.overdue', note:function(){ return odNote(od); }},hp,'pay:od'); });
         dueBox.appendChild(hp);
       }
-      dueBox.appendChild(el('p','sub2',tw('ord.holdP')));
-      var sv=el('button','btn quiet salt-ghost',tw('ord.seeStmt')); sv.type='button';
+      dueBox.appendChild(el('p','onote',tw('ord.holdP')));
+      var sv=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('ord.seeStmt')); sv.type='button';
       sv.addEventListener('click',function(){ placeShow('stmt'); });
       dueBox.appendChild(sv);
       /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
@@ -5691,24 +4672,24 @@ const CLIENT_JS = `
     } else if(ro()){
       /* no order form on his read-only view */
     } else if(!sold().length){
-      top.appendChild(el('p','lead',noOrderLine()));
+      top.appendChild(el('p','onote',noOrderLine()));
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
-      top.appendChild(el('p','lead',tw('ord.lead')));
+      top.appendChild(el('p','onote',tw('ord.lead')));
       var full=openN()>=OMAX;
-      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine()); lim.id='oLimit'; top.appendChild(lim); }
+      if(full){ var lim=el('div','amb-notice amb-notice--warn'); lim.id='oLimit'; lim.appendChild(ambIcon('info')); lim.appendChild(el('span',null,limitLine())); top.appendChild(lim); }
       else {
         if(hoursError||counterHours&&!counterHours.open){
-          top.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
+          top.appendChild(el('p','onote',tw(hoursError?'hours.unavailable':'hours.closed')));
         }
-        var nb=el('button','btn salt-pill salt-pill--md',tw('sh.new')); nb.type='button'; nb.id='oNew';
+        var nb=el('button','amb-pill amb-pill--sm',tw('sh.new')); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ goOrder(); });
         top.appendChild(nb);
       }
       if(osh&&draft.step==='limit') sheetDraw();
     }
     /* Step 1b: notifications are the bell's, in the header of every view of the saved app; this pane retired */
-    pOrder.appendChild(oPlace());
+    oPlace();
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
@@ -5736,25 +4717,13 @@ const CLIENT_JS = `
     var e=endOf(o);
     return oWord(o.status,o,e?e.by:'');
   }
-  /* COUNTER BATCH A (his decision of 18 Oct 2026): A GLYPH BEFORE EVERY STATE WORD. A dot while it is still being agreed, a tick once
-     agreed or ready, a double tick once the goods are with them or it is complete, a cross once it ended; the word is unchanged and
-     the glyph aria-hidden, so the chip reads the same aloud. The dot is filled, the rest drawn as strokes in the chip's tone. */
-  var CHIP_GLYPH={dot:'M8 5.5 A2.5 2.5 0 1 1 7.99 5.5 Z', tick:'M3 8.5 L6.5 12 L13 4.5', ticks:'M1 8.5 L4.5 12 L10.5 4.5 M7.5 11.5 L8 12 L15 4.5', cross:'M4 4 L12 12 M12 4 L4 12'};
-  function chipGlyph(k){
-    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
-    s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('class','salt-status__glyph'); s.setAttribute('data-g',k);
-    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false');
-    d.setAttribute('d',CHIP_GLYPH[k]); if(k==='dot') d.setAttribute('fill','currentColor');
-    s.appendChild(d); return s;
-  }
-  function stateGlyph(o){
-    var s=o.status;
-    return s==='placed'?'dot':(s==='declined'||s==='cancelled')?'cross':(s==='done'||(oPayable(o)&&movedAll(o)))?'ticks':'tick';
-  }
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: a state is the system's Chip, its dot and its word: plain while it waits on us or has ended, warn while it is
+     ready and not yet with them, pos once it is agreed or with them. The glyph before the word went with the recipes (Counter Batch A, 18 Oct 2026);
+     the word is unchanged, and so is what a reader hears. */
   function stateChip(o,cls){
-    var s=o.status, tone=s==='placed'?'steel salt-status--dashed':s==='ready'&&!movedAll(o)?'brass':(s==='acknowledged'||s==='done'||oPayable(o))?'verdigris':'mist';
-    var c=el('span',(cls?cls+' ':'')+'salt-status salt-status--'+tone);
-    c.appendChild(chipGlyph(stateGlyph(o))); c.appendChild(document.createTextNode(stateWord(o)));
+    var s=o.status, tone=s==='ready'&&!movedAll(o)?' amb-chip--warn':(s==='acknowledged'||s==='done'||oPayable(o))?' amb-chip--pos':'';
+    var c=el('span',(cls?cls+' ':'')+'amb-chip'+tone);
+    var dot=el('span','amb-chip__dot'); c.appendChild(dot); c.appendChild(document.createTextNode(stateWord(o)));
     return c;
   }
   /* what happened, a step a line, in the same words: the record's notes are the desk's shorthand */
@@ -5848,23 +4817,28 @@ const CLIENT_JS = `
     if(!b.length&&o.status==='placed') b.push(tw(o.history&&o.history[0]&&o.history[0].by==='desk'?'why.forYou':'why.placed'));
     var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
   }
-  /* one line: the mark and the size with the state, why it is here, then the day and the figure */
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: AN ORDER IS A ROW, the same one as Home's (hRow and hSub): the book's mark thumb, the size, its state as a word and
+     why it is here, then the day and the figure; the whole row opens the order, and its name says all of it in one sentence. An order that can be
+     ordered again is a row with a control of its own: the row opens it and Order again stands beside it, never inside it. */
   function oRow(o,shown){
-    var b=el('button','salt-inbox-row orow'); b.type='button'; b.setAttribute('data-row',o.id);
-    if(o.id===shown) b.setAttribute('aria-current','true');
-    /* the order as a card: its mark a button, its caption under it, and its state beside (his notes of 28 Sep and 11 Oct 2026) */
-    b.appendChild(mtile(o.product,o.qty,oUnit(o)));
-    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(stateChip(o));
-    main.appendChild(t);
-    var why=oWhy(o); if(why) main.appendChild(el('span','salt-inbox-row__what',why));
-    b.appendChild(main);
-    var side=el('span','salt-inbox-row__side');
-    side.appendChild(el('span','salt-inbox-row__age',oDay(o.at)));
-    side.appendChild(el('span','salt-inbox-row__action',rm(o.total+(+o.delivery||0))));
-    b.appendChild(side);
+    var why=oCardWhy(o), sub=hSub(o,why);
+    /* a state and its words in one (Placed for you) is said once, not as Placed, placed for you */
+    if(why&&why.indexOf(stateWord(o))===0){ sub=el('span'); sub.appendChild(el('span',null,why)); }
+    var b=hRow({attrs:{'data-row':o.id}, thumb:markThumb(o.product), title:unitsOf(o.qty,oUnit(o)), sub:sub,
+      age:oDay(o.at), amount:rm(o.total+(+o.delivery||0))});
+    b.setAttribute('aria-label',tw(why?'ord.cardAriaWhy':'ord.cardAria',{d:oDay(o.at), a:Uq(o.qty,oUnit(o)), s:stateWord(o), w:why}));
     b.addEventListener('click',function(){ oOpen(o.id); });
-    return b;
+    var out=b;
+    if(oAgainOk(o)){
+      b.classList.remove('amb-row'); b.classList.add('amb-row__main');
+      out=el('li','amb-row'); out.setAttribute('data-wrap',o.id); out.appendChild(b);
+      var g=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('oa.again')); g.type='button'; g.setAttribute('data-again',o.id);
+      g.setAttribute('aria-label',tw('oa.againAria',{d:oDay(o.at)}));
+      g.addEventListener('click',function(){ againOpen(oAgainOf(o),g); });
+      var tr=el('span','amb-row__trail'); tr.appendChild(g); out.appendChild(tr);
+    }
+    if(o.id===shown){ b.setAttribute('aria-current','true'); out.setAttribute('aria-current','true'); }
+    return out;
   }
   function oBuckets(){ var n=[],p=[],e=[]; orders.forEach(function(o){ (oNeeds(o)?n:oClosed(o)?e:p).push(o); }); return {needs:n,open:p,past:e}; }
   /* COUNTER BATCH A (his decisions of 18 Oct 2026): AN ORDER IS A CARD, the whole card one control. Its day and time with its state on top,
@@ -5877,53 +4851,41 @@ const CLIENT_JS = `
     if(paid<=0.004&&(o.status==='declined'||o.status==='cancelled')) return tw('why.nothingPaid');
     return '';
   }
-  function oCard(o,shown){
-    var b=el('button','orow ocard salt-glass-card salt-glass-card--radius-lg salt-glass-card--link'+(oClosed(o)?' ocard--ended':'')); b.type='button'; b.setAttribute('data-row',o.id);
-    if(o.id===shown) b.setAttribute('aria-current','true');
-    var top=el('span','ocard__top'); top.appendChild(el('span','ocard__when',stamp(o.at))); top.appendChild(stateChip(o)); b.appendChild(top);
-    var main=el('span','ocard__main'), why=oCardWhy(o);
-    main.appendChild(mtile(o.product,o.qty,oUnit(o),32));
-    main.appendChild(el('span','ocard__what'+(oOwes(o)?' odue':''),why));
-    main.appendChild(el('span','ocard__total',rm(o.total+(+o.delivery||0))));
-    b.appendChild(main);
-    b.setAttribute('aria-label',tw(why?'ord.cardAriaWhy':'ord.cardAria',{d:oDay(o.at), a:Uq(o.qty,oUnit(o)), s:stateWord(o), w:why}));
-    b.addEventListener('click',function(){ oOpen(o.id); });
-    return b;
-  }
-  /* the four ways to look at them on a phone; from 860px Open and Done stand as two columns and there is no filter row */
+  /* the four ways to look at them, the system's Filters: each counted, exactly one pressed */
   var OTABS=[['all','ord.tab.all'],['open','ord.tab.open'],['pay','ord.tab.pay'],['done','ord.tab.done']];
   function oOf(k){ return k==='open'?orders.filter(function(o){ return !oClosed(o); }):k==='pay'?orders.filter(oOwes):k==='done'?orders.filter(oClosed):orders.slice(); }
   function oTabs(){
-    var cur=draft.oTab||'all', row=el('div','salt-segment otabs'); row.setAttribute('role','tablist'); row.setAttribute('aria-label',tw('ord.tabs'));
+    var cur=draft.oTab||'all', row=el('div','amb-segment amb-segment--wrap otabs'); row.setAttribute('role','group'); row.setAttribute('aria-label',tw('ord.tabs'));
     OTABS.forEach(function(t){
-      var b=el('button','salt-segment__opt',tw(t[1])); b.type='button'; b.setAttribute('role','tab');
-      b.setAttribute('data-otab',t[0]); b.setAttribute('aria-selected',t[0]===cur?'true':'false');
-      b.appendChild(el('span','salt-segment__count',String(oOf(t[0]).length)));
+      var b=el('button','amb-segment__opt',tw(t[1])+' '); b.type='button';
+      b.setAttribute('data-otab',t[0]); b.setAttribute('aria-pressed',t[0]===cur?'true':'false');
+      b.appendChild(el('span','amb-segment__count',String(oOf(t[0]).length)));
       b.addEventListener('click',function(){ draft.oTab=t[0]; oDraw(); var n=pOrder.querySelector('[data-otab="'+t[0]+'"]'); if(n) try{ n.focus({preventScroll:true}); }catch(e){} });
       row.appendChild(b);
     });
-    segSync(row);
     return row;
   }
-  /* an empty view: its mark, a heading, one sentence and the one way on */
+  /* an empty view: one sentence, its heading and what it says, and the one way on */
   function oEmpty(k){
-    var box=el('div','oempty salt-empty'), mk=el('span','salt-empty__mark'); mk.setAttribute('aria-hidden','true');
-    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
-    s.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d','M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5');
-    s.appendChild(d); mk.appendChild(s); box.appendChild(mk);
-    box.appendChild(el('h3','salt-empty__title',tw('ord.empty.'+k+'.t'))); box.appendChild(el('p','salt-empty__text',tw('ord.empty.'+k+'.b')));
+    var box=el('div','oempty'); box.appendChild(el('p','amb-empty',tw('ord.empty.'+k+'.t')+'. '+tw('ord.empty.'+k+'.b')));
     var go=null;
-    if(k==='none'){ var nb=(oTopEl&&oTopEl.querySelector('#oNew'))||document.getElementById('oNew'); if(nb){ go=el('button','salt-ghost salt-ghost--lit',tw('ord.empty.none.go')); go.addEventListener('click',function(){ sheetOpen(null,null,go); }); } }
-    else{ var to=k==='done'?'open':'all'; go=el('button','salt-ghost salt-ghost--lit',tw('ord.empty.'+k+'.go')); go.addEventListener('click',function(){ draft.oTab=to; oDraw(); }); }
+    if(k==='none'){ var nb=(oTopEl&&oTopEl.querySelector('#oNew'))||document.getElementById('oNew'); if(nb){ go=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('ord.empty.none.go')); go.addEventListener('click',function(){ sheetOpen(null,null,go); }); } }
+    else{ var to=k==='done'?'open':'all'; go=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('ord.empty.'+k+'.go')); go.addEventListener('click',function(){ draft.oTab=to; oDraw(); }); }
     if(go){ go.type='button'; go.setAttribute('data-oempty',k); box.appendChild(go); }
     return box;
   }
+  /* the orders as one list of rows: a row that carries its own control is already an li */
+  function oUl(items,shown){
+    var ul=el('ul','amb-list amb-list--ruled');
+    items.forEach(function(o){ var n=oRow(o,shown), li=n.tagName==='LI'?n:el('li'); if(li!==n) li.appendChild(n); ul.appendChild(li); });
+    return ul;
+  }
   function oFold(box,past,shown){
-    var eb=el('button','salt-ghost olater',tw(past.length===1?'ord.earlier1':'ord.earlierN',{n:past.length})); eb.type='button';
+    var eb=el('button','amb-more olater',tw(past.length===1?'ord.earlier1':'ord.earlierN',{n:past.length})); eb.type='button';
     eb.setAttribute('aria-expanded',draft.oEarlier?'true':'false');
     eb.addEventListener('click',function(){ draft.oEarlier=!draft.oEarlier; oDraw(); });
     box.appendChild(eb);
-    if(draft.oEarlier) past.forEach(function(o){ box.appendChild(oItem(o,shown)); });
+    if(draft.oEarlier) box.appendChild(oUl(past,shown));
   }
   /* ---- EARLIER BY MONTH (plan version 7, 7b, his "Orders lists every order") ------------------------------------------------------
      After their site orders, the live statement's lines that no site order holds, by month, behind one fold. A statement line is
@@ -5934,7 +4896,7 @@ const CLIENT_JS = `
   function earlierLines(){
     var lv=liveDoc(); if(!lv) return [];
     var tp=document.createElement('template'); tp.innerHTML=lv.body;
-    var rows=[].slice.call(tp.content.querySelectorAll('.salt-lines[data-lines="orders"] > .salt-lines__row')), keys=Object.keys(PSYM).filter(function(k){ return k!=='_'; }), held={};
+    var rows=[].slice.call(tp.content.querySelectorAll('table.amb-table[data-lines="orders"] > tbody > tr')), keys=Object.keys(PSYM).filter(function(k){ return k!=='_'; }), held={};
     function near(a,b){ return Math.abs(a-b)<0.005; }
     /* a cancelled order holds only its own cancelled line, never a live one (Fable's review); a declined one never had a row */
     orders.filter(function(o){ return o.status!=='declined'; })
@@ -5945,39 +4907,62 @@ const CLIENT_JS = `
         for(var i=0;i<rows.length;i++){
           if(held[i]) continue;
           var r=rows[i], d=r.getAttribute('data-d'), g=parseFloat(r.getAttribute('data-g')), v=parseFloat(r.getAttribute('data-dv'))||0;
-          if((o.status==='cancelled')!==r.classList.contains('salt-lines__row--cancelled')) continue;
+          if((o.status==='cancelled')!==r.classList.contains('is-off')) continue;
           if(+r.getAttribute('data-b')!==b||!d||days.indexOf(d)<0||isNaN(g)||!goods.some(function(x){ return near(x,g); })||!near(dv,v)) continue;
           held[i]=1; break;
         }
       });
     return rows.filter(function(r,i){ return !held[i]; });
   }
+  /* one of the statement's lines, held by no order, as a row: the mark thumb of its book, the size, its state in words, its day and its figure. The
+     statement's own cells are read for the words (its sealed document is not drawn here), the book from data-b. */
+  function earlierRow(r){
+    var txt=function(n){ return n?String(n.textContent||'').split(' ').filter(Boolean).join(' ').trim():''; }, keys=Object.keys(PSYM).filter(function(k){ return k!=='_'; });
+    /* 16 Nov 2026 (place D): the statement's lines are the system's Table now; a cell is read by its data-label, the size by .stm-size, the state by its chip */
+    var cell=function(n){ return r.querySelector('td[data-label="'+n+'"]'); };
+    var st=r.querySelector('.amb-chip'), subs=[].map.call(r.querySelectorAll('.amb-table__sub'),txt).filter(Boolean), cancelled=r.classList.contains('is-off');
+    var li=hRow({tag:'li', thumb:markThumb(keys[+r.getAttribute('data-b')]||''), title:txt(r.querySelector('.stm-size'))||txt(cell('Quantity')),
+      sub:[txt(st)].concat(subs).filter(Boolean).join(', '), age:txt(cell('Date')), amount:txt(r.querySelector('.stm-fig'))});
+    if(cancelled) li.classList.add('is-off');
+    ['data-m','data-d','data-g','data-dv','data-b'].forEach(function(k){ if(r.hasAttribute(k)) li.setAttribute(k,r.getAttribute(k)); });
+    return li;
+  }
+  /* the system's Select: one of the months the lines hold, All first, the newest month first */
+  function ambMonthSelect(months,pick,onPick){
+    var lab=el('label','amb-field'), wrap=el('span','amb-select'), sel=document.createElement('select');
+    lab.appendChild(el('span','amb-field__label',tw('acct.month')));
+    sel.className='amb-input'; sel.setAttribute('data-mf-select','');
+    [''].concat(months).forEach(function(m){ var o=document.createElement('option'); o.value=m; o.textContent=m?monthLabel(m):tw('acct.allPill'); sel.appendChild(o); });
+    sel.value=pick||'';
+    sel.addEventListener('change',function(){ onPick(sel.value||null); });
+    wrap.appendChild(sel); wrap.appendChild(ambIcon('chevron','amb-icon--sm')); lab.appendChild(wrap);
+    return lab;
+  }
   function oEarlier(){
     var left=earlierLines(); if(!left.length) return null;
-    var head=left[0].parentNode&&left[0].parentNode.querySelector('.salt-lines__head');
-    var box=el('div','oearlier'); box.setAttribute('data-earlier','');
-    var eb=el('button','salt-ghost olater',tw(left.length===1?'ord.earlierBook1':'ord.earlierBookN',{n:left.length})); eb.type='button'; eb.setAttribute('data-earlier-fold','');
+    var box=el('div','oearlier amb-stack'); box.setAttribute('data-earlier','');
+    var eb=el('button','amb-more olater',tw(left.length===1?'ord.earlierBook1':'ord.earlierBookN',{n:left.length})); eb.type='button'; eb.setAttribute('data-earlier-fold','');
     eb.setAttribute('aria-expanded',draft.oEarlierBook?'true':'false');
     eb.addEventListener('click',function(){ draft.oEarlierBook=!draft.oEarlierBook; oDraw(); });
     box.appendChild(eb);
     if(!draft.oEarlierBook) return box;
-    var by={}, months=[];
+    var by={}, months=[], groups=[];
     left.forEach(function(r){ var m=r.getAttribute('data-m')||''; if(!(m in by)){ by[m]=[]; if(m) months.push(m); } by[m].push(r); });
     months.sort().reverse(); if('' in by) months.push('');
-    var fil=el('div','salt-settings mfil'); fil.hidden=true; box.appendChild(fil);
+    function apply(pick){ groups.forEach(function(g){ g.node.hidden=!!pick&&g.m!==''&&g.m!==pick; }); }
+    var pick=months.indexOf(draft.oMonth)>=0?draft.oMonth:null, slot=el('div','mfil'); slot.hidden=true; box.appendChild(slot);
     months.forEach(function(m){
-      if(m) box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',monthLabel(m)));
-      var lst=el('div','salt-lines salt-lines--list'); lst.setAttribute('role','table'); lst.setAttribute('aria-label',m?monthLabel(m):tw('ord.yours'));
-      if(head) lst.appendChild(head.cloneNode(true));   /* the column names, for a screen reader (Fable's review) */
-      by[m].forEach(function(r){ lst.appendChild(r.cloneNode(true)); });
-      box.appendChild(lst);
+      var g=el('div','omonth amb-stack'), ul=el('ul','amb-list amb-list--ruled'); ul.setAttribute('aria-label',m?monthLabel(m):tw('ord.yours'));
+      if(m) g.appendChild(el('h2','amb-section olab',monthLabel(m)));
+      by[m].forEach(function(r){ ul.appendChild(earlierRow(r)); });
+      g.appendChild(ul); box.appendChild(g); groups.push({m:m, node:g});
     });
-    var c={root:box, fil:fil, note:null, pick:draft.oMonth||null, onPick:function(p){ draft.oMonth=p||''; }};
-    mfBuild(c);
+    var real=months.filter(Boolean);
+    if(real.length>=2){ slot.hidden=false; slot.appendChild(ambMonthSelect(real,pick,function(p){ draft.oMonth=p||''; apply(p); })); apply(pick); }
     return box;
   }
   function oList(shown){
-    var box=el('div','olist'); box.setAttribute('data-olist','');
+    var box=el('div','olist amb-stack'); box.setAttribute('data-olist','');
     if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
     if(!orders.length){
       /* no site order yet: the statement's own lines, if it has any, are still their orders */
@@ -5986,28 +4971,12 @@ const CLIENT_JS = `
       return box;
     }
     var B=oBuckets();
-    if(oWide()){
-      /* from 860px: Open and Done, two columns where the list has the room and one under the other beside an open order */
-      var cols=el('div','ocols'), open=B.needs.concat(B.open), pay=orders.filter(oOwes).reduce(function(s,o){ return s+oToPay(o); },0);
-      [['open',open],['done',B.past]].forEach(function(c){
-        var col=el('section','ocol ocol--'+c[0]); col.setAttribute('aria-label',tw('ord.col.'+c[0]));
-        var hd=el('div','ocol__head'), h=el('h3','salt-eyebrow salt-eyebrow--copper olab',tw('ord.tab.'+c[0]));
-        h.appendChild(el('span','ocol__n',String(c[1].length))); hd.appendChild(h);
-        if(c[0]==='open'&&pay>0.004) hd.appendChild(el('span','ocol__pay',tw('ord.col.toPay',{rm:rm(pay)})));
-        col.appendChild(hd);
-        if(!c[1].length) col.appendChild(oEmpty(c[0]));
-        else if(c[0]==='done'&&c[1].length>12){ c[1].slice(0,12).forEach(function(o){ col.appendChild(oItem(o,shown)); }); oFold(col,c[1].slice(12),shown); }
-        else c[1].forEach(function(o){ col.appendChild(oItem(o,shown)); });
-        cols.appendChild(col);
-      });
-      box.appendChild(cols);
-      var ew=oEarlier(); if(ew) box.appendChild(ew);
-      return box;
-    }
     box.appendChild(oTabs());
+    var owing=orders.filter(oOwes).reduce(function(s,o){ return s+oToPay(o); },0);
+    if(owing>0.004) box.appendChild(el('p','onote ocol__pay',tw('ord.col.toPay',{rm:rm(owing)})));
     var k=draft.oTab||'all';
     if(k==='all'){
-      function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oItem(o,shown)); }); }
+      function sec(t,list){ box.appendChild(el('h2','amb-section olab',t)); box.appendChild(oUl(list,shown)); }
       if(B.needs.length) sec(tw('x.needs'),B.needs);
       if(B.open.length) sec(tw('ord.open'),B.open);
       if(B.past.length) oFold(box,B.past,shown);
@@ -6015,13 +4984,13 @@ const CLIENT_JS = `
       return box;
     }
     var list=oOf(k);
-    if(!list.length) box.appendChild(oEmpty(k)); else list.forEach(function(o){ box.appendChild(oItem(o,shown)); });
+    if(!list.length) box.appendChild(oEmpty(k)); else box.appendChild(oUl(list,shown));
     return box;
   }
-  /* S5 5.6 (f12w): FROM 860PX THE LIST STANDS BESIDE AN OPEN ORDER (Phase 7d: it was 1080px, the rail's, and is the width the style turns on).
-     Counter Batch A (18 Oct 2026): an order stands there once it is tapped, never by itself, so a desk opens on the Open and Done
-     columns; an order marked oAuto (none is now) went when the width dropped below 860px. */
-  function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 860px)').matches); }catch(e){ return false; } }
+  /* 16 NOV 2026: THE SHELL IS TWO PANES FROM 960PX (the system's split of panes: the list of orders beside the open one, each scrolling on its own),
+     the width the system turns on, where it was 860px. Below it the open order is the whole tab. An order stands beside the list once it is
+     tapped, never by itself (Counter Batch A, 18 Oct 2026). */
+  function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 960px)').matches); }catch(e){ return false; } }
   function oShownId(){
     if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen='';
     /* Counter Batch A (18 Oct 2026): nothing opens by itself any more, so a desk opens on the Open and Done columns and an order
@@ -6029,10 +4998,10 @@ const CLIENT_JS = `
     return draft.oOpen||'';
   }
   try{
-    var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');
+    var oMq=window.matchMedia&&window.matchMedia('(min-width: 960px)');
     if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){
       if(!oWide()&&draft.oAuto){ draft.oOpen=''; draft.oAuto=false; }
-      if(document.getElementById('oArea')) oDraw();
+      oDraw();
     });
   }catch(e){ /* a browser that cannot say keeps the phone's one column */ }
   /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Placed, Confirmed, Ready, then
@@ -6047,24 +5016,15 @@ const CLIENT_JS = `
     return !!o&&!ro()&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'&&o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);
   }
   function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend, id:o.id}; }
-  /* on the order's screen: one Pill, and today's figure off the list, never what it came to then */
+  /* on the order's screen: one small pill, and today's figure off the list, never what it came to then */
   function oAgain(o){
     var w=el('div','oagain'); if(!oAgainOk(o)) return w;
     var P=sold().filter(function(x){ return x.product===o.product; })[0], a=oAgainOf(o);
-    var b=el('button','salt-pill salt-pill--md',tw('oa.again')); b.type='button'; b.setAttribute('data-again',o.id);
+    var b=el('button','amb-pill amb-pill--sm',tw('oa.again')); b.type='button'; b.setAttribute('data-again',o.id);
     b.addEventListener('click',function(){ againOpen(a,b); });
     w.appendChild(b);
-    w.appendChild(el('p','sub2',tw(a.mode==='deliver'?'oa.againD':'oa.againC',{rm:rm(priceAt(P,o.qty))})));
+    w.appendChild(el('p','onote',tw(a.mode==='deliver'?'oa.againD':'oa.againC',{rm:rm(priceAt(P,o.qty))})));
     return w;
-  }
-  /* in the list: the card and, beside it and never inside it, a ghost; the pair is one child of the list, its shape w:<id> */
-  function oItem(o,shown){
-    var c=oCard(o,shown); if(!oAgainOk(o)) return c;
-    var w=el('div','oagainrow'); w.setAttribute('data-wrap',o.id); w.appendChild(c);
-    var g=el('button','salt-ghost oagainrow__go',tw('oa.again')); g.type='button'; g.setAttribute('data-again',o.id);
-    g.setAttribute('aria-label',tw('oa.againAria',{d:oDay(o.at)}));
-    g.addEventListener('click',function(){ againOpen(oAgainOf(o),g); });
-    w.appendChild(g); return w;
   }
   function firstAt(o,st){ var h=(o.history||[]).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
   function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?dmyOf({day:m[3],month:m[2],year:m[1]},L):''; }
@@ -6095,109 +5055,102 @@ const CLIENT_JS = `
     if(/Android/.test(ua)) return 'geo:'+ll+'?q='+ll+'('+q+')';
     return 'https://www.google.com/maps/search/?api=1&query='+ll;
   }
-  function pinSvg(){
-    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
-    s.setAttribute('viewBox','0 0 24 24'); s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false');
-    d.setAttribute('d','M12 21 C12 21 5 14.6 5 9.6 A7 7 0 0 1 19 9.6 C19 14.6 12 21 12 21 Z M12 7.2 A2.4 2.4 0 1 0 12 12 A2.4 2.4 0 1 0 12 7.2');
-    s.appendChild(d); return s;
-  }
+  /* the way to the point in their maps app: a small quiet pill that says Directions (no map pin in the system's glyphs), the longer words read aloud */
   function pinLink(o){
-    var a=el('a','salt-pin opin'); a.href=pointHref(o.point,o.pointAt.lat,o.pointAt.lng);
+    var a=el('a','amb-pill amb-pill--sm amb-pill--quiet opin',tw('pt.dir')); a.href=pointHref(o.point,o.pointAt.lat,o.pointAt.lng);
     if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
-    a.setAttribute('aria-label',tw('pt.pin',{c:o.point})); a.appendChild(pinSvg());
+    a.setAttribute('aria-label',tw('pt.pin',{c:o.point}));
     return a;
   }
   /* ---- 2 NOV 2026 (his Orders canvas, page 2, "The open order, both sides"; his answer 4 of 31 Oct and "accept all asks as recommended"):
-     ONE ORDER CARD, TWO READERS. The band, the Steps, the Bill as a settings list and the thread with its composer are drawn here, once, for his
-     page and the customer's; each side passes its own words (the customer's from the table, his plain ones) and owner says whose card it is. His
-     page adds the figures, his decision, the rows that go on and Decline (stmt/owner.js); the customer's keeps the mark, what they owe in ember and
-     the one Pay under the Bill. ---- */
+     ONE ORDER CARD, TWO READERS. The band, the Steps, the Bill and the thread with its composer are drawn here, once, for his page and the
+     customer's; each side passes its own words (the customer's from the table, his plain ones) and owner says whose card it is. His page adds
+     the figures, his decision, the rows that go on and Decline (stmt/owner.js); the customer's keeps the mark, what they owe in ember and the
+     one Pay at the foot of the order. 16 NOV 2026, THE MOVE TO AMBIENT: every part is the system's own (Chip, Steps, Settings, Thread, Compose);
+     the band is a chip, a line and a foot on Ambient's plain classes, laid out in design/site.css. ---- */
   /* the band: the state as a chip and the reference the customer sees, one line of when and how, then a foot of what it is */
   function oBandOf(o,b){
-    var h=el('section','oband salt-band salt-band--grid'), top=el('div','salt-band__head');
+    var h=el('section','oband'), top=el('p','oband__head');
     if(b.aria) h.setAttribute('aria-label',b.aria);
     top.appendChild(b.chip);
-    var ref=el('span','salt-band__ref oref',orderRef(o.id)); ref.setAttribute('data-ref',''); top.appendChild(ref);
+    var ref=el('span','amb-chip oref',orderRef(o.id)); ref.setAttribute('data-ref',''); top.appendChild(ref);
     h.appendChild(top);
-    var when=el('p','salt-band__when oband__when'); (b.when||[]).forEach(function(x){ when.appendChild(typeof x==='string'?document.createTextNode(x):x); }); h.appendChild(when);
-    var foot=el('div','salt-band__foot'); (b.foot||[]).forEach(function(x){ if(x) foot.appendChild(x); }); h.appendChild(foot);
+    var when=el('p','oband__when amb-muted'); (b.when||[]).forEach(function(x){ when.appendChild(typeof x==='string'?document.createTextNode(x):x); }); h.appendChild(when);
+    var foot=el('div','oband__foot'); (b.foot||[]).forEach(function(x){ if(x) foot.appendChild(x); }); h.appendChild(foot);
     return h;
   }
-  /* the goods' Steps (Counter Batch A's marks), Paid fourth: names are the side's words, Placed to Delivered or Collected with Paid before the last */
+  /* the goods' Steps (the system's, numbered by itself), Paid before the last: names are the side's words, Placed to Delivered or Collected with
+     Paid before the last. Each step says where it stands in a word, Done, Now or Next, and when it happened under its name */
   function oStepsOf(o,names,next){
     var d=o.mode==='deliver', keys=['placed','confirmed','ready',d?'delivered':'collected'];
     var cur=o.status==='done'?4:movedAll(o)?3:(o.status==='ready'||(+o.moved||0)>0)?2:o.status==='acknowledged'?1:0;
     var at=[o.at,firstAt(o,'acknowledged'),firstAt(o,'ready'),''];
-    var ol=el('ol','salt-steps salt-steps--marks'); ol.setAttribute('aria-label',names.aria);
-    function step(cls,glyph,name,time,now){
-      var li=el('li','salt-steps__step'+cls); if(now) li.setAttribute('aria-current','step');
-      var mk=el('span','salt-steps__mark'), NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), p=document.createElementNS(NS,'path');
-      mk.setAttribute('aria-hidden','true'); s.setAttribute('viewBox','0 0 24 24'); p.setAttribute('d',glyph); s.appendChild(p); mk.appendChild(s);
-      li.appendChild(mk); li.appendChild(el('span','salt-steps__name',name)); if(time) li.appendChild(el('span','salt-steps__time',time));
+    var ol=el('ol','amb-steps'); ol.setAttribute('aria-label',names.aria);
+    function step(state,name,time,chip){
+      var li=el('li','amb-step'+(state==='done'?' is-done':state==='now'?' is-now':'')); if(state==='now') li.setAttribute('aria-current','step');
+      li.appendChild(el('span','amb-step__title',name)); if(time) li.appendChild(el('span','amb-step__text',time));
+      if(state==='done') li.appendChild(el('span','amb-chip amb-chip--pos',names.done||'Done'));
+      else if(state==='now') li.appendChild(el('span','amb-chip amb-chip--warn',names.now||'Now'));
+      else if(chip) li.appendChild(el('span','amb-chip',chip));
       return li;
     }
     names.goods.forEach(function(n,i){
-      var cls=i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':i===cur+1?' salt-steps__step--next':'';
-      ol.appendChild(step(cls,STEP_GLYPH[keys[i]],n,i<=cur?(i===3?(o.movedOn?ymdDay(o.movedOn):''):stepWhen(at[i])):i===cur+1?next:'',i===cur));
+      ol.appendChild(step(i<cur?'done':i===cur?'now':'',n,i<=cur?(i===3?(o.movedOn?ymdDay(o.movedOn):''):stepWhen(at[i])):'',i===cur+1?next:''));
     });
     /* 20 Oct 2026 (his answer): PAID, the fourth step, before the goods' last: done once nothing is owed, which may come before the goods go
        on an order paid first; part paid, how much of what, "RM 40/70" */
     var due=(+o.total||0)+(+o.delivery||0), paid=(+o.paid||0)+(+o.credit||0), settled=['acknowledged','ready','done'].indexOf(o.status)>=0&&due>0&&paid>=due-0.004;
     var pays=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&x.at; });
-    var pli=step(settled?' salt-steps__step--done':'',STEP_GLYPH.paid,names.paid,settled?stepWhen(pays.length?pays[pays.length-1].at:''):paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'',false);
+    var pli=step(settled?'done':'',names.paid,settled?stepWhen(pays.length?pays[pays.length-1].at:''):paid>0.004&&due>0?'RM '+stepRm(paid)+'/'+stepRm(due):'','');
     pli.setAttribute('data-step','paid'); ol.insertBefore(pli,ol.lastChild);
     return ol;
   }
-  /* the Bill as a settings list: a row a line, its name (and a second line where one is said), its figure at the right; the total's name heavier
-     and what is still owed in ember and bold. A row is {k, v, sub, due, total, cls, vcls, lead, at:[name, value]} */
+  /* the Bill as the system's Settings, read only: a row a line, its name (and a second line where one is said), its figure at the right; the
+     total's name heavier and what is still owed in ember. A row is {k, v, sub, due, total, cls, vcls, lead, at:[name, value]} */
   function oBillOf(head,rows){
-    var s=el('section','obill'), L=el('div','salt-settings ordmoney');
-    s.appendChild(el('h2','salt-settings__head obill__head',head));
+    var s=el('section','obill amb-settings'), L=el('ul','amb-settings__list ordmoney');
+    s.appendChild(el('h3','amb-settings__head obill__head',head));
     rows.forEach(function(r){
-      var row=el('div','salt-settings__row obillrow'+(r.total?' salt-settings__row--total':'')+(r.cls?' '+r.cls:'')), name, lab=el('span','salt-settings__label',r.k);
-      if(r.lead) lab.insertBefore(r.lead,lab.firstChild);
-      if(r.sub){ name=el('span','salt-settings__text'); name.appendChild(lab); var sb=el('span','salt-settings__sub'+(r.subCls?' '+r.subCls:'')); sb.appendChild(typeof r.sub==='string'?document.createTextNode(r.sub):r.sub); name.appendChild(sb); }
-      else name=lab;
+      var li=el('li'), row=el('div','amb-setting obillrow'+(r.total?' obill__total':'')+(r.cls?' '+r.cls:'')), name=el('span','amb-setting__name');
+      if(r.lead) name.appendChild(r.lead);
+      name.appendChild(el('span','obill__k',r.k));
+      if(r.sub){ var sb=el('span','obill__sub'+(r.subCls?' '+r.subCls:'')); sb.appendChild(typeof r.sub==='string'?document.createTextNode(r.sub):r.sub); name.appendChild(sb); }
       row.appendChild(name);
-      row.appendChild(el('span','salt-settings__value'+(r.due?' salt-settings__value--due':'')+(r.vcls?' '+r.vcls:''),r.v));
+      row.appendChild(el('span','amb-setting__value'+(r.due?' obill__due':'')+(r.vcls?' '+r.vcls:''),r.v));
       if(r.at) row.setAttribute(r.at[0],r.at[1]);
-      L.appendChild(row);
+      li.appendChild(row); L.appendChild(li);
     });
     s.appendChild(L);
     return s;
   }
   /* the thread: its head and its lines, the reader's own on the right; each side draws its lines (bubble) */
   function oThreadOf(head,lines,aria){
-    var w=el('section','omsgs'), th=el('div','salt-thread'), ls=el('div','salt-thread__lines');
-    ls.setAttribute('role','log'); ls.setAttribute('aria-label',aria);
-    lines.forEach(function(b){ ls.appendChild(b); });
-    th.appendChild(ls); w.appendChild(el('h2','salt-settings__head omsgs__head',head)); w.appendChild(th);
+    var w=el('section','omsgs amb-stack'), th=el('ol','amb-thread');
+    th.setAttribute('role','log'); th.setAttribute('aria-label',aria);
+    lines.forEach(function(b){ th.appendChild(b); });
+    w.appendChild(el('h2','amb-section omsgs__head',head)); w.appendChild(th);
     return w;
   }
-  /* the composer: a box and Send, each side saying what its box is for */
+  /* the composer: a box and a round Send, each side saying what its box is for */
   function oComposerOf(ph,send){
-    var f=el('form','salt-composer'), si=el('input','salt-field__input salt-composer__field'), sg=el('button','salt-ghost salt-ghost--lit salt-composer__send',send);
-    si.type='text'; si.maxLength=200; si.autocomplete='off'; si.setAttribute('enterkeyhint','send'); si.placeholder=ph; si.setAttribute('aria-label',ph); sg.type='submit';
+    var f=el('form','amb-compose'), si=el('input','amb-input'), sg=el('button','amb-circle amb-circle--lg');
+    si.type='text'; si.maxLength=200; si.autocomplete='off'; si.setAttribute('enterkeyhint','send'); si.placeholder=ph; si.setAttribute('aria-label',ph);
+    sg.type='submit'; sg.setAttribute('aria-label',send); sg.appendChild(ambIcon('send')); sg.appendChild(el('span','amb-vh',send));
     f.appendChild(si); f.appendChild(sg); f.field=si; f.sendButton=sg;
     return f;
   }
   /* THE BAND, the order's head: its state as a chip and its reference, when and how in one line, then the mark, the size and the figure and,
-     while it waits at one of his points, the point and its pin */
+     while it waits at one of his points, the point and its way there */
   function oHead(o){
-    /* the mark's tile says the size; the band's middle holds the point while one waits there */
+    /* the mark's thumb says the size; the band's middle holds the point while one waits there */
     var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o), col=el('span','oband__what');
     if(waits) col.appendChild(el('span','oband__point',tw('pt.at',{c:o.point})));
     return oBandOf(o,{aria:tw('oh.order'), chip:stateChip(o), when:[tw('oh.'+(o.mode==='deliver'?(o.place?'deliverTo':'deliver'):'collect')+(o.forFriend?'F':''),{t:Dd(stamp,o.at), p:o.place||''})],
-      foot:[mtile(o.product,o.qty,oUnit(o)), col, el('span','salt-settings__value salt-settings__value--lg oband__sum',rm(o.total+(+o.delivery||0))),
+      foot:[mtile(o.product,o.qty,oUnit(o)), col, el('strong','amb-num oband__sum',rm(o.total+(+o.delivery||0))),
         waits&&o.pointAt&&isFinite(o.pointAt.lat)&&isFinite(o.pointAt.lng)?pinLink(o):null]});
   }
-  /* GOODS ONLY: a declined or cancelled order has no track to show. Counter Batch A: each step a drawn mark (a receipt, a tick, a box, then
-     a bag or a van), the moment it happened under its name, and Next on the step to come */
-  var STEP_GLYPH={paid:'M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M14.6 9 C14 8.2 13.1 7.8 12 7.8 C10.5 7.8 9.4 8.6 9.4 9.8 C9.4 12.6 14.6 11.4 14.6 14.2 C14.6 15.4 13.5 16.2 12 16.2 C10.9 16.2 10 15.8 9.4 15 M12 6.4 V7.8 M12 16.2 V17.6',
-    placed:'M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5',
-    confirmed:'M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M8 12.3 L11 15.2 L16.2 9.2', ready:'M4 8 L12 4 L20 8 V16 L12 20 L4 16 Z M4 8 L12 12 L20 8 M12 12 V20',
-    collected:'M6 8 H18 L17 20 H7 Z M9 8 V6.5 A3 3 0 0 1 15 6.5 V8',
-    delivered:'M2.5 7 H14 V16 H2.5 Z M14 10 H18 L21.5 13.2 V16 H14 M6.5 19 A1.8 1.8 0 1 0 6.5 15.4 A1.8 1.8 0 1 0 6.5 19 M17.5 19 A1.8 1.8 0 1 0 17.5 15.4 A1.8 1.8 0 1 0 17.5 19'};
+  /* GOODS ONLY: a declined or cancelled order has no track to show. The system's Steps number themselves and draw their own marks (the receipt, tick,
+     box and van of Counter Batch A went with the recipes); each step says Done, Now or Next, and the moment it happened sits under its name */
   function stepRm(v){ var n=Math.round((+v||0)*100)/100; return n%1?n.toFixed(2):String(n); }
   function stepWhen(iso){
     if(!iso) return '';
@@ -6206,7 +5159,7 @@ const CLIENT_JS = `
   function oSteps(o){
     var w=el('div');
     if(o.status==='declined'||o.status==='cancelled') return w;
-    w.appendChild(oStepsOf(o,{aria:tw('oh.steps'), goods:[tw('st.placed'),tw('st.acknowledged'),tw('st.ready'),tw(o.mode==='deliver'?'st.delivered':'st.collected')], paid:tw('st.paid')},tw('oh.next')));
+    w.appendChild(oStepsOf(o,{aria:tw('oh.steps'), goods:[tw('st.placed'),tw('st.acknowledged'),tw('st.ready'),tw(o.mode==='deliver'?'st.delivered':'st.collected')], paid:tw('st.paid'), done:tw('oh.stepDone'), now:tw('oh.stepNow')},tw('oh.next')));
     return w;
   }
   /* where it stands and when, in one sentence, off the record's own moments. S11 11.7: an order he ended says so
@@ -6229,7 +5182,7 @@ const CLIENT_JS = `
   }
   function oWhen(o){
     /* S13: each a whole sentence from the table, its day in bold, his reason a slot */
-    var w=el('div'), p=el('p','salt-insight'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status, e=endOf(o),
+    var w=el('div'), p=el('p','onote'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status, e=endOf(o),
         /* Step 1b: his reason is a sentence, the banner's body too; one filed before, with no stop, is given one */
         why=e&&e.note?esch(/[.!?]$/.test(e.note.trim())?e.note.trim():e.note.trim()+'.'):'', back=tw(paid>0?'ow.refunded':'ow.nothingOwed',{rm:rm(paid)}),
         went=function(x){ return function(L){ return esch(x(L)||wordIn(L,'ow.dayWent')); }; }, sz=function(q){ return function(L){ return esch(unitsOf(q,oUnit(o),L)); }; };
@@ -6258,12 +5211,6 @@ const CLIENT_JS = `
     w.appendChild(p);
     var tp=oTap(o); if(tp.k==='state'&&tp.t) w.appendChild(statusLine(tp.t));
     return w;
-  }
-  function lrow(label,value,flag,cls){
-    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
-    l.appendChild(el('span','salt-ledger__label',label)); l.appendChild(el('span','salt-ledger__value'+(cls?' '+cls:''),value));
-    r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
-    return r;
   }
   /* when what is still to pay may be paid, in one set of words for the order's screen and, inline, Home's Coming up, which
      said "when it arrives" of an order they collect (S7-R2 of the stage 7 review) */
@@ -6317,47 +5264,47 @@ const CLIENT_JS = `
       R.push(tp>0.004?{k:tw('pay.still'), v:rm(tp), sub:payWhen(o), due:true, vcls:'odue', total:true, cls:'obill--due'}
         :{k:tw('pay.still'), v:rm(0), sub:tw(claimed>0||ac>0.004&&acctWaiting()>0.004?'om.sentWaiting':'om.paidFull'), total:true});
     }
-    return oBillOf(tw('om.h'),R);
+    var bill=oBillOf(tw('om.h'),R), pt=oTap(o);
+    if(pt.k==='pay'&&pt.t) bill.appendChild(statusLine(pt.t));
+    return bill;
   }
-  /* ONE NEXT ACTION. Pay opens the pay sheet for this order (S6 6.4). On a desk New order (S4 4.3; the form itself is a
-     sheet over the page) stands above the open order, and while it does, Pay is the lit ghost: one filled control a
-     screen. With the limit said in its place, or the Pay page, nothing else is filled and Pay is. On a phone the open
-     order is the whole tab. */
-  var oTopEl=null;   /* the head of the list's column, drawn by drawOrder and carried by oPlace into each list it draws */
-  function oFormPill(){ return oWide()&&!!oTopEl&&!!oTopEl.querySelector('.salt-pill'); }
+  /* ONE NEXT ACTION. Pay is the foot of the open order (the system's Foot): the one pill the record has while something is owed, stuck at the foot of
+     its pane, and nothing when nothing is. It opens the pay sheet for this order (S6 6.4). Its answer is said under the Bill, where the money is.
+     On a desk the head of the list (the lead, New order or the limit, the Pay page) is drawn by drawOrder and carried by oPlace. */
+  var oTopEl=null;
   function oAct(o){
-    var a=el('div','oact'), tp=oTap(o);
+    var a=el('div','amb-foot');
     if(!view&&oOwes(o)){
-      var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(oToPay(o))})); pb.type='button';
+      var pb=el('button','amb-pill amb-pill--block',tw('pay.payRm',{rm:rm(oToPay(o))})); pb.type='button';
       pb.setAttribute('data-back','pay:'+o.id);
       pb.addEventListener('click',function(){ openPay(orderCtx(o.id),pb,'pay:'+o.id); });
       a.appendChild(pb);
     }
-    /* Counter Batch A: Message beside Pay on every order, every stage, Done included: it takes them to the composer */
-    if(!view){
-      var mb=el('button','salt-ghost omsg',tw('oa.msg')); mb.type='button'; mb.setAttribute('data-msg',o.id);
-      mb.addEventListener('click',function(){ var s=pOrder.querySelector('.oscreen[data-order="'+o.id+'"] input[data-say]'); if(s){ try{ s.scrollIntoView({block:'center'}); }catch(e){} try{ s.focus({preventScroll:true}); }catch(e){} } });
-      a.appendChild(mb);
-    }
-    if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
     return a;
+  }
+  /* a fold: the system's More button and what it opens, kept open across a poll (draft[key]); the button's tap is read after the system's own
+     script has flipped it */
+  function oFolded(o,key,label,note,body){
+    var w=el('div','ofold'), id=key+'-'+o.id, open=!!(draft[key]||{})[o.id];
+    var mb=el('button','amb-more',label); mb.type='button'; mb.setAttribute('aria-expanded',open?'true':'false'); mb.setAttribute('aria-controls',id);
+    if(note!=null) mb.appendChild(el('span','amb-section__note',String(note)));
+    body.id=id; body.hidden=!open;
+    mb.addEventListener('click',function(){ setTimeout(function(){ (draft[key]=draft[key]||{})[o.id]=!body.hidden; },0); });
+    w.appendChild(mb); w.appendChild(body);
+    return w;
   }
   /* DETAILS, folded: when it was ordered, the way, the window or the point, and the reference; no note. Kept open across a poll */
   function oDetails(o){
-    var w=el('div');
-    var f=el('details','odet salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm'), s=el('summary','odet__sum');
-    s.appendChild(el('span','salt-eyebrow salt-eyebrow--copper',tw('od.h'))); f.appendChild(s);
-    if((draft.oDet||{})[o.id]) f.open=true;
-    f.addEventListener('toggle',function(){ (draft.oDet=draft.oDet||{})[o.id]=f.open; });
-    var L=el('div','salt-ledger salt-ledger--plain');
-    L.appendChild(lrow(tw('od.at'),stamp(o.at)));
-    L.appendChild(lrow(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect')));
-    if(o.slot&&o.slotSpan) L.appendChild(lrow(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)})));
-    if(o.pinned&&o.mode==='deliver') L.appendChild(lrow(tw('od.sealed'),tw('od.sealedV')));
-    if(o.point) L.appendChild(lrow(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point})));
-    var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr);
-    f.appendChild(L); w.appendChild(f);
-    return w;
+    var L=el('ul','amb-settings__list'), box=el('div','amb-settings odet');
+    function row(k,v){ var li=el('li'), d=el('div','amb-setting'); d.appendChild(el('span','amb-setting__name',k)); d.appendChild(el('span','amb-setting__value',v)); li.appendChild(d); L.appendChild(li); }
+    row(tw('od.at'),stamp(o.at));
+    row(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect'));
+    if(o.slot&&o.slotSpan) row(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)}));
+    if(o.pinned&&o.mode==='deliver') row(tw('od.sealed'),tw('od.sealedV'));
+    if(o.point) row(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point}));
+    row(tw('od.ref'),orderRef(o.id));
+    box.appendChild(L);
+    return oFolded(o,'oDet',tw('od.h'),null,box);
   }
   /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
      each one is: Sending, Sent (stored, never read: there are no read receipts), or, lost on the way, Not sent with
@@ -6372,12 +5319,14 @@ const CLIENT_JS = `
   function oSame(o,w){ return (o.msgs||[]).filter(function(m){ return m.by==='customer'&&oWords(m.text)===w; }).length; }
   function oLanded(o){ var q=oOut(o.id); for(var i=q.length-1;i>=0;i--) if(oSame(o,q[i].w)>q[i].n) q.splice(i,1); return q; }
   function oPut(v){ for(var i=0;i<orders.length;i++) if(orders[i].id===v.id){ orders[i]=v; return; } }
+  /* a line of the thread, the system's Message: its words, then who and when, then where it is (Sending, Sent, Not sent); never read or seen. His
+     line, new to this device, says so in a chip */
   function bubble(side,text,meta,state,isNew){
-    var b=el('div','salt-bubble salt-bubble--'+side+(state==='failed'?' salt-bubble--failed':''));
-    b.appendChild(el('p','salt-bubble__text',text));
-    var m=el('p','salt-bubble__meta'); m.appendChild(el('span',null,meta));
-    if(isNew) m.appendChild(el('span','salt-bubble__new',tw('msg.new')));
-    if(state) m.appendChild(el('span','salt-bubble__state salt-bubble__state--'+state,tw({sending:'msg.sending',sent:'msg.sent',failed:'msg.failed'}[state])));
+    var b=el('li','amb-msg'+(side==='mine'?' amb-msg--mine':'')+(state==='failed'?' is-error':''));
+    b.appendChild(el('p','amb-msg__text',text));
+    var m=el('p','amb-msg__meta'); m.appendChild(el('span',null,meta));
+    if(isNew) m.appendChild(el('span','amb-chip',tw('msg.new')));
+    if(state) m.appendChild(el('span','amb-msg__state',tw({sending:'msg.sending',sent:'msg.sent',failed:'msg.failed'}[state])));
     b.appendChild(m);
     return b;
   }
@@ -6391,10 +5340,10 @@ const CLIENT_JS = `
     out.forEach(function(x){
       var b=bubble('mine',x.t,tw('msg.you',{t:Dd(stamp,x.at)}),x.state,false);
       if(x.state==='failed'){
-        if(x.why){ var y=el('p','salt-bubble__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
-        var r=el('button','salt-ghost salt-ghost--lit salt-bubble__retry',tw('msg.retry')); r.type='button';
+        if(x.why){ var y=el('p','amb-msg__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
+        var r=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('msg.retry')); r.type='button';
         r.addEventListener('click',function(){ oSend(o.id,x); });
-        b.appendChild(r);
+        b.querySelector('.amb-msg__meta').appendChild(r);
       }
       lines.push(b);
     });
@@ -6455,44 +5404,45 @@ const CLIENT_JS = `
       x.state='failed'; x.why=why; oPart(id,'thread');
     }
   }
-  /* WHAT HAPPENED, STEP BY STEP, folded: the record, under the thread a reader came back for */
+  /* WHAT HAPPENED, STEP BY STEP, folded: the record as the system's Journal, the newest first, under the thread a reader came back for */
   function oHist(o){
     var w=el('div','ohist'), h=o.history||[];
     if(o.replacement||o.replaces){
-      var replacement=el('a','salt-ghost',tw(o.replacement?'ord.replaced':'ord.replaces'));
+      var replacement=el('a','amb-pill amb-pill--sm amb-pill--quiet',tw(o.replacement?'ord.replaced':'ord.replaces'));
       replacement.href='#o='+encodeURIComponent(o.replacement||o.replaces);
       /* 1 Nov 2026: the page reads #o= once, at load, so the link opens the other order in place (the glance's way); the address stays for a long press */
       replacement.addEventListener('click',function(ev){ var rid=o.replacement||o.replaces; if(oFind(rid)){ ev.preventDefault(); oOpen(rid); } });
       w.appendChild(replacement);
     }
     if(!h.length) return w;
-    var dt=el('details','salt-plan'); dt.open=!!(draft.oHist||{})[o.id];
-    dt.addEventListener('toggle',function(){ (draft.oHist=draft.oHist||{})[o.id]=dt.open; });
-    var sm=el('summary'); sm.appendChild(el('span','salt-plan__id',String(h.length))); sm.appendChild(el('span','salt-plan__title',tw('oh.hist')));
-    dt.appendChild(sm);
-    var b=el('div','salt-plan__body'), ul=el('ul');
-    h.forEach(function(x){ ul.appendChild(el('li',null,stamp(x.at)+'  '+histLine(x,o))); });
-    b.appendChild(ul); dt.appendChild(b); w.appendChild(dt);
+    var jl=el('ol','amb-journal');
+    h.slice().reverse().forEach(function(x){
+      var li=el('li','amb-journal__entry'), m=el('p','amb-journal__meta'), t=el('time',null,stamp(x.at)); if(x.at) t.setAttribute('datetime',String(x.at));
+      m.appendChild(t); li.appendChild(m); li.appendChild(el('p','amb-journal__text',histLine(x,o))); jl.appendChild(li);
+    });
+    w.appendChild(oFolded(o,'oHist',tw('oh.hist'),h.length,jl));
     return w;
   }
-  /* v694: either side may cancel at any stage until the goods move (his rule, 18 Sep 2026) */
+  /* v694: either side may cancel at any stage until the goods move (his rule, 18 Sep 2026). What ends the order stands last, in the system's danger action */
   function oFoot(o){
     var f=el('div','ofoot'), tp=oTap(o);
     if(view||!(oPayable(o)||o.status==='placed')) return f;
-    if(+o.moved>0) f.appendChild(el('p','sub2',tw('of.moved')));
+    if(+o.moved>0) f.appendChild(el('p','onote',tw('of.moved')));
     /* S6 fix: not while what they sent waits on him, which a cancelled order would leave with nobody to answer it */
-    else if(oClaimed(o)>0.004) f.appendChild(el('p','sub2',tw('of.checking',{rm:rm(oClaimed(o))})));
+    else if(oClaimed(o)>0.004) f.appendChild(el('p','onote',tw('of.checking',{rm:rm(oClaimed(o))})));
     else {
-      if(oOfferOpen(o)){ f.appendChild(el('p','sub2',tw('e.offerOpen'))); return f; }
+      if(oOfferOpen(o)){ f.appendChild(el('p','onote',tw('e.offerOpen'))); return f; }
+      f.className+=' amb-settings';
+      var ul=el('ul','amb-settings__list');
       if(o.status==='placed'&&!hold&&!(o.price&&o.price.state==='taken')){
-        var amend=el('button','salt-ghost',tw('ord.amend')); amend.type='button';
+        var amend=el('button','amb-action',tw('ord.amend')); amend.type='button';
         amend.addEventListener('click',function(){
           if(!oSoldHas(o.product,o.qty)){ tapSaid(o,'amend',tw('ord.amendMissing')); oDraw(); return; }
           sheetOpen(o.product,o.qty,amend,o);
         });
-        f.appendChild(amend);
+        var la=el('li'); la.appendChild(amend); ul.appendChild(la);
       }
-      var wb=el('button','salt-ghost salt-ghost--danger',tw('ord.cancel')); wb.type='button'; wb.setAttribute('data-yn','cancel:'+o.id);
+      var wb=el('button','amb-action amb-action--danger',tw('ord.cancel')); wb.type='button'; wb.setAttribute('data-yn','cancel:'+o.id);
       wb.addEventListener('click', function(){
         /* 11 Oct 2026: asked in a Sheet that restates the order, not by the browser's confirm; its yes is the request it always sent */
         ynCancel(oFind(o.id)||o, wb, 'cancel:'+o.id, async function(){
@@ -6503,7 +5453,7 @@ const CLIENT_JS = `
           await loadOrders(); if(mine!==ticket) return; oDraw();
         });
       });
-      f.appendChild(wb);
+      var lw=el('li'); lw.appendChild(wb); ul.appendChild(lw); f.appendChild(ul);
       if((tp.k==='withdraw'||tp.k==='amend')&&tp.t) f.appendChild(statusLine(tp.t));
     }
     return f;
@@ -6516,15 +5466,24 @@ const CLIENT_JS = `
   function dayMinus(n){ var p=klBits(new Date().toISOString()); return new Date(Date.UTC(+p.year,+p.month-1,+p.day)-n*864e5).toISOString().slice(0,10); }
   function rateDue(o){ var d=String(o.movedOn||''); return !view&&rateOpen(o)&&/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)&&d<=dayMinus(2); }
   function rateHome(o){ return rateDue(o)&&String(o.movedOn)>dayMinus(14); }
-  function starMark(on){ var s=glyph('star',24); if(on) s.firstChild.setAttribute('fill','currentColor'); return s; }
-  function rateGave(n){ var p=el('p','rgave'); for(var i=1;i<=5;i++) p.appendChild(starMark(i<=n)); p.appendChild(el('span','rtx',tw('rt.gave',{n:n}))); return p; }
-  function rateStrip(o){
-    var g=el('div','rstars'); g.setAttribute('role','group'); g.setAttribute('aria-label',tw('rt.ask'));
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: the rating is the system's Rating, five radios whose stars are 44px targets, chosen once and then shown as
+     its five marks and its words. A star's choice sends what the button's tap sent; the legend is the question, drawn on the order and read
+     aloud only under Home's own heading */
+  function rateGave(n){
+    var p=el('p','amb-rating amb-rating--shown rgave'), s=el('span','amb-rating__stars'); s.setAttribute('aria-hidden','true');
+    for(var i=1;i<=5;i++) s.appendChild(ambIcon('star',i<=n?'is-on':''));
+    p.appendChild(s); p.appendChild(el('span','amb-rating__said',tw('rt.gave',{n:n})));
+    return p;
+  }
+  function rateStrip(o,seen){
+    var g=el('fieldset','amb-rating rstars'), st=el('span','amb-rating__stars');
+    g.appendChild(el('legend',seen?'amb-field__label':'amb-vh',tw('rt.ask'))); g.appendChild(st);
     for(var i=1;i<=5;i++) (function(n){
-      var b=el('button','salt-ghost rstar'); b.type='button'; b.setAttribute('aria-label',tw('rt.star',{n:n})); b.setAttribute('data-star',String(n));
-      b.disabled=draft.rating===o.id; b.appendChild(starMark(false));
-      b.addEventListener('click',function(){ rateSend(o,n); });
-      g.appendChild(b);
+      var l=el('label','amb-rating__star'), b=el('input','amb-rating__input'); b.type='radio'; b.name='rate-'+o.id; b.value=String(n); b.setAttribute('data-star',String(n));
+      b.disabled=draft.rating===o.id;
+      b.addEventListener('change',function(){ rateSend(o,n); });
+      l.appendChild(b); l.appendChild(ambIcon('star')); l.appendChild(el('span','amb-vh',tw('rt.star',{n:n})));
+      st.appendChild(l);
     })(i);
     return g;
   }
@@ -6561,14 +5520,20 @@ const CLIENT_JS = `
     var w=el('div','orate');
     if(o.rating&&+o.rating.stars>=1){ w.appendChild(rateGave(+o.rating.stars)); return w; }
     if(!rateDue(o)) return w;
-    w.appendChild(el('h4',null,tw('rt.ask')));
-    w.appendChild(rateStrip(o));
+    w.appendChild(rateStrip(o,true));
     var tp=oTap(o); if(tp.k==='rate'&&tp.t) w.appendChild(statusLine(tp.t));
     return w;
   }
   /* NEGOTIATE (05 Oct 2026): a price they asked for, and our offer: the goods alone and the rate, open until a moment, Accept
      or No thanks. Delivery stays its own line, told at the acknowledgement as on any order. The page prices nothing. */
   function oOfferOpen(o){ var p=o.price; return !!p&&p.state==='offered'&&o.status==='placed'&&!!p.until&&new Date().toISOString()<=String(p.until); }
+  /* one figure, the system's Tile: its label, the figure whole, and its note */
+  function ambTile(label,value,note){
+    var g=el('div','amb-tiles'), t=el('div','amb-tile');
+    t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__figure',value));
+    if(note){ var nt=el('span','amb-tile__delta amb-muted'); nt.appendChild(typeof note==='string'?document.createTextNode(note):note); t.appendChild(nt); }
+    g.appendChild(t); return g;
+  }
   function oPrice(o){
     var w=el('div','oprice'), p=o.price; if(!p||o.status!=='placed') return w;
     /* 3 Nov 2026 (Fable): a tap's words here answer an open offer, so they go once it is withdrawn, lapsed or answered */
@@ -6577,37 +5542,37 @@ const CLIENT_JS = `
        it at, his delivery charge and the window. Yes takes it; No thanks withdraws the order, at no cost */
     if(p.from==='accept'){
       if(p.state==='offered'&&!lapsed){
-        w.appendChild(el('p','salt-insight',tw('np.cAsk')));
+        w.appendChild(el('p','onote',tw('np.cAsk')));
         var same=Math.abs((+p.total||0)-(+o.total||0))<0.005;
-        w.appendChild(kpiTile('brass',tw('np.cGoods'),rm(p.total),same?tw('np.cSame'):tw('np.cWas',{rm:rm(o.total)})));
-        if(o.mode==='deliver') w.appendChild(el('p','sub2',tw('np.cDeliv',{rm:rm(+p.delivery||0)})));
-        if(p.slot&&p.slotSpan){ var wl=el('p','sub2'); setW(wl,'np.cWin',{a:esch(winPart(p.slotSpan,0)), b:esch(winPart(p.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(p.slot),L)); }}); w.appendChild(wl); }
-        w.appendChild(el('p','sub2',tw('np.until',{t:Dd(stamp,p.until)})));
+        w.appendChild(ambTile(tw('np.cGoods'),rm(p.total),same?tw('np.cSame'):tw('np.cWas',{rm:rm(o.total)})));
+        if(o.mode==='deliver') w.appendChild(el('p','onote',tw('np.cDeliv',{rm:rm(+p.delivery||0)})));
+        if(p.slot&&p.slotSpan){ var wl=el('p','onote'); setW(wl,'np.cWin',{a:esch(winPart(p.slotSpan,0)), b:esch(winPart(p.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(p.slot),L)); }}); w.appendChild(wl); }
+        w.appendChild(el('p','onote',tw('np.until',{t:Dd(stamp,p.until)})));
         if(!view){
-          var cy=el('button','salt-pill salt-pill--md',tw('np.cYes')); cy.type='button'; cy.disabled=draft.offerBusy===o.id;
+          var cy=el('button','amb-pill amb-pill--sm',tw('np.cYes')); cy.type='button'; cy.disabled=draft.offerBusy===o.id;
           cy.addEventListener('click',function(){ offerAnswer(o,'take'); });
-          var cn=el('button','salt-ghost',tw('np.cNo')); cn.type='button'; cn.disabled=draft.offerBusy===o.id;
+          var cn=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('np.cNo')); cn.type='button'; cn.disabled=draft.offerBusy===o.id;
           cn.addEventListener('click',function(){ offerAnswer(o,'pass'); });
           var cr=el('div','oact'); cr.appendChild(cy); cr.appendChild(cn); w.appendChild(cr);
         }
       }
-      else w.appendChild(el('p','sub2',tw(lapsed?'np.cLapsed':p.state==='withdrawn'?'np.cWithdrawn':'np.cTaken')));
+      else w.appendChild(el('p','onote',tw(lapsed?'np.cLapsed':p.state==='withdrawn'?'np.cWithdrawn':'np.cTaken')));
       if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));
       return w;
     }
-    if(p.state==='asked') w.appendChild(el('p','salt-insight',tw('np.asked')));
+    if(p.state==='asked') w.appendChild(el('p','onote',tw('np.asked')));
     else if(p.state==='offered'&&!lapsed){
-      w.appendChild(kpiTile('brass',tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(+o.qty||1)).toFixed(2))})));
-      w.appendChild(el('p','sub2',tw('np.until',{t:Dd(stamp,p.until)})+' '+tw(o.mode==='deliver'?'np.deliv':'np.collect')));
+      w.appendChild(ambTile(tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(+o.qty||1)).toFixed(2))})));
+      w.appendChild(el('p','onote',tw('np.until',{t:Dd(stamp,p.until)})+' '+tw(o.mode==='deliver'?'np.deliv':'np.collect')));
       if(!view){
-        var ok=el('button','salt-pill salt-pill--md',tw('np.accept')); ok.type='button'; ok.disabled=draft.offerBusy===o.id;
+        var ok=el('button','amb-pill amb-pill--sm',tw('np.accept')); ok.type='button'; ok.disabled=draft.offerBusy===o.id;
         ok.addEventListener('click',function(){ offerAnswer(o,'take'); });
-        var no=el('button','salt-ghost',tw('np.pass')); no.type='button'; no.disabled=draft.offerBusy===o.id;
+        var no=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('np.pass')); no.type='button'; no.disabled=draft.offerBusy===o.id;
         no.addEventListener('click',function(){ offerAnswer(o,'pass'); });
         var r=el('div','oact'); r.appendChild(ok); r.appendChild(no); w.appendChild(r);
       }
     }
-    else w.appendChild(el('p','sub2',tw(lapsed?'np.lapsed':p.state==='passed'?'np.passed':p.state==='withdrawn'?'np.withdrawn':'np.taken')));
+    else w.appendChild(el('p','onote',tw(lapsed?'np.lapsed':p.state==='passed'?'np.passed':p.state==='withdrawn'?'np.withdrawn':'np.taken')));
     if(tp.k==='price'&&tp.t&&p.state==='offered'&&!lapsed) w.appendChild(statusLine(tp.t));
     return w;
   }
@@ -6622,24 +5587,30 @@ const CLIENT_JS = `
     tapSaid(o,'price',b.ok?'':wErr(b,'np.notSent'));
     await loadOrders(); if(mine!==ticket) return; oDraw();
   }
-  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, act:oAct, again:oAgain, rate:oRate, thread:oThread, say:oSay, details:oDetails, hist:oHist, foot:oFoot};
+  /* the foot of the record (Pay) is last, as the system's Foot stands: what ends the order, in foot, stands before it */
+  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, again:oAgain, rate:oRate, thread:oThread, say:oSay, details:oDetails, hist:oHist, foot:oFoot, act:oAct};
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1) */
-  function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
+  /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
+     that says English (S13-L1). Each part stands in the record's stack as a stack of its own, but the foot, which is the pane's */
+  function oPartOf(k,o){ var n=OPARTS[k](o); if(!n.classList.contains('amb-foot')) n.classList.add('amb-stack'); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
+  /* THE RECORD, one stack of the shell's two panes: its way back on a phone, then every part, the foot last */
   function oScreen(o){
-    /* 2 Nov 2026 (his canvas): no card around the open order; every part stands on the column's edge, 24px apart */
-    var s=el('section','oscreen'); s.setAttribute('data-order',o.id);
+    var s=el('section','amb-stack oscreen'); s.setAttribute('data-order',o.id);
     s.setAttribute('aria-label',tw('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)}));
-    var back=el('button','salt-ghost salt-ghost--tight oback',tw('ord.yours')); back.type='button';
-    back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
-    s.appendChild(back);
+    if(!oWide()){
+      var back=el('button','amb-pill amb-pill--sm amb-pill--quiet oback'); back.type='button';
+      back.appendChild(ambIcon('back','amb-icon--sm')); back.appendChild(document.createTextNode(tw('ord.yours')));
+      back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
+      s.appendChild(back);
+    }
     Object.keys(OPARTS).forEach(function(k){ s.appendChild(oPartOf(k,o)); });
     return s;
   }
-  /* on a phone the open order is the whole tab, with the way back at its head */
+  /* THE PLACE IS THE SHELL'S TWO PANES (#pOrder is the split): the list of orders, then the open order. On a phone an open order is the whole tab and
+     the list stands down; on a desk with nothing open the lead and New order stand in the second pane, and with an order open they head the list */
   function oPlace(){
-    var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':'')+(o?'':' oplace--one'));
-    place.id='oArea';
+    var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), wide=oWide();
     pOrder.classList.toggle('o-open',open);
     /* New is read against what this device had seen when the order was opened, and stays until it is left; the
        list is drawn after the open order is seen, so its row does not call a reply on screen waiting */
@@ -6647,23 +5618,34 @@ const CLIENT_JS = `
     draft.oStale='';
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o) seeIt(o);
-    var col=el('div','olistcol'); if(oTopEl) col.appendChild(oTopEl);
-    col.appendChild(el('h2',null,tw('ord.yours'))); col.appendChild(oList(id));
-    place.appendChild(col);
-    if(o) place.appendChild(oScreen(o));
-    return place;
+    var col=el('div','amb-stack olistcol'), none=wide&&!o;
+    if(oTopEl&&!none) col.appendChild(oTopEl);
+    col.appendChild(el('h2','amb-section',tw('ord.yours'))); col.appendChild(oList(id));
+    if(open&&!wide) col.hidden=true;
+    /* the record's foot is the one main action beside an open order: New order then stands quiet */
+    var nbq=oTopEl&&oTopEl.querySelector('#oNew'); if(nbq) nbq.classList.toggle('amb-pill--quiet',wide&&!!o);
+    spl().appendChild(col);
+    if(o) spl().appendChild(oScreen(o));
+    else if(none){ var rec=el('div','amb-stack orecord'); if(oTopEl) rec.appendChild(oTopEl); spl().appendChild(rec); }
   }
-  function oDraw(){ var was=document.getElementById('oArea'); if(was) was.replaceWith(oPlace()); }
+  /* the split is read where it stands: a shell that is drawn again leaves an older reference behind */
+  function spl(){ return document.getElementById('oPanes'); }
+  function oDraw(){ if(!pOrder.querySelector('.olistcol')) return; spl().textContent=''; oPlace(); }
   /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change; a row
      that did is drawn again and keeps the focus, holding nothing typed. The open order keeps any part holding the
      focus, and draft.oStale has the next poll draw it once the focus has left; a part that reads the same is left
      as it is, which is always the composer. Only an order opened or gone draws the place again. */
-  function oShape(list){ return [].map.call(list.children,function(x){ var w=x.getAttribute('data-wrap'); return w?'w:'+w:x.getAttribute('data-row')||x.textContent; }).join('|'); }
+  function oShape(list){
+    return [].map.call(list.children,function(x){
+      if(x.tagName==='UL') return '['+[].map.call(x.children,function(li){ var w=li.getAttribute('data-wrap'), b=li.querySelector('[data-row]'); return w?'w:'+w:b?b.getAttribute('data-row'):li.textContent; }).join(',')+']';
+      return x.getAttribute('data-row')||x.textContent;
+    }).join('|');
+  }
   /* the order's own node in a list, the pair where Order again stands beside the card; and the control in it that had focus, found again */
   function oNode(box,id){ var r=box.querySelector('[data-row="'+id+'"]'); return r&&r.parentNode&&r.parentNode.getAttribute&&r.parentNode.getAttribute('data-wrap')===id?r.parentNode:r; }
   function oRefocus(box,id,again){ var f=box.querySelector((again?'[data-again="':'button[data-row="')+id+'"]'); if(f) try{ f.focus({preventScroll:true}); }catch(e){} }
   function oSync(ids){
-    var place=document.getElementById('oArea'); if(!place) return;
+    var place=pOrder; if(!place.querySelector('.olistcol')) return;
     var shown=oShownId(), scr=place.querySelector('.oscreen'), sid=scr?scr.getAttribute('data-order'):'';
     if(sid!==shown){ oDraw(); return; }
     var ae=document.activeElement;
@@ -6735,13 +5717,13 @@ const CLIENT_JS = `
     return setW(el('span'),k,{mark:markHtml(p.product,20), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
       d:function(L){ return ymdDay(p.since||p.gotOn||p.date,L); }});
   }
-  function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
   /* 27 Sep 2026 (his approval, "Reward cover on statements"), AMENDED THE SAME DAY (DROP THE RINGGIT): A NOTE, WITH NO
      AMOUNT, that part of an order was paid from the reward, under the part it belongs to, keyed so a switch of language
      words it again. Only where the publish sealed a flag (payDue's cover, on one part only). The part's own figure is
      still what is owed, the cover already paid; a reward unit is valued at cost, so a ringgit figure here would give a
      customer salt's own cost per unit. The statement's order line carries the same note, with no amount either. */
   function coverTo(x,p){ if(x&&p&&p.cover) x.appendChild(setW(el('span','sub2 pcover'),'part.cover')); return x; }
+  /* a tile of the old Tile recipe: Salt Admin's order card (stmt/owner.js, the Agree preview) still draws its figures with it until the open order is redrawn; the pay sheet no longer does */
   function kpiTile(tone,label,value,note){
     var k=el('div','salt-kpi salt-kpi--'+tone);
     k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
@@ -6894,55 +5876,40 @@ const CLIENT_JS = `
         due=now?tw('due.Now'):dueWords(p);
     return at&&due?at+' '+due:at||due;
   }
-  function ledLine(k,v){ var l=el('div','salt-ledger__line'); l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',v)); return l; }
-  /* the lines past the third, folded on Home under "N more" (the system's Plan recipe, a native details). Opened or shut stays
-     as they left it across a poll, which redraws the head only where it reads differently, an open one's attribute included */
+  /* PHASE 7A (his yes of 11 Oct 2026): HOME SHOWS THREE LINES and the rest stand behind "N more"; the sheet shows all of them */
   var HOME_LINES=3, invMoreOpen=false;
-  function invMore(rest){
-    var d=el('details','salt-plan invmore'), sm=el('summary'), b=el('div','salt-plan__body');
-    d.id='invMore'; d.open=invMoreOpen;
-    d.addEventListener('toggle',function(){ invMoreOpen=d.open; });
-    sm.appendChild(el('span','salt-plan__title',tw('inv.more',{n:rest.children.length})));
-    b.appendChild(rest); d.appendChild(sm); d.appendChild(b);
-    return d;
-  }
-  /* Home draws each line in one row, its figure and when (his "less words, but maximum impact"), then Less sent where
-     something was sent, the figure above being the Total; the pay sheet draws the line whole with what it adds up from
-     beneath it, then Goods, Delivery, Less paid, Less sent and the Total. A nil figure is left out, and a line of goods
-     alone draws nothing beneath it. */
+  /* 16 Nov 2026 (place D): the pay sheet's "What this pays", in the system's parts: a row to each line (its sentence with its mark, when it is due and any
+     cover under it, its figure at the right), then the sum the lines make as a group of read-only settings, the total last and heavier. Home's own lines
+     are invHome (place A); this is the whole line. */
   function invNode(lines,full){
-    var L=el('div','salt-ledger salt-ledger--plain inv'), T={goods:0,deliv:0,less:0,sent:0}, split=true,
-        rest=el('div','salt-ledger salt-ledger--plain inv invrest'),
+    var box=el('div','inv amb-stack'), ul=el('ul','amb-list amb-list--ruled'), T={goods:0,deliv:0,less:0,sent:0}, split=true,
         wait=lines.some(function(x){ return x.o&&oClaimed(x.o)>0.004&&x.own>0.004; })||(acctWaiting()>0.004&&lines.some(function(x){ return x.acct>0.004; }));
-    lines.forEach(function(x,i){
+    lines.forEach(function(x){
       var d=invOf(x), mk=markHtml(d.product,20), u=function(Lg){ return esch(unitsOf(d.q,unitFor(d.product),Lg)); },
           lab=full&&d.split&&d.rate>0?setW(el('span'),d.friend?'inv.lineF':'inv.line',{mark:mk, u:u, rate:esch(rm(d.rate))})
             :setW(el('span'),d.friend?'part.BareF':'part.Bare',{mark:mk, u:u});
-      var r=lrowN(lab,rm(x.fig),invWhen(x,full),x.p&&lateNow(x.p)?'odue':'');
-      if(full){
+      var sub=el('span'), when=invWhen(x,full), late=!!x.p&&lateNow(x.p);
+      if(when) sub.appendChild(el('span',late?'amb-neg':null,when));
+      if(full&&d.split){
         var det=[[tw('om.goods'),d.goods],[tw('sh.delivery'),d.deliv],[tw('inv.lessPaid'),d.less]].filter(function(q,i){ return i===0||q[1]>0.004; });
-        if(d.split&&det.length>1){ var dd=el('div','invd'); det.forEach(function(q){ dd.appendChild(ledLine(q[0],rm(q[1]))); }); r.appendChild(dd); }
+        if(det.length>1) sub.appendChild(el('span','invd',(when?'. ':'')+det.map(function(q){ return q[0]+' '+rm(q[1]); }).join(', ')));
       }
-      /* his approval of 27 Sep 2026: the part their reward paid says so, with no amount, on Home and on the sheet */
-      coverTo(r,x.p);
-      /* PHASE 7A (his yes of 11 Oct 2026): HOME SHOWS THREE LINES and the rest stand behind "N more"; the sheet shows all of them */
-      (!full&&i>=HOME_LINES?rest:L).appendChild(r);
+      coverTo(sub,x.p);
+      ul.appendChild(hRow({tag:'li', title:lab, sub:sub, amount:rm(x.fig)}));
       T.goods+=d.goods; T.deliv+=d.deliv; T.less+=d.less; T.sent+=x.own+x.acct; split=split&&d.split;
     });
-    var sent=+T.sent.toFixed(2);
-    if(!full){
-      invMoreOpen=invMoreOpen&&!!rest.firstChild;
-      if(rest.firstChild) L.appendChild(invMore(rest));
-      if(sent>0.004) L.appendChild(lrow(tw('inv.lessSent'),rm(sent),wait?tw('om.waiting'):''));
-      return L;
+    box.appendChild(ul);
+    var sent=+T.sent.toFixed(2), g=el('div','amb-settings obill'), gl=el('ul','amb-settings__list');
+    function srow(k,v,f,cls){
+      var li=el('li'), r=el('div','amb-setting'+(cls?' '+cls:'')), nm=el('span','amb-setting__name',k);
+      if(f) nm.appendChild(el('span','obill__sub',f));
+      r.appendChild(nm); r.appendChild(el('span','amb-setting__value',v)); li.appendChild(r); gl.appendChild(li); return r;
     }
-    var tr=el('div','salt-ledger__row invt');
-    function tl(k,v,f){ tr.appendChild(ledLine(k,rm(v))); if(f) tr.appendChild(el('span','salt-ledger__flag',f)); }
-    if(split){ tl(tw('om.goods'),T.goods); if(T.deliv>0.004) tl(tw('sh.delivery'),T.deliv); if(T.less>0.004) tl(tw('inv.lessPaid'),T.less); }
-    if(sent>0.004) tl(tw('inv.lessSent'),sent,tw(wait?'om.waiting':'om.received'));
-    if(tr.firstChild) L.appendChild(tr);
-    var tt=lrow(tw('inv.total'),rm(invTotal(lines))); tt.className+=' invtot'; L.appendChild(tt);
-    return L;
+    if(split){ srow(tw('om.goods'),rm(T.goods)); if(T.deliv>0.004) srow(tw('sh.delivery'),rm(T.deliv)); if(T.less>0.004) srow(tw('inv.lessPaid'),rm(T.less)); }
+    if(sent>0.004) srow(tw('inv.lessSent'),rm(sent),tw(wait?'om.waiting':'om.received'));
+    srow(tw('inv.total'),rm(invTotal(lines)),'','obill__total invtot');
+    g.appendChild(gl); box.appendChild(g);
+    return box;
   }
   /* S7 7.1: TO PAY NOW IS HOME'S FIRST ANSWER, so it answers even when it is nothing: a new account says there is nothing
      on it yet, and an account owing nothing now says so, with no Pay. Over the line (setHold) it says, in the pay
@@ -6950,8 +5917,36 @@ const CLIENT_JS = `
      page only where it reads differently, so a poll never takes a tap's focus from its Pay. V2: the figure is the
      invoice's Total, its lines beneath it and the one Pay for it; each line says its own day, so the note under the
      figure and the Overdue list under it went. */
+  function hStat(label,value){ var d=el('div','amb-stat'); d.appendChild(el('span','amb-stat__label',label)); d.appendChild(el('span','amb-stat__value',value)); return d; }
+  function hSay(t,id,cls,live){ var d=el('div','amb-prose'), q=el('p',cls||null,t); if(id) q.id=id; if(live) q.setAttribute('role','status'); d.appendChild(q); return d; }
+  function hNote(t,id){ var n=el('div','amb-notice amb-notice--warn'); if(id) n.id=id; n.appendChild(ambIcon('info')); n.appendChild(el('span',null,t)); return n; }
+  /* the invoice's lines on Home, a row each: its mark and size, when it is due (a word of the second line, overdue in the neg tone), its
+     figure; Less sent where something was sent, a row of its own; the lines past the third fold behind "N more", a quiet pill that opens
+     them and stays as it was across a poll (16 Nov 2026: was the Plan recipe's details) */
+  function invHome(lines){
+    var rows=[], rest=[], sent=0, wait=lines.some(function(x){ return x.o&&oClaimed(x.o)>0.004&&x.own>0.004; })||(acctWaiting()>0.004&&lines.some(function(x){ return x.acct>0.004; }));
+    lines.forEach(function(x,i){
+      var d=invOf(x), late=!!x.p&&lateNow(x.p), when=invWhen(x,false), sub=el('span');
+      if(when) sub.appendChild(el('span',late?'amb-neg':null,when));
+      if(x.p&&x.p.cover){ if(when) sub.appendChild(document.createTextNode('. ')); sub.appendChild(setW(el('span'),'part.cover')); }
+      var u=unitsOf(d.q,unitFor(d.product)), r=hRow({tag:'li', attrs:{'data-inv':String(i)}, thumb:markThumb(d.product), title:d.friend?tw('part.BareF',{mark:'', u:u}).trim():u, sub:sub, amount:rm(x.fig)});
+      if(i>=HOME_LINES){ r.hidden=!invMoreOpen; r.classList.add('invrest'); rest.push(r); }
+      rows.push(r); sent+=x.own+x.acct;
+    });
+    sent=+sent.toFixed(2);
+    if(sent>0.004){ var ic=el('span','amb-thumb'); ic.setAttribute('aria-hidden','true'); ic.appendChild(ambIcon('send'));
+      rows.push(hRow({tag:'li', attrs:{'data-inv':'sent'}, thumb:ic, title:tw('inv.lessSent'), sub:wait?tw('om.waiting'):'', amount:rm(sent)})); }
+    var ul=el('ul','amb-list amb-list--ruled'); rows.forEach(function(r){ if(r.tagName==='LI') ul.appendChild(r); else { var li=el('li'); li.appendChild(r); ul.appendChild(li); } });
+    var box=el('div','hinv'); box.appendChild(ul);
+    if(rest.length){
+      var mb=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('inv.more',{n:rest.length})); mb.type='button'; mb.id='invMore'; mb.setAttribute('aria-expanded',String(invMoreOpen));
+      mb.addEventListener('click',function(){ invMoreOpen=!invMoreOpen; mb.setAttribute('aria-expanded',String(invMoreOpen)); rest.forEach(function(r){ r.hidden=!invMoreOpen; }); });
+      box.appendChild(mb);
+    } else invMoreOpen=false;
+    return box;
+  }
   function payHeadNode(){
-    var box=el('div','payhead'); box.id='payHead';
+    var box=el('div'); box.id='payHead';
     var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
     var bad=liveBad(), old=staleNow();
     box.hidden=!bundle||!(old||bad||fr||payDue||lines.length||said.length);
@@ -6961,19 +5956,18 @@ const CLIENT_JS = `
     /* C15: an account that could not be read leads with that, never with nothing to pay */
     if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
-      /* PHASE 7A: with something to pay, the tile and the one Pay stand in the foot above the bar (payFootNode), so the
-         pill is never under it; the head keeps the lines and what is said about them */
-      if(!payFootOn(lines,tot)) box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
-      box.appendChild(invNode(lines,false));
-      if(hold) box.appendChild(el('p','salt-insight salt-insight--copper',tw('pay.hold',{rm:rm(odLeft())})));
+      /* 16 Nov 2026: the foot holds the one Pay and nothing else, so To pay now's figure always stands here, over the lines it adds up */
+      var st=hStat(tw('pay.now'),rm(tot)); st.setAttribute('data-now',tot>0.004?'owing':'clear'); box.appendChild(st);
+      box.appendChild(invHome(lines));
+      if(hold) box.appendChild(hNote(tw('pay.hold',{rm:rm(odLeft())})));
       /* V5c (his answer of 29 Sep 2026): what paying late costs, in few words, while something is to pay */
-      var lk=lateKeep(); if(lk&&tot>0.004){ var kp=el('p','sub2',lk); kp.id='lateKeep'; box.appendChild(kp); }
-      var sn=stageNote(); if(sn){ var sp=el('p','salt-insight salt-insight--copper'); sp.id='stageNote'; sp.textContent=sn; box.appendChild(sp); }
+      var lk=lateKeep(); if(lk&&tot>0.004) box.appendChild(hSay(lk,'lateKeep'));
+      var sn=stageNote(); if(sn) box.appendChild(hSay(sn,'stageNote'));
     }
-    else if(fr) box.appendChild(kpiTile('verdigris',tw('pay.toPay'),rm(0),el('span',null,tw('acct.nothing'))));
+    else if(fr){ var f0=hStat(tw('pay.toPay'),rm(0)); f0.setAttribute('data-now','clear'); box.appendChild(f0); box.appendChild(hSay(tw('acct.nothing'),'','',true)); }
     /* C18: nothing to pay is said once, never over RM 0 */
-    else if(payDue&&!bad) box.appendChild(el('p','lead pnil',tw('pay.nothing')));
-    said.forEach(function(t){ box.appendChild(statusLine(t)); });
+    else if(payDue&&!bad) box.appendChild(hSay(tw('pay.nothing'),'','pnil',true));
+    said.forEach(function(t){ box.appendChild(hSay(t,'','',true)); });
     return box;
   }
   /* V5c: the terms of paying late, off the sealed term, lock and window; nothing where the statement predates them */
@@ -6986,12 +5980,11 @@ const CLIENT_JS = `
      With nothing to pay now no foot is drawn: the tile stays in the head, as it was. */
   function payFootOn(lines,tot){ return !view&&tot>0.004&&lines.length>0; }
   function payFootNode(){
-    var f=el('div','payfoot'); f.id='homeFoot';
+    var f=el('div','amb-foot'); f.id='homeFoot';
     var lines=nowOf(), tot=invTotal(lines);
     f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);
     if(f.hidden) return f;
-    f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));
-    var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
+    var pb=el('button','amb-pill amb-pill--block',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
     pb.setAttribute('data-back','pay:now');
     pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });
     f.appendChild(pb);
@@ -7001,11 +5994,8 @@ const CLIENT_JS = `
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     cBar();
-    footSet(); glanceDraw();
+    glanceDraw();
   }
-  /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
-  function footSet(){ var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(f&&h) h.style.setProperty('--hfoot',(f.hidden?0:Math.ceil(f.offsetHeight||0))+'px'); }
-  window.addEventListener('resize',footSet);
   /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
      its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
@@ -7039,7 +6029,7 @@ const CLIENT_JS = `
      filled pill is I have paid on every rail. Their username is the reference on a code and on Transfer, never on JomPAY.
      The number and the rest are NEVER IN GIT: the repo is public, and stmt/pay.js holds names and rails only. The figure
      is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
-  var paySh=document.getElementById('paySheet'), payScr=document.getElementById('payScrim'), PS=null;
+  var paySh=document.getElementById('paySheet'), PS=null;
   var PAYX={}, payNumAsked=false, payNumAt=0;
   /* asked as a sheet opens, on their own session (his read-only view has none and asks nothing), one ask at a time and again only
      once the last answer is a minute old (PAY_FRESH_MS); an answer that did not come lets the next open ask again. Every field is
@@ -7102,7 +6092,7 @@ const CLIENT_JS = `
     PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false, what:false, from:from||null, back:key||''};
     bkOpen('pay',closePay);
     payNumLoad();
-    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
+    sheetUp(paySh); behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
   /* ---- THE CODE, DRAWN HERE (06 Nov 2026). One rect a run of dark modules, as engine/qr.mjs's qrRectSvg draws them (a stroked path
@@ -7141,14 +6131,15 @@ const CLIENT_JS = `
     return svg;
   }
   function codePanel(a,rows){
-    var box=el('div','salt-qr paycode'), cv=el('div','salt-qr__code'), c=codeCanvas(rows), url='', meta=el('div','salt-qr__meta'), alt=tw('pay.codeAlt',{a:a.name});
+    /* 16 Nov 2026 (place D): the system's code frame holds the code and never draws, rounds or covers it; the page draws the symbol, as before */
+    var box=el('figure','amb-codeframe paycode'), cv=el('div','amb-codeframe__field'), c=codeCanvas(rows), url='', cap=el('figcaption','amb-codeframe__caption'), alt=tw('pay.codeAlt',{a:a.name});
     codePrep(a.key,c);
     try{ url=c?c.toDataURL('image/png'):''; }catch(e){ url=''; }
     if(/^data:image[/]png;base64,/.test(url)){ var im=el('img'); im.src=url; im.alt=alt; im.width=c.width; im.height=c.height; cv.appendChild(im); }
     else cv.appendChild(codeSvg(rows,alt));
     box.appendChild(cv);
-    meta.appendChild(el('p','salt-qr__title',a.name)); meta.appendChild(el('span','salt-qr__caption',METHOD_WORDS.qr));
-    box.appendChild(meta);
+    cap.appendChild(el('b','paycode__name',a.name)); cap.appendChild(document.createTextNode(' ')); cap.appendChild(el('span','paycode__how',METHOD_WORDS.qr));
+    box.appendChild(cap);
     return box;
   }
   /* THE FILE IS READY BEFORE THE TAP (06 Nov 2026, Fable): a phone lets navigator.share run only inside the gesture, so the PNG and its File are made as the code is
@@ -7184,7 +6175,7 @@ const CLIENT_JS = `
   /* quiet (=== true) when the page is leaving it (a lock, another account): focus has nowhere to go back to */
   function closePay(quiet){
     if(!paySh||paySh.hidden) return;
-    var ps=PS; paySh.hidden=true; payScr.hidden=true; behind(); PS=null; payqDrop(); bkDrop('pay');
+    var ps=PS; sheetDown(paySh); behind(); PS=null; payqDrop(); bkDrop('pay');
     if(quiet!==true&&ps) focusBack(ps.from,ps.back?backFind(ps.back):null);
   }
   /* ---- F13 (29 Sep 2026): A SLIP, SEALED ON THIS PHONE. On Did you send, a picture of the payment may go with the claim,
@@ -7240,24 +6231,24 @@ const CLIENT_JS = `
     var box=el('div','payslip');
     if(PS.slip){
       box.appendChild(PS.slip.thumb);
-      box.appendChild(el('span','sub2',tw('pay.slipReady')));
-      var drop=el('button','salt-ghost',tw('pay.slipDrop')); drop.type='button';
+      box.appendChild(el('span','amb-muted',tw('pay.slipReady')));
+      var drop=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('pay.slipDrop')); drop.type='button';
       drop.addEventListener('click',function(){ PS.slip=null; PS.slipSaid=''; drawPay(); });
       box.appendChild(drop);
     } else {
       var inp=el('input'); inp.type='file'; inp.accept='image/*'; inp.hidden=true; inp.id='paySlipFile';
       inp.addEventListener('change',function(){ slipPick(inp.files&&inp.files[0]); });
-      var add=el('button','salt-ghost',tw(PS.slipBusy?'pay.slipWork':'pay.slipAdd')); add.type='button'; add.id='paySlip'; add.disabled=!!PS.slipBusy;
+      var add=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw(PS.slipBusy?'pay.slipWork':'pay.slipAdd')); add.type='button'; add.id='paySlip'; add.disabled=!!PS.slipBusy;
       add.addEventListener('click',function(){ inp.click(); });
       box.appendChild(inp); box.appendChild(add);
-      box.appendChild(el('p','sub2',tw('pay.slipWhy')));
+      box.appendChild(el('p','amb-basis',tw('pay.slipWhy')));
     }
     if(PS.slipSaid) box.appendChild(statusLine(PS.slipSaid));
     return box;
   }
   if(paySh){
     document.getElementById('payX').addEventListener('click',closePay);
-    payScr.addEventListener('click',closePay);
+    sheetWire(paySh,function(){ closePay(); });
     document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closePay(); });
   }
   /* the figure being paid: all of it, or the part typed, never above all of it */
@@ -7304,103 +6295,98 @@ const CLIENT_JS = `
     }
     if(PS.acct&&PS.rail!=='cod'&&!payInto(PS.rail).some(function(x){ return x.key===PS.acct; })) PS.acct='';
     var cash=PS.rail==='cod';
-    /* PHASE 7B: HIS BANKS FIRST, as the system's Option tiles, one tap each, none chosen; then the figure beside them */
+    /* 16 Nov 2026 (place D): in the system's parts. A choice is its Options (a real radio each, a mark, its title and its line), the figure its Tile,
+       All or Part its Segment, an amount its Field, the details its Plate (a row each, a tap on it copying it), the code its frame. */
+    /* PHASE 7B: HIS BANKS FIRST, one tap each, none chosen; then the figure beside them */
     if(PS.rail&&!cash){
-      var fi=el('fieldset','salt-options payinto'), gi=el('div','salt-options__grid salt-options__grid--2');
-      fi.id='payInto'; fi.appendChild(el('legend','salt-options__legend',tw('pay.into')));
+      var fi=el('fieldset','amb-options payinto');
+      fi.id='payInto'; fi.appendChild(el('legend','amb-field__label',tw('pay.into')));
       var offer=payInto(PS.rail);
       offer.forEach(function(a){
-        var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'), tx=el('span','salt-option__text');
-        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key;
+        var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), mk=el('span','amb-option__mark');
+        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key; mk.setAttribute('aria-hidden','true');
         r.addEventListener('change',function(){ PS.acct=a.key; drawPay(); });
-        tx.appendChild(el('span','salt-option__label',a.name)); face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); gi.appendChild(lab);
+        lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',a.name)); fi.appendChild(lab);
       });
-      fi.appendChild(gi); body.appendChild(fi);
-      if(!offer.length&&!payNumAsked){ var na=el('p','sub2',tw('pay.noAcct')); na.id='payNone'; body.appendChild(na); }
+      body.appendChild(fi);
+      if(!offer.length&&!payNumAsked){ var na=el('p','amb-basis',tw('pay.noAcct')); na.id='payNone'; body.appendChild(na); }
     }
-    body.appendChild(kpiTile('ember',tw(c.label),rm(c.fig),c.note()));
-    var seg=el('div','payseg');
+    body.appendChild(ambTile(tw(c.label),rm(c.fig),c.note()));
+    var seg=el('div','amb-segment payseg'); seg.setAttribute('role','group');
     [[false,tw('pay.all',{rm:rm(c.fig)})],[true,tw('pay.part')]].forEach(function(x){
-      var b=el('button','salt-ghost',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
+      var b=el('button','amb-segment__opt',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
       b.addEventListener('click',function(){ PS.part=x[0]; drawPay(); var f=document.getElementById('payAmt'); if(f) try{ f.focus(); }catch(e){} });
       seg.appendChild(b);
     });
     if(!cash) body.appendChild(seg);
     if(PS.part&&!cash){
-      var row=el('div','payamt'); row.appendChild(el('span','cur','RM'));
-      var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.id='payAmt'; inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
-      inp.value=PS.amt; inp.setAttribute('aria-label',tw('pay.amtAria'));
+      var row=el('label','amb-field payamt'), inp=el('input','amb-input amb-input--amount');
+      row.appendChild(el('span','amb-field__label',tw('pay.amtAria')));
+      inp.id='payAmt'; inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+      inp.value=PS.amt;
       inp.addEventListener('input',function(){ PS.amt=inp.value; payTitle(); drawPayFoot();
-        var ar=document.getElementById('payAmtRow'); if(ar) ar.querySelector('.salt-ledger__value').firstChild.nodeValue=rm(payAmt()||c.fig); });
-      row.appendChild(inp); body.appendChild(row);
-      body.appendChild(el('p','sub2',tw('pay.upTo',{rm:rm(c.fig)})));
+        var ar=document.getElementById('payAmtRow'); if(ar) ar.querySelector('.amb-plate__value').firstChild.nodeValue=rm(payAmt()||c.fig); });
+      row.appendChild(inp); row.appendChild(el('span','amb-field__hint',tw('pay.upTo',{rm:rm(c.fig)}))); body.appendChild(row);
     }
-    /* What this pays: the invoice's lines in the system's Plan recipe, shut, and as they left it across a redraw */
+    /* What this pays: the invoice's lines, shut, and as they left it across a redraw (the system's More; the lines are its rows) */
     if(c.lines){
-      var wd=el('details','salt-plan paywhat'), ws=el('summary'), wb=el('div','salt-plan__body');
-      wd.id='payWhat'; wd.open=!!PS.what;
-      wd.addEventListener('toggle',function(){ if(PS) PS.what=wd.open; });
-      ws.appendChild(el('span','salt-plan__title',tw('pay.what')));
-      wb.appendChild(invNode(c.lines,true)); wd.appendChild(ws); wd.appendChild(wb); body.appendChild(wd);
+      var wd=el('button','amb-more paywhat',tw('pay.what')); wd.type='button'; wd.id='payWhat'; wd.setAttribute('aria-expanded',PS.what?'true':'false');
+      wd.addEventListener('click',function(){ if(!PS) return; PS.what=!PS.what; drawPay(); var again=document.getElementById('payWhat'); if(again) try{ again.focus({preventScroll:true}); }catch(e){} });
+      body.appendChild(wd);
+      var ib=invNode(c.lines,true); ib.id='payInv'; ib.hidden=!PS.what; body.appendChild(ib);
     }
     /* V5c: the pay sheet says in full what paying late can cost */
-    var lf=lateFull(); if(lf){ var lp=el('p','sub2',lf); lp.id='lateFull'; body.appendChild(lp); }
-    var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
-    fs.appendChild(el('legend','salt-options__legend',tw('pay.how')));
+    var lf=lateFull(); if(lf){ var lp=el('p','amb-basis',lf); lp.id='lateFull'; body.appendChild(lp); }
+    var fs=el('fieldset','amb-options payhow');
+    fs.appendChild(el('legend','amb-field__label',tw('pay.how')));
     /* V2 (his C1): an order at Ready is due now, so its sheet offers no cash way, cash on handover chosen or not */
     HOW.filter(function(w){ return !w.only||w.only(); }).concat(c.kind==='order'&&!readyDue(oFind(c.id))?[cashWay()]:[]).forEach(function(w){
-      var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'),
-          ld=el('span','salt-option__lead'), tx=el('span','salt-option__text'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
-      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off;
+      var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), mk=el('span','amb-option__mark'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
+      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off; mk.setAttribute('aria-hidden','true');
       r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
-      ld.appendChild(glyph(w.g,22)); face.appendChild(ld);
-      tx.appendChild(el('span','salt-option__label',tw(w.label)));
-      tx.appendChild(el('span','salt-option__detail',w.detail?tw(w.detail):a?tw('pay.fromApp',{a:a.name}):tw('pay.fromAppAny')));
-      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); g.appendChild(lab);
+      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',tw(w.label)));
+      lab.appendChild(el('span','amb-option__sub',w.detail?tw(w.detail):a?tw('pay.fromApp',{a:a.name}):tw('pay.fromAppAny')));
+      fs.appendChild(lab);
     });
-    fs.appendChild(g); body.appendChild(fs);
-    /* the details of the account chosen, each with Copy: the code and Save for a code, the number for Transfer, the biller code and Ref-1 for JomPAY
-       (Ref-2 is left empty), then the figure on every rail and the username as the reference on a code and on Transfer only (his B1). Copy and Save
+    body.appendChild(fs);
+    /* the details of the account chosen, each a Plate row with its own copy: the code and Save for a code, the number for Transfer, the biller code and Ref-1 for
+       JomPAY (Ref-2 is left empty), then the figure on every rail and the username as the reference on a code and on Transfer only (his B1). Copy and Save
        leave for the banking app and so mark the visit away, the net for a phone that reloads while they pay. */
-    var L=el('div','salt-ledger salt-ledger--plain payref'), said=statusLine(PS.said), ac=acct(PS.acct), rail=PS.rail, rw=ac&&rail==='qr'?rowsOf(PS.acct):null,
+    var L=el('div','amb-plate payref'), said=statusLine(PS.said), ac=acct(PS.acct), rail=PS.rail, rw=ac&&rail==='qr'?rowsOf(PS.acct):null,
         num=ac&&rail==='transfer'?numOf(PS.acct):'', jom=ac&&rail==='jompay'?jomOf(PS.acct):null;
     said.hidden=!PS.said;
     /* away: copying a detail is leaving for their banking app (18 Oct 2026, a customer back from paying did not
        know where to go on): it marks the visit, so coming back, or a reload while away, turns the sheet to Did you send and the slip */
-    function copyBtn(text,labelKey,away){
-      var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('aria-label',tw(labelKey)); b.appendChild(glyph('copy',18));
-      b.addEventListener('click',async function(){
-        if(away&&PS&&payAmt()) payAway(payAmt());
-        var s=typeof text==='function'?text():text, t; try{ await navigator.clipboard.writeText(s); t=tw('pay.copied'); }catch(e){ t=tw('pay.copyFail'); }
-        if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
-      });
-      return b;
-    }
-    function detail(id,label,value,flag,copy,labelKey,cls){
-      var r=lrow(tw(label),value,flag); r.id=id; var v=r.querySelector('.salt-ledger__value'); if(cls) v.className+=' '+cls;
-      if(copy!==null) v.appendChild(copyBtn(copy,labelKey,true)); L.appendChild(r); return v;
+    function plate(id,label,value,flag,copy,labelKey,away){
+      var r=el(copy===null?'div':'button','amb-plate__row'), tx=el('span','amb-plate__text'); r.id=id;
+      if(copy!==null){ r.type='button'; r.setAttribute('aria-label',tw(labelKey)); }
+      tx.appendChild(el('span','amb-plate__label',label)); tx.appendChild(el('span','amb-plate__value',value));
+      if(flag) tx.appendChild(el('span','amb-muted payflag',flag));
+      r.appendChild(tx);
+      if(copy!==null){
+        var ac2=el('span','amb-plate__act'); ac2.appendChild(ambIcon('copy','amb-icon--sm')); r.appendChild(ac2);
+        r.addEventListener('click',async function(){
+          if(away&&PS&&payAmt()) payAway(payAmt());
+          var s2=typeof copy==='function'?copy():copy, t; try{ await navigator.clipboard.writeText(s2); t=tw('pay.copied'); }catch(e){ t=tw('pay.copyFail'); }
+          if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
+        });
+      }
+      L.appendChild(r); return r;
     }
     if(rw){
       body.appendChild(codePanel(ac,rw));
-      var sv=el('button','salt-ghost',tw('pay.codeSave')); sv.type='button'; sv.id='paySave';
+      var sv=el('button','amb-pill amb-pill--quiet',tw('pay.codeSave')); sv.type='button'; sv.id='paySave';
       sv.addEventListener('click',function(){ codeSave(said); });
-      body.appendChild(sv); body.appendChild(el('p','sub2',tw('pay.codeHint')));
+      body.appendChild(sv); body.appendChild(el('p','amb-basis',tw('pay.codeHint')));
     }
-    if(num) detail('payAcctNo','pay.acctNo',groupFours(num),ac.bank||ac.name,num,'pay.acctCopy','acctno');
+    if(num) plate('payAcctNo',tw('pay.acctNo'),groupFours(num),ac.bank||ac.name,num,'pay.acctCopy',true);
     if(jom){
-      detail('payBiller','pay.biller',jom.biller,ac.name,jom.biller,'pay.billerCopy','acctno');
-      detail('payRef1','pay.ref1',jom.ref1,'',jom.ref1,'pay.ref1Copy','acctno');
-      var r2=lrow(tw('pay.ref2'),tw('pay.ref2Empty')); r2.id='payRef2'; L.appendChild(r2);
+      plate('payBiller',tw('pay.biller'),jom.biller,ac.name,jom.biller,'pay.billerCopy',true);
+      plate('payRef1',tw('pay.ref1'),jom.ref1,'',jom.ref1,'pay.ref1Copy',true);
+      plate('payRef2',tw('pay.ref2'),tw('pay.ref2Empty'),'',null);
     }
-    if(!cash){
-      var av=lrow(tw('pay.amount'),rm(payAmt()||c.fig)); av.id='payAmtRow';
-      av.querySelector('.salt-ledger__value').appendChild(copyBtn(function(){ return (payAmt()||c.fig).toFixed(2); },'pay.amountCopy'));
-      L.appendChild(av);
-    }
-    if(rail!=='jompay'){
-      var rr=lrow(tw('pay.ref'),user,tw('pay.refHint')); rr.id='payRef'; rr.querySelector('.salt-ledger__value').appendChild(copyBtn(user,'pay.refCopy'));
-      L.appendChild(rr);
-    }
+    if(!cash) plate('payAmtRow',tw('pay.amount'),rm(payAmt()||c.fig),'',function(){ return (payAmt()||c.fig).toFixed(2); },'pay.amountCopy',false);
+    if(rail!=='jompay') plate('payRef',tw('pay.ref'),user,tw('pay.refHint'),user,'pay.refCopy',false);
     if(!cash){ body.appendChild(L); body.appendChild(said); }
     drawPayFoot();
     if(held){
@@ -7416,17 +6402,17 @@ const CLIENT_JS = `
     var foot=document.getElementById('payFoot'), a=payAmt(), rail=PS.rail, ready=!!(rail&&PS.acct&&a);
     foot.textContent='';
     if(rail==='cod'){
-      foot.appendChild(el('p','paycap',tw('pay.cashCap')));
-      var cb=el('button','salt-pill salt-pill--md',cashWord()); cb.type='button'; cb.id='payGo'; cb.disabled=!!PS.busy;
+      foot.appendChild(el('p','amb-basis paycap',tw('pay.cashCap')));
+      var cb=el('button','amb-pill amb-pill--block',cashWord()); cb.type='button'; cb.id='payGo'; cb.disabled=!!PS.busy;
       cb.addEventListener('click',cashSend); foot.appendChild(cb);
       if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
       return;
     }
     /* THE PILL LIGHTS AS SOON AS AN ACCOUNT IS CHOSEN, and is I have paid on every rail: it goes straight to Did you send, and nothing on
        the sheet opens anywhere else. */
-    foot.appendChild(el('p','paycap',ready?tw(rail==='qr'?'pay.capQr':rail==='jompay'?'pay.capJompay':'pay.capTransfer')
+    foot.appendChild(el('p','amb-basis paycap',ready?tw(rail==='qr'?'pay.capQr':rail==='jompay'?'pay.capJompay':'pay.capTransfer')
       :!a?tw('pay.sayHowMuch',{rm:rm(PS.ctx.fig)}):tw(!rail?'pay.chooseHow':'pay.chooseAcct')));
-    var go=el('button','salt-pill salt-pill--md',tw('pay.iPaid')); go.type='button'; go.id='payGo'; go.disabled=!ready;
+    var go=el('button','amb-pill amb-pill--block',tw('pay.iPaid')); go.type='button'; go.id='payGo'; go.disabled=!ready;
     if(ready) go.addEventListener('click',function(){ payAsk(a); });
     foot.appendChild(go);
   }
@@ -7453,7 +6439,7 @@ const CLIENT_JS = `
     PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false,
       from:null, back:q.kind==='order'?'pay:'+q.id:'pay:now'};
     bkOpen('pay',closePay);
-    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
+    sheetUp(paySh); behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
   function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
@@ -7464,26 +6450,26 @@ const CLIENT_JS = `
     var body=document.getElementById('payBody'), foot=document.getElementById('payFoot'), w=PS.away, a=acct(w.acct), qr=w.rail==='qr', jom=w.rail==='jompay';
     body.textContent=''; foot.textContent='';
     document.getElementById('payT').textContent=tw('pay.payRm',{rm:rm(w.amt)});
-    var box=el('div','paycheck'); box.appendChild(glyph(qr?'qr':jom?'jompay':'bank',30));
-    box.appendChild(el('h3','salt-sheet__title',tw('pay.did',{rm:rm(w.amt)})));
-    box.appendChild(el('p','sub2',tw(qr?'pay.byScan':jom?'pay.byJompay':'pay.byTransfer',{a:a.name, u:user})));
+    var box=el('div','paycheck'); box.appendChild(ambIcon(qr?'qr':jom?'doc':'bank','paycheck__mark'));
+    box.appendChild(el('h3','amb-section',tw('pay.did',{rm:rm(w.amt)})));
+    box.appendChild(el('p','amb-basis',tw(qr?'pay.byScan':jom?'pay.byJompay':'pay.byTransfer',{a:a.name, u:user})));
     body.appendChild(box);
-    body.appendChild(setW(el('p','salt-insight'),'pay.tell'));
+    body.appendChild(setW(el('p','amb-basis'),'pay.tell'));
     /* F13: a slip, where his key is filed */
     slipKeyLoad();
     if(SLIPKEY) body.appendChild(slipBlock());
     /* Show again redraws the same details on the sheet, the way and the account as they were, and links nowhere */
-    var again=el('button','salt-ghost payagain',tw(qr?'pay.againCode':jom?'pay.againJompay':'pay.againAcct')); again.type='button'; again.id='payAgain';
+    var again=el('button','amb-pill amb-pill--quiet payagain',tw(qr?'pay.againCode':jom?'pay.againJompay':'pay.againAcct')); again.type='button'; again.id='payAgain';
     again.addEventListener('click',function(){
       if(!PS||!PS.away) return;
       PS.step='pay'; PS.said=''; PS.part=w.amt<PS.ctx.fig-0.004; PS.amt=PS.part?w.amt.toFixed(2):''; PS.away.gone=false; drawPay();
     });
     body.appendChild(again);
-    var no=el('button','salt-ghost',tw('pay.notYet')); no.type='button';
+    var no=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('pay.notYet')); no.type='button';
     no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; payqDrop(); drawPay(); });
-    var yes=el('button','salt-pill salt-pill--md',tw('pay.yes',{rm:rm(w.amt)})); yes.type='button'; yes.id='paySent'; yes.disabled=!!(PS.busy||PS.slipBusy);
+    var yes=el('button','amb-pill amb-pill--block',tw('pay.yes',{rm:rm(w.amt)})); yes.type='button'; yes.id='paySent'; yes.disabled=!!(PS.busy||PS.slipBusy);
     yes.addEventListener('click',claimSend);
-    foot.appendChild(no); foot.appendChild(yes);
+    foot.appendChild(yes); foot.appendChild(no);
     if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
   }
   /* the claim: on the order, or on the account for To pay now (rows he entered on the desk as well). The id stays with
@@ -7519,6 +6505,7 @@ const CLIENT_JS = `
     var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hSupply:homeSupply(), hStart:homeStart(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
       hReward:homeReward(), hYear:homeYear(), hLive:homeLive()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    liveShow();
     thDraw();
     wayDraw();
     bsPatch();
@@ -7526,11 +6513,56 @@ const CLIENT_JS = `
     placeCounts();
     placeTitle();
   }
-  function hHead(t,n){ var h=el('h2','salt-eyebrow salt-eyebrow--copper hlab',t); if(n) h.appendChild(el('span','hn',String(n))); return h; }
+  /* 16 NOV 2026, THE MOVE TO AMBIENT: Home is drawn in Ambient's parts only. A part's heading is a section heading with its count in the note;
+     an order, a group order, a size to order again, a book's light and the reward are rows of a list (a thumb, a title, a second line, what
+     trails); the book's mark is the mark thumb ringed in its hue (amb-kind-N, N from PSYM's order less its blank), carrying the app's own
+     drawing and his letter, never a product word; a state is a word of the second line, never a chip inside a row, except a book's light, which
+     is a chip as the plan has it. A part draws nothing it has no words for, and the boxes take no place of their own (design/site.css). */
+  function ambIcon(name,cls){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), u=document.createElementNS(NS,'use');
+    s.setAttribute('class','amb-icon'+(cls?' '+cls:'')); s.setAttribute('aria-hidden','true'); u.setAttribute('href','#amb-'+name); s.appendChild(u); return s;
+  }
+  function markThumb(product,size){
+    var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k), L=Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
+    var t=el('span','amb-thumb amb-thumb--ring amb-thumb--mark'+(size?' amb-thumb--'+size:'')+(b>=0&&b<6?' amb-kind-'+(b+1):'')); t.setAttribute('aria-hidden','true'); t.setAttribute('data-shape',pshape(product));
+    var svg=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
+    svg.setAttribute('class','amb-thumb__shape'); svg.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._)); svg.appendChild(d); t.appendChild(svg);
+    if(L&&L.l) t.appendChild(el('span','amb-thumb__word',L.l));
+    return t;
+  }
+  /* a row's second line or title: words, or a node */
+  function hSlot(cls,x){ var s=el('span',cls); if(x!=null&&typeof x==='object') s.appendChild(x); else if(x!=null) s.textContent=String(x); return s; }
+  /* a row: whole a button; or static, an li carrying controls of its own. attrs is {name:value} */
+  function hRow(p){
+    var b=el(p.tag||'button','amb-row'+(p.meter?' amb-row--meter':'')); if(b.tagName==='BUTTON') b.type='button';
+    Object.keys(p.attrs||{}).forEach(function(k){ b.setAttribute(k,p.attrs[k]); });
+    if(p.thumb) b.appendChild(p.thumb);
+    var tx=el('span','amb-row__text'); if(p.thumb&&p.thumb.getAttribute('data-shape')) tx.appendChild(el('span','amb-vh',p.thumb.getAttribute('data-shape'))); tx.appendChild(hSlot('amb-row__title',p.title)); if(p.sub!=null&&p.sub!=='') tx.appendChild(hSlot('amb-row__sub',p.sub)); b.appendChild(tx);
+    if(p.age||p.amount||p.act){
+      var tr=el('span','amb-row__trail'+(p.age&&(p.amount||p.act)?' amb-row__trail--stack':''));
+      if(p.age) tr.appendChild(el('span','amb-row__age',p.age));
+      if(p.amount) tr.appendChild(el('span','amb-row__amount',p.amount));
+      if(p.act) tr.appendChild(el('span','amb-row__act',p.act));
+      b.appendChild(tr);
+    }
+    return b;
+  }
+  function hList(rows){ var ul=el('ul','amb-list amb-list--ruled'); rows.forEach(function(r){ var li=el('li'); li.appendChild(r); ul.appendChild(li); }); return ul; }
+  /* a list whose rows are already li (a row with controls of its own) */
+  function hUl(lis){ var ul=el('ul','amb-list amb-list--ruled'); lis.forEach(function(r){ ul.appendChild(r); }); return ul; }
+  function hHead(t,n){ var h=el('h2','amb-section',t); if(n) h.appendChild(el('span','amb-section__note',' '+String(n))); return h; }
+  function lcFirst(t){ t=String(t||''); return /^[A-Z](?![A-Z0-9])/.test(t)?t.charAt(0).toLowerCase()+t.slice(1):t; }
+  /* the second line of an order's row: its state as a word, then why it is here */
+  function hSub(o,what){
+    var s=el('span'), st=el('span',(o.status==='acknowledged'||o.status==='done'||oPayable(o))&&!(o.status==='ready'&&!movedAll(o))?'amb-pos':null,stateWord(o));
+    s.appendChild(st); if(what) s.appendChild(document.createTextNode(', '+lcFirst(what))); return s;
+  }
   /* the Orders row, with Home's own sentence for why it is here */
-  function homeRow(o,what){ var r=oRow(o,''), w=r.querySelector('.salt-inbox-row__what');
-    if(!w){ w=el('span','salt-inbox-row__what'); r.querySelector('.salt-inbox-row__main').appendChild(w); }
-    w.textContent=what; return r; }
+  function homeRow(o,what){
+    return hRow({attrs:{'data-row':o.id}, thumb:markThumb(o.product), title:unitsOf(o.qty,oUnit(o)), sub:hSub(o,what),
+      age:oDay(o.at), amount:rm(o.total+(+o.delivery||0))});
+  }
+  function homeRowGo(o,what){ var r=homeRow(o,what); r.addEventListener('click',function(){ oOpen(o.id); }); return r; }
   function toCollect(o){ return o.status==='ready'&&o.mode!=='deliver'&&!movedAll(o); }
   /* handed over in full and still owing: counted on Orders from the handover, so Home says it too (S7-R6 and S7R-4) */
   function withYouOwing(o){ return movedAll(o)&&oOwes(o); }
@@ -7539,11 +6571,11 @@ const CLIENT_JS = `
     if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
     if(!list.length) return box;
     box.appendChild(hHead(tw('x.needs'),list.length));
-    list.forEach(function(o){
+    box.appendChild(hList(list.map(function(o){
       var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }).pop(), t=m?String(m.text||''):'';
-      box.appendChild(homeRow(o,replyWaiting(o)?tw('hn.reply',{t:t.length>120?t.slice(0,117)+'...':t})
-        :withYouOwing(o)?tw('hn.owing',{rm:rm(oToPay(o))}):tw('hn.ready',{d:Dd(oDay,firstAt(o,'ready'))})));
-    });
+      return homeRowGo(o,replyWaiting(o)?tw('hn.reply',{t:t.length>120?t.slice(0,117)+'...':t})
+        :withYouOwing(o)?tw('hn.owing',{rm:rm(oToPay(o))}):tw('hn.ready',{d:Dd(oDay,firstAt(o,'ready'))}));
+    })));
     return box;
   }
   /* F10: an order to rate, from two days after its last handover for two weeks, each with its stars under it */
@@ -7552,7 +6584,7 @@ const CLIENT_JS = `
     if(!list.length) return box;
     box.appendChild(hHead(tw('rt.ask'),list.length>1?list.length:0));
     list.forEach(function(o){
-      box.appendChild(homeRow(o,tw('rt.row',{d:ymdDay(o.movedOn)})));
+      box.appendChild(hList([homeRowGo(o,tw('rt.row',{d:ymdDay(o.movedOn)}))]));
       box.appendChild(rateStrip(o));
       var tp=oTap(o); if(tp.k==='rate'&&tp.t) box.appendChild(statusLine(tp.t));
     });
@@ -7564,24 +6596,20 @@ const CLIENT_JS = `
   function homePool(){
     var box=el('div'); if(!session||view||!pools.length) return box;
     box.appendChild(hHead(tw('hp.h'),pools.length>1?pools.length:0));
-    pools.forEach(function(p){
-      var inn=!!p.joined, shut=p.state!=='open', sold1=oSoldHas(p.product,p.q);
-      var r=el(inn?'button':'div','salt-inbox-row hpool'); if(inn) r.type='button';
-      r.setAttribute('data-pool',p.id);
-      r.appendChild(mtile(p.product,p.q,unitFor(p.product)));
-      var main=el('span','salt-inbox-row__main');
-      main.appendChild(el('span','salt-inbox-row__what',shut?tw('hp.closed'):inn?tw('hp.joined',{q:unitsOf(p.q,unitFor(p.product))}):tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,unitFor(p.product))})));
-      if(inn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,unitFor(p.product))})));
-      if(p.closesOn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.closes',{d:Dd(ymdDay,p.closesOn)})));
-      r.appendChild(main);
+    box.appendChild(hList(pools.map(function(p){
+      var inn=!!p.joined, shut=p.state!=='open', sold1=oSoldHas(p.product,p.q), u=unitFor(p.product), said=[];
+      said.push(shut?tw('hp.closed'):inn?tw('hp.joined',{q:unitsOf(p.q,u)}):tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,u)}));
+      if(inn&&!shut) said.push(tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,u)}));
+      if(p.closesOn&&!shut) said.push(tw('hp.closes',{d:Dd(ymdDay,p.closesOn)}));
+      var r=hRow({tag:inn?'button':'li', attrs:{'data-pool':p.id}, thumb:markThumb(p.product), title:unitsOf(p.q,u), sub:said.join(' ')});
       if(inn) r.addEventListener('click',function(){ if(oFind(p.joined)) oOpen(p.joined); else placeShow('order'); });
       else if(!shut&&sold1){
-        var side=el('span','salt-inbox-row__side'), j=el('button','salt-pill salt-pill--md',tw('hp.join')); j.type='button'; j.setAttribute('data-pool-join',p.id);
+        var tr=el('span','amb-row__trail'), j=el('button','amb-pill amb-pill--sm',tw('hp.join')); j.type='button'; j.setAttribute('data-pool-join',p.id);
         j.addEventListener('click',function(){ poolOpen(p,j); });
-        side.appendChild(j); r.appendChild(side);
+        tr.appendChild(j); r.appendChild(tr);
       }
-      box.appendChild(r);
-    });
+      return r;
+    })));
     return box;
   }
   function homeComing(){
@@ -7589,33 +6617,25 @@ const CLIENT_JS = `
     var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o)&&!readyDue(o); }), more=comingParts();
     if(!list.length&&!more.length) return box;
     box.appendChild(hHead(tw('hc.h')));
-    list.forEach(function(o){
+    var rows=list.map(function(o){
       var c=oClaimed(o), t=o.status==='placed'?tw('hc.placed'):oToPay(o)>0.004?tw('hc.still'+payWhenKey(o),{rm:rm(oToPay(o))}):tw('hc.paid');
-      box.appendChild(homeRow(o,t+(c>0?'. '+tw('hc.sent',{rm:rm(c)}):'')));
+      return homeRowGo(o,t+(c>0?'. '+tw('hc.sent',{rm:rm(c)}):''));
     });
-    more.forEach(function(p){ box.appendChild(partRow(p)); });
+    more.forEach(function(p){ rows.push(partRow(p)); });
+    box.appendChild(hList(rows));
     return box;
   }
-  /* S7 polish: ONE LIST, ONE ROW. A part no order of theirs accounts for (a row he entered on the desk) is a row of the
-     same Coming up, the system's Inbox row as every order above it is: its mark and size, then (S6 fix) its due day and
-     never an offer to pay now, which Home has no control for; the day and the figure at the side. There is no order to
-     open, so a tap opens Account, whose statement carries the row. It was stage 6's plain Ledger line under the orders. */
+  /* S7 polish: ONE LIST, ONE ROW. A part no order of theirs accounts for (a row he entered on the desk) is a row of the same Coming up, as every
+     order above it is: its mark and size, then (S6 fix) its due day and never an offer to pay now, which Home has no control for; the day and
+     the figure at the side. There is no order to open, so a tap opens Account, whose statement carries the row. */
   function partRow(p){
-    var b=el('button','salt-inbox-row hpart'); b.type='button';
-    /* the part as a card: its mark a button and its caption under it, its due day beside (his notes of 28 Sep and 11 Oct 2026) */
-    b.appendChild(mtile(p.product,p.qty,unitFor(p.product)));
-    var main=el('span','salt-inbox-row__main');
-    main.appendChild(el('span','salt-inbox-row__what',tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt')));
-    coverTo(main,p);
-    b.appendChild(main);
-    var side=el('span','salt-inbox-row__side');
-    side.appendChild(el('span','salt-inbox-row__age',p.date?oDay(p.date):''));
-    side.appendChild(el('span','salt-inbox-row__action',rm(p.rm)));
-    b.appendChild(side);
+    var sub=el('span'); sub.appendChild(document.createTextNode(unitsOf(p.qty,unitFor(p.product)))); coverTo(sub,p);
+    var b=hRow({attrs:{'data-part':'1'}, thumb:markThumb(p.product), title:tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt'), sub:sub,
+      age:p.date?oDay(p.date):'', amount:rm(p.rm)});
     b.addEventListener('click',function(){ placeShow('stmt',true); });
     return b;
   }
-  /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
+  /* S7 7.4: ORDER AGAIN. A row for each thing they have ordered (a size, a way and a place), newest first, while that size
      is still on their list, at TODAY'S price, read off the list: a tap opens the check with the same size, way and place,
      so the second tap places it. The note is not carried: it was about that order. A declined or cancelled order is not
      offered again. A new account, or one whose orders are all off the list, is offered the list's first sizes, which open
@@ -7639,36 +6659,39 @@ const CLIENT_JS = `
     sheetOpen(a.product,a.q,tile,null,null,a);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
   }
-  /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two tiles, I will collect and Deliver to me,
+  /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two settings, I will collect and Deliver to me,
      each opening the sheet with that way chosen (at the limit, the limit step, as every sheet does). Nothing is drawn where nothing can be
      ordered from here: his read-only view, the overdue gate, a list with nothing priced */
   function homeStart(){
     var box=el('div'); if(!bundle||ro()||hold||!sold().length) return box;
     box.appendChild(hHead(tw('sh.new')));
-    var g=el('div','salt-options__grid salt-options__grid--2'), LD=oLatest(function(o){ return o.mode==='deliver'&&!!o.place; }), w=LD?{place:String(LD.place)}:null;
+    var ul=el('ul','amb-settings__list'), LD=oLatest(function(o){ return o.mode==='deliver'&&!!o.place; }), w=LD?{place:String(LD.place)}:null;
     [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
-      var b=el('button','salt-option__face salt-option__face--tap hstart'), t=el('span','salt-option__text'); b.type='button'; b.setAttribute('data-start',x[0]);
-      t.appendChild(el('span','salt-option__label',tw(x[1]))); t.appendChild(el('span','salt-option__detail',tw(x[2]))); b.appendChild(t);
+      var li=el('li'), b=el('button','amb-setting'); b.type='button'; b.setAttribute('data-start',x[0]);
+      b.appendChild(el('span','amb-setting__name',tw(x[1]))); b.appendChild(el('span','amb-setting__value',tw(x[2]))); b.appendChild(ambIcon('next','amb-icon--sm'));
       b.addEventListener('click',function(){ draft.mode=x[0]; startPlace=x[0]==='deliver'&&w&&w.place.trim()?w.place:''; goOrder(); });
-      g.appendChild(b);
+      li.appendChild(b); ul.appendChild(li);
     });
-    box.appendChild(g); return box;
+    var st=el('div','amb-settings'); st.appendChild(ul); box.appendChild(st); return box;
   }
-  /* 22 OCT 2026 (his word, the restock light made plain): AVAILABILITY, one row a book on their list, its mark in the light's border and
-     the light in words (Available, Selling fast, Low on stock, Out of stock; 04 Nov 2026), More by DD Mon under any but green with his day; no figure. A row opens Prices at
-     that book. Sealed with the list, so it is as fresh as the last publish, and nothing here refuses an order. */
+  /* 22 OCT 2026 (his word, the restock light made plain): AVAILABILITY, one row a book on their list, its mark ringed in its hue and the light
+     in words (Available, Selling fast, Low on stock, Out of stock; 04 Nov 2026), More by DD Mon under any but green with his day; no figure.
+     16 Nov 2026: the light is a chip with its dot and word (Out of stock and Low on stock coloured, Available coloured, Selling fast plain
+     with its word), the row's title, since a book is named by no word here. A row opens Prices at that book. Sealed with the list, so it is
+     as fresh as the last publish, and nothing here refuses an order. */
+  function hLight(l){
+    var c=el('span','amb-chip'+(l==='green'?' amb-chip--pos':l==='amber'?' amb-chip--warn':l==='red'?' amb-chip--neg':'')); c.setAttribute('data-light',l);
+    c.appendChild(el('span','amb-chip__dot')); c.appendChild(document.createTextNode(tw('sup.'+l))); return c;
+  }
   function homeSupply(){
     var box=el('div'), list=sold().filter(supLit); if(!bundle||!list.length) return box;
     box.appendChild(hHead(tw('av.h')));
-    list.forEach(function(p){
-      var s=supLit(p), b=el('button','salt-inbox-row hsup'); b.type='button';
-      var m=el('span','pmark'); m.appendChild(coin(p.product,'sm')); m.appendChild(el('span','sr',pshape(p.product))); b.appendChild(m);
-      var main=el('span','salt-inbox-row__main'); main.appendChild(supWord(s.light));
-      if(s.light!=='green'&&dmShort(s.by,'en')) main.appendChild(el('span','salt-inbox-row__what',tw('sup.by',{d:Dd(dmShort,s.by)})));
-      b.appendChild(main);
+    box.appendChild(hList(list.map(function(p){
+      var s=supLit(p), sub=s.light!=='green'&&dmShort(s.by,'en')?tw('sup.by',{d:Dd(dmShort,s.by)}):'';
+      var b=hRow({attrs:{'data-sup':p.product}, thumb:markThumb(p.product), title:hLight(s.light), sub:sub});
       b.addEventListener('click',function(){ placeShow('prices',true); var pn=supPanes[p.product]; if(pn&&pn.scrollIntoView) pn.scrollIntoView({block:'start'}); });
-      box.appendChild(b);
-    });
+      return b;
+    })));
     return box;
   }
   function homeAgain(){
@@ -7676,56 +6699,45 @@ const CLIENT_JS = `
     var list=againList(), start=!list.length;
     if(start) sold().forEach(function(P){ P.sizes.slice(0,2).forEach(function(z){ list.push({product:P.product, q:z.q, start:true}); }); });
     box.appendChild(hHead(tw(!start?'ha.again':fresh()?'ha.first':'ha.start')));
-    /* S7 7.4: the system's Option grid, two across, and its face as a tap (salt-option__face--tap): the tile opens the
-       check, so nothing here is a radio, and no rule of the page's own restates the recipe (S7-R3 of the review) */
-    var g=el('div','salt-options__grid salt-options__grid--2');
-    list.slice(0,4).forEach(function(a){
+    /* S7 7.4: a row opens the check, so nothing here is a radio; nothing of the book in an attribute: the tap reads the row from its own
+       closure (S7R-2 of the stage 7 review). The size under the mark is said in its unit and the price a figure (C19, 29 Sep 2026) */
+    box.appendChild(hList(list.slice(0,4).map(function(a){
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z={price:priceAt(P,a.q)};
-      var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text mstack'), l=el('span','salt-option__label mstack');
-      /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
-      b.type='button';
-      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and its caption under it, the size in words ("1 unit", no shape
-         word drawn, 12 Oct 2026); a reader hears the shape and the size in words, once */
-      /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
-      var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
-      l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(coin(a.product,'lg')); l.appendChild(fq);
-      t.appendChild(l);
-      t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
-      b.appendChild(t);
+      var b=hRow({attrs:{'data-hagain':'1'}, thumb:markThumb(a.product), title:unitsOf(a.q,P.unit),
+        sub:a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})});
       b.addEventListener('click',function(){ if(a.start) goOrder(a.product,a.q); else againOpen(a,b); });
-      g.appendChild(b);
-    });
-    box.appendChild(g);
+      return b;
+    })));
     /* a new account's one filled control, under the sizes it can start from: the whole list (S7-R5, as the plan's first
        Home has it; it stood above them, under To pay) */
-    if(fresh()){ var sp=el('button','salt-pill salt-pill--md hfill',tw('ha.all')); sp.type='button'; sp.id='hPrices';
+    if(fresh()){ var sp=el('button','amb-pill amb-pill--block',tw('ha.all')); sp.type='button'; sp.id='hPrices';
       sp.addEventListener('click',function(){ placeShow('prices',true); }); box.appendChild(sp); }
     return box;
   }
   /* COUNTER BATCH A (his decisions of 18 Oct 2026): THEIR LATEST OPEN ORDER, its state, the moment it last moved, and while it waits at one
-     of his points the point and its pin. Under 1080px a pill that sticks above the App bar and above the pay foot, which sets --hfoot to
-     its own height (drawPayHead); from 1080px a banner under To pay now. A tap opens the order; the pin is its own link beside it. */
+     of his points the point and its pin. 16 Nov 2026: the dock's mini bar, which Ambient keeps over the tabs on a phone and at the foot of the
+     rail from 960px, so it needs no place or height of its own. A tap opens the order; the pin is its own link beside it. Home's only. */
   function lastMoved(o){ var h=o.history||[]; return h.length&&h[h.length-1].at?h[h.length-1].at:o.at; }
+  function liveShow(){ var n=document.getElementById('hLive'); if(n) n.hidden=!(tab==='home'&&n.hasAttribute('data-live')); }
   function homeLive(){
-    var box=el('div'); if(!session||view||!orders.length) return box;
+    var box=el('div'); box.hidden=true; if(!session||view||!orders.length) return box;
     var o=orders.filter(function(x){ return !oClosed(x); }).sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); })[0];
     if(!o) return box;
-    box.className='hlive salt-glass-card salt-glass-card--radius-lg'; box.setAttribute('data-live',o.id);
-    var go=el('button','hlive__go'); go.type='button';
-    go.appendChild(el('span','salt-eyebrow salt-eyebrow--copper hlive__h',tw('hl.h')));
-    var row=el('span','hlive__row');
-    row.appendChild(stateChip(o,'hlive__state'));
-    row.appendChild(el('span','hlive__when mono',stepWhen(lastMoved(o))));
-    var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
-    if(waits) row.appendChild(el('span','hlive__point',tw('pt.at',{c:o.point})));
-    go.appendChild(row);
-    go.addEventListener('click',function(){ oOpen(o.id); });
+    box.className='amb-mini'; box.setAttribute('data-live',o.id); box.hidden=tab!=='home';
+    var th=markThumb(o.product,'sm'); box.appendChild(th);
+    var tx=el('span','amb-mini__text'), waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
+    tx.appendChild(el('span','amb-vh',pshape(o.product))); tx.appendChild(el('span','amb-mini__title',stateWord(o)));
+    tx.appendChild(el('span','amb-mini__sub',stepWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));
+    box.appendChild(tx);
+    var go=el('button','amb-circle amb-circle--plain hlivego'); go.type='button'; go.setAttribute('aria-label',tw('hl.h')); go.appendChild(ambIcon('next'));
     box.appendChild(go);
+    box.addEventListener('click',function(ev){ if(ev.target.closest('a')) return; oOpen(o.id); });
     if(waits&&o.pointAt&&isFinite(o.pointAt.lat)&&isFinite(o.pointAt.lng)) box.appendChild(pinLink(o));
     return box;
   }
   /* THE NEAREST REWARD, an associate's alone, across the books that carry one: its mark, the meter to the next unit and what is theirs to
      take, in the card's own words. Never a level; never the units to go, which is a margin figure the card does not carry. A tap is Rewards. */
+  function hMeter(pc,key){ var m=el('progress','amb-meter'); m.max=100; m.value=pc; m.setAttribute('aria-label',tw(key||'rew.nextAria',{p:pc})); return m; }
   function homeReward(){
     var box=el('div'); if(view||!card||!Array.isArray(card.products)) return box;
     /* 21 Oct 2026: a customer's card carries the share of their next loyalty unit, and nothing else; it opens nothing */
@@ -7734,39 +6746,27 @@ const CLIENT_JS = `
       if(!lp) return box;
       var lpc=Math.max(0,Math.min(100,Math.round(lp.loyal.next*100)));
       box.appendChild(hHead(tw('hr.hLoyal')));
-      var lc=el('div','hreward hloyal salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm');
-      var lt=el('span','hreward__top'); lt.appendChild(el('span','sr',pshape(lp.product))); lt.appendChild(coin(lp.product,'sm'));
-      lt.appendChild(el('span','hreward__left',tw('rew.nextAria',{p:lpc}))); lc.appendChild(lt);
-      var lm=el('span','salt-meter rmeter'), ll=el('span','salt-meter__line');
-      ll.appendChild(el('span',null,tw('rew.next'))); ll.appendChild(el('b',null,lpc+'%'));
-      var lr=el('span','salt-meter__track'); lr.appendChild(el('span','salt-meter__fill'));
-      lm.style.setProperty('--salt-fill',String(lpc)); lm.appendChild(ll); lm.appendChild(lr); lc.appendChild(lm);
-      box.appendChild(lc);
+      var lr=hRow({tag:'li', meter:true, attrs:{'data-reward':'loyal'}, thumb:markThumb(lp.product), title:tw('rew.next'), sub:tw('rew.nextAria',{p:lpc}), amount:lpc+'%'});
+      lr.appendChild(hMeter(lpc));
+      var lu=el('ul','amb-list amb-list--ruled'); lu.appendChild(lr); box.appendChild(lu);
       return box;
     }
     var list=card.products.filter(function(p){ return p.reward&&p.reward.next!=null; }).sort(function(a,b){ return b.reward.next-a.reward.next; }), p=list[0];
     if(!p) return box;
     var rw=p.reward, pc=Math.round(rw.next*100);
     box.appendChild(hHead(tw('hr.h')));
-    var b=el('button','hreward salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm salt-glass-card--link'); b.type='button';
-    var top=el('span','hreward__top'), sr=el('span','sr',pshape(p.product)); top.appendChild(sr); top.appendChild(coin(p.product,'sm'));
-    top.appendChild(el('span','hreward__left',tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})));
-    b.appendChild(top);
-    var mtr=el('span','salt-meter rmeter'), ln=el('span','salt-meter__line');
-    ln.appendChild(el('span',null,tw('rew.next'))); ln.appendChild(el('b',null,pc+'%'));
-    var tr=el('span','salt-meter__track'); tr.appendChild(el('span','salt-meter__fill'));
-    mtr.style.setProperty('--salt-fill',String(pc)); mtr.appendChild(ln); mtr.appendChild(tr);
-    b.appendChild(mtr);
-    b.appendChild(el('span','hreward__see',tw('hr.see')));
+    var b=hRow({meter:true, attrs:{'data-reward':'assoc'}, thumb:markThumb(p.product), title:tw('rew.next'),
+      sub:tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc}), amount:pc+'%', act:tw('hr.see')});
+    b.appendChild(hMeter(pc));
     b.addEventListener('click',function(){ placeShow('card',true); });
-    box.appendChild(b);
+    box.appendChild(hList([b]));
     return box;
   }
   /* THIS YEAR, off the live statement's own lines: the orders this year in Kuala Lumpur and the units of each mark, a cancelled line not
      counted (as the statement's foot counts), and a bar for each month from January to this one. The book's marks are told apart by their
      drawing, and two books' units are never summed. */
   function yearMark(svg){
-    var d=svg&&svg.querySelector('path'), t=svg&&svg.querySelector('text'), key=(d?d.getAttribute('d'):'')+'|'+(t?t.textContent:''), hit='_';
+    var d=svg&&svg.querySelector('path'), t=svg&&(svg.querySelector('text')||(svg.parentNode&&svg.parentNode.querySelector&&svg.parentNode.querySelector('.amb-thumb__word'))), key=(d?d.getAttribute('d'):'')+'|'+(t?t.textContent:''), hit='_';
     Object.keys(PSYM).forEach(function(k){ if(k==='_'||hit!=='_') return; var s=psym(k,24), sd=s.querySelector('path'), st=s.querySelector('text');
       if((sd?sd.getAttribute('d'):'')+'|'+(st?st.textContent:'')===key) hit=k; });
     return hit;
@@ -7775,56 +6775,67 @@ const CLIENT_JS = `
     var lv=bundle&&bundle.statements.filter(function(s){ return s.live&&!s.bad&&s.body; })[0]; if(!lv) return null;
     var tp=document.createElement('template'); tp.innerHTML=lv.body;
     var y=String(klBits(new Date().toISOString()).year), out=[];
-    [].forEach.call(tp.content.querySelectorAll('.salt-lines__row[data-m]'),function(r){
-      var m=r.getAttribute('data-m')||'', mq=r.querySelector('.salt-lines__what .mtile .mq');
-      if(m.slice(0,4)!==y||!mq||r.classList.contains('salt-lines__row--cancelled')) return;
+    [].forEach.call(tp.content.querySelectorAll('table.amb-table[data-lines="orders"] > tbody > tr[data-m]'),function(r){
+      var m=r.getAttribute('data-m')||'', mq=r.querySelector('.stm-size');
+      if(m.slice(0,4)!==y||!mq||r.classList.contains('is-off')) return;
       /* plan version 7 (7d): the book is the line's data-b, the page's own mark table; the drawing is read only for a line published before it */
       var bk=Object.keys(PSYM).filter(function(k){ return k!=='_'; })[parseInt(r.getAttribute('data-b'),10)];
-      out.push({m:m, p:bk||yearMark(r.querySelector('.salt-lines__what .mtile svg')), q:parseFloat(String(mq.textContent).replace(/,/g,''))||0});
+      out.push({m:m, p:bk||yearMark(r.querySelector('.stm-q svg')), q:parseFloat(String(mq.textContent).replace(/,/g,''))||0});
     });
     return out;
   }
+  /* the top of a bar chart's scale: a round number at or above the most, four equal steps from nought */
+  function niceTop(m){ var st=[1,2,5,10,20,50,100,200,500,1000,2000,5000], i=0, q=Math.max(1,m)/4; while(i<st.length-1&&st[i]<q) i++; return st[i]*4; }
   function homeYear(){
     var box=el('div'); if(!bundle||view) return box;
     var rows=yearRows(); if(!rows||!rows.length) return box;
     box.appendChild(hHead(tw('hy.h')));
-    var c=el('div','hyear salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm'), top=el('div','hyear__top');
-    top.appendChild(el('span','hyear__n',tw(rows.length===1?'hy.order1':'hy.orderN',{n:rows.length})));
     var by={}, ps=[]; rows.forEach(function(r){ if(!(r.p in by)){ by[r.p]=0; ps.push(r.p); } by[r.p]+=r.q; });
-    var ts=el('span','hyear__units'); ps.forEach(function(p){ ts.appendChild(mtile(p,+by[p].toFixed(2),'unit',24)); }); top.appendChild(ts);
-    c.appendChild(top);
     var now=+klBits(new Date().toISOString()).month, y=String(klBits(new Date().toISOString()).year), n=[], max=0, said=[], ms=mon3();
     for(var i=1;i<=now;i++){ var k=y+'-'+('0'+i).slice(-2), v=rows.filter(function(r){ return r.m===k; }).length; n.push(v); if(v>max) max=v; said.push(ms[i-1]+' '+v); }
-    var bars=el('div','hyear__bars'); bars.setAttribute('role','img'); bars.setAttribute('aria-label',tw('hy.bars',{list:said.join(', ')}));
-    n.forEach(function(v,i){ var col=el('span','hyear__col'), bar=el('span','hyear__bar'); bar.style.setProperty('--h',String(max?Math.round(v/max*100):0));
-      bar.setAttribute('data-n',String(v)); col.appendChild(bar); col.appendChild(el('span','hyear__mon',ms[i].charAt(0))); bars.appendChild(col); });
-    c.appendChild(bars);
-    box.appendChild(c);
+    var NS='http://www.w3.org/2000/svg', top=niceTop(max), fig=el('figure','amb-chart hyear');
+    fig.setAttribute('aria-label',tw('hy.bars',{list:said.join(', ')}));
+    fig.appendChild(el('figcaption','amb-chart__title',tw(rows.length===1?'hy.order1':'hy.orderN',{n:rows.length})));
+    var plot=el('div','amb-chart__plot'), sc=el('ol','amb-chart__scale'); sc.setAttribute('aria-hidden','true');
+    for(var t=4;t>=0;t--) sc.appendChild(el('li',null,String(top/4*t)));
+    plot.appendChild(sc);
+    var svg=document.createElementNS(NS,'svg'), g=document.createElementNS(NS,'g');
+    svg.setAttribute('class','amb-chart__marks'); svg.setAttribute('viewBox','0 0 '+n.length+' '+top); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('aria-hidden','true');
+    g.setAttribute('transform','translate(0 '+top+') scale(1 -1)');
+    n.forEach(function(v,i){ var r=document.createElementNS(NS,'rect'); r.setAttribute('class','amb-series-1'); r.setAttribute('x',String(i+0.2)); r.setAttribute('y','0');
+      r.setAttribute('width','0.6'); r.setAttribute('height',String(v)); r.setAttribute('data-n',String(v)); g.appendChild(r); });
+    svg.appendChild(g); plot.appendChild(svg);
+    var ax=el('ol','amb-chart__axis'); ax.setAttribute('aria-hidden','true'); n.forEach(function(v,i){ ax.appendChild(el('li',null,ms[i])); }); plot.appendChild(ax);
+    fig.appendChild(plot);
+    var det=el('details','amb-chart__figures'), tb=el('table','amb-table'), hd=el('tr');
+    det.appendChild(el('summary',null,tw('hy.figures')));
+    hd.appendChild(el('th',null,tw('acct.month'))); hd.appendChild(el('th','is-num',tw('hy.col'))); hd.firstChild.scope='col'; hd.lastChild.scope='col';
+    var th=el('thead'); th.appendChild(hd); tb.appendChild(th);
+    var tbd=el('tbody'); n.forEach(function(v,i){ var r=el('tr'), c=el('th',null,ms[i]); c.scope='row'; r.appendChild(c); r.appendChild(el('td','is-num',String(v))); tbd.appendChild(r); });
+    tb.appendChild(tbd); det.appendChild(tb); fig.appendChild(det);
+    box.appendChild(fig);
+    /* the units of each mark, a row each: two books' units are never summed */
+    box.appendChild(hList(ps.map(function(p){
+      var b=hRow({tag:'li', attrs:{'data-year':p}, thumb:markThumb(p,'md'), title:unitsOf(+by[p].toFixed(2),'unit')});
+      return b;
+    })));
     return box;
   }
   /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */
+  /* 15 Nov 2026 (Ambient 0.7.2): a tab's count, drawn from 1 to 99 and 99+ past it, hidden at nought; the reader hears it in the tab's name */
+  function tabCount(c,n){
+    var t=n>99?'99+':n?String(n):'', tab=c.closest('.amb-tab');
+    if(c.textContent!==t) c.textContent=t; if(c.hidden!==!n) c.hidden=!n;
+    if(tab){ var w=tab.getAttribute('data-word')||'', l=n?w+', '+n+' waiting':w; if(tab.getAttribute('aria-label')!==l) tab.setAttribute('aria-label',l); }
+  }
   function placeCounts(){
     var n=orders.filter(oNeeds).length;
-    [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
+    [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ tabCount(c,c.getAttribute('data-n')==='order'?n:0); });
     cBar();
   }
-  /* 21 OCT 2026, HIS WORD: THE BAR SAYS WHAT WAITS ON THEM, on every place: To pay now and its figure, the orders that need them (the
-     rail's own count) and their messages when ours is unread; each a chip to where it is. Only what waits is drawn. Written only when it differs. */
-  function cBar(){
-    var box=document.getElementById('cBarChips'); if(!box||OWNER) return;
-    var lines=bundle?nowOf():[], tot=invTotal(lines), n=orders.filter(oNeeds).length, th=thWaiting(), parts=[];
-    if(tot>0.004) parts.push(['pay','now',tw('pay.now'),rm(tot)]);
-    if(n) parts.push(['order','wait',tw('place.order'),String(n)]);
-    if(th) parts.push(['thread','wait',tw('th.title'),'']);
-    var key=JSON.stringify(parts); if(box.getAttribute('data-k')===key) return;
-    box.setAttribute('data-k',key); box.textContent='';
-    parts.forEach(function(x){
-      var b=el('button','salt-deskbar__chip salt-deskbar__chip--'+x[1]); b.type='button'; b.setAttribute('data-act','bar.'+x[0]); b.setAttribute('data-go',x[0]);
-      b.appendChild(document.createTextNode(x[2])); if(x[3]){ b.appendChild(document.createTextNode(' ')); b.appendChild(el('span','salt-deskbar__n',x[3])); }
-      b.addEventListener('click',function(){ if(x[0]==='thread') thOpen(b); else placeShow(x[0]==='pay'?'home':'order',true); });
-      box.appendChild(b);
-    });
-  }
+  /* 21 Oct 2026 (his word, the bar says what waits on them) to 15 Nov 2026: the bar's chips went with the bar, as on his page; what waits is
+     the tab counts (placeCounts). Its callers are kept, so it stays, drawing nothing. */
+  function cBar(){}
   /* v1377: their orders read again after a Place: their own read on a session, his route on Order as them */
   async function ordersAgain(){ if(act) return loadView(user); return loadOrders(); }
   async function loadOrders(){
@@ -7855,7 +6866,7 @@ const CLIENT_JS = `
     if(ordersFailed!==failedWas){ setHold(); drawOrder(); if(osh&&draft.step==='limit') sheetDraw(); return; }
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
     if(JSON.stringify([claims,orders.map(oClaimed)])!==was||formSig()!==drawnSig){ setHold(); drawPayHead(); }
-    if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
+    if(pOrder.querySelector('.olistcol')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
     if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
@@ -7900,7 +6911,7 @@ const CLIENT_JS = `
     /* a field the door left focused when it was hidden holds nothing: a browser blurs it, and jsdom does not */
     if(f&&(/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)||f.isContentEditable)&&!f.closest('[hidden]')) return false;
     return ![].some.call(document.querySelectorAll('textarea,input:not([type=hidden]):not([type=radio]):not([type=checkbox]):not([type=button]):not([type=submit])'),
-      function(x){ return !!x.value&&!x.closest('[hidden]'); });
+      function(x){ return !!x.value&&!x.closest('[hidden]')&&!x.closest('.amb-stepper'); });   /* 16 Nov 2026: a size stepper always holds its figure, which is no half-typed line */
   }
   async function stampRead(){
     if(OWNER||!session||!curCk||!stampWas||rereading||stampBusy) return;
@@ -7921,7 +6932,7 @@ const CLIENT_JS = `
      back in the box; his stand left, New until this device has shown them. Every line is text, never markup. His
      read-only view has no thread: he answers from his Chat. ---- */
   var TH_MS=__THPOLL__, thread={at:null,msgs:[]}, thOut=[], thTimer=null, thFrom=null, thFromId='hThread', thN=0, thWhy='', thSig='';
-  var thSheetEl=document.getElementById('thSheet'), thScrim=document.getElementById('thScrim'), thLog=document.getElementById('thLog'),
+  var thSheetEl=document.getElementById('thSheet'), thLog=document.getElementById('thLog'),
       thBody=document.getElementById('thBody'), thForm=document.getElementById('thForm'), thIn=document.getElementById('thIn'), thSaid=document.getElementById('thSaid');
   function thPut(t){ thread=t&&Array.isArray(t.msgs)?{at:t.at||null,msgs:t.msgs}:{at:null,msgs:[]}; }
   function thHis(){ var m=thread.msgs.filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
@@ -7933,46 +6944,46 @@ const CLIENT_JS = `
   function thLanded(){ for(var i=thOut.length-1;i>=0;i--) if(thSame(thOut[i].w)>thOut[i].n) thOut.splice(i,1); return thOut; }
   /* the row that opens it, on Home under its heading and on Account: the last line, theirs or ours, and New on a reply */
   function thRow(){
-    var b=el('button','salt-inbox-row throw'); b.type='button';
-    var main=el('span','salt-inbox-row__main'), l=thread.msgs[thread.msgs.length-1], t=el('span','salt-inbox-row__title',tw('th.row'));
-    if(thWaiting()){ t.appendChild(document.createTextNode(' ')); t.appendChild(chipEl('verdigris',tw('msg.new'))); }
-    main.appendChild(t);
-    var x=l?String(l.text||''):'', cut=x.length>120?x.slice(0,117)+'...':x;
-    main.appendChild(el('span','salt-inbox-row__what',!l?tw('th.start'):l.by==='desk'?tw('hn.reply',{t:cut}):tw('th.you',{t:cut})));
-    b.appendChild(main);
-    if(l){ var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__age',oDay(l.at))); b.appendChild(side); }
+    var l=thread.msgs[thread.msgs.length-1], x=l?String(l.text||''):'', cutx=x.length>120?x.slice(0,117)+'...':x;
+    var said=!l?tw('th.start'):l.by==='desk'?tw('hn.reply',{t:cutx}):tw('th.you',{t:cutx}), sub=el('span');
+    if(thWaiting()){ sub.appendChild(el('span','amb-pos',tw('msg.new'))); sub.appendChild(document.createTextNode(', '+lcFirst(said))); } else sub.textContent=said;
+    var th=el('span','amb-thumb'); th.setAttribute('aria-hidden','true'); th.appendChild(ambIcon('people'));
+    var b=hRow({attrs:{'data-thread':'1'}, thumb:th, title:tw('th.row'), sub:sub, age:l?oDay(l.at):''});
     b.addEventListener('click',function(){ thOpen(b); });
     return b;
   }
-  function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
+  function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(hList([thRow()])); return box; }
   /* Home's card and Account's row alone, as drawHome draws them, for a change to the thread and nothing else */
   function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); cBar(); }
   /* COUNTER BATCH A (his decision of 18 Oct 2026): THE GLANCE at the head of Account. To pay now, the same figure Home's tile shows, with when
      it is due and a link to the order it is for; the thread, with a reply waiting said; the statement, up to date as at its moment. Nothing in it
      names a code: the account is theirs by its username alone. Drawn with Home and with To pay now, replaced only when it reads differently. */
   function glanceItem(href,cls,label,value,note,go){
-    var a=el(href?'a':'div','salt-glance__item'+(cls?' '+cls:''));
+    var a=el(href?'a':'div','amb-setting');
     if(href){ a.href=href; a.addEventListener('click',function(ev){ ev.preventDefault(); go(a); }); }
-    a.appendChild(el('span','salt-glance__label',label)); a.appendChild(el('span','salt-glance__value',value));
-    if(note) a.appendChild(el('span','salt-glance__note',note));
+    a.appendChild(el('span','amb-setting__name',label));
+    var v=el('span','amb-setting__value'+(cls?' amb-neg':''),value);
+    if(note){ v.appendChild(document.createTextNode(' ')); v.appendChild(el('span','amb-muted',note)); }
+    a.appendChild(v); if(href) a.appendChild(ambIcon('next','amb-icon--sm'));
     return a;
   }
   function acctGlance(){
     var box=el('div'); if(!session||view||!bundle) return box;
-    box.className='salt-glance aglance';
+    box.className='amb-settings aglance'; var gl=el('ul','amb-settings__list'); box.appendChild(gl);
+    function gadd(n){ var li=el('li'); li.appendChild(n); gl.appendChild(li); }
     if(!staleNow()&&!liveBad()){
       var L=nowOf(), tot=invTotal(L), due=tot>0.004, first=L.filter(function(x){ return x.o; })[0];
-      var it=glanceItem(due&&first?'#o='+encodeURIComponent(first.o.id):'',due?'salt-glance__item--due':'',tw('pay.now'),rm(tot),
+      var it=glanceItem(due&&first?'#o='+encodeURIComponent(first.o.id):'',due?'due':'',tw('pay.now'),rm(tot),
         due?invWhen(first||L[0],false):tw('pay.nothing'),function(){ oOpen(first.o.id); });
-      it.setAttribute('data-glance','owed'); box.appendChild(it);
+      it.setAttribute('data-glance','owed'); gadd(it);
     }
     var n=thread.msgs.length, th=glanceItem('#thread','',tw('th.row'),thWaiting()?tw('gl.reply'):n?tw(n===1?'gl.line1':'gl.lineN',{n:n}):tw('gl.noLine'),'',function(a){ thOpen(a); });
-    th.setAttribute('data-glance','thread'); box.appendChild(th);
+    th.setAttribute('data-glance','thread'); gadd(th);
     var bad=liveBad(), lv=bundle.statements.filter(function(s){ return s.live; })[0];
     if(lv||bad){
       var st=glanceItem(bad?'':'#account','',tw('gl.stmt'),tw(bad?'gl.unread':'gl.upToDate'),!bad&&liveAt?tw('gl.asAt',{d:Dd(stamp,liveAt)}):'',
         function(){ var o=document.getElementById('out'); if(o) try{ o.scrollIntoView({block:'start'}); }catch(e){} });
-      st.setAttribute('data-glance','stmt'); box.appendChild(st);
+      st.setAttribute('data-glance','stmt'); gadd(st);
     }
     return box;
   }
@@ -7981,7 +6992,7 @@ const CLIENT_JS = `
   function thDraw(){
     glanceDraw();
     var a=document.getElementById('aThread'); if(!a) return;
-    var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(thRow());
+    var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(hList([thRow()]));
     if(a.outerHTML!==n.outerHTML) a.replaceWith(n);
   }
   function thEnd(){ if(thBody) thBody.scrollTop=thBody.scrollHeight; }
@@ -7993,7 +7004,7 @@ const CLIENT_JS = `
     thSig=sig;
     var foot=!thBody||thBody.scrollHeight-thBody.scrollTop-thBody.clientHeight<48;
     thLog.textContent='';
-    if(!thread.msgs.length&&!out.length) thLog.appendChild(el('p','salt-bubble__meta thempty',tw('th.empty')));
+    if(!thread.msgs.length&&!out.length) thLog.appendChild(el('li','amb-muted thempty',tw('th.empty')));
     thread.msgs.forEach(function(m){
       var his=m.by==='desk';
       thLog.appendChild(bubble(his?'theirs':'mine',m.text||'',tw(his?'msg.reply':'msg.you',{t:Dd(stamp,m.at)}),his?'':'sent',his&&typeof since==='string'&&String(m.at)>since));
@@ -8001,14 +7012,14 @@ const CLIENT_JS = `
     out.forEach(function(x){
       var b=bubble('mine',x.t,tw('msg.you',{t:Dd(stamp,x.at)}),x.state,false);
       if(x.state==='failed'){
-        if(x.why){ var y=el('p','salt-bubble__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
-        var r=el('button','salt-ghost salt-ghost--lit salt-bubble__retry',tw('msg.retry')); r.type='button';
+        if(x.why){ var y=el('p','amb-msg__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
+        var r=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('msg.retry')); r.type='button';
         r.addEventListener('click',function(){ thSend(x); });
-        b.appendChild(r);
+        b.querySelector('.amb-msg__meta').appendChild(r);
       }
       thLog.appendChild(b);
     });
-    if(thWhy){ var w=el('p','salt-bubble__meta',thWhy); w.setAttribute('role','status'); thLog.appendChild(w); }
+    if(thWhy){ var w=el('li','amb-muted',thWhy); w.setAttribute('role','status'); thLog.appendChild(w); }
     if(force||foot) thEnd();
   }
   function thSay(t){ if(thSaid){ thSaid.textContent=t||''; thSaid.hidden=!t; } }
@@ -8016,7 +7027,7 @@ const CLIENT_JS = `
     if(!thSheetEl||!session||view) return;
     thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':from&&from.closest&&from.closest('#aGlance')?'aGlance':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
     bkOpen('th',thClose);
-    thScrim.hidden=false; thSheetEl.hidden=false; behind();
+    sheetUp(thSheetEl); behind();
     try{ thSheetEl.focus(); }catch(e){}
     if(draft.thDraft&&!thIn.value) thIn.value=draft.thDraft;
     thLines(true); thSeen(); thHome();
@@ -8027,7 +7038,7 @@ const CLIENT_JS = `
   function thClose(){
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
-    thSheetEl.hidden=true; thScrim.hidden=true; behind(); bkDrop('th'); thSay('');
+    sheetDown(thSheetEl); behind(); bkDrop('th'); thSay('');
     focusBack(thFrom,function(){ return (document.getElementById(thFromId)||document).querySelector('.throw, [data-glance="thread"]'); });
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */
@@ -8053,7 +7064,7 @@ const CLIENT_JS = `
   }
   if(thSheetEl){
     document.getElementById('thX').addEventListener('click', thClose);
-    thScrim.addEventListener('click', thClose);
+    sheetWire(thSheetEl,function(){ thClose(); });
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') thClose(); });
     thIn.addEventListener('input', function(){ draft.thDraft=thIn.value; });
     thForm.addEventListener('submit', function(ev){
@@ -8152,7 +7163,7 @@ const CLIENT_JS = `
     var u=norm(un.value), pass=OWNER?pw.value.trim():canonPass(pw.value);
     /* v1377: Order for them's wish is taken by this open alone, so one refused leaves nothing for the next at the door */
     var acting=actWant; actWant=false;
-    var bad=function(f,t){ say(t,'bad'); f.setAttribute('aria-invalid','true'); f.classList.add('salt-field__input--error'); try{ f.focus(); }catch(e){} };
+    var bad=function(f,t){ say(t,'bad'); f.setAttribute('aria-invalid','true'); if(f.parentNode&&f.parentNode.classList) f.parentNode.classList.add('is-error'); try{ f.focus(); }catch(e){} };
     if(!OWNER&&unfit(un.value,8,'username')){ bad(un,unfit(un.value,8,'username')); return; }
     if(!u){ bad(un,tw('door.needUn')); return; }
     if(!pass){ bad(pw,tw('door.needPw')); return; }
@@ -8357,7 +7368,6 @@ const CLIENT_JS = `
        unless that place has gone (Rewards, for an account no longer an associate) */
     if(!same){ var w=wantPlace; wantPlace=''; placeShow(w||'home'); }
     else if(placeBtns(t)[0].hidden) placeShow(t);
-    lookAsk(b);   /* 11 Oct 2026: a device that has chosen no look is asked, once a visit */
     if(same){
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ AMF.pick=mf; applyMonths(); }
       window.scrollTo(0,sy);

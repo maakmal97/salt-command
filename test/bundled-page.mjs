@@ -47,7 +47,7 @@ export async function run({ ok, pageWork }) {
       const deliver = p.d.querySelector('#osheet [data-k="mode:1"]'); if (deliver) { deliver.click(); await p.settle(); }
       let err = "";
       try { addSpot(p.d, p.w, "Veloria"); await p.settle(); } catch (e) { err = e && e.message; }
-      const go = p.d.getElementById("oGo"), body = txt(p.d.querySelector("#osheet .salt-sheet__body"));
+      const go = p.d.getElementById("oGo"), body = txt(p.d.querySelector("#osheet .amb-sheet__body"));
       ok(!err && !errs.length && !!go && go.getAttribute("aria-disabled") !== "true" && /When you want it/.test(body) && /ASAP/.test(body),
         "2 on the bundled page a delivery with a spot added draws When you want it and a Review that goes: "
         + JSON.stringify([err, errs.slice(0, 2), !!go, go && go.getAttribute("aria-disabled"), body.slice(-160)]));

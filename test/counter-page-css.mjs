@@ -5,6 +5,9 @@
  * markup, so a deleted restatement cannot come back, a control cannot go under 44px, a text colour cannot fall under 4.5:1 on either theme's ground, and type cannot go
  * under the system's 11px. Every assertion observes the generated stylesheet or a window, and each was proved red by its own mutation (test/counter-page-css.mutations.json,
  * run with tools/section.mjs). Every code, name and amount here is invented.
+ * 15 Nov 2026, THE MOVE TO AMBIENT: the page is served Ambient (its tokens and parts, then the site's layer) and then PAGE_CSS, which shrinks as each
+ * place is redrawn; the salt-ds recipes, the faces and the statement's stylesheet are no longer served. The page's own layer is cut after Ambient's;
+ * the Aurora is gone for Ambient's mesh, a hero's; and the head of each place is that hero, the Desk bar, the rail and the customer's header gone.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -33,16 +36,18 @@ const subjects = (sel) => sel.split(",").map((s) => s.trim()).filter(Boolean).ma
 
 export async function run({ ok, pageWork }) {
   const { landingPage } = await import("../stmt/page.js");
-  const { STATEMENT_CSS, SITE_RECIPES } = await import("../stmt/statement-css.js");
+  const { STATEMENT_CSS, SITE_RECIPES, AMB_CSS } = await import("../stmt/statement-css.js");
+  const { SITE_STYLE } = await import("../stmt/page.js");
   const { RECIPE_HEADS } = await import("../tools/stmt-style.mjs");
   const OWNER_SRC = readFileSync(join(REPO, "stmt", "owner.js"), "utf8"), PAGE_SRC = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   const ds = strip(readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"));
 
-  /* ---- the page's own layer, cut from the style it is served in: the faces, the statement's stylesheet, the recipes, then PAGE_CSS ---- */
+  /* ---- the page's own layer, cut from the style it is served in: Ambient's tokens and parts, the site's layer, then PAGE_CSS (15 Nov 2026) ---- */
   const allCss = (landingPage("abcd-efgh", "nct", null).match(/<style[^>]*>([\s\S]*?)<\/style>/) || ["", ""])[1];
-  const cutAt = allCss.indexOf(SITE_RECIPES), pageCss = cutAt >= 0 ? allCss.slice(cutAt + SITE_RECIPES.length) : "";
+  const cutAt = allCss.startsWith(SITE_STYLE) ? SITE_STYLE.length : -1, pageCss = cutAt >= 0 ? allCss.slice(cutAt) : "";
   const R = rulesOf(pageCss);
-  ok(cutAt > 0 && R.length > 300 && pageCss.includes(".look-tile"), `the page's own layer is read off the style it is served in (${R.length} rules after the recipes)`);
+  ok(cutAt > 0 && R.length > 300 && pageCss.includes(".adm .rnone") && !allCss.includes(SITE_RECIPES.slice(0, 300)) && !allCss.includes(STATEMENT_CSS.slice(0, 300)),
+    `the page's own layer is read off the style it is served in (${R.length} rules after Ambient's), and no salt-ds recipe or statement stylesheet is served before it`);
 
   /* ---- 1. the three recipes Salt Admin was drawing by hand are carried whole, every rule of them as the system holds it ---- */
   const heads = ["/* ---- Metric row ---- */", "/* ---- Table (synced to the desk", "/* ---- Product tag:"];
@@ -67,62 +72,47 @@ export async function run({ ok, pageWork }) {
       `Batch A's ${batch.length} heads are carried once each (${once.length}), ${want.length} rules whole (${want.filter((r) => r[2]).length} under @media or @container), the reduced-motion and container ones among them (missing: ${lost.slice(0, 4).join(", ") || "none"}), and the page restates none (${restated.join(" ") || "none"})`);
   }
 
-  /* ---- 1b. the light is the system's Aurora, as the Desk draws it (18 Oct 2026): carried whole, the first thing in both bodies, laid under the content, and no light of the
-     page's own. The ground was two radial gradients at a fraction of the orbs' strength, so the glass rail read flat black on the Counter and warm on the Desk ---- */
+  /* ---- 1b. THE LIGHT. From 18 Oct 2026 the system's Aurora, as the Desk draws it, was the first thing in both bodies. 15 Nov 2026, the move to
+     Ambient: the light is the mood's mesh, each place's hero's, and the Aurora is gone: no Aurora drawn and no light of the page's own ---- */
   {
     const { JSDOM } = await import("jsdom");
-    const key = ([sel, body, media]) => squash(media) + "|" + squash(sel) + "{" + squash(body) + "}", have = new Set(rulesOf(SITE_RECIPES).map(key));
-    const aur = rulesOf(ds).filter(([sel]) => /\.salt-aurora/.test(sel)), lost = aur.filter((r) => !have.has(key(r))).map((r) => (r[2] ? r[2] + " " : "") + r[0]);
-    ok(aur.length >= 16 && aur.filter((r) => r[2]).length === 2 && lost.length === 0,
-      `the Aurora is in the recipes the page carries, ${aur.length} rules whole, Tide's blobs and the system's own no-Aurora under reduced transparency and in print among them (missing: ${lost.join(", ") || "none"})`);
     const pages = [["the customer's", landingPage("abcd-efgh", "nct", null)], ["Salt Admin's", landingPage("", "nct", { master: "fixture-master", accounts: [] })]];
-    const drawn = pages.map(([w, h]) => { const a = new JSDOM(h).window.document.body.firstElementChild;
-      return [w, !!a && a.matches(".salt-aurora.salt-aurora--page.salt-aurora--fixed[aria-hidden=true]") && a.querySelectorAll(":scope > .salt-aurora__blob--copper, :scope > .salt-aurora__blob--brass").length === 2]; });
-    ok(drawn.every(([, y]) => y), "both pages draw the page Aurora, fixed and hidden from a reader, as the first thing in the body with its copper and brass blobs: " + drawn.map(([w, y]) => w + " " + (y ? "yes" : "no")).join(", "));
-    const layer = rulesOf(STATEMENT_CSS + pageCss), under = layer.filter(([sel, body, media]) => !media && sel === "body>.salt-aurora" && decl(body, "z-index") === "-1");
-    const hand = layer.filter(([, body]) => /radial-gradient/.test(body) && /(^|;)\s*background(-image)?\s*:/.test(body)).map((r) => r[0]);
-    ok(under.length === 1 && hand.filter((s) => /^(html|body)\b/.test(s)).length === 0,
-      `the page lays the Aurora under its content by a selector that outweighs the recipe's own z-index (${under.length}), and draws no light of its own on the ground (${hand.join(" ") || "none"})`);
+    const drawn = pages.map(([w, h]) => { const d = new JSDOM(h).window.document;
+      return [w, !d.querySelector(".salt-aurora") && d.body.firstElementChild.matches("svg.amb-sprite") && d.querySelectorAll("header.amb-hero.amb-mesh").length >= 1]; });
+    ok(drawn.every(([, y]) => y), "neither page draws an Aurora: the body opens on Ambient's icons, and the light is each hero's mesh: " + drawn.map(([w, y]) => w + " " + (y ? "yes" : "no")).join(", "));
+    const layer = rulesOf(pageCss), hand = layer.filter(([, body]) => /radial-gradient/.test(body) && /(^|;)\s*background(-image)?\s*:/.test(body)).map((r) => r[0]);
+    ok(hand.filter((x) => /^(html|body)\b/.test(x)).length === 0 && !layer.some(([sel]) => /salt-aurora/.test(sel)) && /\.amb-mesh \{/.test(AMB_CSS),
+      `the page lays no Aurora and draws no light of its own on the ground; the mesh is Ambient's (${hand.join(" ") || "none"})`);
   }
 
-  /* ---- 1c. the Desk's type, gutter and shell, from salt-ds (18 Oct 2026, his word that the Desk's aesthetic is the one): no weight over the system's 500 in
-     the page's own layers (the system keeps 700 for its one filled pill), a heading at the display face's 300 and the Desk's 28px, the page 22px from the top,
-     and Salt Admin headed by the system's Desk bar, which carries its name and the clock the rail and every place once carried ---- */
+  /* ---- 1c. THE TYPE AND THE HEAD OF A PLACE. From 18 Oct 2026 the Desk's type, gutter and shell (the display face, the 22px gutter, the Desk bar over his
+     page, the rail's brand). 15 Nov 2026, the move to Ambient: the face is the device's own and the scale Ambient's; each place opens with its hero, its
+     name the title; the body is Ambient's; the bar, the rail and the customer's header are gone. What the page's layer still sets is the door's and the
+     places' own, until each is redrawn ---- */
   {
     const { JSDOM } = await import("jsdom");
-    const own = rulesOf(STATEMENT_CSS + pageCss), heavy = own.filter(([, b]) => /^(600|700|bold|bolder)$/.test(decl(b, "font-weight"))).map((r) => r[0]);
-    ok(heavy.length === 0, `the page's own layers set no weight over the system's 500 (heavier: ${heavy.slice(0, 6).join(" | ") || "none"})`);
-    const h1 = own.filter(([sel, , m]) => !m && sel.split(",").includes("h1")), gateH1 = own.filter(([sel, , m]) => !m && /^\.(gate|chead) h1$/.test(sel));
-    ok(h1.length === 1 && decl(h1[0][1], "font-weight") === "300" && decl(h1[0][1], "letter-spacing") === ".04em" && gateH1.length === 2 && gateH1.every(([, b]) => decl(b, "font-size") === "1.75rem"),
-      "a heading is the display face at 300 with the Desk's tracking, at the Desk's 28px on the door, Salt Admin and the customer's places");
-    const body = own.filter(([sel, , m]) => !m && sel === "body");
-    ok(body.length === 1 && /^22px\b/.test(decl(body[0][1], "padding")) && own.some(([sel, b, m]) => /min-width:\s*1080px/.test(m) && sel === ".gate.adm" && decl(b, "margin-top") === "0" && decl(b, "gap") === "20px"),
-      "the page starts 22px from the top, and from 1080px Salt Admin's rail and column stand 20px apart with no margin above, as the Desk's do");
-    /* 20 Oct 2026 (canvas V32): from 1080px the bar heads the shell, spanning the rail's column and the content's */
-    ok(own.some(([sel, b, m]) => /min-width:\s*1080px/.test(m) && sel === ".adm .abar" && decl(b, "grid-column") === "1/-1"), "from 1080px Salt Admin's bar spans the rail and the column under it");
-    const heads = RECIPE_HEADS.filter((h) => h.startsWith("/* ---- Desk bar"));
-    const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document, bar = od.querySelector("#roster > .salt-deskbar:first-child");
-    ok(heads.length === 1 && SITE_RECIPES.includes(".salt-deskbar__name {") && !!bar && bar.querySelector(".salt-deskbar__brand .salt-deskbar__name").textContent === "Salt Admin"
-      && bar.querySelectorAll(".salt-deskbar__meta [data-clock]").length === 1 && od.querySelectorAll("#roster [data-clock]").length === 1 && !od.querySelector("#roster .salt-rail__brand")
-      && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Admin/.test(e.textContent)),
-      "Salt Admin is headed by the system's Desk bar, carried whole: its name, the one clock under it, and no brand in the rail nor a name repeated over each place");
-    /* the customer's page (Counter Batch A, his decisions of 18 Oct 2026): from 1080px the app's name stands over the rail as the one brand, and the
-       rail's brand slot says whose account it is, which the header then leaves to it; the Desk bar of 18 Oct went, and came back as the header on 21 Oct; a section head at the system's
-       500, not the browser's bold; and Orders' list the whole width while no order stands open beside it */
-    const cd = new JSDOM(landingPage("abcd-efgh", "nct", null)).window.document, rail = cd.querySelector(".cshell .salt-rail");
-    const wide = (sel, prop, v) => own.some(([s, b, m]) => /min-width:\s*1080px/.test(m) && s === sel && decl(b, prop) === v);
-    const title = rail && rail.querySelector(".crtitle"), brand = rail && rail.querySelector(".salt-rail__brand");
-    /* 21 Oct 2026, his word: the header is the bar again, the place and what waits on them, and still no name on it */
-    const cbar = cd.querySelectorAll(".cshell .salt-deskbar");
-    ok(cbar.length === 1 && cbar[0].tagName === "HEADER" && cbar[0].classList.contains("chead") && !cbar[0].querySelector(".salt-deskbar__name") && !/Salt Counter/.test(cbar[0].textContent)
-      && !!title && title.classList.contains("salt-title") && title.textContent === "Salt Counter" && rail.firstElementChild === title && wide(".chead .cclock", "display", "none"),
-      "the customer's header is the one Desk bar and names no app: from 1080px the app's name, Salt Counter, stands over the rail in the system's title, the header's clock left to the phone");
-    ok(!!brand && /^Signed in as$/.test((brand.querySelector(".salt-eyebrow") || {}).textContent || "") && brand.querySelectorAll("[data-whorail]").length === 1 && brand.hasAttribute("data-wholine")
-      && !rail.querySelector(".salt-rail__foot") && cd.querySelectorAll(".chead [data-whoas]").length === 1 && wide(".chead [data-whoas]", "display", "none"),
-      "the rail's brand slot says Signed in as over the username, and from 1080px the header leaves it to the rail, so it stands once at each width");
-    ok(own.some(([s, b, m]) => !m && s === "h2,h3,h4" && decl(b, "font-weight") === "500")
-      && own.some(([s, b, m]) => /min-width:\s*860px/.test(m) && s === ".oplace.oplace--one" && decl(b, "grid-template-columns") === "minmax(0,1fr)"),
-      "a section head is at the system's 500, and from 860px Orders' list takes the width while no order stands open beside it");
+    const own = rulesOf(pageCss), heavy = own.filter(([, b]) => /^(600|700|bold|bolder)$/.test(decl(b, "font-weight"))).map((r) => r[0]);
+    ok(heavy.length === 0, `the page's own layer sets no weight over 500 (heavier: ${heavy.slice(0, 6).join(" | ") || "none"})`);
+    const h1 = own.filter(([sel]) => sel.split(",").some((x) => /(^|\s)h1\b/.test(x.trim()))).map((r) => r[0]);
+    const gateH1 = own.filter(([sel, , m]) => !m && sel === ".gate h1");
+    ok(h1.every((x) => /^(\.gate h1|\.panel h2:not\(\.salt-settings__head\),\.panel h1\.gh)$/.test(x)) && !own.some(([sel]) => /amb-hero/.test(sel))
+      && gateH1.length === 1 && decl(gateH1[0][1], "font-size") === "1.75rem",
+      "a place's heading is Ambient's hero title: the page's layer styles no h1 but the door's and a guest page's, and nothing of the hero: " + JSON.stringify(h1));
+    const body = own.filter(([sel]) => sel === "body" || sel === "html");
+    ok(body.length === 0 && !own.some(([sel]) => /\.gate\.adm|\.amain\b/.test(sel)), "the body is Ambient's: the page pads no body and sizes no frame of his");
+    ok(!own.some(([sel]) => /\.abar\b|\.salt-deskbar|\.cbar\b|\.chead\b|\.crtitle|\.crbrand|\.salt-rail|\.salt-appbar/.test(sel)), "and none of the old bar, rail or header is styled");
+    const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document;
+    const heroes = [...od.querySelectorAll("#roster > main > [data-in] > header.amb-hero")].map((h) => h.querySelector(".amb-hero__title").textContent);
+    ok(JSON.stringify(heroes) === JSON.stringify(["Needs you", "Orders", "Customers", "Record", "Shop"]) && !od.querySelector("#roster .salt-deskbar, #roster .salt-rail")
+      && ![...od.querySelectorAll("#roster .amb-hero")].some((e) => /Salt Admin/.test(e.textContent)) && od.querySelectorAll("#roster h1.sr").length === 0,
+      "each of his places opens with its hero, the place's name its title, and no bar, rail or brand repeated over each: " + JSON.stringify(heroes));
+    const cd = new JSDOM(landingPage("abcd-efgh", "nct", null)).window.document, hero = cd.querySelector("#tabs > main > header.amb-hero");
+    ok(!!hero && hero.querySelector("h1.amb-hero__title#placeT") && !/Salt Counter/.test(hero.textContent) && !cd.querySelector(".crtitle, .salt-rail, .chead"),
+      "the customer's place is named by its hero's title, which names no app, and no rail carries a name over it");
+    ok(cd.querySelectorAll("#tabs [data-whoas]").length === 1 && !!cd.querySelector("#tabs > main > header.amb-hero > .amb-hero__sub[data-wholine] [data-whoas]") && !cd.querySelector("[data-whorail]"),
+      "whose account it is stands once, the line under the place's title, at every width");
+    ok(!own.some(([s]) => /\.oplace|\.olistcol|\.oscreen/.test(s)) && landingPage("abcd-efgh", "nct", null).includes('id="oPanes" class="amb-split amb-split--panes"'),
+      "and Orders is the system's split of panes, the page writing no rule for the list or the open order (16 Nov 2026, the move to Ambient: the second pane holds New order while none is open)");
   }
 
   /* ---- 2. what PAGE_CSS keeps is placement: no rule under .adm sets a recipe's material, nor one of the page's classes that wear a recipe ---- */
@@ -185,9 +175,9 @@ export async function run({ ok, pageWork }) {
     if (!CONTROL.test(s.last.replace(/::?[\w-]+(\([^)]*\))?/g, ""))) continue;
     for (const p of ["min-height", "min-width", "height", "width"]) { const v = decl(body, p); if (!v) continue; const n = px(v, NIGHT); if (n !== null && n < 44) under.push(s.sel + " " + p + " " + v); }
   }
-  const LABELLED = [".rem input", ".pay input[type=radio]", ".spsave input"], tapped = (sel) => R.some(([s, b]) => s.split(",").map((x) => x.trim()).includes(sel) && /min-height:\s*var\(--salt-tap\)/.test(b));
-  ok(under.every((u) => LABELLED.some((l) => u.startsWith(l + " "))) && tapped(".rem") && tapped(".pay label") && tapped(".spsave"),
-    `no control the page sizes is under 44px either way, bar the three native boxes whose label is the tap (Save on this phone, Counter Batch C) (${under.length} under: ${under.join(" | ") || "none"})`);
+  /* 16 Nov 2026, the move to Ambient (place D): the native boxes that stood in a label (Keep me signed in, the pay radios) are the system's Switch and Options now, so the page sizes no control under 44px */
+  ok(under.length === 0,
+    `no control the page sizes is under 44px either way (${under.length} under: ${under.join(" | ") || "none"})`);
   /* 22 Oct 2026 (canvas Needs you): Needs you's kinds are tabs of the Nav bar, 48px tall and a third or a sixth of the row wide, no longer pills; 28 Oct 2026: the month filter is a select in a settings row, no strip */
   const strips = [".mos .salt-tabs__pill", ".adm .aparts .salt-tabs__pill"];
   ok(strips.every((s) => R.some(([sel, b]) => sel === s && /min-height:\s*var\(--salt-tap\)/.test(b) && /min-width:\s*var\(--salt-tap\)/.test(b))) && /--salt-tap:\s*44px/.test(ds)
@@ -204,8 +194,8 @@ export async function run({ ok, pageWork }) {
     const { d, work, click } = p;
     await work.quiet();
     let bad = [], seen = 0, sels = 0, selBad = [];
-    const audit = () => { seen += d.querySelectorAll(".lbl").length; bad.push(...labelsBad(d));
-      for (const x of d.querySelectorAll("select")) { sels++; if (!x.classList.contains("salt-field__select")) selBad.push(x.getAttribute("data-act") || x.className); } };
+    const audit = () => { seen += d.querySelectorAll(".lbl, .amb-field__label").length; bad.push(...labelsBad(d));
+      for (const x of d.querySelectorAll("select")) { sels++; if (!x.classList.contains("salt-field__select") && !x.classList.contains("amb-input")) selBad.push(x.getAttribute("data-act") || x.className); } };
     await click(byAct(d, "nav.record")); await click(byAct(d, "part.record.entry"));
     const forms = [...d.querySelectorAll('[data-act="record.form"]')].length;
     for (let i = 0; i < forms; i++) {
@@ -238,33 +228,34 @@ export async function run({ ok, pageWork }) {
 
     /* the hours are the week chart (20 Oct 2026, canvas V63), a button a day; the table is gone */
     await click(byAct(d, "nav.shop")); await click(byAct(d, "part.shop.hours")); audit();
-    const week = d.querySelector("#makerSchedule .maker-week");
-    ok(!!week && !d.querySelector("table.maker-hours") && week.querySelectorAll("button.maker-day").length === 7,
-      "the weekly hours are the week chart, a button a day, and the table is gone");
+    const week = d.querySelector("#makerSchedule ol.amb-week");   /* 16 Nov 2026, the move to Ambient (place I): Ambient's week of spans */
+    ok(!!week && !d.querySelector("table.maker-hours") && week.querySelectorAll("button.amb-week__day").length === 7,
+      "the weekly hours are the week of spans, a button a day, and the table is gone");
 
     /* the guest links and the report card, on Customers */
     await click(byAct(d, "nav.customers")); await click(byAct(d, "part.customers.links")); audit();
-    const links = [...d.querySelectorAll("#glist .glink")];   /* 26 Oct 2026: a link is Needs you's card; its panel (the .glink) holds the address, QR and moves */
-    const moves = links.flatMap((l) => [...l.querySelectorAll(".grow > button")]);
-    ok(links.length >= 2 && links.every((l) => l.classList.contains("salt-glass-card") && l.classList.contains("salt-glass-card--radius-md") && l.querySelector("h4.gwho"))
+    /* 16 Nov 2026, the move to Ambient (place H): a link is Ambient's row, its panel (the .glpanel) the next item of the list, holding the code in the system's frame and its moves as action rows, Withdraw and Decline in ember */
+    const links = [...d.querySelectorAll("#glist .glpanel")];
+    const moves = links.flatMap((l) => [...l.querySelectorAll(".amb-settings button.amb-action")]);
+    ok(links.length >= 2 && links.every((l) => !!l.querySelector("p.gwho") && !!l.querySelector("figure.amb-codeframe"))
       && ["link.copy", "link.withdraw", "link.restore", "link.approve", "link.decline"].every((a) => moves.some((b) => b.getAttribute("data-act") === a))
-      && moves.every((b) => b.classList.contains("salt-ghost")) && moves.filter((b) => /^link\.(withdraw|decline)$/.test(b.getAttribute("data-act"))).every((b) => b.classList.contains("salt-ghost--danger"))
-      && moves.filter((b) => /^link\.(copy|restore|approve)$/.test(b.getAttribute("data-act"))).every((b) => !b.classList.contains("salt-ghost--danger")),
-    `a guest link's panel is the system's glass card, its heading its own line, and its moves ghosts, Withdraw and Decline the danger ghost (${links.length} links, ${moves.length} moves)`);
-    const heads = [...d.querySelectorAll("#glist .ghead")], picks = [...d.querySelectorAll(".glink select")];
-    ok(heads.length >= 1 && heads.every((h) => h.classList.contains("salt-eyebrow") && /(^| )salt-eyebrow--(copper|brass|mist)( |$)/.test(h.className)) && picks.length === 0,
-      `the heads over the links are the system's eyebrow in the group's severity colour (${heads.length}) and no level picker is drawn (${picks.length})`);
+      && moves.filter((b) => /^link\.(withdraw|decline)$/.test(b.getAttribute("data-act"))).every((b) => b.classList.contains("amb-action--danger"))
+      && moves.filter((b) => /^link\.(copy|restore|approve)$/.test(b.getAttribute("data-act"))).every((b) => !b.classList.contains("amb-action--danger")),
+    `a guest link's panel is the system's code frame over a settings group, its moves action rows, Withdraw and Decline in ember (${links.length} links, ${moves.length} moves)`);
+    const heads = [...d.querySelectorAll("#glist .ghead")], picks = [...d.querySelectorAll(".glpanel select")];
+    ok(heads.length >= 1 && heads.every((h) => h.tagName === "H2" && h.classList.contains("amb-section")) && picks.length === 0 && ["gintro", "glabel"].every((id) => !!d.getElementById(id) && d.getElementById(id).classList.contains("amb-input") && !!d.getElementById(id).closest("label.amb-field")),
+      `the heads over the links are the system's section head (${heads.length}), its two fields are Ambient's, and no level picker is drawn (${picks.length})`);
     await click(byAct(d, "part.customers.associates"));
-    const card = d.querySelector("#clist .acard"), cells = card ? [...card.querySelectorAll(".agrid > .acell")] : [];
-    ok(!!card && card.classList.contains("salt-glass-card") && card.querySelector(".agrid").classList.contains("salt-metrics") && card.querySelector(".agrid").classList.contains("salt-metrics--sm")
-      && JSON.stringify(cells.map((c) => [c.querySelector(".salt-metrics__label").textContent, c.querySelector(".salt-metrics__value").textContent])) === JSON.stringify([["Bought", "RM 100.00"], ["Sold", "RM 50.00"], ["Introduced", "RM 20.00"]]),
-    "the report card is the system's glass card and its three figures its Metric row, label over figure");
+    const trow = d.querySelector("#clist table.amb-table tbody tr"), tcells = trow ? [...trow.children] : [];
+    ok(!!trow && d.querySelector("#clist table.amb-table").classList.contains("amb-table--stack") && JSON.stringify(tcells.slice(2, 5).map((c) => [c.getAttribute("data-label"), c.textContent])) === JSON.stringify([["Bought", "RM 100.00"], ["Sold", "RM 50.00"], ["Introduced", "RM 20.00"]]),
+    "the report card is the system's stacking table, its three figures cells labelled for the stack");
+    /* 16 Nov 2026 (place H): the thread's box is Ambient's compose, no longer a labelled field, so four are read, not five */
     /* 27 Oct 2026 (Record's forms as settings rows): Record's forms now name a field with the settings row's label, so the Field label class is read where a field keeps its label above it, the cards and sheets drawn on their busiest day */
     const every = await richOwnerPage({ pageWork, slip: true, probe: true });
     try {
       await drawEverything(every);
       const above = [...every.d.querySelectorAll("label.maker-field .lbl")];
-      ok(above.length >= 5 && labelsBad(every.d).length === 0 && above.every((n) => n.classList.contains("salt-field__label")),
+      ok(above.length >= 4 && labelsBad(every.d).length === 0 && above.every((n) => n.classList.contains("salt-field__label")),
         `every field that keeps its label above it wears the system's Field label (${above.length} read; bare: ${labelsBad(every.d).slice(0, 3).join(" | ") || "none"})`);
     } finally { every.w.close(); }
   } finally { p.w.close(); }

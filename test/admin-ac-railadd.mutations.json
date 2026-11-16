@@ -1,7 +1,8 @@
 [
- {"name":"the orb still floats wide","file":"stmt/page.js","find":"@media (min-width:1080px){.adm #oAdd{display:none}}","replace":"@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}"},
- {"name":"no rail button","file":"stmt/page.js","find":"        + (test ? \"\" : '<div class=\"salt-rail__group arailadd\">","replace":"        + (true ? \"\" : '<div class=\"salt-rail__group arailadd\">"},
- {"name":"the rail button opens nothing","file":"stmt/owner.js","find":"  [oAdd, document.getElementById('oAddRail')].forEach(","replace":"  [oAdd].forEach("},
- {"name":"the rail button stands on Record","file":"stmt/owner.js","find":"querySelectorAll('#oAdd, #oAddRail'), function(add){","replace":"querySelectorAll('#oAdd'), function(add){"},
- {"name":"the rail button in the places group","file":"stmt/page.js","find":"+ \"</div>\"\n        /* 21 Oct 2026 (P10)","replace":"\n        /* 21 Oct 2026 (P10)"}
+ {"name":"the + is not a circle","file":"stmt/page.js","find":"'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"","replace":"'<button type=\"button\" class=\"amb-pill\" id=\"oAdd\" data-act=\"nav.add\""},
+ {"name":"the + draws another glyph","file":"stmt/page.js","find":"aria-label=\"Record an entry\">' + AMB.glyph(\"plus\")","replace":"aria-label=\"Record an entry\">' + AMB.glyph(\"edit\")"},
+ {"name":"the rail's + comes back","file":"stmt/page.js","find":"'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"","replace":"'<button type=\"button\" id=\"oAddRail\" data-act=\"rail.add\"></button><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\""},
+ {"name":"the page places the + again","file":"stmt/page.js","find":"#roster .salt-orb[data-back]{margin:0 0 16px}","replace":"#roster .salt-orb[data-back]{margin:0 0 16px}\n.adm #oAdd{position:fixed;right:16px}"},
+ {"name":"the + stands on Record","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=placeNow==='record'; });","replace":"    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=false; });"},
+ {"name":"the + opens Shop","file":"stmt/owner.js","find":"  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });","replace":"  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('shop','',{fresh:true,push:true}); });"}
 ]

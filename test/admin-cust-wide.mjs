@@ -6,23 +6,10 @@
  *      section whole in its column; Links and Associates use the width
  * Drawn by the maker harness (test/maker-act.mjs), at a width of 1100px (matchMedia answers 860 and 1080). */
 import { richOwnerPage, enter } from "./maker-act.mjs";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
-import { JSDOM } from "jsdom";
-
+import { SITE_CSS } from "../stmt/statement-css.js";
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const J = JSON.stringify;
 const wideAt = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*(860|1080)px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }); };
-
-function pageRules() {
-  const html = landingPage("", "wide-nonce", { master: "fixture-master", accounts: [] });
-  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
-  const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
-  const out = [];
-  const walk = (rules, media) => { for (const r of rules) { if (r.selectorText) out.push([media + r.selectorText, r.style]); if (r.cssRules) walk(r.cssRules, r.conditionText ? "@" + r.conditionText + " " : media); } };
-  walk(sheet.cssRules, "");
-  return out;
-}
 
 export async function run({ ok, pageWork }) {
   const p = await richOwnerPage({ pageWork, before: wideAt });
@@ -30,28 +17,22 @@ export async function run({ ok, pageWork }) {
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
     await p.work.quiet();
     enter(d, "customers", "accounts"); await p.work.quiet();
+    /* 16 Nov 2026, the move to Ambient (place H): wide there is no table; the accounts are the same rows beside the open account, the system's two panes */
     /* 1 */
-    const tables = [...d.querySelectorAll("#rlist table.salt-table--plain")];
-    const row = (u) => d.querySelector('#rlist tr[data-u="' + u + '"]'), cells = (u) => (row(u) ? [...row(u).children].map(t) : []);
-    if (!row("abcd-efgh")) { ok(false, "the accounts are one plain table, a row an account"); return; }
-    ok(tables.length === 1 && J([...tables[0].querySelectorAll("thead th")].map(t)) === J(["Account", "Username", "State", "Since", "Owed", "Move"])
-      && J(cells("abcd-efgh")) === J(["CX1-ZED", "abcd-efgh", "Owed", "", "RM 100", "Message"]) && cells("tvwx-yz23")[2] === "Locked" && /^to \d\d:\d\d$/.test(cells("tvwx-yz23")[3])
-      && cells("tvwx-yz23")[5] === "Send" && !d.querySelector("#rlist .salt-settings"),
-      "the accounts are one plain table, a row an account: " + J([cells("abcd-efgh"), cells("tvwx-yz23")]));
+    const row = (u) => d.querySelector('#rlist li[data-u="' + u + '"]'), cells = (u) => (row(u) ? [...row(u).querySelectorAll(".amb-row__sub, .amb-row__trail")].map(t) : []);
+    if (!row("abcd-efgh")) { ok(false, "the accounts are rows"); return; }
+    ok(!d.querySelector("#rlist table") && J(cells("abcd-efgh")) === J(["Owed, RM 100", "Message"]) && /^Locked, to \d\d:\d\d$/.test(cells("tvwx-yz23")[0]) && cells("tvwx-yz23")[1] === "Send" && !d.querySelector("#rlist .salt-settings"),
+      "the accounts are Ambient's rows, a row an account, wide too: " + J([cells("abcd-efgh"), cells("tvwx-yz23")]));
     /* 2 */
     await click(row("tvwx-yz23").querySelector('[data-act="acct.open"]'));
     const opened = !!d.querySelector('#aopen [data-acct="tvwx-yz23"]') && d.getElementById("oAccts").classList.contains("open");
     await click(d.querySelector("#aopen [data-back]"));
     await click(row("abcd-efgh").querySelector('[data-act="acct.message"]'));
-    ok(opened && d.getElementById("makerChatOpen").getAttribute("data-key") === "abcd-efgh", "the code opens the account, and Message opens their thread");
+    ok(opened && d.getElementById("makerChatOpen").getAttribute("data-key") === "abcd-efgh", "the row opens the account, and Message opens their thread");
     /* 3 */
-    const R = pageRules(), rule = (sel) => (R.find((x) => x[0] === sel) || [, null])[1], get = (sel, prop) => { const r = rule(sel); return r ? r.getPropertyValue(prop) : "(none)"; };
-    const W = "@(min-width:1080px) ";
-    const got = [get(W + ".adm #oAccts.open .asplit", "grid-template-columns"), get(W + ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount,.adm #oAccts.open .alead", "display"),
-      get(W + ".adm #oAccts.open #aopen [data-back]", "display"), get(W + ".adm #aopen .oacct", "column-count"), get("@(min-width:1440px) .adm #aopen .oacct", "column-count"),
-      /* 3 Nov 2026 (the account on Shop's grid): every group of the card, not only the .asec ones, keeps whole in its column with 24px under it */
-      get(W + ".adm #aopen .oacct>*,.adm #aopen .oacct .amore>*", "break-inside"), get(W + ".adm #aopen .oacct .amore", "display"), get(W + ".adm #oLinks,.adm #oCards", "max-width")];
-    ok(J(got) === J(["minmax(0,1fr)", "none", "grid", "2", "3", "avoid", "contents", "none"]),
-      "from 1080px an open account takes the list's place and fills the page in columns with its way back, three from 1440px, and Links and Associates use the width: " + J(got));
+    const css = SITE_CSS.replace(/\s+/g, " ");
+    ok(/@container amb \(min-width: 960px\) \{ \.aback \{ display: none; \} \}/.test(css) && /@container amb \(max-width: 959px\) \{ #oAccts\.open \.afind, #oAccts\.open #rlist,[^}]*display: none; \}/.test(css)
+      && /#oAccts:not\(\.open\) #aside[^}]*display: none/.test(css) && !/column-count/.test(css.split("Customers (Salt Admin)")[1] || ""),
+      "from 960px an open account stands beside the list with no way back; narrower it takes the list's place, which the way back returns; the layer keeps no columns of its own");
   } finally { p.w.close(); }
 }

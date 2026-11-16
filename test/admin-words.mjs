@@ -331,7 +331,7 @@ export async function run({ ok, pageWork }) {
     s.refuse["/all/signin/abcd-efgh"] = "the link maker would not start";
     byAct(aopen(), "acct.signin-link").click(); await work.quiet();
     /* 5 Nov 2026 (the pane): Send a sign-in link and its answer are the card's foot, last, so the answer is read there (the card's thread line and Sign out's answer are .anote too) */
-    const made = aopen().querySelector(".afoot > .anote");
+    const made = aopen().querySelector(".asign > .anote");
     ok(!!made && made.firstChild.textContent === "Could not make a link: " + GENERAL_SENTENCE && made.querySelectorAll("details > .rraw").length === 1
       && made.querySelector(".rraw").textContent === "the link maker would not start",
     "a link that could not be made says so in a plain sentence on the account card, the server's words under Details: " + (made ? made.textContent : "nothing drawn"));
@@ -370,22 +370,24 @@ export async function run({ ok, pageWork }) {
     /* 12 Nov 2026 (his Approve review): the Sheet asks only on a Reject, so the trip is chosen to reject to draw it */
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.reject").click(); await work.quiet();
     byAct(d, "approve.confirm").click(); await work.quiet();
-    const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
+    const sheet = [...d.querySelectorAll("dialog.amb-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
     ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
       "the sheet that asks on a trip draws each of its rows as a mark with 1 unit beneath, and a reader hears a different shape for each: " + JSON.stringify(sheet));
     byAct(d, "ask.keep").click(); await work.quiet();
     byAct(d, "nav.customers").click(); await work.quiet();
     byAct(d, "part.customers.associates").click(); await work.quiet();
     /* 26 Oct 2026: the report card's book heading is an h2 holding the typed Product tag (his rule of 22 Oct 2026 for Salt Admin), its name in its hue with its dot, and no drawn mark */
-    const heads = [...d.querySelectorAll("#clist h2.aprodtag")].map((h) => [h.className, h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".salt-producttag__dot") ? "dot" : "", (h.querySelector(".salt-producttag") || { className: "" }).className.replace(/^salt-producttag salt-producttag--([a-z]+) ntag$/, "$1")]);
-    ok(heads.length === 2 && heads.every((h) => h[0] === "aprodtag" && h[1] === "" && h[3] === "dot" && /^[a-z]+$/.test(h[4]) && h[2].toLowerCase() === h[4]) && new Set(heads.map((h) => h[4])).size === 2,
+    /* 16 Nov 2026, the move to Ambient (place H): the book is Ambient's chip, its name in ink, its dot in the book's hue (amb-kind-N) */
+    const heads = [...d.querySelectorAll("#clist h2.aprodhead > .aprodtag")].map((h) => [h.className, h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".amb-chip__dot") ? "dot" : "", ((h.querySelector(".amb-chip") || { className: "" }).className.match(/amb-kind-([0-9])/) || [])[1] || ""]);
+    ok(heads.length === 2 && heads.every((h) => h[0] === "aprodtag" && h[1] === "" && h[3] === "dot" && /^[0-9]$/.test(h[4]) && /^(Salt|Oil)$/.test(h[2])) && new Set(heads.map((h) => h[4])).size === 2,
     "the report card's book headings are the typed Product tag, the name in its hue with its dot, and no drawn mark: " + JSON.stringify(heads));
     /* 22 Oct 2026: on Needs you a book is its typed Product tag, the name in its hue with its dot, and no drawn mark */
     byAct(d, "nav.needs").click(); await work.quiet();
-    const tags = [...d.querySelectorAll("#nlist section .salt-producttag")].map((x) => [x.className, x.textContent, !!x.querySelector(".salt-producttag__dot")]);
-    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && new RegExp("^salt-producttag salt-producttag--([a-z]+) ntag$").test(c) && w.toLowerCase() === c.split("--")[1].split(" ")[0] && /^[A-Z][a-z]+$/.test(w))
+    /* 16 Nov 2026, the move to Ambient (place F): on Needs you a book is Ambient's kind chip, the name in ink with its hue on the dot, and no drawn mark */
+    const tags = [...d.querySelectorAll("#nlist section .amb-chip[class*='amb-kind-']")].map((x) => [x.className, x.textContent, !!x.querySelector(".amb-chip__dot")]);
+    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && /^amb-chip amb-kind-[1-6]$/.test(c) && /^[A-Z][a-z]+$/.test(w))
       && !d.querySelector("#nlist section svg.psym"),
-      "Needs you names a book by its typed Product tag, Salt in its own hue, and draws no mark: " + JSON.stringify(tags.slice(0, 3)));
+      "Needs you names a book by its kind chip, Salt with its hue on the dot, and draws no mark: " + JSON.stringify(tags.slice(0, 3)));
   } finally { b.w.close(); }
 
   /* 7. THE WHOLE PAGE, DRAWN: NO BOOK NAME IN ANY WORD, ARIA NAME OR TITLE, AND NO SHAPE WORD DRAWN (his word of 12 Oct 2026). The names are read off the book (ledger/book.json PRODUCTS),
@@ -396,7 +398,7 @@ export async function run({ ok, pageWork }) {
   const drawnWords = (root) => {
     const out = [], walk = root.ownerDocument.createTreeWalker(root, 4);
     /* 22 Oct 2026: a book's typed Product tag is the one place its name is drawn on Salt Admin (his answer on the Needs you canvas), so its words are read apart */
-    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag") && !par.closest(".salt-producttag").querySelector("svg")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
+    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]") && !par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]").querySelector("svg:not(.amb-icon)")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
     root.querySelectorAll("[aria-label],[title],[placeholder],[alt]").forEach((e) => ["aria-label", "title", "placeholder", "alt"].forEach((a) => { if (e.getAttribute(a)) out.push([e.getAttribute(a), a === "aria-label"]); }));
     return out;
   };
@@ -411,13 +413,13 @@ export async function run({ ok, pageWork }) {
     const rowLabels = new Set([...all.d.querySelectorAll(".ordcard[aria-label]")].map((e) => e.getAttribute("aria-label")));
     const named = seenWords.filter(([t]) => BOOK_NAMED.test(t) && !rowLabels.has(t)).map(([t]) => t.slice(0, 80));
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
-    const typed = [...all.d.body.querySelectorAll(".salt-producttag")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.className.split("--")[1].split(" ")[0], x.textContent.trim()]);
+    const typed = [...all.d.body.querySelectorAll(".salt-producttag, .amb-chip[class*='amb-kind-']")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.classList.contains("salt-producttag") ? x.className.split("--")[1].split(" ")[0] : x.textContent.trim().toLowerCase(), x.textContent.trim()]);
     ok(seenWords.length > 400 && named.length === 0 && typed.length > 0 && typed.every(([k, w]) => k === w.toLowerCase() && BOOK_NAMES.includes(k)),
       "no book is named anywhere on Salt Admin, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "), but in its typed Product tag, which names its own book: "
       + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)) + "; " + typed.length + " tags");
     /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Confirm */
     const sheets = [];
-    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector(".salt-coin, svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
+    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector(".amb-thumb--mark svg, svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
     byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();

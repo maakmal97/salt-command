@@ -118,14 +118,14 @@ export async function run({ ok, pageWork }) {
     const root = at(p, "makerSchedule"), save = () => { byAct(root, "hours.day", "Monday").click(); return byAct(root, "hours.save", "Monday"); };
     save().click(); await p.work.quiet();
     /* 26 Oct 2026 (Hours as settings): the week's list closes on its grey line, and the answer stands right under that */
-    let said = beside(root.querySelector(".maker-week + .salt-settings__foot"));
+    let said = beside(root.querySelector("figure.amb-chart"))   /* 16 Nov 2026, the move to Ambient (place I): the week is a chart */;
     ok(!!said && said.id === "makerHoursSaved" && said.getAttribute("role") === "status" && root.contains(said) && said.textContent === "Weekly hours saved." && at(p, "makerHoursMessage").textContent === "",
       "Done answers on the line right under the week chart, inside the hours, and the line below the shop-for-now controls stays empty: " + JSON.stringify([said && said.id, said && said.textContent]));
     ok(p.scrolled.includes(said), "and the answer is brought into reach");
     p.fail.add("/all/maker/hours");
     save().click(); await p.work.quiet();
     /* the day stays open, so the answer stands right under it and its Done */
-    said = beside(root.querySelector(".maker-dayedit"));
+    said = beside(root.querySelector(".amb-foot"));
     ok(!!said && said.id === "makerHoursSaved" && /Not sent/.test(said.textContent) && at(p, "makerHoursMessage").textContent === "",
       "a Done that cannot be sent says so on the same line, under the day still open: " + JSON.stringify(said && said.textContent));
     p.fail.delete("/all/maker/hours");

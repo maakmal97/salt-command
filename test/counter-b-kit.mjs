@@ -116,7 +116,8 @@ export function stepTo(p, shape, q) {
   if (!pn) throw new Error("no book on Order for " + shape);
   const row = [...pn.querySelectorAll(".szrow[data-q]")].find((r) => r.getAttribute("data-q") === String(q));
   if (row) { row.click(); return pn; }
-  const val = () => parseFloat(pn.querySelector('[data-st="val"]').textContent);
+  /* 16 Nov 2026, the move to Ambient: the stepper's figure is the field's value (the system's Stepper over values) */
+  const val = () => parseFloat(pn.querySelector('[data-st="val"]').value);
   for (let i = 0; i < 1000 && Math.abs(val() - q) > 1e-6; i++) {
     const btn = pn.querySelector('[data-st="' + (val() < q ? "more" : "less") + '"]');
     if (!btn || btn.disabled) break;

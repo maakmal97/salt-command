@@ -34,11 +34,12 @@ export async function run({ ok, pageWork }) {
     const closed = rows.every((r) => !r.open);
     if (rows[1]) rows[1].querySelector("summary").click();
     ok(closed && rows.length === 4 && rows[1].open && !rows[0].open && !rows[2].open && !rows[3].open, "every row closed on opening, and a tap opens that row alone");
-    /* ---- 4 ---- */
+    /* ---- 4 ---- (16 Nov 2026, the move to Ambient: the row is the system's disclosure row in a settings list, its 56px the group's own row height, one open at a time by a name of its own) */
     const html = P.landingPage("abcd-efgh", "nh", null).replace(/\/\*[\s\S]*?\*\//g, "");
-    const sum = /\.ahelp__sum\{([^}]*)\}/.exec(html), tap = /--salt-tap:\s*44px/.test(html);
-    ok(sum && /min-height:var\(--salt-tap\)/.test(sum[1]) && tap && rows.every((r) => r.querySelector("summary .glyph")),
-      "each summary is 44px tall by the page's own rule, with its chevron: " + (sum && sum[1]));
+    const rowRule = /\.amb-setting \{([^}]*)\}/.exec(html), mark = rows.every((r) => !!r.querySelector("summary > svg.amb-disclose__mark use[href='#amb-chevron']"));
+    ok(rowRule && /min-height:\s*56px/.test(rowRule[1]) && mark && rows.every((r) => r.classList.contains("amb-disclose") && r.querySelector("summary").classList.contains("amb-setting"))
+      && rows.every((r) => r.getAttribute("name") === "account-help") && card.querySelector(".amb-settings > ul.amb-settings__list") && !card.querySelector("[class*=salt-]"),
+      "each row is the system's disclosure row at its 56px, its chevron last, the four of one name (account-help): " + (rowRule && rowRule[1]));
     /* ---- 5 ---- */
     const his = P.landingPage("", "nho", { master: "fixture-master", accounts: [] });
     ok(!/id="aHelp"/.test(his) && /id="acct"/.test(his), "Salt Admin's Account draws no Help");

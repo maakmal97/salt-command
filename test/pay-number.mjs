@@ -259,29 +259,30 @@ export async function run({ ok, okOff, pageWork, KV }) {
     const A = await openPage({ numbers: BASE });
     A.open();
     const body = A.d.getElementById("payBody"), kids = [...body.children], at = (sel) => kids.findIndex((n) => n.matches(sel));
-    const idx = ["#payInto", ".salt-kpi", ".payseg", "#payWhat", ".payhow", ".payref"].map(at);
+    const idx = ["#payInto", ".amb-tiles", ".payseg", "#payWhat", ".payhow", ".payref"].map(at);
     const tiles = [...body.querySelectorAll('#payInto input[name="payInto"]')], what = A.d.getElementById("payWhat");
     const offered = (rail, nums) => PAY_ACCOUNTS.filter((a) => a[rail] && !a.maintenance && nums[a.key] && (rail === "qr" ? nums[a.key].rows : rail === "transfer" ? nums[a.key].number : nums[a.key].biller)).map((a) => a.key);
     ok(idx.every((i) => i >= 0) && idx.every((i, k) => k === 0 || i > idx[k - 1]),
       "the sheet runs in this order: his banks, the figure, All or Part, What this pays, the way, then the details: " + JSON.stringify(idx));
     ok(tiles.map((r) => r.value).join() === offered("transfer", BASE).join() && tiles.length === 3 && tiles.every((r) => !r.checked) && kind(A.go()) === "BUTTON disabled" && tx(A.go()) === "I have paid",
       "his banks stand first as tiles, only those with a number to show and none suspended, none chosen, and the pill waits as I have paid: " + JSON.stringify([tiles.map((r) => r.value), kind(A.go()), tx(A.go())]));
-    ok(!!what && !what.open && what.tagName === "DETAILS" && what.classList.contains("salt-plan") && tx(what.querySelector("summary")) === "What this pays"
-      && what.querySelectorAll(".inv > .salt-ledger__row:not(.invt):not(.invtot)").length === 3,
-      "What this pays is the Plan recipe's fold, shut, and holds the invoice's three lines: " + JSON.stringify([!!what, what && what.open]));
+    ok(!!what && what.getAttribute("aria-expanded") === "false" && what.tagName === "BUTTON" && what.classList.contains("amb-more") && tx(what) === "What this pays"
+      && A.d.getElementById("payInv").hidden && A.d.querySelectorAll("#payInv .inv .amb-list > li, #payInv.inv .amb-list > li").length === 3,
+      "What this pays is the system's More, shut, and holds the invoice's three lines as its Rows: " + JSON.stringify([!!what, what && what.getAttribute("aria-expanded")]));
     const hows = [...A.d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value);
     ok(hows.join() === "transfer,qr,jompay", "the ways are Transfer, Scan a code and JomPAY, JomPAY because an account gives its biller code and Ref-1 (no cash on To pay now): " + hows.join());
 
     /* Transfer: the number in fours, the figure and the reference, each with Copy; the pill lights as I have paid */
     A.pick("maybank");
-    const row = A.d.getElementById("payAcctNo"), rows = [...A.d.querySelectorAll("#payBody .payref > .salt-ledger__row")];
-    const copyNo = row && row.querySelector("button"), copyAmt = rows[1] && rows[1].querySelector("button"), copyRef = rows[2] && rows[2].querySelector("button");
-    ok(kind(A.go()) === "BUTTON" && tx(A.go()) === "I have paid" && A.go().classList.contains("salt-pill") && !!row && rows.length === 3 && rows[0] === row
-      && tx(row.querySelector(".salt-ledger__label")) === "Account number" && tx(row.querySelector(".salt-ledger__value")) === GROUPED && tx(row.querySelector(".salt-ledger__flag")) === "Maybank"
-      && tx(rows[1].querySelector(".salt-ledger__label")) === "Amount" && tx(rows[1].querySelector(".salt-ledger__value")) === "RM 303.00"
-      && tx(rows[2].querySelector(".salt-ledger__label")) === "Reference" && tx(rows[2].querySelector(".salt-ledger__value")) === UN && /with the reference/.test(tx(A.d.querySelector("#payFoot .paycap"))),
+    const row = A.d.getElementById("payAcctNo"), rows = [...A.d.querySelectorAll("#payBody .payref > .amb-plate__row")];
+    /* 16 Nov 2026, the move to Ambient (place D): a detail is a Plate row that is itself the copy control */
+    const copyNo = row && row.tagName === "BUTTON" ? row : null, copyAmt = rows[1] && rows[1].tagName === "BUTTON" ? rows[1] : null, copyRef = rows[2] && rows[2].tagName === "BUTTON" ? rows[2] : null;
+    ok(kind(A.go()) === "BUTTON" && tx(A.go()) === "I have paid" && A.go().classList.contains("amb-pill") && !!row && rows.length === 3 && rows[0] === row
+      && tx(row.querySelector(".amb-plate__label")) === "Account number" && tx(row.querySelector(".amb-plate__value")) === GROUPED && tx(row.querySelector(".payflag")) === "Maybank"
+      && tx(rows[1].querySelector(".amb-plate__label")) === "Amount" && tx(rows[1].querySelector(".amb-plate__value")) === "RM 303.00"
+      && tx(rows[2].querySelector(".amb-plate__label")) === "Reference" && tx(rows[2].querySelector(".amb-plate__value")) === UN && /with the reference/.test(tx(A.d.querySelector("#payFoot .paycap"))),
       "choosing a bank lights the pill as I have paid, and Transfer shows three rows: the account number in groups of four with the bank's name, the amount, then the reference: "
-      + JSON.stringify([kind(A.go()), tx(A.go()), row && tx(row.querySelector(".salt-ledger__value")), rows.length]));
+      + JSON.stringify([kind(A.go()), tx(A.go()), row && tx(row.querySelector(".amb-plate__value")), rows.length]));
     if (copyNo) copyNo.click();
     await until(() => A.copied.length >= 1 && !!tx(A.d.querySelector("#payBody .payref + .msg")), 40);
     const afterNo = A.copied.slice();
@@ -296,9 +297,10 @@ export async function run({ ok, okOff, pageWork, KV }) {
 
     /* a tap is 44px both ways: the tiles, Copy, the pill, Save and the fold's summary hold the design system's tap size */
     const cs = (e) => A.w.getComputedStyle(e);
-    const tap = { tile: cs(A.d.querySelector("#payInto .salt-option__face")).minHeight, copy: cs(copyNo).minHeight + "|" + cs(copyNo).minWidth, pill: cs(A.go()).minHeight, summary: cs(what.querySelector("summary")).minHeight };
-    ok(tap.tile === "var(--salt-tap)" && tap.copy === "var(--salt-tap)|var(--salt-tap)" && tap.pill === "var(--salt-tap)" && tap.summary === "var(--salt-tap)",
-      "a tap is 44px both ways on the bank tiles, the Copy buttons, the pill and the fold's summary: " + JSON.stringify(tap));
+    const tap = { tile: A.d.querySelector("#payInto .amb-option").className, copy: copyNo.className, pill: A.go().className, more: what.className };
+    const tapRules = [...A.d.styleSheets].flatMap((x) => [...x.cssRules]).filter((r) => /^\.amb-(option|plate__row|pill|more)\b/.test(r.selectorText || "")).map((r) => r.style.getPropertyValue("min-height")).filter(Boolean);
+    ok(/amb-option/.test(tap.tile) && /amb-plate__row/.test(tap.copy) && /amb-pill/.test(tap.pill) && /amb-more/.test(tap.more) && tapRules.length >= 3 && tapRules.every((v) => /^var\(--amb-[a-z-]+\)$|^(4[4-9]|[5-9][0-9])px$/.test(v)),
+      "a tap is 44px both ways on the bank options, the Copy rows, the pill and the fold's More, all by the system's own tokens: " + JSON.stringify({ tap, tapRules }));
 
     /* copying the number is leaving for the banking app (18 Oct 2026): the visit is kept for a reload, and coming back asks */
     const keptCopy = A.q();
@@ -311,7 +313,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     ok(!!again && again.tagName === "BUTTON" && !again.getAttribute("href") && tx(again) === "Show account number again" && A.d.querySelectorAll("#paySheet a[href]").length === 0,
       "the check step's Show again is a button with no address, worded for the account number: " + JSON.stringify([again && again.tagName, again && tx(again)]));
     again.click();
-    ok(!A.d.getElementById("paySent") && tx(A.d.getElementById("payAcctNo").querySelector(".salt-ledger__value")) === GROUPED && A.d.querySelector('#payBody input[name="payInto"]:checked').value === "maybank"
+    ok(!A.d.getElementById("paySent") && tx(A.d.getElementById("payAcctNo").querySelector(".amb-plate__value")) === GROUPED && A.d.querySelector('#payBody input[name="payInto"]:checked').value === "maybank"
       && tx(A.go()) === "I have paid",
       "Show again redraws the sheet with the same account and number, the pill ready: " + JSON.stringify([!!A.d.getElementById("paySent"), !!A.d.getElementById("payAcctNo")]));
 
@@ -339,8 +341,8 @@ export async function run({ ok, okOff, pageWork, KV }) {
     A.open(); A.pick("maybank");
     [...A.d.querySelectorAll("#payBody .payseg button")].find((b) => tx(b) === "Part of it").click();
     const amt = A.d.getElementById("payAmt"); amt.value = "40"; amt.dispatchEvent(new A.w.Event("input", { bubbles: true }));
-    const partRow = tx(A.d.querySelector("#payAmtRow .salt-ledger__value"));
-    A.copied.length = 0; A.d.querySelector("#payAmtRow button").click(); await until(() => A.copied.length >= 1, 40);
+    const partRow = tx(A.d.querySelector("#payAmtRow .amb-plate__value"));
+    A.copied.length = 0; A.d.querySelector("#payAmtRow").click(); await until(() => A.copied.length >= 1, 40);
     A.go().click();
     const partQ = tx(A.d.querySelector("#payBody .paycheck h3"));
     A.d.getElementById("paySent").click();
@@ -352,12 +354,12 @@ export async function run({ ok, okOff, pageWork, KV }) {
     A.open(); A.pick("maybank");
     [...A.d.querySelectorAll("#payBody .payseg button")].find((b) => tx(b) === "Part of it").click();
     const amt2 = A.d.getElementById("payAmt"); amt2.value = "25"; amt2.dispatchEvent(new A.w.Event("input", { bubbles: true }));
-    A.d.querySelector("#payAcctNo button").click(); await until(() => !!A.q(), 40);
+    A.d.querySelector("#payAcctNo").click(); await until(() => !!A.q(), 40);
     A.w.dispatchEvent(new A.w.Event("blur")); A.w.dispatchEvent(new A.w.Event("focus"));
     const partAsk = tx(A.d.querySelector("#payBody .paycheck h3"));
     A.d.getElementById("payAgain").click();
-    ok(partAsk === "Did you send RM 25.00?" && tx(A.d.querySelector("#payAmtRow .salt-ledger__value")) === "RM 25.00" && A.d.getElementById("payAmt") && A.d.getElementById("payAmt").value === "25.00",
-      "Show again after a part brings the part back, in the box and in the amount row: " + JSON.stringify([partAsk, tx(A.d.querySelector("#payAmtRow .salt-ledger__value"))]));
+    ok(partAsk === "Did you send RM 25.00?" && tx(A.d.querySelector("#payAmtRow .amb-plate__value")) === "RM 25.00" && A.d.getElementById("payAmt") && A.d.getElementById("payAmt").value === "25.00",
+      "Show again after a part brings the part back, in the box and in the amount row: " + JSON.stringify([partAsk, tx(A.d.querySelector("#payAmtRow .amb-plate__value"))]));
     A.d.getElementById("payX").click();
 
     /* a bank with no number to show is not offered on Transfer, and with the Worker unreachable the sheet says so and offers none */
@@ -384,11 +386,11 @@ export async function run({ ok, okOff, pageWork, KV }) {
     ok(scanTiles.join() === offered("qr", BASE).join() && !scanTiles.includes("wise") && scanTiles.includes("maybank") && !F.d.querySelector(".paycode") && kind(F.go()) === "BUTTON disabled",
       "on Scan a code the tiles are the accounts that gave a code and no code is drawn until one is chosen: " + JSON.stringify(scanTiles));
     F.pick("maybank");
-    const panel = F.d.querySelector("#payBody .paycode"), svg = panel && panel.querySelector(".salt-qr__code svg"), nrow = MAYROWS.length + 8;
-    ok(!!panel && panel.classList.contains("salt-qr") && !!svg && svg.getAttribute("viewBox") === "0 0 " + nrow + " " + nrow && svg.querySelectorAll("g rect").length === wantRuns
-      && tx(panel.querySelector(".salt-qr__title")) === "Maybank" && tx(panel.querySelector(".salt-qr__caption")) === "DuitNow QR" && svg.getAttribute("aria-label") === "The DuitNow QR code for Maybank",
+    const panel = F.d.querySelector("#payBody .paycode"), svg = panel && panel.querySelector(".amb-codeframe__field svg"), nrow = MAYROWS.length + 8;
+    ok(!!panel && panel.classList.contains("amb-codeframe") && !!svg && svg.getAttribute("viewBox") === "0 0 " + nrow + " " + nrow && svg.querySelectorAll("g rect").length === wantRuns
+      && tx(panel.querySelector(".paycode__name")) === "Maybank" && tx(panel.querySelector(".paycode__how")) === "DuitNow QR" && svg.getAttribute("aria-label") === "The DuitNow QR code for Maybank",
       "the code is the QR panel with one rect a run of dark modules and four modules of quiet round it, titled with the account: " + JSON.stringify([!!panel, svg && svg.querySelectorAll("g rect").length, wantRuns]));
-    const scanRows = [...F.d.querySelectorAll("#payBody .payref > .salt-ledger__row")].map((r) => tx(r.querySelector(".salt-ledger__label")));
+    const scanRows = [...F.d.querySelectorAll("#payBody .payref > .amb-plate__row")].map((r) => tx(r.querySelector(".amb-plate__label")));
     ok(scanRows.join() === "Amount,Reference" && !F.d.getElementById("payAcctNo") && !new RegExp(NUMBER.slice(0, 8)).test(F.d.getElementById("paySheet").textContent.replace(/\s/g, "")) && tx(F.go()) === "I have paid" && kind(F.go()) === "BUTTON"
       && /^Pay it from your banking app[.]/.test(tx(F.d.querySelector("#payFoot .paycap"))) && tx(F.d.getElementById("paySave")) === "Save the code" && /^Press and hold the code to save it to Photos, then open it from your bank app[.]$/.test(tx(F.d.querySelector("#paySave + p"))),
       "a code shows the amount and the reference, no account number, Save the code and its one-sentence hint, and the pill is I have paid: " + JSON.stringify(scanRows));
@@ -417,7 +419,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     /* with a canvas the same modules are painted onto it and the code stands as a PNG picture a long press can save; Save offers the file */
     const C1 = await openPage({ numbers: BASE, canvas: true, share: "ok" });
     C1.open(); C1.way("qr"); C1.pick("maybank");
-    const img = C1.d.querySelector("#payBody .paycode .salt-qr__code img"), fills = C1.fills();
+    const img = C1.d.querySelector("#payBody .paycode .amb-codeframe__field img"), fills = C1.fills();
     ok(!!img && /^data:image[/]png;base64,/.test(img.getAttribute("src")) && !C1.d.querySelector(".paycode svg") && img.getAttribute("alt") === "The DuitNow QR code for Maybank"
       && fills.length === 1 + wantRuns && fills[0].w === (nrow) * 8 && fills.slice(1).every((f) => f.h === 8 && f.w % 8 === 0) && fills.slice(1).reduce((n, f) => n + f.w / 8, 0) === MAYROWS.join("").split("1").length - 1,
       "with a canvas the code is a data: PNG picture, never a blob, painted from the same runs, eight pixels a module: " + JSON.stringify([!!img, fills.length, wantRuns]));
@@ -486,7 +488,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     P.open(); P.way("qr"); P.pick("maybank");
     const pd = JSQR(raster(svgRects(P.d.querySelector("#payBody .paycode svg")), nrow, SHEET_PX).data, SHEET_PX, SHEET_PX);
     P.way("jompay"); P.pick("instapay");
-    const pj = [...P.d.querySelectorAll("#payBody .payref .salt-ledger__value")].map((v) => tx(v));
+    const pj = [...P.d.querySelectorAll("#payBody .payref .amb-plate__value")].map((v) => tx(v));
     ok(!!pd && /INVENTED SHOP/.test(pd.data) && pj[0] === INVD.accounts[1].biller && pj[1] === INVD.accounts[1].ref1 && pj[2] === "Leave it empty" && tilesOf(P).join() === "instapay",
       "a practice account's sheet draws maybank's invented code, which reads back as the invented shop, and shows instapay's invented biller code and Ref-1: " + JSON.stringify([pd && pd.data.length, tilesOf(P)]));
     P.d.getElementById("payX").click();
@@ -496,21 +498,21 @@ export async function run({ ok, okOff, pageWork, KV }) {
     J.open(); J.way("jompay");
     ok(tilesOf(J).join() === "instapay" && !J.d.getElementById("payBiller") && kind(J.go()) === "BUTTON disabled", "JomPAY offers the accounts that gave a biller code and Ref-1, and shows nothing until one is chosen: " + JSON.stringify(tilesOf(J)));
     J.pick("instapay");
-    const jr = [...J.d.querySelectorAll("#payBody .payref > .salt-ledger__row")], JB = BASE.instapay.biller, J1 = BASE.instapay.ref1;
-    ok(jr.map((r) => tx(r.querySelector(".salt-ledger__label"))).join() === "Biller code,Ref-1,Ref-2,Amount" && tx(jr[0].querySelector(".salt-ledger__value")) === JB && tx(jr[1].querySelector(".salt-ledger__value")) === J1
-      && tx(jr[2].querySelector(".salt-ledger__value")) === "Leave it empty" && !jr[2].querySelector("button") && !!jr[0].querySelector("button") && !!jr[1].querySelector("button") && !!jr[3].querySelector("button")
+    const jr = [...J.d.querySelectorAll("#payBody .payref > .amb-plate__row")], JB = BASE.instapay.biller, J1 = BASE.instapay.ref1;
+    ok(jr.map((r) => tx(r.querySelector(".amb-plate__label"))).join() === "Biller code,Ref-1,Ref-2,Amount" && tx(jr[0].querySelector(".amb-plate__value")) === JB && tx(jr[1].querySelector(".amb-plate__value")) === J1
+      && tx(jr[2].querySelector(".amb-plate__value")) === "Leave it empty" && jr[2].tagName !== "BUTTON" && jr[0].tagName === "BUTTON" && jr[1].tagName === "BUTTON" && jr[3].tagName === "BUTTON"
       && !J.d.getElementById("payRef") && /biller code and Ref-1/.test(tx(J.d.querySelector("#payFoot .paycap"))) && !J.d.getElementById("paySheet").textContent.includes(UN) && tx(J.go()) === "I have paid" && kind(J.go()) === "BUTTON" && !J.d.querySelector(".paycode"),
       "JomPAY shows Biller code and Ref-1 with Copy, Ref-2 as Leave it empty, then the amount, with no reference and no username on the sheet, and the pill is I have paid: " + JSON.stringify(jr.map((r) => tx(r))));
     J.copied.length = 0;
-    for (const i of [0, 1, 3]) { jr[i].querySelector("button").click(); await until(() => J.copied.length >= (i === 0 ? 1 : i === 1 ? 2 : 3), 40); }
-    ok(J.copied.join() === [JB, J1, "303.00"].join() && jr[0].querySelector("button").getAttribute("aria-label") === "Copy the biller code" && jr[1].querySelector("button").getAttribute("aria-label") === "Copy Ref-1",
+    for (const i of [0, 1, 3]) { jr[i].click(); await until(() => J.copied.length >= (i === 0 ? 1 : i === 1 ? 2 : 3), 40); }
+    ok(J.copied.join() === [JB, J1, "303.00"].join() && jr[0].getAttribute("aria-label") === "Copy the biller code" && jr[1].getAttribute("aria-label") === "Copy Ref-1",
       "Copy puts the biller code, Ref-1 and the figure on the clipboard: " + JSON.stringify(J.copied).replace(/[0-9]{9,}/g, "#"));
     J.go().click();
-    const jq = { q: tx(J.d.querySelector("#payBody .paycheck h3")), line: tx(J.d.querySelector("#payBody .paycheck .sub2")), again: tx(J.d.getElementById("payAgain")), kept: J.q() };
+    const jq = { q: tx(J.d.querySelector("#payBody .paycheck h3")), line: tx(J.d.querySelector("#payBody .paycheck .amb-basis")), again: tx(J.d.getElementById("payAgain")), kept: J.q() };
     ok(jq.q === "Did you send RM 303.00?" && jq.line === "By JomPAY to Instapay." && jq.again === "Show the JomPAY details again" && jq.kept && jq.kept.away.rail === "jompay" && !J.d.querySelector("#paySheet a[href]"),
       "the question after JomPAY says it was by JomPAY, without the username, and its Show again is its own words: " + JSON.stringify(jq));
     J.d.getElementById("payAgain").click();
-    ok(!!J.d.getElementById("payBiller") && tx(J.d.getElementById("payBiller").querySelector(".salt-ledger__value")) === JB && J.d.querySelector('#payBody input[name="payHow"]:checked').value === "jompay"
+    ok(!!J.d.getElementById("payBiller") && tx(J.d.getElementById("payBiller").querySelector(".amb-plate__value")) === JB && J.d.querySelector('#payBody input[name="payHow"]:checked').value === "jompay"
       && J.d.querySelector('#payBody input[name="payInto"]:checked').value === "instapay", "Show again brings back the JomPAY details with the way and the account as they were");
     J.go().click(); J.d.getElementById("paySent").click(); await until(() => J.posts().length === 1);
     ok(J.posts()[0].b.method === "jompay" && J.posts()[0].b.account === "instapay" && J.posts()[0].b.amount === 303 && !JSON.stringify(J.posts()[0].b).includes(UN), "and Yes claims it by jompay at that account");
@@ -531,14 +533,15 @@ export async function run({ ok, okOff, pageWork, KV }) {
     /* What this pays stays as they left it across a redraw, and the numbers are asked once a visit */
     const G = await openPage({ numbers: BASE });
     G.open();
-    let toggled = false; G.d.getElementById("payWhat").addEventListener("toggle", () => { toggled = true; });
-    G.d.getElementById("payWhat").querySelector("summary").click();
-    await until(() => toggled, 60);
+    /* 16 Nov 2026, the move to Ambient (place D): What this pays is the system's More; a tap on it shows the lines, and the page keeps it as it was across a redraw */
+    const what2 = () => G.d.getElementById("payWhat"), shown2 = () => what2().getAttribute("aria-expanded") === "true" && !G.d.getElementById("payInv").hidden;
+    what2().click();
+    await until(shown2, 60);
     G.pick("maybank");
-    const kept2 = G.d.getElementById("payWhat");
+    const keptOpen = shown2();
     G.d.getElementById("payX").click(); G.open(); G.d.getElementById("payX").click(); G.open();
-    ok(!!kept2 && kept2.open && !G.d.getElementById("payWhat").open && G.asked() === 1,
-      "What this pays stays open across a redraw of the sheet and opens shut with the sheet, and across three openings the numbers were asked once: " + JSON.stringify([kept2 && kept2.open, G.d.getElementById("payWhat").open, G.asked()]));
+    ok(keptOpen && what2().getAttribute("aria-expanded") === "false" && G.d.getElementById("payInv").hidden && G.asked() === 1,
+      "What this pays stays open across a redraw of the sheet and opens shut with the sheet, and across three openings the numbers were asked once: " + JSON.stringify([keptOpen, what2().getAttribute("aria-expanded"), G.asked()]));
 
     /* THE LIVE STATE ON THE SHEET (17 Oct 2026): an account the Worker says is down is not offered, one it has back up is, and a bank chosen
        before the answer came is unchosen when it turns out to be down; a minute on, the next open asks again */

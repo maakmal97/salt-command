@@ -342,11 +342,11 @@ export async function run({ ok }) {
       for (let i = 0; i < 100 && !condition(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!condition();
     };
-    const tap = (root, label) => [...doc.querySelectorAll(root + " button")].find((button) => button.textContent === label)?.click();
+    const tap = (root, label) => [...doc.querySelectorAll(root + " button")].find((button) => button.textContent === label || button.getAttribute("aria-label") === label)?.click();
     /* 11 Oct 2026: the conversations are Customers, Messages */
     doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
-    doc.querySelector('[data-thread="' + user + '"]').click();
+    doc.querySelector('[data-thread="' + user + '"]' + ' .amb-row__main')?.click();
     ok(/^1 waits for your reply/.test(doc.getElementById("makerChatStatus").textContent),
       "The owner waiting count excludes an acceptance-account question.");
     let textarea = doc.querySelector('[data-thread-reply="' + user + '"]');
@@ -367,9 +367,9 @@ export async function run({ ok }) {
       "Owner Chat draws customer markup as text, never executable elements.");
     loseReply = true; tap("#makerChatOpen", "Send");
     tap("#makerChatOpen", "Close");
-    doc.querySelector('[data-thread="' + user + '"]').click();
+    doc.querySelector('[data-thread="' + user + '"]' + ' .amb-row__main')?.click();
     textarea = doc.querySelector('[data-thread-reply="' + user + '"]');
-    ok([...doc.querySelectorAll("#makerChatOpen button")].find((button) => button.textContent === "Send again").disabled,
+    ok([...doc.querySelectorAll("#makerChatOpen button")].find((button) => button.textContent === "Send again" || button.getAttribute("aria-label") === "Send again").disabled,
       "Closing and reopening an in-flight Chat cannot re-enable duplicate submits.");
     await until(() => /Your reply is kept/.test(doc.getElementById("makerChatOpen").textContent));
     const pendingReply = posts.filter((item) => item.path === "/all/maker/threads/" + user).at(-1).body;
@@ -390,14 +390,14 @@ export async function run({ ok }) {
     /* 11 Oct 2026: the conversations are Customers, Messages */
     doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
-    doc.querySelector('[data-thread="' + TEST_USER + '"]').click();
+    doc.querySelector('[data-thread="' + TEST_USER + '"]' + ' .amb-row__main')?.click();
     const beforeSwitchedRetry = posts.length;
     tap("#makerChatOpen", "Open unsent reply");
     const refusedSwitch = await until(() => /belongs to another account/.test(doc.getElementById("makerChatOpen").textContent));
     tap("#makerChatOpen", "Send");
     ok(refusedSwitch && posts.length === beforeSwitchedRetry && page.localStorage.getItem(chatStorageKey) === reloadData,
       "An encrypted retained request is bound to its original account even when moved into another account slot.");
-    doc.querySelector('[data-thread="' + user + '"]').click();
+    doc.querySelector('[data-thread="' + user + '"]' + ' .amb-row__main')?.click();
     textarea = doc.querySelector('[data-thread-reply="' + user + '"]');
     ok(textarea.value === "" && textarea.disabled && page.localStorage.getItem(chatStorageKey) === reloadData,
       "Reload retains the original ciphertext without opening or resubmitting it automatically.");
@@ -475,7 +475,7 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="part.shop.hours"]').click();
     /* 25 Oct 2026 (Salt Admin Shop): Set it and the way back are For now's, first on Hours; the way back reads Weekly hours and goes once taken */
     /* 26 Oct 2026 (Hours as settings): the way back is the Hold the shop switch turned off, and Set it stands once the switch is on */
-    const hoursBtn = (label) => label === "Weekly hours" ? doc.querySelector('#makerNowCard [data-act="hours.hold"][aria-checked="true"]')
+    const hoursBtn = (label) => label === "Weekly hours" ? doc.querySelector('#makerNowCard [data-act="hours.hold"]:checked')
       : [...doc.querySelectorAll("#makerSchedule button, #makerNowCard button, #makerDayPane button")].find((button) => button.textContent === label);
     const holdHours = async (label, ready, saved) => {
       /* 20 Oct 2026 (canvas V63): Done stands in an opened day */
@@ -500,7 +500,7 @@ export async function run({ ok }) {
     }
     doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
-    doc.querySelector('[data-thread="' + user + '"]').click();
+    doc.querySelector('[data-thread="' + user + '"]' + ' .amb-row__main')?.click();
     doc.querySelector('[data-act="part.customers.accounts"]').click();
     ok(fakePolls.size === 0, "Leaving Messages stops an open Chat poll.");
     harness.book.run("drop", { u: TEST_USER });

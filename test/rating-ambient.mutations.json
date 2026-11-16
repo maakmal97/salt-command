@@ -1,0 +1,13 @@
+[
+ {"name":"a star is no radio","file":"stmt/page.js","find":"b.type='radio'; b.name='rate-'+o.id;","replace":"b.type='checkbox'; b.name='rate-'+o.id;"},
+ {"name":"a star is no label of the system's rating","file":"stmt/page.js","find":"var l=el('label','amb-rating__star'), b=el('input','amb-rating__input');","replace":"var l=el('label','rstar'), b=el('input','amb-rating__input');"},
+ {"name":"the stars are no fieldset of the system's rating","file":"stmt/page.js","find":"var g=el('fieldset','amb-rating rstars'), st=el('span','amb-rating__stars');","replace":"var g=el('fieldset','rstars'), st=el('span','amb-rating__stars');"},
+ {"name":"the star's words are not read","file":"stmt/page.js","find":"l.appendChild(el('span','amb-vh',tw('rt.star',{n:n})));","replace":""},
+ {"name":"the question is not the order's visible legend","file":"stmt/page.js","find":"w.appendChild(rateStrip(o,true));","replace":"w.appendChild(rateStrip(o,false));"},
+ {"name":"Home's question is shown twice","file":"stmt/page.js","find":"g.appendChild(el('legend',seen?'amb-field__label':'amb-vh',tw('rt.ask')));","replace":"g.appendChild(el('legend','amb-field__label',tw('rt.ask')));"},
+ {"name":"a tap on a star sends one star more","file":"stmt/page.js","find":"b.addEventListener('change',function(){ rateSend(o,n); });","replace":"b.addEventListener('change',function(){ rateSend(o,n+1); });"},
+ {"name":"the order draws no stars to tap","file":"stmt/page.js","find":"    if(!rateDue(o)) return w;\n    w.appendChild(rateStrip(o,true));","replace":"    return w;\n    w.appendChild(rateStrip(o,true));"},
+ {"name":"a rating given marks no star","file":"stmt/page.js","find":"s.appendChild(ambIcon('star',i<=n?'is-on':''));","replace":"s.appendChild(ambIcon('star',''));"},
+ {"name":"a rating given says no words","file":"stmt/page.js","find":"p.appendChild(el('span','amb-rating__said',tw('rt.gave',{n:n})));","replace":""},
+ {"name":"a rating given is no shown rating","file":"stmt/page.js","find":"var p=el('p','amb-rating amb-rating--shown rgave'), s=el('span','amb-rating__stars');","replace":"var p=el('p','rgave'), s=el('span','amb-rating__stars');"}
+]

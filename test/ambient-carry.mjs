@@ -4,11 +4,15 @@
       hashing to tools/ambient.lock.json, so what the Worker would serve is what was pulled, never a copy edited or trimmed here.
    2. tools/ambientsync.mjs --check passes on the copy as pulled and fails on a carried file edited by hand, on an edited token block and on a
       lock written by a preview pull (run on a scratch copy of the three, so nothing in the tree is touched).
-   3. Salt Admin's own layer, design/admin.css, may read tokens but never name a colour: the generator refuses one.
+   3. The site's own layer, design/site.css (Salt Admin's design/admin.css until 15 Nov 2026), may read tokens but never name a colour:
+      the generator refuses one.
    4. The heat reads the day's SUPPLY STEP, never the move: tight at two days of cover, soft past 14, neutral between, and soft on the day a
       big lot lands while the move is still stepping down from +15; neutral when switched off, before the rule's since and on a book with no
       market. It prices nothing.
-   5. The stock document Salt Admin polls carries each book's heat, the engine's own reading in the desk's window. */
+   5. The stock document Salt Admin polls carries each book's heat, the engine's own reading in the desk's window.
+   6. 15 Nov 2026, the move to Ambient: the browser bar's two colours (AMB_THEME) are Lagoon's base in light and in dark as the carried
+      tokens state them, never typed; and the maintenance page's rules (AMB_MAINT_CSS) are ambient.css's own, cut whole, naming only the
+      parts the page wears. */
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -28,7 +32,8 @@ export async function run({ ok }) {
     && !lock.preview && /^\d+\.\d+\.\d+$/.test(lock.version),
     "the Worker's module carries Ambient " + lock.version + " whole: the tokens, ambient.css, ambient.js and the icons each hash to the lock");
   const mod = await import(pathToFileURL(join(REPO, "stmt", "statement-css.js")).href);
-  ok(mod.AMB_TOKENS === A.tokens && mod.AMB_CSS === A.css && mod.AMB_JS === A.js && mod.AMB_ICONS === A.icons && mod.ADMIN_CSS === A.admin,
+  ok(mod.AMB_TOKENS === A.tokens && mod.AMB_CSS === A.css && mod.AMB_JS === A.js && mod.AMB_ICONS === A.icons && mod.SITE_CSS === A.site
+    && JSON.stringify(mod.AMB_THEME) === JSON.stringify(A.theme) && mod.AMB_MAINT_CSS === A.maint,
     "and stmt/statement-css.js holds them as the generator writes them, as JSON strings the page interpolates");
 
   /* 2: a scratch copy of the tool, its lock and the carried files, laid out as the repo lays them out */
@@ -58,19 +63,19 @@ export async function run({ ok }) {
       + [clean.status, edited.status, tokens.status, preview.status].join(","));
   } finally { rmSync(tmp, { recursive: true, force: true }); }
 
-  /* 3: the generator refuses a colour in Salt Admin's own layer (a scratch copy of the generator, the sync tool and design/) */
+  /* 3: the generator refuses a colour in the site's own layer (a scratch copy of the generator, the sync tool and design/) */
   const t3 = mkdtempSync(join(tmpdir(), "amb-admin-"));
   try {
     for (const rel of ["tools/stmt-style.mjs", "tools/ambientsync.mjs", "tools/ambient.lock.json", "design/ambient"]) {
       mkdirSync(dirname(join(t3, rel)), { recursive: true }); cpSync(join(REPO, rel), join(t3, rel), { recursive: true });
     }
-    writeFileSync(join(t3, "design", "admin.css"), "/* a note may say #fff */\n.adm-x { padding: var(--amb-space-2); color: var(--amb-ink-2); }\n");
+    writeFileSync(join(t3, "design", "site.css"), "/* a note may say #fff */\n.adm-x { padding: var(--amb-space-2); color: var(--amb-ink-2); }\n");
     const ok1 = (await import(pathToFileURL(join(t3, "tools", "stmt-style.mjs")).href + "?a")).ambientParts();
-    writeFileSync(join(t3, "design", "admin.css"), ".adm-x { color: #ffffff; }\n");
+    writeFileSync(join(t3, "design", "site.css"), ".adm-x { color: #ffffff; }\n");
     let refused = "";
     try { (await import(pathToFileURL(join(t3, "tools", "stmt-style.mjs")).href + "?b")).ambientParts(); } catch (e) { refused = e.message; }
-    ok(/var\(--amb-ink-2\)/.test(ok1.admin) && /names a colour/.test(refused),
-      "Salt Admin's own layer reads tokens and may mention a colour in a note, but a colour it draws is refused by the generator: " + refused);
+    ok(/var\(--amb-ink-2\)/.test(ok1.site) && /names a colour/.test(refused),
+      "the site's own layer reads tokens and may mention a colour in a note, but a colour it draws is refused by the generator: " + refused);
   } finally { rmSync(t3, { recursive: true, force: true }); }
 
   /* 4: the heat, on small books of their own (the market test's harness) */
@@ -108,4 +113,19 @@ export async function run({ ok }) {
     ok(ids.length > 0 && ids.every((p) => books[p] && ["tight", "soft", "neutral"].includes(books[p].heat) && books[p].heat === want[p]),
       "the stock document Salt Admin polls carries each book's heat, the engine's own reading in the desk's window: " + JSON.stringify(want));
   } finally { w.close(); }
+
+  /* 6: 15 Nov 2026, the move to Ambient. Lagoon's block read here on its own, out of the carried app.css */
+  const app = readFileSync(join(REPO, "design", "ambient", "app.css"), "utf8");
+  const lag = (/:root,\s*\[data-mood="lagoon"\]\s*\{([^}]*)\}/.exec(app) || ["", ""])[1];
+  const base = (k) => (new RegExp("--amb-" + k + "-base:\\s*(#[0-9a-f]{6});", "i").exec(lag) || [])[1];
+  ok(base("l") && base("d") && mod.AMB_THEME.light === base("l") && mod.AMB_THEME.dark === base("d") && base("l") !== base("d"),
+    "the browser bar's colours are Lagoon's base in light and in dark, as the carried tokens state them: " + JSON.stringify(mod.AMB_THEME));
+  const leaves = [...mod.AMB_MAINT_CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+  const strippedCss = mod.AMB_CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+  const parts = new Set(["amb", "amb-shell", "amb-screen", "amb-mesh", "amb-hero", "amb-hero__title", "amb-hero__sub"]);
+  const named = [...new Set(mod.AMB_MAINT_CSS.match(/\.[A-Za-z][\w-]*/g) || [])].map((c) => c.slice(1));
+  ok(leaves.length > 8 && leaves.every((m) => strippedCss.includes(m[2].trim())) && named.every((c) => parts.has(c))
+    && [".amb-shell{", ".amb-screen{", ".amb-mesh{", ".amb-hero{", ".amb-hero__title{", ".amb-hero__sub{"].every((x) => mod.AMB_MAINT_CSS.includes(x))
+    && mod.AMB_MAINT_CSS.length < mod.AMB_CSS.length / 10,
+    "the maintenance page's rules are ambient.css's own, whole, naming only the shell, its screen and mesh and the hero: " + leaves.length + " rules, " + mod.AMB_MAINT_CSS.length + " bytes, " + JSON.stringify(named));
 }

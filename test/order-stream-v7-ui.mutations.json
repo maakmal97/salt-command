@@ -8,8 +8,8 @@
   {
     "name": "Decline posts approve",
     "file": "stmt/owner.js",
-    "find": "de.addEventListener('click', function(){ moveJoin(r,'decline'); });\n        c._grow();",
-    "replace": "de.addEventListener('click', function(){ moveJoin(r,'approve'); });\n        c._grow();"
+    "find": "de.addEventListener('click', function(){ moveJoin(r,'decline'); });\n        tr.appendChild(ap);",
+    "replace": "de.addEventListener('click', function(){ moveJoin(r,'approve'); });\n        tr.appendChild(ap);"
   },
   {
     "name": "Withdraw posts decline",
@@ -146,14 +146,14 @@
   {
     "name": "Copy link on every join",
     "file": "stmt/page.js",
-    "find": "      if(r.state==='open'){\n        var acts=el('div','racts'), cp=el('button','salt-ghost',tw('lnk.copy'));",
-    "replace": "      if(true){\n        var acts=el('div','racts'), cp=el('button','salt-ghost',tw('lnk.copy'));"
+    "find": "      if(r.state==='open'){\n        var acts=el('div','amb-cluster'), cp=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.copy'));",
+    "replace": "      if(true){\n        var acts=el('div','amb-cluster'), cp=el('button','amb-pill amb-pill--quiet amb-pill--sm',tw('lnk.copy'));"
   },
   {
     "name": "Copy puts the id on the clipboard",
     "file": "stmt/page.js",
-    "find": "\n          try{ await navigator.clipboard.writeText(r.url); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }\n          setTimeout",
-    "replace": "\n          try{ await navigator.clipboard.writeText(r.id); cp.textContent=tw('lnk.copied'); }catch(e){ cp.textContent=tw('lnk.copyFail'); }\n          setTimeout"
+    "find": "await navigator.clipboard.writeText(r.url);",
+    "replace": "await navigator.clipboard.writeText(r.id);"
   },
   {
     "name": "the open state reads Open",
@@ -182,8 +182,8 @@
   {
     "name": "the card shows a link id",
     "file": "stmt/page.js",
-    "find": "top.appendChild(el('p','gh',r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours')));\n      top.appendChild(el('span','gstate salt-status salt-status--'+(r.state==='open'",
-    "replace": "top.appendChild(el('p','gh',r.id+(r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours'))));\n      top.appendChild(el('span','gstate salt-status salt-status--'+(r.state==='open'"
+    "find": "title:r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours'),",
+    "replace": "title:r.id+(r.made?tw('jn.made',{d:Dd(oDay,r.made)}):tw('jn.yours')),"
   },
   {
     "name": "Withdraw on a used link too",

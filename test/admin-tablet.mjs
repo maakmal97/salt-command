@@ -14,15 +14,15 @@
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct, drawEverything } from "./maker-act.mjs";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { SITE_CSS } from "../stmt/statement-css.js";
 
 /* the owner page's own stylesheet, read as rules, by query (spaces taken out) and selector (a list is written "a,b"). It starts where PAGE_CSS says the owner page's rules begin: what
    comes before is the customer's, which has its own rules at 768px and 860px (test/counter-tablet.mjs) */
 const OWNER_MARK = "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S";
 export function ownerCss() {
   const html = landingPage("", "tablet-nonce", { master: "fixture-master", accounts: [] });
-  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice(SITE_STYLE.length);   /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's and the site's */
   const from = all.indexOf(OWNER_MARK), css = from < 0 ? "" : all.slice(all.lastIndexOf("/*", from));
   const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
   const sel = (r) => r.selectorText.replace(/\s*,\s*/g, ",");
@@ -41,44 +41,32 @@ export async function run({ ok, pageWork }) {
     const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859|371)\.98px/.test(m.q));
     const sels = fam.flatMap((m) => m.rules.map((r) => r.sel));
     const loose = sels.filter((s) => s.split(",").some((x) => !/\.adm\b/.test(x)));
-    ok(from > 0 && sels.length >= 30 && !loose.length,
+    ok(from > 0 && sels.length >= 10 && !loose.length,   /* 16 Nov 2026, the merge of places F and H: both retired rules of the 860px widths, 14 are left */
       "every rule of his page at 768px, 860px, 372px and the widths below them is under .adm, which the customer's page shares this stylesheet without (the rules before the one that marks where his begin are the customer's own, test/counter-tablet.mjs): "
         + sels.length + " rules, outside .adm: " + (loose.join(" | ") || "none") + ", marker found: " + (from > 0));
   }
 
   /* 2. NEEDS YOU AND CUSTOMERS: A LIST AND A DETAIL FROM 860px */
   {
-    /* 2 Nov 2026 (Customers on the canvas): Customers' list takes the whole width until an account is open; only then does the account stand beside it, up to 440px */
-    const grid = at("(min-width:860px)", ".adm .nsplit,.adm .asplit"), cols = at("(min-width:860px)", ".adm .nsplit,.adm #oAccts.open .asplit"), alone = at("(min-width:860px)", ".adm .asplit"), pane = at("(min-width:860px)", ".adm #nopen,.adm #aopen");
-    ok(/display: grid/.test(grid) && /grid-template-columns: minmax\(0,1fr\) minmax\(0,440px\)/.test(cols) && /grid-template-columns: minmax\(0,1fr\)(;|$)/.test(alone),
-      "from 860px Needs you stands its list and card side by side and Customers does once an account is open, the account up to 440px, the list alone across the page before: " + [grid, cols, alone].join(" | "));
-    /* 5 Nov 2026 (the frame): sticky 24px down only to 1080px, where the App bar still stands; from 1080px the account is the frame's pane (salt-pane), held to the column's top */
-    const band2 = at("(min-width:860px)and(max-width:1079.98px)", ".adm #nopen,.adm #aopen");
-    ok(/overflow-y: auto/.test(pane) && /position: sticky/.test(band2) && /top: 24px/.test(band2) && d.getElementById("aopen").classList.contains("salt-pane") && d.getElementById("nopen").classList.contains("salt-pane"),
-      "the account is sticky and scrolls inside itself: " + pane + " | " + band2);
-    const band = at("(min-width:860px)and(max-width:1079.98px)", ".adm #nopen,.adm #aopen");
-    ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band),
-      "between 860 and 1080px, where the App bar is still fixed, the account's height gives up the bar's: " + band);
-    const back = at("(min-width:860px)", ".adm #aopen [data-back]"), phone = at("(max-width:859.98px)", ".adm #nopen"), shut = at("(max-width:859.98px)", ".adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount");
-    ok(/display: none/.test(back) && /display: none/.test(phone) && /display: none/.test(shut),
-      "from 860px the way back is not drawn; below it Needs you draws no pane and an account open takes the list's place: " + [back, phone, shut].join(" | "));
-    /* 26 Oct 2026 (his yes to the Customers plan's Ask C): from 1080px an OPEN account fills the page in columns, as an open order does; Needs you's pane still waits for
-       nothing, and every Customers rule at 1080px is the open account's (#oAccts.open, or the account's own sections inside #aopen) */
+    /* 16 Nov 2026, the move to Ambient (place H): Customers is Ambient's two panes (the list and the open account); Needs you's card is drawn by place F */
+    ok(d.querySelector("#oAccts > .asplit").classList.contains("amb-split--panes") && !at("(min-width:860px)", ".adm .asplit") && !at("(min-width:860px)", ".adm #aopen"),
+      "Customers' list and account are Ambient's two panes, the page keeping no rule of its own for them");
+    const css = SITE_STYLE.replace(/\s+/g, " ");
+    ok(/@container amb \(min-width: 960px\) \{ \.aback \{ display: none; \} \}/.test(css) && /@container amb \(max-width: 959px\) \{ #oAccts\.open \.afind, #oAccts\.open #rlist,[^}]*display: none; \}/.test(css),
+      "from 960px the way back is not drawn; below it an account open takes the list's place");
+    ok(/@media \(max-width: 959px\) \{ #nrecord:not\(:has\(> #nopen:not\(\[hidden\]\)\)\) \{ display: none; \} \}/.test(SITE_CSS), "Needs you draws no column for a card that is not open, below 960px");
     const rail = media.filter((m) => /1080px|1079[.]98px/.test(m.q) && !/860px/.test(m.q)).flatMap((m) => m.rules.map((r) => r.sel)).filter((s) => /nopen|aopen|nsplit|asplit|oAccts/.test(s));
-    const needs = rail.filter((s) => /nopen|nsplit/.test(s)), loose = rail.filter((s) => !/nopen|nsplit/.test(s)).filter((s) => s.split(",").some((x) => !/#oAccts[.]open|#aopen [.]oacct/.test(x)));
-    ok(!needs.length && !loose.length && rail.some((s) => /#oAccts[.]open/.test(s)),
-      "Needs you's pane waits for nothing at 1080px, and every Customers rule there is the open account's: " + (needs.concat(loose).join(" | ") || "none astray"));
+    ok(!rail.some((s) => /aopen|asplit|oAccts/.test(s)), "Needs you's pane waits for nothing at 1080px, and the page keeps no Customers rule there: " + (rail.join(" | ") || "none"));
   }
 
   /* 3. NOTHING OPENS BY ITSELF: TAP A CARD */
   {
-    const base = top(".adm .panenone"), wide = at("(min-width:860px)", ".adm .panenone"), open = at("(min-width:860px)", ".adm #nopen:not([hidden])~.panenone");
-    ok(/display: none/.test(base) && /display: block/.test(wide) && /display: none/.test(open),
-      "the invitation is not drawn on a phone, drawn beside the list from 860px, and not drawn beside an account that is open: " + [base, wide, open].join(" | "));
+    ok(/\.panenone \{ display: none; margin: 0;/.test(SITE_CSS) && /@media \(min-width: 960px\) \{ \.panenone \{ display: block; \} #nopen:not\(\[hidden\]\) ~ \.panenone \{ display: none; \} \}/.test(SITE_CSS),
+      "the invitation is not drawn on a phone, drawn beside the list from 960px (Ambient's split), and not drawn beside a card that is open");
     const kids = (id) => [...d.getElementById(id).parentElement.children].map((c) => c.id || c.className).join("|");
     const words = [...d.querySelectorAll(".panenone")].map((p) => p.textContent);
     /* 2 Nov 2026 (Customers on the canvas): Customers' column holds the list and the account's pane and no invitation, so the table takes the width until an account is open */
-    ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "rlist|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
+    ok(kids("nopen") === "nopen|rnone panenone" && kids("aopen") === "anone|aopen" && words.length === 1 && words.every((w) => w === "Choose a card to see it in full."),
       "Needs you's column holds the list, the card's pane and then the invitation, which says Choose a card to see it in full, and Customers' holds the list and the account's pane alone: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
   }
 
@@ -95,21 +83,22 @@ export async function run({ ok, pageWork }) {
     const rest = [...props].filter((x) => !free.includes(x));
     ok(props.size >= 9 && !rest.length, "and it writes placement only, no colour, no type and no surface: " + [...props].join() + (rest.length ? " | not placement: " + rest : ""));
     const mine = (h) => new JSDOM(h).window.document;
-    const lone = mine(landingPage("", "n", null)).getElementById("lookSheet");
+    /* 15 Nov 2026, the move to Ambient: the look's choice Sheet is gone from both pages (light and dark follow the device) */
+    const lone = mine(landingPage("", "n", null));
     const own = (e) => !!e && e.classList.contains("adm") && e.classList.contains("asheet");
-    ok(own(d.getElementById("lookSheet")) && own(d.getElementById("vaultSheet")) && !!lone && !lone.classList.contains("adm") && !lone.classList.contains("asheet"),
-      "the choice and unlock sheets of Salt Admin carry .adm and .asheet beside .salt-sheet, and the customer's choice sheet carries neither: " + d.getElementById("lookSheet").className + " | " + (lone && lone.className));
+    ok(own(d.getElementById("vaultSheet")) && !d.getElementById("lookSheet") && !lone.getElementById("lookSheet") && !lone.getElementById("vaultSheet"),
+      "the unlock sheet of Salt Admin carries .adm and .asheet beside .salt-sheet, the customer's page draws none, and neither draws a look Sheet: " + d.getElementById("vaultSheet").className);
     const p = await richOwnerPage({ pageWork });
     try {
       await p.work.quiet();
       const page = p.d, tap = async (act, key) => { const c = byAct(page, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
       await tap("nav.orders"); await tap("order.open", "ord-p1"); await tap("order.decline", "ord-p1");
       const yn = page.getElementById("ynSheet");
-      ok(!!yn && yn.classList.contains("salt-sheet") && own(yn), "the sheet that asks Yes or No on Salt Admin carries .adm and .asheet: " + (yn && yn.className));
+      ok(!!yn && yn.tagName === "DIALOG" && yn.classList.contains("amb-sheet") && own(yn), "the sheet that asks Yes or No on Salt Admin carries .adm and .asheet: " + (yn && yn.className));
       await tap("order.ask-keep", "ord-p1");
       await tap("nav.customers"); await tap("part.customers.accounts"); await tap("acct.open", "abcd-efgh"); await tap("acct.show-code");
-      const ho = page.querySelector(".salt-sheet.ho");
-      ok(own(ho), "so does the sheet that shows a sign-in code: " + (ho && ho.className));
+      const ho = page.querySelector("dialog.amb-sheet.ho");
+      ok(!!ho && !!ho.querySelector(".amb-codeframe__field > svg.amb-codeframe__code"), "the sheet that shows a sign-in code is the system's dialog, its code in the code frame: " + (ho && ho.className));
     } catch (e) { ok(false, "the sheets stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 
@@ -117,9 +106,10 @@ export async function run({ ok, pageWork }) {
   {
     const q = "(min-width:768px)and(max-width:859.98px)";
     const col = at(q, ".gate.adm"), grid = at(q, ".adm .maker-input"), full = at(q, ".adm .maker-input>*"), short = at(q, ".adm .maker-input>.maker-field--short");
-    ok(/max-width: 620px/.test(col), "from 768 to 859px the column is 620px, centred by the shell's own auto margins: " + col);
-    ok(/display: grid/.test(grid) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(grid) && /grid-column: 1 ?\/ ?-1/.test(full) && /grid-column: auto/.test(short),
-      "a form is two columns there, a short field takes one and anything else across both: " + [grid, full, short].join(" | "));
+    /* 15 Nov 2026, the move to Ambient: his shell is Ambient's, which lays itself out by its own width; the page no longer sizes a column there */
+    ok(!col && !at(q, "#roster") && !at(q, ".adm"), "from 768 to 859px the page sizes no column of its own, the shell laying itself out: " + col);
+    /* 16 Nov 2026, the move to Ambient (place I): a Record form is Ambient's stack of fields, one column; the page lays none out */
+    ok(!grid && !full && !short, "a form is Ambient's stack of fields there, the page laying out no column of its own: " + [grid, full, short].join(" | "));
     const rules = media.filter((m) => m.q === q).flatMap((m) => m.rules.map((r) => r.sel));
     ok(!rules.filter((s) => /need|nlist|ordrow|ordlist|makerOrderList|nopen|aopen/.test(s)).length && !at("(min-width:860px)", ".adm .maker-input"),
       "Needs you cards and order rows keep one column there, and a form beside its menu from 860px keeps its own: " + rules.join(" | "));
@@ -136,7 +126,7 @@ export async function run({ ok, pageWork }) {
         const form = page.querySelector('section.maker-input[data-form="' + slug + '"]');
         if (form) record.push(form);
       }
-      const rowsOk = record.length === 2 && record.every((f) => ![...f.children].some((c) => c.matches("label.maker-field")) && f.querySelectorAll(".salt-settings.maker-list > label.salt-settings__row").length >= 5
+      const rowsOk = record.length === 2 && record.every((f) => ![...f.children].some((c) => c.matches("label.maker-field")) && f.querySelectorAll(":scope > label.amb-field, :scope > div.amb-field").length >= 5
         && !f.querySelector(".maker-field--short"));
       const every = await richOwnerPage({ pageWork, slip: true, probe: true });
       let fields = [];
@@ -146,27 +136,24 @@ export async function run({ ok, pageWork }) {
       /* v1377: Order for them's own box, the one form outside Record with a marked field and a text field, is gone (it opens their page), so
          what holds is that any field marked short is a number, a date or a time */
       ok(rowsOk && marked.every((f) => SHORT.includes(kind(f))) && !others.some((f) => f.classList.contains("maker-field--short")),   /* the cards also hand-build a few number fields that carry no mark */
-        "the sale and new customer forms are rows of lists with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
-    } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+        "the sale and new customer forms are Ambient's fields with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
+    } catch (e) { ok(false, "the form stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   }
 
   /* 6. FROM 1080px, THE LAPTOP: Shop is one column of 760px, the rows to approve lie two up, and Messages stands the thread beside the thread list */
   {
     const q = "(min-width:1080px)";
-    const shop = at(q, ".adm #oShop"), wide = at(q, ".adm #oOrders>.abody>#oApprove"), narrow = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove");
-    ok(/max-width: 760px/.test(shop) && /max-width: none/.test(wide) && /max-width: 600px/.test(narrow),
-      "from 1080px Shop is one column of 760px and the rows to approve have the width for two, and from 860px they keep their 600px column: " + [shop, wide, narrow].join(" | "));
-    const two = at(q, ".adm #makerDrafts"), card = at(q, ".adm #makerDrafts>.maker-card"), note = at(q, ".adm #makerDrafts>.rnone");
-    ok(/display: grid/.test(two) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(two) && /margin: 0/.test(card) && /grid-column: 1 ?\/ ?-1/.test(note),
-      "and the rows to approve lie two up, a row's own margin giving way to the grid's gap and the line that says none wait across both: " + [two, card, note].join(" | "));
-    const shut = at(q, ".adm .chatgrid"), chat = at(q, ".adm .chatgrid.open"), heads = at(q, ".adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus"), list = at(q, ".adm #makerChatList"), open = at(q, ".adm #makerChatOpen");
-    ok(/display: grid/.test(shut) && /grid-template-columns: minmax\(0(px)?, ?640px\)/.test(shut) && /grid-template-columns: minmax\(280px, ?360px\) minmax\(0, ?1fr\)/.test(chat) && /grid-column: 1 ?\/ ?-1/.test(heads) && /flex-direction: column/.test(list)
-      /* 5 Nov 2026 (the frame): the thread is the frame's pane (salt-pane), so the page keeps no sticky rule of its own for it */
-      && !open && d.getElementById("makerChatOpen").classList.contains("salt-pane"),
-    "Messages gives the list a 640px column until a thread opens (5 Nov 2026), then stands it, 280 to 360px, beside the thread, which is sticky and scrolls inside itself: " + [shut, chat, heads, list, open].join(" | "));
-    const sec = d.querySelector('section[data-in="customers.messages"]');
-    ok(!!sec && sec.classList.contains("chatgrid") && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join() === "makerChatTitle,makerChatStatus,makerChatList,makerChatOpen" && sec.querySelector("#makerChatOpen").hidden,
-      "the thread list and the thread are two columns of one section, the thread empty until a tap: " + (sec && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join()));
+    const shop = at(q, ".adm #oShop");
+    ok(!shop, "from 1080px the page sizes no Shop column (Ambient's panes lay it out): " + shop);
+    /* 16 Nov 2026, the move to Ambient (place F): the rows to approve are Ambient's stack (one column, the gutter the stack's), the page keeping no width or grid of its own for them */
+    ok(!at(q, ".adm #makerDrafts") && !at(q, ".adm #oOrders>.abody>#oApprove") && /\.apstack \{ display: grid; gap: var\(--amb-space-3\); \}/.test(SITE_CSS) && !!d.querySelector("#oApprove.amb-stack #makerDrafts.apstack"),
+      "and the rows to approve are Ambient's stack, a card one under the other, the page setting no width or grid for them");
+    /* 16 Nov 2026, the move to Ambient (place H): Messages is a notice over Ambient's two panes, the threads and the open thread, the page keeping no rule of its own for them */
+    ok(!at(q, ".adm .chatgrid") && !at(q, ".adm #makerChatList") && !at(q, ".adm #makerChatOpen") && !!d.querySelector('[data-in="customers.messages"] > .amb-split--panes'),
+      "Messages' threads and thread are Ambient's two panes, and the page writes no column of its own for them");
+    const sec = d.querySelector('[data-in="customers.messages"]');
+    ok(!!sec && sec.classList.contains("chatgrid") && [...sec.querySelectorAll("#makerChatList, #chatside, #makerChatOpen")].map((c) => c.id).join() === "makerChatList,chatside,makerChatOpen" && sec.querySelector("#makerChatOpen").hidden,
+      "the thread list and the thread are two panes of one place, the thread empty until a tap");
     const p = await richOwnerPage({ pageWork });
     try {
       await p.work.quiet();
@@ -174,7 +161,7 @@ export async function run({ ok, pageWork }) {
       await tap("nav.customers"); await tap("part.customers.messages");
       const room = page.getElementById("makerChatOpen"), before = room.hidden && room.textContent === "";
       await tap("chat.open", "abcd-efgh");
-      ok(before && !room.hidden && room.getAttribute("data-key") === "abcd-efgh" && room.parentElement === page.querySelector('section[data-in="customers.messages"]') && ![...page.querySelectorAll(".salt-sheet")].some((x) => !x.hidden && x.id !== "lookSheet"),
+      ok(before && !room.hidden && room.getAttribute("data-key") === "abcd-efgh" && !!room.closest('[data-in="customers.messages"]') && !page.querySelector("dialog[open]"),
         "a thread opens in its own place in the section, beside the list from 1080px and never in a Sheet, and nothing was open before the tap: " + [before, room.hidden, room.getAttribute("data-key")]);
     } catch (e) { ok(false, "Messages stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
@@ -182,9 +169,8 @@ export async function run({ ok, pageWork }) {
   /* 7. SHOP'S HOURS FIT A PHONE OF 320px (20 Oct 2026, canvas V63): the week chart's row is the day's name, a track that takes what is left and the
      times, so a 288px column holds it with room for the track; the table and its narrow-phone rules are gone */
   {
-    const row = (top(".adm .maker-week-scale,.adm .maker-day").match(/grid-template-columns:([^;]*)/) || [])[1] || "";
-    const fixed = (row.replace(/minmax\([^)]*\)/, "").match(/[0-9]+px/g) || []).reduce((s, x) => s + parseInt(x, 10), 0);
-    ok(/minmax\(0(px)?, ?1fr\)/.test(row) && fixed > 0 && fixed + 2 * 12 + 16 <= 288 - 60 && !/maker-hours/.test(html),
-      "the week chart's row fits a 320px phone's column with room for its track, and the table's rules are gone: " + row);
+    const row = (html.match(/\.amb-week__day \{[^}]*?grid-template-columns: ([^;]*);/) || [])[1] || "";
+    ok(/minmax\(0(px)?, ?1fr\)/.test(row) && /var\(--amb-week-name\)/.test(row) && !/maker-hours/.test(html) && !/[.]maker-day[{ ,.:]/.test(html),
+      "the week of spans takes its name column from Ambient's token and gives its bar what is left, so a 288px column holds it with room for the bar, and the table's rules are gone: " + row);
   }
 }

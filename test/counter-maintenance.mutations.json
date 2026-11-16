@@ -30,76 +30,16 @@
   "replace": "until"
  },
  {
-  "name": "the page carries no ring",
-  "file": "stmt/maintenance.js",
-  "find": "\"</style></head><body><main>\" + RING\n",
-  "replace": "\"</style></head><body><main>\"\n"
- },
- {
-  "name": "the ring stands under the heading",
-  "file": "stmt/maintenance.js",
-  "find": "\"</style></head><body><main>\" + RING\n  + \"<h1>\" + esc(EN[\"maint.h\"]) + \"</h1><p>\"",
-  "replace": "\"</style></head><body><main>\"\n  + \"<h1>\" + esc(EN[\"maint.h\"]) + \"</h1>\" + RING + \"<p>\""
- },
- {
-  "name": "the ring is not the app's",
-  "file": "stmt/maintenance.js",
-  "find": "A7.8 7.8 0 1 1 11.99 4.2 Z",
-  "replace": "A7.8 7.8 0 1 1 11.99 4.3 Z"
- },
- {
-  "name": "the page has no heading",
-  "file": "stmt/maintenance.js",
-  "find": "\"<h1>\" + esc(EN[\"maint.h\"]) + \"</h1><p>\"",
-  "replace": "\"<p>\""
- },
- {
-  "name": "the text is dimmer than the system's",
-  "file": "stmt/maintenance.js",
-  "find": "soft: \"#a4bbbf\"",
-  "replace": "soft: \"#4a5a5e\""
- },
- {
-  "name": "the ring is not Tide's brass",
-  "file": "stmt/maintenance.js",
-  "find": "accent: \"#7fd1c0\"",
-  "replace": "accent: \"#c5a059\""
- },
- {
-  "name": "a corner glow is not Tide's",
-  "file": "stmt/maintenance.js",
-  "find": "glow: \"98,182,204\"",
-  "replace": "glow: \"98,182,205\""
- },
- {
   "name": "the page runs a script",
   "file": "stmt/maintenance.js",
   "find": "<meta charset=\"utf-8\"><meta name=\"google\"",
   "replace": "<meta charset=\"utf-8\"><script></script><meta name=\"google\""
  },
  {
-  "name": "the page loads a stylesheet",
-  "file": "stmt/maintenance.js",
-  "find": "<meta name=\"theme-color\" content=\"' + TIDE.ground + '\">'",
-  "replace": "<meta name=\"theme-color\" content=\"' + TIDE.ground + '\"><link rel=\"stylesheet\" href=\"/s.css\">'"
- },
- {
-  "name": "the page is open to the translator",
-  "file": "stmt/maintenance.js",
-  "find": "<html lang=\"en-GB\" translate=\"no\" data-theme=\"tide\"><head><meta charset=\"utf-8\"><meta name=\"google\" content=\"notranslate\">",
-  "replace": "<html lang=\"en-GB\" data-theme=\"tide\"><head><meta charset=\"utf-8\">"
- },
- {
   "name": "the page has no viewport",
   "file": "stmt/maintenance.js",
   "find": "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">",
   "replace": ""
- },
- {
-  "name": "the words are not escaped",
-  "file": "stmt/maintenance.js",
-  "find": "\"</h1><p>\" + esc(text) + \"</p>",
-  "replace": "\"</h1><p>\" + text + \"</p>"
  },
  {
   "name": "MAINTENANCE_TEXT no longer wins",
@@ -166,5 +106,77 @@
   "file": "stmt/words.js",
   "find": "\"maint.on\": \"Back on {d} at {t}\",",
   "replace": "\"maint.on\": \"Back {d} at {t}\","
+ },
+ {
+  "name": "the page has no heading",
+  "file": "stmt/maintenance.js",
+  "find": "'<h1 class=\"amb-hero__title\">' + esc(EN[\"maint.h\"]) + '</h1>",
+  "replace": "'"
+ },
+ {
+  "name": "the words are not escaped",
+  "file": "stmt/maintenance.js",
+  "find": "<p class=\"amb-hero__sub\">' + esc(text) + \"</p>",
+  "replace": "<p class=\"amb-hero__sub\">' + text + \"</p>"
+ },
+ {
+  "name": "the page loads a stylesheet",
+  "file": "stmt/maintenance.js",
+  "find": "<meta name=\"color-scheme\" content=\"light dark\">'",
+  "replace": "<meta name=\"color-scheme\" content=\"light dark\"><link rel=\"stylesheet\" href=\"/s.css\">'"
+ },
+ {
+  "name": "the page is open to the translator",
+  "file": "stmt/maintenance.js",
+  "find": "<html lang=\"en-GB\" translate=\"no\"><head><meta charset=\"utf-8\"><meta name=\"google\" content=\"notranslate\">",
+  "replace": "<html lang=\"en-GB\"><head><meta charset=\"utf-8\">"
+ },
+ {
+  "name": "the page is held to Night",
+  "file": "stmt/maintenance.js",
+  "find": "<html lang=\"en-GB\" translate=\"no\">",
+  "replace": "<html lang=\"en-GB\" translate=\"no\" data-theme=\"dark\">"
+ },
+ {
+  "name": "the page says it is dark only",
+  "file": "stmt/maintenance.js",
+  "find": "<meta name=\"color-scheme\" content=\"light dark\">",
+  "replace": "<meta name=\"color-scheme\" content=\"dark\">"
+ },
+ {
+  "name": "the browser bar is one colour",
+  "file": "stmt/maintenance.js",
+  "find": "<meta name=\"theme-color\" media=\"(prefers-color-scheme: dark)\" content=\"' + AMB_THEME.dark + '\">",
+  "replace": "<meta name=\"theme-color\" media=\"(prefers-color-scheme: dark)\" content=\"' + AMB_THEME.light + '\">"
+ },
+ {
+  "name": "the shell is not at rest",
+  "file": "stmt/maintenance.js",
+  "find": "<div class=\"amb-shell\" data-mood=\"slate\">",
+  "replace": "<div class=\"amb-shell\" data-mood=\"flare\">"
+ },
+ {
+  "name": "the hero is not on the mesh",
+  "file": "stmt/maintenance.js",
+  "find": "<header class=\"amb-hero amb-mesh\">",
+  "replace": "<header class=\"amb-hero\">"
+ },
+ {
+  "name": "the page writes a colour of its own",
+  "file": "stmt/maintenance.js",
+  "find": "\"</title><style>\" + CSS + '</style>",
+  "replace": "\"</title><style>\" + CSS + \"h1{color:#ff0000}\" + '</style>"
+ },
+ {
+  "name": "the page carries the whole of ambient.css",
+  "file": "stmt/maintenance.js",
+  "find": "const CSS = (AMB_TOKENS + AMB_MAINT_CSS)",
+  "replace": "const CSS = (AMB_TOKENS + AMB_MAINT_CSS + \".amb-pill{border:0}\")"
+ },
+ {
+  "name": "the page keeps the comments",
+  "file": "stmt/maintenance.js",
+  "find": "const CSS = (AMB_TOKENS + AMB_MAINT_CSS).replace(/\\/\\*[\\s\\S]*?\\*\\//g, \"\");",
+  "replace": "const CSS = (AMB_TOKENS + AMB_MAINT_CSS);"
  }
 ]

@@ -16,6 +16,7 @@
 import { webcrypto } from "node:crypto";
 import { surface } from "./test-surface-harness.mjs";
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   const P = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
@@ -98,8 +99,7 @@ export async function run({ ok, pageWork }) {
       "A write that went through in one pane is told on the channel, and the other pane re-reads at once: " + JSON.stringify([before, A.seen.paths.filter((p) => p === "GET /all/test/c/orders").length]));
 
     /* ---- 3: storage, over a sign-in and a sign-out (two taps), which drops this phone's remembered account and seen marks */
-    /* 26 Oct 2026, his word: the look is one Switch, greyed while Tide is off; a forced tap on it writes nothing outside this pane */
-    { const sw = B.d.querySelector('#lookRow .salt-switch[data-look="tide"]'); sw.disabled = false; sw.click(); }
+    /* 15 Nov 2026, the move to Ambient: the look's switch is gone (light and dark follow the device), so there is no look to tap here */
     B.d.getElementById("lock").click(); B.d.getElementById("lock").click();
     await until(() => !B.d.getElementById("gate").hidden, 40);
     /* 26 Oct 2026: the look tap no longer writes (Tide is off), so the writes are the sign-out's removals alone */
@@ -131,19 +131,19 @@ export async function run({ ok, pageWork }) {
     wins.push(adm.window);
     const ad = adm.window.document, tick = () => new Promise((r) => setTimeout(r, 60));
     await until(() => calls.length >= 3); await awork.quiet();
-    const places = [...ad.querySelectorAll("nav.salt-rail .place")].map((b) => b.textContent.trim());
+    const places = [...ad.querySelectorAll(".amb-tabbar .place")].map((b) => b.textContent.trim());
     /* 2 Nov 2026 (Orders on the canvas): Orders' parts are the Segment of four and, under More, the Payments row */
     const parts = [...ad.querySelectorAll(".aparts [data-part], .amore__list [data-part]")].map((b) => b.parentNode.getAttribute("data-place") + "." + b.getAttribute("data-part"));
     adm.window.location.hash = "#record"; await tick();
-    const onRecord = [...ad.querySelectorAll('nav.salt-rail .place[aria-current="page"]')].map((b) => b.textContent.trim());
+    const onRecord = [...ad.querySelectorAll('.amb-tabbar .place[aria-current="page"]')].map((b) => b.textContent.trim());
     ok(JSON.stringify(places) === JSON.stringify(["Needs you", "Orders", "Payments", "Chat"]) && !ad.getElementById("oAdd")
       && !parts.some((x) => /approve|group|ledger|accounts|links|associates|record\.|shop\./.test(x)) && parts.includes("orders.payments") && parts.includes("customers.messages")
       && JSON.stringify(onRecord) === JSON.stringify(["Needs you"]),
       "Salt Admin in test draws Needs you, Orders, Payments and Chat, no Record, Shop, Approve, account list, links or + orb, and #record lands on Needs you: " + JSON.stringify([places, parts, onRecord]));
-    ad.querySelector('nav.salt-rail .place[data-p="payments"]').click(); await tick();
+    ad.querySelector('.amb-tabbar .place[data-p="payments"]').click(); await tick();
     const onPay = ["payments"].filter((k) => { const sec = ad.querySelector('[data-in="orders.' + k + '"]'); return !!sec && !sec.hidden; });
-    ad.querySelector('nav.salt-rail .place[data-p="messages"]').click(); await tick();
-    ad.querySelector('nav.salt-rail .place[data-m="orders"]:not([data-p])').click(); await tick();
+    ad.querySelector('.amb-tabbar .place[data-p="messages"]').click(); await tick();
+    ad.querySelector('.amb-tabbar .place[data-m="orders"]:not([data-p])').click(); await tick();
     const reads = [...new Set(calls.map((c) => c[0]))];
     ok(reads.length >= 3 && reads.every((p) => /^\/all\/test\/maker\/(review|claims|threads|stock)$/.test(p)) && JSON.stringify(onPay) === '["payments"]' && ad.getElementById("nFail").hidden,
       "Salt Admin in test reads only the examples' orders, payments, chats and stock (the glance's fixed example, 21 Oct 2026) under /all/test/maker, and Payments opens its part: " + JSON.stringify([reads, onPay]));

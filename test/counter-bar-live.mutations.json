@@ -1,12 +1,10 @@
 [
- {"name":"the header is not the bar","file":"stmt/page.js","find":"(owner ? \"\" : \" salt-deskbar cbar\")","replace":"\"\""},
- {"name":"no chips in the header","file":"stmt/page.js","find":"<div class=\"salt-deskbar__chips\" id=\"cBarChips\"","replace":"<div class=\"salt-deskbar__chips\" id=\"cBarChipsGone\""},
- {"name":"Orders counts every order","file":"stmt/page.js","find":"tot=invTotal(lines), n=orders.filter(oNeeds).length,","replace":"tot=invTotal(lines), n=orders.length+1,"},
- {"name":"To pay now has no figure","file":"stmt/page.js","find":"parts.push(['pay','now',tw('pay.now'),rm(tot)]);","replace":"parts.push(['pay','now',tw('pay.now'),'']);"},
- {"name":"To pay now never drawn","file":"stmt/page.js","find":"if(tot>0.004) parts.push(['pay'","replace":"if(false) parts.push(['pay'"},
- {"name":"a chip has no act","file":"stmt/page.js","find":"b.setAttribute('data-act','bar.'+x[0]); ","replace":""},
- {"name":"a chip goes nowhere","file":"stmt/page.js","find":"else placeShow(x[0]==='pay'?'home':'order',true); });","replace":"});"},
- {"name":"Pay opens Orders","file":"stmt/page.js","find":"placeShow(x[0]==='pay'?'home':'order',true)","replace":"placeShow('order',true)"},
- {"name":"nothing waiting still draws","file":"stmt/page.js","find":"    if(n) parts.push(['order'","replace":"    parts.push(['order'"},
- {"name":"his view gets the customer bar","file":"stmt/page.js","find":"    + (owner ? \"\" : '<div class=\"salt-deskbar__live\"><div class=\"salt-deskbar__chips\"","replace":"    + ('<div class=\"salt-deskbar__live\"><div class=\"salt-deskbar__chips\""}
+ {"name":"the place is not the hero's title","file":"stmt/page.js","find":"wt(\"h1\", 'class=\"amb-hero__title\" id=\"placeT\"', \"place.home\")","replace":"wt(\"h1\", 'class=\"chead\" id=\"placeT\"', \"place.home\")"},
+ {"name":"the count never reaches the tab","file":"stmt/page.js","find":"function(c){ tabCount(c,c.getAttribute('data-n')==='order'?n:0); });","replace":"function(c){ tabCount(c,0); });"},
+ {"name":"the count is read out twice","file":"stmt/page.js","find":"'<span class=\"amb-tab__count\" data-n=\"' + t + '\" aria-hidden=\"true\" hidden></span>","replace":"'<span class=\"amb-tab__count\" data-n=\"' + t + '\" hidden></span>"},
+ {"name":"every place counts the orders","file":"stmt/page.js","find":"function(c){ tabCount(c,c.getAttribute('data-n')==='order'?n:0); });","replace":"function(c){ tabCount(c,n); });"},
+ {"name":"the tab's name keeps a count","file":"stmt/page.js","find":"if(c.textContent!==t) c.textContent=t;","replace":"if(c.textContent!==t) c.textContent=t; if(!n&&tab) tab.setAttribute('data-word',(tab.getAttribute('data-word')||'')+', 0 waiting');"},
+ {"name":"the tab opens Home","file":"stmt/page.js","find":"    var b=ev.target.closest('button[data-t]'); if(b) placeShow(b.getAttribute('data-t'),true);","replace":"    var b=ev.target.closest('button[data-t]'); if(b) placeShow('home',true);"},
+ {"name":"the chips come back","file":"stmt/page.js","find":"    + '<div id=\"barw\" class=\"amb-stack\" hidden>'","replace":"    + '<div id=\"cBarChips\"></div><div id=\"barw\" class=\"amb-stack\" hidden>'"},
+ {"name":"a nought is drawn","file":"stmt/page.js","find":"if(c.hidden!==!n) c.hidden=!n;","replace":"if(c.hidden) c.hidden=false;"}
 ]

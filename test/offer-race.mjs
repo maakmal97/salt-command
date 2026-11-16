@@ -326,7 +326,7 @@ export async function run({ ok, skip, pageWork }) {
       };
     } });
     try {
-      const w = dom.window, d = w.document, yes = (sc) => sc && [...sc.querySelectorAll(".oprice button")].find((x) => x.className.includes("salt-pill"));
+      const w = dom.window, d = w.document, yes = (sc) => sc && [...sc.querySelectorAll(".oprice button")].find((x) => x.className.includes("amb-pill") && !x.className.includes("amb-pill--quiet"))   /* 16 Nov 2026, the move to Ambient: the Yes is the small solid pill, No thanks the quiet one */;
       d.getElementById("un").value = U; d.getElementById("pw").value = PASS;
       d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
       await wait(() => d.querySelector('#pOrder [data-row="' + P + '"]'));

@@ -2,8 +2,8 @@
   {
     "name": "the bar adds a delivery",
     "file": "stmt/page.js",
-    "find": "rm(+sum.toFixed(2)),bco.any?",
-    "replace": "rm(+(sum+(w&&w.mode==='deliver'?12:0)).toFixed(2)),bco.any?"
+    "find": "rm(+sum.toFixed(2)));\n    st.appendChild(el('span','amb-stat__label',bco.any?",
+    "replace": "rm(+(sum+(w&&w.mode==='deliver'?12:0)).toFixed(2)));\n    st.appendChild(el('span','amb-stat__label',bco.any?"
   },
   {
     "name": "the bar's words ignore the way",
@@ -42,15 +42,21 @@
     "replace": "if(draft.pick) delete draft.pick[l.product]; bsPatch();"
   },
   {
-    "name": "the bar sticks to the screen's foot on a phone",
+    "name": "the bar's pill is not in the system's foot",
     "file": "stmt/page.js",
-    "find": "margin-top:24px;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);\n  display:flex;",
-    "replace": "margin-top:24px;bottom:0;\n  display:flex;"
+    "find": "var ft=el('div','amb-foot'),",
+    "replace": "var ft=el('div','bkft'),"
   },
   {
-    "name": "the bar keeps a phone's height on a desk",
+    "name": "the bar's pill is not the block pill",
     "file": "stmt/page.js",
-    "find": "  .bkbar{bottom:0;padding:12px 16px;",
-    "replace": "  .bkbar{padding:12px 16px;"
+    "find": "el('button','amb-pill amb-pill--block',tw('bk.go'))",
+    "replace": "el('button','amb-pill',tw('bk.go'))"
+  },
+  {
+    "name": "the bar's box takes a place of its own",
+    "file": "stmt/statement-css.js",
+    "find": "#pWay, #bkBar { display: contents; }",
+    "replace": "#pWay { display: contents; }"
   }
 ]

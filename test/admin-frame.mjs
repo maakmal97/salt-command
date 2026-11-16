@@ -17,22 +17,18 @@
  *   F8  an order: the stage's pill is the card's foot, last, outside the two columns; Decline the order stays in the ends
  *   F9  a Record form: its one pill (and Discard) are its foot, a child of the form; Other fields and Cancel stay rows
  *   F10 Shop: Set the notice, Save the points and Set it are feet; Needs you's open card's ways are its foot
+ * 15 NOV 2026, THE MOVE TO AMBIENT: the salt-ds frame and pane are gone, and his page is one Ambient shell: the shell the screen's height, never
+ * scrolling; its screen the one box that scrolls; the dock (the rail from 960px) standing still over it; from 960px a split of panes
+ * (amb-split--panes) holding the screen still while each stack scrolls by itself, its one main action an amb-foot. F1 to F4 and F6 are re-aimed at
+ * that: Ambient's rules as carried, his shell wearing it, and nothing of the old frame left (paneFit, --salt-pane-h, --salt-frame-h, the foot's
+ * place under 1080px, data-footed). The places' records keep their present markup (F2.2, F5, F7 to F10) until their builders draw the splits.
  * Every assertion is red under its own mutation (test/admin-frame.mutations.json). Every code and word is invented. */
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
 import { ownerCss } from "./admin-tablet.mjs";
 import { JSDOM } from "jsdom";
-import { SITE_RECIPES } from "../stmt/statement-css.js";
+import { AMB_CSS } from "../stmt/statement-css.js";
 
 const J = JSON.stringify;
-/* the carried recipes, read as rules by query (spaces out) and selector, as ownerCss reads the page's own */
-function recipeCss() {
-  const sheet = new JSDOM("<style>" + SITE_RECIPES + "</style>").window.document.styleSheets[0];
-  const sel = (r) => r.selectorText.replace(/\s*,\s*/g, ",");
-  const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => ({ sel: sel(x), css: x.style.cssText })) }));
-  const at = (q, s) => media.filter((m) => m.q === q).flatMap((m) => m.rules).filter((r) => r.sel === s).map((r) => r.css).join(" ");
-  const top = (s) => [...sheet.cssRules].filter((r) => r.selectorText && sel(r) === s).map((r) => r.style.cssText).join(" ");
-  return { at, top };
-}
 /* a window that answers matchMedia as a screen of this width would */
 const width = (px) => (w) => { w.matchMedia = (mq) => ({ matches: [...String(mq).matchAll(/(min|max)-width:\s*([0-9.]+)px/g)].every((m) => (m[1] === "min" ? px >= +m[2] : px <= +m[2])),
   media: mq, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }); };
@@ -49,44 +45,42 @@ function scrollBox(node, d, client, base = 200) {
 const lines = (n) => Array.from({ length: n }, (_, i) => ({ by: i % 2 ? "desk" : "customer", at: new Date(Date.UTC(2026, 9, 1, 8, i)).toISOString(), text: "Line " + (i + 1) }));
 
 export async function run({ ok, pageWork }) {
-  /* F1 */
+  /* F1: Ambient as carried */
   {
-    const { at, top } = recipeCss(), Q = "(min-width:1080px)";
-    const frame = at(Q, ".salt-frame"), main = at(Q, ".salt-frame__main"), rail = at(Q, ".salt-frame > .salt-rail"), pane = at(Q, ".salt-frame__main .salt-pane"), foot = top(".salt-pane__foot");
-    ok(/display: grid/.test(frame) && /grid-template-rows: auto minmax\(0,\s*1fr\)/.test(frame) && /height: var\(--salt-frame-h,\s*100dvh\)/.test(frame) && /overflow: hidden/.test(frame),
-      "F1.1 from 1080px the frame is a grid the screen tall that never scrolls, the bar's row over the rail and the column: " + frame);
-    ok(/overflow-y: auto/.test(main) && /min-height: 0/.test(main) && /align-self: stretch/.test(main) && /position: static/.test(rail) && /align-self: stretch/.test(rail),
-      "F1.2 the column right of the rail is the one box that scrolls, and the rail stands still beside it, the row's height: " + J([main, rail]));
-    ok(/position: sticky/.test(pane) && /top: 0/.test(pane) && /max-height: var\(--salt-pane-h/.test(pane) && /overflow-y: auto/.test(pane),
-      "F1.3 a pane holds to the column's top and scrolls inside itself, up to the height the page gives it: " + pane);
-    /* 5 Nov 2026, his word on the shots: "seamless and not with the black square behind the main action" (salt-ds 1.28.1): no fill, no frost, no hairline */
-    ok(/position: sticky/.test(foot) && /bottom: var\(--salt-pane-foot-at,\s*0px\)/.test(foot) && /margin-top: auto/.test(foot) && /background: none/.test(foot) && !/backdrop-filter|salt-veil|border-top/.test(foot),
-      "F1.4 a pane's foot is held at its foot (or the screen's, a set distance above it), seamless: the pill alone, no box behind it: " + foot);
-    const keep = top(".salt-settings__row > .salt-ghost,.salt-settings__row > .salt-switch,.salt-settings__row > .salt-orb,.salt-settings__row > .salt-status");
+    const amb = AMB_CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+    const rule = (sel) => (new RegExp("(^|[}\\s])" + sel.replace(/[.*+?^${}()|[\]\\>]/g, "\\$&") + " \\{([^}]*)\\}").exec(amb) || [, , ""])[2];
+    ok(/height: 100dvh;/.test(rule(".amb-shell")) && /overflow: hidden;/.test(rule(".amb-shell")),
+      "F1.1 his shell is the screen's height and never scrolls: " + rule(".amb-shell").replace(/\s+/g, " "));
+    ok(/position: absolute;/.test(rule(".amb-screen")) && /overflow-y: auto;/.test(rule(".amb-screen")) && /position: absolute;/.test(rule(".amb-dock")),
+      "F1.2 its screen is the one box that scrolls, and the dock (the rail from 960px) stands still over it");
+    ok(/\.amb-screen:has\(> \.amb-split--panes\) \{ display: flex; flex-direction: column; overflow-y: hidden; \}/.test(amb) && /overflow-y: auto;/.test(rule(".amb-split--panes > .amb-stack")),
+      "F1.3 from 960px a split of panes holds the screen still and each stack scrolls by itself: " + rule(".amb-split--panes > .amb-stack").replace(/\s+/g, " "));
+    ok(/position: sticky;/.test(rule(".amb-foot")) && /background: linear-gradient\(to bottom, transparent, var\(--amb-base\)/.test(rule(".amb-foot")) && !/border|backdrop-filter/.test(rule(".amb-foot")),
+      "F1.4 a record's foot is held at its foot over a fade of the ground, seamless: no box and no edge behind the pill");
     const { top: ptop } = ownerCss();
-    ok(/flex: (none|0 0 auto)/.test(keep) && !ptop(".adm .athrow > .salt-ghost"), "F1.5 a control in a settings row keeps its own width, from the recipe, and the page's own rule for a thread's Reply is gone: " + keep);
+    ok(!ptop(".adm .athrow > .salt-ghost") && !ptop("#roster .amb-setting"), "F1.5 the page's own rule for a thread's Reply is gone, and none sizes an Ambient setting row");
   }
-  /* F2, F3, F4 */
+  /* F2, F3, F4: his shell wears it, and nothing of the old frame is left */
   {
     const { html, at, top } = ownerCss(), d = new JSDOM(html).window.document;
     const has = (s, c) => !!d.querySelector(s) && d.querySelector(s).classList.contains(c);
-    ok(has("#roster", "salt-frame") && has("#roster > header.abar", "salt-frame__bar") && has("#roster .amain", "salt-frame__main")
-      && d.querySelector("#roster .amain").parentElement.id === "roster",
-      "F2.1 his shell is the frame: the bar its bar, the column right of the rail its one scroll box");
-    const panes = ["#nopen", "#aopen", "#makerReview", "#makerChatOpen", "#makerDayPane"].filter((s) => !has(s, "salt-pane"));
-    ok(!panes.length, "F2.2 every record that opens beside a list is a pane (Needs you's card, an account, an order, a thread, Shop's open day); not: " + J(panes));
-    const Q = "(min-width:1080px)", gate = at(Q, ".gate.adm"), held = at(Q, ".adm .salt-frame__main .salt-pane");
-    ok(/--salt-frame-h: calc\(100dvh - 46px\)/.test(gate) && /padding-bottom: 0/.test(gate) && /margin-bottom: -36px/.test(gate) && /padding-bottom: 24px/.test(at(Q, ".adm .amain")),
-      "F3.1 from 1080px the frame is the screen less the body's 22px top and a 24px margin, taking back 36px of the body's 60px foot, so the page is the screen tall and never scrolls; the column keeps 24px under its last line: " + gate);
-    ok(/top: 0/.test(held) && !/position: sticky/.test(at("(min-width:860px)", ".adm #nopen,.adm #aopen")) && !/position: sticky/.test(at("(min-width:860px)", ".adm .recpane"))
-      && !at(Q, ".adm #makerChatOpen"),
-      "F3.2 a pane holds to the column's very top; the 24px sticky panes of 860px stand only to 1080px: " + J([held, at("(min-width:860px)", ".adm #nopen,.adm #aopen")]));
-    const N = "(max-width:1079.98px)", T = "(min-width:860px)and(max-width:1079.98px)";
-    ok(/--salt-pane-foot-at: calc\(var\(--salt-bar-h\)/.test(at(N, ".gate.adm")) && /--salt-pane-foot-at: 0px/.test(at(T, ".adm #nopen,.adm #aopen,.adm #makerReview,.adm .recpane"))
-      && /position: sticky/.test(at(T, ".adm #nopen,.adm #aopen")) && /position: sticky/.test(at(T, ".adm .recpane")),
-      "F4.1 under 1080px a foot rides the screen's foot over the bar of places, and in a pane that scrolls inside itself (860 to 1080px) the pane's own foot: " + at(N, ".gate.adm"));
-    ok(/display: none/.test(at(N, ".adm[data-footed] #oAdd")) && /position: static/.test(at(N, ".adm .salt-pane__head")),
-      "F4.2 under 1080px the + orb stands down while a foot shows, and a pane's head scrolls with the page under the sticky bar");
+    ok(has("#roster", "amb-shell") && has("#roster", "amb-shell--rail") && has("#roster > main", "amb-screen") && has("#roster > main", "amb-screen--docked")
+      && !d.querySelector("#roster.salt-frame, .salt-frame__main, .salt-frame__bar") && d.querySelector("#roster > .amb-dock > nav.amb-tabbar") !== null,
+      "F2.1 his shell is Ambient's: its screen the one scroll box, docked, and its dock the places; no salt-ds frame");
+    /* 16 Nov 2026, the move to Ambient (places F, H and I): Needs you's card (#nopen) is drawn in the record's column #nrecord of Ambient's split, an account and a thread are the second stack of Ambient's panes (#aside, #chatside), and Shop's open day is the second stack of its panes; none carries salt-pane */
+    const panes = ["#makerReview"].filter((s) => !has(s, "salt-pane"));
+    ok(["#aside", "#chatside"].every((q) => !!d.querySelector(q) && d.querySelector(q).classList.contains("amb-stack") && !!d.querySelector(q).closest(".amb-split--panes")) && d.querySelector("#aside").previousElementSibling.id === "rlist" && d.querySelector("#chatside").previousElementSibling.id === "makerChatList", "F2.2b an account and a thread are the second pane of a split, their list the first");
+    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an order, Shop's open day) for its builder's split; not: " + J(panes));
+    const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),
+      "F3.1 nothing sizes a frame any more: no --salt-frame-h, no frame column, no .gate.adm");
+    ok(!/--salt-pane-h/.test(html) && !/function paneFit|fitSoon/.test(html),
+      "F3.2 no script measures a pane's height: paneFit and --salt-pane-h are gone, the split holding its panes by itself");
+    const N = "(max-width:1079.98px)";
+    ok(!at(N, ".gate.adm") && !/--salt-pane-foot-at/.test(css),
+      "F4.1 nothing places a foot by hand: the foot rides the screen's foot over the dock by Ambient's own rule");
+    ok(!/data-footed/.test(html) && !at(N, ".adm[data-footed] #oAdd"),
+      "F4.2 the + never stands down for a foot: it is the app bar's circle, never the foot's");
   }
   /* F5, F6 on a phone (the page scrolls) */
   {
@@ -94,16 +88,19 @@ export async function run({ ok, pageWork }) {
     const p = await richOwnerPage({ pageWork, threads: () => ({ ok: true, threads: [{ u: "tvwx-yz23", msgs: lines(n), quiet: null }] }) });
     try {
       const d = p.d; await p.work.quiet();
-      const box = scrollBox(d.documentElement, d, 400, 2000);
+      /* 15 Nov 2026: his shell's screen is what scrolls */
+      const box = scrollBox(d.querySelector("#roster > .amb-screen"), d, 400, 2000);
       enter(d, "customers", "messages"); await p.work.quiet(); await p.work.quiet();
-      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] a').click(); await p.work.quiet();
+      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] .amb-row__main').click(); await p.work.quiet();
       const pane = d.getElementById("makerChatOpen"), kids = [...pane.children];
       const head = kids[0], foot = kids[kids.length - 1];
-      ok(head.classList.contains("salt-pane__head") && !!head.querySelector('[data-act="chat.close"]') && kids[1].id === "makerChatLines"
-        && foot.classList.contains("salt-pane__foot") && !!foot.querySelector('textarea[data-act="chat.reply"]') && !!foot.querySelector('[data-act="chat.send"].salt-pill')
-        && !foot.querySelector('[data-act="chat.no-reply"]') && !!kids[kids.length - 2].querySelector('[data-act="chat.no-reply"]'),
+      /* 16 Nov 2026, the move to Ambient (place H): the head is the code and what they owe, the lines Ambient's Thread, Close among what else he may do, and the foot Ambient's compose box, last */
+      const more = kids.find((k) => k.classList.contains("chatmore"));
+      ok(head.classList.contains("chathead") && !!more.querySelector('[data-act="chat.close"]') && kids[1].id === "makerChatLines"
+        && foot.classList.contains("amb-foot") && !!foot.querySelector('form.amb-compose textarea[data-act="chat.reply"]') && !!foot.querySelector('[data-act="chat.send"].amb-circle')
+        && !foot.querySelector('[data-act="chat.no-reply"]') && !!more.querySelector('[data-act="chat.no-reply"]'),
         "F5 an open thread: its head with Close, its lines, then No reply needed, then the foot, last, his box and Send: " + J(kids.map((k) => k.className || k.id)));
-      ok(box.at() === box.end() && box.end() > 0, "F6.1 on a phone a thread opens at its newest line (the page scrolled to its end): " + J([box.at(), box.end()]));
+      ok(box.at() === box.end() && box.end() > 0, "F6.1 on a phone a thread opens at its newest line (the screen scrolled to its end): " + J([box.at(), box.end()]));
       const poll = async () => { const f = p.intervals.filter((x) => x.ms === 2000 && !x.off).pop(); if (f) f.f(); await p.work.quiet(); await p.work.quiet(); };
       box.set(100); n = 13; await poll();
       ok(d.querySelectorAll("#makerChatLines > *").length === 13 && box.at() === 100, "F6.2 a line that lands while he has scrolled up to read leaves him where he is: " + box.at());
@@ -111,15 +108,15 @@ export async function run({ ok, pageWork }) {
       ok(d.querySelectorAll("#makerChatLines > *").length === 14 && box.at() === box.end(), "F6.3 a line that lands while he reads the newest keeps him at the newest: " + J([box.at(), box.end()]));
     } finally { p.w.close(); }
   }
-  /* F6 in the frame: the pane is the scroll, the page never moves */
+  /* F6 from 1180px: until its builder's split makes the thread's pane scroll by itself, the screen is the scroll, and the window never moves */
   {
     const p = await richOwnerPage({ pageWork, before: width(1180), threads: () => ({ ok: true, threads: [{ u: "tvwx-yz23", msgs: lines(12), quiet: null }] }) });
     try {
       const d = p.d; await p.work.quiet();
-      const page = scrollBox(d.documentElement, d, 400), box = scrollBox(d.getElementById("makerChatOpen"), d, 300);
+      const page = scrollBox(d.documentElement, d, 400), box = scrollBox(d.querySelector("#roster > .amb-screen"), d, 300);
       enter(d, "customers", "messages"); await p.work.quiet(); await p.work.quiet();
-      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] a').click(); await p.work.quiet();
-      ok(box.at() === box.end() && box.end() > 0 && page.at() === 0, "F6.4 from 1080px a thread opens at its newest line inside its pane, the page unmoved: " + J([box.at(), box.end(), page.at()]));
+      d.querySelector('#makerChatList [data-thread="tvwx-yz23"] .amb-row__main').click(); await p.work.quiet();
+      ok(box.at() === box.end() && box.end() > 0 && page.at() === 0, "F6.4 from 1180px a thread opens at its newest line in his screen, the window unmoved: " + J([box.at(), box.end(), page.at()]));
     } finally { p.w.close(); }
   }
   /* F7 to F10 */
@@ -131,7 +128,7 @@ export async function run({ ok, pageWork }) {
       enter(d, "customers", "accounts"); await p.work.quiet();
       await click(d.querySelector('#rlist [data-act="acct.open"]'));
       const card = d.querySelector("#aopen > *:not([data-back])"), afoot = card && card.lastElementChild;
-      ok(!!afoot && afoot.classList.contains("salt-pane__foot") && !!afoot.querySelector('[data-act="acct.signin-link"].salt-pill') && !!afoot.querySelector('[role="status"]')
+      ok(!!afoot && afoot.classList.contains("amb-foot") && !!afoot.querySelector('[data-act="acct.signin-link"].amb-pill--block') && !!card.querySelector('.asign [role="status"]')
         && !afoot.querySelector('[data-act="acct.signout-all"]') && !!card.querySelector('.aend [data-act="acct.signout-all"]'),
         "F7 an account's Send a sign-in link and its answer are the card's foot, last; Sign out everywhere stays in the ends: " + (afoot ? afoot.className : "no card"));
       enter(d, "orders", "todo"); await p.work.quiet();
@@ -143,25 +140,26 @@ export async function run({ ok, pageWork }) {
       enter(d, "record", "entry"); await p.work.quiet();
       await click(byAct(d, "record.form", "sale-or-purchase"));
       const send = byAct(d, "record.trade.send"), mf = send && send.parentElement;
-      ok(!!mf && mf.classList.contains("salt-pane__foot") && mf.parentElement.matches("section.maker-input") && mf.parentElement.closest(".recpane.salt-pane") !== null,
-        "F9.1 a Record form's one pill is its foot, a child of the form, in the pane: " + (mf ? mf.className : "none"));
+      ok(!!mf && mf.classList.contains("amb-foot") && mf.parentElement.matches("section.maker-input") && mf.parentElement.closest(".recpane.amb-stack") !== null,
+        "F9.1 a Record form's one pill is its amb-foot, a child of the form, in the pane's stack: " + (mf ? mf.className : "none"));
       const loan = byAct(d, "record.loan.send");
-      ok(!!loan && loan.parentElement.classList.contains("salt-pane__foot") && [...d.querySelectorAll(".mfoot .salt-ghost:not([hidden])")].length === 0,
+      ok(!!loan && loan.parentElement.classList.contains("amb-foot") && [...d.querySelectorAll(".mfoot .amb-pill--quiet:not([hidden]), .mfoot .salt-ghost:not([hidden])")].length === 0,
         "F9.2 every form's pill is its foot (the loan's too), and no ghost but a half-sent Discard stands in a foot");
       enter(d, "shop", "notice"); await p.work.quiet();
       const set = byAct(d, "notice.set");
       enter(d, "shop", "hours"); await p.work.quiet();
       const save = byAct(d, "points.save");
-      ok(!!set && set.parentElement.classList.contains("salt-pane__foot") && !!save && save.parentElement.classList.contains("salt-pane__foot"),
-        "F10.1 Shop's Set the notice and Save the points are feet: " + J([set && set.parentElement.className, save && save.parentElement.className]));
+      /* 16 Nov 2026, the move to Ambient (place I): Set the notice is its part's one foot; Save the points is the Points section's own filled pill, the Hours stack keeping the open day's Done as its one foot */
+      ok(!!set && set.parentElement.classList.contains("amb-foot") && !!save && save.classList.contains("amb-pill") && !!save.closest(".apoints-save") && !save.closest(".amb-foot"),
+        "F10.1 Shop's Set the notice is a foot and Save the points the section's one pill: " + J([set && set.parentElement.className, save && save.parentElement.className]));
       enter(d, "needs"); await p.work.quiet();
       /* an order's open card draws no ways of its own: the order's card under it carries them, its stage pill in its foot */
       await click(d.querySelector("#nlist [data-need=\"o:ord-p1\"] .need-tap"));
       const of2 = d.querySelector("#nopen .maker-card > .ofoot");
       const keys = [...d.querySelectorAll("#nlist [data-need]")].map((x) => x.getAttribute("data-need")), mine = keys.filter((k) => !/^[op]:/.test(k))[0];
       if (mine) await click(d.querySelector('#nlist [data-need="' + mine + '"] .need-tap'));
-      const go = d.querySelector("#nopen .npane__go");
-      ok(!!of2 && of2.classList.contains("salt-pane__foot") && !!of2.querySelector(".salt-pill") && !!go && go.classList.contains("salt-pane__foot") && go.parentElement.lastElementChild === go,
+      const go = d.querySelector("#nrecord > .npane__go");
+      ok(!!of2 && of2.classList.contains("salt-pane__foot") && !!of2.querySelector(".salt-pill") && !!go && go.classList.contains("amb-foot") && go.parentElement.lastElementChild === go,
         "F10.2 Needs you's open card: an order's stage pill is its card's foot, and a card with ways of its own has them as its foot, last: " + J([!!of2, mine, go && go.className]));
     } finally { p.w.close(); }
   }

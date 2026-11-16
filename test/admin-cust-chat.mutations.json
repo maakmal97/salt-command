@@ -8,85 +8,91 @@
   {
     "name": "1 the state, its age and the last line",
     "file": "stmt/owner.js",
-    "find": "(last.by==='desk'?'You: ':'')+cut(last.text||'')].filter(Boolean).join(' · ');",
-    "replace": "''].filter(Boolean).join(' · ');"
+    "find": "var said=(last.by==='desk'?'You: ':'')+cut(last.text||'');",
+    "replace": "var said='';"
   },
   {
     "name": "1 a waiting line is copper",
     "file": "stmt/owner.js",
-    "find": "'salt-settings__sub athrow__line'+(asked?' salt-settings__sub--why':'')",
-    "replace": "'salt-settings__sub athrow__line'"
+    "find": "sub.appendChild(el('span',asked?'amb-neg':null,(asked?'Waiting':'Answered')+(age?' '+age:'')));",
+    "replace": "sub.appendChild(el('span',null,(asked?'Waiting':'Answered')+(age?' '+age:'')));"
   },
   {
     "name": "1 what they owe",
     "file": "stmt/owner.js",
-    "find": "        if(owe>0.004) row.appendChild(el('span','salt-settings__value salt-settings__value--lg',rmShort(owe)));\n",
+    "find": "if(owe>0.004) sub.appendChild(document.createTextNode(', owes '+rmShort(owe)));",
     "replace": ""
   },
   {
-    "name": "1 a thread is Needs you's card again",
+    "name": "a thread is not Ambient's row",
     "file": "stmt/owner.js",
-    "find": "var row=el('div','salt-settings__row athrow')",
-    "replace": "var row=el('div','salt-action ncard athrow')"
+    "find": "var row=el('li','amb-row athrow')",
+    "replace": "var row=el('li','athrow')"
   },
   {
     "name": "2 Reply on one answered too",
     "file": "stmt/owner.js",
-    "find": "        if(asked){ var b=asMove(pill(['Reply','chat.reply-open',th.u]));",
-    "replace": "        if(true){ var b=asMove(pill(['Reply','chat.reply-open',th.u]));"
+    "find": "if(asked){ var tr=el('span','amb-row__trail'), b=aPill(",
+    "replace": "if(true){ var tr=el('span','amb-row__trail'), b=aPill("
   },
   {
-    "name": "2 Reply a filled pill again",
+    "name": "Reply a large pill",
     "file": "stmt/owner.js",
-    "find": "var b=asMove(pill(['Reply','chat.reply-open',th.u]));",
-    "replace": "var b=pill(['Reply','chat.reply-open',th.u]);"
+    "find": "aPill('Reply','chat.reply-open',th.u,true)",
+    "replace": "aPill('Reply','chat.reply-open',th.u,false)"
   },
   {
     "name": "2 a tap on the row opens nothing",
     "file": "stmt/owner.js",
-    "find": "row.addEventListener('click', function(ev){ if(ev.target.closest&&ev.target.closest('button,a,input,select,textarea')) return; openMakerThread(th.u); });",
+    "find": "        open.addEventListener('click', function(){ openMakerThread(th.u); });\n",
     "replace": ""
   },
   {
     "name": "3 his lines right",
     "file": "stmt/owner.js",
-    "find": "b=el('div','salt-bubble salt-bubble--'+(mine?'mine':'theirs'))",
-    "replace": "b=el('div','salt-bubble salt-bubble--theirs')"
+    "find": "b=el('li','amb-msg'+(mine?' amb-msg--mine':''))",
+    "replace": "b=el('li','amb-msg')"
   },
   {
     "name": "3 who and when",
     "file": "stmt/owner.js",
-    "find": "meta.appendChild(el('span','maker-facts',(mine?'You':codeByUser(makerThreadUser))+', '+stampDay(line.at)));",
-    "replace": "meta.appendChild(el('span','maker-facts',stampDay(line.at)));"
+    "find": "meta.appendChild(el('span','maker-facts',mine?'You':codeByUser(makerThreadUser)));",
+    "replace": "meta.appendChild(el('span','maker-facts',''));"
   },
   {
     "name": "4 what they owe in the head",
     "file": "stmt/owner.js",
-    "find": "    if(owe>0.004){ var af=el('div','ahead__fig');",
-    "replace": "    if(false){ var af=el('div','ahead__fig');"
+    "find": "if(owe>0.004) aw.appendChild(el('p','amb-field__hint ahead__fig','They owe '+rmShort(owe)));",
+    "replace": ""
   },
   {
-    "name": "4 the Insight",
-    "file": "stmt/owner.js",
-    "find": "status.className='msg salt-insight salt-insight--copper';",
-    "replace": ""
+    "name": "the count is not a notice",
+    "file": "stmt/page.js",
+    "find": "<div class=\"amb-notice chatnote\">",
+    "replace": "<div class=\"chatnote\">"
   },
   {
     "name": "5 an open thread leaves the list its whole column",
     "file": "stmt/owner.js",
-    "find": "    if(root.parentElement) root.parentElement.classList.add('open'); drawThreadList();\n",
-    "replace": ""
+    "find": "if(grid) grid.classList.add('open'); if(none) none.hidden=true; drawThreadList();",
+    "replace": "if(none) none.hidden=true; drawThreadList();"
   },
   {
     "name": "5 Close keeps the thread's column",
     "file": "stmt/owner.js",
-    "find": "root.hidden=true;if(root.parentElement) root.parentElement.classList.remove('open');stopMakerChat();",
-    "replace": "root.hidden=true;stopMakerChat();"
+    "find": "if(g) g.classList.remove('open');if(n) n.hidden=false;",
+    "replace": "if(n) n.hidden=false;"
   },
   {
     "name": "6 a nought waits again",
     "file": "stmt/owner.js",
     "find": "!waiting.length?'Nothing waits for your reply.':",
     "replace": ""
+  },
+  {
+    "name": "the compose box is not the pane foot",
+    "file": "stmt/owner.js",
+    "find": "foot=el('div','amb-foot chatfoot')",
+    "replace": "foot=el('div','chatfoot')"
   }
 ]

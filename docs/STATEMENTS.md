@@ -189,6 +189,12 @@ regenerates in place, keeping the passwords already issued, because minting fres
 invalidate every password already sent. A *different* issue date means a second issue in one
 month and the tool refuses. Do not talk it out of that.
 
+**A sealed issue is never written again by accident** (16 Nov 2026, the move to Ambient, place D). The live
+document's markup moved to the system's parts that day, so a same-date re-run over a set already sealed would
+redraw a past date's documents in today's code: the tool refuses it unless it is asked for in so many words,
+`--retry`, which is the retry after a failure and keeps the passwords already issued. An `--archive` holds no
+record and is not sealed, so it is let through. Proved red in test/v772-retry.mutations.json.
+
 ## How a customer reads it (03 Sep 2026, his instruction)
 
 **Not bound to a month** (v690, his instruction of 18 Sep 2026). The live statement has always
@@ -198,8 +204,11 @@ then the months the account has, newest first. Undated rows show whatever is cho
 own position under the list does not move with the filter.
 
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
-the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
-own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
+the system's Table (16 Nov 2026, the move to Ambient: `table.amb-table.amb-table--stack`, every `td` named by its
+`data-label`, a row `tr` carrying the `data-m`, `data-d`, `data-g`, `data-dv` and `data-b` the Counter reads; the mark is the system's
+thumb, `markThumbHtml` in `stmt/page.js`; the state is a chip; the foot and Still to collect are groups of settings), "units"
+above one; an issue is a standalone file and keeps its table. A sealed issue that still carries `.salt-lines` or `.salt-settings`
+reads through a small layer in `design/site.css`; nothing draws those classes now. **The account is the live
 document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter and out of every published record (15 Oct 2026), kept on disk and on
 his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
 publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
@@ -707,12 +716,13 @@ The suite section "Account leads with this device, and the door names the app" (
   later edit of the list moves no order. Change point, while the order waits with goods owed, writes a `point` event ("point moved to A3"),
   wakes the customer (`point-moved`) and shows in their history as "We moved your collection point to Point A3". The customer is given
   `pointAt` only while the order waits ready to collect with goods still owed; the five Desk roads never carry it.
-- **Orders** are cards, the whole card one control: All, Open, To pay and Done on a phone, Open and Done as two columns from 860px, nothing
-  opened by itself. An empty view has its mark, a sentence and one way on.
+- **Orders** (16 Nov 2026, the move to Ambient) are the system's Rows, the same row as Home's (hRow, hSub: the book's mark thumb, the size, its state as a word and why it is here, the day and the figure; an order that can be ordered again is a row with Order again in its trail), under the system's four counted Filters, All, Open, To pay and Done, and a line saying what is to pay across them. The place is the shell's split of panes from 960px (#pOrder is the split, panes only while Orders is on show): the list first, the open order second, and with none open the lead and New order. An empty view is one sentence and one way on.
+- **The rating** is the system's Rating (ieldset.amb-rating, five radios, each star 44px), once, then its five marks and Rated n of 5; a star's change sends what a star's tap always sent ({stars, rid}).
+- **The shared order card** (oBandOf, oStepsOf, oBillOf, oThreadOf, oComposerOf, ubble) is drawn once for both readers in the system's Steps, read-only Settings, Thread and Compose; his side adds its parts in stmt/owner.js until it is redrawn. Pay is the record's Foot; the Message button went (the composer stands in view on every order); History is the system's Journal, the newest first. Earlier by month reads the live statement's own cells and draws Rows; the statement's markup (.salt-lines__row with data-m, data-d, data-g, data-dv, data-b) is what the statement's re-seal must keep, or arlierLines and arlierRow follow it.
 - **An order's own screen** is a band (an "Order" eyebrow, a short reference derived from the id such as R9MB-7AK, the state as its heading,
   the mark, how it goes and, while it waits at a point, the point and its pin), the steps marked with their moments and Next, a receipt with
-  one Paid row a payment, Message on every stage, and Details (ordered at, way, window, point, reference). Salt Admin shows the same reference.
-- **Every state word has a glyph** before it (dot, tick, double tick, cross), aria-hidden, the word unchanged.
+  one Paid row a payment, the composer in view on every stage (16 Nov 2026: the Message button went), and Details (ordered at, way, window, point, reference). Salt Admin shows the same reference.
+- **A state is a word** (16 Nov 2026: the glyph before it went with the recipes): a Row says it as the first word of its second line, positive once confirmed, with them or complete, and the band's Chip carries a dot, warn while ready and not yet with them.
 - **Home**: the Today card first (the time in Kuala Lumpur, Open until or Closed and when it opens off `/hours`, and the notice turning a line
   every six seconds with Pause; under reduced motion every line stands). To pay now and the overdue gate still lead, then Needs you and Coming
   up. Their latest open order is one element: a pill above the App bar and the pay foot on a phone (the foot's height is `--hfoot`), a banner
@@ -2416,7 +2426,7 @@ username is the pool's (E1); the passkey is offered on the account as ever. The 
 
 **One list** (plan version 7, his answers F and the plan's version 7 of 02 Nov 2026). The live statement's order lines carry `data-d` (the row's day),
 `data-g` (goods), `data-dv` (delivery) and `data-b` (the book's index in the page's own mark table, `Object.keys(PSYM)` less `_`), and their list
-`data-lines="orders"` (`tools/make_statements.mjs`); refund rows, the money rows and an issued statement carry none. The page (`stmt/page.js`
+`data-lines="orders"` (`tools/make_statements.mjs`; the table's `tbody > tr` since 16 Nov 2026, place D, which re-aimed `earlierLines`, `earlierRow` and Home's year at it); refund rows, the money rows and an issued statement carry none. The page (`stmt/page.js`
 `earlierLines`, `oEarlier`) holds a line by a site order when book, day (`rowOn` or `ackDayOf`), goods (`total`, or `closed.total`) and delivery
 agree, one to one, oldest order first; a cancelled order holds only its own cancelled line, a declined one nothing. Orders draws the site orders,
 then Earlier: the lines no order holds, by month newest first, behind one fold, with a Month select over two months or more. Account
@@ -2771,6 +2781,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
 | `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
 | `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
+| `acct.pct.value` | Account card, Their % | The stepper's field, over the book's steps of 5 (Ambient 0.7.2): a figure typed is held to a whole % inside the book's range; it sends nothing. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Asks on the Sheet (2 Nov 2026), then opens their sealed password straight to the clipboard, never into the page. |
@@ -2849,22 +2860,17 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.restore-card` | Links, a withdrawn link's card (key: the link id) | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
-| `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
-| `look.sheet-night` | Same Sheet | Chooses Night, keeps it and closes the Sheet. |
-| `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
-| `look.tide` | Shop, This device, Tide theme | The Switch: Tide on or off for Salt Admin on this device; greyed while Tide is off (19 Oct 2026). |
 | `more.test-accounts` | Shop, Practice, Practice accounts | The Switch: on makes the missing test accounts; off deletes all three once its Sheet is answered Remove. |
 | `more.test-password` | Shop, Practice, while any is made | Copies the test accounts' one password. |
 | `vault.switch` | Shop, This device, Show names | On asks for the password in the one Sheet; off locks names, places and slips again. |
 | `alerts.switch` | Shop, This device | Notifications on or off; it presses Turn on or Turn off, which stay hidden. |
 | `more.test-page` | Shop, Practice, while all three are made | The row that opens the test surface, `/all/test`. |
-| `nav.add` | The + orb at the foot of the page, on every place but Record, below 1080px | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
-| `rail.add` | New entry, the rail's + under his places, from 1080px, on every place but Record | Opens Record on Entry, as the orb does. |
-| `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
-| `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
-| `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
-| `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Entry. |
-| `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
+| `nav.add` | New entry, the + circle in the shell's app bar (15 Nov 2026, the move to Ambient; it was the orb below 1080px and the rail's `rail.add` above), on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
+| `nav.customers` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Customers, on its Accounts. |
+| `nav.needs` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Needs you. |
+| `nav.orders` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
+| `nav.record` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Record, on Entry. |
+| `nav.shop` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Shop, on Hours. |
 | `need.agree` | Needs you card for an order placed | Opens that order's full card in Orders, where the delivery charge and the window are asked. Books nothing. |
 | `need.reply` | Needs you card for a message asked | Opens that thread (an order's question, the order's card). Sends nothing. |
 | `need.review` | Needs you card for an order with several payments waiting, or a step to send again | Opens that order's card. Books nothing. |
@@ -2899,11 +2905,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
 | `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
-| `bar.hours` | The bar heading every place, its shop hours chip | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
-| `bar.needs` | The bar heading every place, its Needs you chip (21 Oct 2026) | Goes to Needs you; its figure is the rail's. |
-| `bar.orders` | Same bar, its Orders chip | Goes to Orders; its figure is the rail's, the orders still open. |
-| `bar.customers` | Same bar, its Customers chip | Goes to Customers > Messages; its figure is the rail's. |
-| `bar.approve` | Same bar, Approve, brass with the rows to approve | Goes to Orders > Approve; its badge counts the rows as their cards do, a trip's as one. |
+| `bar.hours` | Needs you's hero, its glass hours chip (the bar's until 15 Nov 2026) | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
+| `bar.approve` | Orders' hero, Approve, its one main action (the bar's until 15 Nov 2026), named with the rows to approve | Goes to Orders > Approve; its name counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `order.winback` | Order card, Agree, the win-back line | Fills Goods with the win-back price the preview suggests for a lapsed regular and reads the figures again; nothing is sent until his Accept. |
@@ -3295,3 +3298,15 @@ it.
 - **No overlaps**: Needs you no longer lists rows to approve; the glance's fifth tile, **To approve**, counts the cards and opens Approve.
 - The Desk's one-tap `/drafts/<id>/approve|reject` and the bridge's `/_internal/maker/drafts/<id>/approve|reject` stand unchanged; Salt Admin no
   longer calls the second.
+
+
+## Place D, the Counter's Account, statement, This device, pay and Sheets on Ambient (16 Nov 2026)
+
+- **Drawn in the system's parts**: Account is one stack (the glance, the thread row, This device, Help, the statement); This device is a group of settings
+  (a Switch is the native checkbox, Sign out the system's danger action, its own list at the foot of the card); Help is the system's disclosure rows,
+  one open at a time by a name of its own (`account-help`; Salt Admin's is `shop-help`); the door is one shell (a hero naming the app, the lock screen's form);
+  every Sheet is a native `dialog.amb-sheet` the page's HTML carries (`ambSheet`), put up and away by `sheetUp` and `sheetDown` (`hidden` stays the page's word
+  for shut), its backdrop the scrim; the pay sheet is Options, a Tile, a Segment, a Field, a Plate (a row a detail, itself the copy control) and the code frame.
+- **Acts and ids kept**: every `data-act`, every id the page's script or a check reads, and every request body. Gone with the scrims: `outScrim`, `payScrim`, `devScrim`,
+  `bellScrim`, `thScrim`, `fsScrim`, `vaultScrim` (the dialog's own backdrop took their place). Salt Admin's names Sheet (`vaultSheet`) is the same dialog.
+- **Said, not drawn**: the pay ways' lead glyphs (the Options part has no lead slot); the door's ring (its one name is a glass chip in the hero).

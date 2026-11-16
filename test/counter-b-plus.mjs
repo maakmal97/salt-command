@@ -26,7 +26,7 @@ export async function run({ ok, pageWork }) {
     const F = await page({ orders: five });
     const lim = F.d.getElementById("bkLim");
     addOf(F, 0).click(); await F.settle();
-    const said = F.d.querySelector("#osheet .salt-insight--copper");
+    const said = F.d.querySelector("#osheet .amb-notice--warn");
     const G = await page({ orders: five.slice(0, 3).concat([ord("o5", "placed", ago(5), { sheet: "sh4" }), ord("o6", "placed", ago(6), { sheet: "sh4" })]) });
     addOf(G, 0).click(); await G.settle();
     ok(!!lim && !lim.hidden && /^Five open orders is the most/.test(txt(lim)) && !!said && /^Five open orders is the most/.test(txt(said)) && line(F, 0) === null

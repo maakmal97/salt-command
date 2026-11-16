@@ -1,0 +1,329 @@
+/* design/site.css: THE STATEMENTS SITE'S OWN LAYER OVER AMBIENT (15 Nov 2026, the move to Ambient).
+   Salt Counter and Salt Admin are one page; this layer is both faces', served after ambient.css. It reads --amb-* tokens only and
+   names no colour: tools/stmt-style.mjs refuses one and carries this file to the Worker as SITE_CSS. Each builder of a place writes
+   its own marked section below; a part Ambient lacks is added in Code/ambient-ds first, never drawn here. */
+
+/* ---- The kit: the head and the shell ---- */
+/* the shell is the screen: the body holds one shell at a time (the door, Salt Admin's roster, the customer's places, the ended page) */
+body.amb { min-height: 100dvh; }
+/* his hero's time line: the live word, then the clock, a step apart */
+#roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
+/* on Home the Today card holds the clock, so the hero does not say the time twice */
+#tabs[data-place="home"] > .amb-screen > .amb-hero > .amb-hero__time { display: none; }
+
+/* ---- Admin: Needs you, Approve and the unsent bar (place F) ---- */
+/* the head's tiles sit in a stack, which already carries the gutter; a tile that is a link stays plain */
+.amb-stack > .amb-tiles { padding-inline: 0; }
+a.amb-tile { color: inherit; text-decoration: none; }
+a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
+/* a read that failed: the Notice's words, its Retry at the end */
+.nfail[hidden], .apbar[hidden], .nstock[hidden], .nopen[hidden], #unsentBar[hidden] { display: none; }
+.nfail > span { flex: 1 1 auto; min-width: 0; }
+/* the banner stands under the hero with the stack's gutter, and the kinds use the page's width */
+#unsentBar:not([hidden]) { margin-block: var(--amb-space-4); }
+.nchips { max-width: none; }
+.apparty .amb-chip { text-transform: none; }
+.nfail > .amb-pill, .unsent-note > .amb-pill { margin-inline-start: auto; flex: none; }
+.unsent-note > span { flex: 1 1 auto; min-width: 0; }
+/* the list: a group a word, a card a task; the whole card is its title's tap, the ways above it */
+.nlist { display: grid; gap: var(--amb-space-5); }
+.nlist > .ngroup, .nlist > .nfold, .nopen, #nrecord { display: grid; gap: var(--amb-space-3); }
+.apstack { display: grid; gap: var(--amb-space-3); }
+.nlist > .nfold > summary { display: flex; align-items: center; min-height: var(--amb-tap); cursor: pointer; }
+.ntask { position: relative; }
+.ntask .need-tap { appearance: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--amb-space-2); width: 100%; min-height: var(--amb-tap); margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ntask .need-tap::after { content: ""; position: absolute; inset: 0; }
+.ntask .need-tap:focus-visible { outline: none; }
+.ntask .need-tap:focus-visible::after { outline: 2px solid var(--amb-accent); outline-offset: 2px; border-radius: inherit; }
+.ntask .amb-task__acts, .ntask .nbody { position: relative; z-index: 1; }
+.ntask .need-who--code, .npane .need-who--code { font-family: var(--amb-font-mono); }
+.ntask[aria-current="true"] { outline: 2px solid var(--amb-accent); outline-offset: -2px; }
+#roster .ntask .nage--late { color: var(--amb-neg); }
+.nbody:empty, .npane__body:empty, .npane-x:empty { display: none; }
+.nbody > p, .npane__body > p { margin: 0; }
+/* the open card: the column beside the list from 960px, its one main action the foot */
+.panenone { display: none; margin: 0; color: var(--amb-ink-2); }
+@media (min-width: 960px) { .panenone { display: block; } #nopen:not([hidden]) ~ .panenone { display: none; } }
+@media (max-width: 959px) { #nrecord:not(:has(> #nopen:not([hidden]))) { display: none; } }
+.npane__title { overflow-wrap: anywhere; }
+/* Stock by book: the table's meter stays a hand's width */
+.nstock .amb-meter { min-width: 4rem; }
+/* Approve: the head of the list, the cards, the save bar over them */
+.aphead { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-3); }
+.aphead__n { margin: 0; }
+.apcard.ap--a { border-color: var(--amb-pos); }
+.apcard.ap--r { border-color: var(--amb-neg); }
+.apcard > .maker-say:empty { display: none; }
+.apcard .apticks .amb-pill { white-space: normal; }
+.apdet { display: grid; gap: var(--amb-space-3); }
+.apdet[hidden] { display: none; }
+.aprefused > span > span { display: block; }
+.apbar__acts { display: flex; gap: var(--amb-space-2); flex: none; }
+/* Stock by book: the wide table's columns keep a gap */
+@media (min-width: 720px) { .nstock .amb-table th, .nstock .amb-table td { padding-inline: var(--amb-space-3); } }
+
+/* ---- Record and Shop (Salt Admin) ---- */
+/* the wrappers a place draws into stand aside, so what they hold is the stack's own children and a foot stays the last thing of its stack */
+#makerNowCard, #makerNow, #makerSchedule, #makerPoints, #makerMarket, #makerCalendar, #makerBulletin, .apoints-sec, #mHelp, .recpane > section.maker-input:not([hidden]) { display: contents; }
+.hsplit > .amb-stack > section.apoints-sec > h2 { margin-block: var(--amb-space-3) 0; }
+/* a form's lines stand in the stack's rhythm */
+.maker-fields, .maker-cancellation, .maker-edit, .maker-edit-hist, .maker-reading, .maker-trade-attribution, .maker-trade-tail, .maker-extra-books, .maker-extra-trade, .maker-rewards, .maker-offers, .maker-changes, .maker-edit-more, .amform, .amout, .maker-lock, .anotice-acts, .maker-cover-row { display: grid; gap: var(--amb-space-4); min-width: 0; }
+.maker-extra-trade { padding: var(--amb-space-4); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); }
+.maker-fields:empty, .maker-cancellation:empty, .maker-edit-hist:empty, .maker-edit-more:empty, .maker-offers:empty, .maker-rewards:empty, .maker-changes:empty, .apoints-found:empty, .anotice-lines:empty { display: none; }
+.maker-cover-row:not(:has(.maker-cover:not([hidden]), button:not([hidden]))) { display: none; }
+.anotice-acts:not(:has(button:not([hidden]))) { display: none; }
+.apoints-act { display: flex; flex-wrap: wrap; gap: var(--amb-space-3); }
+.rowcard { display: grid; gap: var(--amb-space-1); }
+.rowcard:empty { display: none; }
+.rowcard__fig { font-variant-numeric: tabular-nums; }
+.reading-bad { color: var(--amb-neg); }
+.repay-left { margin: 0; }
+/* the form's description under its heading, and its status line */
+.maker-input > .msg, .recpane > section > .msg, #makerInputs .msg { margin: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.hsplit .msg:empty, #oShop .msg:empty, #oRecord .msg:empty { display: none; }
+/* the way back to the menu, below the two columns; from 960px the menu stands beside the form */
+@container amb (min-width: 960px) { #makerFormBack { display: none; } }
+@container amb (max-width: 959px) { .recgrid.open .reclist, .recnone { display: none; } }
+.recgrid.open .recnone { display: none; }
+/* a menu row names the form, the count of what it holds at the right */
+.mfig:empty { display: none; }
+/* a list of found places stands under its field only while it holds one */
+.apoints-found { margin: 0; }
+/* the form's status and the mood of a read-only row */
+.amb-setting__name.anow-title[data-now="open"] { color: var(--amb-pos); }
+.codeline__code { font-family: var(--amb-font-mono); white-space: nowrap; }
+/* the menu's lists stand in the stack's rhythm */
+#makerMenu, #makerMenu > [data-in] { display: grid; gap: var(--amb-space-4); min-width: 0; }
+#makerMenu > [data-in]:empty { display: none; }
+
+/* ---- Counter: Home, Today and Rewards ---- */
+/* a part of Home, of the reward card and of the links takes no place of its own: its heading, its list and its notes stand in the stack, so
+   Ambient's gaps and insets are the only ones. The boxes stay because each is drawn afresh and put on the page only where it reads differently. */
+#payHead, #hNeeds, #hRate, #hThread, #hSupply, #hStart, #hPool, #hComing, #hAgain, #hReward, #hYear,
+.hinv, .hprod, .rlinks, .glink, [data-joins] { display: contents; }
+/* the Today notice: its words take the room the icon leaves, the title and the sentences each a line, Pause a step under the notice lines */
+#today > span:not(.amb-icon) { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--amb-space-2); }
+#today .hblock, #today .hline { display: block; }
+#today .hnote { display: grid; gap: var(--amb-space-1); justify-items: start; }
+/* a book's mark alone heads its block */
+.hbook { margin: 0; }
+/* the live order is the dock's mini bar, a tap anywhere on it opening the order */
+.amb-mini[data-live] { cursor: pointer; }
+
+/* ---- Counter: Shop, the order sheet and spots ---- */
+/* the way, the notices and the book panes stand in Shop's stack; the way's box and the basket's bar take no place of their own */
+#pWay, #bkBar { display: contents; }
+#pPrices > p { margin: 0; font-size: var(--amb-text-subhead); }
+/* two books across from 960px, the system's own width for two columns */
+.pgrid { display: grid; gap: var(--amb-space-4); align-items: start; }
+@media (min-width: 960px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* a book's pane: its heading (the mark thumb and the light chip), the stepper, the figure and Add, the basket line, the sizes */
+.pane { display: grid; gap: var(--amb-space-3); min-width: 0; }
+.pane > h2.pmark { display: flex; align-items: center; gap: var(--amb-space-3); margin: 0; }
+.pane .amb-more { margin: 0; justify-self: start; }
+.pane .amb-list { margin: 0; }
+.strow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+.stfig { font-size: var(--amb-text-callout); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stadd { margin-inline-start: auto; }
+.bkline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+.bkline__t { font-size: var(--amb-text-subhead); }
+/* a question of the sheet is a fieldset standing as a field */
+fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+/* the sheet: its foot is a second body under the first, and a list in it keeps no side inset of the screen's */
+.osheet > .osheet__foot { margin-top: var(--amb-space-3); }
+.amb-sheet .amb-list { margin: 0; }
+.amb-sheet .amb-list--ruled { border-top: 0; }
+.amb-sheet .amb-options { max-width: none; }
+.ospot { display: flex; align-items: stretch; gap: var(--amb-space-2); }
+.ospot > .amb-option { flex: 1 1 auto; min-width: 0; }
+.ospot__add { justify-self: start; }
+.osent { display: grid; justify-items: center; gap: var(--amb-space-2); text-align: center; }
+.otick { width: 40px; height: 40px; color: var(--amb-pos); }
+.ofl { display: block; font-size: var(--amb-text-caption); color: var(--amb-ink-2); }
+
+/* ---- Customers (Salt Admin): accounts, messages, links and associates ---- */
+/* the find field, the filters and the notice stand in a stack of their own over the two panes; the panes' wrappers hold no place of their own, so a record's foot stays the last thing of its stack */
+#oAccts, .chatgrid { display: grid; gap: var(--amb-space-4); min-width: 0; }
+#aopen, .oacct, .amore, #makerChatOpen { display: contents; }
+.asec, .ahead, .agroup, .athreads, .glinks { display: grid; gap: var(--amb-space-3); min-width: 0; align-content: start; }
+.ahead__line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); margin: 0; }
+.ahead__code, .chathead__code { overflow-wrap: anywhere; }
+.ahead .un { font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); color: var(--amb-ink-2); overflow-wrap: anywhere; }
+.arow .acode[data-who], .athrow .acode[data-who] { font-family: var(--amb-font-mono); overflow-wrap: anywhere; }
+.amb-settings__foot:empty, .amb-field__hint:empty { display: none; }
+.amb-settings__list > li:has(> button[hidden]:only-child) { display: none; }
+/* a move's answer and a link's panel stand under their row, in the list's own line */
+.oask, .glpanel { list-style: none; display: grid; gap: var(--amb-space-3); justify-items: start; padding: 0 var(--amb-space-4) var(--amb-space-3); margin: 0; }
+.oask:empty { display: none; }
+.oask > p, .glpanel > p { margin: 0; }
+.oask .amb-codeframe, .glpanel .amb-codeframe, .amb-sheet .amb-codeframe { justify-self: center; }
+.oask .gu, .glpanel .gu { overflow-wrap: anywhere; font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); }
+.glpanel > .amb-settings { justify-self: stretch; }
+.glrow.off { opacity: .6; }
+.need-lead { color: var(--amb-ink-2); margin-inline-end: var(--amb-space-1); }
+/* a figure beside the account's head, a thread's amount owed */
+.ahead__fig { justify-self: start; }
+.chathead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--amb-space-3); min-width: 0; }
+.chathead__who { display: grid; gap: var(--amb-space-1); min-width: 0; }
+.chatmore { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }
+.chatnote:has(> #makerChatStatus:empty) { display: none; }
+/* the way back and the open thread's name show only where the list is not beside them */
+@container amb (min-width: 960px) { .aback { display: none; } }
+@container amb (max-width: 959px) {
+  #oAccts.open .afind, #oAccts.open #rlist, .chatgrid.open > .amb-stack:first-child, .chatgrid.open #makerChatList { display: none; }
+  #oAccts:not(.open) #aside, .chatgrid:not(.open) #chatside, #anone, #chatnone { display: none; }
+}
+/* what an account reads at a glance: the loyalty and reward meters, the spark of its rates */
+.acust__tiles { margin: 0; }
+.ameterrow { margin: 0; }
+.apct__prev:empty { display: none; }
+.apct__prev { display: grid; gap: var(--amb-space-2); }
+.apct__table .apct__at { font-weight: 600; }
+.apct__step .amb-input { text-align: center; font-variant-numeric: normal; }
+/* the associates' table: the reward's meter over its words */
+.ameter { display: grid; gap: var(--amb-space-1); min-width: 12rem; }
+.atable td:last-child, .atable th:last-child { padding-inline-start: var(--amb-space-5); }
+.atable tr.off { opacity: .6; }
+.aprodhead { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+/* the filters wrap onto a second line of chips and never narrow to the width a segment keeps (Ambient caps .amb-segment at 30rem; a gap for the parts session) */
+.amb-segment--wrap { max-width: none; }
+/* the links' and the associates' lists stand in their place's stack, the way the accounts' do */
+#glist, #jlist, #clist { display: contents; }
+/* a book's chip inside a pressed choice takes the choice's own ground and ink, its dot left as the chip draws it */
+.apct__books .amb-segment__opt > .amb-chip { background: transparent; color: inherit; border-color: transparent; padding-inline: 0; }
+
+/* ---- Counter: Orders and the order card, both readers' (the band, Steps, Bill, thread) ---- */
+/* the place is the shell's two panes (#pOrder is the split): a stack never insets a stack of its own; a list or a part stands level with its heading */
+.amb-stack .amb-stack { padding-inline: 0; }
+.olistcol .amb-more, .oscreen .amb-more, .oearlier .amb-more { margin: 0; }
+.oscreen .amb-tiles { padding-inline: 0; }
+.orecord .onote { max-width: 36rem; }
+.oback { justify-self: start; }
+.oempty { display: grid; justify-items: center; gap: var(--amb-space-3); }
+.onote { margin: 0; font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
+.odue { color: var(--amb-neg); }
+.mfil .amb-select { max-width: none; }
+.omonth { display: grid; gap: var(--amb-space-2); }
+.ofold { display: grid; gap: var(--amb-space-2); }
+.ohold, .oprice, .oagain, .orate { display: grid; gap: var(--amb-space-3); justify-items: start; }
+.oact { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }
+.ofoot { display: grid; gap: var(--amb-space-2); }
+/* the band: the state and the reference, when and how in a line, then what it is */
+.oband { display: grid; gap: var(--amb-space-3); }
+.oband__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2); margin: 0; }
+.oref { font-family: var(--amb-font-mono); }
+.oband__when { margin: 0; font-size: var(--amb-text-subhead); }
+.oband__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-3); }
+.oband__what { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.oband__point { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.oband__sum { margin-inline-start: auto; font-size: var(--amb-text-title3); }
+.oband__foot .mtile { display: inline-grid; justify-items: center; gap: var(--amb-space-1); }
+.oband__foot .mq { font-size: var(--amb-text-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* the Bill: a row's name and, under it, what it says; the total heavier, what is owed in the stop colour */
+.obill { max-width: none; }
+.obill__sub { display: block; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.obill__total .amb-setting__name, .obill__total .amb-setting__value { font-weight: 700; color: var(--amb-ink); }
+.obill__due { color: var(--amb-neg); font-weight: 700; }
+/* the thread: his and their lines keep their line breaks */
+.omsgs .amb-msg__text { white-space: pre-wrap; }
+.omsgs { max-width: 36rem; }
+.amb-more > .amb-section__note { margin-inline-start: var(--amb-space-2); }
+.oscreen .amb-tiles { grid-template-columns: minmax(0, 1fr); }
+.obill .amb-setting__value { max-width: none; white-space: nowrap; }
+.orecord > .otop > .amb-pill { justify-self: start; }
+/* the rating under Home's row: the row's own inset, since Home's boxes take no place of their own */
+#hRate .amb-rating { margin-inline: var(--amb-space-4); }
+/* a tile and a list stand the width of the part, not the width of their words */
+.oprice > .amb-tiles, .ohold > .amb-tiles, .ohold > .amb-settings { justify-self: stretch; }
+/* ---- Counter: Account, the statement and the sheets ---- */
+/* the statement's lines (a Table of the live document): the cell's own parts stack in one box, so the stacked table reads as labelled lines */
+.stm-cell { display: grid; gap: 2px; justify-items: start; min-width: 0; }
+.stm-q { display: flex; align-items: center; gap: var(--amb-space-3); }
+.stm-size, .stm-fig { font-variant-numeric: tabular-nums; }
+.stm-fig { font-weight: 600; }
+tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decoration: line-through; }
+@container amb (min-width: 720px) { .amb-table td.is-num > .stm-cell { justify-items: end; } }
+/* the statement's foot: the figure that is owed or balanced stands heavier, as the Bill's total does */
+.stm-big > .amb-setting__name, .stm-big > .amb-setting__value { font-weight: 700; }
+.stm-big > .amb-setting__value:not(.amb-neg) { color: var(--amb-ink); }
+.amb-setting > .amb-thumb { flex: none; }
+.amb-settings.tot, .amb-settings.owed { max-width: none; }
+/* the Full statement is a tall sheet whose table stacks by the sheet's own width, not the shell's */
+.amb-sheet--full { container: amb / inline-size; }
+.amb-sheet .amb-table { margin: 0; }
+/* Account: one stack, the device above the statement; from 960px the device and its help stand in a second column */
+#aGlance, #aThread { display: contents; }
+#aGlance > .amb-settings, #aThread > .amb-list { max-width: none; }
+#aThread > .amb-list, #acct .amb-stack > .amb-list { margin-inline: 0; }
+.mfil[hidden] { display: none; }
+.mfil .amb-field { max-width: 24rem; }
+.mfnote { margin: 0; }
+.mfnote:empty { display: none; }
+#thisDevice, #aHelp { display: grid; gap: var(--amb-space-3); min-width: 0; align-content: start; }
+#thisDevice > .amb-settings, #aHelp > .amb-settings { max-width: none; }
+#thisDevice > .amb-section, #aHelp > .amb-section { margin: 0; }
+.devnote { margin: 0; padding: 0 var(--amb-space-4); font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.devnote:empty { display: none; }
+.devnote.bad, .amb-sheet .msg.bad, #gate .msg.bad, .keeppage .msg.bad { color: var(--amb-neg); }
+.keeppage { display: grid; gap: var(--amb-space-3); }
+.keeppage .kline { margin: 0; font-size: var(--amb-text-subhead); }
+.keepsteps { margin: 0; padding-left: var(--amb-space-5); display: grid; gap: var(--amb-space-2); font-size: var(--amb-text-subhead); }
+.keepsteps .glyph, .keeppage .glyph, .amb-basis .glyph { display: inline-block; vertical-align: middle; margin: 0 2px; }
+@container amb (min-width: 960px) {
+  #acct { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; column-gap: var(--amb-space-6); }
+  #acct > #aGlance, #acct > #aThread, #acct > .acct__main { grid-column: 1; }
+  #acct > #thisDevice, #acct > #aHelp { grid-column: 2; }
+  #acct { grid-template-rows: auto auto 1fr auto; }
+  #acct > #thisDevice { grid-row: 1 / span 3; }
+  #acct > #aHelp { grid-row: 4; }
+  #acct > .acct__main { align-self: start; }
+}
+/* the door: one form in the stack; the password's Show stands beside its field, the field's own hint under both */
+#doorBox, #doorBox .amb-form { max-width: 28rem; width: 100%; margin-inline: auto; }
+#doorBox .pwrow { display: flex; align-items: end; gap: var(--amb-space-3); }
+#doorBox .pwrow > .amb-field { flex: 1 1 auto; min-width: 0; }
+#gate .msg, .amb-sheet .msg, .keeppage .msg { margin: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+#gate .msg:empty, .amb-sheet .msg:empty, .keeppage .msg:empty { display: none; }
+#gate .amb-field__hint { margin: 0; }
+.ask { max-width: 28rem; }
+/* the sheets: a code frame stands in the middle, a message line leaves its box standing, a thread keeps its lines in the sheet's own scroll */
+.amb-sheet .appmark { display: none; }
+.amb-sheet .amb-codeframe { justify-self: center; margin: 0; }
+.amb-sheet .amb-plate { margin: 0; }
+.amb-sheet .amb-thread, .amb-sheet .amb-compose { margin: 0; }
+.thsheet .amb-sheet__body { max-height: 60dvh; overflow-y: auto; }
+.thempty { list-style: none; }
+.paysheet > .amb-sheet__body + .amb-sheet__body { margin-top: var(--amb-space-3); }
+.payseg { margin: 0; }
+.payflag { display: block; font-size: var(--amb-text-footnote); }
+.paycode__name { display: block; }
+.paycheck { display: grid; justify-items: center; gap: var(--amb-space-2); text-align: center; }
+.paycheck .amb-section { margin: 0; }
+.paycheck__mark { width: 32px; height: 32px; color: var(--amb-ink-2); }
+.payslip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+.payslip > p { flex-basis: 100%; margin: 0; }
+.slipthumb { border-radius: var(--amb-radius-sm); border: 1px solid var(--amb-line); }
+.paysaid { margin: 0; }
+.inv .invd { display: inline; }
+.inv .amb-list { margin: 0; }
+/* the sealed issues' old classes: an issue sent before this day still reads in the system's tokens, as lines and as a foot. Nothing draws these now. */
+.salt-lines { display: grid; border-top: 1px solid var(--amb-line); font-size: var(--amb-text-subhead); }
+.salt-lines__head { display: none; }
+.salt-lines__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--amb-space-3); padding: 10px 0; border-bottom: 1px solid var(--amb-line); }
+.salt-lines__date, .salt-lines__sub { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.salt-lines__amount { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.salt-lines__sub { display: block; }
+.salt-lines__state { grid-column: 1 / -1; font-size: var(--amb-text-footnote); }
+.salt-lines__state--verdigris { color: var(--amb-pos); }
+.salt-lines__state--ember { color: var(--amb-neg); }
+.salt-lines__row--cancelled { color: var(--amb-ink-3); text-decoration: line-through; }
+.salt-settings { display: grid; border-top: 1px solid var(--amb-line); }
+.salt-settings__row { display: flex; justify-content: space-between; gap: var(--amb-space-3); padding: 10px 0; border-bottom: 1px solid var(--amb-line); }
+.salt-settings__value { font-variant-numeric: tabular-nums; font-weight: 600; }
+.salt-settings__row--muted, .salt-settings__row--text { color: var(--amb-ink-2); }
+.amb-sheet .amb-stack { padding-inline: 0; }
+.stm-cell .amb-table__sub { color: var(--amb-ink-2); font-weight: 400; }
+#devSlot { display: grid; gap: var(--amb-space-3); }
+#devSlot:empty { display: none; }
+.keeppage { padding-inline: var(--amb-space-4); }
+.keeppage > .amb-section { margin: 0; padding: 0; }

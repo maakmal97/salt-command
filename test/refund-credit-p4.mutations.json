@@ -20,8 +20,8 @@
   {
     "name": "Prices says no credit",
     "file": "stmt/page.js",
-    "find": "e.hidden=!(c>0.004); e.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):'';",
-    "replace": "e.hidden=true; e.textContent='';"
+    "find": "e.hidden=!(c>0.004); var sp=e.querySelector('span'); if(sp) sp.textContent=c>0.004?tw('pr.credit',{rm:rm(c)}):''; }",
+    "replace": "e.hidden=true; var sp=e.querySelector('span'); if(sp) sp.textContent=''; }"
   },
   {
     "name": "credit under nought",
@@ -32,8 +32,8 @@
   {
     "name": "the bar says no credit",
     "file": "stmt/page.js",
-    "find": "rm(+sum.toFixed(2)),bco.any?tw('sh.creditOff'",
-    "replace": "rm(+sum.toFixed(2)),false?tw('sh.creditOff'"
+    "find": "rm(+sum.toFixed(2)));\n    st.appendChild(el('span','amb-stat__label',bco.any?tw('sh.creditOff'",
+    "replace": "rm(+sum.toFixed(2)));\n    st.appendChild(el('span','amb-stat__label',false?tw('sh.creditOff'"
   },
   {
     "name": "the check says no credit",

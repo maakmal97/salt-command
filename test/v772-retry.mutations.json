@@ -1,0 +1,6 @@
+[
+ {"name":"a same-date re-run over a sealed issue is let through","file":"tools/make_statements.mjs","find":"if (!archive && prior.includes(issue) && !(opts && opts.retry)) {","replace":"if (false) {"},
+ {"name":"a retry asked for is refused too","file":"tools/make_statements.mjs","find":"if (!archive && prior.includes(issue) && !(opts && opts.retry)) {","replace":"if (!archive && prior.includes(issue)) {"},
+ {"name":"the refusal does not say how to ask","file":"tools/make_statements.mjs","find":"+ \"Nothing was written. A retry after a failure is asked for: --retry.\");","replace":"+ \"Nothing was written.\");"},
+ {"name":"the command line drops the flag","file":"tools/make_statements.mjs","find":"const retry = process.argv.includes('--retry');","replace":"const retry = false;"}
+]

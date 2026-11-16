@@ -61,20 +61,23 @@ export function tileGroup(root, label) {
   const f = [...root.querySelectorAll("fieldset.maker-tiles")].find((g) => legendLabel(g.querySelector("legend")) === label);
   if (f) return f;
   /* 27 Oct 2026 (Record's forms as settings rows): a choice of two or three plain words is a Segment in a row; its name is the row's label, found as a legend's is */
-  return [...root.querySelectorAll(".salt-segment.mseg")].find((s) => { const n = s.getAttribute("aria-labelledby") && s.ownerDocument.getElementById(s.getAttribute("aria-labelledby")); return n && legendLabel(n) === label; }) || null;
+  return [...root.querySelectorAll(".mseg")].find((s) => { const n = s.getAttribute("aria-labelledby") && s.ownerDocument.getElementById(s.getAttribute("aria-labelledby")); return n && legendLabel(n) === label; }) || null;
 }
 /* A LEGEND ABOUT A BOOK ENDS IN THE BOOK'S MARK AND NO WORD (his word of 12 Oct 2026). legendLabel is the legend's words, then ", " and the code of the book that its mark stands for (read off the shape the
    mark tells a reader), so a test names a group "Starting level, salt" as it always did while the page draws the mark alone. A legend with no mark is just its words. */
 export function legendLabel(legend) {
   /* 25 Oct 2026 (Record redesign P3): on Salt Admin the legend ends in the book's typed tag, read off its class, as a mark was read off its shape */
-  const g = legend.cloneNode(true), mark = g.querySelector(".pwith"), shape = mark ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "", tag = g.querySelector(".salt-producttag");
+  const g = legend.cloneNode(true), mark = g.querySelector(".pwith"), shape = mark ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "", tag = g.querySelector(".salt-producttag"), chip = g.querySelector(".amb-chip");
+  /* 16 Nov 2026, the move to Ambient (place I): on Record a legend about a book ends in its chip, the book's name in ink */
+  const chipped = chip && chip.textContent.trim().toLowerCase();
+  if (chip) chip.remove();
   if (mark) mark.remove();
   const typed = tag && ([...tag.classList].find((c) => /^salt-producttag--/.test(c)) || "").replace("salt-producttag--", "");
   if (tag) tag.remove();
-  const book = typed || shape && Object.keys(PSHAPE).find((k) => k !== "_" && PSHAPE[k] === shape);
+  const book = typed || chipped || shape && Object.keys(PSHAPE).find((k) => k !== "_" && PSHAPE[k] === shape);
   return g.textContent.trim() + (book ? ", " + book : "");
 }
-const segOpts = (g) => [...g.querySelectorAll("button.salt-segment__opt")];
+const segOpts = (g) => [...g.querySelectorAll("button.salt-segment__opt, button.amb-segment__opt")];
 export function tileValues(root, label) { const g = tileGroup(root, label); return g ? (g.matches(".mseg") ? segOpts(g).map((b) => b.getAttribute("data-value")) : [...g.querySelectorAll("input")].map((r) => r.value)) : null; }
 export function tileValue(root, label) { const g = tileGroup(root, label); return g ? (g.matches(".mseg") ? g.value : (g.querySelector("input:checked") || { value: "" }).value) : null; }
 export function tile(root, label, value) {
@@ -104,7 +107,7 @@ export function answerSheets(win, asked, answer = () => true) {
     const sheet = doc.getElementById("ynSheet");
     if (!sheet || sheet.hasAttribute("data-answered")) return;
     sheet.setAttribute("data-answered", "");
-    asked.push(sheet.querySelector(".salt-sheet__title").textContent + " " + sheet.textContent);
+    asked.push(sheet.querySelector(".salt-sheet__title, .amb-sheet__title").textContent + " " + sheet.textContent);
     doc.getElementById(answer() ? "ynGo" : "ynKeep").click();
   }).observe(doc.body, { childList: true });
 }

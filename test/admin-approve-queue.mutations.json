@@ -1,9 +1,9 @@
 [
  {
-  "name": "a Desk row is a glass card again, not the Approve recipe",
+  "name": "a Desk row is a glass card again, not Ambient's approval",
   "file": "stmt/owner.js",
-  "find": "makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard')",
-  "replace": "makerCard(draftRoot,'draft:'+draft.id)"
+  "find": "el('article','amb-task apcard'+(pick==='r'",
+  "replace": "el('article','salt-glass-card apcard'+(pick==='r'"
  },
  {
   "name": "the party leaves the card's head",
@@ -26,14 +26,14 @@
  {
   "name": "the drafter's reasoning leaves the card",
   "file": "stmt/owner.js",
-  "find": "      if(d.reasoning) panel.appendChild(el('p','salt-approve__reason',noBook(d.reasoning)));\n",
+  "find": "      if(d.reasoning) panel.appendChild(el('p','amb-task__text apreason',noBook(d.reasoning)));\n",
   "replace": ""
  },
  {
   "name": "the proposed row is open on the card",
   "file": "stmt/owner.js",
-  "find": "var panel=el('div','rdet rdet--row'); panel.hidden=true;",
-  "replace": "var panel=el('div','rdet rdet--row'); panel.hidden=false;"
+  "find": "var panel=el('div','rdet rdet--row apdet'); panel.hidden=true;",
+  "replace": "var panel=el('div','rdet rdet--row apdet'); panel.hidden=false;"
  },
  {
   "name": "a trip's card lists none of the other rows",
@@ -42,21 +42,21 @@
   "replace": "        [g.lead].forEach(function(d){\n          if(tierSets(d).length)"
  },
  {
-  "name": "the page restates the recipe's padding",
+  "name": "the page restates the task's padding",
   "file": "stmt/page.js",
-  "find": ".adm .salt-approve>.maker-say:empty{display:none}",
-  "replace": ".adm .salt-approve>.maker-say:empty{display:none}\n.adm .salt-approve{padding:16px}"
+  "find": ".adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}",
+  "replace": ".adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}\n.adm .apcard{padding:16px}"
  },
  {
   "name": "the queue is open on arrival",
   "file": "stmt/page.js",
-  "find": "<details id=\"makerQueue\" class=\"salt-plan\">",
-  "replace": "<details id=\"makerQueue\" class=\"salt-plan\" open>"
+  "find": "<details id=\"makerQueue\" class=\"nfold\">",
+  "replace": "<details id=\"makerQueue\" class=\"nfold\" open>"
  },
  {
-  "name": "the queue is not the Plan fold",
+  "name": "the queue is not a fold",
   "file": "stmt/page.js",
-  "find": "<details id=\"makerQueue\" class=\"salt-plan\">",
+  "find": "<details id=\"makerQueue\" class=\"nfold\">",
   "replace": "<details id=\"makerQueue\" class=\"maker-card\">"
  },
  {
@@ -68,32 +68,20 @@
  {
   "name": "the queue's summary has no act of its own",
   "file": "stmt/page.js",
-  "find": "<summary data-act=\"record.queue-toggle\">",
-  "replace": "<summary>"
+  "find": "<summary class=\"amb-section\" data-act=\"record.queue-toggle\">",
+  "replace": "<summary class=\"amb-section\">"
  },
  {
   "name": "a redraw of the entries shuts the fold",
   "file": "stmt/owner.js",
   "find": "      queueRoot.textContent='';\n      var held=",
-  "replace": "      queueRoot.textContent=''; if(queueRoot.parentNode&&queueRoot.parentNode.parentNode) queueRoot.parentNode.parentNode.open=false;\n      var held="
+  "replace": "      queueRoot.textContent=''; if(queueRoot.parentNode&&queueRoot.parentNode) queueRoot.parentNode.open=false;\n      var held="
  },
  {
   "name": "an empty queue opens its fold",
   "file": "stmt/owner.js",
   "find": "if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));",
-  "replace": "if(!held.length&&!bad.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.parentNode.open=true; }"
- },
- {
-  "name": "Approve is a danger action",
-  "file": "stmt/owner.js",
-  "find": "go.classList.toggle('salt-ghost--danger',q.plain!==true);",
-  "replace": "go.classList.add('salt-ghost--danger');"
- },
- {
-  "name": "Reject is no danger action",
-  "file": "stmt/owner.js",
-  "find": "go.classList.toggle('salt-ghost--danger',q.plain!==true);",
-  "replace": "go.classList.remove('salt-ghost--danger');"
+  "replace": "if(!held.length&&!bad.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.open=true; }"
  },
  {
   "name": "the Sheet tells its no before the action's yes",
@@ -124,18 +112,6 @@
   "file": "stmt/owner.js",
   "find": "function ynTag(btn,key){ if(btn&&btn.setAttribute) btn.setAttribute('data-yn',key); return btn; }",
   "replace": "function ynTag(btn,key){ return btn; }"
- },
- {
-  "name": "the Sheet's close control has no act",
-  "file": "stmt/owner.js",
-  "find": "actOn(document.getElementById('ynX'),'ask.close',key);",
-  "replace": ""
- },
- {
-  "name": "the Sheet's action has no key",
-  "file": "stmt/owner.js",
-  "find": "actOn(go,'ask.go',key);",
-  "replace": "actOn(go,'ask.go');"
  },
  {
   "name": "Withdraw server-held entry sends at once",
@@ -186,18 +162,6 @@
   "replace": "{lines:lines}"
  },
  {
-  "name": "Set notice is a danger action",
-  "file": "stmt/owner.js",
-  "find": "go:'Set the notice', keep:'Not yet', plain:true}",
-  "replace": "go:'Set the notice', keep:'Not yet'}"
- },
- {
-  "name": "Clear notice is no danger action",
-  "file": "stmt/owner.js",
-  "find": "go:'Clear the notice', keep:'Keep it'}",
-  "replace": "go:'Clear the notice', keep:'Keep it', plain:true}"
- },
- {
   "name": "a twin is recorded without his yes",
   "file": "stmt/owner.js",
   "find": "if(!twin||!(await ownerAsk(send.button,'twin:'+what,{title:'Record this '+what+' again?', say:['You already recorded a '+what+' like this. Record it again as a separate one?'], go:'Record it again', keep:'Do not record', plain:true})))throw error;",
@@ -230,8 +194,8 @@
  {
   "name": "the head is a control again",
   "file": "stmt/owner.js",
-  "find": "head=el('div','salt-approve__head apphead');",
-  "replace": "head=el('button','salt-approve__head apphead');"
+  "find": "head=el('div','amb-task__head apphead');",
+  "replace": "head=el('button','amb-task__head apphead');"
  },
  {
   "name": "a committed or approved copy is listed as waiting for the Desk",
@@ -252,16 +216,16 @@
   "replace": ">Sent, not yet drafted</span>"
  },
  {
-  "name": "Approve is a ghost when chosen, not the filled pill",
+  "name": "Approve is quiet when chosen, not the filled pill",
   "file": "stmt/owner.js",
-  "find": "el('button',pick==='a'?'salt-pill salt-pill--sm':'salt-ghost',approveLabel(g))",
-  "replace": "el('button','salt-ghost',approveLabel(g))"
+  "find": "el('button','amb-pill amb-pill--sm'+(pick==='a'?'':' amb-pill--quiet'),approveLabel(g))",
+  "replace": "el('button','amb-pill amb-pill--sm amb-pill--quiet',approveLabel(g))"
  },
  {
   "name": "a chosen Reject lights no card",
   "file": "stmt/owner.js",
-  "find": "if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r');",
-  "replace": "if(pick) card.classList.add('ap--a');"
+  "find": "(pick==='r'?' ap--r':pick==='a'?' ap--a':gone?' ap--r':'')",
+  "replace": "(pick==='r'||gone?' ap--a':pick==='a'?' ap--a':'')"
  },
  {
   "name": "Approve is not pressed when chosen",
@@ -270,10 +234,10 @@
   "replace": "approve.setAttribute('aria-pressed','false');"
  },
  {
-  "name": "the choices stand outside the recipe's actions",
+  "name": "the choices stand outside the task's actions",
   "file": "stmt/owner.js",
-  "find": "acts=el('div','salt-approve__actions apticks')",
-  "replace": "acts=el('div','apticks')"
+  "find": "var acts=el('div','amb-task__acts apticks');",
+  "replace": "var acts=el('div','apticks');"
  },
  {
   "name": "Details leaves the head",
@@ -400,5 +364,11 @@
   "file": "stmt/owner.js",
   "find": "function bookTag(product){ return productTag(product); }",
   "replace": "function bookTag(product){ return bookMark(product,20); }"
+ },
+ {
+  "name": "the Confirm bar stands in the tab bar, not before it",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-dock\"><div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\">",
+  "replace": "<div class=\"amb-dock\"><nav class=\"amb-tabbar\" aria-label=\"Salt Admin\"><div id=\"apBar\" class=\"amb-savebar apbar\" hidden></div>"
  }
 ]

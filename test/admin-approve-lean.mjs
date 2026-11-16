@@ -36,7 +36,7 @@ export async function run({ ok, pageWork }) {
     await go(p, byAct(p.d, "nav.orders")); await go(p, byAct(p.d, "part.orders.approve"));
     const c = cardOf(p, TIER.id), line = c && c.querySelector(".aptier");
     /* L1 */
-    ok(!!line && !!line.querySelector(".salt-producttag--salt") && t(line) === "Salt −20%, was −10%" && t(c.querySelector(".apverb")) === "Their %" && !/RM 0\.00/.test(t(c)),
+    ok(!!line && !!line.querySelector(".amb-chip.amb-kind-1") && t(line) === "Salt −20%, was −10%" && t(c.querySelector(".apverb")) === "Their %" && !/RM 0\.00/.test(t(c)),
       "L1 a Their % card says the book and the figure as the stepper says it, what it was, the verb Their %, and no RM 0.00: " + J([t(line), t(c && c.querySelector(".apverb"))]));
     ok(t(byAct(c, "draft.approve")) === "Approve −20%", "L1 and its Approve names the figure: " + t(byAct(c, "draft.approve")));
     /* L4 */

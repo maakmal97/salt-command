@@ -109,8 +109,8 @@ async function ownerPage(wd, { loseAppointmentAnswer = false, retained = [] } = 
 
 const sectionOf = (doc, heading) => [...doc.querySelectorAll("#makerInputs .maker-input")]
   .find((section) => section.querySelector("h3")?.textContent === heading);
-const field = (section, label) => section && [...section.querySelectorAll("label")]
-  .find((node) => node.querySelector(".lbl, .salt-settings__label")?.textContent.trim() === label)?.querySelector("input,select");
+const field = (section, label) => section && [...section.querySelectorAll("label, div.amb-field")]
+  .find((node) => node.querySelector(".lbl, .salt-settings__label, .amb-field__label")?.textContent.trim() === label)?.querySelector("input,select");
 const button = (section, text) => section && [...section.querySelectorAll("button")]
   .find((node) => node.textContent.trim() === text);
 

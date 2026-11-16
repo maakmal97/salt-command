@@ -70,10 +70,10 @@ export async function run({ ok }) {
     /* 1. a read that works, then one that fails: the line in place of the figure, and the pay foot gone */
     const a = await open([good, refused], "2026-10-12T02:42:00Z");
     await wait(() => a.figure() && !a.foot().hidden);
-    ok(a.figure() && /To pay now/.test(a.foot().textContent) && !a.foot().hidden && !a.stale(), "the fixture: a page that reads leads with its figure and the overdue sentence, the pay foot standing with To pay now: " + JSON.stringify(a.say().slice(0, 90)));
+    ok(a.figure() && /To pay now/.test(a.head().textContent) && /Pay RM/.test(a.foot().textContent) && !a.foot().hidden && !a.stale(), "the fixture: a page that reads leads with its figure and the overdue sentence, the pay foot standing with To pay now: " + JSON.stringify(a.say().slice(0, 90)));
     a.clock.t = Date.parse("2026-10-12T03:05:00Z");
     await a.read();
-    ok(!!a.stale() && a.say() === "Not updated since 10:42" && a.stale().querySelector("p").getAttribute("role") === "status",
+    ok(!!a.stale() && a.say() === "Not updated since 10:42" && a.stale().querySelector("[role=status]").getAttribute("role") === "status",
       "a read the site refuses, after one that worked, leads Home with the time of the last read in Kuala Lumpur, 24 hours (10:42 for 02:42 UTC): " + JSON.stringify(a.say()));
     ok(!a.figure() && !/RM|Overdue|Please pay/.test(a.say()), "in place of the figure and the overdue sentence, never beside them");
     ok(a.foot().hidden, "and the pay foot, which holds the same figure, goes with it");

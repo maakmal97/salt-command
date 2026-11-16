@@ -54,5 +54,5 @@
  {"name":"banner message opens nothing","file":"stmt/owner.js","find":"if(at) showPlace(at.place, at.part, {fresh:true, push:true});","replace":"if(at){}"},
  {"name":"unknown address opens Needs you","file":"stmt/owner.js","find":"var at=addrOf(d.hash);\n        if(at) showPlace","replace":"var at=addrOf(d.hash)||{place:'needs',part:''};\n        if(at) showPlace"},
  {"name":"bell drawn on the test surface","file":"stmt/page.js","find":"(test ? \"\" : alertRow())","replace":"alertRow()"},
- {"name":"the switch only ever turns them on","file":"stmt/owner.js","find":"(alertSw.getAttribute('aria-checked')==='true'?alertTurnOff:alertTurnOn)();","replace":"alertTurnOn();"}
+ {"name":"the switch only ever turns them on","file":"stmt/owner.js","find":"(was?alertTurnOff:alertTurnOn)();","replace":"alertTurnOn();"}
 ]
