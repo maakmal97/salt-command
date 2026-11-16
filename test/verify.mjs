@@ -26742,7 +26742,8 @@ await (async () => {
     ok(!box(ig).hidden && ig.D.getElementById("inappIos").hidden && !ig.D.getElementById("inappDroid").hidden
       && /Chrome/.test(ig.D.getElementById("inappDroid").textContent),
       "and Instagram's on an Android to Chrome");
-    ok(/salt-ghost/.test(wa.D.getElementById("linkGo").className) && !/salt-pill/.test(wa.D.getElementById("linkGo").className)
+    /* 16 Nov 2026, the move to Ambient (end pass): where Continue stays it is Ambient's quiet pill, no longer the salt-ds ghost */
+    ok(/amb-pill--quiet/.test(wa.D.getElementById("linkGo").className) && !/salt-/.test(wa.D.getElementById("linkGo").className)
       && wa.posts.every((p) => p.peek === true),
       "where Continue stays, quieter, and nothing has been spent");
   } finally { wa.W.close(); ig.W.close(); }
@@ -43752,7 +43753,8 @@ await (async () => {
     /* 2 Nov 2026 (his Orders canvas, page 2): the screen's band is the shared band, whose head holds the chip; the heading that repeated the word is gone, so the chip alone says it */
     "an order's state is the system's chip, in its tone, on its row and card; its own screen's band says the word alone (Counter Batch A P7)");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
-  ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
+  ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && pcssY.trim() === "const PAGE_CSS = " + String.fromCharCode(96),
+    /* 16 Nov 2026, the move to Ambient (end pass): PAGE_CSS is empty, its live rules are in design/site.css, so the page's own layer states no look at all */
     "the page's own layer keeps geometry and states no look the recipe owns");
   /* 26 Oct 2026 (Practice as a list of settings): Practice's one control is the system's Switch */
   ok(/actOn\(el\('button','salt-switch'\),'more\.test-accounts'\)/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
@@ -51381,12 +51383,12 @@ await (async () => {
   for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close();
 })();
 
-section("Failures on brand: the maintenance page is the Counter's frame with the ring, its sentence from the table and its time read from MAINTENANCE_UNTIL in Kuala Lumpur (12 Oct 2026)");
+section("Failures on brand: the maintenance page is the Counter's frame in Ambient's shell, its sentence from the table and its time read from MAINTENANCE_UNTIL in Kuala Lumpur (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-maintenance.mjs")).run({ ok });
 })();
 
-section("Failures on brand: the shut page and the site's 404 stand on the Counter's frame with the ring, the 404 echoes nothing of what was asked and is the page only where a page was asked for (12 Oct 2026)");
+section("Failures on brand: the shut page and the site's 404 stand on the Counter's frame in Ambient's shell, the 404 echoes nothing of what was asked and is the page only where a page was asked for (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-shut-404.mjs")).run({ ok });
 })();
