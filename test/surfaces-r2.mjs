@@ -106,9 +106,11 @@ export async function run({ ok, pageWork }) {
       /* 2 Nov 2026 (Customers on the canvas): an account is a settings row, its code the .acode */
       const row = () => [...d.querySelectorAll("#rlist [data-u]")].find((c) => t(c.querySelector(".acode")) === "CX1-ZED");
       /* the read is held open on purpose, so a short pause, never quiet(), which would wait it out */
-      if (row()) row().click(); await new Promise((r) => setTimeout(r, 80));
+      /* 16 Nov 2026, the move to Ambient (the red fix): an account is Ambient's row, and a tap on it is the row's main button */
+      const tapRow = () => { const r = row(), b = r && r.querySelector(".arow__open"); if (b) b.click(); };
+      tapRow(); await new Promise((r) => setTimeout(r, 80));
       const first = d.querySelector("#aopen .acust");
-      if (row()) row().click(); await new Promise((r) => setTimeout(r, 80));
+      tapRow(); await new Promise((r) => setTimeout(r, 80));
       const second = d.querySelector("#aopen .acust");
       land(); await quiet();
       const now = d.querySelector("#aopen .acust");

@@ -9,7 +9,7 @@
  *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
  *   3  the Orders tabs are the system's four counted Filters (16 Nov 2026), and a tap presses the chosen one and lets the others go
- *   4  Salt Admin's Record strip is the Nav bar's tabs, never the slider, the part entered selected; Customers' is the tight slider, its thumb following each part entered, a hidden option taking no column\n *   5  the strips that do not fit stay pills: the stages' arrows, Orders' second strip, the months; the kinds, Shop's and Orders' parts are the Nav bar's text tabs\n *   6  no rule of the page lowers a slider's option under 44px */
+ *   4  (16 Nov 2026, the move to Ambient) Salt Admin's Record and Customers strips are Ambient's Segment, the part entered the option pressed, a hidden option never the one pressed\n *   5  the strips that do not fit stay pills: the stages' arrows, Orders' second strip, the months; the kinds, Shop's and Orders' parts are Ambient's Segments, counted where they carry a count (16 Nov 2026)\n *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { open, ord, ago } from "./counter-b-kit.mjs";
@@ -72,35 +72,39 @@ export async function run({ ok, pageWork }) {
     await work.quiet();
     /* 25 Oct 2026 (Record redesign P1, his Ask A): Record's three left the slider for the Nav bar's text tabs (test/admin-record-menu.mjs) */
     const rec = d.querySelector('.aparts[data-place="record"]');
-    const picked = () => [...rec.querySelectorAll("button")].map((b) => (b.getAttribute("aria-selected") === "true" ? 1 : 0)).join("");
-    ok(rec && !rec.classList.contains("salt-segment") && !rec.classList.contains("salt-tabs") && [...rec.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link") && !b.classList.contains("salt-segment__opt")),
-      "Salt Admin's Record strip is the Nav bar's tabs, never the slider or pills: " + (rec && rec.className));
+    /* 16 Nov 2026, the move to Ambient (the red fix): every strip of Salt Admin is Ambient's Segment (amb-segment, its options amb-segment__opt, the chosen one aria-pressed); there is no thumb, no --n and no --i,
+       and no salt-ds slider, tab bar or pill left */
+    const pressedOf = (g) => [...g.querySelectorAll("button")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.getAttribute("data-part") || b.getAttribute("data-chip"));
+    const ambSeg = (g) => !!g && g.classList.contains("amb-segment") && !/salt-/.test(g.className) && [...g.querySelectorAll("button")].every((b) => b.classList.contains("amb-segment__opt") && !/salt-/.test(b.className));
+    const picked = () => pressedOf(rec).join();
+    ok(ambSeg(rec) && rec.querySelectorAll("button").length >= 3,
+      "Salt Admin's Record strip is Ambient's Segment, never the slider or pills: " + (rec && rec.className));
     const go = async (h) => { dom.window.location.hash = h; dom.window.dispatchEvent(new dom.window.HashChangeEvent("hashchange")); await work.quiet(); };
     await go("#record/pricing");
     const g1 = picked();
     await go("#record/customers");
     const g2 = picked();
-    ok(g1 === "001" && g2 === "010", "and the part entered is the tab selected, Pricing then Customers: " + J([g1, g2]));
+    ok(g1 === "pricing" && g2 === "customers", "and the part entered is the option pressed, Pricing then Customers: " + J([g1, g2]));
     /* 25 Oct 2026 (canvas Salt Admin Customers): Customers' parts are the slider, the tight one; its thumb follows a part, and a hidden option takes no column */
     const cu = d.querySelector('.aparts[data-place="customers"]');
-    ok(!!cu && cu.classList.contains("salt-segment") && cu.classList.contains("salt-segment--tight") && !cu.classList.contains("salt-tabs")
-      && Number(seg(cu).n) >= 2 && [...cu.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
-      "Salt Admin's Customers strip is a tight slider: " + J(cu && seg(cu)));
+    ok(ambSeg(cu) && cu.querySelectorAll("button").length >= 2,
+      "Salt Admin's Customers strip is Ambient's Segment: " + J(cu && cu.className));
     const firstPart = cu.querySelector("button[data-part]");
     firstPart.hidden = true;
     await go("#customers/links");
-    const g3 = seg(cu), shown = [...cu.querySelectorAll("button")].filter((b) => !b.hidden).length;
-    ok(g3.n === String(shown) && g3.i === "1" && g3.on.split("1").length === 2, "an option hidden leaves the columns: the thumb on Links, the second shown, and its option the one marked active: " + J(g3));   /* 16 Nov 2026: the Orders tabs no longer drive segSync, so the active mark is read here */
+    const g3 = pressedOf(cu), hiddenOnes = [...cu.querySelectorAll("button")].filter((b) => b.hidden);
+    ok(hiddenOnes.length === 1 && hiddenOnes[0] === firstPart && g3.join() === "links" && firstPart.getAttribute("aria-pressed") !== "true",
+      "an option hidden leaves the strip: it is not the one pressed, and Links, entered by its address, is the one marked: " + J(g3));
     firstPart.hidden = false;
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
     /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */
-    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]'].map((s) => [s, d.querySelector(s)]);   /* 2 Nov 2026 (Orders on the canvas): Orders' parts are one Segment of four now, the slider */
-    const navOk = navs.map(([s, g]) => [s, !!g && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link"))]);
-    ok(!!kinds && !kinds.classList.contains("salt-segment") && [...kinds.querySelectorAll("button")].every((b) => b.classList.contains("salt-nav__link")) && navOk.every((x) => x[1]),
-      "the kinds and Shop's parts are the Nav bar's tabs, never the slider: " + J(navOk));
+    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]'].map((s) => [s, d.querySelector(s)]);
+    const navOk = navs.map(([s, g]) => [s, ambSeg(g) && g.classList.contains("amb-segment--wrap")]);
+    ok(ambSeg(kinds) && kinds.classList.contains("amb-segment--wrap") && [...kinds.querySelectorAll(".amb-segment__count")].length > 0 && navOk.every((x) => x[1]),
+      "the kinds (counted) and Shop's parts are Ambient's wrapping Segments, never the slider: " + J(navOk));
     const ordSeg = d.querySelector('.aparts[data-place="orders"]');
-    ok(!!ordSeg && ordSeg.classList.contains("salt-segment") && [...ordSeg.querySelectorAll("button")].length === 4 && [...ordSeg.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
-      "and Orders' four parts are the slider, a Segment of four");
+    ok(ambSeg(ordSeg) && [...ordSeg.querySelectorAll("button")].length >= 4 && [...ordSeg.querySelectorAll(".amb-segment__count")].length >= 4,
+      "and Orders' parts are Ambient's Segment, each counted");
     /* 26 Oct 2026, his word: Salt Admin's look was one Switch; 15 Nov 2026, the move to Ambient: there is none */
     ok(!d.getElementById("lookRow") && !d.querySelector(".lookset"), "Salt Admin draws no Look row, the device choosing light or dark");
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));
