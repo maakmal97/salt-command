@@ -236,7 +236,6 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 #gate .amb-field__hint { margin: 0; }
 .ask { max-width: 28rem; }
 /* the sheets: a code frame stands in the middle, a message line leaves its box standing, a thread keeps its lines in the sheet's own scroll */
-.amb-sheet .appmark { display: none; }
 .amb-sheet .amb-codeframe { justify-self: center; margin: 0; }
 .amb-sheet .amb-plate { margin: 0; }
 .amb-sheet .amb-thread, .amb-sheet .amb-compose { margin: 0; }
@@ -276,3 +275,35 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 #devSlot:empty { display: none; }
 .keeppage { padding-inline: var(--amb-space-4); }
 .keeppage > .amb-section { margin: 0; padding: 0; }
+
+/* ---- Counter: the small pages and the test surface (place E) ---- */
+/* the guest board and the join page are one shell with no script; the sign-in link page, the code screen and the join page keep the door's one column */
+.gcol { max-width: 28rem; width: 100%; margin-inline: auto; }
+.gcol > .amb-form { width: 100%; padding-inline: 0; }
+.gcol > .amb-settings { max-width: none; }
+#link .msg, #codeBox .msg { margin: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+#link .msg:empty, #codeBox .msg:empty { display: none; }
+#link .msg.bad, #codeBox .msg.bad { color: var(--amb-neg); }
+.gonce { margin: 0; text-align: center; }
+#link .amb-setting__name { display: flex; align-items: center; gap: var(--amb-space-3); }
+/* the code screen carried into the signed-out Sheet is the form's own box: no hero, no screen height, the Sheet's title above it */
+.amb-sheet #codeBox { height: auto; overflow: visible; background: none; }
+.amb-sheet #codeBox > main { position: static; overflow: visible; padding: 0; }
+.amb-sheet #codeBox .amb-hero { display: none; }
+.amb-sheet #codeBox .gcol { padding-inline: 0; }
+/* what the join page's script says is drawn only while it holds words */
+.gsay:has(> #jm:empty) { display: none; }
+/* the board: a list a book, side by side where the screen has room; its head is the book's mark */
+.gboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--amb-space-5) var(--amb-space-4); align-items: start; }
+.gboard > .amb-settings { max-width: none; }
+.gmark { display: flex; align-items: center; }
+/* the test surface: the account, its moves and the two views, which stand side by side from 1080px and as two tabs under it */
+.ts-acts { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }
+.ts-say:empty { display: none; }
+.ts-views iframe { display: block; width: 100%; height: calc(100dvh - 190px); min-height: 520px; border: 1px solid var(--amb-line-field); border-radius: var(--amb-radius-lg); background: var(--amb-base); }
+@media (min-width: 1080px) {
+  .amb-segment.ts-tabs { display: none; }
+  .ts-views { grid-template-columns: 1fr 1fr; gap: var(--amb-space-4); }
+  /* over Ambient's own rule that a hidden element is never drawn: both views stand while the tabs are away */
+  .ts-views iframe[hidden] { display: block !important; }
+}

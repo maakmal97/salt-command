@@ -3,7 +3,8 @@
    once, a second tap within four seconds), Reset all, Start empty for the fresh account, and the way to Make an account not yet made,
    which is Salt Admin's (it seals the account under the master this page never holds). THE VIEWS ARE landingPage, NEVER A COPY: this
    file draws only the frame around them. Built from the system's carried recipes and tokens alone. */
-/* 15 Nov 2026, the move to Ambient: the page's one head (stmt/page.js), Ambient and the site's layer; its own frame keeps its markup until its builder */
+/* 16 Nov 2026, the move to Ambient (place E): the page's one head (stmt/page.js), Ambient and the site's layer; the frame is one Ambient shell: its hero, the
+   account and the view as segments of the system, the moves as pills (every control 44px by the system's own), the two views the real landingPage in frames */
 import { DOC_OPEN, SITE_STYLE, BODY_OPEN, ambScript } from "./page.js";
 import { TS } from "./words.js";
 import { TEST_USER, TEST_LOCKED, TEST_FRESH } from "./testusers.js";
@@ -11,28 +12,6 @@ import { TEST_USER, TEST_LOCKED, TEST_FRESH } from "./testusers.js";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 export const SHELL_ACCOUNTS = [[TEST_USER, "ts.open"], [TEST_LOCKED, "ts.locked"], [TEST_FRESH, "ts.fresh"]];
 export const RESET_ARM_MS = 4000;
-
-const SHELL_CSS = `
-body{margin:0;background:var(--salt-obsidian);color:var(--salt-salt)}
-.ts-bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;padding:16px}
-.ts-bar h1{margin:0;font-size:22px;color:var(--salt-salt)}
-.ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-mist);font-size:14px}
-.ts-say:empty{display:none}
-.ts-accts{border:0;margin:0;padding:0;min-width:0}
-.ts-accts .salt-options__grid{display:flex;flex-wrap:wrap;gap:8px}
-.ts-acts{display:flex;flex-wrap:wrap;gap:8px}
-/* the ghosts and the option faces are 44px tall by their recipes; an account's face is held 44px wide too */
-.ts-accts .salt-option__face{min-width:var(--salt-tap);box-sizing:border-box}
-.ts-tabs{display:flex;gap:8px;padding:0 16px 8px}
-.ts-views{padding:0 16px 16px}
-.ts-views iframe{vertical-align:top;width:100%;height:calc(100dvh - 190px);min-height:520px;border:1px solid var(--salt-line,transparent);border-radius:16px;background:var(--salt-obsidian)}
-@media (min-width:1080px){
-.ts-tabs{display:none}
-.ts-views{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-/* 15 Nov 2026: over Ambient's own rule that a hidden element is never drawn */
-.ts-views iframe[hidden]{display:block!important}
-}
-`;
 
 /* the shell's script: no backtick and no lone backslash, as every script spliced from a template literal */
 const SHELL_JS = `
@@ -48,12 +27,12 @@ const SHELL_JS = `
     note(s==='none'?W['ts.none']:s==='waiting'?W['ts.waiting']:'');
     reload();
   }
-  document.querySelectorAll('input[name="tsAcct"]').forEach(function(r){ r.addEventListener('change', function(){ if(r.checked) pick(r.value); }); });
+  /* the system's Segment presses the tapped choice and releases its neighbours, then says so (amb:change): the account and the view follow it */
+  document.querySelectorAll('[name="tsAcct"]').forEach(function(b){ b.addEventListener('amb:change', function(){ pick(b.value); }); });
   document.querySelectorAll('.ts-tabs [data-view]').forEach(function(b){
-    b.addEventListener('click', function(){
+    b.addEventListener('amb:change', function(){
       var c=b.getAttribute('data-view')==='c';
       cv.hidden=!c; av.hidden=c;
-      document.querySelectorAll('.ts-tabs [data-view]').forEach(function(x){ x.setAttribute('aria-selected', String(x===b)); });
     });
   });
   /* RESET ASKS ONCE: the first tap arms it and says so on the control; a second within ARM clears; left alone it lets go */
@@ -80,26 +59,27 @@ const SHELL_JS = `
 /* state: {<username>: 'ready' | 'waiting' | 'none'}, read by the Worker off each account's record and its sealed fixture */
 export function testShell(nonce, state) {
   const w = (k) => esc(TS[k]);
-  const acct = ([u, k]) => '<label class="salt-option"><input class="salt-option__input" type="radio" name="tsAcct" value="' + u + '"'
-    + (u === TEST_FRESH ? " checked" : "") + '><span class="salt-option__face"><span class="salt-option__label">' + w(k) + "</span></span></label>";
+  const acct = ([u, k]) => '<button type="button" class="amb-segment__opt" name="tsAcct" value="' + u + '" aria-pressed="' + (u === TEST_FRESH ? "true" : "false") + '">' + w(k) + "</button>";
+  const view = (v, k, on) => '<button type="button" class="amb-segment__opt" data-view="' + v + '" aria-pressed="' + on + '">' + w(k) + "</button>";
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">'
     + "<title>Salt Counter</title>"
-    + '<style nonce="' + nonce + '">' + SITE_STYLE + SHELL_CSS + "</style></head>" + BODY_OPEN
-    + '<header class="ts-bar"><div><h1>' + w("ts.title") + '</h1><p class="ts-lead">' + w("ts.lead") + "</p></div>"
-    + '<fieldset class="salt-options ts-accts"><legend class="salt-options__legend">' + w("ts.acct") + '</legend><div class="salt-options__grid">'
-    + SHELL_ACCOUNTS.map(acct).join("") + "</div></fieldset>"
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + "</style></head>" + BODY_OPEN
+    + '<div class="amb-shell" data-mood="slate"><main class="amb-screen">'
+    + '<header class="amb-hero amb-hero--compact amb-mesh"><h1 class="amb-hero__title">' + w("ts.title") + '</h1><p class="amb-hero__sub">' + w("ts.lead") + "</p></header>"
+    + '<div class="amb-stack ts-bar">'
+    + '<h2 class="amb-section" id="tsAcctL">' + w("ts.acct") + "</h2>"
+    + '<div class="amb-segment amb-segment--wrap" role="group" aria-labelledby="tsAcctL">' + SHELL_ACCOUNTS.map(acct).join("") + "</div>"
     + '<div class="ts-acts">'
-    + '<button type="button" class="salt-ghost" id="tsReset">' + w("ts.reset") + "</button>"
-    + '<button type="button" class="salt-ghost" id="tsAll">' + w("ts.resetAll") + "</button>"
-    + '<button type="button" class="salt-ghost" id="tsEmpty">' + w("ts.empty") + "</button>"
-    + '<a class="salt-ghost" id="tsMake" href="/all#shop/practice" target="_top" hidden>' + w("ts.make") + "</a></div>"
-    + '<p class="ts-say" id="tsSay" role="status" aria-live="polite"></p></header>'
-    + '<div class="ts-tabs" role="tablist" aria-label="' + w("ts.views") + '">'
-    + '<button type="button" class="salt-ghost" role="tab" data-view="c" aria-selected="true">' + w("ts.customer") + "</button>"
-    + '<button type="button" class="salt-ghost" role="tab" data-view="a" aria-selected="false">' + w("ts.admin") + "</button></div>"
-    + '<main class="ts-views"><iframe id="tsC" title="' + w("ts.customer") + '"></iframe><iframe id="tsA" title="' + w("ts.admin") + '" hidden></iframe></main>'
+    + '<button type="button" class="amb-pill amb-pill--quiet" id="tsReset">' + w("ts.reset") + "</button>"
+    + '<button type="button" class="amb-pill amb-pill--quiet" id="tsAll">' + w("ts.resetAll") + "</button>"
+    + '<button type="button" class="amb-pill amb-pill--quiet" id="tsEmpty">' + w("ts.empty") + "</button>"
+    + '<a class="amb-pill amb-pill--quiet" id="tsMake" href="/all#shop/practice" target="_top" hidden>' + w("ts.make") + "</a></div>"
+    + '<p class="amb-field__hint ts-say" id="tsSay" role="status" aria-live="polite"></p>'
+    + '<div class="amb-segment ts-tabs" role="group" aria-label="' + w("ts.views") + '">' + view("c", "ts.customer", "true") + view("a", "ts.admin", "false") + "</div></div>"
+    + '<div class="amb-stack ts-views"><iframe id="tsC" title="' + w("ts.customer") + '"></iframe><iframe id="tsA" title="' + w("ts.admin") + '" hidden></iframe></div>'
+    + "</main></div>"
     + ambScript(nonce)
     + '<script nonce="' + nonce + '">'
     + SHELL_JS.replace("__WORDS__", () => JSON.stringify(TS).replace(/</g, "\\u003c")).replace("__STATE__", () => JSON.stringify(state || {}))
