@@ -121,6 +121,20 @@ export async function run({ ok }) {
       && kids.indexOf(comp.closest('[data-part="say"]')) < kids.indexOf(fts[0]) && !!sc.querySelector('[data-part="thread"] .amb-thread'),
       "the open order's Pay is its one foot and its last part, and the message box stands in the flow, after the thread and before the foot");
 
+    /* ---- 17: Prices by size, Details and What happened are Ambient's fold (0.7.12): details, a head of title and chevron, a body, in a stack, none in a settings group or another fold, no More stand-in */
+    const isFold = (f) => !!f && f.matches("details.amb-disclose.amb-disclose--fold") && !!f.querySelector(":scope > summary.amb-disclose__head > .amb-disclose__title:is(h2,h3,h4)")
+      && !!f.querySelector(":scope > summary.amb-disclose__head > svg.amb-disclose__mark") && f.querySelectorAll(":scope > .amb-disclose__body").length === 1
+      && !f.closest(".amb-settings") && !f.parentNode.closest(".amb-disclose") && f.parentNode.classList.contains("amb-stack") && !f.classList.contains("amb-stack") && !f.querySelector("summary button, summary a, summary input");
+    const det = sc.querySelector('[data-part="details"]'), hst = sc.querySelector('[data-part="hist"] > details');
+    ok(isFold(det) && isFold(hst) && !det.open && !hst.open && !sc.querySelector(".amb-more") && det.querySelectorAll(".amb-disclose__body p.amb-disclose__text").length >= 3
+      && hst.querySelectorAll(".amb-disclose__body p[data-hist]").length >= 1,
+      "Details and What happened are Ambient's fold in the record's stack, shut, their body words: no More stand-in remains");
+    tab(narrow, "prices"); await until(() => narrow.d.querySelector("#pPrices .sfold"));
+    const sf = narrow.d.querySelector("#pPrices .pane > details.sfold");
+    ok(!!sf && sf.matches("details.amb-disclose.amb-disclose--fold") && !!sf.querySelector(":scope > summary.amb-disclose__head > h3.amb-disclose__title") && !!sf.querySelector(":scope > summary > svg.amb-disclose__mark")
+      && sf.querySelectorAll(":scope > .amb-disclose__body > ul.amb-list--ruled.amb-list--full > li > button.amb-row[data-q]").length >= 1 && !sf.closest(".amb-settings") && !narrow.d.querySelector("#pPrices .amb-more"),
+      "Prices by size is Ambient's fold, its body a ruled list of the sizes to tap, and no More stand-in stands in Shop");
+
     /* ---- 19: no text of the site's own layer is set under 12px */
     const css = readFileSync(new URL("../design/site.css", import.meta.url), "utf8"), small = [];
     for (const m of css.matchAll(/font-size:\s*([0-9.]+)(px|rem|em)/g)) { const px = m[2] === "px" ? +m[1] : +m[1] * 16; if (px < 12) small.push(m[0]); }

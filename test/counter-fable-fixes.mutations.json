@@ -142,5 +142,41 @@
   "file": "design/site.css",
   "find": ".hbook { margin: 0; }",
   "replace": ".hbook { margin: 0; font-size: 11px; }"
+ },
+ {
+  "name": "a fold of the order loses its Ambient classes",
+  "file": "stmt/page.js",
+  "find": "el('details','amb-disclose amb-disclose--fold ofold')",
+  "replace": "el('details','ofold')"
+ },
+ {
+  "name": "a fold's title is no heading",
+  "file": "stmt/page.js",
+  "find": "h=el('h3','amb-disclose__title',label);",
+  "replace": "h=el('span','amb-disclose__title',label);"
+ },
+ {
+  "name": "a fold of the order has no chevron",
+  "file": "stmt/page.js",
+  "find": "sm.appendChild(h); sm.appendChild(ambIcon('chevron','amb-icon--sm amb-disclose__mark'));",
+  "replace": "sm.appendChild(h);"
+ },
+ {
+  "name": "a fold is a stack of its own",
+  "file": "stmt/page.js",
+  "find": "n.tagName!=='DETAILS') n.classList.add('amb-stack')",
+  "replace": "true) n.classList.add('amb-stack')"
+ },
+ {
+  "name": "Prices by size is a plain details",
+  "file": "stmt/page.js",
+  "find": "el('details','amb-disclose amb-disclose--fold sfold')",
+  "replace": "el('details','sfold')"
+ },
+ {
+  "name": "Prices by size's list is not full",
+  "file": "stmt/page.js",
+  "find": "        L.classList.add('amb-list--full');\n",
+  "replace": ""
  }
 ]
