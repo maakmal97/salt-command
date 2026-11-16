@@ -70,7 +70,8 @@ export async function run({ ok }) {
     });
     /* 16 Nov 2026, the move to Ambient (place D): both pages' Sheets are the system's dialog, so they are placed alike by its own rule: from the foot of a phone, a card in the middle from 720px */
     const at768 = rows.find((r) => r.px === 768).customer;
-    ok(rows.every((r) => r.customer === r.his) && /position:fixed/.test(at768) && /max-width:560px/.test(at768) && !/\.salt-sheet:not/.test(html),
+    /* 16 Nov 2026, Ambient 0.7.7: from 720px a Sheet is Ambient's card in the middle of the window, 480px wide (his 560px of 11 Oct 2026 becomes Ambient's 480) */
+    ok(rows.every((r) => r.customer === r.his) && /position:fixed/.test(at768) && /max-width:480px/.test(at768) && !/\.salt-sheet:not/.test(html),
       "a sheet of the customer's and one of his are placed alike at 375, 768, 861, 1000 and 1280px, by the system's own dialog rule and no rule of the page's (the card from 720px is Ambient's, which jsdom does not read): " + JSON.stringify(rows.filter((r) => r.customer !== r.his)));
   }
 
@@ -112,7 +113,7 @@ export async function run({ ok }) {
     const a = await read(768), b = await read(861);
     /* plan version 8 (03 Nov 2026): the size tiles left the new order's sheet (an amendment's keeps them), so its one grid of two columns is the two ways */
     const two = (r) => r.segs.length >= 1 && r.segs.every((g) => g.kids === 2 && g.display === "flex" && g.grows.every((x) => x === "1"));
-    ok(two(a) && two(b) && /max-width:560px/.test(a.box) && /max-width:560px/.test(b.box) && /position:fixed/.test(a.box),
-      "the order sheet is the system's dialog, at most 560px, and its two ways are two equal options side by side at 768px and at 861px: " + JSON.stringify({ a, b }));
+    ok(two(a) && two(b) && /max-width:480px/.test(a.box) && /max-width:480px/.test(b.box) && /position:fixed/.test(a.box),
+      "the order sheet is the system's dialog, at most 480px (Ambient 0.7.7's card), and its two ways are two equal options side by side at 768px and at 861px: " + JSON.stringify({ a, b }));
   }
 }

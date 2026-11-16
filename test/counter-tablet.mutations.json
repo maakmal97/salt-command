@@ -1,10 +1,56 @@
 [
- {"name":"the shell stops naming the place it shows","file":"stmt/page.js","find":"    tab=t; tabs.setAttribute('data-place',t);\n","replace":"    tab=t;\n"},
- {"name":"the order sheet's two ways are one column","file":"stmt/page.js","find":"var g=el('div','amb-segment'+(opts.length>4?' amb-segment--wrap':''));","replace":"var g=el('div','omodes'+(opts.length>4?' amb-segment--wrap':''));"},
- {"name":"the order sheet is not the system's dialog","file":"stmt/page.js","find":"var box=sheetNode('osheet','osheet','oshT');","replace":"var box=el('div','osheet'); box.id='osheet';"},
- {"name":"the script puts an order beside the list from 860px","file":"stmt/page.js","find":"window.matchMedia('(min-width: 960px)').matches); }catch(e)","replace":"window.matchMedia('(min-width: 860px)').matches); }catch(e)"},
- {"name":"the script draws again only at 860px","file":"stmt/page.js","find":"var oMq=window.matchMedia&&window.matchMedia('(min-width: 960px)');","replace":"var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');"},
- {"name":"the place is not the system split","file":"stmt/page.js","find":"<div id=\"oPanes\" class=\"amb-split amb-split--panes\"></div>","replace":"<div id=\"oPanes\" class=\"panel\"></div>"},
- {"name":"the page writes a tablet rule for a sheet again","file":"stmt/page.js","find":"@media print{.mos,.amb-dock,.amb-appbar{display:none}}","replace":"@media print{.mos,.amb-dock,.amb-appbar{display:none}}\n@media (min-width:768px) and (max-width:859.98px){ .salt-sheet:not(.adm){top:50%} }"},
- {"name":"the pay sheet is placed differently from his","file":"stmt/page.js","find":"@media print{.mos,.amb-dock,.amb-appbar{display:none}}","replace":"@media print{.mos,.amb-dock,.amb-appbar{display:none}}\n#paySheet{max-width:300px}"}
+ {
+  "name": "the shell stops naming the place it shows",
+  "file": "stmt/page.js",
+  "find": "    tab=t; tabs.setAttribute('data-place',t);\n",
+  "replace": "    tab=t;\n"
+ },
+ {
+  "name": "the order sheet's two ways are one column",
+  "file": "stmt/page.js",
+  "find": "var g=el('div','amb-segment'+(opts.length>4?' amb-segment--wrap':''));",
+  "replace": "var g=el('div','omodes'+(opts.length>4?' amb-segment--wrap':''));"
+ },
+ {
+  "name": "the order sheet is not the system's dialog",
+  "file": "stmt/page.js",
+  "find": "var box=sheetNode('osheet','osheet','oshT');",
+  "replace": "var box=el('div','osheet'); box.id='osheet';"
+ },
+ {
+  "name": "the script puts an order beside the list from 860px",
+  "file": "stmt/page.js",
+  "find": "window.matchMedia('(min-width: 960px)').matches); }catch(e)",
+  "replace": "window.matchMedia('(min-width: 860px)').matches); }catch(e)"
+ },
+ {
+  "name": "the script draws again only at 860px",
+  "file": "stmt/page.js",
+  "find": "var oMq=window.matchMedia&&window.matchMedia('(min-width: 960px)');",
+  "replace": "var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');"
+ },
+ {
+  "name": "the place is not the system split",
+  "file": "stmt/page.js",
+  "find": "<div id=\"oPanes\" class=\"amb-split amb-split--panes\"></div>",
+  "replace": "<div id=\"oPanes\" class=\"panel\"></div>"
+ },
+ {
+  "name": "the page writes a tablet rule for a sheet again",
+  "file": "stmt/page.js",
+  "find": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}",
+  "replace": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}\n@media (min-width:768px) and (max-width:859.98px){ .salt-sheet:not(.adm){top:50%} }"
+ },
+ {
+  "name": "the pay sheet is placed differently from his",
+  "file": "stmt/page.js",
+  "find": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}",
+  "replace": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}\n#paySheet{max-width:300px}"
+ },
+ {
+  "name": "0.7.7 the page widens the card to its old 560px",
+  "file": "stmt/page.js",
+  "find": "[hidden]{display:none!important}\n",
+  "replace": "[hidden]{display:none!important}\n@media (min-width:720px){dialog.amb-sheet{max-width:560px}}\n"
+ }
 ]
