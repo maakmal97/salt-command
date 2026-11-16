@@ -34,9 +34,9 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo"));
     /* 2 Nov 2026 (Orders on the canvas): a sheet's orders at one stage stand under one head, Sheet and its reference with the delivery charge, each its own row */
     const g = d.querySelector('#makerOrderList section[data-sheet="sh-9"]'), rows = g ? [...g.querySelectorAll("[data-order]")].map((r) => r.getAttribute("data-order")) : [];
-    const head = g ? t(g.querySelector("h2.salt-settings__head")) : "";
+    const head = g ? t(g.querySelector("h2.amb-section")) : "";
     ok(!!g && JSON.stringify(rows.sort()) === JSON.stringify(["ord-s1", "ord-s2"]) && /^Sheet [A-Z0-9]{4}-[A-Z0-9]{3} \u00b7 RM 10 delivery$/.test(head)
-      && g.querySelectorAll(".salt-settings > .ordcard").length === 2
+      && g.querySelectorAll("ul.amb-list > .ordcard").length === 2
       && !d.querySelector('#makerOrderList [data-order="ord-s3"]').closest("section[data-sheet]") && !d.querySelector('#makerOrderList [data-order="ord-s4"]').closest("section[data-sheet]"),
       "a sheet's orders stand in one group under its reference and the sheet's delivery, each its own row; a lone order, or one whose sheet has moved on, stands alone: " + JSON.stringify([rows, head]));
     /* 2 */

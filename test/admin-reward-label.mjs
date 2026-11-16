@@ -33,13 +33,13 @@ export async function run({ ok, pageWork }) {
     byAct(p.d, "nav.orders").click(); await p.work.quiet();
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
     /* 2 Nov 2026 (Orders on the canvas): the label leads the row's second line */
-    const lab = (k) => [...(rowOf(k) || { querySelectorAll: () => [] }).querySelectorAll(".salt-settings__sub")].map((x) => text(x).split(" · ")[0]);
+    const lab = (k) => [...(rowOf(k) || { querySelectorAll: () => [] }).querySelectorAll(".amb-row__sub")].map((x) => text(x).split(" · ")[0]);
     ok(lab("row:fr1").includes("Associate reward") && lab("row:fl1").includes("Loyalty unit") && !lab("row:fa1").some((t) => /reward|Loyalty/i.test(t)),
       "the Orders row carries Associate reward or Loyalty unit, an ordinary row neither: " + J([lab("row:fr1"), lab("row:fl1"), lab("row:fa1")]));
     byAct(p.d, "order.open", "row:fr1").click(); await p.work.quiet();
     const card = p.card("row:fr1");
-    ok(!!card && [...card.querySelectorAll(".lead .salt-status")].map(text).includes("Associate reward")
+    ok(!!card && [...card.querySelectorAll(".oband__head .amb-chip")].map(text).includes("Associate reward")
       && /Associate reward for s1, at cost and free to them/.test(text(card)),
-      "its card carries the label by the stage and names the order it came of: " + text(card && card.querySelector(".lead")));
+      "its card carries the label by the stage and names the order it came of: " + text(card && card.querySelector(".oband__head")));
   } finally { p.w.close(); }
 }

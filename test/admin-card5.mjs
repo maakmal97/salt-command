@@ -64,7 +64,7 @@ export async function run({ ok, pageWork }) {
     /* B. CHANGE THE ORDER UNDER THE HEAD */
     c = cardOf("ord-a1");
     /* 2 Nov 2026 (his Orders canvas, page 2): the head is the band and its steps; Change the order is a row of the stage's own list (Ready), the Bill is the record under his decision */
-    const amend = byAct(c, "order.amend"), money = c.querySelector('h2.salt-settings__head[data-sect="money"]');
+    const amend = byAct(c, "order.amend"), money = c.querySelector('h2.amb-section[data-sect="money"]');
     const firstField = c.querySelector("input, select, textarea");
     ok(!!amend && !!amend.closest(".ostagerows") && before(c.querySelector(".ohead"), amend) && before(c.querySelector(".ordsteps"), amend) && before(amend, money) && before(amend, firstField) && !c.querySelector(".maker-foot").contains(amend),
       "B1: Change the order stands under the head, a row of its stage, above the money and every field of the card, never in the foot");
@@ -102,7 +102,7 @@ export async function run({ ok, pageWork }) {
     ok(fin.length === 2 && new RegExp("^\\{\"rid\":\"" + RID + "\",\"qty\":2,\"close\":true\\}$").test(fin[1]),
       "C6: then sends the close, as Finish at fewer units sent it: " + JSON.stringify(fin));
     const tiles = [...cardOf("ord-r1").querySelectorAll('input[data-act="order.handed-rest"]'), ...roads(cardOf("ord-r1"))];
-    ok(tiles.length === 4 && tiles.every((r) => r.type === "radio" && r.classList.contains("salt-option__input") && r.closest("label.salt-option") && r.closest("fieldset.salt-options")),
+    ok(tiles.length === 4 && tiles.every((r) => r.type === "radio" && r.classList.contains("amb-option__input") && r.closest("label.amb-option") && r.closest("fieldset.amb-options")),
       "C7: every tile is the system's Option recipe, a radio over its 44px face");
     await tapRow("ord-r3");
     ok(!!cardOf("ord-r3").querySelector('[data-act="order.handed-rest"]') && !!byAct(cardOf("ord-r3"), "order.handed"), "C8: a test order is offered the close too, which the fixture runs at the Desk's own goods (the test surface, P4)");

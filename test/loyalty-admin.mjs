@@ -85,11 +85,11 @@ export async function run({ ok, pageWork }) {
     const card = (id) => p.card(id) && p.card(id).querySelector("[data-customer]");
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-c1"));
     /* 4 */
-    const c1 = card("ord-c1"), figs = c1 ? [...c1.querySelectorAll(".salt-ledger__row")].map((n) => [...n.querySelectorAll(".salt-ledger__line > span")].map(t).join(" ")) : [];
+    const c1 = card("ord-c1"), figs = c1 ? [...c1.querySelectorAll(".ocust__figs .amb-setting")].map((n) => [...n.querySelectorAll(".amb-setting__name, .amb-setting__value")].map(t).join(" ")) : [];
     const pts = c1 && c1.querySelector("svg.ocust__spark polyline") ? c1.querySelector("svg.ocust__spark polyline").getAttribute("points").split(" ").length : 0;
-    ok(!!c1 && !c1.hidden && t(c1.querySelector(".salt-eyebrow")) === "This customer" && t(c1.querySelector(".ocust__lab")) === "Last 6 orders" && pts === 6
+    ok(!!c1 && !c1.hidden && /^This customer/.test(t(c1.querySelector("h2.amb-section"))) && t(c1.querySelector(".amb-tile__label")) === "Last 6 orders" && pts === 6
       && j(figs) === j(["A unit now RM 120.00", "Highest RM 120.00", "Orders every 8 days"])
-      && [...c1.querySelectorAll(".salt-meter__line > span")].map(t).join(" | ") === "Loyalty 14 of 20 units | Next order due in 2 days" && c1.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "70"
+      && [...c1.querySelectorAll(".ameterrow .amb-row__title, .ameterrow .amb-row__sub")].map(t).join(" | ") === "Loyalty | 14 of 20 units, Next order due in 2 days" && String(c1.querySelector("progress.amb-meter").value) === "70"
       && t(c1.querySelector(".ocust__note")) === "1 unit at cost every 20 at or above their price (RM 7.20 to you). They see 70%. Paused by a late payment or a write-off."
       && t(c1.querySelector(".ocust__sughead")) === "Suggested +10%, paid late"
       && t(c1.querySelector(".ocust__gain")) === "+10%: RM 23.20 more per 20 units · the loyalty unit RM 7.20 · net RM 16.00",
@@ -97,7 +97,7 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "order.open", "ord-c2"));
     const c2 = card("ord-c2");
     ok(!!c2 && !c2.hidden && !c2.querySelector(".ocust__gain") && t(c2.querySelector(".ocust__sughead")) === "Suggested +10%, paid late"
-      && [...c2.querySelectorAll(".salt-status")].map(t).includes("Paused: a late payment"),
+      && [...c2.querySelectorAll(":scope > .amb-chip")].map(t).includes("Paused: a late payment"),
       "unpaired, the halves are not said and the pause is: " + t(c2));
     /* 5 */
     await click(byAct(d, "order.open", "ord-c3")); const c3 = p.card("ord-c3");
@@ -114,7 +114,7 @@ export async function run({ ok, pageWork }) {
       "Use it sends one tier-set with the suggested %, and the card reads again: " + j([sent, reads]));
     /* 7 */
     const c1b = card("ord-c1");
-    const heavy = [...(c1b ? c1b.querySelectorAll("*") : [])].filter((n) => !n.matches("h4.salt-eyebrow")).filter((n) => { const fw = p.w.getComputedStyle(n).fontWeight; return fw && fw !== "normal" && +fw > 500 || fw === "bold"; });
+    const heavy = [...(c1b ? c1b.querySelectorAll("*") : [])].filter((n) => !n.matches("h2.amb-section, h3.amb-section, .amb-chip, .amb-chip *, button, button *, .amb-tile__figure, .amb-tile__label")).filter((n) => { const fw = p.w.getComputedStyle(n).fontWeight; return fw && fw !== "normal" && +fw > 500 || fw === "bold"; });
     ok(!!c1b && heavy.length === 0, "nothing in the card over the weight of 500: " + heavy.map((n) => n.tagName + ":" + p.w.getComputedStyle(n).fontWeight).join(" "));
   } finally { p.w.close(); }
 }

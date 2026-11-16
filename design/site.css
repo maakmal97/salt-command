@@ -321,6 +321,84 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .keeppage { padding-inline: var(--amb-space-4); }
 .keeppage > .amb-section { margin: 0; padding: 0; }
 
+/* ---- Salt Admin: Orders, Payments, Group orders, the Ledger check and the open order (place G) ---- */
+/* the queue is a grid of groups; its notes and its Show more stand in the stack's rhythm. The record's wrappers stand aside so its foot is the last thing of its stack. */
+.ordlist { display: grid; gap: var(--amb-space-5); min-width: 0; align-content: start; }
+.ordlist > .amb-empty { padding-block: var(--amb-space-6); }
+.ordlist > .amb-pill { justify-self: start; }
+#makerReview, #makerReview > .maker-card { display: contents; }
+.ordopen:empty { display: none; }
+/* a row: the code in the mono face, a trip's other books a plain chip beside it */
+.ordcard .ocode { font-family: var(--amb-font-mono); overflow-wrap: anywhere; }
+.omore { margin-inline-start: var(--amb-space-2); vertical-align: middle; }
+/* from 960px the two panes stand side by side; below it the one open takes the list's place and a way back stands over it */
+#ordnone[hidden] { display: none; }
+@container amb (min-width: 960px) { #ordnone:not([hidden]) { display: block; } }
+@container amb (max-width: 959px) {
+  #oSplit.open .ordqueue, #oSplit:not(.open) .ordrecord, #makerClaims.open > .amb-stack:first-child, #makerClaims:not(.open) > .amb-stack:last-child { display: none; }
+}
+/* the order: the band, the steps, his decision as parts of the record's stack, then the bill, the readings, the thread, where next, what ends it, and the foot */
+.odecide { display: contents; }
+.odecide__part { min-width: 0; }
+.odecide__part > .amb-section:first-child { padding-top: 0; }
+.ostagerows:not(:has(> .amb-settings__list > li > :not([hidden]))), .oclaims:not(:has(> .amb-settings__list > li > :not([hidden]))),
+.ordend:not(:has(> .amb-settings__list > li > :not([hidden]))), .oagainrows:not(:has(> .amb-settings__list > li > :not([hidden]))),
+.ocashrows:not(:has(> .amb-settings__list > li > :not([hidden]))), .orecord:not(:has(> .amb-settings__list > li > :not([hidden]))),
+.omsgs__rows:not(:has(> .amb-settings__list > li > :not([hidden]))) { display: none; }
+.oagree, .maker-quote, .undohist__body, .undolist, .tripline, .triplines { display: grid; gap: var(--amb-space-3); min-width: 0; }
+.maker-quote:empty { display: none; }
+.oagree > .amb-field { min-width: 0; }
+.ofigs { padding-inline: 0; }
+.obillnote { margin: var(--amb-space-3) 0 0; }
+.oquick:empty { display: none; }
+.omsgs__none { margin: 0; }
+/* the reward and the customer under the bill: a head, a meter, its rows */
+.orwdcard, .ocustcard { display: grid; gap: var(--amb-space-3); min-width: 0; }
+.orwdcard[hidden], .ocustcard[hidden] { display: none; }
+.orwdcard > .amb-chip, .ocustcard > .amb-chip { justify-self: start; }
+.ocust__sug { display: grid; gap: var(--amb-space-3); }
+.ocust__spark { display: block; }
+.oclock--late .amb-row__sub { color: var(--amb-neg); }
+.obagain { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2); margin: 0; }
+.osheetlink { justify-self: start; }
+.oband__head .amb-chip { max-width: 100%; }
+/* the answer line, the card's acts, a note and a figure of the readings */
+.maker-foot { display: grid; gap: var(--amb-space-2); }
+.maker-foot__acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2); }
+.maker-foot__acts:empty { display: none; }
+.maker-say { margin: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); scroll-margin: var(--amb-space-6) 0; }
+.maker-say:empty { display: none; }
+.ofoot:not(:has(button:not([hidden]), .maker-say:not(:empty), .maker-foot__acts > *)) { display: none; }
+.ordlead { display: grid; gap: var(--amb-space-2); justify-items: stretch; }
+.maker-facts { margin: 0; font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); }
+.maker-row { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--amb-text-footnote); }
+.msg.bad { color: var(--amb-neg); }
+.maker-fields { min-width: 0; }
+.ometrics { margin: 0; }
+.rdet { display: grid; gap: var(--amb-space-3); min-width: 0; }
+.rdet > summary.amb-more, .undohist > summary.amb-more { margin: 0; }
+.undohist { display: grid; gap: var(--amb-space-3); min-width: 0; }
+.undohist > summary { list-style: none; }
+.undohist__n { margin-inline-start: var(--amb-space-2); }
+.undohist .amb-journal { max-width: none; }
+.undohist .amb-journal__entry > .amb-pill { justify-self: start; margin-top: var(--amb-space-2); }
+/* the sealed delivery address: a group of its own, its chip beside its head */
+.adspot > .amb-settings__head { display: flex; align-items: center; gap: var(--amb-space-2); }
+.adspot__note:empty { display: none; }
+.adspot__maps { text-decoration: none; }
+/* a payment's slip: a thumbnail that is the control, enlarged in place by a tap */
+.maker-slipbox { display: grid; justify-items: start; gap: var(--amb-space-2); }
+.maker-slip { display: block; max-width: 100%; height: auto; }
+.maker-slip-open { display: block; min-width: var(--amb-tap); min-height: var(--amb-tap); max-width: 100%; padding: 0; background: var(--amb-well); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-sm); overflow: hidden; line-height: 0; cursor: zoom-in; }
+.maker-slip-open .maker-slip { max-height: 120px; width: auto; }
+.maker-slipbox.open .maker-slip-open { width: 100%; cursor: zoom-out; }
+.maker-slipbox.open .maker-slip-open .maker-slip { max-height: none; width: 100%; }
+/* the choice of a point and the pool's pools */
+.maker-point-pick { min-width: 0; }
+.ledgrp > .amb-section { padding-top: 0; }
+.ledtable .amb-pill { white-space: nowrap; }
+.ledtable td > .amb-chip { justify-self: start; }
+.aback { justify-self: start; }
 /* ---- Counter: the small pages and the test surface (place E) ---- */
 /* the guest board and the join page are one shell with no script; the sign-in link page, the code screen and the join page keep the door's one column */
 .gcol { max-width: 28rem; width: 100%; margin-inline: auto; }
@@ -352,3 +430,7 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
   /* over Ambient's own rule that a hidden element is never drawn: both views stand while the tabs are away */
   .ts-views iframe[hidden] { display: block !important; }
 }
+/* a row that waits on him says why in the stronger ink */
+.ordwhy { color: var(--amb-ink); font-weight: 600; }
+.rdet > summary { justify-self: start; }
+.odecide .amb-settings, .ordend, .onext, .ocashrows, .orecord, .omsgs__rows { max-width: none; }

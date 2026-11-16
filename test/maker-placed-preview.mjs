@@ -64,7 +64,7 @@ export async function run({ ok }) {
     const choose = (id, v) => { const sel = feeSel(id); sel.value = v; sel.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     /* 2 Nov 2026 (his Orders canvas, page 2): Agree's terms are rows of a settings list; the goods' total is found by its act */
     const total = (id) => card(id).querySelector('[data-act="order.total"]');
-    const tile = (id, label) => [...card(id).querySelectorAll(".salt-kpi")].find((k) => k.querySelector(".salt-kpi__label") && k.querySelector(".salt-kpi__label").textContent === label);
+    const tile = (id, label) => [...card(id).querySelectorAll(".amb-tile")].find((k) => k.querySelector(".amb-tile__label") && k.querySelector(".amb-tile__label").textContent === label);
     const previews = (id) => posts.filter((p) => p.kind === "preview" && (!id || p.path.includes(id)));
     const fire = (node, type) => node.dispatchEvent(new browser.window.Event(type, { bubbles: true }));
     const id = "20261007090001-dlv";
@@ -85,13 +85,13 @@ export async function run({ ok }) {
       "Choosing a delivery charge reads the figures by itself, once, at that charge: " + JSON.stringify(previews(id)));
 
     /* displayed comparison fields: the native card/margin/floor/usual tiles, not raw row JSON */
-    ok(tile(id, "Their price") && tile(id, "Their price").querySelector(".salt-kpi__value").textContent === "RM 190.00"
-      && /the quote is RM 200\.00/.test(tile(id, "Their price").querySelector(".salt-kpi__note").textContent)
-      && tile(id, "Your margin") && tile(id, "Your margin").querySelector(".salt-kpi__value").textContent === "RM 40.00"
-      && tile(id, "Your margin").querySelector(".salt-kpi__note").textContent === "on RM 160.00 cost · 21%"
-      && tile(id, "Floor") && tile(id, "Floor").querySelector(".salt-kpi__value").textContent === "RM 150.00"
-      && /the quote clears it/.test(tile(id, "Floor").querySelector(".salt-kpi__note").textContent)
-      && tile(id, "Their usual") && tile(id, "Their usual").querySelector(".salt-kpi__value").textContent === "RM 95.00"
+    ok(tile(id, "Their price") && tile(id, "Their price").querySelector(".amb-tile__figure").textContent === "RM 190.00"
+      && /the quote is RM 200\.00/.test(tile(id, "Their price").querySelector(".amb-tile__delta").textContent)
+      && tile(id, "Your margin") && tile(id, "Your margin").querySelector(".amb-tile__figure").textContent === "RM 40.00"
+      && tile(id, "Your margin").querySelector(".amb-tile__delta").textContent === "on RM 160.00 cost · 21%"
+      && tile(id, "Floor") && tile(id, "Floor").querySelector(".amb-tile__figure").textContent === "RM 150.00"
+      && /the quote clears it/.test(tile(id, "Floor").querySelector(".amb-tile__delta").textContent)
+      && tile(id, "Their usual") && tile(id, "Their usual").querySelector(".amb-tile__figure").textContent === "RM 95.00"
       && !card(id).querySelector("pre.maker-row"),
       "A successful preview shows the native card, margin, floor and usual tiles, not raw row JSON: " + card(id).textContent);
     ok(/They pay first: paid late before, 1 of 3 on time since; RM 300\.00 owed and this takes them past RM 250\.00\./.test(card(id).textContent),

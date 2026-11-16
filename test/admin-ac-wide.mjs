@@ -27,6 +27,8 @@ function widthOf(state) {
 }
 
 export async function run({ ok, pageWork }) {
+  /* 16 Nov 2026, the move to Ambient (place G): the open order is the second pane of the orders' split, side by side from 960px and in the list's place below it; the
+     older grid, the columns and the first order opening by itself are gone, and a change of width moves and draws nothing */
   const st = { w: 1440 };
   const p = await richOwnerPage({ pageWork, before: widthOf(st) });
   try {
@@ -36,41 +38,27 @@ export async function run({ ok, pageWork }) {
     const split = d.getElementById("oSplit");
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.open"));
     /* 1 */
-    ok(!split.classList.contains("open") && !d.querySelector("#makerReview .maker-card"), "at 1440 no order opens itself: the list is the page");
+    ok(!split.classList.contains("open") && !d.querySelector("#makerReview .maker-card") && !d.getElementById("ordnone").hidden, "at 1440 no order opens itself: the queue stands and the second pane says Choose an order");
     await click(byAct(d, "order.open", "ord-r1"));
-    ok(split.classList.contains("open") && /@media \(max-width:859\.98px\),\(min-width:1080px\)\{\n  \.adm #oSplit\.open \.ordlist,\.adm #oSplit:not\(\.open\) #makerReview,\.adm #oSplit\.open #makerReviewStatus\{display:none\}/.test(css)
-      && /@media \(min-width:860px\) and \(max-width:1079\.98px\)\{\n  \.adm \.ordgrid\{display:grid/.test(css),
-      "an order opened from 1080px takes the list's place, the list and the card side by side only from 860 to 1080");
+    ok(split.classList.contains("open") && d.getElementById("ordnone").hidden && split.matches(".amb-split.amb-split--panes") && split.children[1].contains(d.querySelector("#makerReview .maker-card"))
+      && /#oSplit\.open \.ordqueue, #oSplit:not\(\.open\) \.ordrecord/.test(css) && !/ordgrid|ordcols/.test(css),
+      "an order opened stands in the second pane, and below 960px it takes the queue's place");
     /* 3 */
-    const card = d.querySelector("#makerReview .maker-card"), box = card && card.querySelector(":scope > .ordcols");
-    const colOf = (sel) => { const x = card.querySelector(sel); return x && x.closest(".ordcol") ? x.closest(".ordcol").getAttribute("data-ocol") : "none"; };
-    /* 2 Nov 2026: the parts go by what each says it is (data-ocol); at 1440 two columns, as at 1180 */
-    const map3 = { band: colOf(".ohead"), lead: colOf(".ordlead"), steps: colOf(".ordsteps"), bill: colOf(".ordmoney"), log: colOf(".undohist"), msg: colOf(".omsgs"), foot: colOf(".maker-foot") };
-    /* 5 Nov 2026 (the pane): the stage's pill (the lead) is the card's pinned foot, under both columns and last, the maker foot just before it */
-    ok(!!box && box.classList.contains("ordcols--2") && box.children.length === 2 && J(map3) === J({ band: "decision", lead: "none", steps: "decision", bill: "record", log: "record", msg: "record", foot: "none" })
-      && card.lastElementChild.classList.contains("ofoot") && card.lastElementChild.contains(card.querySelector(".ordlead")) && card.lastElementChild.previousElementSibling.classList.contains("maker-foot") && /\.adm \.ordcols\{display:grid;gap:24px;/.test(css) && !/ordcols--3/.test(css),
-      "at 1440 the card is two columns, the decision and the record, gap 24px, the foot under them: " + J(map3));
+    const card = d.querySelector("#makerReview .maker-card");
+    ok(!card.querySelector(".ordcols") && card.firstElementChild.classList.contains("ohead") && !!card.querySelector(".ordsteps") && !!card.querySelector(".ordmoney") && !!card.querySelector(".omsgs") && !!card.querySelector(".undohist")
+      && card.lastElementChild.matches(".amb-foot.ofoot") && /#makerReview, #makerReview > \.maker-card \{ display: contents; \}/.test(css),
+      "the card is the record's own stack, its band first and its foot last, the wrappers standing aside");
     /* 4 */
-    const field = card.querySelector('[data-sect="money"]') && card.querySelector('.omoney [data-act="order.pay-amount"]');
+    const field = card.querySelector('.omoney [data-act="order.pay-amount"]');
     if (field) field.value = "37";
-    st.w = 1180; st.fire();
-    const box2 = card.querySelector(":scope > .ordcols"), map2 = { band: colOf(".ohead"), steps: colOf(".ordsteps"), msg: colOf(".omsgs") };
-    ok(d.querySelector("#makerReview .maker-card") === card && !!box2 && box2.classList.contains("ordcols--2") && J(map2) === J({ band: "decision", steps: "decision", msg: "record" })
-      && /\.adm \.ordcols--2\{grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)\}/.test(css) && (!field || field.value === "37"),
-      "at 1180 the same card is two columns, the decision and the record, and what he typed stays: " + J(map2));
-    st.w = 1100; st.fire();
-    const seq = (c) => [...c.children].map((x) => x.tagName + "." + x.className).join(" | ");
-    const moved = seq(card);
-    await click(byAct(d, "nav.orders")); await click(byAct(d, "order.open", "ord-r1"));
-    const fresh = d.querySelector("#makerReview .maker-card");
-    ok(!card.querySelector(".ordcols") && fresh !== card && moved === seq(fresh) && fresh.firstElementChild.classList.contains("ohead"),
-      "below 1180 the card is as drawn, part for part in its order: " + moved.slice(0, 160));
+    for (const w of [1180, 1100, 900, 390]) { st.w = w; st.fire(); }
+    ok(d.querySelector("#makerReview .maker-card") === card && split.classList.contains("open") && (!field || field.value === "37"),
+      "a change of width moves and draws nothing: the same card stands, and what he typed stays");
     await click(byAct(d, "nav.orders"));
     ok(!split.classList.contains("open") && !d.querySelector("#makerReview .maker-card"), "and the rail's Orders closes it back to the list");
     /* 2 */
     st.w = 900;
     await click(byAct(d, "part.orders.todo"));
-    ok(split.classList.contains("open") && !!d.querySelector("#makerReview .maker-card") && !d.querySelector("#makerReview .ordcols"),
-      "from 860 to 1080px the first order opens beside the list, in one column");
+    ok(!split.classList.contains("open") && !d.querySelector("#makerReview .maker-card"), "below 960px no order opens itself either");
   } finally { p.w.close(); }
 }

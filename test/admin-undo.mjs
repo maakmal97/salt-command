@@ -374,9 +374,9 @@ export async function run({ ok, pageWork }) {
     const lineH = card && [...card.querySelectorAll(".tripline")].map((l) => !!byAct(l, "undo.history"));
     await p.tap("undo.history", "line:zt1");
     card = p.card("trip:" + T);
-    const moves = [...card.querySelectorAll('[data-history="line:zt1"] .undomove')];
+    const moves = [...card.querySelectorAll('[data-history="line:zt1"] .amb-journal__entry')];
     ok(J(lineH) === J([true, true]) && J(p.sent("/all/maker/undo")) === J([{ rid: "zt1" }]) && moves.length === 2
-      && text(moves[0].querySelector(".maker-facts")) === "RM 220.00 paid, 15 Oct 2026" && text(moves[1].querySelector(".maker-facts")) === "2 units collected, 15 Oct 2026"
+      && text(moves[0].querySelector(".amb-journal__text")) === "RM 220.00 paid" && text(moves[0].querySelector("time")) === "15 Oct 2026" && text(moves[1].querySelector(".amb-journal__text")) === "2 units collected"
       && !!byAct(moves[0], "undo.open") && !byAct(moves[1], "undo.open"),
     "each line of an order of several books has its History, read from the Desk, newest first, and Undo on the newest move alone: " + moves.map(text).join(" | "));
     await p.tap("undo.history", "line:zt2");
@@ -403,8 +403,8 @@ export async function run({ ok, pageWork }) {
     /* 18 Oct 2026: the customer's fold, shut until a tap */
     const fold = card && card.querySelector('[data-history="order:ord-r1"]');
     /* 2 Nov 2026 (his Orders canvas, page 2): the fold's summary is an action row of Where next (Order log, its count at the right), the fold itself no longer a salt-plan */
-    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("onext__log") && !fold.classList.contains("salt-plan") && !fold.open && text(fold.querySelector("summary > .salt-settings__label")) === "Order log"
-      && fold.querySelector("summary").matches(".salt-settings__row.salt-settings__row--action"),
+    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("undohist") && !fold.open && /^Order log/.test(text(fold.querySelector("summary")))
+      && fold.querySelector("summary").matches(".amb-more"),
       "its History is the customer's fold, named Order log on an order (canvas V16), a row of Where next, shut: " + (fold && fold.outerHTML.slice(0, 120)));
     await p.tap("undo.history", "order:ord-r1");
     ok(J(p.sent("/all/maker/undo")) === J([{ order: "ord-r1" }]), "read by its order: " + J(p.sent("/all/maker/undo")));

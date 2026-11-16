@@ -33,7 +33,7 @@ export async function run({ ok, pageWork }) {
     p.tap = async (act, key) => { const e = byAct(p.d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
     p.card = (key) => [...p.d.querySelectorAll("#makerClaims [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "claim:" + key) || null;
     p.in = (act, key) => byAct(p.d.getElementById("makerClaims"), act, key);
-    p.say = () => (p.d.querySelector("#makerClaims .salt-insight[role=status]") || { textContent: "" }).textContent;
+    p.say = () => (p.d.querySelector("#makerClaims .amb-notice[role=status], #makerClaims .amb-field__hint[role=status]") || { textContent: "" }).textContent;
     return p;
   };
 
@@ -138,9 +138,10 @@ export async function run({ ok, pageWork }) {
     await p.tap("claim.open", C2);
     ok(p.urls.revoked.length === open1 + 1 && !p.card(C2) && !d.querySelector("[data-maker-slip]"), "closing the card revokes its picture and leaves no image on the page");
     /* the thumbnail is the control, and it measures the tap: 44px at least both ways, a button of the page's own CSS */
-    const rule = cssRules(p.w)(".adm .maker-slip-open")[0], bigger = cssRules(p.w)(".adm .maker-slipbox.open .maker-slip-open .maker-slip")[0];
-    ok(!!rule && rule.getPropertyValue("min-width") === "var(--salt-tap)" && rule.getPropertyValue("min-height") === "var(--salt-tap)" && !!bigger && bigger.getPropertyValue("max-height") === "none",
-      "the thumbnail's control is the 44px token both ways, and opened it lifts its height limit: " + (rule && rule.cssText));
+    /* 16 Nov 2026, the move to Ambient (place G): the rule is the site layer's, in Ambient's tap token */
+    const css = [...d.querySelectorAll("style")].map((x) => x.textContent).join("\n");
+    ok(/\.maker-slip-open \{[^}]*min-width: var\(--amb-tap\)[^}]*min-height: var\(--amb-tap\)/.test(css) && /\.maker-slipbox\.open \.maker-slip-open \.maker-slip \{[^}]*max-height: none/.test(css),
+      "the thumbnail's control is the 44px token both ways, and opened it lifts its height limit");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3. AN ACCOUNT CLAIM'S RECEIVED AND NOT FOUND ASK ON THE PAGE'S SHEET */
@@ -160,20 +161,20 @@ export async function run({ ok, pageWork }) {
     await p.tap("claim.open", C1);
     p.in("claim.received", C1).click(); await p.work.quiet();
     const sh = sheet();
-    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && answers(p, "c-1", "received").length === 0 && calls.length === 0,
+    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("amb-sheet") && answers(p, "c-1", "received").length === 0 && calls.length === 0,
       "Received opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
-    ok(/Received RM 50\.00 from CX1-ZED\?/.test(sh.querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /RM 50\.00/.test(sh.textContent)
+    ok(/Received RM 50\.00 from CX1-ZED\?/.test(sh.querySelector(".amb-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /RM 50\.00/.test(sh.textContent)
       && /08 Oct 2026: RM 50\.00 of RM 60\.00/.test(sh.textContent) && /recorded against the rows below/.test(sh.textContent),
       "the Sheet says who and how much, lists the rows and says what follows: " + sh.textContent);
-    const lineOf = sh.querySelector(".salt-ledger__line");
-    ok(!!lineOf && /CX1-ZED/.test(lineOf.querySelector(".salt-ledger__label").textContent) && lineOf.querySelector(".salt-ledger__value").textContent === "RM 50.00"
-      && /Says they paid it/.test(sh.querySelector(".salt-ledger__flag").textContent),
+    const lineOf = sh.querySelector(".amb-row");
+    ok(!!lineOf && /CX1-ZED/.test(lineOf.querySelector(".amb-row__title").textContent) && lineOf.querySelector(".amb-row__amount").textContent === "RM 50.00"
+      && /Says they paid it/.test(lineOf.querySelector(".amb-row__sub").textContent),
       "and restates the claim as a line of its own: the code, the figure, and that they say they sent it");
-    ok(!!inSheet("claim.ask-go", C1) && !!inSheet("claim.ask-keep", C1) && !!inSheet("claim.ask-close", C1) && !inSheet("claim.ask-go").classList.contains("salt-ghost--danger")
-      && sh.querySelector(".salt-sheet__foot").contains(inSheet("claim.ask-go")),
+    ok(!!inSheet("claim.ask-go", C1) && !!inSheet("claim.ask-keep", C1) && !!inSheet("claim.ask-close", C1) && !inSheet("claim.ask-go").classList.contains("amb-action--danger")
+      && sh.querySelector(".amb-sheet__body").contains(inSheet("claim.ask-go")),
       "its controls carry their acts, and Received is not a danger action");
     for (const [name, close] of [["Not yet", () => inSheet("claim.ask-keep").click()], ["the close control", () => inSheet("claim.ask-close").click()],
-      ["the scrim", () => d.getElementById("ynScrim").click()], ["Escape", () => key(d.body, "Escape")]]) {
+      ["the scrim", () => sheet().dispatchEvent(new w.MouseEvent("click", { bubbles: true, clientX: -1, clientY: -1 }))], ["Escape", () => key(d.body, "Escape")]]) {
       if (!sheet()) { p.in("claim.received", C1).click(); await p.work.quiet(); }
       close(); await p.work.quiet();
       ok(!sheet() && answers(p, "c-1", "received").length === 0 && d.activeElement === p.in("claim.received", C1), name + " closes the sheet, sends nothing, and gives focus back to Received");
@@ -190,7 +191,7 @@ export async function run({ ok, pageWork }) {
     /* Not found: a danger action, sending the amount and a request id */
     await p.tap("claim.open", C2);
     p.in("claim.not-found", C2).click(); await p.work.quiet();
-    ok(/Not found RM 20\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && inSheet("claim.ask-go", C2).classList.contains("salt-ghost--danger")
+    ok(/Not found RM 20\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && inSheet("claim.ask-go", C2).classList.contains("amb-action--danger")
       && answers(p, "c-2", "notfound").length === 0, "Not found asks on the Sheet, a danger action, and sends nothing as it opens");
     /* a second tap on the action of a sheet already closed sends nothing, whether or not the first answer has landed: the sheet is shut before the request goes */
     p.fail.add("/all/maker/claims/" + U + "/c-2/notfound");
@@ -239,7 +240,7 @@ export async function run({ ok, pageWork }) {
     ok(p.in("claim.received").disabled && !p.in("claim.received-booked").disabled && /RM 20\.00 more than the rows/.test(p.card(C1).textContent),
       "a claim above its rows shuts Received and opens Received, on the book already");
     p.in("claim.received-booked", C1).click(); await p.work.quiet();
-    ok(/Already recorded\?/.test(d.getElementById("ynSheet").querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /Nothing more is recorded/.test(d.getElementById("ynSheet").textContent)
+    ok(/Already recorded\?/.test(d.getElementById("ynSheet").querySelector(".amb-sheet__title").textContent) && /Nothing more is recorded/.test(d.getElementById("ynSheet").textContent)
       && answers(p, "c-1", "received").length === 0, "its Sheet says nothing more is booked, and sends nothing as it opens");
     byAct(d, "claim.ask-go").click(); await p.work.quiet();
     const sent = answers(p, "c-1", "received");
@@ -260,8 +261,8 @@ export async function run({ ok, pageWork }) {
     byAct(d, "order.open", "ord-a1").click(); await p.work.quiet();
     const card = () => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "ord-a1");
     byAct(card(), "order.claim-received", ACLAIM).click(); await p.work.quiet();
-    ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /records RM 30\.00 against this order/.test(sheet().textContent)
-      && !byAct(sheet(), "order.ask-go").classList.contains("salt-ghost--danger") && sends("received").length === 0 && asked.length === 0,
+    ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /records RM 30\.00 against this order/.test(sheet().textContent)
+      && !byAct(sheet(), "order.ask-go").classList.contains("amb-action--danger") && sends("received").length === 0 && asked.length === 0,
       "an order's Receive claimed asks on the Sheet, naming the amount and who, and sends nothing as it opens: " + (sheet() && sheet().textContent));
     byAct(sheet(), "order.ask-keep").click(); await p.work.quiet();
     ok(!sheet() && sends("received").length === 0, "Not yet sends nothing");
@@ -271,11 +272,11 @@ export async function run({ ok, pageWork }) {
     ok(got.length === 1 && got[0].body.amount === 30 && got[0].body.claim === ACLAIM && !Object.hasOwn(got[0].body, "covered") && /^[0-9a-f]{32}$/.test(got[0].body.rid),
       "its one action sends the claim's amount and moment under a request id, as the tap did: " + JSON.stringify(got));
     byAct(card(), "order.claim-received", BCLAIM).click(); await p.work.quiet();
-    ok(/Already recorded, RM 500\.00\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && /Nothing more is recorded/.test(sheet().textContent), "a claim above what the order owes asks as Received, on the book already");
+    ok(/Already recorded, RM 500\.00\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && /Nothing more is recorded/.test(sheet().textContent), "a claim above what the order owes asks as Received, on the book already");
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     ok(sends("received").length === 2 && sends("received")[1].body.covered === true && sends("received")[1].body.claim === BCLAIM, "and sends covered: " + JSON.stringify(sends("received")[1]));
     byAct(card(), "order.claim-not-found", ACLAIM).click(); await p.work.quiet();
-    ok(/Not found RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title, .amb-sheet__title").textContent) && byAct(sheet(), "order.ask-go").classList.contains("salt-ghost--danger") && sends("notfound").length === 0,
+    ok(/Not found RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && byAct(sheet(), "order.ask-go").classList.contains("amb-action--danger") && sends("notfound").length === 0,
       "Not found on an order's claim asks on the Sheet, a danger action, and sends nothing as it opens");
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     const lost = sends("notfound");

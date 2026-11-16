@@ -54,7 +54,7 @@ export async function run({ ok, pageWork }) {
     ok(kmOf() === "Distance 14.4 km", "unlocked, Delivery cost says the distance from his base to their filed point times the factor: " + kmOf());
     await click(byAct(d, "part.orders.todo")); await click(byAct(d, "order.open", "ord-k2"));
     const m = p.card("ord-k2") && p.card("ord-k2").querySelector("[data-clock]");
-    ok(!!m && /^Waited in hours 30 min/.test(t(m)), "the meter says Waited in hours and reads the review's figure: " + t(m));
+    ok(!!m && /^Waited in hourss?30 min/.test(t(m)), "the meter says Waited in hours and reads the review's figure: " + t(m));
     await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-k1"));
     ok(kmOf() === "Distance 14.4 km", "and a card drawn while unlocked says it from the start: " + kmOf());
   } finally { p.w.close(); }

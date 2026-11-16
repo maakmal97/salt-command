@@ -31,8 +31,9 @@ export async function run({ ok, pageWork }) {
   try {
     const { d } = p;
     /* 1 */
-    const heads = [...d.querySelectorAll("#oLedger h2")].map((h) => h.textContent);
-    const order = [...d.querySelectorAll("#oLedger .salt-table-wrap")].map((x) => x.id);
+    const heads = [...d.querySelectorAll('#oLedger h2[id$="-h"]')].map((h) => h.textContent);
+    /* 16 Nov 2026, the move to Ambient (place G): the three tables are Ambient's, each in a region of its own */
+    const order = [...d.querySelectorAll('#oLedger [id^="led-"][role="region"]')].map((x) => x.id);
     ok(JSON.stringify(heads) === JSON.stringify(["Open orders · 2", "Pending orders · 1", "Latest 20 orders · 3"]) && order.join() === "led-open,led-pending,led-recent",
       "the ledger is three tables in the order Open orders, Pending orders, the latest twenty, each headed with its count: " + JSON.stringify([heads, order]));
     const rest = ["makerOrderList", "makerReview", "makerClaims", "makerPools"].filter((id) => shown(d.getElementById(id)));
@@ -54,32 +55,30 @@ export async function run({ ok, pageWork }) {
     ok(!!sec && cells(sec)[7] === "0 of 4" && cells(sec)[6] === "RM 0.00" && cells(sec)[8] === "Open · Deferred" && !!undated && cells(undated)[1] === "Undated",
       "a paid order owes RM 0.00 and has handed over none, and a row with no date says Undated: " + JSON.stringify([sec && cells(sec), undated && cells(undated)]));
     /* 25 Oct 2026 (canvas Salt Admin Orders): a book is its typed Product tag, its name in its hue, as on Needs you, and no mark */
-    ok(!!first && !!first.children[3].querySelector(".salt-producttag--oil") && first.children[3].textContent.trim() === "Oil" && !first.querySelector("svg.psym") && !!sec.querySelector(".salt-producttag") && !sec.querySelector("svg.psym"),
-      "a book is its typed Product tag, its name in its hue, and no mark: " + (first && first.children[3].textContent));
+    ok(!!first && /amb-kind-[1-6]/.test((first.children[3].querySelector(".amb-chip") || { className: "" }).className) && first.children[3].textContent.trim() === "Oil" && !first.querySelector("svg.psym") && !!sec.querySelector(".amb-chip") && !sec.querySelector("svg.psym"),
+      "a book is its chip, its name in ink and its hue on the dot, and no mark: " + (first && first.children[3].textContent));
     /* 4 */
-    const small = first && first.children[6].querySelector("small");
-    ok(!!small && small.textContent === "goods out, RM 5.00" && !sec.children[6].querySelector("small"), "what is out unpaid is said beside what is owed, and only where goods are out: " + (small && small.textContent));
+    const small = first && first.children[6].querySelector(".amb-table__sub");
+    ok(!!small && small.textContent === "goods out, RM 5.00" && !sec.children[6].querySelector(".amb-table__sub"), "what is out unpaid is said beside what is owed, and only where goods are out: " + (small && small.textContent));
     const text = d.getElementById("oLedger").textContent;
     ok(!/\b(salt|oil|candy|rice)\b/i.test(text) && /CA1-BBB/.test(text), "no book is named on it, and a customer is its code: " + text.slice(0, 120));
     /* 6 */
-    const wraps = [...d.querySelectorAll("#oLedger .salt-table-wrap")];
-    ok(wraps.length === 3 && wraps.every((x) => x.getAttribute("tabindex") === "0" && x.getAttribute("role") === "region" && x.getAttribute("aria-labelledby") === x.id + "-h" && x.querySelector("table.salt-table")),
-      "each table sits in its own scrolling box that a keyboard can reach and a reader can name");
-    const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n").split("\n").filter((l) => /ledgrp|#oLedger/.test(l));
-    ok(css.length >= 5 && css.every((l) => !/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(l)), "the ledger's rules are written in the system's tokens, never a colour: " + css.length + " rules");
+    const wraps = ["led-open", "led-pending", "led-recent"].map((id) => d.getElementById(id));
+    ok(wraps.length === 3 && wraps.every((x) => x.getAttribute("role") === "region" && x.getAttribute("aria-labelledby") === x.id + "-h" && !x.hasAttribute("tabindex") && x.querySelector("table.amb-table.amb-table--stack")),
+      "each table is Ambient's stacking table in a region a reader can name, in no scrolling box");
+    const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n").split("\n").filter((l) => /ledgrp|ledtable|#oLedger/.test(l));
+    ok(css.length >= 3 && css.every((l) => !/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(l)), "the ledger's rules are written in the system's tokens, never a colour: " + css.length + " rules");
     /* 7 (4 Nov 2026, his word: the three tables aligned): one column layout, the same nine columns at the same widths in each, fixed */
-    const groups = [...d.querySelectorAll("#oLedger table")].map((t) => { const cg = t.firstElementChild; return cg && cg.tagName === "COLGROUP" ? [...cg.children].map((c) => c.className).join() : ""; });
-    const all = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    const widths = [...Array(9)].map((_, i) => { const m = new RegExp("\\.adm \\.ledtable \\.lc" + (i + 1) + "\\{width:([0-9.]+)%\\}").exec(all); return m ? +m[1] : NaN; });
-    ok(groups.length === 3 && groups.every((g) => g === "lc1,lc2,lc3,lc4,lc5,lc6,lc7,lc8,lc9") && [...d.querySelectorAll("#oLedger table")].every((t) => t.classList.contains("ledtable"))
-      && /\.adm \.ledgrp \.ledtable\{table-layout:fixed;min-width:1000px\}/.test(all) && Math.abs(widths.reduce((a, b) => a + b, 0) - 100) < 1e-9,
-      "7 the three tables share one fixed column layout, nine columns making the whole width, so each column stands in one place: " + JSON.stringify([groups, widths]));
+    const tables = [...d.querySelectorAll("#oLedger table")], all = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    ok(tables.length === 3 && tables.every((t) => !t.querySelector("colgroup") && [...t.querySelectorAll("tbody tr")].every((tr) => [...tr.children].every((td, i) => td.getAttribute("data-label") === COLS[i])))
+      && !/overflow-x:\s*auto[^}]*\}/.test(all.split("\n").filter((l) => /ledgrp|ledtable/.test(l)).join("")),
+      "7 the three tables stack under 720px by their cells' labels, each cell carrying its column's heading, and none scrolls sideways");
   } finally { p.w.close(); }
 
   /* 5 */
   const e = await open({ extra: answer({ open: [], pending: [], recent: [] }) });
   try {
-    const none = [...e.d.querySelectorAll("#oLedger .rnone")].map((x) => x.textContent), heads = [...e.d.querySelectorAll("#oLedger h2")].map((h) => h.textContent);
+    const none = [...e.d.querySelectorAll("#oLedger .rnone")].map((x) => x.textContent), heads = [...e.d.querySelectorAll('#oLedger h2[id$="-h"]')].map((h) => h.textContent);
     ok(JSON.stringify(none) === JSON.stringify(["No open orders.", "No pending orders.", "No orders on the book."]) && e.d.querySelectorAll("#oLedger table").length === 0
       && heads.every((h) => /· 0$/.test(h)), "a table with nothing in it says so and draws no empty head: " + JSON.stringify([none, heads]));
   } finally { e.w.close(); }

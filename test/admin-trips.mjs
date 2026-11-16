@@ -231,18 +231,18 @@ export async function run({ ok, pageWork }) {
     /* 2 Nov 2026 (Orders on the canvas): the order of several books is one row under Agreed in Open, the first book's tag and a +2, all three read out in its aria-label */
     const rowBox = rowEl && rowEl.closest(".ordcard");
     ok(!!rowEl && rowEl.closest("section[data-in]").getAttribute("data-in") === "orders.open" && rowEl.closest("section").getAttribute("aria-label") === "Agreed"
-      && rowEl.querySelectorAll(".salt-producttag:not(.salt-producttag--more)").length === 1 && text(rowEl.querySelector(".salt-producttag--more")) === "+2"
-      && /Salt, Oil, Rice|Salt, Rice, Oil|Oil, Salt, Rice/.test(rowBox.getAttribute("aria-label")) && text(rowBox.querySelector(".salt-settings__value--lg")) === "RM 271",
-      "the order of several books is one row under Agreed, the first book's tag and a +2, and what it comes to: " + text(rowEl) + " | " + (rowBox && rowBox.getAttribute("aria-label")));
+      && rowEl.querySelectorAll(".amb-thumb").length === 1 && text(rowEl.querySelector(".omore")) === "+2"
+      && /Salt, Oil, Rice|Salt, Rice, Oil|Oil, Salt, Rice/.test(rowEl.getAttribute("aria-label")) && text(rowBox.querySelector(".amb-row__amount")) === "RM 271",
+      "the order of several books is one row under Agreed, the first book's tag and a +2, and what it comes to: " + text(rowEl) + " | " + (rowBox && rowEl.getAttribute("aria-label")));
     /* 18 Oct 2026, his screenshot: the marks stand in the tile column, so the line is not squeezed into 84px and the figure keeps the right */
-    const tags = rowEl && rowEl.querySelector(".salt-settings__label"), what = rowEl && rowEl.querySelector(".salt-settings__sub");
-    ok(!!tags && !!tags.querySelector(".salt-producttag") && !!what && !what.querySelector(".salt-producttag") && /^One order/.test(text(what)),
+    const tags = rowEl && rowEl.querySelector(".amb-thumb"), what = rowEl && rowEl.querySelector(".amb-row__sub");
+    ok(!!tags && !!what && !what.querySelector(".amb-chip") && /^One order/.test(text(what)),
       "and its tags stand in the label line before the code, its second line the words alone: " + text(what));
-    ok(!!card && text(card.querySelector("h3")) === "CX9-ZED, 3 books, 14 Oct 2026" && text(card.querySelector(".salt-metrics")) === "Owed RM 271.00 Paid RM 0.00 Handed 0 of 3 lines",
-      "its card's head reads owed, paid and the lines handed over across every line: " + text(card && card.querySelector(".salt-metrics")));
+    ok(!!card && text(card.querySelector("h3")) === "CX9-ZED, 3 books, 14 Oct 2026" && /^Oweds?RM 271.00s?Paids?RM 0.00s?Handeds?0 of 3 lines$/.test(text(card.querySelector(".ometrics"))),
+      "its card's head reads owed, paid and the lines handed over across every line: " + text(card && card.querySelector(".ometrics")));
     const ls = card ? [...card.querySelectorAll(".tripline")] : [];
-    const untagged = (n) => { const g = n.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((x) => x.remove()); return text(g); };
-    ok(ls.length === 3 && ls.every((l) => l.querySelector(".maker-facts .salt-producttag") && !l.querySelector(".maker-facts svg.psym")) && text(ls[0].querySelector(".maker-facts")).endsWith("1 unit, RM 110.00 + RM 10.00 delivery, handed 0 of 1 unit")
+    const untagged = (n) => { const g = n.cloneNode(true); g.querySelectorAll(".amb-chip").forEach((x) => x.remove()); return text(g); };
+    ok(ls.length === 3 && ls.every((l) => l.querySelector(".maker-facts .amb-chip") && !l.querySelector(".maker-facts svg.psym")) && text(ls[0].querySelector(".maker-facts")).endsWith("1 unit, RM 110.00 + RM 10.00 delivery, handed 0 of 1 unit")
       && !/\b(salt|oil|rice)\b/i.test([...card.querySelectorAll(":scope > :not(.rdet)")].map(untagged).join(" ")),
     "then one line a book, its typed tag, units, total and handed, and no word for a book but in its tag: " + ls.map((l) => text(l.querySelector(".maker-facts"))).join(" | "));
     await p.tap("trip.handover", T);

@@ -116,7 +116,7 @@
  {
   "name": "the Sheet row's book is no tag",
   "file": "stmt/owner.js",
-  "find": "ts.length===1?productTag(ts[0].product):item.product",
+  "find": "ts.length===1?bookTile(ts[0].product):item.product",
   "replace": "item.product"
  }
 ]

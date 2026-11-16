@@ -2956,6 +2956,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
+| `order.back` | The pill All orders over an open order or claim, below 960px (16 Nov 2026, the move to Ambient; `data-back` orders; hidden where the two panes stand side by side) | Closes the open order, as the Orders tab does, and returns to the list. Sends nothing. |
+| `claim.back` | The pill All payments over an open claim's card, below 960px (16 Nov 2026; `data-back` claims) | Closes the claim's card and shows the list again. Reads nothing. |
 | `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | The stage's move. Withdraw, Ready (to deliver), Handed (the order's units) and Received (one payment) ask once under the row; Agree, a collection's Ready, two payments and Message (its Answer open) open the order. |
 | `order.move-yes` | Under a row that asks (key: the order id) | Sends what the order card sends for that move: withdraw, move to ready by delivery, handed, received, each under its own request id. |
 | `order.move-no` | Under a row that asks (key: the order id) | Not now: takes the ask away and sends nothing. |

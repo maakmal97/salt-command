@@ -26,8 +26,8 @@
  {
   "name": "a ghost under .adm restates a radius",
   "file": "stmt/page.js",
-  "find": ".adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}",
-  "replace": ".adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px;border-radius:4px}"
+  "find": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}",
+  "replace": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}\n.adm .salt-ghost{border-radius:4px}"
  },
  {
   "name": "the month strip's own button rule comes back",
@@ -92,14 +92,14 @@
  {
   "name": "the Product tag loses its dot",
   "file": "stmt/owner.js",
-  "find": "dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;",
-  "replace": "dot.setAttribute('aria-hidden','true'); t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;"
+  "find": "function bookChip(product){ var k=String(product||''); return amb.node(amb.kindChip(k,k.charAt(0).toUpperCase()+k.slice(1))); }",
+  "replace": "function bookChip(product){ var k=String(product||''); return amb.node(amb.chip(k.charAt(0).toUpperCase()+k.slice(1))); }"
  },
  {
   "name": "the Product tag carries a style attribute",
   "file": "stmt/owner.js",
-  "find": "dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;",
-  "replace": "dot.setAttribute('aria-hidden','true'); t.setAttribute('style','color:red'); t.appendChild(dot); t.appendChild(document.createTextNode(k.charAt(0).toUpperCase()+k.slice(1))); return t;"
+  "find": "function bookChip(product){ var k=String(product||''); return amb.node(amb.kindChip(k,k.charAt(0).toUpperCase()+k.slice(1))); }",
+  "replace": "function bookChip(product){ var k=String(product||''); var c=amb.node(amb.kindChip(k,k.charAt(0).toUpperCase()+k.slice(1))); c.setAttribute('style','color:red'); return c; }"
  },
  {
   "name": "a book's row reads differently once tagged",
@@ -110,14 +110,14 @@
  {
   "name": "a group order's row names its book in plain text",
   "file": "stmt/owner.js",
-  "find": "var pline=el('p','maker-row'); pline.appendChild(bookTag(p.product));",
-  "replace": "var pline=el('p','maker-row'); pline.appendChild(document.createTextNode(p.product));"
+  "find": "head.insertBefore(bookChip(p.product),head.firstChild);",
+  "replace": "head.insertBefore(document.createTextNode(p.product),head.firstChild);"
  },
  {
   "name": "cost and margin are a line of the card's own again",
   "file": "stmt/owner.js",
-  "find": "var row=el('div','salt-metrics salt-metrics--sm');",
-  "replace": "var row=el('div','maker-facts');"
+  "find": "fr.appendChild(amb.node(amb.stat(f[0],f[1])));",
+  "replace": "fr.appendChild(el('span',null,f[0]+' '+f[1]));"
  },
  {
   "name": "the open list is the well again",
@@ -164,8 +164,8 @@
  {
   "name": "a book on Orders is its mark again",
   "file": "stmt/owner.js",
-  "find": "function bookTag(product){ return productTag(product); }",
-  "replace": "function bookTag(product){ return bookMark(product,20); }"
+  "find": "function bookChip(product){ var k=String(product||''); return amb.node(amb.kindChip(k,k.charAt(0).toUpperCase()+k.slice(1))); }",
+  "replace": "function bookChip(product){ return psym(product,20); }"
  },
  {
   "name": "an Aurora is drawn again",
@@ -188,8 +188,8 @@
  {
   "name": "the page styles the hero",
   "file": "stmt/page.js",
-  "find": "#roster .salt-orb[data-back]{margin:0 0 16px}",
-  "replace": "#roster .salt-orb[data-back]{margin:0 0 16px}\n#roster .amb-hero__title{font-size:2rem}"
+  "find": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}",
+  "replace": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}\n#roster .amb-hero__title{font-size:2rem}"
  },
  {
   "name": "a place loses its hero",

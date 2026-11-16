@@ -65,40 +65,42 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.enter();
     /* O1 */
-    const seg = d.querySelector('.aparts[data-place="orders"]'), tabs = seg ? [...seg.querySelectorAll('[role="tab"]')] : [];
-    ok(!!seg && seg.classList.contains("salt-segment") && d.querySelectorAll('.aparts[data-place="orders"]').length === 1 && tabs.length === 4
-      && tabs.map((b) => b.firstChild.textContent).join() === "To do,Open,Done,Ended" && tabs.map((b) => b.getAttribute("data-act")).join() === "part.orders.todo,part.orders.open,part.orders.done,part.orders.ended"
-      && seg.style.getPropertyValue("--n") === "4" && tabs.every((b) => b.classList.contains("salt-segment__opt")) && t(tabs[0].querySelector(".salt-segment__count")) === "7" && !tabs[1].querySelector(".salt-segment__count"),
-    "the parts are one Segment of exactly four tabs in order, To do carrying its count of seven: " + tabs.map((b) => t(b)).join(" | "));
+    /* 16 Nov 2026, the move to Ambient (place G): the parts are Ambient's Segment, a part pressed not selected, each with its count, one with none dimmed (aria-disabled, its count 0) and never the one in use */
+    const seg = d.querySelector('.aparts[data-place="orders"]'), tabs = seg ? [...seg.querySelectorAll("[data-part]")] : [];
+    ok(!!seg && seg.classList.contains("amb-segment") && d.querySelectorAll('.aparts[data-place="orders"]').length === 1 && tabs.length === 4
+      && tabs.map((b) => b.firstChild.textContent.trim()).join() === "To do,Open,Done,Ended" && tabs.map((b) => b.getAttribute("data-act")).join() === "part.orders.todo,part.orders.open,part.orders.done,part.orders.ended"
+      && tabs.every((b) => b.classList.contains("amb-segment__opt") && !!b.querySelector(".amb-segment__count")) && t(tabs[0].querySelector(".amb-segment__count")) === "7"
+      && tabs[0].getAttribute("aria-pressed") === "true" && !tabs[0].hasAttribute("aria-disabled")
+      && tabs[2].getAttribute("aria-disabled") === "true" && t(tabs[2].querySelector(".amb-segment__count")) === "0" && !tabs[1].hasAttribute("aria-disabled"),
+    "the parts are one Segment of exactly four in order, To do carrying its count of seven and Done dimmed at 0: " + tabs.map((b) => t(b)).join(" | "));
     /* O2 */
     await p.enter("open");
-    const heads = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"]')].map((s) => t(s.querySelector(":scope > h2.salt-settings__head")));
-    const lists = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"]')].map((s) => s.querySelectorAll(":scope > .salt-settings").length);
+    const heads = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"]')].map((s) => t(s.querySelector(":scope > h2.amb-section")));
+    const lists = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"]')].map((s) => s.querySelectorAll(":scope > ul.amb-list").length);
     ok(J(heads) === J(["Agreed", "Ready", "Out or paid"]) && lists.every((n) => n === 1),
       "Open lists Agreed, Ready and Out or paid each under its own head, and one list a head: " + J([heads, lists]));
     /* O3 */
     const trip = d.querySelector('[data-act="order.open"][data-key="trip:' + TRIP.trip + '"]'), tripRow = trip && trip.closest(".ordcard");
-    const tagsIn = trip ? [...trip.querySelectorAll(".salt-producttag:not(.salt-producttag--more)")] : [];
-    ok(!!trip && tagsIn.length === 1 && t(tagsIn[0]) === "Salt" && t(trip.querySelector(".salt-producttag--more")) === "+1"
-      && /Salt, Rice/.test(tripRow.getAttribute("aria-label")),
-    "an order of two books folds to the first tag and a +1, and the row's aria-label reads out both books: " + t(trip) + " | " + (tripRow && tripRow.getAttribute("aria-label")));
+    ok(!!trip && trip.querySelectorAll(".amb-thumb").length === 1 && t(trip.querySelector(".omore")) === "+1"
+      && /Salt, Rice/.test(trip.getAttribute("aria-label")),
+    "an order of two books folds to the first book's thumb and a +1, and the row's aria-label reads out both books: " + t(trip) + " | " + (trip && trip.getAttribute("aria-label")));
     /* O4 */
     const ridSeen = (root) => [...root.querySelectorAll("#makerOrderList *")].filter((x) => shown(x) && [...x.childNodes].some((n) => n.nodeType === 3 && /\bs[0-9]{2,}\b/.test(n.textContent))).map((x) => x.textContent);
     const rowFor = d.querySelector('[data-act="order.open"][data-key="row:s182"]');
-    ok(!!rowFor && ridSeen(d).length === 0 && /^Out/.test(t(rowFor.querySelector(".salt-settings__sub"))),
+    ok(!!rowFor && ridSeen(d).length === 0 && /^Out/.test(t(rowFor.querySelector(".amb-row__sub"))),
       "no visible text is a row's id: a book row says Out, never s182: " + t(rowFor) + " | " + J(ridSeen(d)));
     /* O5 */
     await p.enter("todo");
     const leadTodo = t(d.getElementById("makerReviewStatus"));
     const mv = byAct(d, "order.move", "ord-p4");
-    ok(!!mv && t(mv) === "Withdraw" && ["salt-ghost", "salt-ghost--lit", "salt-ghost--tight"].every((c) => mv.classList.contains(c)) && !mv.classList.contains("salt-pill")
-      && d.querySelectorAll("#makerOrderList .salt-pill").length === 0 && mv.getAttribute("data-key") === "ord-p4",
-    "a move is a lit ghost and never a filled pill, with its act and key: " + (mv && mv.className));
+    ok(!!mv && t(mv) === "Withdraw" && ["amb-pill", "amb-pill--sm"].every((c) => mv.classList.contains(c)) && !mv.classList.contains("amb-pill--quiet")
+      && d.querySelectorAll("#makerOrderList [class*='salt-']").length === 0 && mv.getAttribute("data-key") === "ord-p4",
+    "a move is Ambient's small pill, with its act and key, and no salt class stands in the list: " + (mv && mv.className));
     mv.click(); await p.work.quiet();
-    const ask = d.querySelector('[data-rowof="ord-p4"] .oask'), yes = byAct(d, "order.move-yes", "ord-p4"), no = byAct(d, "order.move-no", "ord-p4");
-    ok(!!ask && !!yes && !!no && yes.classList.contains("salt-ghost--lit") && !yes.classList.contains("salt-pill") && /^Take back your offer of RM [0-9,.]+ to /.test(t(ask.querySelector(".oask__q")))
+    const ask = d.querySelector('.oask[data-rowof="ord-p4"]'), yes = byAct(d, "order.move-yes", "ord-p4"), no = byAct(d, "order.move-no", "ord-p4");
+    ok(!!ask && !!yes && !!no && yes.classList.contains("amb-pill") && no.classList.contains("amb-pill--quiet") && /^Take back your offer of RM [0-9,.]+ to /.test(t(ask.querySelector(".oask__q")))
       && p.posts.filter((x) => /withdraw$/.test(x.route)).length === 0,
-    "it asks once under its row, in ghosts, and sends nothing yet: " + t(ask));
+    "it asks once under its row, in pills, and sends nothing yet: " + t(ask));
     yes.click(); await p.work.quiet();
     const sent = p.posts.filter((x) => x.route === "/all/maker/orders/ord-p4/withdraw");
     ok(sent.length === 1 && J(Object.keys(sent[0].body)) === J(["rid"]) && /^[0-9a-f]{32}$/.test(sent[0].body.rid),
@@ -114,49 +116,39 @@ export async function run({ ok, pageWork }) {
       "the list has no Refresh and no line under it");
     /* O10 */
     await p.enter("done");
-    const none = [...d.querySelectorAll("#makerOrderList .salt-settings__foot")].filter(shown), btns = [...d.querySelectorAll("#makerOrderList button")].filter(shown);
+    const none = [...d.querySelectorAll("#makerOrderList .amb-empty")].filter(shown), btns = [...d.querySelectorAll("#makerOrderList button")].filter(shown);
     ok(none.length === 1 && t(none[0]) === "No done orders." && btns.length === 0, "a part with nothing in it is one grey line and no button: " + J(none.map(t)) + " " + btns.length);
     /* a settings list below 1080px, no table */
-    ok(!d.querySelector("#makerOrderList table") && d.querySelectorAll("#makerOrderList .salt-settings").length > 0, "below 1080px the list is settings lists, never a table");
+ok(!d.querySelector("#makerOrderList table") && d.querySelectorAll("#makerOrderList ul.amb-list").length > 0, "below 960px the list is Ambient's rows, never a table");
   } catch (e) { ok(false, "admin-orders-v2 stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
-  /* from 1080px: one plain table */
+  /* from 960px: the same rows, the queue beside the record, never a table */
   p = await open({ before: wideAt });
   try {
     const d = p.d;
     await p.enter("open");
-    const wrap = d.querySelector('#makerOrderList [data-in="orders.open"].salt-glass-card'), region = wrap && wrap.querySelector(":scope > .salt-table-wrap"), tb = region && region.querySelector("table");
-    const cols = tb ? [...tb.querySelectorAll(":scope > colgroup > col")].map((c) => c.style.getPropertyValue("width")) : [];
-    const heads = tb ? [...tb.querySelectorAll(":scope > thead th")] : [];
-    ok(!!wrap && wrap.classList.contains("salt-glass-card--radius-lg") && wrap.classList.contains("salt-glass-card--pad-none") && region.getAttribute("role") === "region"
-      && tb.classList.contains("salt-table") && tb.classList.contains("salt-table--plain") && tb.classList.contains("salt-table--rows") && J(cols) === J(["136px", "140px", "", "104px", "184px", "112px", "140px"]),
-    "from 1080px the list is one plain table in a glass card, its colgroup 136, 140, auto, 104, 184, 112 and 140px (2 Nov 2026: Waiting was 136px and cut Offered, their yes and Says sent RM 530): " + J(cols));
-    /* O12: the code link fills its cell's height, so the table's link is a 44px target (measured 59x14 before) */
-    const link = (pageRules().find((x) => x[0] === ".adm .salt-table--rows tbody th a") || [, null])[1];
-    ok(!!link && link.getPropertyValue("display") === "flex" && link.getPropertyValue("align-items") === "center" && link.getPropertyValue("min-height") === "var(--salt-tap)",
-      "the code link in a table row fills its cell's height with a 44px minimum: " + (link && link.cssText));
-    ok(heads.map((h) => t(h)).join() === "Code,Book,Way,Units,Waiting,Total,Move" && heads.every((h) => h.getAttribute("scope") === "col") && !!heads[6].querySelector(".sr")
-      && ["Code", "Book", "Way", "Waiting"].every((w, i) => heads[[0, 1, 2, 4][i]].classList.contains("salt-table__left")),
-    "its columns are Code, Book, Way, Units, Waiting, Total and a move with a screen-reader head, the word columns left: " + heads.map((h) => t(h)).join());
-    const groups = tb ? [...tb.querySelectorAll("tr.salt-table__group > th")].map((h) => t(h)) : [];
-    ok(J(groups) === J(["Agreed", "Ready", "Out or paid"]) && !d.querySelector("#makerOrderList .salt-settings__row") && !!tb.querySelector('tr.salt-table__group > th[colspan="7"] > .salt-settings__head'),
-      "its group heads are rows of it, Agreed, Ready and Out or paid, and no settings row stands beside the table: " + J(groups));
-    const out1 = byAct(d, "order.open", "ord-out1"), r1 = out1 && out1.closest("tr");
-    const cells = r1 ? [...r1.children] : [];
-    ok(!!r1 && out1.tagName === "A" && out1.closest("th") === cells[0] && cells[0].getAttribute("scope") === "row" && t(cells[0]) === "CX1-ZED"
-      && t(cells[1].querySelector(".salt-table__tags")) === "Salt" && t(cells[2]) === "Out" && t(cells[3]) === "1 unit" && t(cells[4]) === "owes RM 100" && !!cells[4].querySelector(".salt-status--ember")
-      && t(cells[5]) === "RM 100" && /^CX1-ZED, Salt, Out, 1 unit, owes RM 100, RM 100$/.test(r1.getAttribute("aria-label")),
-    "an order is a row: the code the link that opens it, the book, the way, the units, what is still owed in ember when late, the total: " + cells.map(t).join(" | "));
+    const split = d.getElementById("oSplit");
+    ok(!d.querySelector("#makerOrderList table") && !!split && split.classList.contains("amb-split") && split.classList.contains("amb-split--panes") && split.children.length === 2
+      && split.children[0].contains(d.getElementById("makerOrderList")) && split.children[1].contains(d.getElementById("makerReview")) && !!d.getElementById("ordnone"),
+    "from 960px the list is the same rows and the open order the second pane of one split, never a table");
+    const groups = [...d.querySelectorAll('#makerOrderList section[data-in="orders.open"] > h2.amb-section')].map((h) => t(h));
+    ok(J(groups) === J(["Agreed", "Ready", "Out or paid"]) && !d.querySelector("#makerOrderList [class*='salt-']"),
+      "its group heads are Agreed, Ready and Out or paid, each over its own list: " + J(groups));
+    const out1 = byAct(d, "order.open", "ord-out1"), r1 = out1 && out1.closest(".ordcard");
+    ok(!!r1 && out1.tagName === "A" && out1.classList.contains("amb-row__main") && r1.classList.contains("amb-row") && t(out1.querySelector(".ocode")) === "CX1-ZED"
+      && /^Out · 1 unit · /.test(t(out1.querySelector(".amb-row__sub"))) && out1.querySelector(".amb-row__sub").classList.contains("amb-neg") && t(r1.querySelector(".amb-row__amount")) === "RM 100"
+      && /^CX1-ZED, Salt, Out, 1 unit, owes RM 100, RM 100$/.test(out1.getAttribute("aria-label")),
+    "an order is a row: the code the link that opens it, its way and units and what is still owed in the loss colour when late, the total: " + (r1 && t(r1)));
     const rid = d.querySelector('[data-act="order.open"][data-key="row:s182"]');
-    ok(!!rid && t(rid.closest("tr").children[2]) === "Out" && [...d.querySelectorAll("#makerOrderList td, #makerOrderList th")].every((c) => !/^s[0-9]+$/.test(t(c))),
-      "no cell is a row's id: the book row's Way reads Out");
-    const trip = d.querySelector('[data-act="order.open"][data-key="trip:' + TRIP.trip + '"]').closest("tr");
-    ok(t(trip.children[1].querySelector(".salt-table__tags")) === "Salt+1" && /Salt, Rice/.test(trip.getAttribute("aria-label")) && t(trip.children[2]) === "One order",
-      "an order of two books folds to Salt and +1 in the table too, its Way One order: " + t(trip.children[1]));
+    ok(!!rid && /^Out/.test(t(rid.querySelector(".amb-row__sub"))) && [...d.querySelectorAll("#makerOrderList .ordcard")].every((c) => !/\bs[0-9]{3}\b/.test(t(c))),
+      "no row says a book row's id: its way reads Out");
+    const trip = d.querySelector('[data-act="order.open"][data-key="trip:' + TRIP.trip + '"]');
+    ok(t(trip.querySelector(".omore")) === "+1" && /Salt, Rice/.test(trip.getAttribute("aria-label")) && /^One order/.test(t(trip.querySelector(".amb-row__sub"))),
+      "an order of two books folds to its first book and a +1 here too, its way One order: " + t(trip));
     await p.enter("todo");
-    const mvs = [...d.querySelectorAll('#makerOrderList table [data-act="order.move"]')];
-    ok(mvs.length > 0 && mvs.every((b) => b.classList.contains("salt-ghost--lit") && b.classList.contains("salt-ghost--tight") && !b.classList.contains("salt-pill") && !!b.closest(".salt-table__act")),
-      "and the table's moves are lit ghosts in the last column");
+    const mvs = [...d.querySelectorAll('#makerOrderList [data-act="order.move"]')];
+    ok(mvs.length > 0 && mvs.every((b) => b.classList.contains("amb-pill") && b.classList.contains("amb-pill--sm") && !!b.closest(".amb-row__trail")),
+      "and the moves are small pills at the row's trail");
   } catch (e) { ok(false, "admin-orders-v2 stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* O8 Approve is reached by its address and by the bar */

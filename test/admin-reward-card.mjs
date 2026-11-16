@@ -10,7 +10,9 @@
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
-const meter = (c) => [...c.querySelectorAll(".salt-meter__line > span")].map(t).join(" | ");
+/* 16 Nov 2026, the move to Ambient (place G): the measure is Ambient's meter row, its words (title, then what it says) over a progress bar */
+const meter = (c) => [...c.querySelectorAll(".ameterrow .amb-row__title, .ameterrow .amb-row__sub")].map(t).join(" | ");
+const fill = (c) => String(c.querySelector("progress.amb-meter").value);
 
 export async function run({ ok, pageWork }) {
   const base = { u: "abcd-efgh", product: "salt", msgs: [], history: [], payments: [], paid: 0, qty: 1, total: 100, delivery: 0, mode: "collect", at: "2026-10-10T02:00:00.000Z" };
@@ -38,21 +40,21 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.todo")); await click(byAct(d, "order.open", "ord-r1"));
     /* 1 */
     const c1 = card("ord-r1");
-    ok(!!c1 && !c1.hidden && t(c1.querySelector(".salt-eyebrow")) === "Associate reward" && t(c1.querySelector(".salt-status")) === "Reaches a reward"
-      && /salt-status--brass/.test(c1.querySelector(".salt-status").className) && meter(c1) === "RM 530.00 + RM 70.00 | Next reward 10 units’ cost"
+    ok(!!c1 && !c1.hidden && /^Associate reward/.test(t(c1.querySelector("h2.amb-section"))) && t(c1.querySelector(":scope > .amb-chip")) === "Reaches a reward"
+      && /amb-chip--warn/.test(c1.querySelector(":scope > .amb-chip").className) && meter(c1) === "Next reward | RM 530.00 + RM 70.00 of 10 units’ cost"
       && t(c1.querySelector(".orwdnote")) === "Margin past 10 units at landed cost (RM 580.00 at RM 58.00 today). Once paid, 1 unit joins this order at cost, one delivery: RM 58.00, less RM 20.00 given under their Median Price since the last reward, RM 38.00 net. Salt only."
-      && c1.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "100",
+      && fill(c1) === "100",
       "a placed order reads the preview: " + t(c1));
     await click(byAct(d, "part.orders.open")); await click(byAct(d, "order.open", "ord-r2"));
     /* 2 */
     const c2 = card("ord-r2");
-    ok(!!c2 && !c2.hidden && t(c2.querySelector(".salt-status")) === "RM 210.00 short" && /salt-status--mist/.test(c2.querySelector(".salt-status").className)
-      && meter(c2) === "AX1-ZED RM 300.00 + RM 70.00 | Next reward 10 units’ cost" && c2.querySelector(".salt-meter").style.getPropertyValue("--salt-fill") === "64",
+    ok(!!c2 && !c2.hidden && t(c2.querySelector(":scope > .amb-chip")) === "RM 210.00 short" && !/amb-chip--(warn|pos|neg)/.test(c2.querySelector(":scope > .amb-chip").className)
+      && meter(c2) === "Next reward | AX1-ZED RM 300.00 + RM 70.00 of 10 units’ cost" && fill(c2) === "64",
       "an agreed order reads his reading by its key: " + t(c2));
     /* 3 */
     await click(byAct(d, "order.open", "ord-r3"));
     const c3 = card("ord-r3");
-    ok(!!c3 && !c3.hidden && t(c3.querySelector(".orwdnote")) === "1 reward unit raised: it goes with this delivery, RM 38.00 net." && !c3.querySelector(".salt-meter"),
+    ok(!!c3 && !c3.hidden && t(c3.querySelector(".orwdnote")) === "1 reward unit raised: it goes with this delivery, RM 38.00 net." && !c3.querySelector("progress.amb-meter"),
       "a raised unit says it is on this delivery, with its net: " + t(c3));
     /* 4 */
     await click(byAct(d, "order.open", "ord-r4"));
@@ -61,7 +63,7 @@ export async function run({ ok, pageWork }) {
     const c5 = card("ord-r5");
     ok(!!c4 && !c4.querySelector("[data-reward]") && !!c5 && c5.hidden && !t(c5), "no card on oil, none for a party the Desk does not read as an associate: " + t(c5));
     /* 5 */
-    const heavy = [...(c2 ? c2.querySelectorAll("*") : [])].filter((n) => !n.matches("h4.salt-eyebrow")).filter((n) => { const fw = p.w.getComputedStyle(n).fontWeight; return fw && fw !== "normal" && +fw > 500 || fw === "bold"; });
+    const heavy = [...(c2 ? c2.querySelectorAll("*") : [])].filter((n) => !n.matches("h2.amb-section, .amb-chip, .amb-chip *")).filter((n) => { const fw = p.w.getComputedStyle(n).fontWeight; return fw && fw !== "normal" && +fw > 500 || fw === "bold"; });
     ok(!!c2 && heavy.length === 0, "nothing in the card over the weight of 500: " + heavy.map((n) => n.tagName + ":" + p.w.getComputedStyle(n).fontWeight).join(" "));
   } finally { p.w.close(); }
 }

@@ -21,7 +21,13 @@ export async function run({ ok, pageWork }) {
   try {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
-    const card = (id) => { const r = d.querySelector('#makerOrderList .ordcard > [data-order="' + id + '"]'); return r && r.parentNode; };
+    const card = (id) => {
+      /* 16 Nov 2026, the move to Ambient (place G): a row is an li of the list and its ask or answer the li under it, so a card is the two read as one */
+      const r = d.querySelector('#makerOrderList .ordcard > [data-order="' + id + '"]'); if (!r) return null;
+      const row = r.parentNode, ask = d.querySelector('#makerOrderList .oask[data-rowof="' + id + '"]');
+      return { row, ask, hidden: false, get textContent() { return row.textContent + (ask ? ask.textContent : ""); }, closest: (s) => row.closest(s), querySelector: (s) => row.querySelector(s) || (ask && (ask.matches(s) ? ask : ask.querySelector(s))) || null,
+        querySelectorAll: (s) => [...row.querySelectorAll(s), ...(ask ? [...(ask.matches(s) ? [ask] : []), ...ask.querySelectorAll(s)] : [])] };
+    };
     const pill = (id) => card(id) && byAct(card(id), "order.move", id);
     const sent = (id, what) => p.posts.filter((x) => x.route === "/all/maker/orders/" + id + "/" + what);
     const opened = (id) => d.getElementById("oSplit").classList.contains("open") && !!d.querySelector('#makerReview [data-maker-card="' + id + '"]');

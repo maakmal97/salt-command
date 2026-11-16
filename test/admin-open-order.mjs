@@ -42,15 +42,16 @@ export async function run({ ok, pageWork }) {
         && bill.querySelector(":scope > .amb-settings__head") && t(bill.querySelector(".amb-settings__head")) === "Bill" && bill.querySelector(":scope > ul.amb-settings__list.ordmoney")
         && bill.querySelector("[data-total]").classList.contains("obill__total") && !card.querySelector(".salt-ledger"),
         "V2: his card is the shared band and the Bill as a settings list, no glass card around it and no ledger: " + t(bill));
-      const agree = card.querySelector(".oagreesec"), rows = agree ? [...agree.querySelectorAll(".salt-settings > .salt-settings__row .salt-settings__label")].map(t) : [];
-      const pills = [...card.querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
-      ok(!!agree && t(agree.querySelector(".salt-settings__head")) === "Agree" && J(rows) === J(["Goods, RM"]) && agree.querySelector(".salt-settings [data-act=\"order.total\"]")
-        && pills.length === 1 && pills[0].getAttribute("data-act") === "order.accept", "V3: Agree's terms are rows of a settings list and the one filled pill is Agree: " + J([rows, pills.map(t)]));
+      const agree = card.querySelector(".oagreesec"), rows = agree ? [...agree.querySelectorAll(".amb-field > .amb-field__label")].map(t) : [];
+      /* 16 Nov 2026, the move to Ambient (place G): Agree's terms are Ambient's fields under a section head, and the one main pill, Agree, stands in the record's foot */
+      const pills = [...card.querySelectorAll(".amb-pill:not(.amb-pill--quiet):not(.amb-pill--sm)")].filter((b) => !b.hidden);
+      ok(!!agree && t(agree.querySelector(":scope > h2.amb-section")) === "Agree" && J(rows) === J(["Goods, RM"]) && agree.querySelector('.amb-field [data-act="order.total"]')
+        && pills.length === 1 && pills[0].getAttribute("data-act") === "order.accept" && !!pills[0].closest(".amb-foot"), "V3: Agree's terms are fields under its head and the one main pill is Agree, in the foot: " + J([rows, pills.map(t)]));
       /* 5 Nov 2026 (the pane): the pinned foot (Agree) is the card's last child but not its end, so the end is read without it, as without the maker foot */
       const ctl = [...card.querySelectorAll("button,input,select,summary,a[href]")].filter((b) => !b.hidden && !b.closest("[hidden]") && !b.closest(".maker-foot") && !b.closest(".ofoot")).pop();
       const asked = []; answerSheets(p.w, asked, () => false);
-      ok(!!ctl && ctl.getAttribute("data-act") === "order.decline" && ctl.matches(".salt-settings__row--action.salt-settings__row--danger") && ctl.parentElement.matches(".salt-settings.ordend")
-        && ctl.parentElement.querySelectorAll("button:not([hidden])").length === 1, "V4: Decline the order is the card's last control, an ember row alone in its list: " + t(ctl));
+      ok(!!ctl && ctl.getAttribute("data-act") === "order.decline" && ctl.matches(".amb-action.amb-action--danger") && !!ctl.closest(".amb-settings.ordend")
+        && ctl.closest("ul").querySelectorAll("button:not([hidden])").length === 1, "V4: Decline the order is the card's last control, an ember row alone in its list: " + t(ctl));
       const before = p.posts.length; ctl.click(); await p.work.quiet();
       ok(asked.length === 1 && /Decline this order/.test(asked[0]) && p.posts.length === before, "V4: and it asks on the Sheet first, sending nothing on Keep: " + J(asked));
       const field = card.querySelector('.omsgs form.amb-compose [data-act="order.reply-text"]'), send = card.querySelector('.omsgs form.amb-compose [data-act="order.reply"]');
@@ -92,11 +93,12 @@ export async function run({ ok, pageWork }) {
   for (const w of [1180, 1440]) {
     const p = await open(w);
     try {
-      const card = await p.order("ord-p1", "todo"), cols = card && card.querySelector(":scope > .ordcols");
-      const sides = cols ? [...cols.children].map((c) => c.getAttribute("data-ocol")) : [];
-      ok(!!cols && cols.matches(".ordcols--2") && J(sides) === J(["decision", "record"]) && !!cols.children[0].querySelector(".oband") && !!cols.children[0].querySelector(".oagreesec")
-        && !!cols.children[1].querySelector(".obill") && !!cols.children[1].querySelector(".omsgs") && !!cols.children[1].querySelector(".ordend"),
-        "V7: at " + w + "px two columns, the decision left and the record right: " + J(sides));
+      const card = await p.order("ord-p1", "todo"), split = p.d.getElementById("oSplit");
+      /* 16 Nov 2026, the move to Ambient (place G): the open order is the second pane of the shell's split, the queue first, and it ends in its one foot */
+      ok(!!card && !card.querySelector(".ordcols") && !!split && split.matches(".amb-split.amb-split--panes") && split.children[1].contains(card) && split.children[0].contains(p.d.getElementById("makerOrderList"))
+        && !!card.querySelector(".oband") && !!card.querySelector(".oagreesec") && !!card.querySelector(".obill") && !!card.querySelector(".omsgs") && !!card.querySelector(".ordend")
+        && card.lastElementChild.matches(".amb-foot.ofoot"),
+        "V7: at " + w + "px the queue and the record stand in two panes, the record ending in its foot");
     } finally { p.w.close(); }
   }
   /* V2 and V9: the customer's card */
