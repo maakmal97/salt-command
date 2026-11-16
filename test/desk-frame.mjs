@@ -40,10 +40,11 @@ export async function run({ ok }) {
     const side = at(Q, ".salt-frame--side"), rail = at(Q, ".salt-frame--side > .salt-rail"), col = at(Q, ".salt-frame__col");
     ok(/grid-template-rows: minmax\(0,\s*1fr\)/.test(side) && /grid-row: 1/.test(rail),
       "D1.1 the side form is one row, the rail its full height beside the column, never under a bar's row: " + J([side, rail]));
-    ok(/grid-column: 2/.test(col) && /align-self: stretch/.test(col) && /display: flex/.test(col) && /flex-direction: column/.test(col) && /min-height: 0/.test(col),
-      "D1.2 the column right of the rail is a flex column the frame's height: " + col);
-    ok(/flex: (none|0 0 auto)/.test(at(Q, ".salt-frame__col > .salt-frame__bar")) && /flex: 1 1 auto/.test(at(Q, ".salt-frame__col > .salt-frame__main")),
-      "D1.3 in the column the bar keeps its height and the scroll box takes the rest: " + J([at(Q, ".salt-frame__col > .salt-frame__bar"), at(Q, ".salt-frame__col > .salt-frame__main")]));
+    /* 16 Nov 2026, his answer ("slide under the bar", salt-ds 1.33.0): the column is one cell, the bar laid over the scroll box's top, which fills it */
+    ok(/grid-column: 2/.test(col) && /align-self: stretch/.test(col) && /display: grid/.test(col) && /grid-template: minmax\(0(px)?, 1fr\) \/ minmax\(0(px)?, 1fr\)/.test(col) && /min-height: 0/.test(col),
+      "D1.2 the column right of the rail is one cell the frame's height: " + col);
+    ok(/grid-area: 1 \/ 1/.test(at(Q, ".salt-frame__col > .salt-frame__bar")) && /align-self: start/.test(at(Q, ".salt-frame__col > .salt-frame__bar")) && /grid-area: 1 \/ 1/.test(at(Q, ".salt-frame__col > .salt-frame__main")),
+      "D1.3 in the column the bar lies over the scroll box's top and the scroll box fills it, so what scrolls slides under the bar: " + J([at(Q, ".salt-frame__col > .salt-frame__bar"), at(Q, ".salt-frame__col > .salt-frame__main")]));
     const bar = at(Q, ".salt-frame .salt-frame__bar");
     ok(/position: relative/.test(bar) && /top: auto/.test(bar),
       "D1.4 a frame's bar never sticks: the frame is a scroll container, and a sticky bar's top would push it down over the column: " + bar);
@@ -59,9 +60,11 @@ export async function run({ ok }) {
       "D2.3 under the bar #deskcol is the frame's one scroll box, holding every page: " + J(secs.map((s) => s.parentElement && s.parentElement.id)));
     /* D3 */
     const pad = top(".wrap"), framed = at(Q, ".shell"), wrapQ = at(Q, ".wrap");
-    const topPad = /padding: (\d+)px/.exec(pad), h = /--salt-frame-h: calc\(100dvh - (\d+)px\)/.exec(framed), foot = /padding-bottom: (\d+)px/.exec(wrapQ);
-    ok(!!topPad && !!h && !!foot && +topPad[1] + +foot[1] === +h[1] && +foot[1] === 24,
-      "D3.1 from 1080px the frame is the screen less the page's top and its 24px foot, so the page is the screen tall: " + J({ pad, framed, wrapQ }));
+    /* 16 Nov 2026 (salt-ds 1.33.0): the frame runs to the screen's foot, what scrolls leaving at it; the last rule is the one that holds */
+    const last = (re, s) => [...s.matchAll(re)].pop();
+    const topPad = /padding: (\d+)px/.exec(pad), h = last(/--salt-frame-h: calc\(100dvh - (\d+)px\)/g, framed), foot = last(/padding-bottom: (\d+)px/g, wrapQ);
+    ok(!!topPad && !!h && !!foot && +topPad[1] + +foot[1] === +h[1] && +foot[1] === 0,
+      "D3.1 from 1080px the frame is the screen less the page's top and runs to its foot, so the page is the screen tall: " + J({ pad, framed, wrapQ }));
     ok(/max-height: none/.test(at(Q, ".shell > .rail")), "D3.2 the rail is the frame's height, not its own older screen less 44px: " + at(Q, ".shell > .rail"));
     const where = anywhere(/salt-frame__col|salt-frame--side|salt-frame__bar|--salt-frame-h/);
     ok(where.length > 0 && where.every((q) => q === Q) && !/--salt-frame-h/.test(top(".shell")),

@@ -16871,10 +16871,12 @@ await (async () => {
       + "return {ap:(document.getElementById('wbApPlace')||{}).getAttribute&&document.getElementById('wbApPlace').getAttribute('list'),am:document.getElementById('wbAmPlace')&&document.getElementById('wbAmPlace').getAttribute('list'),n:d?d.options.length:0};})()");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w82.close(); } catch (e) { /* best effort */ } }
 })();
-section("v684: on a desktop the rail stands at every width; only a touch screen at 860px or below folds it into the menu");
+section("v684, re-aimed 16 Nov 2026: from 1080px the rail stands; under it, at every pointer, it floats from the orb beside the bar of places");
 await (async () => {
   /* HIS INSTRUCTION OF 17 SEP 2026, on the desk in a desktop browser: the navigation bar on the left does not collapse. The
-     menu was keyed on the window's width alone, so a desktop window at 860px or narrower lost the rail. jsdom applies no
+     menu was keyed on the window's width alone, so a desktop window at 860px or narrower lost the rail. 16 NOV 2026, HIS ANSWER
+     (one way on every Salt surface): under 1080px the Desk's places are the bar at the screen's foot, as Salt Admin's and the
+     Counter's, at every pointer, and the rail floats from the orb for this device's theme and alerts; from 1080px it stands. jsdom applies no
      media query, so this reads the rules as the master carries them, both layers; the widths were measured in Chromium
      with a mouse at 380 to 1280px and a finger at 375, 820 and 1024px. */
   const m84 = readFileSync(FROZEN_MASTER, "utf8");
@@ -16893,15 +16895,15 @@ await (async () => {
   const norm84 = (x) => x.replace(/\s+/g, "");
   const where = (s) => blocks.filter((b) => norm84(b.body).includes(norm84(s))).map((b) => norm84(b.q));
 
-  const MENU = [".navbtn,.navbtn.salt-orb{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".salt-rail{background:var(--salt-pane)", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
+  const MENU = [".navbtn,.navbtn.salt-orb{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".shell>.rail.salt-rail{position:fixed", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
   const menu = MENU.map((s) => [s, where(s)]);
-  ok(menu.every(([, q]) => q.length >= 1 && q.every((x) => /^\(max-width:(860|560)px\)and\(pointer:coarse\)$/.test(x))),
-    "every rule that folds the rail into the menu is a touch screen's, at 860px or below: " + JSON.stringify(menu));
-  ok(!MENU.some((s) => norm84(top84).includes(norm84(s))), "and none of them stands outside a media query, where a desktop would read it");
-  ok(JSON.stringify(where(".railbrand{display:none;}")) === '["(min-width:861px),notalland(pointer:coarse)"]'
-    && JSON.stringify(where(".salt-rail{width:212px;flex:0 0 212px;")) === '["(min-width:861px),notalland(pointer:coarse)"]',
-    "the rail keeps its 212px column and hides its own brand wherever it stands: wide, or any screen but a touch one: "
-    + JSON.stringify([where(".railbrand{display:none;}"), where(".salt-rail{width:212px;flex:0 0 212px;")]));
+  ok(menu.every(([, q]) => q.length >= 1 && q.every((x) => /^\(max-width:(1079\.98|560)px\)$/.test(x))),
+    "every rule that folds the rail into the menu holds under 1080px at every pointer, as the bar of places does: " + JSON.stringify(menu));
+  ok(!MENU.some((s) => norm84(top84).includes(norm84(s))), "and none of them stands outside a media query, where a wide screen would read it");
+  ok(JSON.stringify(where(".railbrand{display:none;}")) === '["(min-width:1080px)"]'
+    && /background:var\(--salt-pane\)/.test(norm84(blocks.filter((b) => norm84(b.body).includes(".shell>.rail.salt-rail{")).map((b) => b.body).join(""))),
+    "the rail hides its own brand where it stands, from 1080px, and floats on the system's pane under it: "
+    + JSON.stringify(where(".railbrand{display:none;}")));
 
   /* a standing rail takes 232px from a desktop window's column, so what fitted a phone's 353px has to fit from 860px */
   ok(JSON.stringify(where("h2{white-space:normal;}")) === '["(max-width:860px)"]',
@@ -16937,9 +16939,9 @@ await (async () => {
   const { w: mw84 } = await om84(tmp84);
   try {
     const shut = String(mw84.eval("(function(){document.getElementById('navbtn').click();var open=document.body.classList.contains('navopen');"
-      + "var q=window.__mq.filter(function(o){return o.media==='(max-width:860px) and (pointer:coarse)';});q.forEach(function(o){o.matches=false;o.l.forEach(function(f){f({matches:false,media:o.media});});});"
+      + "var q=window.__mq.filter(function(o){return o.media==='(max-width:1079.98px)';});q.forEach(function(o){o.matches=false;o.l.forEach(function(f){f({matches:false,media:o.media});});});"
       + "return open+' '+q.length+' '+document.body.classList.contains('navopen');})()"));
-    ok(shut === "true 1 false", "a menu left open when the layout stops being a touch screen's closes itself (opened, listened, closed): " + shut);
+    ok(shut === "true 1 false", "a menu left open when the layout stops being the bar of places' (1080px and wider) closes itself (opened, listened, closed): " + shut);
   } finally { try { mw84.close(); } catch (e) { /* best effort */ } rmSync(tmp84, { force: true }); }
 })();
 section("v685: beside the standing rail, the chart pair, the approach calendar and the ledger fit their column at every width");
@@ -44090,7 +44092,8 @@ await (async () => {
     "the layer states no rail, and the card subtitle's rule steps around the rail's parts");
   ok(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*\.salt-rail \{ width: 212px; flex: 0 0 212px; position: sticky;/.test(sR) && !/\n\.salt-rail \{[^}]*position: sticky/.test(sR),
     "the rail stands and sticks only where it stands beside the page; on a phone the drawer's geometry is the page's");
-  ok(!/\.railbrand\{display:none;\}/.test(baseR) && /@media\(min-width:861px\),not all and \(pointer:coarse\)\{\.railbrand\{display:none;\}\}/.test(dR),
+  /* 16 Nov 2026: the rail stands beside the page from 1080px; under it the bar of places takes the page and the rail floats from the orb with its brand */
+  ok(!/\.railbrand\{display:none;\}/.test(baseR) && /@media\(min-width:1080px\)\{\.railbrand\{display:none;\}\}/.test(dR),
     "the rule that hides the rail's brand beside the page lives in the layer, where it outranks the recipe");
 })();
 
@@ -50586,6 +50589,11 @@ await (async () => {
 section("13 Nov 2026: the price band's customers on the Desk, the price test, the calendar, the new buyers and the habits");
 await (async () => {
   await (await import("./desk-customers.mjs")).run({ ok });
+})();
+
+section("16 Nov 2026: one look on every Salt surface, panes apart, one shadow, the bar over what scrolls, the bar of places");
+await (async () => {
+  await (await import("./one-look.mjs")).run({ ok });
 })();
 
 section("15 Nov 2026: one page width on every Salt surface, the Desk, Salt Admin and the Counter");

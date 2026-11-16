@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="baf961475a8e6c36";
+var SALT_BUILD_ID="bc889ef0990e4d93";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5567,11 +5567,12 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-tide-accent) 0 13px,transparent 14px),var(--desk-look-tide-ground);}
 .look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);}
 /* 5 Nov 2026, his word ("like Mail or Messages on a Mac", Salt Admin first in v1442): THE FRAME (salt-ds salt-frame--side). From 1080px the rail
-   and the bar never move and #deskcol, the column under the bar, is the one box that scrolls, so the page itself never does: the frame is the screen
-   less the page's 22px top and a 24px foot under it (22 + frame + 24 = the screen) */
+   and the bar never move and #deskcol, the column under the bar, is the one box that scrolls, so the page itself never does. 16 Nov 2026, his
+   answer ("slide under the bar", salt-ds 1.33.0): the frame is the screen less the page's 22px top and runs to its foot, so what scrolls leaves
+   at the foot as a page does, never cut at a line 24px above it; the rail keeps its 24px under it (--salt-frame-foot) */
 @media (min-width:1080px){
-  .wrap{padding-bottom:24px;}
-  .shell{--salt-frame-h:calc(100dvh - 46px);}
+  .wrap{padding-bottom:0;}
+  .shell{--salt-frame-h:calc(100dvh - 22px);}
   /* 15 Nov 2026, his word: one width on every Salt surface (salt-ds 1.32.0). The frame stands at most --salt-page-max wide, as Salt Admin's and
      the Counter's do, the page's 18px gutters outside it; the wrap no longer caps it at 1180px */
   .wrap{max-width:none;}
@@ -5598,12 +5599,6 @@ h2{font-size:.75rem;letter-spacing:.24em;}
 @media(max-width:560px){
   .wrap{padding-top:calc(16px + var(--safetop));padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
 }
-/* the frame runs to the screen's foot (salt-ds 1.33.0), so what scrolls leaves at the foot as a page does, never cut at a line 24px above it;
-   the rail keeps its 24px under it (--salt-frame-foot) */
-@media (min-width:1080px){
-  .wrap{padding-bottom:0;}
-  .shell{--salt-frame-h:calc(100dvh - 22px);}
-}
 /* 16 Nov 2026, his word: THE BAR OF PLACES under 1080px, as on Salt Admin and the Counter (salt-ds salt-appbar): the six places at the screen's foot,
    the rail out of the page and floating from the bar's orb for this device's theme and alerts; the page and back-to-top clear the bar */
 .deskapp{z-index:93;}
@@ -5613,7 +5608,7 @@ h2{font-size:.75rem;letter-spacing:.24em;}
 }
 @media(max-width:1079.98px){
   /* the system stands its rail from 861px (for a surface with no bar of places); here, under 1080px, it floats from the orb at every width */
-  .shell>.rail.salt-rail{position:fixed;height:auto;flex:none;width:min(272px,calc(100vw - 28px));}
+  .shell>.rail.salt-rail{position:fixed;height:auto;flex:none;width:min(272px,calc(100vw - 28px));background:var(--salt-pane);}
 }
 /* ==== END DESIGN desk ==== */
 </style>

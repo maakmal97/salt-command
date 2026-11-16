@@ -70,15 +70,18 @@ export async function run({ ok, pageWork }) {
   {
     const { html, at, top } = ownerCss(), d = new JSDOM(html).window.document;
     const has = (s, c) => !!d.querySelector(s) && d.querySelector(s).classList.contains(c);
-    ok(has("#roster", "salt-frame") && has("#roster > header.abar", "salt-frame__bar") && has("#roster .amain", "salt-frame__main")
-      && d.querySelector("#roster .amain").parentElement.id === "roster",
-      "F2.1 his shell is the frame: the bar its bar, the column right of the rail its one scroll box");
+    /* 16 Nov 2026, his answer (one way on every Salt surface): the side form, as the Desk's, the bar over the column right of the rail */
+    ok(has("#roster", "salt-frame--side") && has("#roster > .salt-frame__col > header.abar", "salt-frame__bar") && has("#roster .amain", "salt-frame__main")
+      && d.querySelector("#roster .amain").parentElement.classList.contains("salt-frame__col") && d.querySelector("#roster .amain").parentElement.parentElement.id === "roster",
+      "F2.1 his shell is the frame: the bar its bar over the column right of the rail, the column its one scroll box");
     const panes = ["#nopen", "#aopen", "#makerReview", "#makerChatOpen", "#makerDayPane"].filter((s) => !has(s, "salt-pane"));
     ok(!panes.length, "F2.2 every record that opens beside a list is a pane (Needs you's card, an account, an order, a thread, Shop's open day); not: " + J(panes));
     const Q = "(min-width:1080px)", gate = at(Q, ".gate.adm"), held = at(Q, ".adm .salt-frame__main .salt-pane");
-    ok(/--salt-frame-h: calc\(100dvh - 46px\)/.test(gate) && /padding-bottom: 0/.test(gate) && /margin-bottom: -36px/.test(gate) && /padding-bottom: 24px/.test(at(Q, ".adm .amain")),
-      "F3.1 from 1080px the frame is the screen less the body's 22px top and a 24px margin, taking back 36px of the body's 60px foot, so the page is the screen tall and never scrolls; the column keeps 24px under its last line: " + gate);
-    ok(/top: 0/.test(held) && !/position: sticky/.test(at("(min-width:860px)", ".adm #nopen,.adm #aopen")) && !/position: sticky/.test(at("(min-width:860px)", ".adm .recpane"))
+    /* 16 Nov 2026 (salt-ds 1.33.0): the frame runs to the screen's foot and what scrolls leaves at it; the recipe keeps the column's last line clear */
+    ok(/--salt-frame-h: calc\(100dvh - 22px\)/.test(gate) && /padding: 0(px)?/.test(gate) && /margin-bottom: -60px/.test(gate) && !/padding-bottom/.test(at(Q, ".adm .amain")),
+      "F3.1 from 1080px the frame is the screen less the body's 22px top, taking back the body's whole 60px foot, so the page is the screen tall and never scrolls, and the column runs to the foot: " + gate);
+    /* 16 Nov 2026: the pane holds under the bar, the recipe's top; the page sets none of its own */
+    ok(held === "" && !/position: sticky/.test(at("(min-width:860px)", ".adm #nopen,.adm #aopen")) && !/position: sticky/.test(at("(min-width:860px)", ".adm .recpane"))
       && !at(Q, ".adm #makerChatOpen"),
       "F3.2 a pane holds to the column's very top; the 24px sticky panes of 860px stand only to 1080px: " + J([held, at("(min-width:860px)", ".adm #nopen,.adm #aopen")]));
     const N = "(max-width:1079.98px)", T = "(min-width:860px)and(max-width:1079.98px)";

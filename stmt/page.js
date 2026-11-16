@@ -214,7 +214,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    are on; both 44px taps */
 .chead{display:flow-root}
 /* 16 Nov 2026, his word (one way on every Salt surface): the Desk's cap, four obsidian copies of the bar's shape above it once the page has moved */
-body.salt-stuck .chead.salt-deskbar,body.salt-stuck .adm .abar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight)}
+body.salt-stuck .chead.salt-deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight)}
+.adm:where(.salt-stuck *) .abar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight)}
 .cbell{float:right;display:flex;align-items:center;gap:8px;margin:0 0 6px 10px}
 .cbell__orb{position:relative}
 .cbell__dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--salt-brass);display:none}
