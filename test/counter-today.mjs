@@ -60,15 +60,16 @@ export async function run({ ok }) {
 
     /* ---- 3: no live region ---- */
     const live = [M.d, S.d].flatMap((d) => [...d.querySelectorAll("#today, #today *")].filter((e) => e.hasAttribute("aria-live") || /^(status|alert|log|marquee|timer)$/.test(e.getAttribute("role") || "")));
-    ok(live.length === 0 && !!M.d.querySelector("#pHome #today #bull") && !M.d.querySelector("#today [data-clock]") && !!M.d.querySelector(".amb-hero > .amb-hero__time[data-clock]"),
-      "the card is Home's first and holds the notice, the clock is the hero's own time line, and nothing in the card is a live region: " + live.length);
+    ok(live.length === 0 && !!M.d.querySelector("#pHome #today #bull") && !M.d.querySelector("#today [data-clock]") && !M.d.querySelector(".amb-hero > .amb-hero__time, .amb-hero [data-clock]"),
+      /* 17 Nov 2026, the move to Ambient (Fable's review): the Counter's hero carries no bare clock any more, so the card and the hero say no time */
+      "the card is Home's first and holds the notice, the Counter's hero says no time, and nothing in the card is a live region: " + live.length);
     /* the render pass of 19 Oct 2026: the card wears the system's padding, and on Home the header does not say the time twice */
     /* read off the served sheet: jsdom's parser drops part of this stylesheet, which a browser applies */
     const css = [...P.landingPage("", "ntd3", null, null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
     /* 16 Nov 2026, the move to Ambient: the card is Ambient's notice, and the hero's time line is the one clock, so no rule hides it on Home */
     const once = css.match(/#tabs\[data-place="home"\] > \.amb-screen > \.amb-hero > \.amb-hero__time \{([^}]*)\}/g) || [];
     ok(M.d.getElementById("today").classList.contains("amb-notice") && once.length === 0,
-      "the card is Ambient's notice, and on Home nothing hides the hero's clock: " + JSON.stringify(once));
+      "the card is Ambient's notice, and no rule stands for a clock in the hero (17 Nov 2026, Fable's review: it is not drawn): " + JSON.stringify(once));
 
     /* ---- 4: open or closed, off /hours ---- */
     const u = "abcd-efgh", pass = "fixture-pass-p8", ck = await C.contentKey("test-secret", u);

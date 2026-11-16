@@ -1,6 +1,6 @@
 [
  {"name":"the glance is never drawn","file":"stmt/page.js","find":"    var box=el('div'); if(!session||view||!bundle) return box;\n    box.className='amb-settings aglance';","replace":"    var box=el('div'); return box;\n    box.className='amb-settings aglance';"},
- {"name":"the glance sits under the thread","file":"stmt/page.js","find":"<div id=\"aGlance\"></div><div id=\"aThread\"></div>","replace":"<div id=\"aThread\"></div><div id=\"aGlance\"></div>"},
+ {"name":"the glance sits under This device","file":"stmt/page.js","find":"<div id=\"aGlance\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())","replace":"'\n    + (owner ? \"\" : thisDevice() + helpCard())\n    + '<div id=\"aGlance\"></div>'"},
  {"name":"owed is its own sum","file":"stmt/page.js","find":"tw('pay.now'),rm(tot),","replace":"tw('pay.now'),rm(tot+1),"},
  {"name":"owed is never in the neg tone","file":"stmt/page.js","find":"var v=el('span','amb-setting__value'+(cls?' amb-neg':''),value);","replace":"var v=el('span','amb-setting__value',value);"},
  {"name":"owed says no due day","file":"stmt/page.js","find":"due?invWhen(first||L[0],false):tw('pay.nothing')","replace":"tw('pay.nothing')"},

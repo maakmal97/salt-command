@@ -8,8 +8,6 @@
 body.amb { min-height: 100dvh; }
 /* his hero's time line: the live word, then the clock, a step apart */
 #roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
-/* on Home the Today card holds the clock, so the hero does not say the time twice */
-#tabs[data-place="home"] > .amb-screen > .amb-hero > .amb-hero__time { display: none; }
 
 /* ---- Admin: Needs you, Approve and the unsent bar (place F) ---- */
 /* the head's tiles sit in a stack, which already carries the gutter; a tile that is a link stays plain */
@@ -106,6 +104,15 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 #today > span:not(.amb-icon) { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--amb-space-2); }
 #today .hblock, #today .hline { display: block; }
 #today .hnote { display: grid; gap: var(--amb-space-1); justify-items: start; }
+/* 17 Nov 2026 (Fable's review): in one column Home's two stacks stand one measure, centred, so the tile, the rows, the card and the Pay share their two edges;
+   a list in one of the boxes takes the stack's edge and not a second inset */
+@container amb (max-width: 959px) {
+  #pHome > .amb-stack { width: 100%; max-width: calc(36rem + 2 * var(--amb-space-4)); justify-self: center; }
+  /* the first stack stands empty in one column (its parts are in the last, over which the Pay stays pinned) and leaves no gap */
+  #pHome > .amb-stack:not(:has(*)) { display: none; }
+  #pHome > .amb-stack + .amb-stack { margin-top: 0; }
+}
+#pHome .amb-stack .amb-list { margin-inline: 0; }
 /* a book's mark alone heads its block */
 .hbook { margin: 0; }
 /* the live order is the dock's mini bar, a tap anywhere on it opening the order */
@@ -247,9 +254,9 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .amb-settings.tot, .amb-settings.owed { max-width: none; }
 .amb-sheet .amb-table { margin: 0; }
 /* Account: one stack, the device above the statement; from 960px the device and its help stand in a second column */
-#aGlance, #aThread { display: contents; }
-#aGlance > .amb-settings, #aThread > .amb-list { max-width: none; }
-#aThread > .amb-list, #acct .amb-stack > .amb-list { margin-inline: 0; }
+#aGlance { display: contents; }
+#aGlance > .amb-settings { max-width: none; }
+#acct .amb-stack > .amb-list { margin-inline: 0; }
 .mfil[hidden] { display: none; }
 .mfil .amb-field { max-width: 24rem; }
 .mfnote { margin: 0; }
@@ -266,11 +273,11 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .keepsteps .glyph, .keeppage .glyph, .amb-basis .glyph { display: inline-block; vertical-align: middle; margin: 0 2px; }
 @container amb (min-width: 960px) {
   #acct { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; column-gap: var(--amb-space-6); }
-  #acct > #aGlance, #acct > #aThread, #acct > .acct__main { grid-column: 1; }
+  #acct > #aGlance, #acct > .acct__main { grid-column: 1; }
   #acct > #thisDevice, #acct > #aHelp { grid-column: 2; }
-  #acct { grid-template-rows: auto auto 1fr auto; }
-  #acct > #thisDevice { grid-row: 1 / span 3; }
-  #acct > #aHelp { grid-row: 4; }
+  #acct { grid-template-rows: auto 1fr auto; }
+  #acct > #thisDevice { grid-row: 1 / span 2; }
+  #acct > #aHelp { grid-row: 3; }
   #acct > .acct__main { align-self: start; }
 }
 /* the door: one form in the stack; the password's Show stands beside its field, the field's own hint under both */
@@ -460,7 +467,7 @@ body.ended > *:not(#aEnded) { display: none; }
 @media (min-width: 1080px) {
   .acct { max-width: 1060px; display: grid; grid-template-columns: minmax(0, 620px) minmax(300px, 1fr); column-gap: 40px; row-gap: var(--amb-pane-gap); align-items: start; }
   #aGlance { grid-column: 1 / -1; }
-  #aThread, .acct__main { grid-column: 1; }
+  .acct__main { grid-column: 1; }
   .devcard { grid-column: 2; grid-row: 2 / span 2; }
   .ahelp { grid-column: 2; }
 }

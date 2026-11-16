@@ -8,7 +8,7 @@
  {
   "name": "Home is no split (16 Nov 2026, the red fix)",
   "file": "stmt/page.js",
-  "find": "'<div id=\"pHome\" class=\"amb-split\"><div class=\"amb-stack\">'",
-  "replace": "'<div id=\"pHome\" class=\"amb-stack\"><div class=\"amb-stack\">'"
+  "find": "'<div class=\"amb-place\"><div id=\"pHome\" class=\"amb-split\"><div class=\"amb-stack\">'",
+  "replace": "'<div class=\"amb-place\"><div id=\"pHome\" class=\"amb-stack\"><div class=\"amb-stack\">'"
  }
 ]

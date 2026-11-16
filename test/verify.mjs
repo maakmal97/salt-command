@@ -41109,9 +41109,10 @@ await (async () => {
     "the page's own sheet is read, with its 1080px blocks; resolved at a width no @media is left, and the block for print is dropped");
   const wide = [1080, 1280].map(shape), narrow = [1079, 390, 320].map(shape);
   /* 11 Oct 2026 (Phase 7d part 2): the device comes first in the reading order, Messages, This device, then the statement, and the grid still puts Messages and the statement in the first column and This device in the second */
-  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aGlance div#aThread section#thisDevice section#aHelp div.acct__main" && s.placed === "1 / -1/0 1/0 2/0 2/0 1/0"),
+  /* 17 Nov 2026, the move to Ambient (Fable's review): the glance's Messages row is Account's one way to the thread, so the thread row of its own (#aThread) is gone from the grid */
+  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aGlance section#thisDevice section#aHelp div.acct__main" && s.placed === "1 / -1/0 2/0 2/0 1/0"),
     "from 1080px Account is a grid of two columns, the glance across both, Messages and the statement placed in the first and This device placed by the grid into the second, beside them: " + JSON.stringify(wide));
-  ok(narrow.every((s) => s.display === "grid" && s.tracks === 1 && s.kids === "div#aGlance div#aThread section#thisDevice section#aHelp div.acct__main"),
+  ok(narrow.every((s) => s.display === "grid" && s.tracks === 1 && s.kids === "div#aGlance section#thisDevice section#aHelp div.acct__main"),
     "below 1080px it is one column in reading order, the glance, Messages, then This device, then the statement: " + JSON.stringify(narrow));
 })();
 
@@ -51458,6 +51459,11 @@ await (async () => {
 section("16 Nov 2026, the move to Ambient (place E): the guest board, the join page, the sign-in link page, the code screen and the opening draw the system's parts alone");
 await (async () => {
   await (await import("./counter-small-pages.mjs")).run({ ok });
+})();
+
+section("17 Nov 2026, the move to Ambient (Fable's review): the Counter's Pay is the last thing in one column, This device one group, Account says Messages once, no bare clock in the hero");
+await (async () => {
+  await (await import("./counter-fable-fixes.mjs")).run({ ok });
 })();
 
 section("Maintenance guard on both Workers");

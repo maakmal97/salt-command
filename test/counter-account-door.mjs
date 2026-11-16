@@ -105,18 +105,19 @@ export async function run({ ok }) {
     /* ---- 1: Account's order, read from the rendered DOM */
     const P = await open();
     const { d } = P;
-    const thread = d.querySelector("#acct #aThread [data-thread]"), dev = d.querySelector("#acct #thisDevice"), stmt = d.querySelector("#acct .acct__main"), head = d.querySelector("#acct .acct__main #out h2.amb-section");
-    ok(!!thread && t(thread.querySelector(".amb-row__title")) === W.EN["th.row"] && !!dev && !dev.hidden && !!head && t(head) === "Statement of account"
+    /* 17 Nov 2026, the move to Ambient (Fable's review): Account's one way to the thread is the glance's Messages row; the thread row of its own is gone */
+    const thread = d.querySelector('#acct #aGlance [data-glance="thread"]'), dev = d.querySelector("#acct #thisDevice"), stmt = d.querySelector("#acct .acct__main"), head = d.querySelector("#acct .acct__main #out h2.amb-section");
+    ok(!!thread && t(thread.querySelector(".amb-setting__name")) === W.EN["th.row"] && !!dev && !dev.hidden && !!head && t(head) === "Statement of account"
       && before(thread, dev) && before(dev, head) && before(dev, stmt) && dev.parentNode === d.getElementById("acct") && stmt.parentNode === d.getElementById("acct"),
       "Account reads Messages, then This device, then the statement under its own heading: " + JSON.stringify({ thread: !!thread, dev: !!dev, head: t(head) }));
     const parts = ["mfil", "mfnote", "out"].map((id) => d.getElementById(id));
-    ok(parts.every((x) => x && stmt.contains(x)) && !dev.contains(d.getElementById("out")) && !d.getElementById("aThread").closest(".acct__main")
+    ok(parts.every((x) => x && stmt.contains(x)) && !dev.contains(d.getElementById("out")) && !d.getElementById("aGlance").closest(".acct__main")
       && !d.getElementById("stmtFoot") && !d.getElementById("stmtBack"),
       "the statement's parts (the month filter and its note, the list) stay together after the card, Messages is not among them, and no earlier statement or way back to one is drawn (14 Oct 2026)");
     /* 16 Nov 2026, the move to Ambient (place D): Account is one of the system's stacks, so its gap is the stack's own and no margin of the page's stands in for it */
     const acctEl = d.getElementById("acct");
     const gapRules = [...d.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => /^\.(acct__main|devcard|acct)$/.test(r.selectorText || "") && /margin(-top)?:\s*[1-9]/.test(r.cssText));
-    ok(acctEl.classList.contains("amb-stack") && stmt.classList.contains("amb-stack") && gapRules.length === 0 && d.querySelector("#aThread:empty") === null,
+    ok(acctEl.classList.contains("amb-stack") && stmt.classList.contains("amb-stack") && gapRules.length === 0 && d.getElementById("aThread") === null,
       "the gap between the parts is the system's stack's own, so a part not drawn leaves none, and no margin stands in for it");
 
     /* ---- 2: the card, compact and ordered, every control with its id */
@@ -124,7 +125,7 @@ export async function run({ ok }) {
     /* 15 Nov 2026, the move to Ambient: the Look left This device (light and dark follow the device) */
     const seq = ["devH", "devRows", "lock", "devSlot", "keepCard"].map((id) => d.getElementById(id));
     ok(seq.every((x) => !!x && card.contains(x)) && seq.every((x, i) => i === 0 || before(seq[i - 1], x)),
-      "This device reads notifications, Sign out, then the other devices and the install guide, each control with its id");
+      "This device reads one list, Notifications first and Sign out last, then the line under it and the install guide, each control with its id");
     /* 26 Oct 2026, his word: the Look was one Switch; 15 Nov 2026, the move to Ambient: there is none, the device choosing light or dark */
     ok(!d.getElementById("lookRow") && !d.querySelector("[data-look]") && t(d.getElementById("lock")) === W.fill(W.EN["dev.out"], { dev: "computer" }, "en")
       && d.getElementById("keepHead").tagName === "H3" && d.querySelectorAll("#pStmt h1").length === 0,
@@ -134,7 +135,7 @@ export async function run({ ok }) {
     /* 28 Oct 2026 (his yes, the statement in the language): Sign out is the last row of This device's list, in ember, never a ghost */
 /* 16 Nov 2026, the move to Ambient (place D): Sign out is the system's danger action, the last list of This device, and no ghost */
     ok(d.getElementById("lock").classList.contains("amb-action--danger") && !d.querySelector("#thisDevice .salt-ghost")
-      && d.getElementById("lock").closest("ul.amb-settings__list") === d.querySelector("#thisDevice .devlist").lastElementChild && !!d.getElementById("lock").closest("li"),
+      && d.getElementById("lock").closest("li") === d.getElementById("devRows").lastElementChild && d.querySelectorAll("#thisDevice .devlist > ul").length === 1,
       "Sign out is the group's last row, the system's danger action, and no ghost button");
 
     /* ---- 3: Sign out, a tap and a tap again */

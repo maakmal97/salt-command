@@ -515,7 +515,7 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 
 ### This device (S9 9.9, his D2)
 
-Drawn by `drawDev` into Account's This device (`#devSlot`), once signed in and never on his read-only view; its
+Drawn by `drawDev` into Account's This device (its rows into the one list `#devRows` after the settings, Sign out last; `#devSlot` holds the line under the group; 17 Nov 2026, Fable's review), once signed in and never on his read-only view; its
 Turn off (`drawDevice`) also sends `POST /push/unsubscribe {endpoint}`, which drops that phone's own record. Its
 phones and computers (`POST /devices {token}` on the session, `token` this phone's own
 remembered one, answering each device's name, `at`, `last`, `kept` and `here`, no id and no address), read in the background, so a lapse it meets

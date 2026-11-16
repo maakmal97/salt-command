@@ -9,7 +9,7 @@
  {"name":"reduced motion still turns","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>1;"},
  {"name":"a single line turns with a Pause","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>0&&!still;"},
  {"name":"the card is a live region","file":"stmt/page.js","find":"'<div id=\"today\" class=\"amb-notice\"' + (lines.length ? \"\" : \" hidden\") + wl(\"today.aria\")","replace":"'<div id=\"today\" class=\"amb-notice\" aria-live=\"polite\"' + (lines.length ? \"\" : \" hidden\") + wl(\"today.aria\")"},
- {"name":"the hero loses its clock","file":"stmt/page.js","find":"<p class=\"amb-hero__time\" data-clock></p></header>","replace":"<p class=\"amb-hero__time\"></p></header>"},
+ {"name":"the hero carries a bare clock again","file":"stmt/page.js","find":"<span id=\"cstay\"></span></p></header>'","replace":"<span id=\"cstay\"></span></p><p class=\"amb-hero__time\" data-clock></p></header>'"},
  {"name":"open reads Closed","file":"stmt/page.js","find":"chip.textContent=tw(h.open?'today.open':'today.closed');","replace":"chip.textContent=tw('today.closed');"},
  {"name":"the hours are never drawn","file":"stmt/page.js","find":"    if(before!==JSON.stringify([counterHours,hoursError])) todayDraw();\n","replace":""},
  {"name":"unread hours still show","file":"stmt/page.js","find":"    chip.hidden=!known; line.hidden=!known;","replace":"    chip.hidden=false; line.hidden=false;"},

@@ -297,11 +297,12 @@ function helpCard(owner) {
 }
 function thisDevice() {
   /* 16 Nov 2026 (place D): This device is a group of settings, a name and one control a row; Sign out is the group's last row, the system's danger action,
-     and still a tap and a tap again on the one control. The rows are drawn into #devRows (notifications, the saved app), then the other devices into #devSlot. */
+     and still a tap and a tap again on the one control. The one list is #devRows: the settings (notifications, the saved app), then the other devices and the ways in, then Sign out; #devSlot holds the line under them. */
   return '<section id="thisDevice" class="devcard" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="amb-section" id="devH"', "dev.h")
-    + '<div class="amb-settings devlist"><ul class="amb-settings__list" id="devRows"></ul>'
-    + '<ul class="amb-settings__list devout"><li><button type="button" class="amb-action amb-action--danger" id="lock" aria-live="polite">'
+    /* 17 Nov 2026 (Fable's review): one group, one list: the settings (drawDevice), the other devices and the account's ways in (drawDev), then Sign out last */
+    + '<div class="amb-settings devlist"><ul class="amb-settings__list" id="devRows">'
+    + '<li class="devout"><button type="button" class="amb-action amb-action--danger" id="lock" aria-live="polite">'
     + wt("span", 'id="lockT"', "dev.out") + "</button></li></ul></div>"
     + '<p class="msg devnote" id="devNote" role="status"></p>'
     + '<div id="devSlot"></div>' + keepPage()
@@ -937,7 +938,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
     + '<main class="amb-screen amb-screen--docked">'
     + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")
-    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p><p class="amb-hero__time" data-clock></p></header>'
+    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'   /* 17 Nov 2026 (Fable's review): no bare clock in a hero of the Counter */
     + '<div id="barw" class="amb-stack" hidden>'
     /* S9 9.5: on his page an account is viewed, never signed into, so the line says whose it is and that it is read only, and its one
        control takes him back to that account on Accounts. A customer's Log out is This device's, on Account (S7 7.1) */
@@ -953,17 +954,19 @@ export function landingPage(user, nonce, owner, bulletin, test) {
        and put on the page only where it reads differently, and the box takes no place of its own (display: contents in the site layer). The
        foot is the one Pay, the last thing in the first stack, where Ambient keeps it above the dock; their latest open order is the dock's
        mini bar (hLive, in placesDock). */
-    + '<div id="pHome" class="amb-split"><div class="amb-stack">' + noticeCard(bulletin)
+    /* 17 Nov 2026 (Fable's review): Home stands in a place of its own, so Ambient's ground under the dock follows its foot; in one column the foot is the
+       last thing of the last stack (footPlace), over the dock, and from 960px the first stack's. */
+    + '<div class="amb-place"><div id="pHome" class="amb-split"><div class="amb-stack">' + noticeCard(bulletin)
     + '<div id="payHead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hSupply"></div><div id="hStart"></div>'
     + '<div id="homeFoot" class="amb-foot" hidden></div></div>'
-    + '<div class="amb-stack"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div></div>'
+    + '<div class="amb-stack"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
        statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
     /* 16 Nov 2026, THE MOVE TO AMBIENT (place D): ACCOUNT is one stack of the system's parts: the glance and the thread row, This device and Help, then the
        statement (its Month field beside the lines it filters and nothing after it); the order is the phone's, This device above the statement, and from 960px
        the device and its help stand in a second column. The statement is drawn into #out as the system's own parts (tools/make_statements.mjs). */
-    + '<div id="pStmt" hidden><div id="acct" class="acct amb-stack"><div id="aGlance"></div><div id="aThread"></div>'
+    + '<div id="pStmt" hidden><div id="acct" class="acct amb-stack"><div id="aGlance"></div>'
     + (owner ? "" : thisDevice() + helpCard())
     + '<div class="acct__main amb-stack">'
     + '<div id="mfil" class="mfil" hidden></div><p class="mfnote amb-basis" id="mfnote" role="status"></p>'
@@ -1753,6 +1756,15 @@ const CLIENT_JS = `
      code is a tap of its own. Every answer is on the line under the controls. Notifications are drawDevice's row, above.
      His read-only view has none of it: those are not his devices. */
   var devSlot=document.getElementById('devSlot'), devN=0, devSaid={t:'',bad:false};
+  /* 17 Nov 2026 (Fable's review): This device is one list. Its rows are put in kinds: the settings ('own', drawDevice) and the devices and ways in
+     ('slot', drawDev); each kind is drawn again alone, in its place, and Sign out stays the last row */
+  function devPut(kind,rows){
+    var ul=document.getElementById('devRows'); if(!ul) return;
+    [].slice.call(ul.children).forEach(function(x){ if(x.getAttribute('data-dev')===kind) x.remove(); });
+    var out=ul.querySelector(':scope > .devout'), first=[].filter.call(ul.children,function(x){ return x.getAttribute('data-dev')==='slot'; })[0];
+    var before=kind==='own'?(first||out):out;
+    rows.forEach(function(r){ r.setAttribute('data-dev',kind); ul.insertBefore(r,before); });
+  }
   var devSheetEl=document.getElementById('devSheet'), devCode=document.getElementById('devCode'),
       devCopy=document.getElementById('devCopy'), devMsg=document.getElementById('devMsg'), devQr=document.getElementById('devQr'), devHo='', devM=0;
   /* a device's line: its name, This one beside it, and how it is signed in under it (devRow is drawDevice's) */
@@ -1777,7 +1789,7 @@ const CLIENT_JS = `
   function devSet(b,t){ var l=(b.button||b).querySelector('.amb-action__label'); (l||b).textContent=t; }
   async function drawDev(){
     if(!devSlot) return;
-    if(!session||view||OWNER){ devN++; devSlot.textContent=''; return; }
+    if(!session||view||OWNER){ devN++; devSlot.textContent=''; devPut('slot',[]); return; }
     var n=++devN, rec=remGet(), tok=rec&&rec.u===user?rec.t||null:null, r={status:0, body:{ok:false, error:tw('x.notSent')}};
     /* a read in the background, so a lapse it meets is left to the next thing they tap, which reopens the session (api) */
     try{
@@ -1788,19 +1800,18 @@ const CLIENT_JS = `
     }catch(e){ /* not sent: the card says so */ }
     if(n!==devN||!session) return;
     /* the list is drawn afresh: a control in it that holds focus (Sign in another device, as its Sheet closes) is given it again */
-    var held=document.activeElement&&devSlot.contains(document.activeElement)?document.activeElement.getAttribute('data-back')||'':'';
+    var held=document.activeElement&&document.getElementById('devRows').contains(document.activeElement)?document.activeElement.getAttribute('data-back')||'':'';
     devSlot.textContent='';
-    var list=el('ul','amb-settings__list');
+    var list=[];
     var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
     devs.forEach(function(d){
-      list.appendChild(devLine(devName(d.label)||tw('dev.aDevice'), d.here?chipEl('verdigris',tw('dev.thisOne')):null,
+      list.push(devLine(devName(d.label)||tw('dev.aDevice'), d.here?chipEl('verdigris',tw('dev.thisOne')):null,
         d.passkey?tw('dev.pkKept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):d.kept?tw('dev.kept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):tw('dev.visit',{a:Dd(devDay,d.at)})));
     });
-    if(!r.body.ok) list.appendChild(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
-    var lw=el('div','amb-settings'); lw.appendChild(list); devSlot.appendChild(lw);
-    var acts=el('ul','amb-settings__list dacts'), note=el('p','msg devnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
+    if(!r.body.ok) list.push(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
+    var acts=list, note=el('p','msg devnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
     var another=devQuiet(tw('dev.another')), anb=another.button; anb.setAttribute('data-back','dev:another'); anb.addEventListener('click', function(){ openDevSheet(anb); });
-    acts.appendChild(another);
+    acts.push(another);
     if(others){
       var so=devQuiet(tw('dev.outOthers')), armed=null;
       so.button.addEventListener('click', async function(){
@@ -1812,7 +1823,7 @@ const CLIENT_JS = `
           :{t:wErr(x.body,'x.notSent'),bad:true};
         drawDev();
       });
-      acts.appendChild(so);
+      acts.push(so);
     }
     /* Step 6: this device's passkey, removed on a second tap; or one saved, or the account's used here too */
     if(PKOK){
@@ -1823,16 +1834,16 @@ const CLIENT_JS = `
           if(!parmed){ devSet(pr,tw('dev.pkAgain')); parmed=setTimeout(function(){ parmed=null; devSet(pr,tw('dev.pkRemove')); }, 4000); return; }
           clearTimeout(parmed); parmed=null; pr.button.disabled=true; pkRemove();
         });
-        acts.appendChild(pr);
+        acts.push(pr);
       }else{
         var pn=await pkPrep();
         if(n!==devN||!session) return;
         var has=!!pn&&pn.has.length>0;
-        if(has){ var pu=devQuiet(tw('dev.pkUse')); pu.button.addEventListener('click', function(){ pkSave(pu.button, true); }); acts.appendChild(pu); }
-        var ps=devQuiet(tw(has?'dev.pkNew':'dev.pkSave')); ps.button.addEventListener('click', function(){ pkSave(ps.button, false); }); acts.appendChild(ps);
+        if(has){ var pu=devQuiet(tw('dev.pkUse')); pu.button.addEventListener('click', function(){ pkSave(pu.button, true); }); acts.push(pu); }
+        var ps=devQuiet(tw(has?'dev.pkNew':'dev.pkSave')); ps.button.addEventListener('click', function(){ pkSave(ps.button, false); }); acts.push(ps);
       }
     }
-    var aw=el('div','amb-settings'); aw.appendChild(acts); devSlot.appendChild(aw); devSlot.appendChild(note);
+    devPut('slot',acts); devSlot.appendChild(note);
     if(held&&(!document.activeElement||document.activeElement===document.body)) focusBack(null,backFind(held));
     devSaid={t:'',bad:false};
   }
@@ -2005,7 +2016,7 @@ const CLIENT_JS = `
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
     keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
-    closeDevSheet(); fsClose(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
+    closeDevSheet(); fsClose(); ynShut(true); devN++; if(devSlot) devSlot.textContent=''; devPut('slot',[]);
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(history.state,'',location.pathname); }catch(e){}
@@ -2137,6 +2148,8 @@ const CLIENT_JS = `
     tab=t; tabs.setAttribute('data-place',t);
     [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
+    /* 17 Nov 2026 (Fable's review): Home's place is shown with Home and hidden with every other, as Ambient reads only the place shown */
+    var hp=pHome.parentNode; if(hp&&hp.classList.contains('amb-place')) hp.hidden=pHome.hidden;
     liveShow();
     placeTitle();
     if(tapped&&(!location.hash||placeOf(location.hash))){
@@ -2210,6 +2223,14 @@ const CLIENT_JS = `
   /* the filter and its note sit beside the list they filter, inside the document once it is drawn: parked back
      above it before the document is replaced, so replacing it never takes them with it */
   function parkMonths(){ if(acctEl&&mfil.parentNode!==out.parentNode){ out.parentNode.insertBefore(mfil,out); out.parentNode.insertBefore(mfnote,out); } }
+  /* 17 Nov 2026 (Fable's review): "nothing yet" is said only of an account with no statement, nothing owed and nothing ordered; the orders are read after the account
+     opens, so it is drawn again with them (drawPayHead) and goes the moment one is there */
+  function nothingDraw(){
+    if(!bundle||bundle.statements[at]) return;
+    var want=!orders.length&&!(invTotal(nowOf())>0.004), has=!!out.querySelector(':scope > .panel');
+    if(want&&!has){ var e=el('div','panel'); e.appendChild(el('p','lead',tw('acct.nothing'))); out.appendChild(e); }
+    else if(!want&&has) out.textContent='';
+  }
   function pickStmt(i){
     if(!bundle) return;
     at=i;
@@ -2219,7 +2240,7 @@ const CLIENT_JS = `
        the page stopped on a blank tab. */
     var s=bundle.statements[i];
     if(!s){
-      out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead',tw('acct.nothing'))); out.appendChild(e);
+      out.textContent=''; nothingDraw();
       mfil.hidden=true; mfnote.textContent='';
       return;
     }
@@ -2408,16 +2429,17 @@ const CLIENT_JS = `
     if(!devEl) return;
     devEl.hidden=!session||view||OWNER;
     if(devEl.hidden) return;
-    devRows.textContent='';
+    var own=[];
     var on=!!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone), said=devNote||noteSaid(draft.pushNote);
     var note=document.getElementById('devNote'), why='';
-    if(!pushCan()){ why=tw(IOS&&!STANDALONE?'push.devIos':'push.devNo'); devRows.appendChild(devRow(tw('push.h'),why,devValue(tw('push.notHere')))); }
-    else if(on) devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOn'),devSwitch(true,tw('push.h'),devPushOff)));
-    else devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOff'),devSwitch(false,tw('push.h'),devPushOn)));
+    if(!pushCan()){ why=tw(IOS&&!STANDALONE?'push.devIos':'push.devNo'); own.push(devRow(tw('push.h'),why,devValue(tw('push.notHere')))); }
+    else if(on) own.push(devRow(tw('push.h'),said||tw('push.devOn'),devSwitch(true,tw('push.h'),devPushOff)));
+    else own.push(devRow(tw('push.h'),said||tw('push.devOff'),devSwitch(false,tw('push.h'),devPushOn)));
     /* the line under the list: why there are none on this browser, or what a tap was answered */
     if(note) note.textContent=why||said||'';
     /* Saving the app is optional; the install guide sits with this device's settings. */
-    if(STANDALONE) devRows.appendChild(devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('dev.yes'))));
+    if(STANDALONE) own.push(devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('dev.yes'))));
+    devPut('own',own);
   }
   async function devPushOn(){
     var mine=ticket;
@@ -5451,9 +5473,25 @@ const CLIENT_JS = `
     f.appendChild(pb);
     return f;
   }
+  /* 17 Nov 2026 (Fable's review): in one column Home is ONE stack, the last, with the Pay its last thing: Ambient pins a foot only inside the stack that holds it, so a Pay in the
+     first of two stacks was pinned for the first stack alone and stood mid-page; in the last stack it stays over the dock from the top of Home to its end, and the first stack stands
+     empty. From 960px, where Home is two columns, the first stack's parts go back to it and the Pay is its foot. The width is the shell's, which is the window's. */
+  var HOME1=['today','payHead','hNeeds','hRate','hThread','hSupply','hStart'];
+  function footPlace(){
+    var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(!f||!h) return;
+    var st=h.querySelectorAll(':scope > .amb-stack'); if(st.length<2) return;
+    var one=window.innerWidth<960, a=st[0], b=st[1], to=one?b:a;
+    (one?HOME1.slice().reverse():HOME1).forEach(function(id){
+      var n=document.getElementById(id); if(!n||n.parentNode===to) return;
+      if(one) to.insertBefore(n,to.firstChild); else to.appendChild(n);
+    });
+    if(to.lastElementChild!==f) to.appendChild(f);
+  }
+  window.addEventListener('resize',footPlace);
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    footPlace(); nothingDraw();
     cBar();
     glanceDraw();
   }
@@ -6198,7 +6236,7 @@ const CLIENT_JS = `
     var o=orders.filter(function(x){ return !oClosed(x); }).sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); })[0];
     if(!o) return box;
     box.className='amb-mini'; box.setAttribute('data-live',o.id); box.hidden=tab!=='home';
-    var th=markThumb(o.product,'sm'); box.appendChild(th);
+    var th=markThumb(o.product,'md'); box.appendChild(th);   /* 17 Nov 2026 (Fable's review): the mini bar's coin is the shape alone, never a letter cut at its edge */
     var tx=el('span','amb-mini__text'), waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
     tx.appendChild(el('span','amb-vh',pshape(o.product))); tx.appendChild(el('span','amb-mini__title',stateWord(o)));
     tx.appendChild(el('span','amb-mini__sub',stepWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));
@@ -6464,10 +6502,8 @@ const CLIENT_JS = `
   function glanceDraw(){ var a=document.getElementById('aGlance'); if(!a) return; var n=acctGlance(); n.id='aGlance'; if(a.outerHTML!==n.outerHTML) a.replaceWith(n); }
   /* Account's row, drawn with Home: replaced only when it reads differently, so a tap is never lost to a redraw */
   function thDraw(){
+    /* 17 Nov 2026 (Fable's review): the glance's Messages row is Account's one way to the thread, so the thread row stands nowhere else on Account */
     glanceDraw();
-    var a=document.getElementById('aThread'); if(!a) return;
-    var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(hList([thRow()]));
-    if(a.outerHTML!==n.outerHTML) a.replaceWith(n);
   }
   function thEnd(){ if(thBody) thBody.scrollTop=thBody.scrollHeight; }
   /* the lines, drawn again only when they read differently; a reader at the foot is kept at the foot */
@@ -6499,7 +6535,7 @@ const CLIENT_JS = `
   function thSay(t){ if(thSaid){ thSaid.textContent=t||''; thSaid.hidden=!t; } }
   function thOpen(from){
     if(!thSheetEl||!session||view) return;
-    thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':from&&from.closest&&from.closest('#aGlance')?'aGlance':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
+    thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aGlance')?'aGlance':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
     bkOpen('th',thClose);
     sheetUp(thSheetEl); behind();
     try{ thSheetEl.focus(); }catch(e){}
