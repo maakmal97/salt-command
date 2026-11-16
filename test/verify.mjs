@@ -8290,7 +8290,7 @@ await (async () => {
   const mT = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const dsT = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
-  ok(/\.salt-table \.salt-table__label \{[^}]*background: var\(--salt-panel\)/.test(mT) && /\.salt-table thead th \{/.test(mT), "the recipe is in the DESIGN base block");
+  ok(/\.salt-table--scrolled \.salt-table__label[^{]*\{[^}]*background: var\(--salt-obsidian\)/.test(mT) && /\.salt-table thead th \{/.test(mT), "the recipe is in the DESIGN base block");
   /* the markup: every <table> after the style block, but the calendar popover's two key-and-value lists (not data tables) */
   const tail = (h) => h.slice(h.indexOf("END DESIGN desk"));
   const tabs = (h) => [...tail(h).matchAll(/<table\b[^>]*>/g)];
@@ -12676,41 +12676,41 @@ await (async () => {
     const b = m ? /background:\s*([^;]+);/.exec(m[1]) : null;
     return b ? b[1].trim() : null;
   };
-  for (const [sel, why] of [[".salt-table thead th", "every table head"], [".salt-table .salt-table__label", "every label column"]]) {
+  /* 16 Nov 2026, his word ("the brown shade really does not belong there", salt-ds 1.34.0): the warm opaque panel of v567 stood
+     under every head and label column whether anything scrolled under it or not, a brown band on a glass card. The head, the label
+     column and the total row now take the card's own glass; v567's ghosting stays answered, but only while figures have scrolled
+     under the label column (salt-table--scrolled, set by tscrollLeft), and then by the ground itself: opaque, as v567 proved it
+     must be, and never the brown. */
+  for (const [sel, why] of [[".salt-table thead th", "every table head"], [".salt-table .salt-table__label", "every label column"], [".salt-table tr.tot td", "every total row"]]) {
     const bg = ruleBg(sel);
-    ok(!!bg, `${sel} declares a background (${bg || "none found"})`);
-    const varName = (/var\(--([\w-]+)\)/.exec(bg || "") || [])[1];
-    ok(!!varName, `and takes it from a token rather than a literal (${bg})`);
-    const c = rgba(tok(varName, ds7));
-    ok(!!c, `and the token --${varName} resolves to an rgba in the design layer (${tok(varName, ds7)})`);
-    /* THE FAULT WAS THE HUE, NOT THE WEIGHT. --salt-veil is rgba(5,8,10,.86): b above r, a cold
-       near-black, and the identity documents it for surfaces that float OVER content. These sit
-       INSIDE a card the aurora lights warm, so they must be warm too. Red before: 5 > 10 is false. */
-    ok(c && c.r > c.b, `${why} is filled warm rather than cold, so it sits in the card instead of punching a hole in it (r ${c && c.r} against b ${c && c.b})`);
-    /* AND IT MAY NOT BE THINNED TO FIX THAT, WHICH IS THE MISTAKE THIS FIX MADE FIRST. The first
-       cut thinned the label column to .62 so the card would show through, and he caught the
-       ORDERS column legible straight through the band labels on the earnings table. Ghosting is
-       arithmetic: a sticky fill at alpha a passes (1-a) of whatever scrolls under it, the .86
-       this replaced already passed a readable 14 per cent, and 1 is the only value that cannot
-       ghost. Asserted as fully opaque rather than as "opaque enough", because there is no
-       defensible number between them. */
-    ok(c && c.a === 1, `and is fully opaque, so nothing scrolling under it can ghost through (alpha ${c && c.a})`);
+    ok(!bg, `${why} is painted with nothing, so the card's glass shows through it (${bg || "no background"})`);
   }
+  const scrolledBg = ruleBg(".salt-table--scrolled .salt-table__label, .salt-table--scrolled tbody tr:hover .salt-table__label");
+  ok(scrolledBg === "var(--salt-obsidian)", `a label column with figures scrolled under it is backed by the ground (${scrolledBg})`);
+  ok(/--salt-obsidian:\s*#[0-9a-f]{6}\s*;/.test(ds7), "and the ground is fully opaque, so nothing scrolling under it can ghost through");
   /* the rule holds only because these tables really do scroll sideways; if that stopped being
      true the assertion above would be pinning a cost with nothing on the other side of it. */
   /* this one is read from the master, not the design layer: .tscroll's overflow-x belongs to an
      older CSS layer that the design layer sits on top of and does not restate. */
   ok(/\.tscroll\{[^}]*overflow-x:\s*auto/.test(master7),
     "and the tables these cells sit in really do scroll sideways, which is what makes opacity load-bearing");
-  /* A LATER RULE MAY NOT UN-PAINT THE STICKY COLUMN, WHICH IS HOW 14 CELLS STAYED LEAKY THROUGH
-     THE FIRST FIX. `tr.tot td` sets a 7% brass wash and sits after th.l,td.l, so on a total row it
-     REPLACED the opaque fill and passed 93 per cent. Whatever repaints a label cell has to layer
-     over the panel rather than stand in for it. Found by computing all 232 sticky cells in a
-     browser; reading this file would not have shown it, and the assertion below is a reminder of
-     the rule rather than the instrument that catches the next one. */
-  const totL = ruleBg(".salt-table tr.tot .salt-table__label");
-  ok(!!totL, `the total row restates the label column's fill rather than dropping it (${totL || "no tot label rule"})`);
-  ok(!!totL && /var\(--salt-panel\)/.test(totL), `and layers its wash over the opaque panel (${totL})`);
+  /* the class follows the scroll: on when the wrap has scrolled from its left edge, off when it is back */
+  {
+    const { w } = await om7(process.env.SALT_MASTER || FROZEN_MASTER);
+    try {
+      const d = w.document, wrap = d.createElement("div"), t = d.createElement("table");
+      t.className = "salt-table"; wrap.className = "tscroll"; wrap.appendChild(t); d.body.appendChild(wrap);
+      w.tscrollLeft(wrap, true);
+      const on = t.classList.contains("salt-table--scrolled") && wrap.classList.contains("morel");
+      w.tscrollLeft(wrap, false);
+      ok(on && !t.classList.contains("salt-table--scrolled") && !wrap.classList.contains("morel"),
+        "the label column is backed only while figures have scrolled under it: tscrollLeft sets and clears salt-table--scrolled with the left hint");
+      /* a wrap the fade never wired (a table drawn after it measured) still follows its own scroll */
+      Object.defineProperty(wrap, "scrollLeft", { configurable: true, value: 80 });
+      wrap.dispatchEvent(new w.Event("scroll"));
+      ok(t.classList.contains("salt-table--scrolled"), "and a table drawn after the fade was measured is marked as it scrolls, through the one listener on the document");
+    } finally { try { w.close(); } catch (e) {} }
+  }
   ok(/\.menu\{[^}]*background:var\(--salt-veil\)/.test(desk7),
     "and --salt-veil keeps the one job it is documented for, the menu that really does float over the page");
 
@@ -43662,7 +43662,8 @@ await (async () => {
   /* the identity owns every colour the layer used to decide */
   ok(/--salt-alarm:\s*#fa3c5a/.test(sX) && /--salt-panel:\s*rgb\(28, 20, 13\)/.test(sX) && /--salt-mist-bright:\s*#b4bcc2/.test(sX),
     "the alarm, the opaque panel and the bright mist are the identity's tokens");
-  ok(/--panel:var\(--salt-panel\)/.test(dX) && /--mut:var\(--salt-mist-bright\)/.test(dX) && !/#b4bcc2|#fa3c5a|rgba\(28,20,13/.test(dX),
+  /* 16 Nov 2026: the layer names no panel (the tables take the card's glass, salt-ds 1.34.0) */
+  ok(!/--panel:/.test(dX) && /--mut:var\(--salt-mist-bright\)/.test(dX) && !/#b4bcc2|#fa3c5a|rgba\(28,20,13/.test(dX),
     "and the layer points at them rather than restating them");
   ok(!/rgba\(197,160,89,\.4[25]\)|rgba\(255,255,255,\.06\)/.test(dX) && /--salt-line-strong:/.test(sX) && /--salt-glass-hover:/.test(sX),
     "the lifted hairline and the hover fill are the identity's words, not alphas written by hand");

@@ -1,0 +1,44 @@
+[
+ {
+  "name": "the head is painted again",
+  "file": "design/salt-ds.css",
+  "find": "  color: var(--salt-mist);\n  border-bottom: 1px solid var(--salt-line);\n}",
+  "replace": "  color: var(--salt-mist);\n  background: var(--salt-panel);\n  border-bottom: 1px solid var(--salt-line);\n}"
+ },
+ {
+  "name": "the label column is painted again",
+  "file": "design/salt-ds.css",
+  "find": ".salt-table .salt-table__label { text-align: left; color:",
+  "replace": ".salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color:"
+ },
+ {
+  "name": "the total row takes the brass wash again",
+  "file": "design/salt-ds.css",
+  "find": ".salt-table tr.tot td { font-weight: 500; border-top",
+  "replace": ".salt-table tr.tot td { font-weight: 500; background: var(--salt-tint); border-top"
+ },
+ {
+  "name": "a scrolled label column is left unbacked",
+  "file": "design/salt-ds.css",
+  "find": "tbody tr:hover .salt-table__label { background: var(--salt-obsidian); }",
+  "replace": "tbody tr:hover .salt-table__label { background: transparent; }"
+ },
+ {
+  "name": "a scrolled label column is backed by the warm panel",
+  "file": "design/salt-ds.css",
+  "find": "tbody tr:hover .salt-table__label { background: var(--salt-obsidian); }",
+  "replace": "tbody tr:hover .salt-table__label { background: var(--salt-panel); }"
+ },
+ {
+  "name": "the scroll never marks the table",
+  "file": "master/salt_command.html",
+  "find": "t.classList.toggle('salt-table--scrolled',on);",
+  "replace": "void 0;"
+ },
+ {
+  "name": "a table drawn after the fade never follows its scroll",
+  "file": "master/salt_command.html",
+  "find": "w.classList.contains('tscroll'))tscrollLeft(",
+  "replace": "w.classList.contains('tscrollX'))tscrollLeft("
+ }
+]

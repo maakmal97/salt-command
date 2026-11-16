@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the base block carries no scrolled backing",
+  "file": "master/salt_command.html",
+  "find": "tbody tr:hover .salt-table__label { background: var(--salt-obsidian); }",
+  "replace": "tbody tr:hover .salt-table__label { background: transparent; }"
+ }
+]
