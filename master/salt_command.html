@@ -1723,8 +1723,11 @@ details.obs>summary{min-height:var(--tap);}
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border: 1px solid var(--salt-line);
-  box-shadow: var(--salt-shadow), inset 0 1px 0 var(--salt-highlight);
+  /* 1.33.0, his word of 16 Nov 2026 (one shadow on every Salt surface, the lighter): a card casts the desk shadow, as every pane on the Desk does */
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
 }
+/* 1.33.0: a card inside a card casts no drop shadow, its highlight alone; a shadow seen through the glass of the card around it reads as a black stain */
+.salt-glass-card .salt-glass-card { box-shadow: inset 0 1px 0 var(--salt-highlight); }
 .salt-glass-card--radius-md { border-radius: var(--salt-radius-md); }
 .salt-glass-card--radius-lg { border-radius: var(--salt-radius-lg); }
 .salt-glass-card--radius-xl { border-radius: var(--salt-radius-xl); }
@@ -4095,9 +4098,20 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
      1080px, where the page scrolls, it is sticky in the column as before */
   .salt-frame--side { grid-template-rows: minmax(0, 1fr); }
   .salt-frame--side > .salt-rail { grid-row: 1; }
-  .salt-frame__col { grid-column: 2; grid-row: 1; align-self: stretch; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .salt-frame__col > .salt-frame__bar { flex: none; }
-  .salt-frame__col > .salt-frame__main { flex: 1 1 auto; }
+  .salt-frame__col { grid-column: 2; grid-row: 1; align-self: stretch; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); min-width: 0; min-height: 0; }
+  /* 1.33.0, his word of 16 Nov 2026 ("slide under the bar", one way on every Salt surface): the bar and __main share the column's one cell,
+     the bar laid over __main's top, so what scrolls slides under the bar as a page slides under the Counter's sticky bar, never cut at a line
+     below it. __main opens one bar (--salt-frame-bar-h, which the surface keeps to its bar's height) and a gap (--salt-frame-gap) down, and
+     reaches --salt-frame-room past the column at each side and its foot, so a pane's shadow is never cut flat at the column's edge; a pane
+     holds under the bar */
+  .salt-frame__col > .salt-frame__bar { grid-area: 1 / 1; align-self: start; z-index: 3; }
+  .salt-frame__col > .salt-frame__main {
+    grid-area: 1 / 1;
+    margin: 0 calc(-1 * var(--salt-frame-room, 20px));
+    padding: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)) var(--salt-frame-room, 20px) var(--salt-frame-room, 20px);
+    scroll-padding-top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px));
+  }
+  .salt-frame__col > .salt-frame__main .salt-pane { top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)); }
 }
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026; complete since 21 Oct 2026, his word: "very sharp and complete, and
@@ -5355,6 +5369,32 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .wrap{max-width:none;}
   .shell{max-width:var(--salt-page-max);margin-inline:auto;}
   .shell>.rail{max-height:none;}
+}
+
+/* ---- 14. ONE LOOK ON EVERY SALT SURFACE (16 Nov 2026, his word: "consistent across all apps", "layering, scrolling, visual", the
+   Counter the reference, measured at 390, 1180, 1440 and 1920 on all three). Panes standing one under another sit 14px apart, as the
+   Counter's do (To do's book table and its Cover chart touched); a pane inside a pane, and a tile, casts no drop shadow, its highlight
+   alone, as on Salt Admin and the Counter, so no shadow reads through the glass under it as a black stain; a card's padding is the
+   Counter's 16px, 18px at its sides from 860px; a phone's gutter is 16px, as on Salt Admin and the Counter; a section's name is the
+   system's eyebrow (12px, .24em). A ledger card (.lcard) keeps its own pressed glow. ---- */
+:is(.card,.chartbox,.quotecard,.pend,.ledsum,.updbox)+:is(.card,.chartbox,.quotecard,.pend,.ledsum,.updbox){margin-top:14px;}
+:is(.two,.kpis)>:is(.card,.chartbox,.quotecard,.pend){margin-top:0;}
+.kpi,
+:is(.kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox) :is(.kpi,.card,.chartbox,.quotecard,.evo,.pend,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox){
+  box-shadow:inset 0 1px 0 var(--salt-highlight);}
+.card,.pend,.quotecard{padding:16px 18px;}
+h2{font-size:.75rem;letter-spacing:.24em;}
+@media(max-width:860px){
+  .card,.pend,.quotecard{padding:16px;}
+}
+@media(max-width:560px){
+  .wrap{padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
+}
+/* the frame runs to the screen's foot (salt-ds 1.33.0), so what scrolls leaves at the foot as a page does, never cut at a line 24px above it;
+   the rail keeps its 24px under it (--salt-frame-foot) */
+@media (min-width:1080px){
+  .wrap{padding-bottom:0;}
+  .shell{--salt-frame-h:calc(100dvh - 22px);}
 }
 /* ==== END DESIGN desk ==== */
 </style>
@@ -24667,6 +24707,14 @@ function undoEntry(at){
   /* a tab change replaces the whole content column, so the old scroll position may no longer
      exist; re-read rather than leaving the button lit over a short tab */
   window._totopSync=sync;
+})();
+/* 16 Nov 2026, his word ("slide under the bar", one way on every Salt surface; salt-ds 1.33.0): in the frame the bar lies over the column's top and
+   what scrolls slides under it, so the column opens one bar down. The bar's height is kept on the frame's column as --salt-frame-bar-h, read again
+   whenever the bar's size changes (its chips, a wider screen) */
+(function(){
+  const bar=document.getElementById('deskbar'),col=bar&&bar.parentElement;if(!col)return;
+  const keep=()=>{try{col.style.setProperty('--salt-frame-bar-h',Math.ceil(bar.getBoundingClientRect().height)+'px');}catch(e){}};
+  keep();try{new ResizeObserver(keep).observe(bar);}catch(e){window.addEventListener('resize',keep,{passive:true});}
 })();
 try{const _lni=localStorage.getItem('saltNewIds');if(_lni)newIds=JSON.parse(_lni);}catch(e){}
 try{const _lnl=localStorage.getItem('saltNewLocs');if(_lnl)newLocs=JSON.parse(_lnl);}catch(e){}

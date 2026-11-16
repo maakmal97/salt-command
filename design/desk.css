@@ -781,3 +781,29 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .shell{max-width:var(--salt-page-max);margin-inline:auto;}
   .shell>.rail{max-height:none;}
 }
+
+/* ---- 14. ONE LOOK ON EVERY SALT SURFACE (16 Nov 2026, his word: "consistent across all apps", "layering, scrolling, visual", the
+   Counter the reference, measured at 390, 1180, 1440 and 1920 on all three). Panes standing one under another sit 14px apart, as the
+   Counter's do (To do's book table and its Cover chart touched); a pane inside a pane, and a tile, casts no drop shadow, its highlight
+   alone, as on Salt Admin and the Counter, so no shadow reads through the glass under it as a black stain; a card's padding is the
+   Counter's 16px, 18px at its sides from 860px; a phone's gutter is 16px, as on Salt Admin and the Counter; a section's name is the
+   system's eyebrow (12px, .24em). A ledger card (.lcard) keeps its own pressed glow. ---- */
+:is(.card,.chartbox,.quotecard,.pend,.ledsum,.updbox)+:is(.card,.chartbox,.quotecard,.pend,.ledsum,.updbox){margin-top:14px;}
+:is(.two,.kpis)>:is(.card,.chartbox,.quotecard,.pend){margin-top:0;}
+.kpi,
+:is(.kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox) :is(.kpi,.card,.chartbox,.quotecard,.evo,.pend,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox){
+  box-shadow:inset 0 1px 0 var(--salt-highlight);}
+.card,.pend,.quotecard{padding:16px 18px;}
+h2{font-size:.75rem;letter-spacing:.24em;}
+@media(max-width:860px){
+  .card,.pend,.quotecard{padding:16px;}
+}
+@media(max-width:560px){
+  .wrap{padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
+}
+/* the frame runs to the screen's foot (salt-ds 1.33.0), so what scrolls leaves at the foot as a page does, never cut at a line 24px above it;
+   the rail keeps its 24px under it (--salt-frame-foot) */
+@media (min-width:1080px){
+  .wrap{padding-bottom:0;}
+  .shell{--salt-frame-h:calc(100dvh - 22px);}
+}
