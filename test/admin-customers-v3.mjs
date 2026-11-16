@@ -59,7 +59,8 @@ export async function run({ ok, pageWork }) {
 
   /* 4: the new buyers */
   {
-    const look = async (b) => { const p = await open({ inputsAnswer: habitsAnswer([], b) }); const c = need(p, "x:buyers"); return c ? { t: c.querySelector(".salt-action__title").textContent.replace(/^Salt/, ""), sev: c.closest(".ngroup").getAttribute("data-sev") } : null; };
+    const look = async (b) => { const p = await open({ inputsAnswer: habitsAnswer([], b) }); const c = need(p, "x:buyers"); /* 16 Nov 2026, the move to Ambient (place F): a card is Ambient's task, its title the task's title, its severity on the card itself */
+      return c ? { t: c.querySelector(".amb-task__title").textContent.replace(/^Salt/, ""), sev: c.getAttribute("data-sev") } : null; };
     const a = await look({ count: 3, introduced: 1, back: 2, thin: false }), b = await look({ count: 0, introduced: 0, back: 0, thin: true }), c = await look({ count: 0, introduced: 0, back: 0, thin: false }), d = await look({ count: 2, introduced: 0, back: 0, thin: true });
     ok(a && a.sev === "watch" && a.t === "3 new this week, 1 through an associate, 2 came back" && b && b.t === "No new buyers this week. Thin against the weeks before" && c === null
       && d && d.t === "2 new this week. Thin against the weeks before",
