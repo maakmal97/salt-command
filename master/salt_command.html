@@ -12305,7 +12305,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1523","d":"16 Nov 2026","t":"NO BROWN UNDER A TABLE, NO SHADOW BEHIND A CARD","n":["<b>TABLES TAKE THE CARD'S GLASS.</b> A table's head row, its first column and its Total row were painted an opaque brown on every surface, so each table carried a brown band across its card. They are now clear, the card's own glass behind them. On a phone, when a wide table is scrolled sideways, the first column is backed by the page's dark ground so the figures passing under it cannot show through; scrolled back, it is clear again.","<b>NO SHADOW BEHIND A CARD.</b> Cards, panes, the rail and the bar no longer cast a drop shadow on the Desk, Salt Admin or Salt Counter; each keeps its hairline and its top highlight. Menus that float over the page keep theirs."]}];
+const evolution=[{"v":"v1524","d":"17 Nov 2026","t":"A NEW CUSTOMER'S ACCOUNT IS NEVER LEFT WAITING","n":["<b>THE PUBLISH IS ASKED AGAIN.</b> A new ID's account opens with the publish after its Add ID, about three minutes when GitHub starts the run. If GitHub leaves that run waiting, the Desk now asks for the publish again 11, 20 and 40 minutes after the approval, until the account is there. On 16 Nov 2026 CA9-TBC waited 35 minutes behind a run GitHub never started.","<b>A STUCK RUN NO LONGER HOLDS THE REST UP.</b> A run GitHub has left queued for over ten minutes with no job started no longer counts as covering a publish, so the restock date and the day's publish go too. A run waiting its turn behind another still counts.","<b>FIFTY READY ACCOUNTS.</b> The pool of spare accounts is fifty (it was ten), and Salt Admin's Accounts card shows when fewer than ten are left (it was three). The laptop's top-up waits while a new ID is booked but not yet in git, and a top-up can never move a customer already given an account to another username."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12467,7 +12467,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Nov 2026, 20:37 KL';
+const LAST_UPDATED='17 Nov 2026, 00:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
