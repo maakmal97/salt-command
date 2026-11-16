@@ -21,12 +21,11 @@
  * It is `npm test` (his instruction of 24 Sep 2026), here and in CI. No machine runs more shards than its cores less one
  * (never fewer than two): a hosted runner's memory comes with its cores, and each shard may take a 4 GB heap.
  *
- * SHARDS FIT THE MACHINE'S MEMORY AS WELL AS ITS CORES (09 Oct 2026, his instruction). Eight shards on the laptop's sixteen
- * cores, three worktrees testing at once, took 21 GB of its 31.5 and left it 0.7 GB free. A shard and the tools it spawns
- * peak near 1.8 GB (four shards measured 7.3 GB), so unasked a machine runs the fewest of: half its cores; what lets two runs
- * share half its memory; and what three quarters of the memory free right now holds; never fewer than two, at most ten.
- * The laptop runs four, a 24-core 128 GB machine ten, and a run started beside two others takes what is left. --jobs still
- * asks for any count. The 4 GB heap cap stays: it is a ceiling, not what a shard uses.
+ * THE WHOLE MACHINE (16 Nov 2026, his instruction, reversing the memory fit of 09 Oct 2026). Unasked a machine runs its
+ * cores less one, never fewer than two: the laptop fifteen. Measured on its 16 cores and 31.5 GB, 13 GB free at the start:
+ * 4 shards 8.6 min, 8 7.1, 12 6.9, 15 6.5; from 8 shards free memory reached nought and Windows paged, still faster. Run one
+ * suite at a time: two side by side page each other. --jobs still asks for any count. The 4 GB heap cap stays: it is a
+ * ceiling, not what a shard uses.
  * `npm run test:serial` is the one-process road.
  *
  * ONE PART A RUNNER IN CI (05 Oct 2026, his instruction). Once the repo went private on 01 Oct its runners had two cores, so
@@ -34,7 +33,7 @@
  * runners, each with --part i/3: the build phase, then shard i of the same three-way packing, in one process. A part packs
  * by the committed costs alone, never a machine's own times, so all three cut the suite alike and the parts cover it once.
  *
- *   node tools/suite-split.mjs                 shards to fit the cores and the memory, 2 to 10
+ *   node tools/suite-split.mjs                 the cores less one, never fewer than two
  *   node tools/suite-split.mjs --jobs 12
  *   node tools/suite-split.mjs --part 2/3      the build phase and the second of three shards (CI, one runner a part)
  *   node tools/suite-split.mjs --write-costs   test/suite-costs.json from this machine's last run; runs nothing
@@ -140,15 +139,14 @@ export function runShard(suite, name, blocks, line = () => {}, env = {}, root = 
   });
 }
 
-/* shards: --jobs, else the fewest that half the cores, two runs in half the memory and the memory free now allow, 2 to 10;
-   asked, never more than the cores less one, never fewer than one */
+/* shards: --jobs, else the whole machine, the cores less one, never fewer than two (16 Nov 2026, his word: "the fastest, the
+   laptop using all of its resources"; measured here: 4 shards 8.6 min, 8 7.1, 12 6.9, 15 6.5, memory reaching nought from 8).
+   This reverses the memory fit of 09 Oct 2026, so run ONE suite at a time; a second beside it pages. asked, never more than
+   the cores less one, never fewer than one. SHARD_GB stays for section.mjs's mutation lanes. */
 export const SHARD_GB = 1.8, GB = 1024 ** 3;
-export function jobsFor(argv, cores, mem = { total: totalmem(), free: freemem() }) {
+export function jobsFor(argv, cores) {
   const ji = argv.indexOf("--jobs");
-  if (ji < 0) {
-    const byMemory = Math.floor(mem.total / GB / 4 / SHARD_GB), byFree = Math.floor((mem.free / GB) * 0.75 / SHARD_GB);
-    return Math.max(2, Math.min(10, Math.floor(cores / 2), byMemory, byFree));
-  }
+  if (ji < 0) return Math.max(2, cores - 1);
   return Math.max(1, Math.min(+argv[ji + 1], Math.max(2, cores - 1)));
 }
 

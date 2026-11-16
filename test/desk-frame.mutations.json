@@ -8,20 +8,20 @@
  {
   "name": "D1.1 the rail sits under the bar's row",
   "file": "master/salt_command.html",
-  "find": ".salt-frame--side > .salt-rail { grid-row: 1; }",
-  "replace": ".salt-frame--side > .salt-rail { }"
+  "find": ".salt-frame--side > .salt-rail { grid-row: 1; margin-bottom: var(--salt-frame-foot, 24px); }",
+  "replace": ".salt-frame--side > .salt-rail { margin-bottom: var(--salt-frame-foot, 24px); }"
  },
  {
   "name": "D1.2 the column is a plain block",
   "file": "master/salt_command.html",
-  "find": "align-self: stretch; display: flex; flex-direction: column;",
+  "find": "align-self: stretch; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr);",
   "replace": "align-self: stretch; display: block;"
  },
  {
-  "name": "D1.3 the scroll box does not take the rest",
+  "name": "D1.3 the bar stands above the column, not over it",
   "file": "master/salt_command.html",
-  "find": ".salt-frame__col > .salt-frame__main { flex: 1 1 auto; }",
-  "replace": ".salt-frame__col > .salt-frame__main { }"
+  "find": ".salt-frame__col > .salt-frame__bar { grid-area: 1 / 1; align-self: start; z-index: 3; }",
+  "replace": ".salt-frame__col > .salt-frame__bar { }"
  },
  {
   "name": "D1.4 a frame's bar sticks",
@@ -60,16 +60,16 @@
   "replace": "    </div>\n    <div class=\"sec\" id=\"sec-book\"></div>"
  },
  {
-  "name": "D3.1 the frame is the screen less the top alone",
+  "name": "D3.1 the frame stops 24px short of the foot",
   "file": "master/salt_command.html",
-  "find": "--salt-frame-h:calc(100dvh - 46px)",
-  "replace": "--salt-frame-h:calc(100dvh - 22px)"
+  "find": "  .wrap{padding-bottom:0;}\n  .shell{--salt-frame-h:calc(100dvh - 22px);}",
+  "replace": "  .wrap{padding-bottom:0;}\n  .shell{--salt-frame-h:calc(100dvh - 46px);}"
  },
  {
-  "name": "D3.1 the page keeps its 80px foot",
+  "name": "D3.1 the page keeps a foot under the frame",
   "file": "master/salt_command.html",
-  "find": ".wrap{padding-bottom:24px;}",
-  "replace": ""
+  "find": "  .wrap{padding-bottom:0;}\n  .shell{--salt-frame-h:calc(100dvh - 22px);}",
+  "replace": "  .wrap{padding-bottom:24px;}\n  .shell{--salt-frame-h:calc(100dvh - 22px);}"
  },
  {
   "name": "D3.2 the rail keeps its own height",
@@ -80,8 +80,8 @@
  {
   "name": "D3.3 the frame binds at every width",
   "file": "master/salt_command.html",
-  "find": "@media (min-width:1080px){\n  .wrap{padding-bottom:24px;}\n  .shell{--salt-frame-h:calc(100dvh - 46px);}",
-  "replace": "  .shell{--salt-frame-h:calc(100dvh - 46px);}\n@media (min-width:1080px){\n  .wrap{padding-bottom:24px;}"
+  "find": "@media (min-width:1080px){\n  .wrap{padding-bottom:0;}\n  .shell{--salt-frame-h:calc(100dvh - 22px);}",
+  "replace": "  .shell{--salt-frame-h:calc(100dvh - 22px);}\n@media (min-width:1080px){\n  .wrap{padding-bottom:0;}"
  },
  {
   "name": "D4.1 Back to top reads the page alone",
