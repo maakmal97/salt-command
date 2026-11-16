@@ -1,27 +1,27 @@
 [
  {
-  "name": "the shut page has no ring",
+  "name": "the shut page's heading is not the page's h1",
   "file": "stmt/page.js",
   "find": "export function shutPage(nonce) { return onePage(\"shut\", nonce); }",
-  "replace": "export function shutPage(nonce) { return guestPage('<h1 class=\"gh\">' + wd(\"shut.h\") + \"</h1>\" + '<p class=\"lead\">' + wd(\"shut.p\") + \"</p>\", nonce, esc(EN[\"shut.title\"])); }"
+  "replace": "export function shutPage(nonce) { return guestPage(\"slate\", '<h2 class=\"amb-hero__title\">' + wd(\"shut.h\") + '</h2><p class=\"amb-hero__sub\">' + wd(\"shut.p\") + \"</p>\", \"\", nonce, esc(EN[\"shut.title\"])); }"
  },
  {
-  "name": "the 404 has no ring",
+  "name": "the 404's heading is not the page's h1",
   "file": "stmt/page.js",
   "find": "export function notFoundPage(nonce) { return onePage(\"nf\", nonce); }",
-  "replace": "export function notFoundPage(nonce) { return guestPage('<h1 class=\"gh\">' + wd(\"nf.h\") + \"</h1>\" + '<p class=\"lead\">' + wd(\"nf.p\") + \"</p>\", nonce, esc(EN[\"nf.title\"])); }"
+  "replace": "export function notFoundPage(nonce) { return guestPage(\"slate\", '<h2 class=\"amb-hero__title\">' + wd(\"nf.h\") + '</h2><p class=\"amb-hero__sub\">' + wd(\"nf.p\") + \"</p>\", \"\", nonce, esc(EN[\"nf.title\"])); }"
  },
  {
-  "name": "the ring is not the app's",
+  "name": "the page is not Slate",
   "file": "stmt/page.js",
-  "find": "'<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + '<h1 class=\"gh\">' + wd(k + \".h\")",
-  "replace": "'<span class=\"appmark\">' + glyphSvg(\"home\", 40) + \"</span>\" + '<h1 class=\"gh\">' + wd(k + \".h\")"
+  "find": "return guestPage(\"slate\", '<h1 class=\"amb-hero__title\">' + wd(k + \".h\")",
+  "replace": "return guestPage(\"lagoon\", '<h1 class=\"amb-hero__title\">' + wd(k + \".h\")"
  },
  {
-  "name": "the frame has no room for the ring",
+  "name": "the page carries the older page layer",
   "file": "stmt/page.js",
-  "find": ".appmark{display:block;margin:0 0 14px}\n",
-  "replace": ""
+  "find": "+ '<style nonce=\"' + nonce + '\">' + SITE_STYLE + \"</style></head>\" + BODY_OPEN\n    + '<div class=\"amb-shell\" data-mood=\"' + mood",
+  "replace": "+ '<style nonce=\"' + nonce + '\">' + SITE_STYLE + PAGE_CSS + \"</style></head>\" + BODY_OPEN\n    + '<div class=\"amb-shell\" data-mood=\"' + mood"
  },
  {
   "name": "the 404 is the page for every request",

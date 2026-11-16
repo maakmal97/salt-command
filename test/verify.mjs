@@ -16409,7 +16409,8 @@ await (async () => {
   const PG = await import("../stmt/page.js");
   const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit",
     sizes: [{ q: 0.5, price: 60 }, { q: 1, price: 110 }, { q: 2.5, price: 250 }] }] } }, "nf9");
-  const cells = [...board.matchAll(/<td class="l">([^<]*)<[/]td>/g)].map((m) => m[1]);
+  /* 16 Nov 2026, the move to Ambient (place E): a size is a settings row's name */
+  const cells = [...board.matchAll(/<span class="amb-setting__name">([^<]*)<[/]span>/g)].map((m) => m[1]);
   ok(cells.join("|") === "0.5 unit|1 unit|2.5 units", "a guest's board says units above one and unit at one: " + JSON.stringify(cells));
   const page = PG.landingPage("abcd-efgh", "nf9", null);
   /* S13 13.3: both say it through words.js's unitsIn, each with its table's words */
@@ -23571,7 +23572,7 @@ await (async () => {
   const boardText = board95.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
   /* S13 13.2: off the lock's own list */
   const WL95 = await import("../src/orders.js");
-  ok(!/\b(salt|oil)\b/i.test(boardText) && !WL95.wordsIn(boardText, WL95.PRODUCT_WORDS).length && (board95.match(/class="salt-coin /g) || []).length === 2,   /* plan version 10 (03 Nov 2026): the board's heads are coins */
+  ok(!/\b(salt|oil)\b/i.test(boardText) && !WL95.wordsIn(boardText, WL95.PRODUCT_WORDS).length && (board95.match(/class="amb-thumb amb-thumb--ring amb-thumb--mark /g) || []).length === 2,   /* plan version 10 (03 Nov 2026): the board's heads are coins; 16 Nov 2026, the move to Ambient: the system's mark thumbs */
     "the guest board draws two marks and writes neither name: " + JSON.stringify((boardText.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   ok(/aria-label="Cube"/.test(board95) && /aria-label="Droplet"/.test(board95), "and each heading is named by its shape");
 
@@ -26721,7 +26722,9 @@ await (async () => {
     ok(plain.posts.length === 1 && plain.posts[0].peek === true && !(await kv33.get("ot:" + (await S33.idOf(plain.t))).then(JSON.parse)).spent
       && plain.W.location.pathname === "/s/" + plain.t,
       "and has spent nothing: one question asked, the record whole, the address still the link's");
-    ok(plain.D.getElementById("linkInapp").hidden && /salt-pill/.test(plain.D.getElementById("linkGo").className),
+    /* 16 Nov 2026, the move to Ambient (place E): Continue is the one solid pill of the system */
+    ok(plain.D.getElementById("linkInapp").hidden && /(^|\s)amb-pill(\s|$)/.test(plain.D.getElementById("linkGo").className) && !/amb-pill--quiet/.test(plain.D.getElementById("linkGo").className)
+      && plain.D.getElementById("link").querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1,
       "Safari is not told to go anywhere else, and Continue is the one filled control");
     await tapGo(plain);
     ok(signedIn(plain) && !plain.D.getElementById("keepCard").hidden && !plain.D.getElementById("tabs").hidden && plain.W.location.pathname === "/"
@@ -27453,8 +27456,9 @@ await (async () => {
       && /Bring your sign-in across from Safari\. You do this once on this phone\./.test(text),
       "the saved iPhone app with nothing remembered opens on One step to finish, never the door");
     const paste = g1.D.getElementById("codePaste"), field = g1.D.getElementById("codeIn");
-    ok(/salt-pill/.test(paste.className) && /Paste the code/.test(paste.textContent) && box.querySelectorAll(".salt-pill").length === 1
-      && field.classList.contains("salt-field__input--code") && field.getAttribute("autocomplete") === "one-time-code",
+    /* 16 Nov 2026, the move to Ambient (place E): the one solid Paste is a pill of the system and the field its one-time code field */
+    ok(/(^|\s)amb-pill(\s|$)/.test(paste.className) && !/amb-pill--quiet/.test(paste.className) && /Paste the code/.test(paste.textContent) && box.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1
+      && field.classList.contains("amb-input--code") && field.getAttribute("autocomplete") === "one-time-code",
       "with one filled Paste the code, and the Code field to type eight symbols");
     ok(g1.D.getElementById("codeHelp").textContent === "No code? Open your sign-in link in Safari, and copy the code shown there.",
       "and the true help line: " + JSON.stringify(g1.D.getElementById("codeHelp").textContent));
@@ -28505,7 +28509,7 @@ await (async () => {
 
   const pad = await drive(IPAD, { touch: true, u: uD });
   try {
-    ok(/on this iPad/.test(pad.D.getElementById("gate").textContent), "an iPad is called an iPad at the door: " + JSON.stringify(pad.D.querySelector("label.rem").textContent));
+    ok(/on this iPad/.test(pad.D.getElementById("gate").textContent), "an iPad is called an iPad at the door: " + JSON.stringify(pad.D.querySelector("label[for=rem]").textContent));
     pad.D.getElementById("pw").value = passD;
     pad.D.getElementById("f").dispatchEvent(new pad.W.Event("submit", { bubbles: true, cancelable: true }));
     await pad.until(() => !pad.D.getElementById("barw").hidden);
@@ -51385,6 +51389,11 @@ await (async () => {
 section("Failures on brand: the shut page and the site's 404 stand on the Counter's frame with the ring, the 404 echoes nothing of what was asked and is the page only where a page was asked for (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-shut-404.mjs")).run({ ok });
+})();
+
+section("16 Nov 2026, the move to Ambient (place E): the guest board, the join page, the sign-in link page, the code screen and the opening draw the system's parts alone");
+await (async () => {
+  await (await import("./counter-small-pages.mjs")).run({ ok });
 })();
 
 section("Maintenance guard on both Workers");

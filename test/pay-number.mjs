@@ -271,6 +271,12 @@ export async function run({ ok, okOff, pageWork, KV }) {
       "What this pays is the system's More, shut, and holds the invoice's three lines as its Rows: " + JSON.stringify([!!what, what && what.getAttribute("aria-expanded")]));
     const hows = [...A.d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value);
     ok(hows.join() === "transfer,qr,jompay", "the ways are Transfer, Scan a code and JomPAY, JomPAY because an account gives its biller code and Ref-1 (no cash on To pay now): " + hows.join());
+    /* 16 Nov 2026, the move to Ambient (0.7.6): every way leads with Ambient's option glyph after its mark: a code and a transfer Ambient's own
+       sprite, JomPAY its own mark as a filled shape with no colour of its own; none is read aloud */
+    const glyphs = [...A.d.querySelectorAll('#payBody .payhow > label.amb-option')].map((l) => { const g = l.querySelector(":scope > .amb-option__mark + svg.amb-option__glyph"), u = g && g.querySelector("use");
+      return !g ? "none" : g.getAttribute("aria-hidden") !== "true" || ["fill", "stroke", "color", "style"].some((x) => g.hasAttribute(x) || [...g.querySelectorAll("*")].some((c) => c.hasAttribute(x))) ? "coloured"
+        : u ? u.getAttribute("href") : g.getAttribute("viewBox") === "0 0 24 24" && !g.classList.contains("amb-icon") && !!g.querySelector("path[fill-rule=evenodd]") ? "own" : "odd"; });
+    ok(glyphs.join() === "#amb-bank,#amb-qr,own", "each way leads with its glyph, Transfer a bank, Scan a code a code, JomPAY its own mark in the ink alone: " + glyphs.join());
 
     /* Transfer: the number in fours, the figure and the reference, each with Copy; the pill lights as I have paid */
     A.pick("maybank");

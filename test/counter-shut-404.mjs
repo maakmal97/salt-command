@@ -26,17 +26,17 @@ export async function run({ ok }) {
   /* ---- the two pages, as the page module draws them ---- */
   for (const [name, html, h, p, title] of [["the shut page", PG.shutPage("nA"), "shut.h", "shut.p", "shut.title"], ["the 404", PG.notFoundPage("nB"), "nf.h", "nf.p", "nf.title"]]) {
     const dom = new JSDOM(html), d = dom.window.document, hs = [...d.querySelectorAll("h1,h2,h3")].map((x) => x.tagName.toLowerCase());
-    const mark = d.querySelector(".panel > .appmark");
-    ok(RING_D !== "" && !!mark && mark.querySelector("path") && mark.querySelector("path").getAttribute("d") === RING_D && mark.querySelector("svg").getAttribute("aria-hidden") === "true"
-      && d.querySelector(".panel").firstElementChild === mark
-      && hs.join() === "h1" && d.querySelector("h1").textContent === W.EN[h] && d.querySelector("p.lead").textContent === W.EN[p] && d.title === W.EN[title],
-      `${name} is the app's ring over its one heading and its line, with its own tab title: ` + JSON.stringify([hs, d.title]));
+    /* 16 Nov 2026, the move to Ambient (place E): the page is one shell in Slate, its hero the one heading and the line (the ring over them went with the door's) */
+    const hero = d.querySelector(".amb-shell > .amb-screen > header.amb-hero");
+    ok(!!hero && d.querySelector(".amb-shell").getAttribute("data-mood") === "slate" && !d.querySelector(".appmark, .panel")
+      && hs.join() === "h1" && hero.querySelector("h1.amb-hero__title").textContent === W.EN[h] && hero.querySelector("p.amb-hero__sub").textContent === W.EN[p] && d.title === W.EN[title],
+      `${name} is one Ambient shell in Slate, its hero the one heading and its line, with its own tab title: ` + JSON.stringify([hs, d.title]));
     /* 15 Nov 2026, the move to Ambient: the page follows the device, light or dark, on Ambient's head, and loads no face (the device's own) */
     ok(!/<html[^>]* data-theme=/.test(html) && /<meta name="color-scheme" content="light dark">/.test(html) && /<body class="amb">/.test(html) && /translate="no"/.test(html)
       && /name="viewport"/.test(html) && /name="robots" content="noindex/.test(html) && !/<script/i.test(html)
       /* the icon sprite's xmlns names SVG's namespace, which nothing fetches; any other address is refused */
-      && /[.]appmark\{display:block/.test(html) && !/url\(|@font-face/.test(html) && !/https?:\/\/(?!www\.w3\.org\/2000\/svg")/.test(html),
-      `${name} follows the device on Ambient's head, kept from the translator and from search, with a viewport, spacing for the ring, no face loaded, no script and no address`);
+      && !/[.]appmark|[.]panel\{max-width/.test(html) && !/url\(|@font-face/.test(html) && !/https?:\/\/(?!www\.w3\.org\/2000\/svg")/.test(html),
+      `${name} follows the device on Ambient's head, kept from the translator and from search, with a viewport, no face loaded, none of the older page layer, no script and no address`);
     /* 19 Oct 2026: whole words, so a salt- recipe class or a word such as desktop is not a name */
     const words = visible(html), src = html.replace(/<style[\s\S]*?<\/style>/g, " ");
     ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/\b(salt|command|counter|desk)\b(?![-(])/i.test(src)
@@ -56,8 +56,8 @@ export async function run({ ok }) {
     && !/img-src (?!'self' data:)/.test(x.csp) && nonceOf(x.body) && x.csp.includes("'nonce-" + nonceOf(x.body) + "'") && x.r.headers.get("cache-control") === "no-store"));
   ok(!shutBad.length, "every shut kind is a 404 page under the board's policy, its style by nonce, never cached: " + JSON.stringify(shutBad.map((x) => [x.what, x.r.status])));
   const shutSame = new Set(shuts.map((x) => bare(x.body, x.csp)));
-  ok(shutSame.size === 1 && [...shutSame][0].includes(RING) && /This link is not open/.test([...shutSame][0]),
-    "and it is ONE page with the ring, byte for byte but its nonce, the policy's included: " + JSON.stringify(shuts.map((x) => [x.what, bare(x.body, x.csp).length])));
+  ok(shutSame.size === 1 && [...shutSame][0].includes('<h1 class="amb-hero__title">This link is not open</h1>'),
+    "and it is ONE page, byte for byte but its nonce, the policy's included: " + JSON.stringify(shuts.map((x) => [x.what, bare(x.body, x.csp).length])));
   ok(new Set(shuts.map((x) => nonceOf(x.body))).size === shuts.length, "each answer has a nonce of its own");
 
   /* ---- the 404: the page where a page was asked for, and nothing of what was asked ---- */
@@ -67,8 +67,8 @@ export async function run({ ok }) {
   ok(a.status === 404 && /^text\/html/.test(a.headers.get("content-type")) && /script-src 'none'/.test(acsp) && /default-src 'none'/.test(acsp) && acsp.includes("'nonce-" + nonceOf(abody) + "'")
     && !/img-src (?!'self' data:)/.test(acsp) && a.headers.get("cache-control") === "no-store" && /noindex/.test(a.headers.get("x-robots-tag") || ""),
     "an address the site does not have, asked for as a page, answers 404 as the styled page under the board's policy, never cached");
-  ok(abody.includes(RING) && abody.includes("<h1 class=\"gh\">This page is not here</h1>") && abody.includes("Check the address and try again.") && abody.includes("<title>Page not found</title>"),
-    "its ring, its heading, its line and its tab title are the table's");
+  ok(abody.includes("<h1 class=\"amb-hero__title\">This page is not here</h1>") && abody.includes("<p class=\"amb-hero__sub\">Check the address and try again.</p>") && abody.includes("<title>Page not found</title>"),
+    "its heading, its line and its tab title are the table's");
   ok(!/zq7|abcd-efgh|x%20y/.test(abody + bbody + JSON.stringify([...a.headers]) + JSON.stringify([...b.headers])) && bare(abody, acsp) === bare(bbody, bcsp) && bare(abody, acsp).length > 1000,
     "it echoes nothing of the path or the query, in the page or in a header: two different addresses with the same Accept answer byte for byte the same but their nonce");
   ok(nonceOf(abody) !== nonceOf(bbody) && nonceOf(abody).length >= 16, "and each has a nonce of its own");

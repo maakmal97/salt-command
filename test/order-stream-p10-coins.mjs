@@ -56,14 +56,16 @@ export async function run({ ok, pageWork }) {
     /* the guest board */
     const html = P.boardPage({ prices: { week: { label: "this week" }, products: [{ product: "rice", unit: "unit", sizes: [{ q: 1, price: 8 }] }, { product: "gas", unit: "unit", sizes: [{ q: 1, price: 75 }] }] } }, "nonce10");
     const g = new JSDOM(html).window.document;
-    const gc = [...g.querySelectorAll("h2.pmark .salt-coin")];
-    ok(gc.length === 2 && gc.every((c) => c.classList.contains("salt-coin--md")) && gc[0].getAttribute("data-b") === String(Object.keys(P.PSYM).indexOf("rice")),
-      "10b the guest board's heads are coins, by the book's index");
-    ok(gc[0].querySelector("text").getAttribute("font-size") === "13" && gc[1].querySelector("text").getAttribute("font-size") === "12" && P.coinSvg("salt", "sm").includes('font-size="13"'),
-      "10b the letter's size follows its length: one 13, three 12");
+    /* 16 Nov 2026, the move to Ambient (place E): the board's heads are the system's mark thumbs, each in its book's hue by the book's index (PSYM's order less the ring, N from 1),
+       carrying his letter; the system fits the letter to the thumb */
+    const gc = [...g.querySelectorAll("h2.amb-settings__head .amb-thumb--mark.amb-thumb--ring")], kindOf = (k) => Object.keys(P.PSYM).filter((x) => x !== "_").indexOf(k) + 1;
+    ok(gc.length === 2 && gc[0].classList.contains("amb-kind-" + kindOf("rice")) && gc[1].classList.contains("amb-kind-" + kindOf("gas")) && !g.querySelector("svg.psym, .salt-coin"),
+      "10b the guest board's heads are mark thumbs, by the book's index");
+    ok((gc[0].querySelector(".amb-thumb__word") || {}).textContent === P.PLET.rice && (gc[1].querySelector(".amb-thumb__word") || {}).textContent === P.PLET.gas && gc[0].querySelectorAll("svg path").length === 1,
+      "10b each carries its book's letter or letters beside its shape");
     const css = [...g.querySelectorAll("style")].map((s) => s.textContent).join("");
     const land = P.landingPage("abcd-efgh", "n10", null);
-    ok(Object.keys(P.PSYM).every((k, i) => css.includes('.salt-coin[data-b="' + i + '"]{--salt-hue:var(--salt-product-' + k + ")}") && land.includes('.salt-coin[data-b="' + i + '"]')),
+    ok([1, 2, 3, 4, 5, 6].every((n) => css.includes(".amb-kind-" + n) && land.includes(".amb-kind-" + n)),
       "10b the guest board and the account both carry every book's hue by its index");
     /* 16 Nov 2026, the move to Ambient (10a): the recipes the Counter's pages carry for a mark and a light are the system's, the mark thumb and the chip with its tones; the guest board's own markup is its builder's */
     const lst = (land.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1];

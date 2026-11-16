@@ -58,23 +58,8 @@ export const TEST_POLL_MS = 2000;
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
-/* The gate, in the same material as the document behind it. One filled control, the
-   brass-to-copper pill, because this is the one thing on the page that produces something;
-   decision 5 of the identity. Everything else is a hairline or a word. */
-.gate{max-width:440px;margin:10vh auto 0;padding:0 4px}
-.gate h1{font-size:1.75rem;margin:0 0 8px}
-.gate p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 24px}
-/* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
-.appmark{display:block;margin:0 0 14px}
-.gate .salt-glass-card{margin:0 0 4px}
-.gate .salt-ledger__label{display:flex;align-items:center;gap:10px}
-.gate .salt-ledger__row:last-child{border-bottom:0}
-.gate .salt-insight .glyph{vertical-align:-0.3em}
-.center{text-align:center}
-/* S3 3.11: the code screen, the system's Code field under the one filled Paste */
-#codeBox .salt-code{margin-top:22px;display:flex;flex-direction:column;gap:8px}
-#codePaste .glyph{margin-right:8px;color:inherit}
-#toCode,#codeDoor{margin-top:14px}
+/* 16 Nov 2026 (place E): the gate's, the link page's and the code screen's rules went with their redraw (the door, the link page, the code screen and the
+   opening are Ambient shells; the sign-in column and the Sheet's carrying of the code screen are in design/site.css) */
 /* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
 .mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
 /* 12 OCT 2026 (PHASE 5): a form's label is the system's Field label (salt-field__label, or the Option legend's label modifier), set beside lbl in the markup; what is left
@@ -84,10 +69,6 @@ const PAGE_CSS = `
 /* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
    44px tall; a code or a figure takes --mono and a sentence stays in the display face */
 .fld{display:block}
-.gate .salt-insight,#doorBox .salt-insight{margin:22px 0 0}
-/* S3 fix: the code screen, carried into the signed-out Sheet, under the Sheet's own title */
-#outForm #codeBox{margin:0}
-#outForm .appmark{display:none}
 /* 15 Nov 2026, the move to Ambient: a select is the device's own list in light and dark alike, so its forced dark colour scheme and chevron went (Ambient's Select draws one) */
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
@@ -136,14 +117,10 @@ const PAGE_CSS = `
    each safe area added, the App bar cleared by the same 16px, and Home's sections one gap apart with nothing after the last,
    a list's last row included (its 8px stood inside Coming up, so the gap after it read 32px). The rows' resets are
    shorthands, as the rules they undo are. */
-@media (max-width:1079.98px){
-  .gate{padding:0}
-}
 @media (min-width:1080px){
 .panel{max-width:none}
 }
 .panel{max-width:620px;margin:0 auto}
-.panel h2:not(.salt-settings__head),.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
@@ -403,13 +380,10 @@ body.ended>*:not(#aEnded){display:none}
 .glink .gu{display:block;width:100%;margin:10px 0 0;padding:9px 11px;font-family:var(--salt-font-mono);
   font-size:var(--salt-text-xs);color:var(--salt-brass);background:var(--salt-well);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);word-break:break-all}
-.glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
-  font-family:var(--salt-font-mono);letter-spacing:.04em}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
 /* 14 OCT 2026 (the layout rework): a guest link is one row (summary), the address, QR and moves under it once opened; accounts are rows with one state; an associate's
    code has room beside its marks and its figures stand in a ledger; a customer's loans stand on their card as rows of figures */
 .rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
-.rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
 .rlinks .msg:empty{display:none}
 .rlinks .rlnext{margin:16px 0 10px}
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
@@ -616,8 +590,9 @@ const sheetTitle = (tid, k) => wt("h2", 'class="amb-sheet__title" id="' + tid + 
 /* S3 3.5: A REMEMBERED PHONE DRAWS THIS, NOT THE DOOR, while it opens; and when a session lapses with nothing
    remembered, a Sheet says so over whatever they were doing, and the door's own form moves into it. */
 function signedOutSheet() {
-  return '<div id="opening" class="gate" hidden><span class="appmark">' + glyphSvg("ring", 40) + "</span>"
-    + wt("p", 'class="lead" role="status"', "open.lead") + "</div>"
+  /* 16 Nov 2026 (place E): the remembered phone's opening is one shell of the system, the app name a glass chip over its one line */
+  return '<div id="opening" class="amb-shell" data-mood="lagoon" hidden><main class="amb-screen"><header class="amb-hero amb-hero--compact amb-mesh">'
+    + wt("span", 'class="amb-chip amb-chip--glass"', "door.app") + wt("h1", 'class="amb-hero__title" role="status"', "open.lead") + "</header></main></div>"
     + ambSheet("outSheet", "outT", "outX", sheetTitle("outT", "out.h"), '<div class="amb-sheet__body">' + wt("p", "", "out.p") + '<div id="outForm"></div></div>');
 }
 
@@ -783,44 +758,45 @@ function devSheet() {
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
    eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
 function codeScreen() {
-  return '<div id="codeBox" class="gate" hidden>'
-    + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
-    + wt("h1", 'id="codeH"', "code.h")
-    + wt("p", 'class="lead" id="codeLead"', "code.lead")
-    + wt("button", 'class="btn salt-pill salt-pill--md" id="codePaste" type="button"', "code.paste", 20)
-    + '<div class="salt-code">' + wt("label", 'class="salt-code__label" for="codeIn"', "code.or")
-    + '<input class="fld salt-field__input salt-field__input--code" id="codeIn" type="text" placeholder="XXXX XXXX" '
+  /* 16 Nov 2026, the move to Ambient (place E): ONE STEP TO FINISH is one shell, as the door is: its hero over a column holding the one solid Paste, the
+     system's one-time code field (one field for the eight symbols; the device can fill it, a code pasted with its spaces lands whole), the other way in
+     and the help. In the signed-out Sheet the shell gives up its hero and its height (site.css) and is the form's own box. */
+  return '<div id="codeBox" class="amb-shell" data-mood="lagoon" hidden><main class="amb-screen">'
+    + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="codeH"', "code.h")
+    + wt("p", 'class="amb-hero__sub" id="codeLead"', "code.lead") + "</header>"
+    + '<div class="amb-stack gcol">'
+    + wt("button", 'class="amb-pill amb-pill--block" id="codePaste" type="button"', "code.paste", 20)
+    + '<label class="amb-field" for="codeIn">' + wt("span", 'class="amb-field__label"', "code.or")
+    + '<input class="amb-input amb-input--code" id="codeIn" type="text" placeholder="XXXX XXXX" '
     + 'autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-describedby="codeHint">'
-    + wt("span", 'class="salt-code__hint" id="codeHint"', "code.hint") + "</div>"
+    + wt("span", 'class="amb-field__hint" id="codeHint"', "code.hint") + "</label>"
     + '<p class="msg" id="codeMsg" role="status" aria-live="polite"></p>'
-    + wt("button", 'class="btn salt-ghost" id="codeDoor" type="button"', "code.door")
-    + wt("p", 'class="salt-insight" id="codeHelp"', "code.help")
-    + "</div>";
+    + wt("button", 'class="amb-pill amb-pill--quiet amb-pill--block" id="codeDoor" type="button"', "code.door")
+    + wt("p", 'class="amb-basis" id="codeHelp"', "code.help")
+    + "</div></main></div>";
 }
 
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
    and what is inside, and an app's own browser is sent to Safari or Chrome first. */
 function linkScreen() {
-  const row = (g, k) => '<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">'
-    + glyphSvg(g, 20) + wt("span", "", k) + "</span></div></div>";
-  return '<div id="link" class="gate" hidden>'
-    + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
-    + wt("h1", "", "link.h")
-    + wt("p", 'class="lead" id="linkLead"', "link.lead")
-    + '<div class="salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm">'
-    + wt("p", 'class="salt-eyebrow salt-eyebrow--copper"', "link.inside")
-    + '<div class="salt-ledger salt-ledger--plain">'
-    + row("home", "link.r1") + row("prices", "link.r2") + row("orders", "link.r3")
-    + "</div></div>"
+  /* 16 Nov 2026, the move to Ambient (place E): the link page is one shell, its hero the app's name over the line that says which {dev} it opens, then
+     what is inside as the system's settings rows, an app's own browser told where to go in a notice, one quiet Copy and one solid Continue */
+  const row = (g, k) => '<li><div class="amb-setting"><span class="amb-setting__name">' + AMB.glyph(g) + wt("span", "", k) + "</span></div></li>";
+  return '<div id="link" class="amb-shell" data-mood="lagoon" hidden><main class="amb-screen">'
+    + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title"', "link.h")
+    + wt("p", 'class="amb-hero__sub" id="linkLead"', "link.lead") + "</header>"
+    + '<div class="amb-stack gcol">'
+    + '<div class="amb-settings"><h2 class="amb-settings__head">' + wd("link.inside") + '</h2><ul class="amb-settings__list">'
+    + row("home", "link.r1") + row("tag", "link.r2") + row("doc", "link.r3") + "</ul></div>"
     /* an app's own browser keeps nothing once it closes: the phone's own menu mark, and where to go */
-    + '<p class="salt-insight" id="linkInapp" hidden>'
+    + '<div class="amb-notice amb-notice--warn" id="linkInapp" hidden>' + AMB.glyph("info") + "<span>"
     + wt("span", 'id="inappIos"', "link.inappIos", 20)
-    + wt("span", 'id="inappDroid" hidden', "link.inappDroid", 20) + "</p>"
-    + wt("button", 'class="btn salt-ghost" id="linkCopy" type="button" hidden', "link.copy")
-    + wt("button", 'class="btn salt-pill salt-pill--md" id="linkGo" type="button"', "link.go")
+    + wt("span", 'id="inappDroid" hidden', "link.inappDroid", 20) + "</span></div>"
+    + wt("button", 'class="amb-pill amb-pill--quiet amb-pill--block" id="linkCopy" type="button" hidden', "link.copy")
+    + wt("button", 'class="amb-pill amb-pill--block" id="linkGo" type="button"', "link.go")
     + '<p class="msg" id="linkMsg" role="status" aria-live="polite"></p>'
-    + wt("p", 'class="sub2 center" id="linkOnce"', "link.once")
-    + "</div>";
+    + wt("p", 'class="amb-field__hint gonce" id="linkOnce"', "link.once")
+    + "</div></main></div>";
 }
 
 export function boardPage(guest, nonce) {
@@ -828,33 +804,32 @@ export function boardPage(guest, nonce) {
   const products = Array.isArray(b.products) ? b.products : [];
   const week = (b.week && b.week.label) || "";
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
-  const body = products.length
-    ? products.map((p) => '<div class="pane salt-glass-card salt-glass-card--radius-md">'
-        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + coinSvg(p.product, "md") + "</h2>"
-        + '<div class="tblw"><table><thead><tr><th class="l">' + wd("board.size") + "</th><th>" + wd("board.price") + "</th></tr></thead><tbody>"
-        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(unitsOf(r.q, p.unit))
-            + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
-        + "</tbody></table></div></div>").join("")
-    : '<p class="lead">' + wd("board.none") + "</p>";
+  /* 16 Nov 2026, the move to Ambient (place E): the board is one shell of the system and runs no script. Its hero is the heading over the week and
+     what the prices cover (a notice); each book is a list of settings rows (the size, the price), its head the book's mark as the system's thumb with the
+     shape named for a reader and no product word; the one next step is a notice. */
+  const sub = products.length ? (week ? fillHtml(EN["board.week"], { w: esc(week) }, "en") : "") : wd("board.none");
+  const note = (t) => '<div class="amb-notice">' + AMB.glyph("info") + "<span>" + t + "</span></div>";
+  const body = products.map((p) => '<div class="amb-settings"><h2 class="amb-settings__head gmark" aria-label="'
+    + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + markThumbHtml(p.product) + '</h2><ul class="amb-settings__list">'
+    + p.sizes.map((r) => '<li><div class="amb-setting"><span class="amb-setting__name">' + esc(unitsOf(r.q, p.unit))
+      + '</span><span class="amb-setting__value">' + esc(rm(r.price)) + "</span></div></li>").join("")
+    + "</ul></div>").join("");
   /* C21 (29 Sep 2026): a guest page opens on its h1, and each board's mark is an h2 under it */
-  return guestPage('<h1 class="gh">' + wd("board.h") + "</h1>"
-    + (products.length ? '<p class="lead">' + (week ? fillHtml(EN["board.week"], { w: esc(week) }, "en") + " " : "")
-      + wd("board.goods") + " " + wd("deliv") + " "
-      + wd("board.ask") + "</p>" : "")
-    + body
+  return guestPage("lagoon", '<h1 class="amb-hero__title">' + wd("board.h") + "</h1>" + (sub ? '<p class="amb-hero__sub">' + sub + "</p>" : ""),
+    '<div class="amb-stack">' + (products.length ? note(wd("board.goods") + " " + wd("deliv") + " " + wd("board.ask")) + '<div class="gboard">' + body + "</div>" : "")
     /* S8 8.2: A STRANGER IS TOLD WHAT TO DO NEXT, in words and with no brand. The board is all they
        have, and it named no way to order. */
-    + '<p class="lead">' + wd("board.next") + "</p>", nonce, esc(EN["board.h"]));
+    + note(wd("board.next")) + "</div>", nonce, esc(EN["board.h"]));
 }
 /* S8 8.2: EVERY SHUT LINK ANSWERS THIS, WORD FOR WORD. Unknown, malformed, withdrawn, declined and
    waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
    it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
 export function shutPage(nonce) { return onePage("shut", nonce); }
-/* 12 Oct 2026 (Phase 7d part 4, his yes of 11 Oct): A PAGE THAT SAYS ONE THING stands on the frame the door has, the app's ring over a heading and a line:
-   the shut link and the site's own 404. Neither says anything but its key's words (nf.* for the 404), so a path or a query never reaches it. */
+/* 12 Oct 2026 (Phase 7d part 4, his yes of 11 Oct): A PAGE THAT SAYS ONE THING is the shut link and the site's own 404. Neither says anything but its key's words
+   (nf.* for the 404), so a path or a query never reaches it. 16 Nov 2026, the move to Ambient (place E): one shell of the system in Slate, as the maintenance
+   page is, its hero the heading and the line (the ring over them went with the door's, and a page that is not the app's names nothing). */
 function onePage(k, nonce) {
-  return guestPage('<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + '<h1 class="gh">' + wd(k + ".h") + "</h1>"
-    + '<p class="lead">' + wd(k + ".p") + "</p>", nonce, esc(EN[k + ".title"]));
+  return guestPage("slate", '<h1 class="amb-hero__title">' + wd(k + ".h") + '</h1><p class="amb-hero__sub">' + wd(k + ".p") + "</p>", "", nonce, esc(EN[k + ".title"]));
 }
 export function notFoundPage(nonce) { return onePage("nf", nonce); }
 /* PLAN VERSION 5 (his answers E, E1, E2 of 02 Nov 2026): THE JOIN PAGE, for one person an associate invited. A name or nickname and where they
@@ -890,15 +865,16 @@ const JOIN_JS = "(function(){var F=document.getElementById('jf'),N=document.getE
 export function joinPage(nonce, id) {
   const W = {}; for (const k of ["wait", "ready", "bad", "both", "used"]) W[k] = EN["join." + k];
   W.inappIos = EN["join.inappIos"]; W.inappDroid = EN["join.inappDroid"];   /* the sign-in link's test (INAPP), the join page's own words */
-  const field = (key, nm, hint) => '<label class="salt-field"><span class="salt-field__label">' + wd(key) + '</span><input class="salt-field__input" id="' + nm
-    + '" required maxlength="60" autocomplete="off"><span class="salt-field__hint">' + wd(hint) + "</span></label>";
-  const inner = '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + '<h1 class="gh">' + wd("join.h") + "</h1>" + '<p class="lead">' + wd("join.p") + "</p>"
-    + '<form id="jf" data-id="' + esc(id) + '">' + field("join.name", "jn", "join.nameHint") + field("join.place", "jp", "join.placeHint")
-    + '<button class="salt-pill salt-pill--md" id="js" type="submit">' + wd("join.send") + "</button></form>"
-    + '<p class="lead" id="jm" role="status"></p>'
+  /* 16 Nov 2026, the move to Ambient (place E): the join page is one shell: its hero the heading and the line, the form's two fields as the system's Field
+     (a label, the hint under it), one solid Send, and what the script says (a refusal, Sent, the wait) a notice that is drawn only while it holds words */
+  const field = (key, nm, hint) => '<label class="amb-field" for="' + nm + '"><span class="amb-field__label">' + wd(key) + '</span><input class="amb-input" id="' + nm
+    + '" required maxlength="60" autocomplete="off" aria-describedby="' + nm + 'h"><span class="amb-field__hint" id="' + nm + 'h">' + wd(hint) + "</span></label>";
+  const inner = '<div class="amb-stack gcol"><form id="jf" class="amb-form" data-id="' + esc(id) + '">' + field("join.name", "jn", "join.nameHint") + field("join.place", "jp", "join.placeHint")
+    + '<button class="amb-pill amb-pill--block" id="js" type="submit">' + wd("join.send") + "</button></form>"
+    + '<div class="amb-notice gsay">' + AMB.glyph("info") + '<span id="jm" role="status"></span></div></div>'
     + '<script type="application/json" id="jw">' + JSON.stringify(W).replace(/</g, "\\u003c") + "</script>"
     + '<script nonce="' + nonce + '">' + JOIN_JS + "</script>";
-  return guestPage(inner, nonce, esc(EN["join.title"]));
+  return guestPage("lagoon", '<h1 class="amb-hero__title">' + wd("join.h") + '</h1><p class="amb-hero__sub">' + wd("join.p") + "</p>", inner, nonce, esc(EN["join.title"]));
 }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
@@ -977,14 +953,16 @@ export const AMB_STYLE = noNotes(AMB_TOKENS + AMB_CSS);
 export const SITE_STYLE = AMB_STYLE + noNotes(SITE_CSS);
 export const BODY_OPEN = '<body class="amb">' + AMB_ICONS;
 export const ambScript = (nonce) => '<script nonce="' + nonce + '">' + AMB_JS + "</script>";
-function guestPage(inner, nonce, title) {
+function guestPage(mood, hero, inner, nonce, title) {
+  /* 16 Nov 2026, the move to Ambient (place E): every page a guest or a stranger sees is one shell of the system, its hero first; none carries the
+     older page layer or the coins' (the page's own rules stand with the pages that draw them) and none runs the system's script */
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>" + title + "</title>"
-    + '<style nonce="' + nonce + '">' + SITE_STYLE + PAGE_CSS + COIN_CSS + "</style></head>" + BODY_OPEN
-    + '<div class="panel">' + inner + "</div></body></html>";
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + "</style></head>" + BODY_OPEN
+    + '<div class="amb-shell" data-mood="' + mood + '"><main class="amb-screen"><header class="amb-hero amb-hero--compact amb-mesh">' + hero + "</header>" + inner + "</main></div></body></html>";
 }
 
 /** The landing page. `user` is the normalised username to prefill, or "". `nonce` ties the
@@ -6128,6 +6106,18 @@ const CLIENT_JS = `
      order's own included (v694): the tile stays, dashed, with the reason in place of its line. Choosing it tells him how
      they will pay; the cash itself is his to record when he takes it, so the customer never declares it. V3: never on an
      order paid in advance, whose reason is said first, since paying at the door is not paying in advance. */
+  /* 16 Nov 2026, the move to Ambient (0.7.6): every way leads with its glyph again, Ambient's option glyph, drawn in the ink. A code and a
+     transfer are Ambient's own (qr, bank); JomPAY's receipt and cash's note are the page's own marks as filled shapes, their lines cut out
+     (evenodd), so they hold no fill, stroke or colour of their own. Every way carries one, or the choice would break Ambient's rule. */
+  var WAY_MARK={jompay:'M6.2 3.8H17.8V20.2L15.9 18.9L14 20.2L12 18.9L10 20.2L8.1 18.9L6.2 20.2ZM9 7.6V8.8H15V7.6ZM9 10.8V12H15V10.8ZM9 14V15.2H12.6V14Z',
+    cash:'M3.6 7H20.4V17H3.6ZM12 9.4A2.6 2.6 0 1 0 12 14.6A2.6 2.6 0 1 0 12 9.4ZM6 11.4V12.6H7.6V11.4ZM16.4 11.4V12.6H18V11.4Z'};
+  function wayGlyph(g){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
+    s.setAttribute('aria-hidden','true');
+    if(WAY_MARK[g]){ s.setAttribute('class','amb-option__glyph'); s.setAttribute('viewBox','0 0 24 24'); var p=document.createElementNS(NS,'path'); p.setAttribute('d',WAY_MARK[g]); p.setAttribute('fill-rule','evenodd'); s.appendChild(p); }
+    else { s.setAttribute('class','amb-icon amb-option__glyph'); var u=document.createElementNS(NS,'use'); u.setAttribute('href','#amb-'+(g==='qr'?'qr':'bank')); s.appendChild(u); }
+    return s;
+  }
   function cashWay(){
     var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', pre=!!(o&&o.prepay), no=pre||heldUnpaid();
     return {v:'cod', label:d?'pay.cashArrives':'pay.cashCollect', g:'cash', off:no,
@@ -6210,7 +6200,7 @@ const CLIENT_JS = `
       var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), mk=el('span','amb-option__mark'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
       r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off; mk.setAttribute('aria-hidden','true');
       r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
-      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',tw(w.label)));
+      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(wayGlyph(w.g)); lab.appendChild(el('span','amb-option__title',tw(w.label)));
       lab.appendChild(el('span','amb-option__sub',w.detail?tw(w.detail):a?tw('pay.fromApp',{a:a.name}):tw('pay.fromAppAny')));
       fs.appendChild(lab);
     });

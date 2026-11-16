@@ -325,7 +325,8 @@ export async function run({ ok }) {
     ok(css8.includes(".mtile{") && !/\.pshape|\.mq \.nb|max-width:11ch/.test(css8), "and the page carries no rule for a shape word, nor for the caption's comma break");
     const board = new JSDOM(P.boardPage({ prices: { week: { label: "5 to 11 Oct 2026" }, products: [
       { product: "salt", unit: "unit", sizes: [{ q: 1, price: 130 }] }, { product: "oil", unit: "unit", sizes: [{ q: 1, price: 44 }] }, { product: "tin", unit: "unit", sizes: [{ q: 1, price: 9 }] }] } }, "n7c3")).window.document;
-    const bh = [...board.querySelectorAll("h2.pmark")].map((h) => [h.getAttribute("aria-label"), drawnText(h).trim(), !!h.querySelector(".salt-coin")]);
+    /* 16 Nov 2026, the move to Ambient (place E): a head is the system's mark thumb, hidden from a reader (its letter is his, never a word), the head named by its shape */
+    const bh = [...board.querySelectorAll("h2.amb-settings__head")].map((h) => [h.getAttribute("aria-label"), drawnText(h).trim(), !!h.querySelector(".amb-thumb--mark")]);
     ok(JSON.stringify(bh) === JSON.stringify([["Cube", "", true], ["Droplet", "", true], ["Ring", "", true]]) && shapesDrawn(board.body).length === 0,
       "a guest's board is each mark alone, named by its shape for the reader, the Ring for a book with none: " + JSON.stringify(bh));
 
