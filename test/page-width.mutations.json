@@ -25,15 +25,15 @@
  },
  {
   "name": "W3 Salt Admin's shell is held to 1376px",
-  "file": "stmt/page.js",
-  "find": "#roster .salt-orb[data-back]{margin:0 0 16px}",
-  "replace": "#roster .salt-orb[data-back]{margin:0 0 16px}\n@media (min-width:1080px){#roster{max-width:1376px;margin-inline:auto}}"
+  "file": "stmt/statement-css.js",
+  "find": ".ahelp { grid-column: 2; }",
+  "replace": ".ahelp { grid-column: 2; } @media (min-width:1080px){#roster{max-width:1376px;margin-inline:auto}}"
  },
  {
   "name": "W3 Salt Admin's screen is narrowed from 1440",
-  "file": "stmt/page.js",
-  "find": "@media (min-width:1440px){.adm .nsplit{",
-  "replace": "@media (min-width:1440px){#roster > .amb-screen{max-width:1376px}}\n@media (min-width:1440px){.adm .nsplit{"
+  "file": "stmt/statement-css.js",
+  "find": ".ahelp { grid-column: 2; }",
+  "replace": ".ahelp { grid-column: 2; } @media (min-width:1440px){#roster > .amb-screen{max-width:1376px}}"
  },
  {
   "name": "W4 the Counter's shell is held to 1240px",

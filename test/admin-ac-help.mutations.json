@@ -8,8 +8,8 @@
  {
   "name": "the answers left out",
   "file": "stmt/page.js",
-  "find": "      + wt(\"p\", 'class=\"amb-disclose__text ahelp__a\"', \"help.\" + k + \"A\") + \"</details></li>\"",
-  "replace": "      + \"</details></li>\""
+  "find": "+ wt(\"p\", 'class=\"amb-disclose__text ahelp__a\"', \"help.\" + k + \"A\") + \"</details></li>\";",
+  "replace": "+ \"</details></li>\";"
  },
  {
   "name": "a question missing",
@@ -20,8 +20,8 @@
  {
   "name": "the folds open",
   "file": "stmt/page.js",
-  "find": "<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\">",
-  "replace": "<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\" open>"
+  "find": "<li><details class=\"amb-disclose ahelp__q\" name=\"' + g + '\">",
+  "replace": "<li><details class=\"amb-disclose ahelp__q\" name=\"' + g + '\" open>"
  },
  {
   "name": "an Edit button",
@@ -44,20 +44,20 @@
  {
   "name": "1b a question is a plain details",
   "file": "stmt/page.js",
-  "find": "'<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\">",
-  "replace": "'<li><details class=\"ahelp__q\" name=\"shop-help\">"
+  "find": "<li><details class=\"amb-disclose ahelp__q\" name=\"' + g + '\">",
+  "replace": "<li><details class=\"ahelp__q\" name=\"' + g + '\">"
  },
  {
   "name": "1b each question opens on its own",
   "file": "stmt/page.js",
-  "find": "'<li><details class=\"amb-disclose ahelp__q\" name=\"shop-help\">",
-  "replace": "'<li><details class=\"amb-disclose ahelp__q\">"
+  "find": "<li><details class=\"amb-disclose ahelp__q\" name=\"' + g + '\">",
+  "replace": "<li><details class=\"amb-disclose ahelp__q\">"
  },
  {
   "name": "1b the summary is no settings row",
   "file": "stmt/page.js",
-  "find": "<summary class=\"amb-setting ahelp__sum\" data-act=",
-  "replace": "<summary class=\"ahelp__sum\" data-act="
+  "find": "<summary class=\"amb-setting ahelp__sum\"'",
+  "replace": "<summary class=\"ahelp__sum\"'"
  },
  {
   "name": "1b the chevron is the old next glyph",
@@ -73,8 +73,8 @@
  },
  {
   "name": "1b the page draws its own disclosure",
-  "file": "stmt/page.js",
-  "find": ".ahelp{margin:0}\n",
-  "replace": ".ahelp{margin:0}\n.ahelp-list .ahelp__sum{min-height:56px}\n"
+  "file": "stmt/statement-css.js",
+  "find": ".ahelp { grid-column: 2; }",
+  "replace": ".ahelp { grid-column: 2; } .ahelp-list .ahelp__sum{min-height:56px}"
  }
 ]

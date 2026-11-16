@@ -1,110 +1,110 @@
 [
-  {
-    "name": "1 the username in the reading name",
-    "file": "stmt/owner.js",
-    "find": "+(a.test?'':', '+a.username)+",
-    "replace": "+"
-  },
-  {
-    "name": "2 not opened is Pending",
-    "file": "stmt/owner.js",
-    "find": "return {sev:'soon', word:'Not opened'",
-    "replace": "return {sev:'now', word:'Not opened'"
-  },
-  {
-    "name": "2 the largest sum first",
-    "file": "stmt/owner.js",
-    "find": ".sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); })",
-    "replace": ".sort(function(x, y){ return (x[1]-y[1]); })"
-  },
-  {
-    "name": "3 a refund in ember",
-    "file": "stmt/owner.js",
-    "find": "sub.appendChild(el('span',s.mine?'amb-neg':null,rmShort(s.rm)));",
-    "replace": "sub.appendChild(el('span',null,rmShort(s.rm)));"
-  },
-  {
-    "name": "4 Message for money owed",
-    "file": "stmt/owner.js",
-    "find": "if(s.act==='message'&&a.username){",
-    "replace": "if(s.act==='messagex'&&a.username){"
-  },
-  {
-    "name": "4 Show for no account",
-    "file": "stmt/owner.js",
-    "find": "    else if(s.act==='show') acctShow(a, c);\n",
-    "replace": ""
-  },
-  {
-    "name": "the way is the filled pill, never the small quiet one",
-    "file": "stmt/owner.js",
-    "find": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm';",
-    "replace": "c._add(linkButton(a, noteOf(c)));"
-  },
-  {
-    "name": "5 the row's way opens the account too",
-    "file": "stmt/owner.js",
-    "find": "if(!mv){ mv=b; if(!mv.getAttribute('data-key'))",
-    "replace": "if(!mv){ mv=b; b.addEventListener('click', function(){ openCard(a.username); }); if(!mv.getAttribute('data-key'))"
-  },
-  {
-    "name": "5 the row's text opens",
-    "file": "stmt/owner.js",
-    "find": "    open.addEventListener('click', function(){ openCard(a.username); });\n",
-    "replace": ""
-  },
-  {
-    "name": "6 No account",
-    "file": "stmt/page.js",
-    "find": "[\"none\", \"No account\"]];",
-    "replace": "[\"none\", \"No account yet\"]];"
-  },
-  {
-    "name": "6 a count beside each",
-    "file": "stmt/owner.js",
-    "find": "if(c) c.textContent=sheet?String(n):'';",
-    "replace": "if(c) c.textContent='';"
-  },
-  {
-    "name": "6 an empty filter dimmed",
-    "file": "stmt/owner.js",
-    "find": "if(k!=='all'&&!n) x.setAttribute('aria-disabled','true'); else x.removeAttribute('aria-disabled'); });",
-    "replace": "x.removeAttribute('aria-disabled'); });"
-  },
-  {
-    "name": "a filter chosen is ignored",
-    "file": "stmt/owner.js",
-    "find": "    aFilter=FILTER[f]?f:'all';\n    filterMark();",
-    "replace": "    aFilter='all';\n    filterMark();"
-  },
-  {
-    "name": "7 past its term",
-    "file": "stmt/owner.js",
-    "find": "if(s.late) lateRM+=+t.owed||0;",
-    "replace": ""
-  },
-  {
-    "name": "7 the lead is two sentences again",
-    "file": "stmt/owner.js",
-    "find": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });",
-    "replace": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('. ')); box.appendChild(n); });"
-  },
-  {
-    "name": "7 the lead shows",
-    "file": "stmt/owner.js",
-    "find": "    wrap.hidden=!sheet;",
-    "replace": "    wrap.hidden=true;"
-  },
-  {
-    "name": "the parts are not Ambient segment",
-    "file": "stmt/page.js",
-    "find": "p === \"shop\" || p === \"record\" || p === \"customers\"",
-    "replace": "p === \"shop\" || p === \"record\""
-  },
-  {
-    "name": "a row text carries no act",
-    "file": "stmt/owner.js",
-    "find": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button';",
-    "replace": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button'; open.removeAttribute('data-act');"
-  }
+ {
+  "name": "1 the username in the reading name",
+  "file": "stmt/owner.js",
+  "find": "+(a.test?'':', '+a.username)+",
+  "replace": "+"
+ },
+ {
+  "name": "2 not opened is Pending",
+  "file": "stmt/owner.js",
+  "find": "return {sev:'soon', word:'Not opened'",
+  "replace": "return {sev:'now', word:'Not opened'"
+ },
+ {
+  "name": "2 the largest sum first",
+  "file": "stmt/owner.js",
+  "find": ".sort(function(x, y){ return (rm(y[0])-rm(x[0]))||(x[1]-y[1]); })",
+  "replace": ".sort(function(x, y){ return (x[1]-y[1]); })"
+ },
+ {
+  "name": "3 a refund in ember",
+  "file": "stmt/owner.js",
+  "find": "sub.appendChild(el('span',s.mine?'amb-neg':null,rmShort(s.rm)));",
+  "replace": "sub.appendChild(el('span',null,rmShort(s.rm)));"
+ },
+ {
+  "name": "4 Message for money owed",
+  "file": "stmt/owner.js",
+  "find": "if(s.act==='message'&&a.username){",
+  "replace": "if(s.act==='messagex'&&a.username){"
+ },
+ {
+  "name": "4 Show for no account",
+  "file": "stmt/owner.js",
+  "find": "    else if(s.act==='show') acctShow(a, c);\n",
+  "replace": ""
+ },
+ {
+  "name": "the way is the filled pill, never the small quiet one",
+  "file": "stmt/owner.js",
+  "find": "c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm amb-pill--quiet';",
+  "replace": "c._add(linkButton(a, noteOf(c))); mv.className='salt-pill';"
+ },
+ {
+  "name": "5 the row's way opens the account too",
+  "file": "stmt/owner.js",
+  "find": "if(!mv){ mv=b; if(!mv.getAttribute('data-key'))",
+  "replace": "if(!mv){ mv=b; b.addEventListener('click', function(){ openCard(a.username); }); if(!mv.getAttribute('data-key'))"
+ },
+ {
+  "name": "5 the row's text opens",
+  "file": "stmt/owner.js",
+  "find": "    open.addEventListener('click', function(){ openCard(a.username); });\n",
+  "replace": ""
+ },
+ {
+  "name": "6 No account",
+  "file": "stmt/page.js",
+  "find": "[\"none\", \"No account\"]];",
+  "replace": "[\"none\", \"No account yet\"]];"
+ },
+ {
+  "name": "6 a count beside each",
+  "file": "stmt/owner.js",
+  "find": "if(c) c.textContent=sheet?String(n):'';",
+  "replace": "if(c) c.textContent='';"
+ },
+ {
+  "name": "6 an empty filter dimmed",
+  "file": "stmt/owner.js",
+  "find": "if(k!=='all'&&!n) x.setAttribute('aria-disabled','true'); else x.removeAttribute('aria-disabled'); });",
+  "replace": "x.removeAttribute('aria-disabled'); });"
+ },
+ {
+  "name": "a filter chosen is ignored",
+  "file": "stmt/owner.js",
+  "find": "    aFilter=FILTER[f]?f:'all';\n    filterMark();",
+  "replace": "    aFilter='all';\n    filterMark();"
+ },
+ {
+  "name": "7 past its term",
+  "file": "stmt/owner.js",
+  "find": "if(s.late) lateRM+=+t.owed||0;",
+  "replace": ""
+ },
+ {
+  "name": "7 the lead is two sentences again",
+  "file": "stmt/owner.js",
+  "find": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('; ')); box.appendChild(n); });",
+  "replace": "bits.forEach(function(n, i){ if(i) box.appendChild(document.createTextNode('. ')); box.appendChild(n); });"
+ },
+ {
+  "name": "7 the lead shows",
+  "file": "stmt/owner.js",
+  "find": "    wrap.hidden=!sheet;",
+  "replace": "    wrap.hidden=true;"
+ },
+ {
+  "name": "the parts are not Ambient segment",
+  "file": "stmt/page.js",
+  "find": "p === \"shop\" || p === \"record\" || p === \"customers\"",
+  "replace": "p === \"shop\" || p === \"record\""
+ },
+ {
+  "name": "a row text carries no act",
+  "file": "stmt/owner.js",
+  "find": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button';",
+  "replace": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button'; open.removeAttribute('data-act');"
+ }
 ]

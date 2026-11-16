@@ -1,16 +1,86 @@
 [
- {"name":"Record's parts are a wrapping row of pills again","file":"stmt/page.js","find":"(p === \"shop\" ? \" amb-segment--wrap\" : \"\")","replace":"\" amb-segment--wrap\""},
- {"name":"the tab tapped is not marked","file":"stmt/owner.js","find":"b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected');","replace":"b.setAttribute('aria-pressed', 'false'); b.removeAttribute('aria-selected');"},
- {"name":"no count of what waits unsent beside a part","file":"stmt/owner.js","find":"c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):'';","replace":"c.textContent='';"},
- {"name":"a row's name is the form's long heading","file":"stmt/owner.js","find":"var row=sOpen(MENU_NAME[slug]||name,'','record.form',slug)","replace":"var row=sOpen(name,'','record.form',slug)"},
- {"name":"the form's line is not moved into the form","file":"stmt/owner.js","find":"if(FORM_WHAT[slug]&&!(said&&said.matches('p.msg'))) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);","replace":""},
- {"name":"the form's line is doubled where the form had it","file":"stmt/owner.js","find":"if(FORM_WHAT[slug]&&!(said&&said.matches('p.msg')))","replace":"if(FORM_WHAT[slug])"},
- {"name":"a row is no longer a settings row","file":"stmt/owner.js","find":"row.classList.add('formrow'); row.querySelector","replace":"row.classList.remove('amb-setting'); row.classList.add('formrow'); row.querySelector"},
- {"name":"Entry's rows stand outside a list","file":"stmt/owner.js","find":"have.forEach(function(s){ seen[s]=1; group.list.appendChild(entryRows[s]); });","replace":"have.forEach(function(s){ seen[s]=1; group.appendChild(entryRows[s]); });"},
- {"name":"a head is an h2 again","file":"stmt/owner.js","find":"el('h3','amb-settings__head',head)","replace":"el('h2','amb-settings__head',head)"},
- {"name":"the loans to repay are not counted","file":"stmt/owner.js","find":"    menuCount('repayment',(catalog.loans||[]).length);\n","replace":""},
- {"name":"a reward with nothing to give is counted","file":"stmt/owner.js","find":"menuCount('rewards',(catalog.rewards||[]).filter(function(offer){ return offer.action; }).length);","replace":"menuCount('rewards',(catalog.rewards||[]).length);"},
- {"name":"the offsets' count never lands","file":"stmt/owner.js","find":"        menuOffers=read.offers.length; menuCount('offsets',menuOffers);\n","replace":""},
- {"name":"the row has no way in","file":"stmt/owner.js","find":"b.appendChild(amb.node(amb.glyph('next','sm')));","replace":""},
- {"name":"the page styles a row again","file":"stmt/statement-css.js","find":".mfig:empty { display: none; }","replace":".formrow { min-height: 44px; }"}
+ {
+  "name": "Record's parts are a wrapping row of pills again",
+  "file": "stmt/page.js",
+  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\")",
+  "replace": "\" amb-segment--wrap\""
+ },
+ {
+  "name": "the tab tapped is not marked",
+  "file": "stmt/owner.js",
+  "find": "b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected');",
+  "replace": "b.setAttribute('aria-pressed', 'false'); b.removeAttribute('aria-selected');"
+ },
+ {
+  "name": "no count of what waits unsent beside a part",
+  "file": "stmt/owner.js",
+  "find": "c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):'';",
+  "replace": "c.textContent='';"
+ },
+ {
+  "name": "a row's name is the form's long heading",
+  "file": "stmt/owner.js",
+  "find": "var row=sOpen(MENU_NAME[slug]||name,'','record.form',slug)",
+  "replace": "var row=sOpen(name,'','record.form',slug)"
+ },
+ {
+  "name": "the form's line is not moved into the form",
+  "file": "stmt/owner.js",
+  "find": "if(FORM_WHAT[slug]&&!(said&&said.matches('p.msg'))) head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);",
+  "replace": ""
+ },
+ {
+  "name": "the form's line is doubled where the form had it",
+  "file": "stmt/owner.js",
+  "find": "if(FORM_WHAT[slug]&&!(said&&said.matches('p.msg')))",
+  "replace": "if(FORM_WHAT[slug])"
+ },
+ {
+  "name": "a row is no longer a settings row",
+  "file": "stmt/owner.js",
+  "find": "row.classList.add('formrow'); row.querySelector",
+  "replace": "row.classList.remove('amb-setting'); row.classList.add('formrow'); row.querySelector"
+ },
+ {
+  "name": "Entry's rows stand outside a list",
+  "file": "stmt/owner.js",
+  "find": "have.forEach(function(s){ seen[s]=1; group.list.appendChild(entryRows[s]); });",
+  "replace": "have.forEach(function(s){ seen[s]=1; group.appendChild(entryRows[s]); });"
+ },
+ {
+  "name": "the line saying what a form is for is not under its heading",
+  "file": "stmt/owner.js",
+  "find": "head.parentNode.insertBefore(el('p','msg formwhat',FORM_WHAT[slug]),head.nextSibling);",
+  "replace": "head.parentNode.appendChild(el('p','msg formwhat',FORM_WHAT[slug]));"
+ },
+ {
+  "name": "the loans to repay are not counted",
+  "file": "stmt/owner.js",
+  "find": "    menuCount('repayment',(catalog.loans||[]).length);\n",
+  "replace": ""
+ },
+ {
+  "name": "a reward with nothing to give is counted",
+  "file": "stmt/owner.js",
+  "find": "menuCount('rewards',(catalog.rewards||[]).filter(function(offer){ return offer.action; }).length);",
+  "replace": "menuCount('rewards',(catalog.rewards||[]).length);"
+ },
+ {
+  "name": "the offsets' count never lands",
+  "file": "stmt/owner.js",
+  "find": "        menuOffers=read.offers.length; menuCount('offsets',menuOffers);\n",
+  "replace": ""
+ },
+ {
+  "name": "the row has no way in",
+  "file": "stmt/owner.js",
+  "find": "b.appendChild(amb.node(amb.glyph('next','sm')));",
+  "replace": ""
+ },
+ {
+  "name": "the page styles a row again",
+  "file": "stmt/statement-css.js",
+  "find": ".mfig:empty { display: none; }",
+  "replace": ".formrow { min-height: 44px; }"
+ }
 ]

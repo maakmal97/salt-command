@@ -116,8 +116,8 @@
  {
   "name": "a refund's line explains itself again",
   "file": "stmt/owner.js",
-  "find": "(waits?'. Waiting under Approve.':'. Paid marks it returned.')",
-  "replace": "(waits?'. Waiting under Approve.':'. Paid marks it returned; Remove as stale takes it off the book, and the money received rises by it.')"
+  "find": "waits?'Waiting under Approve':'Paid marks it returned'",
+  "replace": "waits?'Waiting under Approve':'Paid marks it returned; Remove as stale takes it off the book, and the money received rises by it'"
  },
  {
   "name": "the retained No reply needed button reads five words again",
