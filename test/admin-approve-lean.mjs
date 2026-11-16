@@ -45,7 +45,7 @@ export async function run({ ok, pageWork }) {
     /* L5 */
     const lead = p.d.getElementById("makerDraftStatus"), fold = p.d.getElementById("makerQueue");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(t(lead) === "" && /\.adm #makerDraftStatus:empty\{display:none\}/.test(css), "L5 the lead says no row count beside the head and is not drawn while empty: " + J(t(lead)));
+    ok(t(lead) === "" && /\.adm #makerDraftStatus:empty\s*\{\s*display:\s*none/.test(css), "L5 the lead says no row count beside the head and is not drawn while empty (16 Nov 2026, the move to Ambient (the proofs): the rule is now design/site.css's, spaced, in SITE_CSS): " + J(t(lead)));
     ok(!!fold && fold.hidden === true, "L5 with nothing sent the queue fold is not drawn");
     /* L3, L6 */
     await go(p, byAct(c, "draft.approve"));

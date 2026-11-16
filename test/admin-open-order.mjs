@@ -95,7 +95,8 @@ export async function run({ ok, pageWork }) {
     try {
       const card = await p.order("ord-p1", "todo"), split = p.d.getElementById("oSplit");
       /* 16 Nov 2026, the move to Ambient (place G): the open order is the second pane of the shell's split, the queue first, and it ends in its one foot */
-      ok(!!card && !card.querySelector(".ordcols") && !!split && split.matches(".amb-split.amb-split--panes") && split.children[1].contains(card) && split.children[0].contains(p.d.getElementById("makerOrderList"))
+      /* 16 Nov 2026 (the move to Ambient, the proofs): the record's pane is itself one of the split's stacks */
+      ok(!!card && !card.querySelector(".ordcols") && !!split && split.matches(".amb-split.amb-split--panes") && split.children[1].contains(card) && split.children[1].classList.contains("amb-stack") && split.children[0].contains(p.d.getElementById("makerOrderList"))
         && !!card.querySelector(".oband") && !!card.querySelector(".oagreesec") && !!card.querySelector(".obill") && !!card.querySelector(".omsgs") && !!card.querySelector(".ordend")
         && card.lastElementChild.matches(".amb-foot.ofoot"),
         "V7: at " + w + "px the queue and the record stand in two panes, the record ending in its foot");

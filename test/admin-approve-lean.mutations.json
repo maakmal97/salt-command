@@ -61,8 +61,8 @@
  },
  {
   "name": "an empty lead is drawn",
-  "file": "stmt/page.js",
-  "find": ".adm #makerDraftStatus:empty{display:none}\n",
+  "file": "stmt/statement-css.js",
+  "find": ".adm #makerDraftStatus:empty { display: none; }",
   "replace": ""
  },
  {

@@ -104,8 +104,8 @@
  {
   "name": "the claims show in every part of Orders",
   "file": "stmt/page.js",
-  "find": "<section class=\"amb-stack\" data-in=\"orders.payments\" aria-labelledby=\"makerClaimsTitle\">",
-  "replace": "<section class=\"amb-stack\" data-in=\"orders\" aria-labelledby=\"makerClaimsTitle\">"
+  "find": "<section class=\"amb-place\" data-in=\"orders.payments\" aria-labelledby=\"makerClaimsTitle\">",
+  "replace": "<section class=\"amb-place\" data-in=\"orders\" aria-labelledby=\"makerClaimsTitle\">"
  },
  {
   "name": "the Desk's rows show under Entry",

@@ -499,15 +499,15 @@
  },
  {
   "name": "the page lays out the pane again",
-  "file": "stmt/page.js",
-  "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
-  "replace": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .recpane{overflow-y:auto}\n"
+  "file": "stmt/statement-css.js",
+  "find": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); }",
+  "replace": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); } .adm .recpane { overflow-y: auto; }"
  },
  {
   "name": "the page lays out the grid again",
-  "file": "stmt/page.js",
-  "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
-  "replace": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .recgrid{display:grid}\n"
+  "file": "stmt/statement-css.js",
+  "find": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); }",
+  "replace": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); } .adm .recgrid { display: grid; }"
  },
  {
   "name": "an order stands in two stages",

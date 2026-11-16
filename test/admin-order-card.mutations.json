@@ -108,7 +108,7 @@
   "replace": "[].forEach.call(card.querySelectorAll('.ordlead button,.ordlead input,.ordlead select'),function(n){\n        if(!n.hasAttribute('data-maker-cash-undo')"
  },
  {
-  "name": "the answer line stands outside the foot",
+  "name": "the answer line stands outside the foot (its second road)",
   "file": "stmt/owner.js",
   "find": "if(mfoot) lead.insertBefore(mfoot,lead.firstChild);",
   "replace": ""

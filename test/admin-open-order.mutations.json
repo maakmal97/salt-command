@@ -15,7 +15,7 @@
   "name": "V2 his card is a glass card again",
   "file": "stmt/owner.js",
   "find": "var card=makerCard(root,order.id,'ocard'), acts=",
-  "replace": "var card=makerCard(root,order.id), acts="
+  "replace": "var card=makerCard(root,order.id,'ocard salt-glass-card'), acts="
  },
  {
   "name": "V2 the Bill is a ledger again",
@@ -32,8 +32,8 @@
  {
   "name": "V3 a field in his decision keeps its label above it",
   "file": "stmt/owner.js",
-  "find": "var wrap=el(control&&(control.tagName==='SELECT'||control.tagName==='INPUT')?'label':'div','amb-field mrow');",
-  "replace": "var wrap=el('div','mrow');"
+  "find": "var L=labOf(label), af=el('label','amb-field'), at=el('span','amb-field__label',L[0])",
+  "replace": "var L=labOf(label), af=el('label','mrow'), at=el('span','amb-field__label',L[0])"
  },
  {
   "name": "V3 the stand-in pill stays beside Agree",

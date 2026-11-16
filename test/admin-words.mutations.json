@@ -14,8 +14,8 @@
  {
   "name": "an old section title comes back on the page",
   "file": "stmt/page.js",
-  "find": "<h2 class=\"amb-section\" id=\"makerClaimsTitle\">Payments they say they sent</h2>",
-  "replace": "<h2 class=\"amb-section\" id=\"makerClaimsTitle\">No account claims waiting.</h2>"
+  "find": "<h2 class=\"amb-vh\" id=\"makerClaimsTitle\">Payments they say they sent</h2>",
+  "replace": "<h2 class=\"amb-vh\" id=\"makerClaimsTitle\">No account claims waiting.</h2>"
  },
  {
   "name": "fmtWhen prints a day as ISO",

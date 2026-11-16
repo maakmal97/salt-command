@@ -47,6 +47,8 @@ export async function run({ ok, pageWork }) {
     /* 16 Nov 2026, the move to Ambient: the shared band is plain classes on the site's layer (place C); his chip and his foot are his own until his side is redrawn */
     ok(!!head && head.classList.contains("oband") && t(head.querySelector(".oband__head .amb-chip:not([data-ref])")) === "To hand over"
       && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(t(head.querySelector(".oband__head > [data-ref]"))) && t(head.querySelector(".oband__foot .mq")) === "2 units"
+      /* 16 Nov 2026 (the proofs): the band's foot holds the units and the buyer, never the order's raw status word */
+      && ![...head.querySelector(".oband__foot").querySelectorAll("*")].some((e) => /^(placed|acknowledged|ready|done|declined|cancelled)$/.test(t(e)))
       && t(head.querySelector(".oband__foot .ogoods__who")) === "CX1-ZED" && /^Ready /.test(t(head.querySelector(".oband__when .omoment"))),
       "his order's head is the band: the action as a chip by the short reference, the moment and the way, the buyer and the units: " + t(head));
     ok(t(head.querySelector(".oway")) === "Collect at Z9", "a collection says where: " + t(head && head.querySelector(".oway")));

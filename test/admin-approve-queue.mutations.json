@@ -43,9 +43,9 @@
  },
  {
   "name": "the page restates the task's padding",
-  "file": "stmt/page.js",
-  "find": ".adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}",
-  "replace": ".adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}\n.adm .apcard{padding:16px}"
+  "file": "stmt/statement-css.js",
+  "find": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); }",
+  "replace": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); } .adm .apcard { padding: 16px; }"
  },
  {
   "name": "the queue is open on arrival",
@@ -362,8 +362,8 @@
  {
   "name": "a book on Orders is its mark again",
   "file": "stmt/owner.js",
-  "find": "if(product) p.appendChild(bookChip(product));",
-  "replace": "if(product) p.appendChild(psym(product,20));"
+  "find": "if(d.product) bl.appendChild(nBook(d.product));",
+  "replace": "if(d.product){ var mk=document.createElementNS('http://www.w3.org/2000/svg','svg'); mk.setAttribute('class','psym'); bl.appendChild(mk); }"
  },
  {
   "name": "the Confirm bar stands in the tab bar, not before it",

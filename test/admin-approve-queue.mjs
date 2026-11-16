@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { landingPage, SITE_STYLE } from "../stmt/page.js";
-import { AMB_CSS } from "../stmt/statement-css.js";
+import { AMB_CSS, SITE_CSS } from "../stmt/statement-css.js";
 
 const U = "abcd-efgh";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -27,8 +27,9 @@ const MANY = "/all/maker/drafts/decide-many";
 
 /* the page's own stylesheet as rules, the recipes carried ahead of it cut away */
 function pageRules() {
-  const html = landingPage("", "approve-nonce", { master: "fixture-master", accounts: [] });
-  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice(SITE_STYLE.length);
+  /* 16 Nov 2026, the move to Ambient (the proofs): the page's old stylesheet (PAGE_CSS) is empty, so slicing SITE_STYLE off left nothing and the check below
+     read no rule at all; the site's own rules are design/site.css, carried as SITE_CSS, and those are what must not restate the recipe */
+  const css = SITE_CSS;
   const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
   const out = [];
   const walk = (rules) => { for (const r of rules) { if (r.selectorText) out.push([r.selectorText, r.style]); if (r.cssRules) walk(r.cssRules); } };
@@ -146,6 +147,7 @@ export async function run({ ok, pageWork }) {
       && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
     /* 25 Oct 2026 (canvas Salt Admin Orders): a row's book is its typed Product tag, "1 unit [tag], RM 100.00", its name in its hue and no mark */
+    /* 16 Nov 2026, the move to Ambient (the proofs): the chip is Ambient's (nBook); a svg.psym mark in the line is the mutation "a book on Orders is its mark again" */
     const factsOf = (card) => [...card.querySelectorAll(".apline")].map((f) => { const g = f.cloneNode(true); g.querySelectorAll(".amb-chip").forEach((x) => x.replaceWith("[tag]")); return g.textContent; });
     const tagsOf = (card) => [...card.querySelectorAll(".apline .amb-chip")].map((x) => [!!x.querySelector("svg.psym"), x.textContent.trim()]);
     ok(factsOf(t2).includes("1 unit [tag], RM 100.00") && tagsOf(t2).length === 2 && tagsOf(t2).every(([mark, said]) => !mark && /^(Salt|Oil|Candy|Rice)$/.test(said)) && new Set(tagsOf(t2).map((x) => x[1])).size === 2,

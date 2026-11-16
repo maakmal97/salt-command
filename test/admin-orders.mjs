@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES, SITE_CSS } from "../stmt/statement-css.js";
 
 const U1 = "abcd-efgh";
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
@@ -68,6 +68,25 @@ function ownerCss() {
   const at = (q, sel) => media.filter((m) => m.q === q).flatMap((m) => m.rules).filter((r) => r.startsWith(sel + "{"));
   const top = (sel) => [...sheet.cssRules].filter((r) => r.selectorText === sel).map((r) => r.selectorText + "{" + r.style.cssText + "}");
   return { html, media, at, top };
+}
+
+/* 16 Nov 2026, the move to Ambient (the proofs): the site's own rules (design/site.css, carried as SITE_CSS) as [at-rule head or "", selector, declarations], read with a small brace
+   walk because jsdom applies no container query and drops it. A selector list is split, so each selector stands alone. */
+function siteRules(css = SITE_CSS) {
+  const out = [], text = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const walk = (src, at) => {
+    let i = 0;
+    while (i < src.length) {
+      const o = src.indexOf("{", i); if (o < 0) break;
+      let depth = 1, k = o + 1;
+      while (k < src.length && depth) { if (src[k] === "{") depth++; else if (src[k] === "}") depth--; k++; }
+      const head = src.slice(i, o).trim(), body = src.slice(o + 1, k - 1);
+      if (head.startsWith("@")) walk(body, head.replace(/\s+/g, " ")); else head.split(",").forEach((sel) => out.push([at, sel.trim().replace(/\s+/g, " "), body.replace(/\s+/g, " ").trim()]));
+      i = k;
+    }
+  };
+  walk(text, "");
+  return out;
 }
 
 /* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
@@ -157,6 +176,16 @@ export async function run({ ok, pageWork }) {
     const why = (id) => { const n = byAct(d, "order.open", id).querySelector(".amb-row__sub"); return n.textContent.split(" · ")[0] + (n.classList.contains("ordwhy") ? " (copper)" : ""); };
     ok(why("ord-a1") === "Says sent RM 530 (copper)" && why("ord-a2") === "Send again (copper)" && pillOf("ord-a1") === "Received",
       "a payment they say they sent and a stage he rejected say which in copper, and a payment's move is Received: " + JSON.stringify(["ord-a1", "ord-a2"].map((id) => [why(id), pillOf(id)])));
+    /* 16 Nov 2026, the move to Ambient (the proofs): a move that sends asks once, in a line under its row (the `.oask` li, the question, Yes and Not now), and sends nothing yet */
+    {
+      const todo = p.rowsShown(), asker = todo.find((id) => ["Withdraw", "Ready", "Handed"].includes(pillOf(id)));
+      p.posts.length = 0;
+      if (asker) { byAct(d, "order.move", asker).click(); await p.work.quiet(); }
+      const ask = asker && d.querySelector('#makerOrderList .oask[data-rowof="' + asker + '"]');
+      ok(!!ask && ask.tagName === "LI" && !!ask.querySelector(".oask__q") && ask.querySelector(".oask__q").textContent.length > 8 && !!byAct(ask, "order.move-yes", asker) && !!byAct(ask, "order.move-no", asker) && p.posts.length === 0,
+        "a move that sends asks once, under its row, with Yes and Not now, and sends nothing as it asks: " + JSON.stringify([asker, ask && ask.textContent]));
+      if (ask) { byAct(ask, "order.move-no", asker).click(); await p.work.quiet(); }
+    }
     await byAct(d, "part.orders.open").click(); await p.work.quiet();
     ok(["ord-r2", "ord-r3"].every((id) => !byAct(d, "order.open", id).querySelector(".ordwhy") && ["Handed", "Message", ""].includes(pillOf(id))),
       "and an order that waits on nothing is a quiet row, its move the goods' next step: " + JSON.stringify(["ord-r2", "ord-r3"].map((id) => [why(id), pillOf(id)])));
@@ -524,6 +553,34 @@ export async function run({ ok, pageWork }) {
     await p.tap("record.form", "gift");
     await p.tap("nav.orders"); await p.tap("nav.record"); await p.tap("part.record.entry");
     ok(p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "so does leaving the place: " + JSON.stringify(p.formsOpen()));
+
+    /* 16 Nov 2026, the move to Ambient (the proofs): THE MENU AND THE FORM ARE AMBIENT'S PANES. The grid is amb-split amb-split--panes (it stacks below 960px by Ambient's own rule),
+       the menu and the retained input in the list, every form and the invitation in the pane; the page lays out neither, and says only what Ambient lacks: the form open takes the
+       menu's place below 960px, the invitation goes while a form is open, and the way back shows below 960px alone */
+    {
+      const grid = d.getElementById("makerFormGrid"), list = grid && grid.querySelector(".reclist"), pane = grid && grid.querySelector(".recpane");
+      const forms = [...d.querySelectorAll("#makerInputs section[data-form]")];
+      ok(!!grid && grid.classList.contains("amb-split") && grid.classList.contains("amb-split--panes") && !!list && !!pane && list.parentElement === grid && pane.parentElement === grid,
+        "the menu and the form stand in Ambient's panes, amb-split amb-split--panes with a list and a pane: " + (grid && grid.className));
+      ok(forms.length >= 13 && forms.every((f) => f.parentElement === pane) && !!pane.querySelector(".recnone") && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && !d.querySelector("#makerInputs > section[data-form], #makerInputs > #makerMenu"),
+        "every form and the invitation are in the pane and the menu with the retained input in the list, none left outside the grid: " + forms.filter((f) => f.parentElement !== pane).length + " outside");
+      const rules = siteRules(), decl = (at, sel) => rules.filter((r) => r[0] === at && r[1] === sel).map((r) => r[2]);
+      ok(decl("@container amb (max-width: 959px)", ".recgrid.open .reclist").some((x) => /display:\s*none/.test(x)) && decl("@container amb (max-width: 959px)", ".recnone").some((x) => /display:\s*none/.test(x)),
+        "below 960px a form open takes the menu's place: the menu, and the invitation, are not drawn (container rule in design/site.css): " + JSON.stringify(rules.filter((r) => /recgrid\.open|recnone/.test(r[1]))));
+      ok(decl("", ".recgrid.open .recnone").some((x) => /display:\s*none/.test(x)), "a form open takes the invitation away at every width (a pane holding a form needs no invitation)");
+      ok(decl("@container amb (min-width: 960px)", "#makerFormBack").some((x) => /display:\s*none/.test(x)) && !rules.some((r) => r[1] === "#makerFormBack" && r[0] !== "@container amb (min-width: 960px)" && /display:\s*(inline|flex|block|grid)/.test(r[2])),
+        "from 960px the menu stands beside the form, so the way back is not drawn, and no other rule draws it");
+      const mine = rules.filter(([, sel]) => /(^|[ >])\.(recgrid|recpane)(\.[\w-]+)*(:not\([^)]*\))*$/.test(sel.replace(/^\.adm /, "")) && !/\.recgrid\.open/.test(sel));
+      const lays = mine.filter(([, , body]) => /(^|[;\s])(display|overflow|overflow-y|overflow-x|grid-template-columns|grid-template|height|max-height|position|gap|align-items)\s*:/.test(body));
+      ok(lays.length === 0, "the page lays out neither the grid nor the pane: its own rules name them and set no display, overflow, columns or height: " + JSON.stringify(lays));
+    }
+    /* 16 Nov 2026, the move to Ambient (the proofs): the form's sweep brings back a menu that was hidden, since nothing else hides it (it names no place of its own) */
+    {
+      const menu = d.getElementById("makerMenu");
+      menu.hidden = true;
+      await p.tap("part.record.customers");
+      ok(!menu.hidden && same(p.menu(), MENU.customers), "a menu hidden is shown again by the next sweep, since it names no place that could hide it: " + JSON.stringify(p.menu()));
+    }
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 9. THE OWNER'S SCRIPT IS SPLICED INTO THE CUSTOMER PAGE'S SCOPE (stmt/page.js splices it in at the end of the page script): a name it declares at the top is a name the
