@@ -33,7 +33,13 @@ export async function run({ ok, pageWork }) {
   try {
     await p.work.quiet();
     const d = p.d, click = async (e) => { if (e) e.click(); await p.work.quiet(); };
-    const row = (id) => { const r = d.querySelector('#makerOrderList .ordcard > [data-order="' + id + '"]'); return r && r.parentNode; };
+    const row = (id) => {
+      /* 16 Nov 2026, the move to Ambient (place G): a row is an li of the list and its ask or answer the li under it, so a card is the two read as one */
+      const r = d.querySelector('#makerOrderList .ordcard > [data-order="' + id + '"]'); if (!r) return null;
+      const row = r.parentNode, ask = d.querySelector('#makerOrderList .oask[data-rowof="' + id + '"]');
+      return { row, ask, hidden: false, get textContent() { return row.textContent + (ask ? ask.textContent : ""); }, closest: (s) => row.closest(s), querySelector: (s) => row.querySelector(s) || (ask && (ask.matches(s) ? ask : ask.querySelector(s))) || null,
+        querySelectorAll: (s) => [...row.querySelectorAll(s), ...(ask ? [...(ask.matches(s) ? [ask] : []), ...ask.querySelectorAll(s)] : [])] };
+    };
     const inPart = (id, k) => !!row(id) && row(id).closest("[data-in]").getAttribute("data-in") === "orders." + k;   /* every part's rows are drawn, shown by data-in */
     const headOf = (id) => row(id) && row(id).closest("section").getAttribute("aria-label");   /* 2 Nov 2026 (Orders on the canvas): Open's group heads are its stages */
     const pill = (id) => row(id) && byAct(row(id), "order.move", id);
@@ -100,8 +106,8 @@ export async function run({ ok, pageWork }) {
 
     /* 5: Placed's lead */
     await part("todo");
-    ok(t(row("ord-q1").querySelector(".salt-settings__value--lg")) === "RM 115" && /^RM 245 waits on you across 3 orders[.]$/.test(lead()),
-      "To do's lead counts what its rows show, the placed order's goods and delivery (RM 115) and the payments they say they sent (RM 50 and RM 80): " + t(row("ord-q1").querySelector(".salt-settings__value--lg")) + " / " + lead());
+    ok(t(row("ord-q1").querySelector(".amb-row__amount")) === "RM 115" && /^RM 245 waits on you across 3 orders[.]$/.test(lead()),
+      "To do's lead counts what its rows show, the placed order's goods and delivery (RM 115) and the payments they say they sent (RM 50 and RM 80): " + t(row("ord-q1").querySelector(".amb-row__amount")) + " / " + lead());
   } catch (e) { ok(false, "admin-orders-review stopped on an error: " + (e && e.stack)); }
   finally { p.w.close(); }
 }

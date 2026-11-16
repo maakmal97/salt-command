@@ -96,16 +96,16 @@
   "replace": "data-in=\"orders\""
  },
  {
-  "name": "a table's box cannot be reached by keyboard",
+  "name": "a table's region loses its name",
   "file": "stmt/page.js",
-  "find": "\" tabindex=\"0\" role=\"region\"",
-  "replace": "\" role=\"region\""
+  "find": "role=\"region\" aria-labelledby=\"led-' + k + '-h\"",
+  "replace": "role=\"region\""
  },
  {
   "name": "a figure in the ledger is a literal colour",
-  "file": "stmt/page.js",
-  "find": ".adm .ledgrp small{display:block;color:var(--salt-mist)}",
-  "replace": ".adm .ledgrp small{display:block;color:#888888}"
+  "file": "stmt/statement-css.js",
+  "find": ".ledgrp > .amb-section { padding-top: 0; }",
+  "replace": ".ledgrp > .amb-section { padding-top: 0; color: #888888; }"
  },
  {
   "name": "the ledger is never read on entering the part",
@@ -116,8 +116,8 @@
  {
   "name": "Units and Total swap places",
   "file": "stmt/owner.js",
-  "find": "['Units',''],['Total','']",
-  "replace": "['Total',''],['Units','']"
+  "find": "['Units','n'],['Total','n']",
+  "replace": "['Total','n'],['Units','n']"
  },
  {
   "name": "handed over drops what was ordered",
@@ -128,13 +128,13 @@
  {
   "name": "an undated row says nothing",
   "file": "stmt/owner.js",
-  "find": "el('td','l',r.date?fmtWhen(r.date):'Undated')",
-  "replace": "el('td','l',r.date?fmtWhen(r.date):'')"
+  "find": "cell(1,r.date?fmtWhen(r.date):'Undated')",
+  "replace": "cell(1,r.date?fmtWhen(r.date):'')"
  },
  {
   "name": "a book is drawn as its word",
   "file": "stmt/owner.js",
-  "find": "book.appendChild(bookTag(r.product));",
+  "find": "book.appendChild(bookChip(r.product));",
   "replace": "book.textContent=r.product;"
  },
  {
@@ -146,7 +146,7 @@
  {
   "name": "an empty table says nothing",
   "file": "stmt/owner.js",
-  "find": "if(!rows.length){ root.appendChild(el('p','rnone',t[2])); return; }",
+  "find": "if(!rows.length){ root.appendChild(el('p','amb-empty rnone',t[2])); return; }",
   "replace": "if(!rows.length){ return; }"
  },
  {
@@ -155,8 +155,28 @@
   "find": "try{ j=await refs('/all/maker/ledger'); }catch(error){ refusal(status,error); return; }",
   "replace": "try{ j=await refs('/all/maker/ledger'); }catch(error){ return; }"
  },
-{"name": "a book on Orders is its mark again", "file": "stmt/owner.js", "find": "function bookTag(product){ return productTag(product); }", "replace": "function bookTag(product){ return bookMark(product,20); }"},
- {"name":"the tables keep their own columns (4 Nov 2026)","file":"stmt/owner.js","find":"      table.appendChild(cols); table.appendChild(el('thead')).appendChild(head); table.appendChild(body);","replace":"      table.appendChild(el('thead')).appendChild(head); table.appendChild(body);"},
- {"name":"the layout sizes itself to each table (4 Nov 2026)","file":"stmt/page.js","find":".adm .ledgrp .ledtable{table-layout:fixed;min-width:1000px}","replace":".adm .ledgrp .ledtable{min-width:1000px}"},
- {"name":"the widths leave a gap (4 Nov 2026)","file":"stmt/page.js","find":".adm .ledtable .lc9{width:14%}","replace":".adm .ledtable .lc9{width:10%}"}
+ {
+  "name": "a book on Orders is its mark again",
+  "file": "stmt/owner.js",
+  "find": "book.appendChild(bookChip(r.product));",
+  "replace": "book.appendChild(bookMark(r.product,20));"
+ },
+ {
+  "name": "a cell loses its column's label (16 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "td.setAttribute('data-label',LEDGER_COLS[i][0]); return td;",
+  "replace": "return td;"
+ },
+ {
+  "name": "the table does not stack (16 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "var table=el('table','amb-table amb-table--stack ledtable')",
+  "replace": "var table=el('table','amb-table ledtable')"
+ },
+ {
+  "name": "a table scrolls sideways (16 Nov 2026)",
+  "file": "stmt/statement-css.js",
+  "find": ".ledtable .amb-pill { white-space: nowrap; }",
+  "replace": ".ledtable .amb-pill { white-space: nowrap; } .ledgrp .ledtable { overflow-x: auto; }"
+ }
 ]

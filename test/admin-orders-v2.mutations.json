@@ -1,27 +1,152 @@
 [
- {"name": "the Segment loses Ended", "file": "stmt/page.js", "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];", "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\"];"},
- {"name": "Approve gets a tab in the Segment", "file": "stmt/page.js", "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];", "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\", \"approve\"];"},
- {"name": "the Segment is the Nav bar again", "file": "stmt/page.js", "find": "'<div class=\"salt-segment salt-segment--tight aparts\" role=\"tablist\" aria-label=\"Orders\" data-place=\"orders\">'", "replace": "'<div class=\"salt-nav__links aparts\" role=\"tablist\" aria-label=\"Orders\" data-place=\"orders\">'"},
- {"name": "To do carries no count", "file": "stmt/owner.js", "find": "if(c){ c.textContent=todo?String(todo):''; c.hidden=!todo; }", "replace": ""},
- {"name": "To do is not what waits on him", "file": "stmt/owner.js", "find": "function ordPartFor(stage,waits){ return waits?'todo':ORD_PART_OF[stage]||'ended'; }", "replace": "function ordPartFor(stage,waits){ return ORD_PART_OF[stage]||'ended'; }"},
- {"name": "Open has no stage heads", "file": "stmt/owner.js", "find": "else if(part==='open') putGroup('stage:'+e.stage,ORD_HEAD[e.stage]||'Open',e);", "replace": "else if(part==='open') putGroup('stage:open','Open',e);"},
- {"name": "an order of several books has no +N", "file": "stmt/owner.js", "find": "if(f.tags.length>1) into.appendChild(el('span','salt-producttag salt-producttag--more','+'+(f.tags.length-1)));", "replace": ""},
- {"name": "the row reads out only its first book", "file": "stmt/owner.js", "find": "f.aria=[f.code,f.tags.map(bookWord).join(', '),f.way,", "replace": "f.aria=[f.code,f.tags.slice(0,1).map(bookWord).join(', '),f.way,"},
- {"name": "a book row's Way is its id", "file": "stmt/owner.js", "find": "f.way={confirmed:'Agreed',ready:'Ready',paid:'Out',done:'Handed over'}[st]||(r.cancelled?'Cancelled':r.writtenOff?'Written off':'Closed');", "replace": "f.way=r.rid;"},
- {"name": "the Waiting column is narrow again", "file": "stmt/owner.js", "find": "[136,140,0,104,184,112,140]", "replace": "[136,140,0,104,136,112,140]"},
- {"name": "the code link in a row is a small target", "file": "stmt/page.js", "find": ".adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}", "replace": ".adm .salt-table--rows tbody th a{display:inline}"},
- {"name": "a move is a filled pill", "file": "stmt/owner.js", "find": "'salt-ghost salt-ghost--lit salt-ghost--tight',label)", "replace": "'salt-pill salt-pill--sm',label)"},
- {"name": "a move sends without asking", "file": "stmt/owner.js", "find": "    ordAsk[e.id]=main; ordRowRedraw(e);", "replace": "    ordMoveSend(e,main);"},
- {"name": "the table has no colgroup", "file": "stmt/owner.js", "find": "widths.forEach(function(w){ var c=el('col');", "replace": "[].forEach(function(w){ var c=el('col');"},
- {"name": "the table is not the rows table", "file": "stmt/owner.js", "find": "tb=el('table','salt-table salt-table--plain salt-table--rows')", "replace": "tb=el('table','salt-table salt-table--plain')"},
- {"name": "a group head is no row of the table", "file": "stmt/owner.js", "find": "var gr=el('tr','salt-table__group')", "replace": "var gr=el('tr',null)"},
- {"name": "the Waiting cell says nothing owed", "file": "stmt/owner.js", "find": "var owes=st==='paid'&&f.owed>0.004?'owes '+rmShort(f.owed):'';", "replace": "var owes='';"},
- {"name": "late is not ember", "file": "stmt/owner.js", "find": "f.cellTone=f.why||f.placed?'copper':owes&&f.late?'ember':'';", "replace": "f.cellTone=f.why||f.placed?'copper':'';"},
- {"name": "the code is no link", "file": "stmt/owner.js", "find": "open=el('a','ordrow',f.code);", "replace": "open=el('span','ordrow',f.code);"},
- {"name": "the list has a Refresh again", "file": "stmt/owner.js", "find": "    if(ordTripsError){ var te=el('p','msg bad',ordTripsError);", "replace": "    makerButton(list,['Refresh','maker.refresh'],loadMaker,false);\n    if(ordTripsError){ var te=el('p','msg bad',ordTripsError);"},
- {"name": "Approve has no address", "file": "stmt/owner.js", "find": "if(PARTS.orders&&!TESTING) PARTS.orders.push('approve');", "replace": ""},
- {"name": "Open's lead leaves out what is late", "file": "stmt/owner.js", "find": "+(lateRM>0.004?', '+rmShort(lateRM)+' of it late':'')+'.';", "replace": "+'.';"},
- {"name": "an empty part says nothing", "file": "stmt/owner.js", "find": "done:'No done orders.',", "replace": "done:'',"},
- {"name": "Approve's line says Reading while hidden", "file": "stmt/owner.js", "find": "if(rows&&partNow==='approve') rows.textContent='Reading.';", "replace": "if(rows) rows.textContent='Reading.';"},
- {"name": "the count stays beside both sums (3 Nov 2026)", "file": "stmt/owner.js", "find": "' waits on you'+(theirs>0.004?'':' across '+plural(n,'order'))", "replace": "' waits on you across '+plural(n,'order')"}
+ {
+  "name": "the Segment loses Ended",
+  "file": "stmt/page.js",
+  "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
+  "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\"];"
+ },
+ {
+  "name": "Approve gets a tab in the Segment",
+  "file": "stmt/page.js",
+  "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
+  "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\", \"approve\"];"
+ },
+ {
+  "name": "the Segment is a plain group again",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">'",
+  "replace": "'<div class=\"amb-stack aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">'"
+ },
+ {
+  "name": "a part carries no count",
+  "file": "stmt/owner.js",
+  "find": "if(c){ c.textContent=ordCountN?String(v):''; c.hidden=!ordCountN; }",
+  "replace": "if(c){ c.textContent=''; c.hidden=true; }"
+ },
+ {
+  "name": "To do is not what waits on him",
+  "file": "stmt/owner.js",
+  "find": "function ordPartFor(stage,waits){ return waits?'todo':ORD_PART_OF[stage]||'ended'; }",
+  "replace": "function ordPartFor(stage,waits){ return ORD_PART_OF[stage]||'ended'; }"
+ },
+ {
+  "name": "Open has no stage heads",
+  "file": "stmt/owner.js",
+  "find": "else if(part==='open') putGroup('stage:'+e.stage,ORD_HEAD[e.stage]||'Open',e);",
+  "replace": "else if(part==='open') putGroup('stage:open','Open',e);"
+ },
+ {
+  "name": "an order of several books has no +N",
+  "file": "stmt/owner.js",
+  "find": "if(f.tags.length>1) into.appendChild(el('span','amb-chip omore','+'+(f.tags.length-1)));",
+  "replace": ""
+ },
+ {
+  "name": "the row reads out only its first book",
+  "file": "stmt/owner.js",
+  "find": "f.aria=[f.code,f.tags.map(bookWord).join(', '),f.way,",
+  "replace": "f.aria=[f.code,f.tags.slice(0,1).map(bookWord).join(', '),f.way,"
+ },
+ {
+  "name": "a book row's Way is its id",
+  "file": "stmt/owner.js",
+  "find": "f.way={confirmed:'Agreed',ready:'Ready',paid:'Out',done:'Handed over'}[st]||(r.cancelled?'Cancelled':r.writtenOff?'Written off':'Closed');",
+  "replace": "f.way=r.rid;"
+ },
+ {
+  "name": "a part with none is not dimmed",
+  "file": "stmt/owner.js",
+  "find": "if(ordCountN&&!v&&b.getAttribute('aria-pressed')!=='true') b.setAttribute('aria-disabled','true'); else b.removeAttribute('aria-disabled');",
+  "replace": "b.removeAttribute('aria-disabled');"
+ },
+ {
+  "name": "the code link in a row is a small target",
+  "file": "stmt/page.js",
+  "find": ".adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}",
+  "replace": ".adm .salt-table--rows tbody th a{display:inline}"
+ },
+ {
+  "name": "a move is a quiet pill",
+  "file": "stmt/owner.js",
+  "find": "var g=aPill(f.move,'order.move',e.id,true);",
+  "replace": "var g=aPill(f.move,'order.move',e.id,true,true);"
+ },
+ {
+  "name": "a move sends without asking",
+  "file": "stmt/owner.js",
+  "find": "    ordAsk[e.id]=main; ordRowRedraw(e);",
+  "replace": "    ordMoveSend(e,main);"
+ },
+ {
+  "name": "the list is a table again",
+  "file": "stmt/owner.js",
+  "find": "var sec=el('section','agroup'), ul=el('ul','amb-list amb-list--ruled');\n    sec.setAttribute('data-in','orders.'+part);",
+  "replace": "var sec=el('section','agroup'), ul=el('table','amb-list amb-list--ruled');\n    sec.setAttribute('data-in','orders.'+part);"
+ },
+ {
+  "name": "a row is no Ambient row",
+  "file": "stmt/owner.js",
+  "find": "row=el('li','amb-row ordcard'), out=[row];",
+  "replace": "row=el('li','ordcard'), out=[row];"
+ },
+ {
+  "name": "a group has no head",
+  "file": "stmt/owner.js",
+  "find": "sec.appendChild(el('h2','amb-section',g.head)); sec.appendChild(ul); return sec;",
+  "replace": "sec.appendChild(ul); return sec;"
+ },
+ {
+  "name": "the Waiting cell says nothing owed",
+  "file": "stmt/owner.js",
+  "find": "var owes=st==='paid'&&f.owed>0.004?'owes '+rmShort(f.owed):'';",
+  "replace": "var owes='';"
+ },
+ {
+  "name": "late is not ember",
+  "file": "stmt/owner.js",
+  "find": "f.cellTone=f.why||f.placed?'copper':owes&&f.late?'ember':'';",
+  "replace": "f.cellTone=f.why||f.placed?'copper':'';"
+ },
+ {
+  "name": "the code is no link",
+  "file": "stmt/owner.js",
+  "find": "var open=el('a','amb-row__main ordrow');",
+  "replace": "var open=el('span','amb-row__main ordrow');"
+ },
+ {
+  "name": "the list has a Refresh again",
+  "file": "stmt/owner.js",
+  "find": "    if(ordTripsError){ var te=el('p','amb-field__hint amb-neg',ordTripsError);",
+  "replace": "    makerButton(list,['Refresh','maker.refresh'],loadMaker,false);\n    if(ordTripsError){ var te=el('p','amb-field__hint amb-neg',ordTripsError);"
+ },
+ {
+  "name": "Approve has no address",
+  "file": "stmt/owner.js",
+  "find": "if(PARTS.orders&&!TESTING) PARTS.orders.push('approve');",
+  "replace": ""
+ },
+ {
+  "name": "Open's lead leaves out what is late",
+  "file": "stmt/owner.js",
+  "find": "+(lateRM>0.004?', '+rmShort(lateRM)+' of it late':'')+'.';",
+  "replace": "+'.';"
+ },
+ {
+  "name": "an empty part says nothing",
+  "file": "stmt/owner.js",
+  "find": "done:'No done orders.',",
+  "replace": "done:'',"
+ },
+ {
+  "name": "Approve's line says Reading while hidden",
+  "file": "stmt/owner.js",
+  "find": "if(rows&&partNow==='approve') rows.textContent='Reading.';",
+  "replace": "if(rows) rows.textContent='Reading.';"
+ },
+ {
+  "name": "the count stays beside both sums (3 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "' waits on you'+(theirs>0.004?'':' across '+plural(n,'order'))",
+  "replace": "' waits on you across '+plural(n,'order')"
+ }
 ]
