@@ -1,0 +1,14 @@
+[
+ {
+  "name": "Account's two columns come at 1100px (16 Nov 2026, the red fix)",
+  "file": "stmt/statement-css.js",
+  "find": "@media (min-width: 1080px) {\\n  .acct {",
+  "replace": "@media (min-width: 1100px) {\\n  .acct {"
+ },
+ {
+  "name": "Home is no split (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "'<div id=\"pHome\" class=\"amb-split\"><div class=\"amb-stack\">'",
+  "replace": "'<div id=\"pHome\" class=\"amb-stack\"><div class=\"amb-stack\">'"
+ }
+]

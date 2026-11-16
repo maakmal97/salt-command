@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the Today card is no notice (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "'<div id=\"today\" class=\"amb-notice\"'",
+  "replace": "'<div id=\"today\" class=\"amb-row\"'"
+ }
+]

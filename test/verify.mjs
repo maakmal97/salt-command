@@ -22094,8 +22094,8 @@ await (async () => {
           && !/Reward|reward/.test(c.textContent) && !c.querySelector(".amb-meter") && !c.querySelector(".pbar"))),
         "it never says margin, and a book with no reward draws its progress alone, no reward line and no bar: " + JSON.stringify(bare91));
       const meters91 = [...list91.querySelectorAll(".atable .ameter")];
-      ok(meters91.length > 0 && !list91.querySelector(".pbar") && meters91.every((m) => /^Reward, [\d.]+ units? left, \d+% of the way to the next$/.test(m.querySelector("progress.amb-meter").getAttribute("aria-label")))
-        && meters91.every((m) => { const pr = m.querySelector("progress.amb-meter"); return pr.getAttribute("max") === "100" && pr.getAttribute("aria-label").includes(pr.getAttribute("value") + "%"); })
+      ok(meters91.length > 0 && !list91.querySelector(".pbar") && meters91.every((m) => /^Reward, [\d.]+ units? left, \d+% of the way to the next$/.test((m.querySelector("progress.amb-meter") || D91.createElement("progress")).getAttribute("aria-label") || ""))
+        && meters91.every((m) => { const pr = m.querySelector("progress.amb-meter") || D91.createElement("progress"); return pr.getAttribute("max") === "100" && pr.getAttribute("aria-label").includes(pr.getAttribute("value") + "%"); })
         && meters91.every((m) => /left, .*% to next$/.test(tx91(m.querySelector(".amb-field__hint")))),
         "and the part-unit is the system's Meter, Reward X left and N% to next over a filled track, never a bar: " + meters91.length);
     } finally { try { W91.close(); } catch (e) { /* best effort */ } }
@@ -22989,7 +22989,7 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     /* 16 Nov 2026, the move to Ambient (the red fix): an account is Ambient's row, and its tap is the row's main button (arow__open), not the row */
-    const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.querySelector(".arow__open").click();
+    const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; (r.querySelector(".arow__open") || { click() {} }).click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
     const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => /^Show a code/.test(b.textContent)); };
     ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
@@ -40539,7 +40539,7 @@ await (async () => {
   const tap = (D) => { const g = D.getElementById("payNow"); const said = g ? g.textContent : ""; if (g) g.click(); return said; };
   const payOf = (D) => { const s = D.querySelector("#pOrder .oscreen"); return s ? { id: s.getAttribute("data-order"), pays: [...s.querySelectorAll(".amb-pill")].map((b) => b.textContent).filter((t) => /^Pay RM/.test(t)) } : null; };
   /* 16 Nov 2026, the move to Ambient (the red fix): the sheet's figure is Ambient's Tile, a pay button an amb-pill */
-  const sheet = (D) => { const s = D.getElementById("paySheet"); return s && !s.hidden ? (D.querySelector("#payBody .amb-tile__label").textContent + " " + D.querySelector("#payBody .amb-tile__figure").textContent) : ""; };
+  const sheet = (D) => { const s = D.getElementById("paySheet"); return s && !s.hidden ? ((D.querySelector("#payBody .amb-tile__label") || {}).textContent + " " + (D.querySelector("#payBody .amb-tile__figure") || {}).textContent) : ""; };
 
   const a = await open([agreed]);
   try {
@@ -41848,7 +41848,7 @@ await (async () => {
         /* 16 Nov 2026, the move to Ambient (the red fix): the figure is Ambient's Stat in the head, a line a thing due an amb-row (its hidden book word
            and its size, its day or overdue note in the sub, its figure the amount), Coming up's part an amb-row button with its mark thumb, its size in the sub */
         tile: [".amb-stat__label", ".amb-stat__value", ".amb-stat__note"].map((s) => t(h.querySelector(".amb-stat " + s))),
-        pill: t(f.querySelector("button.amb-pill")), pills: h.querySelectorAll(".amb-pill").length + f.querySelectorAll(".amb-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
+        pill: t(f.querySelector("button.amb-pill")), pills: h.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length + f.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
         rows: [...h.querySelectorAll(".amb-row")].map((r) => [t(r.querySelector(".amb-vh")) + " " + t(r.querySelector(".amb-row__title")), t(r.querySelector(".amb-row__amount")), t(r.querySelector(".amb-row__sub"))]),
         late: [...h.querySelectorAll(".amb-row")].map((r) => !!r.querySelector(".amb-row__sub .amb-neg")),
         coming: [...c.querySelectorAll("button.amb-row")].map((r) => [t(r.querySelector(".amb-vh")), t(r.querySelector(".amb-row__title")), t(r.querySelector(".amb-row__sub")), t(r.querySelector(".amb-row__age")), t(r.querySelector(".amb-row__amount"))]),

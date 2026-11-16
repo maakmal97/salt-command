@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the month is no Ambient input (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "sel.className='amb-input'; sel.setAttribute('data-mf-select','');",
+  "replace": "sel.className='amb-inp'; sel.setAttribute('data-mf-select','');"
+ }
+]

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a Needs you card is no task (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var c=el('article','amb-task'+(st[0]?' amb-task--'+st[0]:'')+' ntask')",
+  "replace": "var c=el('article','amb-tsk'+(st[0]?' amb-task--'+st[0]:'')+' ntask')"
+ },
+ {
+  "name": "the open record's action leaves the foot (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "go=el('div','amb-foot npane__go')",
+  "replace": "go=el('div','amb-foot npane_go')"
+ },
+ {
+  "name": "the page reads wide from 1000px (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }",
+  "replace": "function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1000px)').matches); }"
+ }
+]

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a part's row loses its mark (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var b=hRow({attrs:{'data-part':'1'}, thumb:markThumb(p.product),",
+  "replace": "var b=hRow({attrs:{'data-part':'1'}, thumb:null,"
+ },
+ {
+  "name": "a row's figure loses its amount class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "if(p.amount) tr.appendChild(el('span','amb-row__amount',p.amount));",
+  "replace": "if(p.amount) tr.appendChild(el('span','amb-row__amt',p.amount));"
+ },
+ {
+  "name": "a row is no Ambient row (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var b=el(p.tag||'button','amb-row'+(p.meter?' amb-row--meter':''));",
+  "replace": "var b=el(p.tag||'button','amb-rw'+(p.meter?' amb-row--meter':''));"
+ }
+]

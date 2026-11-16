@@ -1,0 +1,8 @@
+[
+ {
+  "name": "a list of rows is no Ambient list (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "function hList(rows){ var ul=el('ul','amb-list amb-list--ruled');",
+  "replace": "function hList(rows){ var ul=el('ul','amb-lst amb-list--ruled');"
+ }
+]

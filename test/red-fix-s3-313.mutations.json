@@ -1,0 +1,32 @@
+[
+ {
+  "name": "an account's tap is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "el('button','amb-row__main arow__open')",
+  "replace": "el('button','amb-row__main arow__op')"
+ },
+ {
+  "name": "the hand-over sheet is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var box=sheetNode('hoSheet','ho','hoT')",
+  "replace": "var box=sheetNode('hoSheet','hx','hoT')"
+ },
+ {
+  "name": "the code field is no code input (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var inp=el('input','amb-input amb-input--code');",
+  "replace": "var inp=el('input','amb-input');"
+ },
+ {
+  "name": "the code's symbol loses its class (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "svg.setAttribute('class','amb-codeframe__code');",
+  "replace": "svg.setAttribute('class','qrcode');"
+ },
+ {
+  "name": "the sheet's close is no circle (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var x=el('button','amb-circle'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close');",
+  "replace": "var x=el('button','amb-circ'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close');"
+ }
+]

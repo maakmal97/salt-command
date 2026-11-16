@@ -1,0 +1,8 @@
+[
+ {
+  "name": "Send a sign-in link is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "b=el('button','amb-pill amb-pill--block apill','Send a sign-in link')",
+  "replace": "b=el('button','amb-pill amb-pill--quiet amb-pill--block apill','Send a sign-in link')"
+ }
+]

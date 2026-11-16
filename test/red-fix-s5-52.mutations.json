@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the sheet's I have paid is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var go=el('button','amb-pill amb-pill--block',tw('pay.iPaid'));",
+  "replace": "var go=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('pay.iPaid'));"
+ }
+]

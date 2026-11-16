@@ -1,0 +1,8 @@
+[
+ {
+  "name": "This device's Notifications switch reads off when on (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "b.setAttribute('role','switch'); b.checked=!!on;",
+  "replace": "b.setAttribute('role','switch'); b.checked=!on;"
+ }
+]

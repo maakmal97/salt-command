@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a book's head is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var hd=el('h2','amb-section aprodhead')",
+  "replace": "var hd=el('h2','amb-section aprodh')"
+ },
+ {
+  "name": "the associates' table does not stack (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var table=el('table','amb-table amb-table--stack atable')",
+  "replace": "var table=el('table','amb-table atable')"
+ },
+ {
+  "name": "the reward meter is no meter (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var cell=el('div','ameter'), m=el('progress','amb-meter')",
+  "replace": "var cell=el('div','ameter'), m=el('progress','amb-mtr')"
+ }
+]

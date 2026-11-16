@@ -1,0 +1,14 @@
+[
+ {
+  "name": "Account's two columns come at 1100px (16 Nov 2026, the red fix)",
+  "file": "stmt/statement-css.js",
+  "find": "@media (min-width: 1080px) {\\n  .acct {",
+  "replace": "@media (min-width: 1100px) {\\n  .acct {"
+ },
+ {
+  "name": "Account is no stack (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "<div id=\"acct\" class=\"acct amb-stack\">",
+  "replace": "<div id=\"acct\" class=\"acct\">"
+ }
+]

@@ -1,0 +1,14 @@
+[
+ {
+  "name": "the live footer is no settings list (16 Nov 2026, the red fix)",
+  "file": "tools/make_statements.mjs",
+  "find": "lines?'<div class=\"amb-settings tot\"><ul class=\"amb-settings__list\">'",
+  "replace": "lines?'<div class=\"amb-settings tt\"><ul class=\"amb-settings__list\">'"
+ },
+ {
+  "name": "a book's row in the footer loses its mark (16 Nov 2026, the red fix)",
+  "file": "tools/make_statements.mjs",
+  "find": "ps.map(p=>'<li><div class=\"amb-setting\">'+markThumbHtml(p,'md')+",
+  "replace": "ps.map(p=>'<li><div class=\"amb-setting\">'+"
+ }
+]

@@ -1,35 +1,206 @@
 [
- {"name":"a practice order counts on the glance","file":"stmt/owner.js","find":"      if(o.test&&!TESTING) return;\n      if(orderPartsOf","replace":"      if(orderPartsOf"},
- {"name":"Ready counts every ready status alike","file":"stmt/owner.js","find":"if(orderPartsOf(o)==='orders.ready') ready++;","replace":"if(o.status==='ready'||o.status==='acknowledged') ready++;"},
- {"name":"what is paid is not taken off","file":"stmt/owner.js","find":"left=ordDue(o);","replace":"left=comes;"},
- {"name":"the delivery is left out","file":"stmt/owner.js","find":"var comes=(+o.total||0)+(+o.delivery||0), left","replace":"var comes=(+o.total||0), left"},
- {"name":"an agreed order is left out","file":"stmt/owner.js","find":"if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;","replace":"if(['ready','done'].indexOf(o.status)<0||o.writtenOff) return;"},
- {"name":"the Ready tile goes nowhere","file":"stmt/owner.js","find":"[['#orders/ready','ready'","replace":"[['#needs','ready'"},
- {"name":"a practice card counts on its pill","file":"stmt/owner.js","find":"if(i.practice||i.sev==='watch') return; n.all++;","replace":"n.all++;"},
- {"name":"a kind with nothing can be chosen","file":"stmt/owner.js","find":"var none=ready&&!have[k];","replace":"var none=false;"},
- {"name":"the menu counts every kind as All","file":"stmt/owner.js","find":"var said=ready?String(n[k]||0):'';","replace":"var said=ready?String(n.all):'';"},
- {"name":"To approve counts rows not cards","file":"stmt/owner.js","find":"String(draftGroups(pendingRows()).length),'copper'","replace":"String(pendingRows().length),'copper'"},
- {"name":"To approve has another label","file":"stmt/owner.js","find":"'approve','To approve',String(","replace":"'approve','Approve',String("},
- {"name":"To approve links to Orders","file":"stmt/owner.js","find":"['#orders/approve','approve','To approve'","replace":"['#orders','approve','To approve'"},
- {"name":"To approve is not a link","file":"stmt/owner.js","find":"['#orders/approve','approve','To approve'","replace":"['','approve','To approve'"},
- {"name":"Receivables says Owed to you","file":"stmt/owner.js","find":"'Receivables',rmShort(owe)","replace":"'Owed to you',rmShort(owe)"},
- {"name":"the meter is always full","file":"stmt/owner.js","find":"fill=due>0.004?Math.round(paid/due*100):0;","replace":"fill=100;"},
- {"name":"Receivables draws no meter","file":"stmt/owner.js","find":"if(t[5]!=null){","replace":"if(false){"},
- {"name":"a tile is not a link","file":"stmt/owner.js","find":"var a=el('a','amb-tile nkpi'); a.href=t[0];","replace":"var a=el('div','amb-tile nkpi'); a.href=t[0];"},
- {"name":"the glance is not Ambient's tiles","file":"stmt/page.js","find":"class=\"amb-tiles nglance\"","replace":"class=\"nglance\""},
- {"name":"a tile has no figure of its own","file":"stmt/owner.js","find":"a.appendChild(el('span','amb-tile__figure',t[3]));","replace":"a.appendChild(el('span','x',t[3]));"},
- {"name":"the lead counts an order to agree as one to confirm","file":"stmt/owner.js","find":"if(i.tap==='confirm') conf+=i.rm;","replace":"if(i.tap) conf+=i.rm;"},
- {"name":"a claim brings no money to the lead","file":"stmt/owner.js","find":"rm:+c.amount||0, tap:'confirm'}","replace":"rm:0, tap:'confirm'}"},
- {"name":"an order to agree brings no money to the lead","file":"stmt/owner.js","find":"+o.total||0, tap:'agree', late:","replace":"0, tap:'agree', late:"},
- {"name":"a book out of stock is not said","file":"stmt/owner.js","find":"if(b.light==='red') out++;","replace":"if(false) out++;"},
- {"name":"a book past its shelf is said by what is agreed","file":"stmt/owner.js","find":"if(over>0.005) past.push(over); else low++;","replace":"if(over>0.005) past.push(+b.commit||0); else low++;"},
- {"name":"the lead's figures are not bold","file":"stmt/owner.js","find":"if(p[0]) nCount.appendChild(el('b',null,p[0]));","replace":"if(p[0]) nCount.appendChild(document.createTextNode(p[0]));"},
- {"name":"the lead is a plain line","file":"stmt/page.js","find":"<p class=\"amb-hero__sub\" id=\"nCount\">","replace":"<p class=\"lead nlead\" id=\"nCount\">"},
- {"name":"the stock tiles stay on the glance","file":"stmt/owner.js","find":"['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)]];","replace":"['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)],['#orders','stock','Stock cover','1','brass']];"},
- {"name":"the kinds are pills","file":"stmt/page.js","find":"'<button type=\"button\" class=\"amb-segment__opt nkopt\"","replace":"'<button type=\"button\" class=\"amb-pill nktab\""},
- {"name":"the kinds do not wrap","file":"stmt/page.js","find":"amb-segment amb-segment--wrap nchips","replace":"amb-segment nchips"},
- {"name":"Ambient's wrapped Segment does not wrap","file":"stmt/statement-css.js","find":".amb-segment--wrap { flex-wrap: wrap;","replace":".amb-segment--wrap { flex-wrap: nowrap;"},
- {"name":"an empty kind is hidden","file":"stmt/owner.js","find":"if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }","replace":"b.hidden=none;"},
- {"name":"the chosen filter is not drawn as chosen","file":"stmt/statement-css.js","find":".amb-segment--wrap > .amb-segment__opt[aria-pressed=\\\"true\\\"] { border-color: var(--amb-pill); color: var(--amb-on-pill); }","replace":".amb-segment--wrap > .amb-segment__opt[aria-pressed=\\\"true\\\"] { border-color: var(--amb-line-field); color: var(--amb-ink); }"},
- {"name":"Jump to is back","file":"stmt/page.js","find":"<span class=\"amb-segment__count nkopt__n\"></span></button>').join(\"\") + \"</div>\"","replace":"<span class=\"amb-segment__count nkopt__n\"></span></button>').join(\"\") + \"<button type=\\\"button\\\" id=\\\"nJump\\\"></button></div>\""}
+ {
+  "name": "a practice order counts on the glance",
+  "file": "stmt/owner.js",
+  "find": "      if(o.test&&!TESTING) return;\n      if(orderPartsOf",
+  "replace": "      if(orderPartsOf"
+ },
+ {
+  "name": "Ready counts every ready status alike",
+  "file": "stmt/owner.js",
+  "find": "if(orderPartsOf(o)==='orders.ready') ready++;",
+  "replace": "if(o.status==='ready'||o.status==='acknowledged') ready++;"
+ },
+ {
+  "name": "what is paid is not taken off",
+  "file": "stmt/owner.js",
+  "find": "left=ordDue(o);",
+  "replace": "left=comes;"
+ },
+ {
+  "name": "the delivery is left out",
+  "file": "stmt/owner.js",
+  "find": "var comes=(+o.total||0)+(+o.delivery||0), left",
+  "replace": "var comes=(+o.total||0), left"
+ },
+ {
+  "name": "an agreed order is left out",
+  "file": "stmt/owner.js",
+  "find": "if(['acknowledged','ready','done'].indexOf(o.status)<0||o.writtenOff) return;",
+  "replace": "if(['ready','done'].indexOf(o.status)<0||o.writtenOff) return;"
+ },
+ {
+  "name": "the Ready tile goes nowhere",
+  "file": "stmt/owner.js",
+  "find": "[['#orders/ready','ready'",
+  "replace": "[['#needs','ready'"
+ },
+ {
+  "name": "a practice card counts on its pill",
+  "file": "stmt/owner.js",
+  "find": "if(i.practice||i.sev==='watch') return; n.all++;",
+  "replace": "n.all++;"
+ },
+ {
+  "name": "a kind with nothing can be chosen",
+  "file": "stmt/owner.js",
+  "find": "var none=ready&&!have[k];",
+  "replace": "var none=false;"
+ },
+ {
+  "name": "the menu counts every kind as All",
+  "file": "stmt/owner.js",
+  "find": "var said=ready?String(n[k]||0):'';",
+  "replace": "var said=ready?String(n.all):'';"
+ },
+ {
+  "name": "To approve counts rows not cards",
+  "file": "stmt/owner.js",
+  "find": "String(draftGroups(pendingRows()).length),'copper'",
+  "replace": "String(pendingRows().length),'copper'"
+ },
+ {
+  "name": "To approve has another label",
+  "file": "stmt/owner.js",
+  "find": "'approve','To approve',String(",
+  "replace": "'approve','Approve',String("
+ },
+ {
+  "name": "To approve links to Orders",
+  "file": "stmt/owner.js",
+  "find": "['#orders/approve','approve','To approve'",
+  "replace": "['#orders','approve','To approve'"
+ },
+ {
+  "name": "To approve is not a link",
+  "file": "stmt/owner.js",
+  "find": "['#orders/approve','approve','To approve'",
+  "replace": "['','approve','To approve'"
+ },
+ {
+  "name": "Receivables says Owed to you",
+  "file": "stmt/owner.js",
+  "find": "'Receivables',rmShort(owe)",
+  "replace": "'Owed to you',rmShort(owe)"
+ },
+ {
+  "name": "the meter is always full",
+  "file": "stmt/owner.js",
+  "find": "fill=due>0.004?Math.round(paid/due*100):0;",
+  "replace": "fill=100;"
+ },
+ {
+  "name": "Receivables draws no meter",
+  "file": "stmt/owner.js",
+  "find": "if(t[5]!=null){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "a tile is not a link",
+  "file": "stmt/owner.js",
+  "find": "var a=el('a','amb-tile nkpi'); a.href=t[0];",
+  "replace": "var a=el('div','amb-tile nkpi'); a.href=t[0];"
+ },
+ {
+  "name": "the glance is not Ambient's tiles",
+  "file": "stmt/page.js",
+  "find": "class=\"amb-tiles nglance\"",
+  "replace": "class=\"nglance\""
+ },
+ {
+  "name": "a tile has no figure of its own",
+  "file": "stmt/owner.js",
+  "find": "a.appendChild(el('span','amb-tile__figure',t[3]));",
+  "replace": "a.appendChild(el('span','x',t[3]));"
+ },
+ {
+  "name": "the lead counts an order to agree as one to confirm",
+  "file": "stmt/owner.js",
+  "find": "if(i.tap==='confirm') conf+=i.rm;",
+  "replace": "if(i.tap) conf+=i.rm;"
+ },
+ {
+  "name": "a claim brings no money to the lead",
+  "file": "stmt/owner.js",
+  "find": "rm:+c.amount||0, tap:'confirm'}",
+  "replace": "rm:0, tap:'confirm'}"
+ },
+ {
+  "name": "an order to agree brings no money to the lead",
+  "file": "stmt/owner.js",
+  "find": "+o.total||0, tap:'agree', late:",
+  "replace": "0, tap:'agree', late:"
+ },
+ {
+  "name": "a book out of stock is not said",
+  "file": "stmt/owner.js",
+  "find": "if(b.light==='red') out++;",
+  "replace": "if(false) out++;"
+ },
+ {
+  "name": "a book past its shelf is said by what is agreed",
+  "file": "stmt/owner.js",
+  "find": "if(over>0.005) past.push(over); else low++;",
+  "replace": "if(over>0.005) past.push(+b.commit||0); else low++;"
+ },
+ {
+  "name": "the lead's figures are not bold",
+  "file": "stmt/owner.js",
+  "find": "if(p[0]) nCount.appendChild(el('b',null,p[0]));",
+  "replace": "if(p[0]) nCount.appendChild(document.createTextNode(p[0]));"
+ },
+ {
+  "name": "the lead is a plain line",
+  "file": "stmt/page.js",
+  "find": "<p class=\"amb-hero__sub\" id=\"nCount\">",
+  "replace": "<p class=\"lead nlead\" id=\"nCount\">"
+ },
+ {
+  "name": "the stock tiles stay on the glance",
+  "file": "stmt/owner.js",
+  "find": "['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)]];",
+  "replace": "['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)],['#orders','stock','Stock cover','1','brass']];"
+ },
+ {
+  "name": "the kinds are pills",
+  "file": "stmt/page.js",
+  "find": "'<button type=\"button\" class=\"amb-segment__opt nkopt\"",
+  "replace": "'<button type=\"button\" class=\"amb-pill nktab\""
+ },
+ {
+  "name": "the kinds do not wrap",
+  "file": "stmt/page.js",
+  "find": "amb-segment amb-segment--wrap nchips",
+  "replace": "amb-segment nchips"
+ },
+ {
+  "name": "Ambient's wrapped Segment does not wrap",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-segment--wrap { flex-wrap: wrap;",
+  "replace": ".amb-segment--wrap { flex-wrap: nowrap;"
+ },
+ {
+  "name": "an empty kind is hidden",
+  "file": "stmt/owner.js",
+  "find": "if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }",
+  "replace": "b.hidden=none;"
+ },
+ {
+  "name": "the chosen filter is not drawn as chosen",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-segment--wrap > .amb-segment__opt[aria-pressed=\\\"true\\\"] { border-color: var(--amb-pill); color: var(--amb-on-pill); }",
+  "replace": ".amb-segment--wrap > .amb-segment__opt[aria-pressed=\\\"true\\\"] { border-color: var(--amb-line-field); color: var(--amb-ink); }"
+ },
+ {
+  "name": "Jump to is back",
+  "file": "stmt/page.js",
+  "find": "<span class=\"amb-segment__count nkopt__n\"></span></button>').join(\"\") + \"</div>\"",
+  "replace": "<span class=\"amb-segment__count nkopt__n\"></span></button>').join(\"\") + \"<button type=\\\"button\\\" id=\\\"nJump\\\"></button></div>\""
+ },
+ {
+  "name": "the part entered is not pressed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected'); }",
+  "replace": "if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', 'false'); b.removeAttribute('aria-selected'); }"
+ }
 ]

@@ -1,0 +1,8 @@
+[
+ {
+  "name": "a row is no Ambient row (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var b=el(p.tag||'button','amb-row'+(p.meter?' amb-row--meter':''));",
+  "replace": "var b=el(p.tag||'button','amb-rw'+(p.meter?' amb-row--meter':''));"
+ }
+]

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "Order again's price is not mono (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "b.querySelector('.amb-row__sub').classList.add('mono');",
+  "replace": "0;"
+ },
+ {
+  "name": "a row's hidden book word is left out (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "tx.appendChild(el('span','amb-vh',p.thumb.getAttribute('data-shape')));",
+  "replace": "0;"
+ },
+ {
+  "name": "the stepper's size in words loses its mark (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "S.q.setAttribute('data-st','q');",
+  "replace": "S.q.setAttribute('data-st','qq');"
+ }
+]

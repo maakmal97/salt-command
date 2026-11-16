@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a link's row is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var row=el('li','amb-row glrow'+(r.revoked?' off':''))",
+  "replace": "var row=el('li','amb-row glrw'+(r.revoked?' off':''))"
+ },
+ {
+  "name": "a link's panel is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "var card=el('li','glpanel');",
+  "replace": "var card=el('li','glpnl');"
+ },
+ {
+  "name": "a link group's head is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "group.appendChild(el('h2','amb-section ghead',heads[i]))",
+  "replace": "group.appendChild(el('h2','amb-section ghd',heads[i]))"
+ }
+]
