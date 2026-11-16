@@ -50639,6 +50639,11 @@ await (async () => {
   await (await import("./accounts-wanted.mjs")).run({ ok });
 })();
 
+section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
+await (async () => {
+  await (await import("./amend-way.mjs")).run({ ok });
+})();
+
 section("15 Nov 2026: one page width on every Salt surface, the Desk, Salt Admin and the Counter");
 await (async () => {
   await (await import("./page-width.mjs")).run({ ok });

@@ -265,11 +265,12 @@ export async function run({ ok, pageWork }) {
     && settledFromRow({ ...sO, paid: 120, queued: { paid: 110, moved: 1 } }, sRow) === null
     && settledFromRow({ ...sO, moved: 1, queued: { paid: 110, moved: 0 } }, sRow) === null
     && settledFromRow({ ...sO, payments: [{ at: "x", amount: 5, claim: "waiting" }] }, sRow) === null
-    && settledFromRow(sO, { ...sRow, total: 2000000 }) === null && settledFromRow(sO, { ...sRow, delivery: 9 }) === null
+    && settledFromRow(sO, { ...sRow, total: 2000000 }) === null
+    && J(settledFromRow(sO, { ...sRow, delivery: 9 })) === J({ qty: 1, total: 100, delivery: 9, paid: 100, moved: 1, mode: "deliver" })   /* 17 Nov 2026: the row's way with its charge */
     && settledFromRow({ ...sO, closed: { qty: 2, total: 200 } }, { ...sRow, qty: 2, deliveredQty: 2 }) === null
     && J(settledFromRow({ ...sO, mode: "deliver", delivery: 7 }, { ...sRow, trip: "t1", delivery: 0 })) === J({ qty: 1, total: 100, delivery: 7, paid: 100, moved: 1 }),
   "a settled order takes its row's size, goods, delivery, money and goods handed over; never when they agree, it is not settled, the site holds a "
-    + "move the book has not heard, a claim waits, past the bounds, a charge on a collection or a closed order's size; a trip row leaves its delivery: " + J(settledFromRow(sO, sRow)));
+    + "move the book has not heard, a claim waits, past the bounds or a closed order's size; a charge on a collection takes the way with it; a trip row leaves its delivery: " + J(settledFromRow(sO, sRow)));
   /* and the order book: the book's figures whole on a settled order alone, a move it has not told refusing them, and owing after them it opens again */
   const sd = { ...JSON.parse(J(sO)), status: "done", history: [{ at: "x", status: "ready", by: "desk" }, { at: "y", status: "done", by: "site" }] };
   const bk1 = decideDesk(JSON.parse(J(sd)), { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:00.000Z");
@@ -296,13 +297,14 @@ export async function run({ ok, pageWork }) {
   ok(J(termsFromRow(ag, rowT)) === J({ qty: 1, total: 100, delivery: 0 }) && termsFromRow({ ...ag, total: 100 }, rowT) === null
     && termsFromRow({ ...ag, status: "done" }, rowT) === null
     && termsFromRow({ ...ag, payments: [{ at: "x", amount: 5, claim: "waiting" }] }, rowT) === null
-    && termsFromRow(ag, { ...rowT, delivery: 8 }) === null && J(termsFromRow({ ...ag, mode: "deliver" }, { ...rowT, delivery: 8 })) === J({ qty: 1, total: 100, delivery: 8 })
+    /* 17 Nov 2026 (Fable's review of the way): a row charging delivery on a collection order is no longer left unsaid; the row wins, the way with it */
+    && J(termsFromRow(ag, { ...rowT, delivery: 8 })) === J({ qty: 1, total: 100, delivery: 8, mode: "deliver" }) && J(termsFromRow({ ...ag, mode: "deliver" }, { ...rowT, delivery: 8 })) === J({ qty: 1, total: 100, delivery: 8 })
     && J(termsFromRow({ ...ag, mode: "deliver", delivery: 8 }, { ...rowT, trip: "t1", delivery: 0 })) === J({ qty: 1, total: 100, delivery: 8 })
     && termsFromRow({ ...ag, moved: 0 }, { ...rowT, qty: 0.5 }, 1) === null
     && termsFromRow(ag, { ...rowT, total: 2000000 }) === null
     && termsFromRow({ ...ag, closed: { qty: 2, total: 220 } }, { ...rowT, qty: 2 }) === null && J(termsFromRow({ ...ag, closed: { qty: 2, total: 220 } }, rowT)) === J({ qty: 1, total: 100, delivery: 0 }),
-  "an agreed order takes its row's size, goods and delivery; never when they agree, it is not agreed, a claim waits, a charge would sit on a collection "
-    + "or the size under what is out, past the site's bounds or a closed order's size; a row on a trip leaves the order its delivery: " + J(termsFromRow(ag, rowT)));
+  "an agreed order takes its row's size, goods and delivery; never when they agree, it is not agreed, a claim waits "
+    + "or the size under what is out, past the site's bounds or a closed order's size; a charge on a collection takes the way with it; a row on a trip leaves the order its delivery: " + J(termsFromRow(ag, rowT)));
   const fBehind = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", paid: 160, queued: { paid: 110, moved: 1 } })] });
   const fDown = await fixture({ siteDown: true });
   const fWait = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", payments: [{ at: "2026-10-03T00:00:00.000Z", amount: 5, claim: "waiting" }] })] });

@@ -92,7 +92,7 @@ export function makerOrderFault(action, body) {
     cash: ["amount", "rid"],
     received: ["amount", "claim", "covered", "rid"],
     again: ["stage", "rid", "drop"],
-    restate: ["qty", "total", "delivery", "rid", "undo", "oneOff"],
+    restate: ["qty", "total", "delivery", "rid", "undo", "oneOff", "mode"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode", "point"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"],
@@ -130,7 +130,8 @@ export function makerOrderFault(action, body) {
   if (action === "accept" && body.hash === undefined) return "Accept needs the preview digest.";
   if (body.covered !== undefined && (action !== "received" || body.covered !== true || body.claim === undefined))
     return "Received, on the book already, answers one named claim.";
-  if (action === "restate" && body.qty === undefined && body.total === undefined && body.delivery === undefined) return "Say which figure changes.";
+  if (action === "restate" && body.mode !== undefined && !["collect", "deliver"].includes(body.mode)) return "The way is collect or deliver.";
+  if (action === "restate" && body.qty === undefined && body.total === undefined && body.delivery === undefined && body.mode === undefined) return "Say which figure changes.";
   if (action === "restate" && (body.qty !== undefined && !(body.qty > 0) || body.total !== undefined && !(body.total > 0))) return "A size and a price are above nothing.";
   if (action === "restate" && body.undo !== undefined && (!Number.isInteger(body.undo) || body.undo < 1 || body.qty === undefined || body.total === undefined || body.delivery === undefined)) return "An undo names its step and the figures it puts back.";
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";

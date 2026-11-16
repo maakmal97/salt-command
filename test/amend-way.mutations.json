@@ -1,0 +1,23 @@
+[
+ {"name":"the Desk holds the charge to the old way","file":"engine/stages.mjs","find":"if (delivery > 0 && mode !== \"deliver\") return { error: \"a collection carries no delivery charge\" };","replace":"if (delivery > 0 && o.mode !== \"deliver\") return { error: \"a collection carries no delivery charge\" };"},
+ {"name":"the Desk refuses no charge on a collection","file":"engine/stages.mjs","find":"if (delivery > 0 && mode !== \"deliver\") return { error: \"a collection carries no delivery charge\" };","replace":""},
+ {"name":"the Desk takes any way","file":"engine/stages.mjs","find":"if (body && body.mode !== undefined && ![\"collect\", \"deliver\"].includes(body.mode)) return { error: \"the way is collect or deliver\" };","replace":""},
+ {"name":"the Correction never restates the handover","file":"engine/stages.mjs","find":"if (way && (+order.moved || 0) > 0.0004) fields.handover = way;","replace":""},
+ {"name":"the Correction restates the handover before any goods are out","file":"engine/stages.mjs","find":"if (way && (+order.moved || 0) > 0.0004) fields.handover = way;","replace":"if (way) fields.handover = way;"},
+ {"name":"the site is not told the way","file":"engine/stages.mjs","find":"Object.assign({}, figs, wayMoves ? { mode } : {},","replace":"Object.assign({}, figs,"},
+ {"name":"a change of way alone is no change","file":"engine/stages.mjs","find":"figs.delivery === was.delivery && !wayMoves)","replace":"figs.delivery === was.delivery)"},
+ {"name":"the order book holds the charge to the old way","file":"stmt/orders.js","find":"(d > 0 && m !== \"deliver\")) return { error: \"the delivery charge is a figure from nothing, and nothing on a collection\"","replace":"(d > 0 && order.mode !== \"deliver\")) return { error: \"the delivery charge is a figure from nothing, and nothing on a collection\""},
+ {"name":"the order book never moves the mode","file":"stmt/orders.js","find":"    if (ev.mode) order.mode = ev.mode;   /* 17 Nov 2026: the way, amended with the charge */","replace":""},
+ {"name":"the order book's event carries no way","file":"stmt/orders.js","find":"m !== order.mode ? { mode: m } : {}, r.undo","replace":"{}, r.undo"},
+ {"name":"the Desk gate refuses the way","file":"src/maker.js","find":"restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\", \"oneOff\", \"mode\"],","replace":"restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\", \"oneOff\"],"},
+ {"name":"the Desk gate takes any way","file":"src/maker.js","find":"  if (action === \"restate\" && body.mode !== undefined && ![\"collect\", \"deliver\"].includes(body.mode)) return \"The way is collect or deliver.\";\n","replace":""},
+ {"name":"the Desk gate wants a figure beside the way","file":"src/maker.js","find":"body.delivery === undefined && body.mode === undefined) return \"Say which figure changes.\";","replace":"body.delivery === undefined) return \"Say which figure changes.\";"},
+ {"name":"Salt Admin words the Desk's refusal generally","file":"stmt/owner.js","find":"    'a collection carries no delivery charge':'A collection has no delivery charge. Choose Deliver to charge one.',\n","replace":""},
+ {"name":"Salt Admin words the order book's refusal generally","file":"stmt/owner.js","find":"    'the delivery charge is a figure from nothing, and nothing on a collection':'A collection has no delivery charge. Choose Deliver to charge one.',\n","replace":""},
+ {"name":"the return leg never heals a charge on a collection","file":"engine/stages.mjs","find":"if (delivery > 0.004 && o.mode !== \"deliver\") return \"deliver\";","replace":""},
+ {"name":"the return leg never heals a collection on a delivery","file":"engine/stages.mjs","find":"if (!(delivery > 0.004) && row.handover === \"collected\" && o.mode === \"deliver\") return \"collect\";","replace":""},
+ {"name":"the agreed return leg sends no way","file":"engine/stages.mjs","find":"return Object.assign({ qty, total, delivery }, way ? { mode: way } : {});","replace":"return { qty, total, delivery };"},
+ {"name":"the settled return leg sends no way","file":"engine/stages.mjs","find":"return Object.assign({ qty, total, delivery, paid, moved }, way ? { mode: way } : {});","replace":"return { qty, total, delivery, paid, moved };"},
+ {"name":"the order book drops the book's way","file":"stmt/orders.js","find":"moved: +r.moved.toFixed(3) }, bm !== order.mode ? { mode: bm } : {}) };","replace":"moved: +r.moved.toFixed(3) }, {}) };"},
+ {"name":"a group order changes its way","file":"stmt/orders.js","find":"    if (order.pool && m !== order.mode) return { error: \"a group order is collect only\", status: 409 };\n","replace":""}
+]

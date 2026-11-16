@@ -248,14 +248,14 @@
  {
   "name": "the Desk's gate refuses a reason on an amendment",
   "file": "src/maker.js",
-  "find": "    restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\", \"oneOff\"],",
-  "replace": "    restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\"],"
+  "find": "    restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\", \"oneOff\", \"mode\"],",
+  "replace": "    restate: [\"qty\", \"total\", \"delivery\", \"rid\", \"undo\", \"mode\"],"
  },
  {
   "name": "the Counter's bridge refuses a reason on an amendment",
   "file": "stmt/maker.js",
-  "find": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"oneOff\"] :",
-  "replace": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\"] :"
+  "find": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"oneOff\", \"mode\"] :",
+  "replace": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"mode\"] :"
  },
  {
   "name": "a placed order's ask draws no Reason line",
