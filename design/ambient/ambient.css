@@ -1731,17 +1731,21 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   .amb-shell--page.amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + var(--amb-dock-inset) + var(--amb-rail-gap) + max(0px, var(--amb-page-side) - var(--amb-safe-left))); }
 }
 
-/* ---- Work screens (0.7.9): the owner's answers of 16 Nov 2026, on a docked screen in a shell with an app bar.
+/* ---- Work screens (0.7.9, 0.7.10): the owner's answers of 16 Nov 2026, on a docked screen in a shell with an app bar.
    A document, a dashboard, a deck or a paper has no dock, so keeps its look, and no shared token moves. The look is
    bounded at the next shell, so a framed mock-up inside a work screen keeps its own. ---- */
 @scope (.amb-shell:has(> .amb-appbar) > .amb-screen--docked) to (.amb-shell) {
-  /* one shadow: a page's own panes cast it; a tile or a plate casts none, and a pane, a task, a settings group or
-     a verdict inside another casts none. Panes, and a work screen's own blocks, stand --amb-pane-gap apart */
+  /* no drop shadow on a card (0.7.10, R25, the owner's fix of 16 Nov 2026, superseding 0.7.9's one shadow): a pane,
+     a task, a settings group, a verdict, a tile and a plate keep their hairline and cast none, at any depth. Panes, and
+     a work screen's own blocks, stand --amb-pane-gap apart */
   .amb-stack { gap: var(--amb-pane-gap); }
   :scope > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split),
   .amb-place > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-pane-gap); }
   .amb-tile:not(.amb-tiles--strip > .amb-tile), .amb-plate { box-shadow: none; }
-  :is(.amb-pane, .amb-task, .amb-settings__list, .amb-verdict) :is(.amb-pane, .amb-task, .amb-settings__list, .amb-verdict) { box-shadow: none; }
+  :is(.amb-pane, .amb-task, .amb-settings__list, .amb-verdict) { box-shadow: none; }
+  .amb-tiles.amb-tiles--strip, .amb-card { box-shadow: none; }
+  /* a code's white field keeps a hairline in place of its lift, so it never vanishes on a light surface */
+  .amb-codeframe__field { box-shadow: 0 0 0 1px var(--amb-line); }
 }
 /* the app bar over what scrolls: once a hero has passed under the bar, or with no hero once the screen or a pane
    under the bar has moved, ambient.js marks the shell (data-amb-moved) and what scrolls is drawn only from the bar's
@@ -1761,14 +1765,34 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
     }
   }
 }
+@media not print {
 @container amb (min-width: 960px) {
   @media (min-height: 640px) {
-    /* room at each pane's outer side, so its shadow is never cut flat at the pane's edge: never past the screen's own
-       inset there, so nothing scrolls sideways; the foot's ground reaches across the same room */
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child { margin-left: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-l))); padding-left: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-l))); }
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child { margin-right: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-r))); padding-right: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-r))); }
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child > .amb-foot { margin-left: calc(-1 * (var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-l)))); padding-left: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-l))); }
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child > .amb-foot { margin-right: calc(-1 * (var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-r)))); padding-right: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-r))); }
+    /* a pane carries the room at its outer side alone, no inset of its own there (the owner's answer of 16 Nov 2026):
+       the queue's first card stands --amb-rail-gap from the rail, its outer edge the column's; the room is never past the
+       screen's own inset, so nothing scrolls sideways, and a card never stands nearer the screen's edge than the room.
+       The inner sides keep their inset, and the foot's ground reaches across the same room */
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child { margin-left: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-l))); padding-left: var(--amb-pane-room); }
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child { margin-right: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-r))); padding-right: var(--amb-pane-room); }
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child > .amb-foot { margin-left: calc(-1 * var(--amb-pane-room)); padding-left: var(--amb-pane-room); }
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child > .amb-foot { margin-right: calc(-1 * var(--amb-pane-room)); padding-right: var(--amb-pane-room); }
+    /* the app bar's ends stand on the panes' card edges (the owner's answer of 16 Nov 2026): its first item over the
+       queue's card, its last circle over the record's. The queue's card stands on the column's edge beside a rail, or
+       the room in from the screen's edge with none; the record's stands max(the screen's inset, the room) in from the
+       screen's edge, less what the bar already stands in from it with the page's box */
+    .amb-shell:has(> .amb-appbar):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-appbar { padding-left: max(var(--amb-safe-left), var(--amb-pane-room)); padding-right: max(var(--amb-safe-right), var(--amb-pane-room)); }
+    .amb-shell--page:has(> .amb-appbar):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-appbar { padding-left: calc(max(var(--amb-safe-left), var(--amb-page-side, 0px), var(--amb-pane-room)) - max(0px, var(--amb-page-side, 0px) - var(--amb-safe-left))); padding-right: calc(max(var(--amb-safe-right), var(--amb-page-side, 0px), var(--amb-pane-room)) - max(0px, var(--amb-page-side, 0px) - var(--amb-safe-right))); }
+    /* beside a rail the queue's card stands on the column's edge, where the bar already stands: after the page rule, so it wins */
+    .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-appbar { padding-left: var(--amb-safe-left); }
+    /* the save bar beside the rail stands on the panes' content edge */
+    .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-dock > .amb-savebar { left: calc(100% + var(--amb-rail-gap)); width: min(520px, calc(100cqi - 100% - 2 * var(--amb-dock-inset) - var(--amb-rail-gap) - var(--amb-pane-room) - var(--amb-safe-left) - var(--amb-safe-right))); }
   }
+}
+}
+/* no drop shadow on the rail (0.7.10, R25, the owner's fix of 16 Nov 2026): from 960px, where the dock is the rail
+   beside a work screen, its bars and the save bar beside it keep their rim and top highlight and cast none. On a
+   phone the dock floats over the page, so keeps its shadow, as a sheet, a menu and a toast do */
+@container amb (min-width: 960px) {
+  .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked) > .amb-dock > :is(.amb-tabbar, .amb-mini, .amb-savebar) { box-shadow: inset 0 1px 0 var(--amb-sheen); }
 }
 @media print { .amb-shell[data-amb-moved] > .amb-screen--docked { clip-path: none; } }
