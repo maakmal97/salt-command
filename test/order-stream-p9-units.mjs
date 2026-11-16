@@ -40,7 +40,7 @@ export async function run({ ok, pageWork }) {
     ok(units(s) === "25 units", "9b minus from an ask steps back onto the walk's top: " + units(s));
     /* the fold */
     const row10 = s.pn.querySelector('.sfold .szrow[data-q="10"]');
-    ok(!!row10 && /Prices by size/.test(K.txt(s.pn.querySelector(".amb-more"))) && s.pn.querySelector(".amb-more").getAttribute("aria-controls") === s.pn.querySelector(".sfold").id, "9b the sizes stand one fold under the stepper, named Prices by size");
+    ok(!!row10 && /Prices by size/.test(K.txt(s.pn.querySelector(".sfold > summary.amb-disclose__head .amb-disclose__title"))) && s.pn.querySelector(".sfold").matches("details.amb-disclose.amb-disclose--fold") && !s.pn.querySelector(".amb-more") && row10.closest(".amb-disclose__body"), "9b the sizes stand one fold under the stepper, named Prices by size");   /* 17 Nov 2026, the move to Ambient (Fable's review): the fold is Ambient's (details, head, chevron) */
     row10.click(); await p.settle(); s = st(p, "Cube");
     ok(units(s) === "10 units" && row10.getAttribute("aria-pressed") === "true" && [...s.pn.querySelectorAll(".szrow[aria-pressed=true]")].length === 1, "9b a size in the fold sets the stepper and is the one pressed");
     /* Add sets the line */

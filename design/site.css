@@ -148,7 +148,6 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 /* a book's pane: its heading (the mark thumb and the light chip), the stepper, the figure and Add, the basket line, the sizes */
 .pane { display: grid; gap: var(--amb-space-3); min-width: 0; }
 .pane > h2.pmark { display: flex; align-items: center; gap: var(--amb-space-3); margin: 0; }
-.pane .amb-more { margin: 0; justify-self: start; }
 .pane .amb-list { margin: 0; }
 .strow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
 .stfig { font-size: var(--amb-text-callout); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -219,7 +218,7 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 /* ---- Counter: Orders and the order card, both readers' (the band, Steps, Bill, thread) ---- */
 /* the place is the shell's two panes (#pOrder is the split): a stack never insets a stack of its own; a list or a part stands level with its heading */
 .amb-stack .amb-stack { padding-inline: 0; }
-.olistcol .amb-more, .oscreen .amb-more, .oearlier .amb-more { margin: 0; }
+.olistcol .amb-more, .oearlier .amb-more { margin: 0; }
 .oscreen .amb-tiles { padding-inline: 0; }
 .orecord .onote { max-width: 36rem; }
 .oback { justify-self: start; }
@@ -228,7 +227,6 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .odue { color: var(--amb-neg); }
 .mfil .amb-select { max-width: none; }
 .omonth { display: grid; gap: var(--amb-space-2); }
-.ofold { display: grid; gap: var(--amb-space-2); }
 .ohold, .oprice, .oagain, .orate { display: grid; gap: var(--amb-space-3); justify-items: start; }
 .oact { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }
 .ofoot { display: grid; gap: var(--amb-space-2); }
@@ -251,7 +249,7 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 /* the thread: his and their lines keep their line breaks */
 .omsgs .amb-msg__text { white-space: pre-wrap; }
 .omsgs { max-width: 36rem; }
-.amb-more > .amb-section__note { margin-inline-start: var(--amb-space-2); }
+.amb-disclose__title > .amb-section__note { margin-inline-start: var(--amb-space-2); }
 .oscreen .amb-tiles { grid-template-columns: minmax(0, 1fr); }
 .obill .amb-setting__value { max-width: none; white-space: nowrap; }
 .orecord > .otop > .amb-pill { justify-self: start; }

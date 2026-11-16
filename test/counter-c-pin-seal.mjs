@@ -132,7 +132,7 @@ export async function run({ ok }) {
     if (await wait(cardOf)) cardOf().click();
     const scr = () => E.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"] .odet');
     await wait(scr);
-    const rows = scr() ? [...scr().querySelectorAll(".amb-setting")].map((r) => r.textContent.replace(/s+/g, " ").trim()) : [];
+    const rows = scr() ? [...scr().querySelectorAll("p.amb-disclose__text")].map((r) => r.textContent.replace(/s+/g, " ").trim())   /* 17 Nov 2026, the move to Ambient (Fable's review): Details is Ambient's fold, a line of words a fact */ : [];
     ok(rows.some((t) => t.includes(W.EN["od.sealed"]) && t.includes(W.EN["od.sealedV"])), "an order whose spot is sealed says Spot or unit, Sealed under Details: " + J(rows));
     /* ---- 9 ---- */
     const F = await drive(); closeAll.push(F);

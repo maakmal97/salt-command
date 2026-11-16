@@ -2759,7 +2759,7 @@ const CLIENT_JS = `
   /* a plain line of words under the place's title, and a notice (the system's Notice: its icon, then the words) */
   function pLine(t){ return el('p','amb-muted',t); }
   function pNote(t,id,warn){ var n=el('div','amb-notice'+(warn?' amb-notice--warn':'')); if(id) n.id=id; n.appendChild(ambIcon('info')); n.appendChild(el('span',null,t)); return n; }
-  var stN=0, szN=0;
+  var stN=0;
   function drawPrices(){
     pPrices.textContent='';
     /* V5: from pay.hide after the handover the prices are hidden until the overdue amount is paid */
@@ -2801,8 +2801,11 @@ const CLIENT_JS = `
         return row;
       }));
       if(tapTo&&stPanes[p.product]){
-        var id='sz'+(szN++), mo=el('button','amb-more',tw('st.sizes')); mo.type='button'; mo.setAttribute('aria-controls',id); mo.setAttribute('aria-expanded','false');
-        var fd=el('div','sfold'); fd.id=id; fd.hidden=true; fd.appendChild(L); pane.appendChild(mo); pane.appendChild(fd); stepPatch(p.product,false);
+        /* 17 Nov 2026 (Fable's review, Ambient 0.7.12): the sizes are the system's fold, each size a row to tap */
+        L.classList.add('amb-list--full');
+        var fd=el('details','amb-disclose amb-disclose--fold sfold'), sm=el('summary','amb-disclose__head'), bd=el('div','amb-disclose__body');
+        sm.appendChild(el('h3','amb-disclose__title',tw('st.sizes'))); sm.appendChild(ambIcon('chevron','amb-icon--sm amb-disclose__mark'));
+        bd.appendChild(L); fd.appendChild(sm); fd.appendChild(bd); pane.appendChild(fd); stepPatch(p.product,false);
       } else pane.appendChild(L);
       grid.appendChild(pane);
     });
@@ -4776,28 +4779,28 @@ const CLIENT_JS = `
     }
     return a;
   }
-  /* a fold: the system's More button and what it opens, kept open across a poll (draft[key]); the button's tap is read after the system's own
-     script has flipped it */
+  /* 17 Nov 2026 (Fable's review, Ambient 0.7.12): a fold is the system's fold, details with a head (its title and the chevron) over its body; kept open across a poll
+     (draft[key]). It stands in the record's stack, and holds words here. */
   function oFolded(o,key,label,note,body){
-    var w=el('div','ofold'), id=key+'-'+o.id, open=!!(draft[key]||{})[o.id];
-    var mb=el('button','amb-more',label); mb.type='button'; mb.setAttribute('aria-expanded',open?'true':'false'); mb.setAttribute('aria-controls',id);
-    if(note!=null) mb.appendChild(el('span','amb-section__note',String(note)));
-    body.id=id; body.hidden=!open;
-    mb.addEventListener('click',function(){ setTimeout(function(){ (draft[key]=draft[key]||{})[o.id]=!body.hidden; },0); });
-    w.appendChild(mb); w.appendChild(body);
+    var w=el('details','amb-disclose amb-disclose--fold ofold'), id=key+'-'+o.id, open=!!(draft[key]||{})[o.id];
+    var sm=el('summary','amb-disclose__head'), h=el('h3','amb-disclose__title',label);
+    if(note!=null) h.appendChild(el('span','amb-section__note',String(note)));
+    sm.appendChild(h); sm.appendChild(ambIcon('chevron','amb-icon--sm amb-disclose__mark'));
+    body.id=id; body.classList.add('amb-disclose__body'); w.open=open;
+    w.addEventListener('toggle',function(){ (draft[key]=draft[key]||{})[o.id]=w.open; });
+    w.appendChild(sm); w.appendChild(body);
     return w;
   }
   /* DETAILS, folded: when it was ordered, the way, the window or the point, and the reference; no note. Kept open across a poll */
   function oDetails(o){
-    var L=el('ul','amb-settings__list'), box=el('div','amb-settings odet');
-    function row(k,v){ var li=el('li'), d=el('div','amb-setting'); d.appendChild(el('span','amb-setting__name',k)); d.appendChild(el('span','amb-setting__value',v)); li.appendChild(d); L.appendChild(li); }
+    var box=el('div','odet');
+    function row(k,v){ var p=el('p','amb-disclose__text'); p.appendChild(el('span','odet__k',k)); p.appendChild(document.createTextNode(': ')); p.appendChild(el('span','odet__v',v)); box.appendChild(p); }
     row(tw('od.at'),stamp(o.at));
     row(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect'));
     if(o.slot&&o.slotSpan) row(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)}));
     if(o.pinned&&o.mode==='deliver') row(tw('od.sealed'),tw('od.sealedV'));
     if(o.point) row(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point}));
     row(tw('od.ref'),orderRef(o.id));
-    box.appendChild(L);
     return oFolded(o,'oDet',tw('od.h'),null,box);
   }
   /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
@@ -4909,10 +4912,10 @@ const CLIENT_JS = `
       w.appendChild(replacement);
     }
     if(!h.length) return w;
-    var jl=el('ol','amb-journal');
+    var jl=el('div','ohist');
     h.slice().reverse().forEach(function(x){
-      var li=el('li','amb-journal__entry'), m=el('p','amb-journal__meta'), t=el('time',null,stamp(x.at)); if(x.at) t.setAttribute('datetime',String(x.at));
-      m.appendChild(t); li.appendChild(m); li.appendChild(el('p','amb-journal__text',histLine(x,o))); jl.appendChild(li);
+      var p=el('p','amb-disclose__text'), t=el('time',null,stamp(x.at)); if(x.at) t.setAttribute('datetime',String(x.at));
+      p.appendChild(t); p.appendChild(document.createTextNode(': ')); p.appendChild(el('span','ohist__t',histLine(x,o))); p.setAttribute('data-hist',''); jl.appendChild(p);
     });
     w.appendChild(oFolded(o,'oHist',tw('oh.hist'),h.length,jl));
     return w;
@@ -5087,7 +5090,7 @@ const CLIENT_JS = `
      that says English (S13-L1) */
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1). Each part stands in the record's stack as a stack of its own, but the foot, which is the pane's */
-  function oPartOf(k,o){ var n=OPARTS[k](o); if(!n.classList.contains('amb-foot')) n.classList.add('amb-stack'); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
+  function oPartOf(k,o){ var n=OPARTS[k](o); if(!n.classList.contains('amb-foot')&&n.tagName!=='DETAILS') n.classList.add('amb-stack'); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
   /* THE RECORD, one stack of the shell's two panes: its way back on a phone, then every part, the foot last */
   function oScreen(o){
     var s=el('section','amb-stack oscreen'); s.setAttribute('data-order',o.id);

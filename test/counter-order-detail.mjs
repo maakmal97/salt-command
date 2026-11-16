@@ -152,13 +152,14 @@ export async function run({ ok, pageWork }) {
     ok(footR.classList.contains("amb-foot") && footR.hidden === false && !!footR.querySelector("button.amb-pill--block[data-back]") && sRf.lastElementChild === footR && footA.hidden === true,
       "and Pay is the record's foot, the last thing on an order that owes, and nothing on one still to be confirmed");
     const sR2 = await screen(S, R);
-    const det = part(sR2, "details"), more = det.querySelector("button.amb-more"), box = det.querySelector(".amb-settings"), dl = [...box.querySelectorAll(".amb-setting")].map((r) => t(r.querySelector(".amb-setting__name")) + "=" + t(r.querySelector(".amb-setting__value")));
-    ok(!!more && more.getAttribute("aria-expanded") === "false" && box.hidden === true && dl.length === 4 && /^Ordered at=\d\d \w{3} \d{4}, \d\d:\d\d$/.test(dl[0]) && dl[1] === "Way=Collect" && dl[2] === "Point=Point Z9" && dl[3] === "Reference=" + refR && !/Note/.test(t(det)),
-      "Details is folded under the system's More and holds when it was ordered, the way, the point and the reference, and no note: " + JSON.stringify(dl));
-    more.click(); await until(() => box.hidden === false);
-    ok(box.hidden === false && more.getAttribute("aria-expanded") === "true", "and More opens it");
-    const dD = [...part(await screen(S, D), "details").querySelectorAll(".amb-setting")].map((r) => t(r));
-    ok(dD.some((x) => x === "PointCollected at Point Z8"), "an order collected says where it was collected: " + JSON.stringify(dD));
+    const det = part(sR2, "details"), more = det.querySelector("details.amb-disclose--fold > summary.amb-disclose__head"), box = det.querySelector(".amb-disclose__body"), dl = [...box.querySelectorAll("p.amb-disclose__text")].map((r) => t(r.querySelector(".odet__k")) + "=" + t(r.querySelector(".odet__v")));
+    /* 17 Nov 2026, the move to Ambient (Fable's review): Details is Ambient's fold (details, head, chevron), its facts words in the body, shut until a tap */
+    ok(!!more && more.parentNode.open === false && dl.length === 4 && /^Ordered at=\d\d \w{3} \d{4}, \d\d:\d\d$/.test(dl[0]) && dl[1] === "Way=Collect" && dl[2] === "Point=Point Z9" && dl[3] === "Reference=" + refR && !/Note/.test(t(det)),
+      "Details is the system's fold and holds when it was ordered, the way, the point and the reference, and no note: " + JSON.stringify(dl));
+    more.click(); await until(() => more.parentNode.open === true);
+    ok(more.parentNode.open === true, "and its head opens it");
+    const dD = [...part(await screen(S, D), "details").querySelectorAll("p.amb-disclose__text")].map((r) => t(r));
+    ok(dD.some((x) => x === "Point: Collected at Point Z8"), "an order collected says where it was collected: " + JSON.stringify(dD));
   } catch (e) { ok(false, "counter-order-detail stopped on an error: " + (e && e.stack)); }
   finally { wins.forEach((w) => w.close()); }
 }

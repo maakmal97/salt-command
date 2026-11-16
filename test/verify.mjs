@@ -31824,8 +31824,9 @@ await (async () => {
       && shP.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1,   /* 16 Nov 2026, the move to Ambient (the red fix): the sheet's filled control is Ambient's pill */
       "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
     if (shP) d.getElementById("payX").click();
-    const hist = part("hist").querySelector("button.amb-more");
-    ok(!!hist && hist.getAttribute("aria-expanded") === "false" && /What happened, step by step/.test(hist.textContent),
+    /* 17 Nov 2026, the move to Ambient (Fable's review): the fold is Ambient's (details, head, chevron), shut until a tap */
+    const hist = part("hist").querySelector("details.amb-disclose--fold > summary.amb-disclose__head");
+    ok(!!hist && hist.parentNode.open === false && /What happened, step by step/.test(hist.textContent),
       "what happened is folded under its own line");
 
     ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0.00", "Paid in full"]),
@@ -31898,13 +31899,13 @@ await (async () => {
       "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
     row("20260924000000-a6").click();
     /* the history is the system's Journal, the newest first: read oldest first as before */
-    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
+    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] p[data-hist]')].map((li) => li.querySelector(".ohist__t").textContent).reverse();
     ok(JSON.stringify(hist) === JSON.stringify(["Placed", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70.00 by cash on handover",
       "We recorded a payment of RM 20.00", "1 unit collected", "Complete"]),
       "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
     d.querySelector("#pOrder .oback").click();
     row("20260923000000-a7").click();
-    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
+    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] p[data-hist]')].map((li) => li.querySelector(".ohist__t").textContent).reverse();
     ok(h7[1] === "Declined: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
   } finally { w.close(); }
 
@@ -32550,7 +32551,7 @@ await (async () => {
   });
   await drive(async (w, d, st) => {
     d.querySelector('#pOrder [data-row="' + A + '"]').click();
-    const sm = scr(d).querySelector('[data-part="hist"] button.amb-more');
+    const sm = scr(d).querySelector('[data-part="hist"] summary.amb-disclose__head');
     sm.focus();
     hand(st);
     await until(() => /Collected on/.test(part(d, "when")));
@@ -38338,7 +38339,7 @@ await (async () => {
       const r = pd.querySelector('#pOrder [data-row="' + id + '"]'); if (!r) return null;
       r.click();
       const s = pd.querySelector('#pOrder .oscreen[data-order="' + id + '"]'); if (!s) return null;
-      const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();   /* 16 Nov 2026: the Journal, newest first, read oldest first */
+      const h = [...s.querySelectorAll('[data-part="hist"] p[data-hist]')].map((li) => li.querySelector(".ohist__t").textContent).reverse();   /* 16 Nov 2026: the Journal, newest first, read oldest first */
       /* 2 Nov 2026 (his Orders canvas, page 2): the state is the band's chip, as on his card; the heading that repeated it is gone */
       return [s.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)').textContent, s.querySelector('[data-part="when"] .onote').textContent, h[h.length - 1]];
     };
@@ -38497,7 +38498,7 @@ await (async () => {
     ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Paid", "Collected*"]) && scr.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)').textContent === "Collected"
       && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
-    const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
+    const h = [...scr.querySelectorAll('[data-part="hist"] p[data-hist]')].map((li) => li.querySelector(".ohist__t").textContent).reverse();
     ok(h[h.length - 1] === "Closed at 2 units of the 5 ordered", "and what happened says it in their words: " + JSON.stringify(h));
   } finally { pw.close(); }
 
@@ -42315,7 +42316,7 @@ await (async () => {
       + JSON.stringify({ once, refused, sent: st.sent }));
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
     const lines = [...scr().querySelectorAll('[data-part="money"] .amb-setting')].map((x) => [".obill__k", ".amb-setting__value", ".obill__sub"].map((q) => t(x.querySelector(q))).join("|"));
-    const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map((li) => " " + t(li.querySelector(".amb-journal__text")));
+    const hist = [...scr().querySelectorAll('[data-part="hist"] p[data-hist]')].map((li) => " " + t(li.querySelector(".ohist__t")));
     const row = t(d.querySelector('#pOrder [data-row="oA"] .amb-row__sub'));
     ok(lines.includes("Sent by you|RM 150.00|Waiting for us to confirm") && lines.includes("Still to pay|RM 0.00|Sent, waiting for us to confirm")
       && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150.00 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
@@ -42349,7 +42350,7 @@ await (async () => {
     const scrB = dB.querySelector("#pOrder .oscreen");
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows */
     const lost = [...scrB.querySelectorAll('[data-part="money"] .amb-setting')].map((x) => t(x.querySelector(".obill__k")) + "|" + t(x.querySelector(".amb-setting__value")));
-    const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map((li) => " " + t(li.querySelector(".amb-journal__text")));
+    const histB = [...scrB.querySelectorAll('[data-part="hist"] p[data-hist]')].map((li) => " " + t(li.querySelector(".ohist__t")));
     ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50.00") && histB.some((x) => x.endsWith(" We have not found RM 50.00 yet"))
       && !!scrB.querySelector("[data-part=act] .amb-pill"),
       "his Not found on an order shows on its row, on its money and in its history, and Pay is back: " + JSON.stringify({ why, lost, histB }));
