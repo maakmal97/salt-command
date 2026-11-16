@@ -1533,10 +1533,16 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
   .amb-pill:hover:not(:disabled):not([aria-disabled="true"]) { opacity: .88; }
 }
 
-/* ---- Wider: from 720px a sheet is a card in the middle ---- */
-@container amb (min-width: 720px) {
-  .amb-sheet { inset: 0; height: fit-content; max-width: 480px; margin: auto; padding-top: var(--amb-space-5); border: 1px solid var(--amb-rim); border-radius: var(--amb-radius-xl); transform: translateY(12px) scale(.98); }
+/* ---- Wider: from 720px a sheet is a card in the middle ----
+   A sheet stands after the shell, outside every container, so this reads the window, which the sheet fills. The
+   card is 480px at most, 440px inside, so what it holds still stands as it does on a phone (a table stacks) */
+@media (min-width: 720px) {
+  .amb-sheet { inset: 0; height: fit-content; max-width: 480px; max-height: calc(100dvh - 2 * var(--amb-space-6)); margin: auto; padding-block: var(--amb-space-5); border: 1px solid var(--amb-rim); border-radius: var(--amb-radius-xl); transform: translateY(12px) scale(.98); }
   .amb-sheet--full { height: min(720px, calc(100dvh - 2 * var(--amb-space-8))); }
+  @starting-style { .amb-sheet[open] { opacity: 0; transform: translateY(12px) scale(.98); } }
+}
+/* ---- Wider: from 720px a part keeps its phone proportions ---- */
+@container amb (min-width: 720px) {
   .amb-hero__title { font-size: var(--amb-text-large); }
   /* a part keeps its phone proportions when the screen grows: a note beside its title, a switch
      of a few choices no wider than it needs, a row whose amount stays near its name */
