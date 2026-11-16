@@ -31804,7 +31804,7 @@ await (async () => {
     /* S6 6.4: Pay opens the pay sheet for this order, where the one filled control is the sheet's */
     const shP = d.getElementById("paySheet");
     ok(!!pay && !scr().querySelector("[data-part=act] .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190.00"
-      && shP.querySelectorAll(".salt-pill").length === 1,
+      && shP.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length === 1,   /* 16 Nov 2026, the move to Ambient (the red fix): the sheet's filled control is Ambient's pill */
       "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
     if (shP) d.getElementById("payX").click();
     const hist = part("hist").querySelector("button.amb-more");
@@ -42146,12 +42146,13 @@ await (async () => {
     await until(() => d.getElementById("payNow"));
     d.getElementById("payNow").click();
     await until(() => d.querySelector('#payBody input[name="payInto"][value="maybank"]'));
-    const first = { open: !sh().hidden, title: t(d.getElementById("payT")), tile: t(d.querySelector("#payBody .salt-kpi__label")) + " " + t(d.querySelector("#payBody .salt-kpi__value")),
+    /* 16 Nov 2026, the move to Ambient (the red fix): the sheet's figure is Ambient's Tile, its ways and accounts Ambient's options (title, then a sub), its amount and reference plate rows */
+    const first = { open: !sh().hidden, title: t(d.getElementById("payT")), tile: t(d.querySelector("#payBody .amb-tile__label")) + " " + t(d.querySelector("#payBody .amb-tile__figure")),
       seg: [...d.querySelectorAll("#payBody .payseg button")].map((b) => t(b) + ":" + b.getAttribute("aria-pressed")),
-      ways: [...d.querySelectorAll('#payBody input.salt-option__input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")),
-      labels: [...d.querySelectorAll("#payBody .payhow .salt-option__label")].map(t), select: !!d.querySelector('#payBody input[name="payInto"]'),
-      go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody #payRef .salt-ledger__value")),
-      copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".salt-pill").length };
+      ways: [...d.querySelectorAll('#payBody input.amb-option__input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")),
+      labels: [...d.querySelectorAll("#payBody .payhow .amb-option__title")].map(t), select: !!d.querySelector('#payBody input[name="payInto"]'),
+      go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody #payRef .amb-plate__value")),
+      copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length };
     ok(first.open && first.title === "Pay RM 70.00" && first.tile === "To pay now RM 70.00" && first.seg.join() === "All, RM 70.00:true,Part of it:false"
       && first.ways.join() === "transfer*,qr,jompay" && first.labels.join() === "Transfer to an account,Scan a code,JomPAY" && first.select
       && first.go === "BUTTON disabled" && first.cap === "Choose which of our accounts to pay into." && first.ref === u && first.copy && first.pills === 1,
@@ -42165,14 +42166,14 @@ await (async () => {
       && tGo === "BUTTON disabled" && tCap === "Choose which of our accounts to pay into."
       && a1.tagName === "BUTTON" && !a1.disabled && t(a1) === "I have paid" && !sh().querySelector("a[href]")
       && /^Pay it in your banking app, with the reference[.] Then come back here/.test(cap())
-      && /to Maybank$/.test(t(d.querySelectorAll("#payBody .salt-option__detail")[0])),
+      && /to Maybank$/.test(t(d.querySelectorAll("#payBody .payhow .amb-option__sub")[0])),
       "Transfer offers every account that gave a number and no suspended one, chooses none, and once they choose Maybank the pill lights as I have paid and nothing on the sheet is a link: "
       + JSON.stringify({ tIn, tPicked, go: t(a1) }));
     how("qr");
     const qIn = into(), qGo = go();
     [...d.querySelectorAll("#payBody .payseg button")].find((b) => t(b) === "Part of it").click();
     const amt = d.getElementById("payAmt"); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
-    const part = { title: t(d.getElementById("payT")), amount: t(d.querySelector("#payAmtRow .salt-ledger__value")) };
+    const part = { title: t(d.getElementById("payT")), amount: t(d.querySelector("#payAmtRow .amb-plate__value")) };
     amt.value = "90"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
     const over = { go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap() };
     ok(JSON.stringify(qIn) === JSON.stringify(linked("qr")) && !qIn.includes("wise") && qGo.tagName === "BUTTON" && t(qGo) === "I have paid"
@@ -42190,7 +42191,7 @@ await (async () => {
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b)));
     if (payO) payO.click();
-    ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200.00" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
+    ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200.00" && t(d.querySelector("#payBody .amb-tile__label")) === "Still to pay"
       && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder [data-part=act] .pay"),
       "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, Transfer chosen and no account, and nothing drawn in the order itself");
   } finally { w.close(); }
@@ -42269,12 +42270,13 @@ await (async () => {
     const unasked = asked();
     tap("payGo");
     const stillThere = asked();
-    const check = { title: t(d.getElementById("payT")), q: t(d.querySelector("#payBody .paycheck h3")), how: t(d.querySelector("#payBody .paycheck .sub2")),
-      ins: t(d.querySelector("#payBody .salt-insight")), again: (d.getElementById("payAgain") || { tagName: "(none)" }).tagName + " " + (d.getElementById("payAgain") || { getAttribute: () => "" }).getAttribute("href"),
-      foot: [...d.querySelectorAll("#payFoot button")].map((b) => t(b) + ":" + b.className.split(" ")[0]) };
+    /* 16 Nov 2026, the move to Ambient (the red fix): the question is the check's h3 over Ambient's basis lines, the foot Ambient's pills (the one filled first, Not yet quiet) */
+    const check = { title: t(d.getElementById("payT")), q: t(d.querySelector("#payBody .paycheck h3")), how: t(d.querySelector("#payBody .paycheck .amb-basis")),
+      ins: t(d.querySelector('#payBody [data-w="pay.tell"]')), again: (d.getElementById("payAgain") || { tagName: "(none)" }).tagName + " " + (d.getElementById("payAgain") || { getAttribute: () => "" }).getAttribute("href"),
+      foot: [...d.querySelectorAll("#payFoot button")].map((b) => t(b) + ":" + (b.classList.contains("amb-pill--quiet") ? "quiet" : "filled")) };
     ok(!besideCode && !unasked && stillThere && check.title === "Pay RM 150.00" && check.q === "Did you send RM 150.00?"
       && check.how === "By transfer to Maybank, reference " + u + "." && /^Tell us only once it has gone from your bank\. It shows as sent, waiting until we confirm it arrived/.test(check.ins)
-      && check.again === "BUTTON null" && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150.00:salt-pill" && !st.sent.length,
+      && check.again === "BUTTON null" && check.foot.join() === "Yes, I sent RM 150.00:filled,Not yet:quiet" && !st.sent.length,
       "nothing beside the account number says it was sent, a trip away with nothing copied asks nothing, and I have paid asks at once, Did you send RM 150.00, with Not yet and Show again as a button: "
       + JSON.stringify({ besideCode, unasked, stillThere, check }));
     const notYet = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (notYet) notYet.click();
@@ -42297,7 +42299,7 @@ await (async () => {
     const row = t(d.querySelector('#pOrder [data-row="oA"] .amb-row__sub'));
     ok(lines.includes("Sent by you|RM 150.00|Waiting for us to confirm") && lines.includes("Still to pay|RM 0.00|Sent, waiting for us to confirm")
       && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150.00 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
-      && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150.00 sent, waiting for us to confirm",
+      && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "Confirmed, RM 150.00 sent, waiting for us to confirm",
       "the claim reads sent, waiting for us to confirm on the order's money, its history and its row, and nothing calls it paid: " + JSON.stringify({ lines, hist, row }));
   } finally { w.close(); }
 
@@ -42313,8 +42315,8 @@ await (async () => {
   const domB = await page(120, listB, claimsB, (p, j) => { sentB.push([p, j]); return { ok: true }; });
   const wB = domB.window, dB = wB.document;
   try {
-    await until(() => dB.querySelectorAll("#payHead .msg").length === 3);
-    const said = [...dB.querySelectorAll("#payHead .msg")].map(t), pill = t(dB.getElementById("payNow"));
+    await until(() => dB.querySelectorAll("#payHead .amb-prose p:not(#lateKeep)").length === 3);
+    const said = [...dB.querySelectorAll("#payHead .amb-prose p:not(#lateKeep)")].map(t), pill = t(dB.getElementById("payNow"));
     const day = (x) => { const k = new Date(new Date(x).getTime() + 8 * 3600e3); return String(k.getUTCDate()).padStart(2, "0") + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][k.getUTCMonth()] + " " + k.getUTCFullYear(); };
     ok(JSON.stringify(said) === JSON.stringify(["RM 110.00 sent, waiting for us to confirm.", "RM 30.00 received on " + day(iso(-1)) + ". Your statement shows it at its next update.",
       "We have not found the RM 20.00 you sent on " + day(iso(-2.5)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20.00",
@@ -42322,7 +42324,7 @@ await (async () => {
       + JSON.stringify({ said, pill }));
     dB.querySelector('button[data-t="order"]').click();
     await until(() => dB.querySelector('#pOrder [data-row="oB"]'));
-    const why = t(dB.querySelector('#pOrder [data-row="oB"] .ocard__what'));
+    const why = t(dB.querySelector('#pOrder [data-row="oB"] .amb-row__sub'));
     dB.querySelector('#pOrder [data-row="oB"]').click();
     const scrB = dB.querySelector("#pOrder .oscreen");
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows */
@@ -43765,11 +43767,12 @@ await (async () => {
     "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients, while its open list is the system's slate (18 Oct 2026)");
   const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   /* 15 Nov 2026, the move to Ambient: both pages carry Ambient (SITE_STYLE: its tokens and parts and the site's layer) before the page's own layer, and no recipe */
-  ok((pgY.match(/SITE_STYLE \+ PAGE_CSS \+ COIN_CSS/g) || []).length === 2 && !/STATEMENT_CSS \+ SITE_RECIPES/.test(pgY),
+  /* 16 Nov 2026, the move to Ambient (the red fix): PAGE_CSS is empty and the coin's layer is gone, so each page's one style is SITE_STYLE (the second page adds the empty PAGE_CSS) */
+  ok((pgY.match(/<style nonce="' \+ nonce \+ '">' \+ SITE_STYLE/g) || []).length === 2 && !/COIN_CSS/.test(pgY) && !/STATEMENT_CSS \+ SITE_RECIPES/.test(pgY),
     "both pages the Worker serves carry Ambient between the head and the page's own layer, and no salt-ds recipe");
   /* S13 13.3: the door's words are the table's, keyed on the element (data-w), so it is read off the page as served */
   const doorY = (await import("../stmt/page.js")).landingPage("", "n22y", null);
-  ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit" data-w="door.go">/.test(doorY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
+  ok(/<button class="amb-pill amb-pill--block" id="go" type="submit" data-w="door.go">/.test(doorY) && /<input class="amb-input" id="un" /.test(doorY) && /<input class="amb-input mono" id="rq"/.test(pgY),
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   /* S7 7.1: the tabs are places on the system's App bar and rail, and the open one carries aria-current, which both draw */
   /* 15 Nov 2026, the move to Ambient: one Ambient tab bar */
@@ -43778,7 +43781,9 @@ await (async () => {
     "the places are Ambient's tabs, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
      1a.2) stood it beside the head's card; Counter Batch A P4 put an aria-hidden glyph before the word, so the word is a text node after it */
-  ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /t\.appendChild\(stateChip\(o\)\)/.test(pgY) && /top\.appendChild\(stateChip\(o\)\)/.test(pgY) && /oBandOf\(o,\{aria:tw\('oh\.order'\), chip:stateChip\(o\), when:/.test(pgY) && /top\.appendChild\(b\.chip\)/.test(pgY) && !/oband__state/.test(pgY),
+  /* 16 Nov 2026, the move to Ambient (the red fix): the chip is Ambient's (a dot and the word, the warn and pos tones) and stands on the order's own band; a row says its state as the word that leads its sub, in the positive tone while it is going well */
+  ok(/var c=el\('span',\(cls\?cls\+' ':''\)\+'amb-chip'\+tone\);\s*var dot=el\('span','amb-chip__dot'\); c\.appendChild\(dot\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='ready'&&!movedAll\(o\)\?' amb-chip--warn':\(s==='acknowledged'\|\|s==='done'\|\|oPayable\(o\)\)\?' amb-chip--pos':''/.test(pgY)
+    && /st=el\('span',\(o\.status==='acknowledged'\|\|o\.status==='done'\|\|oPayable\(o\)\)&&!\(o\.status==='ready'&&!movedAll\(o\)\)\?'amb-pos':null,stateWord\(o\)\)/.test(pgY) && /oBandOf\(o,\{aria:tw\('oh\.order'\), chip:stateChip\(o\), when:/.test(pgY) && /top\.appendChild\(b\.chip\)/.test(pgY) && !/oband__state/.test(pgY),
     /* 2 Nov 2026 (his Orders canvas, page 2): the screen's band is the shared band, whose head holds the chip; the heading that repeated the word is gone, so the chip alone says it */
     "an order's state is the system's chip, in its tone, on its row and card; its own screen's band says the word alone (Counter Batch A P7)");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
@@ -43786,7 +43791,9 @@ await (async () => {
     /* 16 Nov 2026, the move to Ambient (end pass): PAGE_CSS is empty, its live rules are in design/site.css, so the page's own layer states no look at all */
     "the page's own layer keeps geometry and states no look the recipe owns");
   /* 26 Oct 2026 (Practice as a list of settings): Practice's one control is the system's Switch */
-  ok(/actOn\(el\('button','salt-switch'\),'more\.test-accounts'\)/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
+  /* 16 Nov 2026, the move to Ambient (the red fix): Practice is a settings row (sSwitchRow) whose control is Ambient's Switch */
+  const ownY = readFileSync(join(REPO, "stmt", "owner.js"), "utf8");
+  ok(/srow=sSwitchRow\('Practice accounts','more\.test-accounts',null,on\)/.test(ownY) && /function sSwitchRow\(label,act,key,on\)\{ var row=el\('label','amb-setting'\), sw=sSwitch\(act,key,on,label\)/.test(ownY) && /function sSwitch\(/.test(ownY) && /amb-switch/.test(ownY.slice(ownY.indexOf("function sSwitch("), ownY.indexOf("function sSwitch(") + 400)),
     "and the master page's practice control is the system's Switch");
 })();
 

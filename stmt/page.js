@@ -806,7 +806,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="amb-stack afind">'
         + '<div class="amb-notice alead" id="alead" hidden>' + AMB.glyph("info") + '<span id="aleadT"></span></div>'
         + '<div class="amb-search">' + AMB.glyph("search", "sm")
-        + '<input class="amb-input" id="rq" type="search" autocapitalize="none" autocorrect="off" '
+        + '<input class="amb-input mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>'
         + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
           '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
