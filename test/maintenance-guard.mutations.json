@@ -1,0 +1,6 @@
+[
+ {"name": "the guard page runs a script", "file": "stmt/maintenance.js", "find": "<meta charset=\"utf-8\"><meta name=\"google\"", "replace": "<meta charset=\"utf-8\"><script></script><meta name=\"google\""},
+ {"name": "the guard page loads an external address", "file": "stmt/maintenance.js", "find": "<meta charset=\"utf-8\"><meta name=\"google\"", "replace": "<meta charset=\"utf-8\"><meta name=\"x\" content=\"https://x.test/\"><meta name=\"google\""},
+ {"name": "the sentence is not the hero's sub line", "file": "stmt/maintenance.js", "find": "<p class=\"amb-hero__sub\">", "replace": "<p>"},
+ {"name": "the words are not escaped", "file": "stmt/maintenance.js", "find": "esc(text)", "replace": "text"}
+]

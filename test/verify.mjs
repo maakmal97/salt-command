@@ -51551,8 +51551,9 @@ await (async () => {
     const page = await get("/", { accept: "text/html,application/xhtml+xml" }), body = page.body;
     ok(page.status === 503 && page.headers.get("retry-after") > 0 && page.headers.get("cache-control") === "no-store"
       && /^text\/html/.test(page.headers.get("content-type")), name + ": a page request before the window ends answers 503 with Retry-After and no-store");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the Counter's sentence is the hero's sub line, a p with amb-hero__sub */
     /* the desk's page keeps its sentence; the Counter's says when it is back, read from the time in Kuala Lumpur (test/counter-maintenance.mjs) */
-    ok((name === "desk" ? body.includes("<p>" + TEXT + "</p>") : /<p>Back (at \d\d:\d\d|on \d\d [A-Z][a-z]{2} \d{4} at \d\d:\d\d)<\/p>/.test(body)) && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
+    ok((name === "desk" ? body.includes("<p>" + TEXT + "</p>") : /<p class="amb-hero__sub">Back (at \d\d:\d\d|on \d\d [A-Z][a-z]{2} \d{4} at \d\d:\d\d)<\/p>/.test(body)) && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
       && !/<script|https?:\/\//.test(body), name + ": the page carries its words, a title and language, no script and no external load");
     ok(page.headers.get("content-security-policy") === "default-src 'none'; style-src 'unsafe-inline'", name + ": the page's CSP is the closed one");
     const js = await get("/queue", { accept: "application/json" });
@@ -51575,7 +51576,7 @@ await (async () => {
   {
     const words = { MAINTENANCE_UNTIL: future, MAINTENANCE_TEXT: "  Back by 6:00 a.m. <b>&</b> 'soon'  " };
     const r = await stmtM.fetch(req("/", { accept: "text/html" }), words, {}), b = await r.text();
-    ok(r.status === 503 && b.includes("<p>Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>") && !b.includes(TEXT),
+    ok(r.status === 503 && b.includes('<p class="amb-hero__sub">Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>') && !b.includes(TEXT),
       "counter: MAINTENANCE_TEXT replaces the words, trimmed and escaped");
   }
   ok(/^\s*"MAINTENANCE_UNTIL": "",/m.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")), "wrangler.jsonc carries MAINTENANCE_UNTIL empty (guard off)");
