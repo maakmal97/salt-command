@@ -1,0 +1,20 @@
+[
+ {
+  "name": "the Desk row's card is not marked as a maker card",
+  "file": "stmt/owner.js",
+  "find": "card.setAttribute('data-maker-card','draft:'+draft.id); draftRoot.appendChild(card);",
+  "replace": "draftRoot.appendChild(card);"
+ },
+ {
+  "name": "Order for them takes View as them's act",
+  "file": "stmt/owner.js",
+  "find": "aBtn('Order for them','amb-action','acct.order-for')",
+  "replace": "aBtn('Order for them','amb-action','acct.view-as')"
+ },
+ {
+  "name": "an account row opens through no act",
+  "file": "stmt/owner.js",
+  "find": "arow__open'),'acct.open'",
+  "replace": "'arow__open'),'acct.opn'"
+ }
+]

@@ -134,8 +134,9 @@
  {
   "name": "the messages place is not the grid",
   "file": "stmt/page.js",
-  "find": "<div class=\"chatgrid\" data-in=\"customers.messages\">",
-  "replace": "<div data-in=\"customers.messages\">"
+  "find": "<div class=\"chatgrid amb-place\" data-in=\"customers.messages\">",
+  "replace": "<div class=\"amb-place\" data-in=\"customers.messages\">",
+  "note": "17 Nov 2026, the move to Ambient (the older reds): the messages place is Ambient's amb-place beside the chatgrid class"
  },
  {
   "name": "the open thread is not empty until a tap",

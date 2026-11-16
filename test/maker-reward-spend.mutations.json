@@ -1,0 +1,4 @@
+[
+ {"name":"the fold finds no reward scheme to spend against","file":"engine/position.mjs","find":"||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)","replace":"||!Number.isFinite(+scheme.margin)||+scheme.margin>=0)"},
+ {"name":"the fold reads no extract beside the book","file":"tools/fold.mjs","find":"return r && r.stated ? { stated: r.stated,","replace":"return false && r.stated ? { stated: r.stated,"}
+]

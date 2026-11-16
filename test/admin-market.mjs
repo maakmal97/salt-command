@@ -160,8 +160,9 @@ export async function run({ ok, pageWork }) {
     const p = await richOwnerPage({ pageWork, review: (j) => { j.drafts = [mkDraft({ kind: "marketOff" }, "2026-11-20T03:00:00.000Z"), mkDraft({ kind: "marketOn" }, "2026-11-20T03:01:00.000Z"), mkDraft({ kind: "anchor", q: 1, price: 130 }, "2026-11-20T03:02:00.000Z")]; return j; } });
     await p.work.quiet();
     enter(p.d, "orders"); p.d.querySelector('[data-act="bar.approve"]').click(); await p.work.quiet();
-    const text = [...p.d.querySelectorAll(".apcard")].map((c) => c.querySelector(".apverb").textContent + "|" + c.querySelector(".salt-approve__party").textContent.trim());
-    const flags = [...p.d.querySelectorAll(".apcard .apflag")].map((f) => f.textContent);
+    /* 17 Nov 2026, the move to Ambient (the older reds): the party is Ambient's task kind (.apparty), and the cards of the Desk's own queue (.apqueued) are not drafts to read */
+    const text = [...p.d.querySelectorAll(".apcard:not(.apqueued)")].map((c) => c.querySelector(".apverb").textContent + "|" + c.querySelector(".apparty").textContent.trim());
+    const flags = [...p.d.querySelectorAll(".apcard:not(.apqueued) .apflag")].map((f) => f.textContent);
     ok(text.length === 3 && text[0].startsWith("Market move off|Median Price") && text[1].startsWith("Market move on|") && text[2] === "Median point, 1 unit, RM 130.00|Median Price" && flags.some((f) => /Median at 1 unit goes from RM 120 to RM 130/.test(f)) && flags.some((f) => /Outside the band/.test(f)),
       "Approve names a market edit in his words, from the figures he sent, with the drafter's two flags: " + JSON.stringify([text, flags.slice(0, 2)]));
   }
@@ -186,7 +187,8 @@ export async function run({ ok, pageWork }) {
   {
     const p = await open();
     enter(p.d, "customers", "links"); await p.work.quiet();
-    const lead = p.d.querySelector("#oLinks .lead");
+    /* 17 Nov 2026, the move to Ambient (the older reds): the line is Ambient's field hint */
+    const lead = p.d.querySelector("#oLinks .amb-field__hint");
     ok(shown(lead) && lead.textContent === "A guest link opens the +30% list for everybody; naming whose friend it is stays your note.",
       "the links card says a guest link opens the +30% list for everybody: " + (lead && lead.textContent));
   }

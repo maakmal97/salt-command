@@ -4,7 +4,7 @@
    reward scheme in the mirror the spend is refused and nothing is queued. Then Accept tier proposals, driven in the actual owner
    script: one request id kept across a failure, a fresh one after it lands, and a refusal with nothing to accept let go. */
 import { FROZEN_BOOK, FROZEN_MASTER } from "./frozen.mjs";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { webcrypto } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
@@ -14,7 +14,7 @@ import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { readBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
-import { apply } from "../tools/fold.mjs";
+import { tmpdir } from "node:os";
 
 class Store {
   values = new Map();
@@ -44,6 +44,13 @@ export async function run({ ok }) {
   const source = await readBook();
   const { w, version } = source;
   const ledger = JSON.parse(JSON.stringify(source.ledger));
+  /* 17 Nov 2026, the move to Ambient (the older reds): the fold reads the reward scheme from a ledger.json beside its book, and the frozen book has none, so run alone
+     (tools/section.mjs) the spend was refused with "no configured reward" while the full suite, where an earlier section had loaded the live book's, passed. The scheme
+     is the master's own (ledger.REWARD, the one the seed check above proves), so the fold is loaded with an extract carrying it: the same answer alone and in the suite. */
+  const extract = join(mkdtempSync(join(tmpdir(), "reward-spend-")), "ledger.json");
+  writeFileSync(extract, JSON.stringify({ ledger: { REWARD: ledger.REWARD } }));
+  if (!process.argv.includes("--ledger")) process.argv.push("--ledger", extract);
+  const { apply } = await import("../tools/fold.mjs");
   try {
     w.eval(`(function(){var rows=${JSON.stringify(SCENARIO)};rows.forEach(function(r){sales.push(JSON.parse(JSON.stringify(r)));
       BASE_SALES.push(JSON.parse(JSON.stringify(r)));});recompute();})()`);

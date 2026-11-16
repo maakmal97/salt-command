@@ -50234,8 +50234,9 @@ await (async () => {
     for (let i = 0; i < 100 && !doc.querySelector("#makerDrafts .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     /* a card is drawn for the order opened alone (Phase 1c): open the placed one, as he does from its row */
     cardOf(doc, "20260929120000-makr");
-    let cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");
-    ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
+    /* 17 Nov 2026, the move to Ambient (the older reds): the Desk row's card is Ambient's task, found by its data-maker-card, no longer a .maker-card */
+    let cards = doc.querySelectorAll("#makerReview [data-maker-card], #makerDrafts [data-maker-card]");
+    ok(cards.length === 2 && /Cost\s?RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
       "the Admin review draws Desk row cost and frozen flags beside its decision");
     const o0 = { u: "abcd-efgh", product: "salt", qty: 1, total: 100 };
     extraReviewOrders.push({ ...o0, id: "20260929120000-ca01", status: "acknowledged" }, { ...o0, id: "20260929120000-ca02", status: "acknowledged", paid: 20 },
@@ -50492,8 +50493,11 @@ await (async () => {
       "loan, repayment, gift and reward forms send their typed ledger fields to the corresponding Desk constructors");
     doc.querySelector('button[data-m="customers"]').click();
     for (let i = 0; i < 100 && !doc.querySelector('#rlist [data-u]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    doc.querySelector('#rlist [data-u]').click();
-    const forThem = [...doc.querySelectorAll("#aopen button")].find((button) => button.textContent === "Order for them");
+    doc.querySelector('#rlist [data-u] [data-act="acct.open"]').click();
+    /* 17 Nov 2026, the move to Ambient (the older reds): the cost reads "CostRM 56.00" in text; a row's open is its own button;  */
+    const forThem = doc.querySelector('#aopen [data-act="acct.order-for"]');
+    ok(!!forThem && /Order for them/.test(forThem.textContent), "an open account offers Order for them");
+    if (!forThem) throw new Error("no Order for them");
     forThem.click();
     /* v1377 (Order as them, his answer A of 02 Nov 2026): Order for them opens the customer's own page by the master with ordering live,
        so New order, Review and Place are their page's own, at their sealed prices */

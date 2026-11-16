@@ -20,8 +20,9 @@
   {
     "name": "C2 a group head is not a settings head",
     "file": "stmt/owner.js",
-    "find": "sec.appendChild(el('h2','amb-section',g.head));",
-    "replace": "sec.appendChild(el('h2','nsev',g.head));"
+    "find": "sec.setAttribute('data-sev',g.sev); sec.setAttribute('aria-label',g.head);\n      sec.appendChild(el('h2','amb-section',g.head));",
+    "replace": "sec.setAttribute('data-sev',g.sev); sec.setAttribute('aria-label',g.head);\n      sec.appendChild(el('h2','nsev',g.head));",
+    "note": "17 Nov 2026, the move to Ambient (the older reds): needle re-aimed to the code that now does this job"
   },
   {
     "name": "a state word is not ember",
@@ -146,8 +147,9 @@
   {
     "name": "C6 the back has no glyph",
     "file": "stmt/owner.js",
-    "find": "b.appendChild(ambIcon('back','amb-icon--sm')); ",
-    "replace": ""
+    "find": "b.appendChild(ambIcon('back','amb-icon--sm')); b.appendChild(document.createTextNode(' All accounts'));",
+    "replace": "b.appendChild(document.createTextNode(' All accounts'));",
+    "note": "17 Nov 2026, the move to Ambient (the older reds): needle re-aimed to the code that now does this job"
   },
   {
     "name": "C6 the back does not return",
@@ -170,8 +172,9 @@
   {
     "name": "C7 the Accounts tab does not return",
     "file": "stmt/owner.js",
-    "find": "if(t&&aOpen&&t.parentNode.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);",
-    "replace": ""
+    "find": "if(t&&aOpen&&tp.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);",
+    "replace": "",
+    "note": "17 Nov 2026, the move to Ambient (the older reds): needle re-aimed to the code that now does this job"
   },
   {
     "name": "C8 the lead is two sentences",
