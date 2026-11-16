@@ -8,8 +8,6 @@
 body.amb { min-height: 100dvh; }
 /* his hero's time line: the live word, then the clock, a step apart */
 #roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
-/* on Home the Today card holds the clock, so the hero does not say the time twice */
-#tabs[data-place="home"] > .amb-screen > .amb-hero > .amb-hero__time { display: none; }
 
 /* ---- Admin: Needs you, Approve and the unsent bar (place F) ---- */
 /* the head's tiles sit in a stack, which already carries the gutter; a tile that is a link stays plain */

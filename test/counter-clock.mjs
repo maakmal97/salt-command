@@ -9,17 +9,20 @@ export async function run({ ok }) {
   const kl = () => { const p = {}; new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).forEach((x) => { p[x.type] = x.value; }); return { t: p.hour + ":" + p.minute, d: p.day + " " + MON[+p.month - 1] }; };
   const swallow = () => { };
   process.on("unhandledRejection", swallow);
-  const dom = new JSDOM(landingPage("abcd-efgh", "nclk", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+  /* 17 Nov 2026, the move to Ambient (Fable's review): the Counter's hero carries no bare clock any more; Salt Admin's heroes keep theirs, so the script is read there */
+  const dom = new JSDOM(landingPage("", "nclk", { master: "", accounts: [] }), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) { w.fetch = async () => ({ ok: false, status: 503, json: async () => ({}), text: async () => "" }); } });
   try {
     await new Promise((r) => setTimeout(r, 300));
-    const D = dom.window.document, c = D.querySelector("#tabs header.amb-hero > .amb-hero__time[data-clock]");
+    const D = dom.window.document, c = D.querySelector("header.amb-hero > .amb-hero__time > [data-clock]");
     const want = kl(), got = c ? c.textContent : null;
-    ok(!!c && (got === want.t || got === kl().t), "the Counter's hero shows the time in Kuala Lumpur, digits only: " + JSON.stringify({ got, want: want.t }));
+    ok(!!c && (got === want.t || got === kl().t), "a hero of Salt Admin shows the time in Kuala Lumpur, digits only: " + JSON.stringify({ got, want: want.t }));
     c.textContent = "";
     D.dispatchEvent(new dom.window.Event("visibilitychange"));
     ok(c.textContent === kl().t || c.textContent === want.t, "and paints it again when the page comes back into view: " + JSON.stringify(c.textContent));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
+  const counter = new JSDOM(landingPage("abcd-efgh", "nclk3", null)).window.document;
+  ok(counter.querySelectorAll("#tabs header.amb-hero").length === 1 && counter.querySelectorAll("#tabs .amb-hero__time, #tabs [data-clock]").length === 0, "the Counter's hero carries no bare clock");
   const owner = landingPage("", "nclk2", { master: "", accounts: [] });
   const heroes = owner.match(/<header class="amb-hero amb-hero--compact amb-mesh">(?:(?!<\/header>)[\s\S])*<\/header>/g) || [];
   const timed = heroes.filter((h) => /<p class="amb-hero__time"><span class="abarlive" data-barlive( id="aBarLive")?><\/span><span class="clk" data-clock><\/span><\/p>/.test(h));

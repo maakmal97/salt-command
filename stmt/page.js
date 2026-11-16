@@ -937,7 +937,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
     + '<main class="amb-screen amb-screen--docked">'
     + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")
-    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p><p class="amb-hero__time" data-clock></p></header>'
+    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'   /* 17 Nov 2026 (Fable's review): no bare clock in a hero of the Counter */
     + '<div id="barw" class="amb-stack" hidden>'
     /* S9 9.5: on his page an account is viewed, never signed into, so the line says whose it is and that it is read only, and its one
        control takes him back to that account on Accounts. A customer's Log out is This device's, on Account (S7 7.1) */
