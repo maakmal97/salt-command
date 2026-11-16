@@ -62,6 +62,26 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 /* Stock by book: the wide table's columns keep a gap */
 @media (min-width: 720px) { .nstock .amb-table th, .nstock .amb-table td { padding-inline: var(--amb-space-3); } }
 
+/* ---- Admin: Fable's review of 17 Nov 2026 ---- */
+/* the page's old status line is empty at rest; Ambient's panes take the screen to its foot only when nothing visible stands after the split (item 2) */
+#rmsg:empty { margin: 0; min-height: 0; }
+/* the glance heads the queue's pane (item 3): its own section head, two tiles across, Receivables across both */
+.nglancebox { display: grid; gap: var(--amb-space-3); }
+.nglancebox > .amb-tiles { padding-inline: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nglancebox > .amb-tiles > .nkpi--owed { grid-column: 1 / -1; }
+/* the find, notice and count head the accounts' first pane as part of its stack (item 3) */
+.afhead { display: contents; }
+/* the bar's hours chip is a control: a 44px hit area (item 11) */
+#aBarHours { min-height: var(--amb-tap); min-width: var(--amb-tap); }
+/* from 960px, where the panes take the screen: what stands before the split (the unsent notice, the parts, the filters) takes the panes' own edge, so the notice, the
+   filters and the queue's first card start on one line (item 16), and the second pane's group and the foot take the pane's width (item 15) */
+@container amb (min-width: 960px) {
+  @media (min-height: 640px) {
+    :is(#unsentBar, .amb-stack:has(> #nFail), .amb-stack:has(> .aparts), .afind):is(:has(~ .amb-split--panes:not([hidden])), :has(~ .amb-place:not([hidden]) .amb-split--panes:not([hidden]))) { padding-inline: 0; }
+    .amb-split--panes > .amb-stack:last-child .amb-settings, .amb-split--panes > .amb-stack:last-child .amb-foot > .amb-pill { max-width: none; }
+  }
+}
+
 /* ---- Record and Shop (Salt Admin) ---- */
 /* the wrappers a place draws into stand aside, so what they hold is the stack's own children and a foot stays the last thing of its stack */
 #makerNowCard, #makerNow, #makerSchedule, #makerPoints, #makerMarket, #makerCalendar, #makerBulletin, .apoints-sec, #mHelp, .recpane > section.maker-input:not([hidden]) { display: contents; }
@@ -339,8 +359,9 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
   #oSplit.open .ordqueue, #oSplit:not(.open) .ordrecord, #makerClaims.open > .amb-stack:first-child, #makerClaims:not(.open) > .amb-stack:last-child { display: none; }
 }
 /* the order: the band, the steps, his decision as parts of the record's stack, then the bill, the readings, the thread, where next, what ends it, and the foot */
+/* 17 Nov 2026 (Fable's review, item 20): a part of his decision stands a section gap under the Steps above it, so its head is not tight under the last step */
 .odecide { display: contents; }
-.odecide__part { min-width: 0; }
+.odecide__part { min-width: 0; margin-top: var(--amb-space-3); }
 .odecide__part > .amb-section:first-child { padding-top: 0; }
 .ostagerows:not(:has(> .amb-settings__list > li > :not([hidden]))), .oclaims:not(:has(> .amb-settings__list > li > :not([hidden]))),
 .ordend:not(:has(> .amb-settings__list > li > :not([hidden]))), .oagainrows:not(:has(> .amb-settings__list > li > :not([hidden]))),

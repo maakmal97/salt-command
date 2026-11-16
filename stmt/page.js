@@ -571,7 +571,7 @@ function aHero(title, sub, o) {
     + '<p class="amb-hero__time"><span class="abarlive" data-barlive' + (o.live ? ' id="aBarLive"' : "") + '></span><span class="clk" data-clock></span></p>'
     + (o.hours ? '<button type="button" class="amb-chip amb-chip--glass" id="aBarHours" data-act="bar.hours" hidden></button>' : "")
     /* Orders' one main action: Approve, the rows that wait (barLive names it with their count); its act is the bar's of 21 Oct 2026 */
-    + (o.approve ? '<div class="amb-cluster"><button type="button" class="amb-pill" id="aApprove" data-act="bar.approve">Approve</button></div>' : "")
+    + (o.approve ? '<div class="amb-cluster"><button type="button" class="amb-pill amb-pill--quiet" id="aApprove" data-act="bar.approve">Approve</button></div>' : "")
     + "</header>";
 }
 /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026: light and dark follow each device). ONE HEAD FOR EVERY PAGE THE SITE SERVES:
@@ -749,19 +749,20 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            (Orders' stages, Shop's hours) is never an amb-place. The parts segment stays before the body (his call, asked) */
         + '<div id="mHome" class="amb-place" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
-        /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice), the glance (Ambient's tiles, each a link
-           to Orders: Ready, To approve, Receivables with its meter) and the kinds (counted filters, one chosen). Under it the queue and the open card, two columns from
+        /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice) and the kinds (counted filters, one chosen); the glance (Ambient's tiles, each a link
+           to Orders: Ready, To approve, Receivables with its meter) heads the queue's pane (17 Nov 2026). Under the head the queue and the open card, two columns from
            960px, the card's one main action the foot of its column (stmt/owner.js needPane, nFoot); Stock by book under both, a table that stacks on a phone. */
         + '<div class="amb-stack">'
         + '<div id="nFail" class="amb-notice amb-notice--warn nfail" role="alert" hidden></div>'
-        + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section>'
         + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nkopt" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nkopt__n"></span></button>').join("") + "</div>"
         + "</div>"
         /* 16 Nov 2026 (0.7.8): the queue and the card are panes; Stock by book closes the queue's pane, since only hidden places may follow a split */
-        + '<div class="amb-split amb-split--panes nsplit"><div class="amb-stack"><div id="nlist" class="nlist"></div>'
+        /* 17 Nov 2026 (Fable's review, item 3): the glance is the queue's first group, under its own section head, two tiles across and Receivables across both */
+        + '<div class="amb-split amb-split--panes nsplit"><div class="amb-stack"><div class="nglancebox" id="nGlanceBox" hidden><h2 class="amb-section">At a glance</h2>'
+        + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section></div><div id="nlist" class="nlist"></div>'
         + '<section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden></section></div>'
-        + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><p class="rnone panenone">Choose a card to see it in full.</p></div></div>'
+        + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><div class="amb-settings rnone panenone"><h3 class="amb-settings__head">No card open</h3><ul class="amb-settings__list"><li><div class="amb-setting"><span class="amb-setting__name">Choose a card to see it in full.</span></div></li></ul></div></div></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
@@ -803,18 +804,19 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="oAccts" class="amb-place" data-in="customers.accounts">'
         /* 16 Nov 2026, the move to Ambient (place H): a notice leads, money first, then the find field and the filters, counted, as Ambient's Search and Filters; the accounts are
            rows in the first pane and the open account the second, which holds its one main action at its foot */
+        /* 17 Nov 2026, the move to Ambient (Fable's review, item 3): only the filters stand before the split; the summary notice, the find field and the sent count head the first pane */
         + '<div class="amb-stack afind">'
+        + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
+          '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
+          + '<span class="amb-segment__count"></span></button>').join("") + "</div>"
+        + "</div>"
+        + '<div class="amb-split amb-split--panes asplit"><div id="rlist" class="amb-stack alist"><div class="afhead">'
         + '<div class="amb-notice alead" id="alead" hidden>' + AMB.glyph("info") + '<span id="aleadT"></span></div>'
         + '<div class="amb-search">' + AMB.glyph("search", "sm")
         + '<input class="amb-input mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>'
-        + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
-          + '<span class="amb-segment__count"></span></button>').join("") + "</div>"
-        + '<p class="amb-field__hint" id="scount"></p>'
-        + "</div>"
-        + '<div class="amb-split amb-split--panes asplit"><div id="rlist" class="amb-stack alist"></div><div id="aside" class="amb-stack">'
-        + '<p class="amb-empty" id="anone">Choose an account.</p><div id="aopen" hidden></div></div></div>'
+        + '<p class="amb-field__hint" id="scount"></p></div></div><div id="aside" class="amb-stack">'
+        + '<div class="amb-settings" id="anone"><h3 class="amb-settings__head">No account open</h3><ul class="amb-settings__list"><li><div class="amb-setting"><span class="amb-setting__name">Choose an account.</span></div></li></ul></div><div id="aopen" hidden></div></div></div>'
         + "</div>"
         /* 16 Nov 2026, the move to Ambient (place H): Messages is a notice and two panes, the threads and the one open, which ends in its compose box as its foot */
         + '<div class="chatgrid amb-place" data-in="customers.messages"><div class="amb-stack"><h2 id="makerChatTitle" class="amb-vh">Messages</h2>'
@@ -845,12 +847,13 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + "</div></div>"
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
-        + '<div id="oRecord" class="aplace" data-in="record" hidden>'
+        /* 17 Nov 2026, the move to Ambient (Fable's review, items 1 and 2): Record is a chain of places like the others, so its hero rests as Needs you's does and its forms' two panes take the screen */
+        + '<div id="oRecord" class="aplace amb-place" data-in="record" hidden>'
         + aHero("Record", "")
         + '<p class="amb-vh">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
-        + '<div class="abody">'
-        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
+        + '<div class="abody amb-place">'
+        + '<section id="makerInputs" class="amb-place" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace amb-place" data-in="shop" hidden>'
@@ -882,7 +885,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + (test ? "" : '<p class="msg adev-note" id="alertNote" role="status"></p>') + "</div>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
-        + '<div class="amb-dock"><div id="apBar" class="amb-savebar apbar" hidden></div><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
+        + '<div class="amb-dock"><div id="apBar" class="apbar" hidden></div><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
           AMB.glyph(ADMIN_GLYPH[p === "messages" ? "customers" : m]) + "<span>" + w + "</span>"
           + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("") + "</nav></div>"
         + "</div>"

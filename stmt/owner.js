@@ -996,8 +996,8 @@ export const OWNER_JS = `
     var tail=el('li','oask'); tail.setAttribute('data-rowof',a.username); tail.setAttribute('role','status');
     var c={_body:tail, _grow:function(){}, _add:function(b){ if(!mv){ mv=b; if(!mv.getAttribute('data-key')) mv.setAttribute('data-key',a.username); } }};
     li.setAttribute('data-u',a.username);
-    if(s.act==='message'&&a.username){ var ms=aPill('Message','acct.message',a.username,true); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
-    else if(s.act==='send'){ c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm'; }
+    if(s.act==='message'&&a.username){ var ms=aPill('Message','acct.message',a.username,true,true); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(a.username); }); c._add(ms); }
+    else if(s.act==='send'){ c._add(linkButton(a, noteOf(c))); mv.className='amb-pill amb-pill--sm amb-pill--quiet'; }
     else if(s.act==='show') acctShow(a, c);
     else { var op=aPill('Open','acct.open-card',a.username,true,true); op.addEventListener('click', function(){ openCard(a.username); }); c._add(op); }
     var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button';
@@ -1019,7 +1019,7 @@ export const OWNER_JS = `
   }
   /* Show, for an ID with no account: the standing guest link, its code in the system's frame and Copy link, under the row it was asked on */
   function acctShow(a, c){
-    var sh=aPill('Show','acct.show-link',null,true); sh.setAttribute('aria-label','Show the guest price list');
+    var sh=aPill('Show','acct.show-link',null,true,true); sh.setAttribute('aria-label','Show the guest price list');
     c._add(sh);
     var note=noteOf(c);
     function openSilver(){
@@ -1063,7 +1063,8 @@ export const OWNER_JS = `
   function drawRoster(){
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
-    rlist.textContent='';
+    /* 17 Nov 2026, the move to Ambient (Fable's review, item 3): the pane's head (notice, find, count) stays; the groups are drawn afresh */
+    [].slice.call(rlist.children).forEach(function(c){ if(!c.classList.contains('afhead')) rlist.removeChild(c); });
     var pool=sheet?sheetRows:OWNER.accounts;
     /* each filter counts its accounts beside its word, and one with none is dimmed and cannot be chosen; the one in use is let go when none is left in it */
     [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
@@ -1183,9 +1184,9 @@ export const OWNER_JS = `
       sub.appendChild(el('span',pending?'amb-neg':null,word)); sub.appendChild(document.createTextNode(', '+age+(shut?'':', opened '+(r.opens||0)+(+r.opens===1?' time':' times')))); tx.appendChild(sub);
       main.appendChild(tx); main.setAttribute('aria-expanded',open?'true':'false'); row.appendChild(main);
       var go;
-      if(pending){ go=aPill('Approve','link.approve-card',r.id,true); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }
-      else if(r.revoked){ go=aPill('Restore','link.restore-card',r.id,true); go.addEventListener('click', function(){ moveLink(r,'restore'); }); }
-      else { go=aPill('Copy','link.copy-card',r.id,true); go.addEventListener('click', async function(){ try{ await navigator.clipboard.writeText(r.url); go.textContent='Copied'; }catch(e){ go.textContent='Not copied'; } setTimeout(function(){ go.textContent='Copy'; }, 1500); }); }
+      if(pending){ go=aPill('Approve','link.approve-card',r.id,true,true); go.addEventListener('click', function(){ moveLink(r,'approve'); }); }
+      else if(r.revoked){ go=aPill('Restore','link.restore-card',r.id,true,true); go.addEventListener('click', function(){ moveLink(r,'restore'); }); }
+      else { go=aPill('Copy','link.copy-card',r.id,true,true); go.addEventListener('click', async function(){ try{ await navigator.clipboard.writeText(r.url); go.textContent='Copied'; }catch(e){ go.textContent='Not copied'; } setTimeout(function(){ go.textContent='Copy'; }, 1500); }); }
       var tr=el('span','amb-row__trail'); tr.appendChild(go); row.appendChild(tr);
       list.appendChild(row);
       var card=el('li','glpanel'); card.setAttribute('data-link',r.id); card.open=open; card.hidden=!open;
@@ -2079,7 +2080,7 @@ export const OWNER_JS = `
         tx.appendChild(sub); open.appendChild(tx); row.appendChild(open);
         open.setAttribute('aria-label',(asked?'Waiting':'Answered')+(age?', '+age:'')+': '+who+(last.text?', '+cut(last.text):'')+(owe>0.004?', owes '+rmShort(owe):''));
         open.addEventListener('click', function(){ openMakerThread(th.u); });
-        if(asked){ var tr=el('span','amb-row__trail'), b=aPill('Reply','chat.reply-open',th.u,true); b.addEventListener('click', function(){ openMakerThread(th.u); }); tr.appendChild(b); row.appendChild(tr); }
+        if(asked){ var tr=el('span','amb-row__trail'), b=aPill('Reply','chat.reply-open',th.u,true,true); b.addEventListener('click', function(){ openMakerThread(th.u); }); tr.appendChild(b); row.appendChild(tr); }
         if(makerThreadUser===th.u){ row.setAttribute('aria-current','true'); open.setAttribute('aria-current','true'); }
         ul.appendChild(row);
       });
@@ -4095,7 +4096,7 @@ export const OWNER_JS = `
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
        them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
     var grid=el('div','amb-split amb-split--panes recgrid'), list=el('div','amb-stack reclist'), pane=el('div','amb-stack recpane');
-    grid.id='makerFormGrid'; pane.appendChild(el('p','amb-prose rnone recnone','Choose a form to open it here.'));
+    grid.id='makerFormGrid'; var none=sGroup('No form open','rnone recnone'); none.list.appendChild(sLi(sRead('Choose a form to open it here.'))); pane.appendChild(none);   /* 17 Nov 2026, the move to Ambient (Fable's review, item 10): Shop's empty pane, a head over a one-row card */
     grid.appendChild(list); grid.appendChild(pane); box.insertBefore(grid,back.nextSibling);
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
@@ -4795,7 +4796,7 @@ export const OWNER_JS = `
   }
   function ordMoveGhost(e,f){
     if(!f.move) return null;
-    var g=aPill(f.move,'order.move',e.id,true);
+    var g=aPill(f.move,'order.move',e.id,true,true);
     g.addEventListener('click', function(){ ordMoveTap(e,f.move); });
     if(ordAsk[e.id]||ordBusy[e.id]) g.hidden=true;
     return g;
@@ -6349,6 +6350,8 @@ export const OWNER_JS = `
     var bar=document.getElementById('apBar'); if(!bar) return;
     var gs=apGroups(), A=gs.filter(function(g){ return apPick[g.lead.id]==='a'; }), R=gs.filter(function(g){ return apPick[g.lead.id]==='r'; });
     bar.textContent=''; bar.hidden=!(A.length+R.length);
+    /* 17 Nov 2026, the move to Ambient (Fable's review, item 2): Ambient keeps a dock's save bar room clear even while it is hidden, so the class stands only while it shows */
+    bar.classList.toggle('amb-savebar',!bar.hidden);
     try{ drawNeedOpen(false); }catch(e){}
     if(bar.hidden) return;
     bar.appendChild(el('span','amb-savebar__text apbar__line',[A.length?A.length+' to approve':'',R.length?R.length+' to reject':''].filter(Boolean).join(' \u00b7 ')));
@@ -7062,7 +7065,7 @@ export const OWNER_JS = `
       sub.appendChild(el('span',waiting?'amb-neg':null,joinWord(r))); sub.appendChild(document.createTextNode(age?', '+age:'')); tx.appendChild(sub); row.appendChild(tx);
       var tr=el('span','amb-row__trail');
       if(waiting){
-        var ap=aPill('Approve','join.approve',key,true), de=aPill('Decline','join.decline',key,true,true);
+        var ap=aPill('Approve','join.approve',key,true,true), de=aPill('Decline','join.decline',key,true,true);
         ap.setAttribute('data-move',''); de.setAttribute('data-move','');
         ap.disabled=de.disabled=!!joinMoving[r.id];
         ap.addEventListener('click', function(){ moveJoin(r,'approve'); }); de.addEventListener('click', function(){ moveJoin(r,'decline'); });
@@ -8045,7 +8048,7 @@ export const OWNER_JS = `
   function drawGlance(){
     var g=document.getElementById('nGlance'); if(!g) return;
     stockRead();
-    if(!makerData){ g.hidden=true; return; }
+    if(!makerData){ g.hidden=true; if(g.parentNode) g.parentNode.hidden=true; return; }
     var ready=0, owe=0, due=0;
     (makerData.orders||[]).forEach(function(o){
       if(o.test&&!TESTING) return;
@@ -8058,7 +8061,7 @@ export const OWNER_JS = `
     var tiles=[['#orders/ready','ready','Ready',String(ready),'brass'],['#orders/approve','approve','To approve',String(draftGroups(pendingRows()).length),'copper'],
       ['#orders','owed','Receivables',rmShort(owe),'verdigris',fill,rmShort(paid),rmShort(due)]];
     var sig=JSON.stringify(tiles);
-    g.hidden=false;
+    g.hidden=false; if(g.parentNode) g.parentNode.hidden=false;
     if(g.getAttribute('data-sig')===sig) return;
     g.setAttribute('data-sig',sig); g.textContent='';
     tiles.forEach(function(t){
