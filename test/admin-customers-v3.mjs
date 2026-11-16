@@ -273,7 +273,7 @@ export async function run({ ok, pageWork }) {
     const { ADMIN_TO } = await import("../src/worker.js");
     ok(ADMIN_TO.test("shop/calendar") && !ADMIN_TO.test("shop/calendars") && !ADMIN_TO.test("shop") && !ADMIN_TO.test("calendar") && !ADMIN_TO.test("shop/calendar/x"), "the Desk's Act road takes shop/calendar and refuses a near miss");
     const p = await open({ hash: "#shop/calendar" });
-    const here = [...p.d.querySelectorAll('.aparts[data-place="shop"] button[aria-selected="true"]')].map((b) => b.getAttribute("data-part")).join();
+    const here = [...p.d.querySelectorAll('.aparts[data-place="shop"] button[aria-pressed="true"]')].map((b) => b.getAttribute("data-part")).join();
     ok(here === "calendar" && shown(p.d.getElementById("makerCalendar")), "the address #shop/calendar opens Shop's Calendar part: " + here);
   }
 }

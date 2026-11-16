@@ -25,7 +25,7 @@ export async function run({ ok, pageWork }) {
   try {
     /* ---- 1 ---- */
     const A = await page({ orders: [C, D].concat(rest) });
-    const homeT = [...A.d.querySelectorAll("#hAgain .htile")].length;
+    const homeT = [...A.d.querySelectorAll("#hAgain [data-hagain]")].length;
     await showOrders(A);
     const rows = again(A);
     const screens = [];
@@ -82,7 +82,7 @@ export async function run({ ok, pageWork }) {
     const G = await page({ orders: [C, D], late: 1 });
     await showOrders(G);
     G.d.querySelector('#pOrder button[data-row="oC"]').click(); await G.settle();
-    ok(!G.d.querySelector("[data-again]") && !G.d.querySelector("#hAgain .htile"), "no Order again anywhere under the overdue gate");
+    ok(!G.d.querySelector("[data-again]") && !G.d.querySelector("#hAgain [data-hagain]"), "no Order again anywhere under the overdue gate");
 
     /* ---- 5 ---- */
     const F = await page({ orders: [C, ord("oP", "ready", ago(50))] });

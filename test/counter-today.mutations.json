@@ -1,19 +1,20 @@
 [
  {"name":"the notice stands still","file":"stmt/page.js","find":"    if(turns) bullTimer=setInterval(bullTurn,BULL_MS);\n","replace":""},
  {"name":"the notice turns every four seconds","file":"stmt/page.js","find":"BULL_MS=6000,","replace":"BULL_MS=4000,"},
- {"name":"every line is on","file":"stmt/page.js","find":"p.classList.toggle('salt-notice__line--on',i===bullAt);","replace":"p.classList.toggle('salt-notice__line--on',true);"},
- {"name":"the dots do not follow","file":"stmt/page.js","find":"d.classList.toggle('salt-notice__dot--on',i===bullAt);","replace":"d.classList.toggle('salt-notice__dot--on',i===0);"},
+ {"name":"every line is on","file":"stmt/page.js","find":"p.hidden=!bullAll&&i!==bullAt;","replace":"p.hidden=false;"},
+ {"name":"reduced motion hides the other lines","file":"stmt/page.js","find":"    bullAll=!turns;\n","replace":"    bullAll=true;\n"},
  {"name":"Pause holds nothing","file":"stmt/page.js","find":"if(bullHeld||n<2) return;","replace":"if(n<2) return;"},
  {"name":"Pause keeps its name","file":"stmt/page.js","find":"      pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause'));","replace":"      pz.setAttribute('aria-label',tw('bull.pause'));"},
  {"name":"Pause never says it is pressed","file":"stmt/page.js","find":"bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');","replace":"bullHeld=!bullHeld;"},
  {"name":"reduced motion still turns","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>1;"},
  {"name":"a single line turns with a Pause","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>0&&!still;"},
- {"name":"the card is a live region","file":"stmt/page.js","find":"'<section id=\"today\" class=\"today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm\"' + wl(\"today.aria\") + \">\"","replace":"'<section id=\"today\" aria-live=\"polite\" class=\"today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm\"' + wl(\"today.aria\") + \">\""},
- {"name":"the clock leaves the card","file":"stmt/page.js","find":"<span class=\"today__clock\" data-clock></span>","replace":""},
+ {"name":"the card is a live region","file":"stmt/page.js","find":"'<div id=\"today\" class=\"amb-notice\"' + (lines.length ? \"\" : \" hidden\") + wl(\"today.aria\")","replace":"'<div id=\"today\" class=\"amb-notice\" aria-live=\"polite\"' + (lines.length ? \"\" : \" hidden\") + wl(\"today.aria\")"},
+ {"name":"the hero loses its clock","file":"stmt/page.js","find":"<p class=\"amb-hero__time\" data-clock></p></header>","replace":"<p class=\"amb-hero__time\"></p></header>"},
  {"name":"open reads Closed","file":"stmt/page.js","find":"chip.textContent=tw(h.open?'today.open':'today.closed');","replace":"chip.textContent=tw('today.closed');"},
  {"name":"the hours are never drawn","file":"stmt/page.js","find":"    if(before!==JSON.stringify([counterHours,hoursError])) todayDraw();\n","replace":""},
  {"name":"unread hours still show","file":"stmt/page.js","find":"    chip.hidden=!known; line.hidden=!known;","replace":"    chip.hidden=false; line.hidden=false;"},
  {"name":"closed says nothing of when it opens","file":"stmt/page.js","find":"tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)})","replace":"''"},
- {"name":"the card has no padding","file":"stmt/page.js","find":"salt-glass-card--radius-lg salt-glass-card--pad-sm\"' + wl(\"today.aria\")","replace":"salt-glass-card--radius-lg\"' + wl(\"today.aria\")"},
- {"name":"Home says the time twice","file":"stmt/page.js","find":".cshell[data-place=home] .chead .cclock{display:none}","replace":".cshell[data-place=home] .chead .cclock{}"}
+ {"name":"the card is not Ambient's notice","file":"stmt/page.js","find":"'<div id=\"today\" class=\"amb-notice\"' + (lines.length ? \"\" : \" hidden\") + wl(\"today.aria\")","replace":"'<div id=\"today\" class=\"today\"' + (lines.length ? \"\" : \" hidden\") + wl(\"today.aria\")"},
+ {"name":"Home says the time twice","file":"stmt/statement-css.js","find":".amb-mini[data-live] { cursor: pointer; }","replace":".amb-mini[data-live] { cursor: pointer; }\\n#tabs[data-place=\\\"home\\\"] > .amb-screen > .amb-hero > .amb-hero__time { display: none; }"},
+ {"name":"the card stands empty","file":"stmt/page.js","find":"if(t&&o&&b) t.hidden=o.hidden&&b.hidden;","replace":""}
 ]

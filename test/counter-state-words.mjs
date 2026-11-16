@@ -112,15 +112,16 @@ export async function run({ ok }) {
   /* what is DRAWN: every text node a person can see, which leaves out what the reader alone is told (.sr), a mark's own letter (it is in the svg)
      and the page's script and style */
   const drawnText = (root) => { const out = [], tw = root.ownerDocument.createTreeWalker(root, 4);
-    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, svg")) out.push(n.nodeValue); }
+    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, .amb-vh, .amb-thumb__word, svg")) out.push(n.nodeValue); }
     return out.join(" ").replace(/\s+/g, " "); };
   /* the shape words drawn under root, each as many times as it stands (a mark whose shape word is drawn is a mark that is not alone) */
   const shapesDrawn = (root) => { const s = drawnText(root); return SHAPES.flatMap((w) => s.match(new RegExp("\\b" + w + "\\b", "g")) || []); };
   /* a mark with no name: the reader is told its shape by the heading's own label, by the .sr that follows it, or by its tile's .sr. A nameless mark is a hole. */
   /* plan version 10 (03 Nov 2026): a mark that stands alone is a coin (span.salt-coin), a mark under 28px keeps svg.psym; both are marks and both are named by their shape */
-  const MARKS = "svg.psym:not(.glyph), .salt-coin";
+  /* 16 Nov 2026, the move to Ambient: Home's and Rewards' marks are the mark thumb, named by a visually hidden shape word in its row (.amb-vh), never drawn */
+  const MARKS = "svg.psym:not(.glyph), .salt-coin, .amb-thumb--mark";
   const nameless = (d) => [...d.querySelectorAll(MARKS)].filter((s) => {
-    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack"), tsr = tile && tile.querySelector(".sr");
+    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack, .amb-row, .amb-mini"), tsr = tile && tile.querySelector(".sr, .amb-vh");
     return !((host && SHAPES.some((x) => host.getAttribute("aria-label").startsWith(x)))
       || (nx && nx.classList.contains("sr") && SHAPES.includes(t(nx))) || (tsr && SHAPES.some((x) => t(tsr).startsWith(x))));
   });
@@ -135,25 +136,28 @@ export async function run({ ok }) {
     S.d.querySelector("#pOrder .olater").click();
     await until(() => S.d.querySelector('#pOrder [data-row="' + G.id + '"]'));
     const R0 = rows(S);
-    const chip = (id) => t(R0[id].querySelector(".salt-status"));
+    /* 16 Nov 2026, the move to Ambient: a row's state is a word, the first of its second line, never a chip (hSub); the band's is the system's Chip */
+    const chip = (id) => t(R0[id].querySelector(".amb-row__sub span > span"));
     const want = { [A.id]: "Placed", [B.id]: "Confirmed", [H.id]: "Confirmed", [R.id]: "Ready to deliver", [D1.id]: "Collected", [D2.id]: "Delivered",
       [N.id]: "Complete", [E.id]: "Declined", [F.id]: "Cancelled by us", [G.id]: "Cancelled by you" };
     const got = Object.fromEntries(ALL.map((o) => [o.id, R0[o.id] ? chip(o.id) : null]));
     ok(JSON.stringify(got) === JSON.stringify(want),
       "each state is one word on its row under Your orders: Placed, Confirmed, Ready to deliver, Collected, Delivered, Complete, Declined and the two cancellations: " + JSON.stringify(got));
-    /* Counter Batch A (18 Oct 2026): one glyph before each word, aria-hidden, so the word above is still all the chip says */
-    const glyph = (id) => { const c = R0[id] && R0[id].querySelector(".salt-status"), g = c ? [...c.querySelectorAll("svg")] : [];
-      return g.length === 1 && c.firstChild === g[0] && g[0].getAttribute("aria-hidden") === "true" && g[0].classList.contains("salt-status__glyph") ? g[0].getAttribute("data-g") : null; };
-    const wantG = { [A.id]: "dot", [B.id]: "tick", [H.id]: "tick", [R.id]: "tick", [D1.id]: "ticks", [D2.id]: "ticks", [N.id]: "ticks", [E.id]: "cross", [F.id]: "cross", [G.id]: "cross" };
-    const gotG = Object.fromEntries(ALL.map((o) => [o.id, glyph(o.id)]));
+    /* Counter Batch A (18 Oct 2026) put a glyph before each word; the system's Row says the state in colour as well as words (hSub), and its Chip its dot: plain while it
+       waits on us, ready to collect or deliver or ended, positive once it is confirmed, with them or complete */
+    const tone = (id) => { const c = R0[id] && R0[id].querySelector(".amb-row__sub span > span"); return c ? (c.classList.contains("amb-pos") ? "pos" : "plain") : null; };
+    const wantG = { [A.id]: "plain", [B.id]: "pos", [H.id]: "pos", [R.id]: "plain", [D1.id]: "pos", [D2.id]: "pos", [N.id]: "pos", [E.id]: "plain", [F.id]: "plain", [G.id]: "plain" };
+    const gotG = Object.fromEntries(ALL.map((o) => [o.id, tone(o.id)]));
     ok(JSON.stringify(gotG) === JSON.stringify(wantG),
-      "each chip leads with one aria-hidden glyph: a dot while placed, a tick once confirmed or ready, a double tick once handed over or complete, a cross once ended: " + JSON.stringify(gotG));
+      "each row's state word is plain while placed, ready or ended and positive once confirmed, with them or complete: " + JSON.stringify(gotG));
 
     const screen = async (o) => { R0[o.id].click(); await until(() => S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]')); return S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]'); };
     /* 2 Nov 2026 (his Orders canvas, page 2): the state word is the band's chip, the heading that repeated it gone */
-    const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .salt-band__head .salt-status')), when: t(s.querySelector('[data-part="when"]')),
-      steps: [...s.querySelectorAll('[data-part="steps"] li .salt-steps__name')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
+    const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)')), tone: [...s.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)').classList].filter((c) => /^amb-chip--/.test(c)).join(), when: t(s.querySelector('[data-part="when"]')),
+      steps: [...s.querySelectorAll('[data-part="steps"] li .amb-step__title')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
     const sA = parts(await screen(A)), sB = parts(await screen(B)), sH = parts(await screen(H)), sD2 = parts(await screen(D2)), sE = parts(await screen(E)), sN = parts(await screen(N));
+    ok(sA.tone === "" && sB.tone === "amb-chip--pos" && sD2.tone === "amb-chip--pos" && sE.tone === "" && sN.tone === "amb-chip--pos",
+      "the band's chip is plain while placed or ended and positive once confirmed, with them or complete: " + JSON.stringify([sA.tone, sB.tone, sD2.tone, sE.tone, sN.tone]));
     ok(sA.head === "Placed" && /^Waiting for us to confirm\. You will see it change here\./.test(sA.when) && sA.steps === "Placed|Confirmed|Ready|Paid|Collected",
       "a placed order's own screen reads Placed, Waiting for us to confirm, and its steps run Placed, Confirmed, Ready, Paid, Collected: " + JSON.stringify(sA));
     ok(sB.head === "Confirmed" && /^Confirmed on \d\d \w{3} \d{4}, and being prepared\./.test(sB.when) && sB.steps === "Placed|Confirmed|Ready|Paid|Collected",
@@ -164,10 +168,11 @@ export async function run({ ok }) {
       "a declined order reads Declined, then his reason, and its history says Declined: " + JSON.stringify([sE.head, sE.when, sE.hist]));
     ok(/Sent by you/.test(sH.money) && /Waiting for us to confirm/.test(sH.money) && !/Sent, waiting/.test(sH.money.replace(/Sent, waiting for us to confirm/, "")),
       "a claim of theirs waiting is Waiting for us to confirm beside what they sent: " + JSON.stringify(sH.money));
-    const whyA = t(R0[A.id].querySelector(".ocard__what"));
+    const whyA = t(R0[A.id].querySelector(".amb-row__sub"));
     tab(S, "home");
     await until(() => /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))));
-    ok(whyA === "Waiting for us to confirm" && /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))),
+    /* 16 Nov 2026, the move to Ambient: Coming up names the state, then its words in lower case ("Placed, waiting for us to confirm"), so the row is read whole and the old family looked for in any case */
+    ok(whyA === "Placed, waiting for us to confirm" && /Placed, waiting for us to confirm/.test(t(S.d.getElementById("hComing"))) && !/sent, waiting(?! for us to confirm)/i.test(t(S.d.getElementById("hComing"))),
       "a placed order is waiting on the same words in the list's reason and on Home's Coming up: " + JSON.stringify([whyA, t(S.d.getElementById("hComing")).slice(0, 80)]));
 
     /* ---- 3: no word of the family in any text the page renders; Place and the order sheet driven too */
@@ -188,8 +193,8 @@ export async function run({ ok }) {
     L.d.getElementById("spUse").click();
     const formText = t(L.d.getElementById("osheet"));
     L.d.getElementById("oGo").click();
-    const checkText = t(L.d.getElementById("osheet")), delRow = [...L.d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => t(r.querySelector(".salt-ledger__label")) === "Delivery");
-    ok(!FAMILY.test(formText + checkText) && /confirm your order, before you pay/.test(checkText) && t(delRow.querySelector(".salt-ledger__value")) === "Set when we confirm it" && /set when we confirm it/.test(formText),
+    const checkText = t(L.d.getElementById("osheet")), delRow = [...L.d.querySelectorAll("#osheet .amb-setting")].find((r) => t(r.querySelector(".amb-setting__name")) === "Delivery");   /* 16 Nov 2026, the move to Ambient: the check's rows are the system's settings */
+    ok(!FAMILY.test(formText + checkText) && /confirm your order, before you pay/.test(checkText) && t(delRow.querySelector(".amb-setting__value")) === "Set when we confirm it" && /set when we confirm it/.test(formText),
       "the order sheet and its check say confirm where they said acknowledge: the delivery sentence, the line and the form: " + JSON.stringify(t(delRow)));
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
@@ -249,7 +254,9 @@ export async function run({ ok }) {
 
     /* ---- 7: a mark stands alone (his word of 12 Oct 2026): no shape word is drawn, and the reader is still told the shape */
     const nameP = marks(S.d), nameL = marks(L.d);
-    const heads = [...S.d.querySelectorAll("#pPrices h2.pmark")].map((h) => [h.getAttribute("aria-label").split(",")[0], drawnText(h).trim()]);
+    /* 16 Nov 2026, the move to Ambient: a heading is its mark thumb and its light's chip, the light being words of the light and no shape word */
+    const headText = (h) => { const c = h.cloneNode(true); c.querySelectorAll(".amb-chip").forEach((x) => x.remove()); return drawnText(c).trim(); };
+    const heads = [...S.d.querySelectorAll("#pPrices h2.pmark")].map((h) => [h.getAttribute("aria-label").split(",")[0], headText(h)]);
     ok(seen.marks >= 25 && shapesDrawn(S.d.body).length === 0 && shapesDrawn(L.d.body).length === 0 && nameP.length === 0 && nameL.length === 0
       && heads.length === 4 && heads.every(([a, b]) => SHAPES.includes(a) && b === ""),
       "no shape word is drawn across Prices, Home, Your orders, each order's screen and the order sheet, every mark is still named by its shape for the reader, and a heading is its mark alone: " + JSON.stringify({ marks: seen.marks, drawn: shapesDrawn(S.d.body).concat(shapesDrawn(L.d.body)), nameless: nameP.length + nameL.length, heads }));
@@ -257,8 +264,8 @@ export async function run({ ok }) {
     tab(checkL, "order"); await until(() => checkL.d.getElementById("oNew"));
     /* plan version 8: the sheet lists the lines Order made, each its mark and its size; the form holds the line of one tap, the check one a book of the basket */
     await startAt(checkL.d);
-    const legsAll = [...checkL.d.querySelectorAll("#osheet [data-sheet-lines] .pwith")].filter((f) => f.querySelector("svg.psym"));
-    const legs = legsAll.map((f) => [t(f.querySelector(".sr")), drawnText(f).trim()]);
+    const legsAll = [...checkL.d.querySelectorAll("#osheet [data-sheet-lines] .amb-row")].filter((f) => f.querySelector(".amb-thumb--mark"));
+    const legs = legsAll.map((f) => [t(f.querySelector(".amb-vh")), drawnText(f.querySelector(".amb-row__title")).trim()]);
     checkL.d.querySelector('#osheet [data-k="close"]').click();
     /* plan version 9: the size started is the basket's line; it is taken out before the basket is built */
     for (const x of [...checkL.d.querySelectorAll("#pPrices [data-bkout]")]) x.click();
@@ -267,10 +274,10 @@ export async function run({ ok }) {
       await basketAdd(checkL, sh, pn.querySelector(".szrow").getAttribute("data-q"));
     }
     await toSheet(checkL);
-    const lines = [...checkL.d.querySelectorAll("#osheet .pwith")].map((x) => [t(x.querySelector(".sr")), drawnText(x).trim()]);
+    const lines = [...checkL.d.querySelectorAll("#osheet .amb-list .amb-row")].map((x) => [t(x.querySelector(".amb-vh")), drawnText(x.querySelector(".amb-row__title")).trim()]);
     ok(legs.length === 1 && legs.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn)) && lines.length >= 4 && lines.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn))
       && marks(checkL.d).length === 0 && shapesDrawn(checkL.d.body).length === 0,
-      "the order sheet names each book by its shape for the reader only, in the line of the form and in each line of the check, drawn as the size then the mark: " + JSON.stringify({ legs, lines }));
+      "the order sheet names each book by its shape for the reader only, in the line of the form and in each line of the check, drawn as the size beside the mark thumb: " + JSON.stringify({ legs, lines }));
 
     /* 7b: a sheet of two books whose list moved at Place: each line that moved leads with its mark, named by its shape for the reader only */
     const list2 = (digest, oil10) => ({ at: new Date().toISOString(), digest, week: { monday: "2026-10-05", label: "5 to 11 Oct 2026" }, soon: [],
@@ -286,18 +293,28 @@ export async function run({ ok }) {
     const way0 = M.d.querySelector('#osheet [data-k="mode:0"]'); if (way0) way0.click();
     if (M.d.getElementById("oGo")) M.d.getElementById("oGo").click();
     M.d.getElementById("oPlace").click();
-    await until(() => M.d.querySelector("#osheet .salt-insight--copper"));
-    const mv = M.d.querySelector("#osheet .salt-insight--copper"), mvKid = mv && mv.firstElementChild, mvNext = mvKid && mvKid.nextElementSibling;
+    await until(() => M.d.querySelector("#osheet .amb-notice--warn"));
+    const mv = M.d.querySelector("#osheet .amb-notice--warn"), mvBody = mv && mv.lastElementChild, mvKid = mvBody && mvBody.firstElementChild, mvNext = mvKid && mvKid.nextElementSibling;
     ok(!!mv && /Now RM 99\.00 \(was RM 95\.00\)/.test(t(mv)) && !!mvKid && mvKid.classList.contains("psym") && !!mvNext && mvNext.classList.contains("sr") && t(mvNext) === "Droplet"
       && shapesDrawn(mv).length === 0 && marks(M.d).length === 0,
       "a line of the check whose price moved at Place leads with its mark, named by its shape for the reader and drawn with no shape word: " + JSON.stringify(mv && drawnText(mv)));
 
+    /* ---- 7b: a mark in a sentence the page words again (markHtml: the pay sheet's note, its lines) is read aloud as its shape and never drawn as one
+       (16 Nov 2026, the move to Ambient: Home no longer calls markHtml, so the check drives the pay sheet, which does) */
+    const PY = await open({ orders: [R] }); tab(PY, "order");
+    await until(() => PY.d.querySelector('#pOrder [data-row="' + R.id + '"]')); PY.d.querySelector('#pOrder [data-row="' + R.id + '"]').click();
+    await until(() => PY.d.querySelector("#pOrder .amb-foot button")); PY.d.querySelector("#pOrder .amb-foot button").click();
+    const srs = [...PY.d.querySelectorAll("#paySheet .psym + .sr")], drawn = [...PY.d.querySelectorAll("#paySheet .pshape")];
+    ok(srs.length > 0 && drawn.length === 0 && srs.every((x) => SHAPES.includes(t(x))),
+      "a mark in a sentence on the pay sheet is the drawing and its shape word read aloud, and no shape word is drawn beside it: " + JSON.stringify(srs.map((x) => t(x))));
     /* ---- 8: the tile's caption is the size alone */
-    const tile = S.d.querySelector('#pOrder [data-row="' + A.id + '"] .mtile');
+    /* 16 Nov 2026: the list's rows are the system's Row (no tile); the size under the mark stands in the open order's band */
+    await screen(A);
+    const tile = S.d.querySelector('#pOrder .oscreen[data-order="' + A.id + '"] [data-part="head"] .mtile');
     const capOf = (tl) => t(tl.querySelector(".mq")), srOf = (tl) => t(tl.querySelector(".sr"));
     const tiles = [...S.d.querySelectorAll(".mtile")];
     ok(!!tile && capOf(tile) === "2.5 units" && srOf(tile) === "Cube 2.5 units" && tile.querySelector(".mq").getAttribute("aria-hidden") === "true" && !tile.querySelector(".mq .nb")
-      && tiles.length > 10 && tiles.every((tl) => srOf(tl) === SHAPES.find((s) => srOf(tl).startsWith(s + " ")) + " " + capOf(tl)),
+      && tiles.length >= 1 && tiles.every((tl) => srOf(tl) === SHAPES.find((s) => srOf(tl).startsWith(s + " ")) + " " + capOf(tl)),
       "a tile's caption is the size in words, 2.5 units, with no shape word, and a reader hears the shape and the size once; on every tile the reader's name is the shape, then the caption: " + JSON.stringify([capOf(tile), srOf(tile)]));
     const sv = new JSDOM("<body>" + P.mtileSvg("salt", "2.5 units") + P.mtileSvg("tin", "1 unit") + "</body>").window.document;
     const [t1, t2] = [...sv.querySelectorAll(".mtile")];
@@ -338,7 +355,7 @@ export async function run({ ok }) {
     const all = TF.buildAll(new Date()), fixOrders = Object.values(all).flatMap((f) => f.orders);
     const FX = await open({ orders: fixOrders.slice(0, 40) });
     tab(FX, "order");
-    const fxChips = [...FX.d.querySelectorAll("#pOrder [data-row] .salt-status")].map(t);
+    const fxChips = [...FX.d.querySelectorAll("#pOrder [data-row] .amb-row__sub")].map((s) => t(s.querySelector(":scope > span > span")));
     const fxStates = new Set(fixOrders.map((o) => o.status));
     const KNOWN = new Set(["Placed", "Confirmed", "Ready to collect", "Ready to deliver", "Collected", "Delivered", "Part collected", "Part delivered", "Complete", "Declined", "Cancelled by us", "Cancelled by you"]);
     ok(["placed", "acknowledged", "ready", "done", "declined", "cancelled"].every((s) => fxStates.has(s)) && fxChips.length > 5 && fxChips.every((c) => KNOWN.has(c)) && fxChips.includes("Placed") && fxChips.includes("Confirmed")

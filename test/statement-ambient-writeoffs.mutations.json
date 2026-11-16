@@ -1,0 +1,4 @@
+[
+ {"name":"a foot figure is not the system's value","file":"tools/make_statements.mjs","find":"(val===''?'':'<span class=\"amb-setting__value'","replace":"(val===''?'':'<span class=\"v'"},
+ {"name":"the foot is not a group of settings","file":"tools/make_statements.mjs","find":"lines?'<div class=\"amb-settings tot\"><ul class=\"amb-settings__list\">':'<div class=\"tot\">',","replace":"lines?'<div class=\"tot\"><ul class=\"amb-settings__list\">':'<div class=\"tot\">',"}
+]

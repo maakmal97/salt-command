@@ -18,12 +18,14 @@ const TRIPS = [{ trip: "t1792000000000", party: "CQ7-ZED", date: D, owed: 145, s
 const DAYS = [{ rids: ["cq7", "cq8"], party: "CQ8-ZED", date: D, owed: 145, stage: "confirmed", lines: lines("cq7", "cq8") },
   { rids: ["cq9", "cq10"], party: "CQ8-ZED", date: D, owed: 0, stage: "done", lines: lines("cq9", "cq10") }];
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: ORDERS, drafts: [], queue: [], rows: ROWS, trips: TRIPS, sameDay: DAYS }) });
   try {
     await p.work.quiet();
-    const d = p.d, rail = () => { const c = d.querySelector('.salt-rail [data-count="orders"]'); return c ? c.textContent : null; };
-    const bar = () => { const c = d.querySelector('[data-act="bar.orders"] .salt-deskbar__n'); return c ? c.textContent : null; };
+    const d = p.d, rail = () => { const c = d.querySelector('.amb-tabbar [data-count="orders"]'); return c ? c.textContent : null; };
+    /* 15 Nov 2026, the move to Ambient: the bar's chips went; the tab says the count in its own name (Ambient 0.7.2) */
+    const bar = () => { const c = d.querySelector('.amb-tabbar .place[data-m="orders"]:not([data-p])'), m = c && /, (\d+) waiting$/.exec(c.getAttribute('aria-label') || ''); return m ? m[1] : null; };
     const tap = async (act, key) => { const e = byAct(d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
     /* 1 */
     await tap("nav.orders"); await tap("part.orders.open");
@@ -37,7 +39,7 @@ export async function run({ ok, pageWork }) {
     ok(rail() === "5", "the bars redrawn alone still count the book's open orders: " + rail());
     /* 3 */
     const t = p.intervals.filter((i) => i.ms === 5000 && !i.off)[0];
-    d.querySelectorAll('.salt-rail [data-count="orders"]').forEach((c) => { c.textContent = ""; });
+    d.querySelectorAll('.amb-tabbar [data-count="orders"]').forEach((c) => { c.textContent = ""; });
     await tap("nav.orders"); if (t) t.f(); await p.work.quiet();
     ok(rail() === "5", "and so does the list redrawn on the orders' read: " + rail());
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }

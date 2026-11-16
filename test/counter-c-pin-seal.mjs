@@ -132,7 +132,7 @@ export async function run({ ok }) {
     if (await wait(cardOf)) cardOf().click();
     const scr = () => E.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"] .odet');
     await wait(scr);
-    const rows = scr() ? [...scr().querySelectorAll(".salt-ledger__row, .salt-ledger > *")].map((r) => r.textContent.replace(/s+/g, " ").trim()) : [];
+    const rows = scr() ? [...scr().querySelectorAll(".amb-setting")].map((r) => r.textContent.replace(/s+/g, " ").trim()) : [];
     ok(rows.some((t) => t.includes(W.EN["od.sealed"]) && t.includes(W.EN["od.sealedV"])), "an order whose spot is sealed says Spot or unit, Sealed under Details: " + J(rows));
     /* ---- 9 ---- */
     const F = await drive(); closeAll.push(F);

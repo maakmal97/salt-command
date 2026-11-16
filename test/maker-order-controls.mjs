@@ -323,9 +323,9 @@ export async function run({ ok }) {
     const card = (id) => cardOf(doc, id) || doc.querySelector('#makerDrafts [data-maker-card="draft:' + id + '"]');
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
-      const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label") && l.querySelector(".lbl, .salt-settings__label").textContent === label);
+      const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl, .salt-settings__label, .amb-field__label") && l.querySelector(".lbl, .salt-settings__label, .amb-field__label").textContent === label);
       /* 2 Nov 2026 (his Orders canvas, page 2): the reply's box is the thread's composer, an input named by its aria-label with no label around it */
-      return (wrap && wrap.querySelector("input")) || (card(id) && card(id).querySelector('form.salt-composer input[aria-label="' + label + '"]'));
+      return (wrap && wrap.querySelector("input")) || (card(id) && card(id).querySelector('form.amb-compose input[aria-label="' + label + '"]'));
     };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
     /* his decision 4 of 11 Oct 2026: a yes or no on the card is the page's Sheet; its one action is what the native confirm's OK was */

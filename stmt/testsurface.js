@@ -3,8 +3,8 @@
    once, a second tap within four seconds), Reset all, Start empty for the fresh account, and the way to Make an account not yet made,
    which is Salt Admin's (it seals the account under the master this page never holds). THE VIEWS ARE landingPage, NEVER A COPY: this
    file draws only the frame around them. Built from the system's carried recipes and tokens alone. */
-import { DOC_OPEN, LOOK_HEAD } from "./page.js";
-import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
+/* 15 Nov 2026, the move to Ambient: the page's one head (stmt/page.js), Ambient and the site's layer; its own frame keeps its markup until its builder */
+import { DOC_OPEN, SITE_STYLE, BODY_OPEN, ambScript } from "./page.js";
 import { TS } from "./words.js";
 import { TEST_USER, TEST_LOCKED, TEST_FRESH } from "./testusers.js";
 
@@ -29,7 +29,8 @@ body{margin:0;background:var(--salt-obsidian);color:var(--salt-salt)}
 @media (min-width:1080px){
 .ts-tabs{display:none}
 .ts-views{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ts-views iframe[hidden]{display:block}
+/* 15 Nov 2026: over Ambient's own rule that a hidden element is never drawn */
+.ts-views iframe[hidden]{display:block!important}
 }
 `;
 
@@ -82,11 +83,10 @@ export function testShell(nonce, state) {
   const acct = ([u, k]) => '<label class="salt-option"><input class="salt-option__input" type="radio" name="tsAcct" value="' + u + '"'
     + (u === TEST_FRESH ? " checked" : "") + '><span class="salt-option__face"><span class="salt-option__label">' + w(k) + "</span></span></label>";
   return DOC_OPEN
-    + '<script nonce="' + nonce + '">' + LOOK_HEAD + "</script>"
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">'
     + "<title>Salt Counter</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + SHELL_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + SITE_STYLE + SHELL_CSS + "</style></head>" + BODY_OPEN
     + '<header class="ts-bar"><div><h1>' + w("ts.title") + '</h1><p class="ts-lead">' + w("ts.lead") + "</p></div>"
     + '<fieldset class="salt-options ts-accts"><legend class="salt-options__legend">' + w("ts.acct") + '</legend><div class="salt-options__grid">'
     + SHELL_ACCOUNTS.map(acct).join("") + "</div></fieldset>"
@@ -100,6 +100,7 @@ export function testShell(nonce, state) {
     + '<button type="button" class="salt-ghost" role="tab" data-view="c" aria-selected="true">' + w("ts.customer") + "</button>"
     + '<button type="button" class="salt-ghost" role="tab" data-view="a" aria-selected="false">' + w("ts.admin") + "</button></div>"
     + '<main class="ts-views"><iframe id="tsC" title="' + w("ts.customer") + '"></iframe><iframe id="tsA" title="' + w("ts.admin") + '" hidden></iframe></main>'
+    + ambScript(nonce)
     + '<script nonce="' + nonce + '">'
     + SHELL_JS.replace("__WORDS__", () => JSON.stringify(TS).replace(/</g, "\\u003c")).replace("__STATE__", () => JSON.stringify(state || {}))
       .replace("__FRESH__", JSON.stringify(TEST_FRESH)).replace("__ARM__", String(RESET_ARM_MS))

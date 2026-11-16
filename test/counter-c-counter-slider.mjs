@@ -8,7 +8,7 @@
  * (test/counter-c-counter-slider.mutations.json, tools/section.mjs).
  *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
- *   3  the Orders tabs are a slider of four with their counts, and a tap moves the thumb and aria-selected together
+ *   3  the Orders tabs are the system's four counted Filters (16 Nov 2026), and a tap presses the chosen one and lets the others go
  *   4  Salt Admin's Record strip is the Nav bar's tabs, never the slider, the part entered selected; Customers' is the tight slider, its thumb following each part entered, a hidden option taking no column\n *   5  the strips that do not fit stay pills: the stages' arrows, Orders' second strip, the months; the kinds, Shop's and Orders' parts are the Nav bar's text tabs\n *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
@@ -33,29 +33,28 @@ export async function run({ ok, pageWork }) {
     /* ---- 2 and 3: the customer's page ---- */
     const A = await open({ pageWork, orders: [ord("c1", "done", ago(300), { paid: 100, moved: 1 }), ord("c2", "placed", ago(100)), ord("c3", "acknowledged", ago(50))] });
     wins.push(A);
-    /* 26 Oct 2026, his word ("like settings on an iPhone"): the customer's Look is one Switch, Tide off and greyed while Tide is off */
-    const tide = A.d.querySelector('#lookRow [data-look="tide"]');
-    ok(!!tide && tide.classList.contains("salt-switch") && tide.getAttribute("role") === "switch" && tide.getAttribute("aria-checked") === "false" && tide.disabled && !A.d.querySelector("#lookRow .lookset"),
-      "the Look row is a switch, Tide off and greyed");
-    tide.disabled = false; tide.click(); await A.settle();
-    ok(A.d.documentElement.getAttribute("data-theme") === "night" && tide.getAttribute("aria-checked") === "false", "and a forced tap on Tide moves nothing");
+    /* 26 Oct 2026, his word: the customer's Look was one Switch; 15 Nov 2026, the move to Ambient: there is none, light and dark following the device */
+    ok(!A.d.getElementById("lookRow") && !A.d.querySelector("[data-look]") && !A.d.querySelector(".lookset"),
+      "no Look row is drawn: the device chooses light or dark");
+    ok(!A.d.documentElement.hasAttribute("data-theme"), "and no theme is set on the page, signed in");
     /* 26 Oct 2026, his word: the customer's This device is a list of settings too; a browser that cannot take notifications says Not here in
        its row and why on the one line under the list */
-    const devList = A.d.querySelector("#thisDevice .salt-settings"), devLabels = devList ? [...devList.querySelectorAll(".salt-settings__label")].filter((n) => n.id !== "lockT").map((n) => n.textContent) : [];
-    const pushRow = devList && [...devList.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === "Notifications");
-    ok(!!devList && J(devLabels) === J(["Notifications", "Tide theme"]) && !!pushRow && (pushRow.querySelector(".salt-settings__value") || {}).textContent === "Not here"
+    /* 16 Nov 2026, the move to Ambient (place D): This device is the system's settings group, a row a name and one control or value */
+    const devList = A.d.querySelector("#thisDevice .amb-settings #devRows"), devLabels = devList ? [...devList.querySelectorAll(".amb-setting__name")].map((n) => n.textContent) : [];
+    const pushRow = devList && [...devList.querySelectorAll(".amb-setting")].find((r) => r.querySelector(".amb-setting__name").textContent === "Notifications");
+    ok(!!devList && J(devLabels) === J(["Notifications"]) && !!pushRow && (pushRow.querySelector(".amb-setting__value") || {}).textContent === "Not here"
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
-      "This device is a list of settings, Notifications and Tide theme; with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
+      "This device is a list of settings, Notifications (Tide theme gone, 15 Nov 2026, the move to Ambient); with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
     const row = () => A.d.querySelector("#pOrder .otabs");
-    const r1 = seg(row());
-    ok(row() && row().classList.contains("salt-segment") && r1.n === "4" && r1.i === "0" && r1.on === "1000" && row().querySelectorAll(".salt-segment__count").length === 4
-      && [...row().querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
-      "the Orders tabs are a slider of four, each with its count, the thumb on All: " + J(r1));
+    /* 16 Nov 2026, the move to Ambient: the Orders tabs are the system's counted Filters (amb-segment--wrap, aria-pressed), no slider and no thumb */
+    const on = () => [...row().querySelectorAll("button")].map((b) => (b.getAttribute("aria-pressed") === "true" ? 1 : 0)).join("");
+    ok(row() && row().classList.contains("amb-segment") && row().classList.contains("amb-segment--wrap") && !row().classList.contains("salt-segment") && on() === "1000"
+      && row().querySelectorAll(".amb-segment__count").length === 4 && [...row().querySelectorAll("button")].every((b) => b.classList.contains("amb-segment__opt")),
+      "the Orders tabs are the system's four Filters, each with its count, All pressed: " + on());
     row().querySelector('[data-otab="pay"]').click(); await A.settle();
-    const r2 = seg(row()), sel = [...row().querySelectorAll("button")].map((b) => b.getAttribute("aria-selected") === "true" ? 1 : 0).join("");
-    ok(r2.i === "2" && r2.on === "0010" && sel === "0010", "a tap on To pay moves the thumb, the active mark and aria-selected together: " + J([r2, sel]));
+    ok(on() === "0010", "a tap on To pay presses it and lets go of All: " + on());
     const mf = A.d.getElementById("mfil");
-    ok(mf && mf.classList.contains("salt-settings") && !mf.classList.contains("salt-segment") && !mf.classList.contains("salt-tabs"), "the months are a select in a settings row (28 Oct 2026), never a strip of pills");
+    ok(mf && mf.classList.contains("mfil") && !mf.classList.contains("amb-segment") && !mf.querySelector(".amb-segment, .salt-tabs, .salt-segment"), "the months are a select (the system's Select, 16 Nov 2026), never a strip of pills");
 
     /* ---- 4 and 5: Salt Admin ---- */
     const errs = [], vc = new VirtualConsole(); vc.on("jsdomError", (e) => errs.push(String(e.message || e)));
@@ -91,7 +90,7 @@ export async function run({ ok, pageWork }) {
     firstPart.hidden = true;
     await go("#customers/links");
     const g3 = seg(cu), shown = [...cu.querySelectorAll("button")].filter((b) => !b.hidden).length;
-    ok(g3.n === String(shown) && g3.i === "1", "an option hidden leaves the columns: the thumb on Links, the second shown: " + J(g3));
+    ok(g3.n === String(shown) && g3.i === "1" && g3.on.split("1").length === 2, "an option hidden leaves the columns: the thumb on Links, the second shown, and its option the one marked active: " + J(g3));   /* 16 Nov 2026: the Orders tabs no longer drive segSync, so the active mark is read here */
     firstPart.hidden = false;
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
     /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */
@@ -102,9 +101,8 @@ export async function run({ ok, pageWork }) {
     const ordSeg = d.querySelector('.aparts[data-place="orders"]');
     ok(!!ordSeg && ordSeg.classList.contains("salt-segment") && [...ordSeg.querySelectorAll("button")].length === 4 && [...ordSeg.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
       "and Orders' four parts are the slider, a Segment of four");
-    /* 26 Oct 2026, his word: Salt Admin's look is one Switch now, Tide on or off */
-    const al = d.querySelector("#lookRow .salt-switch");
-    ok(!!al && al.getAttribute("role") === "switch" && !d.querySelector("#lookRow .lookset"), "Salt Admin's Look row is a switch, not the slider");
+    /* 26 Oct 2026, his word: Salt Admin's look was one Switch; 15 Nov 2026, the move to Ambient: there is none */
+    ok(!d.getElementById("lookRow") && !d.querySelector(".lookset"), "Salt Admin draws no Look row, the device choosing light or dark");
     ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));
 
     /* ---- 6 ---- */

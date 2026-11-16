@@ -125,16 +125,16 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const s267 = p.card("2026-10-15T12:48:33.817Z"), s262 = p.card("2026-10-15T12:52:26.992Z");
     /* B. the head */
-    const head = s267 && s267.querySelector(".salt-approve__head");
-    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CS6-BS-R Salt" && !!head.querySelector(".salt-approve__party .salt-producttag--salt") && !head.querySelector(".salt-approve__party svg.psym")
-      && !head.querySelector(".salt-approve__entry") && s267.querySelector(".rdet--row .salt-approve__entry").textContent === "from laptop, 15 Oct 2026, 20:48" && !/no code/.test(d.getElementById("makerDrafts").textContent),
+    const head = s267 && s267.querySelector(":scope > .amb-task__head");
+    ok(!!head && head.querySelector(".apparty").textContent === "CS6-BS-R Salt" && !!head.querySelector(".apparty .amb-chip.amb-kind-1") && !head.querySelector(".apparty svg.psym")
+      && !head.querySelector(".apentry") && s267.querySelector(".rdet--row .apentry").textContent === "from laptop, 15 Oct 2026, 20:48" && !/no code/.test(d.getElementById("makerDrafts").textContent),
     "the head is the customer's code read off the draft (no \"no code\" for a correction) and the book's typed tag; the row and where and when it came from are in Details: " + (head && head.textContent));
     ok(!/s267/.test(head.textContent) && /s267/.test(s267.querySelector(".rdet--row").textContent) && !/r-fixture|2026-10-15T12/.test(head.textContent),
       "the row's id is no part of the head; it stands in Details with the source: " + head.textContent);
     const claimCard = p.card("2026-10-15T12:50:00.000Z");
-    ok(!!claimCard && !byAct(claimCard, "draft.approve") && !byAct(claimCard, "draft.reject") && !!byAct(s267, "draft.approve") && !!byAct(s267, "draft.reject") && s267.querySelectorAll(".rdet--row .salt-approve__reason").length === 1,
+    ok(!!claimCard && !byAct(claimCard, "draft.approve") && !byAct(claimCard, "draft.reject") && !!byAct(s267, "draft.approve") && !!byAct(s267, "draft.reject") && s267.querySelectorAll(".rdet--row .apreason").length === 1,
       "a customer's claim on the same row stands on a card of its own with no Approve or Reject, and his take-back on that row stays his to decide");
-    const heads = [...d.querySelectorAll("#makerDrafts .salt-approve__entry")].map((x) => x.textContent.replace(/, .*/, ""));
+    const heads = [...d.querySelectorAll("#makerDrafts .apentry")].map((x) => x.textContent.replace(/, .*/, ""));
     ok(J(heads) === J(["from laptop", "from the site", "from laptop", "from Salt Admin", "from the site"]), "each card says where its entry came from: laptop, Salt Admin, the site: " + J(heads));
     /* C. one verb */
     const verbs = [...d.querySelectorAll("#makerDrafts .apverb")].map((x) => x.textContent);
@@ -149,14 +149,14 @@ export async function run({ ok, pageWork }) {
     ok(J(table(s262)) === J([["Paid", "RM 0.00", "*RM 540.00"], ["Owed", "RM 575.00", "*RM 0.00"], ["Handed over", "0 of 6.25 units", "*6.25 of 6.25 units"]]),
       "a card of two moves reads the first move's Now and the last move's After: " + J(table(s262)));
     /* E. the lines that ask */
-    const lines = (card) => [...card.querySelectorAll(":scope > .apflag")].map((x) => x.textContent.trim());
-    ok(J(lines(s267)) === J(["! CS6-BS will owe RM 240.00 (under the RM 250.00 ceiling)."]) && J(lines(s262)) === J([]),
+    const lines = (card) => /* 16 Nov 2026, the move to Ambient (place F): a line that asks is a warning chip in the task's flags (colour agrees with the words; the bang is gone) */ [...card.querySelectorAll(":scope > .amb-task__flags .apflag")].map((x) => x.textContent.trim());
+    ok(J(lines(s267)) === J(["CS6-BS will owe RM 240.00 (under the RM 250.00 ceiling)."]) && J(lines(s262)) === J([]),
       "the take-back asks one thing, what the customer will owe against the ceiling; the trail and the advance it means to make ask nothing; a close that lowers what is owed says nothing: " + J([lines(s267), lines(s262)]));
     const fl = p.card(FLAGGED().id), over = p.card(OVER().id);
-    ok(J(lines(fl)) === J(["! RM 80 for the goods is RM 10 under the Floor of RM 90.", "! This matches s9 on the book by party, date, size and total and is not marked a second order, so the fold will refuse it as a replay."])
-      && lines(fl).every((t) => !/\b(?!RM\b)[A-Z]{2,}\b/.test(t.replace(/CX1-ZED/g, ""))) && !fl.querySelector(".salt-approve__flags, .salt-status"),
+    ok(J(lines(fl)) === J(["RM 80 for the goods is RM 10 under the Floor of RM 90.", "This matches s9 on the book by party, date, size and total and is not marked a second order, so the fold will refuse it as a replay."])
+      && lines(fl).every((t) => !/\b(?!RM\b)[A-Z]{2,}\b/.test(t.replace(/CX1-ZED/g, ""))) && fl.querySelectorAll(":scope > .amb-task__flags .amb-chip--warn").length === 2 && !fl.querySelector(".salt-status"),
     "two lines at most, those that ask a decision, in sentence case and no capitals, and no pill: " + J(lines(fl)));
-    ok(J(lines(over)) === J(["! CN3-WM will owe RM 255.00, over the RM 250.00 ceiling."]), "over the ceiling is said as over: " + J(lines(over)));
+    ok(J(lines(over)) === J(["CN3-WM will owe RM 255.00, over the RM 250.00 ceiling."]), "over the ceiling is said as over: " + J(lines(over)));
     /* the rest is under Details: the drafter's note, every flag and the row */
     const det = s267.querySelector(":scope > .rdet--row");
     ok(!!det && det.hidden && /Sets cash from 220 to 0/.test(det.textContent) && det.querySelectorAll(".apnote").length === 2 && /trail of 3 steps/.test(det.textContent) && /advance/i.test(det.textContent)
@@ -172,7 +172,7 @@ export async function run({ ok, pageWork }) {
     ok(btn(s267) === "Approve: s267 owes RM 220.00" && btn(s262) === "Approve: s262 closed" && btn(over) === "Approve: s270 handed over" && btn(fl) === "Approve the sale",
       "the button says the result: " + J([btn(s267), btn(s262), btn(over), btn(fl)]));
     const tile = d.querySelector('[data-glance="approve"]');
-    ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]') && !!tile && tile.querySelector(".salt-kpi__value").textContent === "5" && tile.querySelector(".salt-kpi__label").textContent === "To approve" && tile.classList.contains("salt-kpi--line"),
+    ok(!d.querySelector('#nlist [data-need^="d:"]') && !d.querySelector('[data-act="need.approve-row"]') && !!tile && tile.querySelector(".amb-tile__figure").textContent === "5" && tile.querySelector(".amb-tile__label").textContent === "To approve" && tile.classList.contains("amb-tile"),
       "Needs you lists no row to approve, and the glance counts one card per order, the claim's included: " + (tile && tile.textContent));
     ok(d.querySelectorAll("#makerDrafts [data-maker-card] [data-act='draft.approve']").length === 4 && d.querySelector("#makerDrafts > .aphead").textContent.startsWith("5 to decide") === false,
       "four of the five cards can be chosen (the claim's cannot), and the head counts the four it can decide: " + d.querySelector("#makerDrafts > .aphead").textContent);

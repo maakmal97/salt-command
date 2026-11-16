@@ -2,8 +2,8 @@
  {
   "name": "the Their % card draws no figure",
   "file": "stmt/owner.js",
-  "find": "          if(tierSets(d).length) tierLines(d).forEach(function(p){ card.appendChild(p); });\n",
-  "replace": ""
+  "find": "          if(tierSets(d).length){\n            var many=",
+  "replace": "          if(false){\n            var many="
  },
  {
   "name": "the figure is said as a fraction",
@@ -14,8 +14,8 @@
  {
   "name": "what it was is not said",
   "file": "stmt/owner.js",
-  "find": "(was?', was '+was:'')",
-  "replace": "''"
+  "find": "p.appendChild(document.createTextNode(' '+tierWord(s.v)+(was?', was '+was:''))); card.appendChild(p); });",
+  "replace": "p.appendChild(document.createTextNode(' '+tierWord(s.v))); card.appendChild(p); });"
  },
  {
   "name": "the verb is Price %",
@@ -32,14 +32,14 @@
  {
   "name": "a no-figure entry draws RM 0.00 again",
   "file": "stmt/owner.js",
-  "find": "          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning))); }\n",
+  "find": "          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','amb-task__text apsays',firstSentence(d.reasoning))); }\n",
   "replace": ""
  },
  {
   "name": "the reading is drawn whole",
   "file": "stmt/owner.js",
-  "find": "card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning)))",
-  "replace": "card.appendChild(el('p','maker-facts apsays',d.reasoning))"
+  "find": "el('p','amb-task__text apsays',firstSentence(d.reasoning))",
+  "replace": "el('p','amb-task__text apsays',d.reasoning)"
  },
  {
   "name": "Approve all beside one card",

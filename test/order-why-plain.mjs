@@ -49,9 +49,9 @@ async function drive() {
 export async function run({ ok }) {
   const A = await drive();
   try {
-    const { d, seen } = A, go = () => d.getElementById("oGo"), why = () => txt(d.querySelector("#osheet .ototal .sub2"));
-    const legends = () => [...d.querySelectorAll("#osheet .salt-options__legend")];
-    const tagged = () => legends().filter((l) => !!l.querySelector(".salt-status")).map((l) => txt(l));
+    const { d, seen } = A, go = () => d.getElementById("oGo"), why = () => txt(d.querySelector("#osheet .ototal .amb-stat__label"));
+    const legends = () => [...d.querySelectorAll("#osheet legend.amb-field__label")];
+    const tagged = () => legends().filter((l) => !!l.querySelector(".amb-chip")).map((l) => txt(l));
     const pressed = (k) => [...d.querySelectorAll('#osheet [data-k^="' + k + ':"]')].map((b) => b.getAttribute("aria-pressed"));
     ok(JSON.stringify(tagged()) === '["Who is it for? Choose one"]' && JSON.stringify(pressed("mode")) === '["true","false"]'
       && JSON.stringify(pressed("when")) === '["true","false"]' && !go().disabled && go().getAttribute("aria-disabled") === "true" && why() === "Say who it is for.",
@@ -74,7 +74,7 @@ export async function run({ ok }) {
     await wait(() => !!d.getElementById("spAdd"));
     go().click();
     const add = d.getElementById("spAdd");
-    ok(!d.getElementById("oPlace") && d.activeElement === add && seen.includes(add) && /Pick where it is going, or add a spot[.]/.test(txt(d.querySelector("#osheet .ototal .sub2"))),
-      "W4 a delivery with no spot: Review takes them to Add a spot and says why: " + JSON.stringify([d.activeElement && d.activeElement.id, txt(d.querySelector("#osheet .ototal .sub2"))]));
+    ok(!d.getElementById("oPlace") && d.activeElement === add && seen.includes(add) && /Pick where it is going, or add a spot[.]/.test(txt(d.querySelector("#osheet .ototal .amb-stat__label"))),
+      "W4 a delivery with no spot: Review takes them to Add a spot and says why: " + JSON.stringify([d.activeElement && d.activeElement.id, txt(d.querySelector("#osheet .ototal .amb-stat__label"))]));
   } finally { B.w.close(); }
 }

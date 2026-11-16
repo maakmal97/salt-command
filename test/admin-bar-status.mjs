@@ -3,7 +3,9 @@ import { landingPage } from "../stmt/page.js";
 
 /* 19 Oct 2026, his word: Salt Admin's bar says where things stand, as the Desk's line does: a dot and Live or Offline, then Open or
    Closed with when that changes, off the hours his page already reads, then the clock. Offline when his read cannot reach the Counter,
-   and once the sign-in has ended. It sends nothing of its own, and nothing of it reaches a customer's page. */
+   and once the sign-in has ended. It sends nothing of its own, and nothing of it reaches a customer's page.
+   15 Nov 2026, THE MOVE TO AMBIENT: the bar is gone with the salt-ds frame. The live word and the clock are each place's hero's time line;
+   the hours are a glass chip in Needs you's hero, its dot the chip's own, its state said in its word (the mesh carries the ink alone). */
 export async function run({ ok }) {
   const kl = (d, o) => { const p = {}; new Intl.DateTimeFormat("en-GB", Object.assign({ timeZone: "Asia/Kuala_Lumpur", hourCycle: "h23" }, o)).formatToParts(d).forEach((x) => { p[x.type] = x.value; }); return p; };
   const swallow = () => { };
@@ -31,32 +33,31 @@ export async function run({ ok }) {
   try {
     await wait();
     const D = dom.window.document, live = D.getElementById("aBarLive"), hrs = D.getElementById("aBarHours");
-    ok(!!live && live.className === "abarlive on" && live.textContent === "Live",
-      "Salt Admin's bar reads Live, the dot lit, while his reads reach the Counter: " + JSON.stringify(live && [live.className, live.textContent]));
-    ok(!!hrs && !hrs.hidden && hrs.textContent === "Open to " + until && hrs.className === "salt-status ashop",
-      "and Open to the next change, off the hours his page reads, in verdigris: " + JSON.stringify(hrs && [hrs.hidden, hrs.textContent, hrs.className, until]));
+    ok(!!live && live.className === "abarlive on" && live.textContent === "Live" && !!live.closest("#mHome > header.amb-hero > .amb-hero__time"),
+      "Salt Admin's hero reads Live in its time line, the dot lit, while his reads reach the Counter: " + JSON.stringify(live && [live.className, live.textContent]));
+    ok(!!hrs && !hrs.hidden && hrs.textContent === "Open to " + until && hrs.classList.contains("amb-chip") && hrs.classList.contains("amb-chip--glass") && !hrs.classList.contains("ashop--closed"),
+      "and Open to the next change, off the hours his page reads, a glass chip: " + JSON.stringify(hrs && [hrs.hidden, hrs.textContent, hrs.className, until]));
     /* 20 Oct 2026 (canvas V26, his yes): the hours are a control, named with what a tap does, and a tap goes to Shop hours. 22 Oct 2026 (canvas Needs you):
        a glowing status chip at the bar's top right, its dot the system's glyph */
-    ok(hrs.tagName === "BUTTON" && hrs.getAttribute("data-act") === "bar.hours" && hrs.getAttribute("aria-label") === "Open to " + until + ". Tap to change" && !!hrs.querySelector("svg.salt-status__glyph"),
+    ok(hrs.tagName === "BUTTON" && hrs.getAttribute("data-act") === "bar.hours" && hrs.getAttribute("aria-label") === "Open to " + until + ". Tap to change" && !!hrs.querySelector(".amb-chip__dot") && hrs.firstElementChild.classList.contains("amb-chip__dot"),
       "the hours are a chip, a button named with what a tap does: " + (hrs.getAttribute("aria-label") || ""));
-    ok(!!hrs.parentElement && hrs.parentElement.classList.contains("salt-deskbar__brand") && hrs.parentElement.lastElementChild === hrs && !hrs.closest(".salt-deskbar__meta"),
-      "the chip stands at the right end of the bar's brand row, out of the quiet line, which keeps Live and the clock: " + (hrs.parentElement && hrs.parentElement.className));
+    ok(!!hrs.parentElement && hrs.parentElement.matches("#mHome > header.amb-hero") && hrs.parentElement.lastElementChild === hrs && !hrs.closest(".amb-hero__time"),
+      "the chip stands last in Needs you's hero, out of the time line, which keeps Live and the clock: " + (hrs.parentElement && hrs.parentElement.className));
     const css = [...D.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.ashop\{[^}]*min-height:var\(--salt-tap\)/.test(css) && /\.adm \.ashop svg\{[^}]*animation:ashopglow/.test(css)
-      && /@media \(prefers-reduced-motion:reduce\)\{\.adm \.ashop svg\{animation:none\}\}/.test(css) && /\.adm \.abar\{padding:12px\}/.test(css),
-      "the chip is 44px tall, its dot breathes and stands still under reduced motion, and the bar is 12px all round");
+    ok(!/\.ashop|\.abar\b/.test(css.replace(/\/\*[\s\S]*?\*\//g, "")) && /\.amb-chip \{/.test(css),
+      "the chip is Ambient's, its size and its dot the part's own, and the page's layer draws none of it, nor a bar");
     ok(reads.filter((r) => r === "/hours").length === 0, "and the bar sends no read of its own: " + JSON.stringify(reads.filter((r) => r === "/hours")));
     status = { open: false, source: "schedule", nextChange: next.toISOString(), nextOpen: next.toISOString() };
     await again();
     ok(hrs.textContent === "Closed to " + n.weekday + " " + n.hour + ":" + n.minute && hrs.classList.contains("ashop--closed") && !hrs.classList.contains("ashop--paused"),
-      "Closed, in ember, to the day and time it opens, when the shop is shut by its hours: " + JSON.stringify([hrs.textContent, hrs.className]));
+      "Closed, said in its word, to the day and time it opens, when the shop is shut by its hours: " + JSON.stringify([hrs.textContent, hrs.className]));
     status = { open: false, source: "manual", nextChange: soon.toISOString(), nextOpen: soon.toISOString() };
     await again();
     ok(hrs.textContent === "Paused to " + until && hrs.classList.contains("ashop--paused") && !hrs.classList.contains("ashop--closed"),
-      "Paused, in brass, to the moment his override ends, when he has shut the shop for now: " + JSON.stringify([hrs.textContent, hrs.className]));
+      "Paused, said in its word, to the moment his override ends, when he has shut the shop for now: " + JSON.stringify([hrs.textContent, hrs.className]));
     mode = "down";
     await again();
-    ok(live.className === "abarlive off" && live.textContent === "Offline", "Offline, the dot brass, once his read cannot reach the Counter: " + JSON.stringify([live.className, live.textContent]));
+    ok(live.className === "abarlive off" && live.textContent === "Offline", "Offline, once his read cannot reach the Counter: " + JSON.stringify([live.className, live.textContent]));
     mode = "ok";
     await again();
     ok(live.className === "abarlive on", "and Live again on the next read that reaches it: " + live.className);

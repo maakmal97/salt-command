@@ -1,225 +1,42 @@
 [
- {
-  "name": "a placed order's chip reads Sent",
-  "file": "stmt/words.js",
-  "find": "\"st.placed\": \"Placed\",",
-  "replace": "\"st.placed\": \"Sent\","
- },
- {
-  "name": "a confirmed order's chip reads Acknowledged",
-  "file": "stmt/words.js",
-  "find": "\"st.acknowledged\": \"Confirmed\",",
-  "replace": "\"st.acknowledged\": \"Acknowledged\","
- },
- {
-  "name": "a declined order's chip reads Not taken",
-  "file": "stmt/words.js",
-  "find": "\"st.declined\": \"Declined\",",
-  "replace": "\"st.declined\": \"Not taken\","
- },
- {
-  "name": "a placed order's sentence waits on an acknowledgement",
-  "file": "stmt/words.js",
-  "find": "\"ow.placed\": \"Waiting for us to confirm. You will see it change here.\",",
-  "replace": "\"ow.placed\": \"Waiting to be acknowledged. You will see it change here.\","
- },
- {
-  "name": "a confirmed order's sentence says Acknowledged on",
-  "file": "stmt/words.js",
-  "find": "\"ow.confirmed\": \"Confirmed on **{d}**, and being prepared.\",",
-  "replace": "\"ow.confirmed\": \"Acknowledged on **{d}**, and being prepared.\","
- },
- {
-  "name": "a declined order with no reason says Not taken",
-  "file": "stmt/words.js",
-  "find": "\"ow.declined\": \"We could not take this order.\",",
-  "replace": "\"ow.declined\": \"Not taken.\","
- },
- {
-  "name": "a declined order's sentence says Not taken",
-  "file": "stmt/words.js",
-  "find": "\"ow.declinedWhy\": \"We could not take this order. {why}\",",
-  "replace": "\"ow.declinedWhy\": \"Not taken. {why}\","
- },
- {
-  "name": "a claim of theirs waiting reads Sent, waiting",
-  "file": "stmt/words.js",
-  "find": "\"om.waiting\": \"Waiting for us to confirm\",",
-  "replace": "\"om.waiting\": \"Sent, waiting\","
- },
- {
-  "name": "the list's reason for a placed order waits on an acknowledgement",
-  "file": "stmt/words.js",
-  "find": "\"why.placed\": \"waiting for us to confirm\",",
-  "replace": "\"why.placed\": \"waiting to be acknowledged\","
- },
- {
-  "name": "Home's Coming up reads a placed order as Sent, waiting",
-  "file": "stmt/words.js",
-  "find": "\"hc.placed\": \"Waiting for us to confirm\",",
-  "replace": "\"hc.placed\": \"Sent, waiting\","
- },
- {
-  "name": "Place answers Order sent",
-  "file": "stmt/words.js",
-  "find": "\"sh.sent\": \"Order placed\",",
-  "replace": "\"sh.sent\": \"Order sent\","
- },
- {
-  "name": "the check's delivery line says Set when we acknowledge it",
-  "file": "stmt/words.js",
-  "find": "\"sh.setOnConfirm\": \"Set when we confirm it\",",
-  "replace": "\"sh.setOnConfirm\": \"Set when we acknowledge it\","
- },
- {
-  "name": "the one delivery sentence says acknowledge",
-  "file": "stmt/words.js",
-  "find": "We tell you the charge when we confirm your order, before you pay, and you can cancel then at no cost.",
-  "replace": "We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost."
- },
- {
-  "name": "the banner for his confirm on credit says Order acknowledged",
-  "file": "stmt/words.js",
-  "find": "\"news.confirmed-credit\": \"Order confirmed\",",
-  "replace": "\"news.confirmed-credit\": \"Order acknowledged\","
- },
- {
-  "name": "the banner for his confirm in advance says Order acknowledged",
-  "file": "stmt/words.js",
-  "find": "\"news.confirmed\": \"Order confirmed\",",
-  "replace": "\"news.confirmed\": \"Order acknowledged\","
- },
- {
-  "name": "the banner for his decline says Order not taken",
-  "file": "stmt/words.js",
-  "find": "\"news.declined\": \"Order declined\",",
-  "replace": "\"news.declined\": \"Order not taken\","
- },
- {
-  "name": "the group order's banner says We acknowledge it next",
-  "file": "stmt/words.js",
-  "find": "\"news.pool-closed.b\": \"Your order is in. We confirm it next.\",",
-  "replace": "\"news.pool-closed.b\": \"Your order is in. We acknowledge it next.\","
- },
- {
-  "name": "supply reads Expected by",
-  "file": "stmt/words.js",
-  "find": "\"sup.by\": \"More by {d}\",",
-  "replace": "\"sup.by\": \"Expected by {d}\","
- },
- {
-  "name": "the line of a placed order in the check reads Sent",
-  "file": "stmt/words.js",
-  "find": "\"sh.lineSent\": \"Placed\",",
-  "replace": "\"sh.lineSent\": \"Sent\","
- },
- {
-  "name": "a heading draws its shape word beside its mark",
-  "file": "stmt/page.js",
-  "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md'));\n    return h;",
-  "replace": "h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md')); h.appendChild(el('span','pshape',pshape(product)));\n    return h;"
- },
- {
-  "name": "a heading is nameless",
-  "file": "stmt/page.js",
-  "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(coin(product,'md'));\n    return h;",
-  "replace": "h.appendChild(coin(product,'md'));\n    return h;"
- },
- {
-  "name": "an inline mark draws its shape word",
-  "file": "stmt/page.js",
-  "find": "    w.appendChild(el('span','sr',pshape(product)));\n    return w;",
-  "replace": "    w.appendChild(el('span','pshape',pshape(product)));\n    return w;"
- },
- {
-  "name": "an inline mark is nameless",
-  "file": "stmt/page.js",
-  "find": "    w.appendChild(el('span','sr',pshape(product)));\n    return w;",
-  "replace": "    return w;"
- },
- {
-  "name": "a mark leading a note draws its shape word",
-  "file": "stmt/page.js",
-  "find": "f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));",
-  "replace": "f.appendChild(el('span','pshape',pshape(product))); f.appendChild(document.createTextNode(' '));"
- },
- {
-  "name": "a mark leading a note is nameless",
-  "file": "stmt/page.js",
-  "find": "f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));",
-  "replace": "f.appendChild(document.createTextNode(' '));"
- },
- {
-  "name": "a mark in a sentence draws its shape word",
-  "file": "stmt/page.js",
-  "find": "w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML;",
-  "replace": "w.appendChild(el('span','pshape',pshape(pr))); return w.innerHTML;"
- },
- {
-  "name": "a tile's caption draws the shape word",
-  "file": "stmt/page.js",
-  "find": "var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);",
-  "replace": "var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true'); w.appendChild(f);"
- },
- {
-  "name": "a tile's reader hears no shape",
-  "file": "stmt/page.js",
-  "find": "w.appendChild(el('span','sr',pshape(product)+' '+words));",
-  "replace": "w.appendChild(el('span','sr',words));"
- },
- {
-  "name": "Order again's tile draws the shape word",
-  "file": "stmt/page.js",
-  "find": "var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');",
-  "replace": "var fq=el('span','mq',pshape(a.product)+', '+unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');"
- },
- {
-  "name": "the statement's tile draws the shape word",
-  "file": "stmt/page.js",
-  "find": "'<span class=\"mq\" aria-hidden=\"true\">' + esc(said) + \"</span></span>\"",
-  "replace": "'<span class=\"mq\" aria-hidden=\"true\">' + esc(PSHAPE[String(product || \"\").toLowerCase()] || PSHAPE._) + \", \" + esc(said) + \"</span></span>\""
- },
- {
-  "name": "the guest board's heading draws its shape word",
-  "file": "stmt/page.js",
-  "find": "+ coinSvg(p.product, \"md\") + \"</h2>\"",
-  "replace": "+ coinSvg(p.product, \"md\") + '<span class=\"pshape\">' + esc(PSHAPE[String(p.product || \"\").toLowerCase()] || PSHAPE._) + \"</span></h2>\""
- },
- {
-  "name": "a rule for the shape word comes back",
-  "file": "stmt/page.js",
-  "find": ".mtile .psym,.mstack .psym{display:block}",
-  "replace": ".mtile .psym,.mstack .psym{display:block}\n.pshape{font-family:var(--salt-font-mono)}"
- },
- {
-  "name": "a shape word is a product's",
-  "file": "stmt/page.js",
-  "find": "export const PSHAPE = { salt: \"Cube\",",
-  "replace": "export const PSHAPE = { salt: \"Salt\","
- },
- {
-  "name": "the Worker's lock refuses a new state word",
-  "file": "src/orders.js",
-  "find": "export const LEVEL_WORDS = [\"ambassador\", \"titanium\", \"platinum\", \"gold\", \"silver\", \"bronze\"];",
-  "replace": "export const LEVEL_WORDS = [\"ambassador\", \"titanium\", \"platinum\", \"gold\", \"silver\", \"bronze\", \"declined\"];"
- },
- {
-  "name": "the card tells him a placed order reads Sent",
-  "file": "src/orders.js",
-  "find": "placed: [\"Placed\", \"Waiting for us to confirm\"],",
-  "replace": "placed: [\"Sent\", \"Waiting for us to confirm\"],"
- },
- {
-  "name": "a practice account's feature is named for the old word",
-  "file": "tools/testfix.mjs",
-  "find": "[\"order confirmed\", (f) => has(f, (o) => o.status === \"acknowledged\")]",
-  "replace": "[\"order acknowledged\", (f) => has(f, (o) => o.status === \"acknowledged\")]"
- },
- {"name": "the Worker's lock refuses no level", "file": "src/orders.js", "find": "if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";", "replace": "if (false) return \"that names a level\";"},
- {"name":"the chip draws no glyph","file":"stmt/page.js","find":"    c.appendChild(chipGlyph(stateGlyph(o))); c.appendChild(document.createTextNode(stateWord(o)));","replace":"    c.appendChild(document.createTextNode(stateWord(o)));"},
- {"name":"the glyph is read aloud","file":"stmt/page.js","find":"    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false');\n    d.setAttribute('d',CHIP_GLYPH[k]);","replace":"    s.setAttribute('focusable','false');\n    d.setAttribute('d',CHIP_GLYPH[k]);"},
- {"name":"the glyph follows the word","file":"stmt/page.js","find":"    c.appendChild(chipGlyph(stateGlyph(o))); c.appendChild(document.createTextNode(stateWord(o)));","replace":"    c.appendChild(document.createTextNode(stateWord(o))); c.appendChild(chipGlyph(stateGlyph(o)));"},
- {"name":"an ended order takes a tick","file":"stmt/page.js","find":"return s==='placed'?'dot':(s==='declined'||s==='cancelled')?'cross':","replace":"return s==='placed'?'dot':(s==='declined')?'cross':"},
- {"name":"goods handed over take a single tick","file":"stmt/page.js","find":"(s==='done'||(oPayable(o)&&movedAll(o)))?'ticks':'tick';","replace":"(s==='done')?'ticks':'tick';"},
- {"name":"a placed order takes a tick","file":"stmt/page.js","find":"return s==='placed'?'dot':","replace":"return s==='placedX'?'dot':"}
+ {"name":"a placed order's chip reads Sent","file":"stmt/words.js","find":"\"st.placed\": \"Placed\",","replace":"\"st.placed\": \"Sent\","},
+ {"name":"a confirmed order's chip reads Acknowledged","file":"stmt/words.js","find":"\"st.acknowledged\": \"Confirmed\",","replace":"\"st.acknowledged\": \"Acknowledged\","},
+ {"name":"a declined order's chip reads Not taken","file":"stmt/words.js","find":"\"st.declined\": \"Declined\",","replace":"\"st.declined\": \"Not taken\","},
+ {"name":"a placed order's sentence waits on an acknowledgement","file":"stmt/words.js","find":"\"ow.placed\": \"Waiting for us to confirm. You will see it change here.\",","replace":"\"ow.placed\": \"Waiting to be acknowledged. You will see it change here.\","},
+ {"name":"a confirmed order's sentence says Acknowledged on","file":"stmt/words.js","find":"\"ow.confirmed\": \"Confirmed on **{d}**, and being prepared.\",","replace":"\"ow.confirmed\": \"Acknowledged on **{d}**, and being prepared.\","},
+ {"name":"a declined order with no reason says Not taken","file":"stmt/words.js","find":"\"ow.declined\": \"We could not take this order.\",","replace":"\"ow.declined\": \"Not taken.\","},
+ {"name":"a declined order's sentence says Not taken","file":"stmt/words.js","find":"\"ow.declinedWhy\": \"We could not take this order. {why}\",","replace":"\"ow.declinedWhy\": \"Not taken. {why}\","},
+ {"name":"a claim of theirs waiting reads Sent, waiting","file":"stmt/words.js","find":"\"om.waiting\": \"Waiting for us to confirm\",","replace":"\"om.waiting\": \"Sent, waiting\","},
+ {"name":"the list's reason for a placed order waits on an acknowledgement","file":"stmt/words.js","find":"\"why.placed\": \"waiting for us to confirm\",","replace":"\"why.placed\": \"waiting to be acknowledged\","},
+ {"name":"Home's Coming up reads a placed order as Sent, waiting","file":"stmt/words.js","find":"\"hc.placed\": \"Waiting for us to confirm\",","replace":"\"hc.placed\": \"Sent, waiting\","},
+ {"name":"Place answers Order sent","file":"stmt/words.js","find":"\"sh.sent\": \"Order placed\",","replace":"\"sh.sent\": \"Order sent\","},
+ {"name":"the check's delivery line says Set when we acknowledge it","file":"stmt/words.js","find":"\"sh.setOnConfirm\": \"Set when we confirm it\",","replace":"\"sh.setOnConfirm\": \"Set when we acknowledge it\","},
+ {"name":"the one delivery sentence says acknowledge","file":"stmt/words.js","find":"We tell you the charge when we confirm your order, before you pay, and you can cancel then at no cost.","replace":"We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost."},
+ {"name":"the banner for his confirm on credit says Order acknowledged","file":"stmt/words.js","find":"\"news.confirmed-credit\": \"Order confirmed\",","replace":"\"news.confirmed-credit\": \"Order acknowledged\","},
+ {"name":"the banner for his confirm in advance says Order acknowledged","file":"stmt/words.js","find":"\"news.confirmed\": \"Order confirmed\",","replace":"\"news.confirmed\": \"Order acknowledged\","},
+ {"name":"the banner for his decline says Order not taken","file":"stmt/words.js","find":"\"news.declined\": \"Order declined\",","replace":"\"news.declined\": \"Order not taken\","},
+ {"name":"the group order's banner says We acknowledge it next","file":"stmt/words.js","find":"\"news.pool-closed.b\": \"Your order is in. We confirm it next.\",","replace":"\"news.pool-closed.b\": \"Your order is in. We acknowledge it next.\","},
+ {"name":"supply reads Expected by","file":"stmt/words.js","find":"\"sup.by\": \"More by {d}\",","replace":"\"sup.by\": \"Expected by {d}\","},
+ {"name":"the line of a placed order in the check reads Sent","file":"stmt/words.js","find":"\"sh.lineSent\": \"Placed\",","replace":"\"sh.lineSent\": \"Sent\","},
+ {"name":"a heading draws its shape word beside its mark","file":"stmt/page.js","find":"h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));\n    return h;","replace":"h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md')); h.appendChild(el('span','pshape',pshape(product)));\n    return h;"},
+ {"name":"a heading is nameless","file":"stmt/page.js","find":"h.setAttribute('aria-label',pshape(product)); h.appendChild(markThumb(product,'md'));\n    return h;","replace":"h.appendChild(markThumb(product,'md'));\n    return h;"},
+ {"name":"a mark leading a note draws its shape word","file":"stmt/page.js","find":"f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));","replace":"f.appendChild(el('span','pshape',pshape(product))); f.appendChild(document.createTextNode(' '));"},
+ {"name":"a mark leading a note is nameless","file":"stmt/page.js","find":"f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));","replace":"f.appendChild(document.createTextNode(' '));"},
+ {"name":"a mark in a sentence draws its shape word","file":"stmt/page.js","find":"w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML;","replace":"w.appendChild(el('span','pshape',pshape(pr))); return w.innerHTML;"},
+ {"name":"a tile's caption draws the shape word","file":"stmt/page.js","find":"var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);","replace":"var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true'); w.appendChild(f);"},
+ {"name":"a tile's reader hears no shape","file":"stmt/page.js","find":"w.appendChild(el('span','sr',pshape(product)+' '+words));","replace":"w.appendChild(el('span','sr',words));"},
+ {"name":"Order again's row draws the shape word","file":"stmt/page.js","find":"thumb:markThumb(a.product), title:unitsOf(a.q,P.unit),","replace":"thumb:markThumb(a.product), title:pshape(a.product)+', '+unitsOf(a.q,P.unit),"},
+ {"name":"the statement's tile draws the shape word","file":"stmt/page.js","find":"'<span class=\"mq\" aria-hidden=\"true\">' + esc(said) + \"</span></span>\"","replace":"'<span class=\"mq\" aria-hidden=\"true\">' + esc(PSHAPE[String(product || \"\").toLowerCase()] || PSHAPE._) + \", \" + esc(said) + \"</span></span>\""},
+ {"name":"the guest board's heading draws its shape word","file":"stmt/page.js","find":"+ coinSvg(p.product, \"md\") + \"</h2>\"","replace":"+ coinSvg(p.product, \"md\") + '<span class=\"pshape\">' + esc(PSHAPE[String(p.product || \"\").toLowerCase()] || PSHAPE._) + \"</span></h2>\""},
+ {"name":"a rule for the shape word comes back","file":"stmt/page.js","find":".mtile .psym{display:block}","replace":".mtile .psym{display:block}\n.pshape{font-family:var(--salt-font-mono)}"},
+ {"name":"a shape word is a product's","file":"stmt/page.js","find":"export const PSHAPE = { salt: \"Cube\",","replace":"export const PSHAPE = { salt: \"Salt\","},
+ {"name":"the Worker's lock refuses a new state word","file":"src/orders.js","find":"export const LEVEL_WORDS = [\"ambassador\", \"titanium\", \"platinum\", \"gold\", \"silver\", \"bronze\"];","replace":"export const LEVEL_WORDS = [\"ambassador\", \"titanium\", \"platinum\", \"gold\", \"silver\", \"bronze\", \"declined\"];"},
+ {"name":"the card tells him a placed order reads Sent","file":"src/orders.js","find":"placed: [\"Placed\", \"Waiting for us to confirm\"],","replace":"placed: [\"Sent\", \"Waiting for us to confirm\"],"},
+ {"name":"a practice account's feature is named for the old word","file":"tools/testfix.mjs","find":"[\"order confirmed\", (f) => has(f, (o) => o.status === \"acknowledged\")]","replace":"[\"order acknowledged\", (f) => has(f, (o) => o.status === \"acknowledged\")]"},
+ {"name":"the Worker's lock refuses no level","file":"src/orders.js","find":"if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";","replace":"if (false) return \"that names a level\";"},
+ {"name":"the band's chip draws no tone","file":"stmt/page.js","find":"var s=o.status, tone=s==='ready'&&!movedAll(o)?' amb-chip--warn':(s==='acknowledged'||s==='done'||oPayable(o))?' amb-chip--pos':'';","replace":"var s=o.status, tone='';"},
+ {"name":"goods handed over take no positive chip","file":"stmt/page.js","find":"(s==='acknowledged'||s==='done'||oPayable(o))?' amb-chip--pos':'';","replace":"(s==='acknowledged'||s==='done')?' amb-chip--pos':'';"},
+ {"name":"a placed order's chip takes the ready tone","file":"stmt/page.js","find":"var s=o.status, tone=s==='ready'&&!movedAll(o)?","replace":"var s=o.status, tone=s==='placed'||s==='ready'&&!movedAll(o)?"},
+ {"name":"an ended order's word turns positive","file":"stmt/page.js","find":"(o.status==='acknowledged'||o.status==='done'||oPayable(o))&&!(o.status==='ready'&&!movedAll(o))?'amb-pos':null","replace":"(o.status==='acknowledged'||o.status==='done'||oPayable(o)||o.status==='declined')&&!(o.status==='ready'&&!movedAll(o))?'amb-pos':null"},
+ {"name":"no row's state word is positive","file":"stmt/page.js","find":"?'amb-pos':null,stateWord(o));","replace":"?null:null,stateWord(o));"}
 ]

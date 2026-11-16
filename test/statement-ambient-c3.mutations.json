@@ -1,0 +1,4 @@
+[
+ {"name":"a sub-line is not the system's small line","file":"tools/make_statements.mjs","find":"const sub=t=>t?'<span class=\"amb-table__sub\">'+t+'</span>':'';","replace":"const sub=t=>t?'<span class=\"sub\">'+t+'</span>':'';"},
+ {"name":"the delivery sub-line is dropped","file":"tools/make_statements.mjs","find":"+sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery)+tripSaid(r):'')","replace":"+sub('')"}
+]

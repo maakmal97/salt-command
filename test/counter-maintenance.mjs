@@ -1,6 +1,6 @@
 /* test/counter-maintenance.mjs: THE COUNTER'S MAINTENANCE PAGE IS ON ITS FRAME (his yes of 11 Oct 2026, the plan's customer item 10).
  *
- * stmt/maintenance.js answers 503 with the ring over a heading and one sentence, its words from the table (stmt/words.js) and its time read
+ * stmt/maintenance.js answers 503 with a heading and one sentence (15 Nov 2026, the move to Ambient: one Ambient shell at rest, its hero), its words from the table (stmt/words.js) and its time read
  * from MAINTENANCE_UNTIL in Kuala Lumpur: "Back at 14:30", or "Back on 13 Oct 2026 at 00:01" once that is not today. MAINTENANCE_TEXT, when set,
  * still wins and is escaped. It runs no script, loads nothing and keeps the closed policy, so the ring is inline and the faces fall back to the
  * system's. What the guard keeps (503, Retry-After, no-store, JSON for a request that is not HTML, the machine routes, the policy) is held by
@@ -16,8 +16,6 @@ const strip = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
 export async function run({ ok }) {
   const { maintenance, backWords, MACHINE } = await import("../stmt/maintenance.js");
   const W = await import("../stmt/words.js"), PG = await import("../stmt/page.js"), Worker = (await import("../stmt/worker.js")).default;
-  const ds = strip(readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"));
-  const tide = Object.fromEntries([...((ds.match(/:root\[data-theme="tide"\]\s*\{([^}]*)\}/) || ["", ""])[1]).matchAll(/--salt-([\w-]+):\s*([^;]+);/g)].map((x) => [x[1], x[2].trim()]));
   const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
   const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   const at = (iso) => Date.parse(iso);
@@ -47,46 +45,55 @@ export async function run({ ok }) {
   ok(r.status === 503 && r.headers.get("retry-after") === String(4.5 * 3600) && r.headers.get("cache-control") === "no-store" && /^text\/html/.test(r.headers.get("content-type")),
     "it answers 503 with Retry-After for the whole window and no-store");
   ok(r.headers.get("content-security-policy") === "default-src 'none'; style-src 'unsafe-inline'", "under the closed policy, which admits no script, image or face");
-  ok(body.includes("<p>Back at 14:30</p>") && body.includes("<h1>Under maintenance</h1>") && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"'),
-    "it says the heading and when it is back: " + JSON.stringify(body.replace(/<style>[\s\S]*?<\/style>/, "").replace(/<svg[\s\S]*?<\/svg>/, "[ring]").slice(-150)));
-  const ringOf = (h) => (/<path d="[^"]*"[^>]*\/>/.exec(h) || [""])[0];
-  ok(ringOf(PG.glyphSvg("ring", 40)) !== "" && body.includes(ringOf(PG.glyphSvg("ring", 40))) && /<svg [^>]*width="40" height="40"/.test(body) && body.indexOf("<svg") < body.indexOf("<h1>"),
-    "the ring is the app's own, inline and above the heading, drawn as the page draws it");
+  /* 15 Nov 2026, the move to Ambient: the page is one Ambient shell at rest (Slate), its hero the heading and the sentence, in light and dark
+     as the device is; it runs no script, loads nothing, and carries Ambient's tokens and the rules of the parts it wears, cut whole, inline */
+  const H = (t) => '<h1 class="amb-hero__title">' + t + "</h1>", P = (t) => '<p class="amb-hero__sub">' + t + "</p>";
+  ok(body.includes(P("Back at 14:30")) && body.includes(H("Under maintenance")) && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"'),
+    "it says the heading and when it is back: " + JSON.stringify(body.replace(/<style>[\s\S]*?<\/style>/, "").slice(-200)));
+  const A = await import("../stmt/statement-css.js");
+  const shell = /<body class="amb"><div class="amb-shell" data-mood="slate"><main class="amb-screen"><header class="amb-hero amb-mesh">(<h1 [^>]*>[^<]*<\/h1>)(<p [^>]*>[^<]*<\/p>)<\/header><\/main><\/div><\/body><\/html>$/.exec(body);
+  ok(shell && shell[1] === H("Under maintenance") && shell[2] === P("Back at 14:30"),
+    "it is one Ambient shell at rest (Slate), its hero the heading as the title and the sentence under it, and nothing else");
   ok(!/<script|<img|<link|\bsrc=|\bhref=|url\(|@import|https?:\/\//i.test(body), "and it loads nothing: no script, image, stylesheet, face or address");
-  ok(/theme-color" content="#03141a"/.test(body) && /<html[^>]* data-theme="tide"/.test(body) && /translate="no"/.test(body) && /name="viewport"/.test(body),
-    "it is Tide, with the browser bar at Tide's ground, kept from the translator, with a viewport");
-  /* each colour it writes is the design system's Tide token */
-  const hexes = [...new Set(body.match(/#[0-9a-f]{6}/gi) || [])].map((x) => x.toLowerCase()).sort();
-  const want = [tide.obsidian, tide.salt, tide["mist-light"], tide.brass].map((x) => x.toLowerCase()).sort();
-  ok(JSON.stringify(hexes) === JSON.stringify(want), "every colour it writes is Tide's obsidian, salt, mist-light or brass in the design system: " + JSON.stringify([hexes, want]));
-  const glow = [...body.matchAll(/rgba\((\d+,\d+,\d+),/g)].map((m) => m[1].split(",").join(", ")).sort();
-  const css = strip(readFileSync(join(REPO, "stmt", "statement-css.js"), "utf8"));
-  const tideRgb = [(/--salt-copper-rgb:\s*([\d, ]+);/.exec(css) || [])[1], (/--salt-brass-rgb:\s*([\d, ]+);/.exec(css) || [])[1]].sort();
-  ok(JSON.stringify(glow) === JSON.stringify(tideRgb) && tideRgb.every(Boolean), "and its two corner glows are Tide's copper and brass channels: " + JSON.stringify([glow, tideRgb]));
-  ok(ratio(tide.salt, tide.obsidian) >= 4.5 && ratio(tide["mist-light"], tide.obsidian) >= 4.5 && ratio(tide.brass, tide.obsidian) >= 3,
-    "the heading and the sentence hold 4.5:1 on the ground and the ring 3:1: " + [ratio(tide.salt, tide.obsidian), ratio(tide["mist-light"], tide.obsidian), ratio(tide.brass, tide.obsidian)].map((x) => x.toFixed(2)).join(" "));
-  ok(/<p>Back on 13 Oct 2026 at 00:01<\/p>/.test(await html({ MAINTENANCE_UNTIL: "2026-10-12T16:01:00Z" }, now).text()), "a window that ends on another day says so on the page");
+  ok(!/<[a-z][^>]* data-theme=/.test(body) && /<meta name="color-scheme" content="light dark">/.test(body)
+    && body.includes('<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + A.AMB_THEME.light + '">')
+    && body.includes('<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + A.AMB_THEME.dark + '">')
+    && /translate="no"/.test(body) && /name="viewport"/.test(body),
+    "it follows the device, light or dark, the browser bar at Ambient's base in each, kept from the translator, with a viewport");
+  /* what it draws with is Ambient's, inline and whole: its style is the token block and the cut rules, comments out, and nothing of its own */
+  const style = (/<style>([\s\S]*?)<\/style>/.exec(body) || [, ""])[1];
+  ok(style === (A.AMB_TOKENS + A.AMB_MAINT_CSS).replace(/\/\*[\s\S]*?\*\//g, "") && style.includes(".amb-hero__title{") && style.includes("--amb-l-ink:"),
+    "its style is Ambient's tokens and the parts it wears, as the generator cut them, with no rule or colour of its own (" + style.length + " bytes)");
+  /* every colour it can show is a token of Ambient's, measured there: the slate ink holds 4.5:1 on the slate base in both modes */
+  const slate = (/\[data-mood="slate"\]\s*\{([^}]*)\}/.exec(A.AMB_TOKENS) || [, ""])[1], tok = (k) => (new RegExp("--amb-" + k + ":\\s*(#[0-9a-f]{6});", "i").exec(slate) || [])[1];
+  const pairs = [["l-ink", "l-base"], ["d-ink", "d-base"]].map(([x, y]) => tok(x) && tok(y) ? ratio(tok(x), tok(y)) : 0);
+  ok(pairs.every((r) => r >= 4.5) && !/#[0-9a-f]{3,8}\b/i.test(body.replace(/<style>[\s\S]*?<\/style>/, "").replace(/<meta name="theme-color"[^>]*>/g, "")),
+    "the heading and the sentence are Ambient's ink, 4.5:1 or more on Slate's ground in light and dark, and no colour is written outside its tokens: " + pairs.map((x) => x.toFixed(2)).join(" "));
+
+  ok(/<p class="amb-hero__sub">Back on 13 Oct 2026 at 00:01<\/p>/.test(await html({ MAINTENANCE_UNTIL: "2026-10-12T16:01:00Z" }, now).text()), "a window that ends on another day says so on the page");
 
   /* 19 Oct 2026: whole words, so a CSS counter-reset, a salt- recipe class or a word such as desktop is not a name */
   /* nothing a stranger is handed names the app, the desk, a product, a level or a shape (the page's whole source, its comments included) */
   const O = await import("../src/orders.js");
-  const words = body.replace(/<[^>]*>/g, " ");
+  /* 15 Nov 2026: what it says is read outside its style, which is Ambient's own tokens and rules (held whole above), where a token's name
+     such as --amb-solid-capsule is not a shape; its source is still searched whole for a brand */
+  const words = body.replace(/<style>[\s\S]*?<\/style>/, " ").replace(/<[^>]*>/g, " ");
   ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/\b(salt|command|counter|desk)\b(?![-(])/i.test(body)
     && !Object.values(PG.PSHAPE).some((s) => new RegExp("\\b" + s + "\\b", "i").test(words)),
     "and it names no brand, product, shape or level, in what it says or in its source: " + JSON.stringify(words.replace(/\s+/g, " ").trim().slice(0, 120)));
 
   /* ---- MAINTENANCE_TEXT still wins, escaped, and the heading stays ---- */
   const t = await html({ MAINTENANCE_UNTIL: until, MAINTENANCE_TEXT: "  Back by 6:00 a.m. <b>&</b> 'soon'  " }, now).text();
-  ok(t.includes("<p>Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>") && !t.includes("Back at 14:30") && t.includes("<h1>Under maintenance</h1>"),
+  ok(t.includes('<p class="amb-hero__sub">Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>') && !t.includes("Back at 14:30") && t.includes('<h1 class="amb-hero__title">Under maintenance</h1>'),
     "MAINTENANCE_TEXT, when set, replaces the sentence, trimmed and escaped, under the same heading");
-  ok(/<p>Back at 14:30<\/p>/.test(await html({ MAINTENANCE_UNTIL: until, MAINTENANCE_TEXT: "   " }, now).text()), "and a blank one is the time's sentence");
+  ok(/<p class="amb-hero__sub">Back at 14:30<\/p>/.test(await html({ MAINTENANCE_UNTIL: until, MAINTENANCE_TEXT: "   " }, now).text()), "and a blank one is the time's sentence");
   ok(!/October 5|00:01 midnight|currently under maintenance/.test(body), "the old default sentence is gone");
 
   /* ---- what the guard keeps, on the real Worker ---- */
   const live = new Date(Date.now() + 36e5).toISOString(), env = { MAINTENANCE_UNTIL: live };
   const go = (p, h, e) => Worker.fetch(req(p, h), e || env, {});
   const pg = await go("/", { accept: "text/html,application/xhtml+xml" });
-  ok(pg.status === 503 && +pg.headers.get("retry-after") > 3500 && pg.headers.get("cache-control") === "no-store" && /<h1>Under maintenance<\/h1>/.test(await pg.text()),
+  ok(pg.status === 503 && +pg.headers.get("retry-after") > 3500 && pg.headers.get("cache-control") === "no-store" && /<h1 class="amb-hero__title">Under maintenance<\/h1>/.test(await pg.text()),
     "the Worker answers a page with this one: 503, Retry-After, no-store");
   const js = await go("/orders", { accept: "application/json" });
   ok(js.status === 503 && (await js.text()) === '{"ok":false,"error":"maintenance"}' && /^application\/json/.test(js.headers.get("content-type")) && js.headers.get("cache-control") === "no-store" && js.headers.has("retry-after"),

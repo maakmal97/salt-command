@@ -12,7 +12,7 @@
  {"name":"Start empty resets in full","file":"stmt/testsurface.js","find":"function(){ return {u:FRESH, empty:true}; }","replace":"function(){ return {u:FRESH}; }"},
  {"name":"an account face is short of 44px","file":"stmt/testsurface.js","find":".ts-accts .salt-option__face{min-width:var(--salt-tap);box-sizing:border-box}","replace":".ts-accts .salt-option__face{box-sizing:border-box}"},
  {"name":"the views never stand side by side","file":"stmt/testsurface.js","find":".ts-views{display:grid;grid-template-columns:1fr 1fr;gap:16px}","replace":".ts-views{display:block}"},
- {"name":"the desk shows one view","file":"stmt/testsurface.js","find":".ts-views iframe[hidden]{display:block}","replace":".ts-views iframe[hidden]{}"},
+ {"name":"the desk shows one view","file":"stmt/testsurface.js","find":".ts-views iframe[hidden]{display:block!important}","replace":".ts-views iframe[hidden]{}"},
  {"name":"a tab does not switch the view","file":"stmt/testsurface.js","find":"cv.hidden=!c; av.hidden=c;","replace":"cv.hidden=false; av.hidden=true;"},
  {"name":"the lead is drawn in a faint colour","file":"stmt/testsurface.js","find":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-mist);","replace":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-obsidian);"},
  {"name":"the shell names Salt Admin","file":"stmt/words.js","find":"  \"ts.make\": \"Make the practice accounts\",","replace":"  \"ts.make\": \"Make it in Salt Admin\","},

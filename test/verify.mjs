@@ -8624,8 +8624,10 @@ await (async () => {
   await (await import("./tide-off.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
 })();
 
-section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
-if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
+/* 15 Nov 2026, the move to Ambient: the Counter's Night and Tide retired with his answer of 14 Nov 2026, so the section is re-aimed at the
+   rule that replaced them and runs again */
+section("15 Nov 2026, the move to Ambient: every page of the statements site wears one Ambient head and follows the device, light or dark");
+await (async () => {
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 
@@ -10345,7 +10347,7 @@ await (async () => {
       aug = await makeStatements(join(root, "2026-08"), "2026-08-01", { archive: true });
       try { await makeStatements(join(root, "2026-07"), "2026-07-01", { newIssue: true }); } catch (e) { noKey = e; }
       sep = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
-      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true, retry: true });   /* 16 Nov 2026, the move to Ambient: a same-date re-run over a sealed issue is a retry only when asked for */
     } finally { console.log = q; }
     ok(noKey && /STMT_KEY/.test(noKey.message) && !existsSync(join(root, "2026-07")),
       "a run with no key refuses before writing anything: a record wrapped under nothing opens nothing");
@@ -10401,7 +10403,7 @@ await (async () => {
     const bookL = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
-      const nRows = h => (h.match(/<td class="l dt">|<div class="salt-lines__date" role="cell">/g) || []).length;   // S7 7.3: a live row is a Statement line
+      const nRows = h => (h.match(/<td class="l dt">|<td data-label="Date">/g) || []).length;   // 16 Nov 2026: a live row is a row of the system's Table
       const issuedDoc = sep.sheets.find(s => s.who === afterIssue.customer);
       const lvA = liveStatement(afterIssue.customer, now);
       ok(issuedDoc && lvA && nRows(lvA.body) > nRows(issuedDoc.html),
@@ -15540,7 +15542,7 @@ await (async () => {
       const sh = d.getElementById("osheet");
       return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label")),
-        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
+        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow")).length,
         /* V4b, plan version 8: each product's sizes sit under its mark on Order (the sheet no longer lists sizes), and the shape is said to the reader in the mark's label, drawn nowhere (12 Oct 2026) */
         products: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".szrow")).map((x) => x.querySelector("h2.pmark").getAttribute("aria-label").split(",")[0]),
         orderable: !!nw && !!d.querySelector("#pPrices .szrow") && !d.getElementById("osheet") };
@@ -15606,34 +15608,34 @@ await (async () => {
     ok(!!d.getElementById("oNew") && formOnTab === 0 && !d.getElementById("osheet"),
       "the Order tab offers New order and holds no form of its own: " + formOnTab);
     await startAt(d, "salt", 2.5);
-    const dlg = d.querySelector("#osheet .salt-sheet");
+    const dlg = d.getElementById("osheet");
     ok(!!dlg && d.getElementById("osheet").parentNode === d.body && dlg.getAttribute("role") === "dialog" && dlg.getAttribute("aria-modal") === "true"
-      && d.getElementById(dlg.getAttribute("aria-labelledby")).textContent === "New order" && !!d.querySelector("#osheet .salt-sheet-scrim"),
+      && d.getElementById(dlg.getAttribute("aria-labelledby")).textContent === "New order" && d.getElementById("osheet").tagName === "DIALOG"   /* 16 Nov 2026, the move to Ambient: the dialog carries its own scrim */,
       "A size tapped on Order lays the system's Sheet over the page, at the root of the body, as a named modal dialog");
     /* plan version 8 (03 Nov 2026): the sizes are chosen on Order, each row carrying its own price; the sheet lists the line the tap made and chooses no size */
-    const rowsO = [...d.querySelectorAll("#pPrices .pane")[0].querySelectorAll(".szrow")].map((r) => ({ q: r.getAttribute("data-q"), fig: r.querySelector(".salt-ledger__value").textContent, label: r.querySelector(".salt-ledger__label").textContent }));
+    const rowsO = [...d.querySelectorAll("#pPrices .pane")[0].querySelectorAll(".szrow")].map((r) => ({ q: r.getAttribute("data-q"), fig: r.querySelector(".amb-row__amount").textContent, label: r.querySelector(".amb-row__title").textContent }));
     ok(rowsO.length === 3 && rowsO.map((t) => t.fig).join() === "RM 60.00,RM 110.00,RM 250.00" && rowsO.map((t) => t.label).join() === "0.5 unit,1 unit,2.5 units",
       "the sizes stand on Order, each row carrying its own price, units above one and unit at one: " + JSON.stringify(rowsO));
-    const lines = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => r.textContent.replace(/\s+/g, " ").trim());
+    const lines = [...d.querySelectorAll("#osheet [data-sheet-lines] .amb-row")].map((r) => r.textContent.replace(/\s+/g, " ").trim());
     ok(!d.querySelector('#osheet input[name^="osize"]') && !d.querySelector("#osheet .oany") && lines.length === 1 && /2\.5 units/.test(lines[0]) && /RM 250\.00/.test(lines[0])
       && /Change the units on Shop[.]/.test(d.getElementById("osheet").textContent),
       "the sheet chooses no size: it lists the line the tap made, with its figure, and says the units change on Order: " + JSON.stringify(lines));
-    const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
+    const pressed = (t) => { const b = [...d.querySelectorAll("#osheet .amb-segment__opt")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
     /* 11 Nov 2026 (his answer "Always ask"): the way is never the last order's; the kit answered collect, so Deliver is chosen here */
-    [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === "Deliver to me").click();
+    [...d.querySelectorAll("#osheet .amb-segment__opt")].find((x) => x.textContent === "Deliver to me").click();
     const where = d.getElementById("oWhere");
     ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && !where && !!d.getElementById("spAdd") && !/Same as last time/.test(d.getElementById("osheet").textContent),
       "Deliver chosen, the place is not the last one given, no spot is picked and no Same as last time hint is drawn (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify({ where: where && where.value }));
-    const foot = d.querySelector("#osheet .salt-sheet__foot");
-    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && (d.getElementById("oGo").getAttribute("aria-disabled") === "true") && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
+    const foot = d.querySelector("#osheet .osheet__foot");
+    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("amb-pill") && /^RM 250/.test(foot.textContent) && (d.getElementById("oGo").getAttribute("aria-disabled") === "true") && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
       "the total and Review, the one filled control, sit in the sheet's foot, Review waiting for a spot and saying so (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(foot && foot.textContent));
-    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    d.getElementById("osheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await startAt(d, "salt", 1);
-    ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size on Order opens the sheet at that size's total");
+    ok(/^RM 110/.test(d.querySelector("#osheet .osheet__foot").textContent), "a tap on another size on Order opens the sheet at that size's total");
     /* 19 Oct 2026: whole words, so toilet or Golden, or a random id, is not a product or a level */
     ok(!/\b(salt|oil|gold)\b/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
       "and the sheet carries no product word and no level's name, in its text or its attributes");
-    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    d.getElementById("osheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     ok(!d.getElementById("osheet"), "Escape closes it");
   } finally { w.close(); }
 })();
@@ -15689,7 +15691,7 @@ await (async () => {
   const A = await drive([await moved(list("d2", [{ q: 1, price: 120 }, { q: 2, price: 190 }]))]);
   try {
     const { d, posted } = A;
-    const say = (d.querySelector("#osheet .salt-insight") || {}).textContent || "";
+    const say = (d.querySelector("#osheet .amb-notice") || {}).textContent || "";
     ok(posted.length === 1 && posted[0].digest === "d1" && posted[0].total === 100,
       "Place carries the stamp of the list the page opened, with the price it showed: " + JSON.stringify(posted.map((x) => [x.digest, x.total])));
     ok(say === "This size is now RM 120.00 (was RM 100.00). Place at RM 120.00?" && d.getElementById("oPlace").textContent === "Place at RM 120.00",
@@ -15706,7 +15708,7 @@ await (async () => {
   /* the size left the list: said, and Place is not offered */
   const B = await drive([await moved(list("d3", [{ q: 2, price: 190 }]))]);
   try {
-    const say = (B.d.querySelector("#osheet .salt-insight") || {}).textContent || "";
+    const say = (B.d.querySelector("#osheet .amb-notice") || {}).textContent || "";
     ok(/no longer on your list/.test(say) && B.d.getElementById("oPlace").disabled && B.posted.length === 1,
       "a size gone from the list is said, and Place is held: " + JSON.stringify(say));
   } finally { B.w.close(); }
@@ -15715,7 +15717,7 @@ await (async () => {
   const E = await drive([await moved(list("d4", [{ q: 1, price: 100 }, { q: 2, price: 200 }]))]);
   try {
     const { d, posted } = E;
-    ok(!d.querySelector("#osheet .salt-insight") && d.getElementById("oPlace").textContent === "Place order" && /still RM 100/.test(d.querySelector("#osheet .salt-sheet__foot").textContent),
+    ok(!d.querySelector("#osheet .amb-notice") && d.getElementById("oPlace").textContent === "Place order" && /still RM 100/.test(d.querySelector("#osheet .osheet__foot").textContent),
       "where this size did not move the check stays as it was and says so beside Place");
     d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
@@ -15784,7 +15786,9 @@ await (async () => {
     ok(!!sh() && /Order placed/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
       "Place answers in the sheet, Order placed, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
     ok(!/notification|buzz/i.test(sh().textContent) && !bellBox.hidden && bellBox.classList.contains("cbell--off") && !call.hidden
-      && call.textContent === "Turn on notifications" && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
+      /* 16 Nov 2026, the move to Ambient (0.7.3): the call is the app bar's own, two words seen and the whole sentence its name */
+      && call.textContent === "Turn on" && call.getAttribute("aria-label") === "Turn on notifications" && call.classList.contains("amb-pill--bar")
+      && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
       "Sent asks nothing about notifications; the bell is marked with its call beside it, and drawing them asks the browser nothing: " + st.asked);
     call.click();
     for (let i = 0; i < 100 && !(st.subscribed.length && call.hidden); i++) await new Promise((r) => setTimeout(r, 30));
@@ -15861,19 +15865,20 @@ await (async () => {
     const { w, d, st } = B;
     ok(!!d.getElementById("oNew") && !d.getElementById("oLimit"), "one short of the limit, New order is offered");
     await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
-    for (let i = 0; i < 100 && !d.querySelector("#osheet .olim"); i++) await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 100 && !d.querySelector("#osheet [data-k^=\"cancel:\"]"); i++) await new Promise((r) => setTimeout(r, 30));
     /* F8 (Step 1a.2): the order is a tile, its figure under the mark, and its word stands beside the tile */
-    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => { const lab = r.querySelector(".salt-ledger__label"), tile = lab.querySelector(".mtile");
-      return { tile: tile ? tile.querySelector(".sr").textContent + "|" + tile.querySelector(".mq").textContent : "", t: [...lab.children].filter((c) => c !== tile).map((c) => c.textContent).join(""), cancel: !!r.querySelector("button") }; });
-    ok(st.placed === 1 && /^Five open orders is the most:/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
-      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|1 unit")
+    /* 16 Nov 2026, the move to Ambient: the limit's orders are the system's rows, the mark thumb (the shape said aloud), the size, the word of the second line and Cancel */
+    const rows = [...d.querySelectorAll("#osheet .amb-list > li")].map((r) => ({ tile: ((r.querySelector(".amb-vh") || {}).textContent || "") + "|" + r.querySelector(".amb-row__title").textContent,
+      t: r.querySelector(".amb-row__sub").textContent.split(" \u00b7 ")[0], cancel: !!r.querySelector("button") }));
+    ok(st.placed === 1 && /^Five open orders is the most:/.test((d.querySelector("#osheet .amb-notice") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
+      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube|1 unit")
       && rows.map((r) => r.t).join("|") === "Placed|Placed|Confirmed|Confirmed|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
-    const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
+    const cb = d.querySelector("#osheet [data-k^=\"cancel:\"]"); if (cb) cb.click();
     const asked = !!d.getElementById("ynSheet") && st.cancels.length === 0;   /* Phase 7d: the Sheet asks first, and nothing is sent yet */
     if (d.getElementById("ynGo")) d.getElementById("ynGo").click();
     for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(asked && st.cancels.length === 1 && st.cancels[0] === five[0].id && !!d.getElementById("oGo") && !d.querySelector("#osheet .olim") && !d.getElementById("ynSheet"),
+    ok(asked && st.cancels.length === 1 && st.cancels[0] === five[0].id && !!d.getElementById("oGo") && !d.querySelector("#osheet [data-k^=\"cancel:\"]") && !d.getElementById("ynSheet"),
       "Cancel asks in its Sheet, and its yes withdraws that order, and the sheet goes on to the form of its own accord: " + JSON.stringify({ asked, cancels: st.cancels }));
     void w;
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
@@ -15913,19 +15918,19 @@ await (async () => {
     await startAt(d);
     return { w, d, st };
   };
-  const who = (d) => { const fs = d.querySelector("#osheet .salt-sheet__body > fieldset");
+  const who = (d) => { const fs = d.querySelector("#osheet .amb-sheet__body > fieldset");
     return fs && /Who is it for[?]/.test(fs.textContent) ? [...fs.querySelectorAll("button")].map((b) => b.textContent + "=" + b.getAttribute("aria-pressed")) : null; };
   const A = await drive(true);
   try {
     const { d, st } = A;
-    const why = () => d.querySelector("#osheet .ototal .sub2").textContent;
+    const why = () => d.querySelector("#osheet .ototal .amb-stat__label").textContent;
     ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && (d.getElementById("oGo").getAttribute("aria-disabled") === "true") && why() === "Say who it is for.",
       "an associate's sheet opens on Who is it for?, neither chosen, and Review waits for the answer and says why: " + JSON.stringify([who(d), why()]));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "A friend").click();
     ok(JSON.stringify(who(d)) === '["Me=false","A friend=true"]' && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"), "a tap answers it and lets Review go");
     d.getElementById("oGo").click();
-    const forRow = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "For");
-    ok(!!forRow && forRow.querySelector(".salt-ledger__value").textContent === "A friend", "the check says who it is for");
+    const forRow = [...d.querySelectorAll("#osheet .amb-setting")].find((r) => r.querySelector(".amb-setting__name").textContent === "For");
+    ok(!!forRow && forRow.querySelector(".amb-setting__value").textContent === "A friend", "the check says who it is for");
     d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order placed/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
     ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
@@ -15972,7 +15977,7 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
-    return { w, d, lead: [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent) };
+    return { w, d, lead: [...d.querySelectorAll("#pPrices > p")].map((p) => p.textContent) };
   };
   /* 03:59 UTC is 11:59 in Kuala Lumpur on Thursday; 16:05 UTC the same day is already Friday there */
   const A = await drive(list("2026-09-24T03:59:00Z"));
@@ -15981,19 +15986,19 @@ await (async () => {
     ok(lead.includes("Prices as at 24 Sep 2026, 11:59; choose the units, then add them.") && !lead.some((t) => /week of/.test(t)),
       "the list says when it was written, in Kuala Lumpur, and that the units are chosen, then added (plan version 9): " + JSON.stringify(lead.slice(1, 2)));
     const rows = [...d.querySelectorAll("#pPrices .szrow")];
-    ok(rows.length === 4 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-ledger__row"))
+    ok(rows.length === 4 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("amb-row"))
       && rows.map((r) => r.textContent).join("|") === "1 unitRM 100.00|2 unitsRM 190.00|1 unitRM 45.00|3 unitsRM 120.00",
-      "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
+      "every size is a row of the system's list, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
     /* plan version 9: a size row is one tap that sets the book's stepper, in the fold under it; the sheet opens from the basket, at the size added */
     rows[3].click();
-    const stepSet = rows[3].getAttribute("aria-pressed") === "true" && !d.getElementById("osheet") && !!rows[3].closest("details.sfold");
+    const stepSet = rows[3].getAttribute("aria-pressed") === "true" && !d.getElementById("osheet") && !!rows[3].closest(".sfold");
     await startAt(d, "oil", 3);
     const sh = d.getElementById("osheet");
     /* V4b, plan version 8: the size tapped on its product's mark is the one line on the sheet, listed with its mark, its size and its figure */
-    const lns = sh ? [...sh.querySelectorAll("[data-sheet-lines] .salt-settings__row")] : [];
-    const on = lns.map((r) => (r.querySelector(".mq, .pwith") || r).textContent.replace(/\s+/g, " ").trim());
-    const prod = lns.map((r) => { const x = r.querySelector(".sr"); return x ? x.textContent : ""; });
-    ok(stepSet && !!sh && lns.length === 1 && /3 units/.test(on[0]) && prod.join() === "Droplet" && /RM 120/.test(lns[0].textContent) && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
+    const lns = sh ? [...sh.querySelectorAll("[data-sheet-lines] .amb-row")] : [];
+    const on = lns.map((r) => (r.querySelector(".amb-row__title") || r).textContent.replace(/\s+/g, " ").trim());
+    const prod = lns.map((r) => { const x = r.querySelector(".amb-vh"); return x ? x.textContent : ""; });
+    ok(stepSet && !!sh && lns.length === 1 && /3 units/.test(on[0]) && prod.join() === "Droplet" && /RM 120/.test(lns[0].textContent) && /^RM 120/.test(sh.querySelector(".osheet__foot").textContent),
       "a tap on a size sets its stepper, and Add then Continue opens the order sheet on that product at that size: " + JSON.stringify({ stepSet, on, prod }));
     void w;
   } finally { A.w.close(); }
@@ -16085,20 +16090,20 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent);
+    const lead = [...d.querySelectorAll("#pPrices > p")].map((p) => p.textContent);
     ok(lead.some((t) => t.includes(ONE)) && !lead.some((t) => /acknowledged/.test(t)), "Prices says it, in the customer's word for the step: " + JSON.stringify(lead.find((t) => /Delivery/.test(t))));
     await startAt(d);
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
     spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
-    const says = [...d.querySelectorAll("#osheet .salt-insight")].map((x) => x.textContent);
-    const row = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "Delivery");
-    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we confirm it",
+    const says = [...d.querySelectorAll("#osheet .amb-notice")].map((x) => x.textContent);
+    const row = [...d.querySelectorAll("#osheet .amb-setting")].find((r) => r.querySelector(".amb-setting__name").textContent === "Delivery");
+    ok(says.includes(ONE) && row && row.querySelector(".amb-setting__value").textContent === "Set when we confirm it",
       "the check of a delivery says it beside the order, and its Delivery line says when: " + JSON.stringify(says));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
     d.getElementById("oGo").click();
-    ok(![...d.querySelectorAll("#osheet .salt-insight")].some((x) => x.textContent === ONE), "and a collection's check does not, having no charge to explain");
+    ok(![...d.querySelectorAll("#osheet .amb-notice")].some((x) => x.textContent === ONE), "and a collection's check does not, having no charge to explain");
   } finally { w.close(); }
 })();
 section("S4 4.5 fix: a redraw that takes away the tapped control keeps focus in the sheet, so Escape still closes it");
@@ -16234,17 +16239,17 @@ await (async () => {
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
     await startAt(d); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !st.release; i++) await new Promise((r) => setTimeout(r, 30));
-    const orbs = [...d.querySelectorAll("#osheet .salt-sheet__head button")].map((b) => [b.getAttribute("aria-label"), b.disabled]);
+    const orbs = [...d.querySelectorAll("#osheet .amb-sheet__head button")].map((b) => [b.getAttribute("aria-label"), b.disabled]);
     ok(st.posted === 1 && orbs.length === 2 && orbs.every((o) => o[1] === true),
       "while Place is on its way, the sheet's own Close and Change controls are held: " + JSON.stringify(orbs));
     const tap = (sel, ev) => { const x = d.querySelector(sel); if (x) (ev ? x.dispatchEvent(ev) : x.click()); return !!d.getElementById("osheet"); };
     const held = [tap("#osheet .salt-sheet", new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
-      tap("#osheet .salt-sheet-scrim"), tap("#osheet .salt-sheet__close")];
+      tap("#osheet .salt-sheet-scrim"), tap("#osheet [data-k=\"close\"]")];
     ok(held.join() === "true,true,true", "and Escape, the scrim and Close leave the sheet open: " + JSON.stringify(held));
     st.release();
     for (let i = 0; i < 100 && !/Order placed/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
     ok(/Order placed/.test((d.getElementById("osheet") || {}).textContent || ""), "so the answer is drawn in the sheet where Place was tapped");
-    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    d.getElementById("osheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     ok(!d.getElementById("osheet"), "and once it is answered, Escape closes it again");
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
@@ -16328,7 +16333,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 60));
     return { w, d, posted, errs };
   };
-  const foot = (d) => ((d.querySelector("#osheet .salt-sheet__foot") || {}).textContent || "");
+  const foot = (d) => ((d.querySelector("#osheet .osheet__foot") || {}).textContent || "");
   /* the list came back with nothing priced */
   const A = await drive({ ok: false, error: "prices moved", prices: await sealed(list("d2", [])) });
   try {
@@ -16336,7 +16341,7 @@ await (async () => {
     ok(/Ordering opens once your prices are set[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/pick another/.test(d.getElementById("osheet").textContent),
       "a list that comes back with nothing priced says ordering opens once the prices are set, and Place is held: " + JSON.stringify(foot(d)));
     d.getElementById("oBack").click();
-    const bodyText = ((d.querySelector("#osheet .salt-sheet__body") || {}).textContent || "");
+    const bodyText = ((d.querySelector("#osheet .amb-sheet__body") || {}).textContent || "");
     ok(!errs.length && bodyText === "Ordering opens once your prices are set." && !d.getElementById("oNew"),
       "and Change draws that line in the sheet, throwing nothing, with New order gone from the Order tab: " + JSON.stringify({ errs, bodyText }));
   } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
@@ -16346,7 +16351,7 @@ await (async () => {
     const { d, posted } = B;
     ok(/Ordering opens once your price list is written, with the next update[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/open your prices again/.test(foot(d)),
       "a refusal carrying no list says ordering opens once the list is written, and Place is held: " + JSON.stringify(foot(d)));
-    d.querySelector("#osheet .salt-sheet__close").click();
+    d.querySelector("#osheet [data-k=\"close\"]").click();
     ok(posted.length === 1 && !d.getElementById("oNew") && /No price list for your account yet/.test(d.getElementById("pPrices").textContent)   /* 1 Nov 2026: pr.none in one sentence */ && !d.querySelector("#pPrices .szrow"),
       "and behind it the page holds no list, as a sign-in would show it, so the same stamp cannot be placed again: " + JSON.stringify({ posted: posted.length }));
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
@@ -16387,9 +16392,8 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 60));
     d.querySelector('#pPrices [data-st="add"]').click();   /* plan version 9: at the limit Add opens the limit step, as a size tapped did */
     /* F8 (Step 1a.2): the word stands beside the order's tile, which holds the mark and its figure */
-    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({
-      word: [...r.querySelector(".salt-ledger__label").children].filter((c) => !c.classList.contains("mtile")).map((c) => c.textContent).join(""),
-      flag: [...r.querySelectorAll(".salt-ledger__flag")].map((f) => f.textContent).filter((t) => !/^Placed /.test(t)).join("") }));
+    const rows = [...d.querySelectorAll("#osheet .amb-list > li")].map((r) => { const sub = r.querySelector(".amb-row__sub").textContent.split(" \u00b7 ");
+      return { word: sub[0], flag: sub.slice(1).filter((t) => !/^Placed /.test(t)).join("") }; });
     ok(rows.map((r) => r.word).join("|") === "Placed|Placed|Delivered|Part delivered|Part collected",
       "a handover reads as what happened to the goods, in part where only some moved, never Ready: " + JSON.stringify(rows.map((r) => r.word)));
     ok(rows[2] && rows[2].flag === "The goods are with you, so this one finishes when it is paid."
@@ -17238,7 +17242,7 @@ await (async () => {
     ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
       "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
-    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".salt-bubble__new") && /After six is fine/.test(scr.textContent)
+    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".amb-msg__meta .amb-chip") && /After six is fine/.test(scr.textContent)
       && !/reply for you/i.test(pOrder.querySelector("[data-row]").textContent),
       "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
@@ -18112,14 +18116,15 @@ await (async () => {
     } }).window;
     const D = win.document;
     const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
-    ok(places(".salt-appbar") === "needs,orders,customers,record,shop" && places(".salt-rail") === "needs,orders,customers,record,shop",
-      "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    /* 15 Nov 2026, the move to Ambient: one tab bar, which Ambient stands up as the rail from 960px */
+    ok(places(".amb-tabbar") === "needs,orders,customers,record,shop" && D.querySelectorAll(".place[data-m]").length === 5,
+      "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), on the one tab bar: " + JSON.stringify(places(".amb-tabbar")));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
     ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
       "and it carries the count of what is To do there on both bars, the refused account, the ID with no account and the account not sent (all his to act since 22 Oct 2026): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
-    D.querySelector('.salt-appbar button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     /* 2 Nov 2026 (Customers on the canvas): an account is a settings row inside its group's list (.salt-settings), no longer Needs you's card */
     const rows = () => [...D.querySelectorAll("#rlist .arow[data-u]")];
     const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
@@ -18161,10 +18166,10 @@ ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-selected") 
     D.querySelector('#aopen button[data-back="accounts"]').click();
     ok(!D.getElementById("oAccts").classList.contains("open") && D.getElementById("aopen").hidden && !rowOf(uO).hasAttribute("aria-current"),
       "and the way back closes it");
-    D.querySelector('.salt-rail button[data-m="shop"]').click();
+    D.querySelector('.amb-tabbar button[data-m="shop"]').click();
     ok(D.getElementById("oShop").hidden === false && current() === "shop" && !!D.querySelector('#oShop [data-act="part.shop.practice"]') && !!D.getElementById("mTest"),
       "Shop holds the test accounts, with the hours and the notice beside them");
-    D.querySelector('.salt-rail button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     D.querySelector('[data-act="part.customers.associates"]').click();
     ok(D.getElementById("oCards").hidden === false && D.getElementById("oAccts").hidden === true && current() === "customers",
       "and Customers holds the associates' report card under Associates");
@@ -18221,7 +18226,7 @@ await (async () => {
     view.click();
     ok(await until(() => !D.getElementById("tabs").hidden && !D.getElementById("barw").hidden),
       "View as them opens their own page");
-    const bar = D.querySelector("#barw .bar");
+    const bar = D.querySelector("#barw .amb-notice");   /* 15 Nov 2026, the move to Ambient: his read-only line is a notice under the hero */
     ok(D.getElementById("vas").textContent === "Viewing as " + u + ", read only" && D.getElementById("roster").hidden,
       "under a banner naming the username and saying read only: " + JSON.stringify(D.getElementById("vas").textContent));
     const lockB = D.getElementById("lock");
@@ -18848,7 +18853,7 @@ await (async () => {
       "Share the link shares the one it made, and mints no second: " + JSON.stringify({ shared: shared.length, ots: await ots() }));
     /* a redraw while one is being made: the card drawn in its place waits, then shares, and one link is made */
     btn("k:" + uM, "Send a sign-in link").click();
-    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    D.querySelector('.amb-tabbar button[data-m="needs"]').click();
     ok(!!btn("k:" + uM, "Making it...") && btn("k:" + uM, "Making it...").disabled, "a redraw while one is made draws its button waiting");
     ok(await until(() => btn("k:" + uM, "Share the link")) && (await ots()) === 2, "and once made the redrawn card offers Share the link, one link made for it, not two");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -18913,7 +18918,7 @@ await (async () => {
     cut.on = false;
     ok(!card().querySelector("select"), "and the card offers no price level to pin");
     /* the same in Links */
-    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
     ok(await until(() => btn(lcard(), "Approve")), "Links lists the link with its Approve");
     cut.on = true;
@@ -18987,7 +18992,7 @@ await (async () => {
     ok(await until(() => hold.held === 1) && first.disabled && btn(pane(), "Decline").disabled,
       "while Approve is out, the card's Approve and Decline are off: " + JSON.stringify([first.disabled, btn(pane(), "Decline").disabled]));
     /* a redraw puts fresh buttons in their place; a tap on the new Approve while the first move is out sends nothing */
-    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    D.querySelector('.amb-tabbar button[data-m="needs"]').click();
     const again = btn(card(), "Approve");
     ok(!!again && again !== first, "a redraw put a new Approve on the card");
     again.click();
@@ -18998,13 +19003,13 @@ await (async () => {
       "and the move lands once: " + JSON.stringify({ sent: sent("approve") }));
 
     /* ---- Links: Withdraw held in flight ---- */
-    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => btn(lcard(), "Withdraw")), "Links lists the approved link with its Withdraw");
     holdNext("POST /all/refs/" + lid + "/revoke");
     const wd = btn(lcard(), "Withdraw");
     wd.click();
     ok(await until(() => hold.held === 1) && wd.disabled, "while Withdraw is out, its button in Links is off");
-    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const wd2 = btn(lcard(), "Withdraw");
     ok(!!wd2 && wd2 !== wd, "a redraw put a new Withdraw on the card");
     wd2.click();
@@ -19066,7 +19071,7 @@ await (async () => {
     ok(await until(() => ko() && /Last signed in by code, 03 Sep 2026[.]/.test(ko().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card, opened: " + (ko() || {}).textContent);
     delete win.matchMedia;
-    D.querySelector('.salt-appbar button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     /* 25 OCT 2026: an open is read from the opened card's Opened line, no longer from the row */
     const opened = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return ""; r.click();
       const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .salt-settings__value'); return v ? v.textContent : ""; };
@@ -19343,7 +19348,7 @@ await (async () => {
       && [...nc().querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")),
       "Needs you offers the guest price list with only the sheet read: " + (nc() || {}).textContent);
     delete win.matchMedia;
-    D.querySelector('.salt-appbar button[data-m="customers"]').click();
+    D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     /* 25 OCT 2026: the row says No account and offers Show; the next-update words are on the opened card */
     const cardOf = (u) => { row(u).click(); const c = D.querySelector("#aopen .scard"); return c && c.textContent.includes(u) ? c : null; };
@@ -19810,9 +19815,9 @@ await (async () => {
     const card = D.getElementById("thisDevice"), body = () => card.textContent;
     ok(await until(() => !card.hidden && /iPhone, Safari/.test(body()) && /Kept signed in/.test(body())) && D.getElementById("pStmt").contains(card),
       "signed in, the statement ends on This device: " + JSON.stringify(body()));
-    const rows = () => [...card.querySelectorAll(".salt-settings__row, .salt-ledger__row")].map((r) => r.textContent);
-    ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, EdgeThis oneKept signed in since/.test(t))
-      && rows().some((t) => /^iPhone, SafariSigned in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
+    const rows = () => [...card.querySelectorAll(".amb-setting")].map((r) => r.textContent);   /* 16 Nov 2026, the move to Ambient: a row of the system's settings */
+    ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, Edge ?This one ?Kept signed in since/.test(t))
+      && rows().some((t) => /^iPhone, Safari ?Signed in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
       "it lists notifications, this computer marked This one and kept signed in, and the iPhone for that visit: " + JSON.stringify(rows()));
     const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
 
@@ -19974,7 +19979,7 @@ await (async () => {
       "Sign out everywhere ends both copied links, where it spared the one the page still held");
 
     /* ---- Needs you's Share the link, on the locked account's card ---- */
-    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    D.querySelector('.amb-tabbar button[data-m="needs"]').click();
     const need = () => D.querySelector('#nlist [data-need="k:' + uL + '"]');
     const nbtn = (t) => need() && [...need().querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t);
     ok(await until(() => nbtn("Send a sign-in link")), "Needs you carries the refused account's card");
@@ -21408,19 +21413,19 @@ await (async () => {
   let docs = 0, tabled = 0, untagged = 0, plural = 0, wrongWord = [];
   for (const p of parties) {
     const d = M.liveStatement(p, at, "abcd-efgh");
-    if (!d || !/salt-lines__row|<tr/.test(d.body)) continue;
+    if (!d || !/<tr/.test(d.body)) continue;
     docs++;
-    if (!/<div class="salt-lines salt-lines--list" role="table" aria-label="Your orders" data-lines="orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
-    const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?(?: data-d="\d{4}-\d{2}-\d{2}")? data-g="[^"]*" data-dv="[^"]*" data-b="-?\d+"><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
+    if (!/<table class="amb-table amb-table--stack" data-lines="orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body) || /salt-lines/.test(d.body)) tabled++;
+    const rows = [...d.body.split('<h3 class="amb-section">Refunds</h3>')[0].matchAll(/<tr(?: class="is-off")?( data-m="\d{4}-\d{2}")?(?: data-d="\d{4}-\d{2}-\d{2}")? data-g="[^"]*" data-dv="[^"]*" data-b="-?\d+"><td data-label="Date">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
     untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
     /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its size
        under the mark (no shape word drawn, 12 Oct 2026), and the words a reader hears carry the unit */
-    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="mtile"><span class="sr">[A-Z][a-z]+ ([\d.,]+) (units?)<\/span><svg[\s\S]*?<\/svg><span class="mq" aria-hidden="true">([\d.,]+) (units?)<\/span>/g)) {
+    for (const m of d.body.matchAll(/<span class="amb-vh">[A-Z][a-z]+<\/span><span class="stm-size">([\d.,]+) (units?)<\/span>/g)) {
       const q = +m[1].replace(/,/g, "");
-      if ((q > 1) !== (m[2] === "units") || m[3] !== m[1] || m[4] !== m[2]) wrongWord.push(p + " " + m[1] + " " + m[2] + " under " + m[3] + " " + m[4]); else if (q > 1) plural++;
+      if ((q > 1) !== (m[2] === "units")) wrongWord.push(p + " " + m[1] + " " + m[2]); else if (q > 1) plural++;
     }
   }
-  ok(docs > 10 && !tabled, "every live statement lists its orders as Statement lines, not a table: " + docs + " statements, " + tabled + " still a table");
+  ok(docs > 10 && !tabled, "every live statement lists its orders as the system's Table, each cell named by its heading, no salt- class left: " + docs + " statements, " + tabled + " still a table");
   ok(docs > 10 && !untagged, "and every dated line carries its month, an undated one none: " + untagged + " out of step");
   ok(plural > 0 && !wrongWord.length, "a quantity above one reads units, one or less unit (D11), and the card's figure is the size: " + plural + " plural" + (wrongWord.length ? "; wrong: " + wrongWord.slice(0, 3).join(", ") : ""));
 
@@ -21480,12 +21485,12 @@ await (async () => {
     /* plan version 7 (7c): Account keeps the money and Full statement holds the lines and the month filter, in a Sheet */
     ok(!D.querySelector('#out [data-lines="orders"]') && D.getElementById("mfil").hidden, "Account draws no order lines and no month filter");
     D.getElementById("fsOpen").click();
-    const strip = D.getElementById("fsMf"), note = D.getElementById("fsNote"), list = D.querySelector("#fsOut .salt-lines");
+    const strip = D.getElementById("fsMf"), note = D.getElementById("fsNote"), list = D.querySelector("#fsOut table.amb-table");
     const mopts = [...strip.querySelectorAll("select option")], msel = strip.querySelector("select");
     const pickM = (v) => { msel.value = v; msel.dispatchEvent(new W.Event("change", { bubbles: true })); };
-    const shown = () => [...D.querySelectorAll("#fsOut .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    const shown = () => [...D.querySelectorAll("#fsOut tr[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
     const months = [...new Set(shown())];
-    ok(!strip.hidden && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
+    ok(!strip.hidden && !!strip.querySelector("label.amb-field .amb-select > select.amb-input") && mopts[0].textContent === "All" && msel.value === "" && mopts.length === months.length + 1
       && strip.nextElementSibling === note && note.nextElementSibling === D.getElementById("fsOut") && !!list && !D.getElementById("mos"),
       "one filter, All first and chosen, on the list it filters: " + JSON.stringify(mopts.map((b) => b.textContent)));
     const one = mopts[mopts.length - 1].value;
@@ -21505,22 +21510,22 @@ await (async () => {
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
     /* 26 Oct 2026, his word: This device is a list of settings; Notifications is a Switch, on or off */
-    const row = (label) => [...dev.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === label);
-    const btnOf = (label) => row(label) && row(label).querySelector("button");
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "true") && !dev.hidden && st.subs === 1,
+    const row = (label) => [...dev.querySelectorAll(".amb-setting")].find((r) => r.querySelector(".amb-setting__name") && r.querySelector(".amb-setting__name").textContent === label);
+    const btnOf = (label) => row(label) && row(label).querySelector("input[role=switch]");   /* 16 Nov 2026: the Switch is the native checkbox */
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").checked === true) && !dev.hidden && st.subs === 1,
       "This device says the notifications are on, with Turn off beside them: " + JSON.stringify([st.subs, dev.textContent.slice(0, 120)]));
     btnOf("Notifications").click();
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "false") && st.unsub === 1 && !st.subbed
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").checked === false) && st.unsub === 1 && !st.subbed
       && /Off[.]/.test(row("Notifications").textContent),
       "Turn off drops this phone's subscription and says Off on the row tapped: " + JSON.stringify(row("Notifications").textContent));
     /* signing out is on the card, and signing in again does not turn them back on by itself */
     signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && dev.hidden, "Sign out of this device signs out, and the card goes with the account");
     ok(await signIn() && await until(() => st.rem === 2) && await new Promise((r) => setTimeout(() => r(true), 150))
-      && btnOf("Notifications").getAttribute("aria-checked") === "false" && st.key === 1 && st.subs === 1 && !st.subbed,
+      && btnOf("Notifications").checked === false && st.key === 1 && st.subs === 1 && !st.subbed,
       "and the next sign-in, run to its end, leaves them off, where the way in used to file the phone again: " + JSON.stringify([st.rem, st.key, st.subs, st.subbed]));
     btnOf("Notifications").click();
-    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").getAttribute("aria-checked") === "true") && st.subs === 2 && st.subbed,
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").checked === true) && st.subs === 2 && st.subbed,
       "and Turn on files it again: " + JSON.stringify([st.subs, st.subbed]));
     signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
@@ -21545,8 +21550,9 @@ await (async () => {
   for (const p of parties) {
     const d = M.liveStatement(p, at, "abcd-efgh");
     if (!d) continue; docs++;
-    const trs = [...d.body.slice(d.body.indexOf('<div class="tot')).matchAll(/<div class="tr( [a-z_ -]+)?"><span(?: class="salt-settings__label")?>((?:(?!<\/div>)[\s\S])*?)<\/span><span(?: class="salt-settings__value")?>([^<]*)<\/span><\/div>/g)]
-      .map((m) => [m[2].replace(/<[^>]+>/g, "").trim(), m[3]]);
+    const t0 = d.body.indexOf('class="amb-settings tot"');   /* 16 Nov 2026, the move to Ambient: the foot is a group of the system's settings, a name and its figure a row */
+    const trs = [...d.body.slice(t0, d.body.indexOf("</ul></div>", t0)).matchAll(/<div class="amb-setting[^"]*"><span class="amb-setting__name">((?:(?!<\/div>)[\s\S])*?)<\/span><span class="amb-setting__value[^"]*">([^<]*)<\/span><\/div>/g)]
+      .map((m) => [m[1].replace(/<[^>]+>/g, "").trim(), m[2]]);
     const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
     const del = sum(/^Delivery$/); if (del > 0) withDel++;
     const bal = (trs.find((t) => /^(Outstanding|Balance)$/.test(t[0])) || [0, "x"])[1];
@@ -21679,7 +21685,7 @@ await (async () => {
     ok(await until(() => !!D.querySelector("#out .tot")) && !D.getElementById("stmtFoot") && !/ISSUE|Earlier statements/.test(vis()),
       "the Counter draws the live document alone: no earlier statements, no issue");
     /* C14: the first read of orders failed; the list and Home say so, never the empty state (No orders yet; Counter Batch A P5 replaced "None yet."), and Try again reads it */
-    const oArea = () => D.getElementById("oArea");
+    const oArea = () => D.getElementById("pOrder");
     ok(await until(() => !!oArea() && !!oArea().querySelector('[data-unread="ord.unread"]')) && !oArea().textContent.includes(EN["ord.empty.none.t"])
       && !!D.querySelector('#hNeeds [data-unread="ord.unread"]') && !/KV/.test(vis()),
       "a failed read of orders says so on Orders and Home, never None yet: " + JSON.stringify(oArea() && oArea().textContent.slice(0, 120)));
@@ -21734,13 +21740,18 @@ await (async () => {
   const opt = (live) => ({ dates: true, brand: null, issued: "24 Sep 2026 12:00", live, user: live ? "abcd-efgh" : null, recon, refunds });
   const live = M.stmtDoc("ZZ9-TST", rows, opt(true)), issue = M.stmtDoc("ZZ9-TST", rows, opt(false));
   const text = (h) => h.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ");
-  const cells = (h, c) => [...h.matchAll(new RegExp('<div class="salt-lines__' + c + '[^"]*" role="cell">([\\s\\S]*?)</div>', "g"))].map((m) => text(m[1]).trim());
+  const cells = (h, c) => [...h.matchAll(new RegExp('<td data-label="' + c + '"[^>]*>([\\s\\S]*?)</td>', "g"))].map((m) => text(m[1]).trim());   /* 16 Nov 2026, the move to Ambient (place D): a cell of the system's Table, by its heading */
   /* C4: every fully paid row says the day it was paid under its state word, the same day as well as a later one; never in the date cell */
-  const st = cells(live, "state"), dt = cells(live, "date");
+  const st = cells(live, "Status"), dt = cells(live, "Date");
   ok(st.some((x) => /^settled paid 20 Sep 2026$/.test(x)) && st.some((x) => /^paid in full paid 07 Aug 2026 /.test(x)) && st.some((x) => /^RM 60\.00 due$/.test(x))
     && !dt.some((x) => /paid/.test(x)), "every fully paid row says when it was paid under its state word, the same day too, and the date cell carries the order's date alone (C4): " + JSON.stringify([st, dt]));
+  /* 16 Nov 2026 (place D): a debt is a loss chip with its dot and word, a settled line a gain, and the live document carries no salt- class at all */
+  ok(/<span class="amb-chip amb-chip--neg"><span class="amb-chip__dot"><\/span>RM 60\.00 due<\/span>/.test(live) && /<span class="amb-chip amb-chip--pos"><span class="amb-chip__dot"><\/span>settled<\/span>/.test(live) && !/salt-/.test(live.slice(live.indexOf("<body>"))),
+    "a debt is a loss chip with its word, a settled row a gain chip, and no salt- class is left in the live document: " + JSON.stringify([live.includes('amb-chip--neg"><span class="amb-chip__dot"></span>RM 60'), live.includes('amb-chip--pos"><span class="amb-chip__dot"></span>settled'), (live.slice(live.indexOf("<body>")).match(/.{20}salt-.{20}/g) || []).slice(0, 2)]));
   /* C5: the live footer's every figure carries RM, as its lines do; an issue's footer is as it was sent */
-  const figs = (h) => [...h.slice(h.indexOf('<div class="tot')).matchAll(/<div class="tr[^"]*"><span[^>]*>(?:(?!<\/div>)[\s\S])*?<\/span><span[^>]*>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);   /* 28 Oct 2026: the live rows carry the settings classes */
+  const figs = (h) => h.includes('class="amb-settings tot"')
+      ? [...h.slice(h.indexOf('class="amb-settings tot"'), h.indexOf("</ul></div>", h.indexOf('class="amb-settings tot"'))).matchAll(/<span class="amb-setting__value[^"]*">([^<]*)<\/span>/g)].map((m) => m[1])   /* 16 Nov 2026: the live foot is a group of the system's settings */
+      : [...h.slice(h.indexOf('<div class="tot')).matchAll(/<div class="tr[^"]*"><span[^>]*>(?:(?!<\/div>)[\s\S])*?<\/span><span[^>]*>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);
   ok(figs(live).length >= 4 && figs(live).every((f) => /^RM [\d,]+\.\d\d$|^nil$/.test(f)) && figs(issue).some((f) => /^[\d,]+\.\d\d$/.test(f)),
     "the live footer's figures carry RM, as its lines do, and an issue's are as they were sent (C5): " + JSON.stringify([figs(live), figs(issue)]));
   /* C6 and C8: the live document describes itself as live, never by an issue date or the desk's approving */
@@ -21757,14 +21768,14 @@ await (async () => {
     && /How the 1\.5 unit is arrived at/.test(text(issue)) && /So the salt due to you is what you bought/.test(text(issue)),
     "and the goods are plural where the salt was not, the units counted as they read; an issue keeps its words (C7, C11)");
   /* C9: a refund row belongs to its month, so the month filter reaches it */
-  ok(/<div class="salt-lines__row" role="row" data-m="2026-08"><div class="salt-lines__date" role="cell">10 Aug 2026<\/div><div class="salt-lines__what" role="cell">Overpayment/.test(live),
+  ok(/<tr data-m="2026-08"><td data-label="Date">10 Aug 2026<\/td><td data-label="Reason">Overpayment/.test(live),
     "a refund row carries its month, so a month chosen filters it with the orders (C9)");
   /* C10: a live document with no orders says so without a period it does not have */
   const none = M.stmtDoc("ZZ9-TST", [], Object.assign(opt(true), { recon: [] })), noneI = M.stmtDoc("ZZ9-TST", [], Object.assign(opt(false), { recon: [] }));
   ok(/No orders yet\./.test(none) && !/period/.test(text(none)) && /No orders in this period\./.test(noneI), "a live document with no orders says No orders yet, never a period (C10)");
   /* C2 and C21: an h2 under the Counter's own h1, naming nobody a second time; its sections are h3; an issue is a page of its own */
   const heads = (h) => [...h.matchAll(/<(h[1-6])[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => m[1] + ":" + text(m[2]).trim());
-  ok(JSON.stringify(heads(live)) === JSON.stringify(["h2:Statement of account", "h3:Refunds", "h3:Still to collect"]) && !/class="who"|>Account</.test(live) && !live.includes("abcd-efgh")
+  ok(JSON.stringify(heads(live)) === JSON.stringify(["h2:Statement of account", "h3:Refunds", "h3:Still to collect", "h3:How the 1.5 units are arrived at", "h3:How your 05 Aug 2026 order was settled"]) && !/class="who"|>Account</.test(live) && !live.includes("abcd-efgh")
     && heads(issue)[0] === "h1:Statement of account", "the live document is an h2 with its sections h3 under it and names the account no second time; an issue opens on its own h1 (C2, C21): " + JSON.stringify(heads(live)));
   /* C25: a book's day is its own digits, wherever the tool runs */
   const here = M.stmtDoc("ZZ9-TST", rows, opt(true));
@@ -21781,12 +21792,13 @@ await (async () => {
   ok(hs(g).join() === "h1,h2" && hs(PG.shutPage("nC21")).join() === "h1" && /RM 150\.00/.test(g),
     "a guest board opens on its h1 with each mark an h2 under it, the shut page on its h1, and money is RM with two places (C21, C5): " + JSON.stringify([hs(g), hs(PG.shutPage("nC21"))]));
   const navs = [...PG.landingPage("aaaa-cccd", "nC22", null).matchAll(/<nav\b[^>]*aria-label="([^"]*)"/g)].map((m) => m[1]);
-  ok(navs.length === 2 && new Set(navs).size === 2 && navs.includes("Places"), "the rail and the bar are two landmarks with two names (C22): " + JSON.stringify(navs));
+  /* 16 Nov 2026, the move to Ambient: the rail and the bar are one dock, a single landmark named Places */
+  ok(navs.length === 1 && navs.includes("Places"), "the places are one landmark with a name (C22): " + JSON.stringify(navs));
   /* C23: the test account's own statement is a customer's live document in shape, dated DD Mon YYYY */
   const { testStatement } = await import("../stmt/worker.js");
   const tb = (await testStatement()).body;
-  ok(!/<h1|<table|September/.test(tb) && /^<h2 class="stmth">/.test(tb) && /class="salt-lines__row"[^>]*><div class="salt-lines__date" role="cell">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
-    "the test account's statement is Statement lines under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
+  ok(!/<h1|September|<th class="l">/.test(tb) && /^<h2 class="amb-section">/.test(tb) && /<tr[^>]*><td data-label="Date">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
+    "the test account's statement is the system's Table under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
 })();
 section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
 await (async () => {
@@ -22228,10 +22240,10 @@ await (async () => {
     D.querySelector('#pOrder [data-row="' + oid + '"]').click();
     const scr = D.querySelector("#pOrder .oscreen"), box = scr && scr.querySelector("input[aria-label='Write about this order']");
     if (box) { box.value = "is it ready"; box.form.requestSubmit(); }
-    await wait(() => scr && scr.querySelector(".salt-bubble--failed"));
-    const send = btn("Send"), failed = scr && scr.querySelector(".salt-bubble--failed");
+    await wait(() => scr && scr.querySelector(".amb-msg.is-error"));
+    const send = btn("Send"), failed = scr && scr.querySelector(".amb-msg.is-error");
     ok(!!send && !send.disabled && !!failed && /Not sent/.test(failed.textContent) && /Check your connection/.test(failed.textContent)
-      && !!failed.querySelector("button.salt-bubble__retry") && failed.closest(".oscreen") === send.closest(".oscreen"),
+      && !!failed.querySelector(".amb-msg__meta button.amb-pill") && failed.closest(".oscreen") === send.closest(".oscreen"),
       "Send on an order is given back too, and Not sent is said on the line itself, in that order's own thread: "
       + JSON.stringify({ send: send && send.disabled, failed: failed && failed.textContent }));
     ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
@@ -22379,7 +22391,7 @@ await (async () => {
     await until(() => underBox().length);
     const sent = said();
     ok(underBox().length === 1 && lapsedLine(underBox()[0]) && sent.filter(lapsedLine).length === 1 && !!box && box.value === "is it ready"
-      && !D.querySelector("#pOrder .salt-bubble--failed") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      && !D.querySelector("#pOrder .amb-msg.is-error") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
       "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
@@ -22450,21 +22462,16 @@ await (async () => {
   const { JSDOM: JDF } = await import("jsdom");
   const dom = new JDF(lpF("", "nF", null), { url: "https://site.test/", pretendToBeVisual: true });
   try {
+    /* 15 Nov 2026, THE MOVE TO AMBIENT: the bar is gone. The lapse (and his read-only line) are notices in a stack under the place's hero, in the
+       shell's screen, which scrolls inside the shell; the app bar floats over it and clears the safe area by Ambient's own rule; each line's one control
+       is a quiet pill, 44px by Ambient's --amb-tap */
     const W = dom.window, D = W.document, barw = D.getElementById("barw");
-    barw.hidden = false;
-    const cs = W.getComputedStyle(barw), inner = W.getComputedStyle(barw.querySelector(".bar"));
-    ok(cs.position === "sticky" && inner.position !== "sticky",
-      "the wrapper is the sticky element and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, bar: inner.position }));
-    /* UX2: pinned under the status bar, which a saved iPhone app draws the page beneath. jsdom reads no env(),
-       so the rule is read off the page as served */
     const served = D.documentElement.outerHTML;
-    ok(/#barw\{position:sticky;top:env\(safe-area-inset-top,0px\);/.test(served) && /viewport-fit=cover/.test(served),
-      "and it sticks at the safe-area inset, not at top:0 behind the clock, on a page drawn under the status bar");
-    /* UX4: Log out and Continue were 55 and 62 by 21. Measured by a hit test in the rig at 320, 360 and 390: 55 and
-       62 by 44 after, the bar 46px tall as it was about 45 before. The rule is read as served: jsdom resolves no var() */
-    const barBtn = (/\.bar button\{([^}]*)\}/.exec(served) || ["", ""])[1];
-    ok(/min-height:var\(--salt-tap\)/.test(barBtn) && /min-width:var\(--salt-tap\)/.test(barBtn) && /flex:none/.test(barBtn) && !/min-height:auto/.test(barBtn),
-      "the bar's two buttons are 44px both ways and never shrink under it: " + JSON.stringify(barBtn));
+    ok(barw.classList.contains("amb-stack") && barw.parentElement.matches("#tabs > main.amb-screen") && barw.previousElementSibling.matches("header.amb-hero")
+      && D.getElementById("lapse").classList.contains("amb-notice--warn") && !/#barw\{position:sticky/.test(served),
+      "the lapse line is a warning notice in a stack under the place's hero, in the screen that scrolls, no sticky bar of the page's own");
+    ok(/viewport-fit=cover/.test(served) && D.getElementById("lapseGo").classList.contains("amb-pill") && D.getElementById("lapseGo").classList.contains("amb-pill--quiet"),
+      "and its one control, Continue, is Ambient's quiet pill, 44px by its own measure, on a page drawn under the status bar");
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.39: no em-dash reaches the served page, and a waiting link says it is shut");
@@ -23504,8 +23511,8 @@ await (async () => {
   for (const p of parties) {
     const doc = M.liveStatement(p, new Date("2026-09-24T04:00:00Z"));
     if (!doc) continue;
-    /* S7 7.3: a live statement's date cells are Statement lines */
-    const cells = [...doc.body.matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => x[1]);
+    /* 16 Nov 2026, the move to Ambient: a live statement's date cells are the system's Table cells */
+    const cells = [...doc.body.matchAll(/<td data-label="Date">([\s\S]*?)<\/td>/g)].map((x) => x[1]);
     sep += cells.filter((c) => /\d\d Sep 2026/.test(c)).length;
     four += cells.filter((c) => FOUR.test(c)).length + (FOUR.test(doc.body) ? 1 : 0);
   }
@@ -23616,14 +23623,14 @@ await (async () => {
     d95.getElementById("f").dispatchEvent(new dom95.window.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 150 && !d95.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
     const marks95 = [...d95.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label"));
-    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices h2.pmark .salt-coin").length === 3 && !d95.querySelector("#pPrices h3"),
+    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark").length === 3 && !d95.querySelector("#pPrices h3"),
       "the price list heads each block with its mark, an h2 under the place's h1 (C21), the one still waiting for a price included: " + JSON.stringify(marks95));
     d95.querySelector('button[data-t="order"]').click();
     /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
     for (let i = 0; i < 60 && !d95.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
     /* V4b (his point 5 of 28 Sep 2026), plan version 8: each product's sizes sit under its mark on Order, a tap makes the sheet's one line, and the basket joins a size of the other beside it */
-    const legOf95 = () => [...d95.querySelectorAll("#pPrices .pane")].filter((f) => f.querySelector(".szrow") && f.querySelector("h2.pmark .salt-coin"));
-    const onOf95 = () => [...d95.querySelectorAll("#osheet .pwith")].map((x) => x.querySelector(".sr").textContent);
+    const legOf95 = () => [...d95.querySelectorAll("#pPrices .pane")].filter((f) => f.querySelector(".szrow") && f.querySelector("h2.pmark .amb-thumb--mark"));
+    const onOf95 = () => [...d95.querySelectorAll("#osheet .amb-list .amb-row")].map((x) => x.querySelector(".amb-vh").textContent);
     const leg95 = legOf95();
     await startAt(d95, "salt");
     const on95 = onOf95();
@@ -23634,7 +23641,7 @@ await (async () => {
     ok(onOf95().join() === "Cube,Droplet", "and a size of the other product joins the sheet beside it, by the basket: " + JSON.stringify(onOf95()));
     /* a product waiting for its price is a mark too, not a name */
     const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector(".szrow"));
-    ok(soon95.length === 1 && soon95[0].querySelector("h2.pmark .salt-coin svg")
+    ok(soon95.length === 1 && soon95[0].querySelector("h2.pmark .amb-thumb--mark svg")
       && soon95[0].querySelector("h2.pmark").getAttribute("aria-label") === "Ring"
       && /Price coming soon\./.test(soon95[0].textContent),
       "a product with no price yet is a mark as well, and one with no mark of its own falls back to the ring");
@@ -23645,7 +23652,7 @@ await (async () => {
     if (row95) row95.click();
     const card95 = d95.querySelector("#pOrder .oscreen");
     /* F8: a row's mark is a tile, its figure under it (his "number alone"), and the shape rides in the tile's words */
-    ok(row95 && row95.querySelector(".mtile .salt-coin") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector(".oband .salt-coin") && /Droplet/.test(card95.textContent)
+    ok(row95 && row95.querySelector(".amb-thumb--mark") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector(".oband .amb-thumb--mark") && /Droplet/.test(card95.textContent)
       && !/\b(salt|oil)\b/i.test(card95.textContent + " " + row95.textContent),
       "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
@@ -23809,17 +23816,14 @@ await (async () => {
     D8.getElementById("f").dispatchEvent(new dom8.window.Event("submit", { bubbles: true, cancelable: true }));
     const up8 = await until8(() => D8.querySelectorAll("#pPrices h2.pmark").length === 5 && D8.querySelector(IN8("#pCard .pane"))
       && D8.querySelector(IN8("#pOrder [data-row]")) && D8.querySelector(IN8("#pHome .htile")));
-    const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector(".salt-coin");
-      return [h.getAttribute("aria-label"), [...s.querySelectorAll("text.salt-coin__let")].map((t) => t.textContent).join(""), s.className.replace("salt-coin salt-coin--", "")].join(":"); });
+    /* 16 Nov 2026, the move to Ambient: a book's head on Prices is the mark thumb (the one drawing of a mark standing alone), its letter the thumb's word */
+    const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector(".amb-thumb--mark");
+      return [h.getAttribute("aria-label"), (s.querySelector(".amb-thumb__word") || { textContent: "" }).textContent, [...s.classList].filter((c) => /^amb-thumb--(sm|md|lg)$/.test(c)).map((c) => c.slice(11))[0] || ""].join(":"); });
     ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube:I:md", "Droplet:G:md", "Lozenge:E:md", "Capsule:V:md", "Ring::md"]),
-      "Prices draws each book's letter in its coin (plan version 10), priced and not yet priced alike, named by its shape, the Ring bare: " + JSON.stringify(heads8));
-    /* the page's coin is coinSvg's, drawn twice in two languages: the same class, hue index, ring, shape, letter and place (a transform's spaces and commas are not compared) */
-    const look8 = (c) => { const q = (x) => c.querySelector(x), at = (e, names) => names.map((a) => (e ? String(e.getAttribute(a)) : "")).join(",").replace(/[\s,]+/g, ""), t = q("text");
-      return [c.className, c.getAttribute("data-b"), at(q("circle"), ["class", "cx", "cy", "r"]), at(q("g"), ["transform"]), at(q("path"), ["class", "d"]),
-        t ? at(t, ["class", "x", "y", "font-size", "text-anchor"]) + t.textContent : ""].join("|"); };
-    const srv8 = (k) => { const h = D8.createElement("div"); h.innerHTML = P8.coinSvg(k, "md"); return look8(h.querySelector(".salt-coin")); };
-    const pair8 = [...D8.querySelectorAll("#pPrices h2.pmark .salt-coin")].map((s, i) => [look8(s), srv8(["salt", "oil", "candy", "rice", "tin"][i])]);
-    ok(pair8.length === 5 && pair8.every(([a, b]) => a === b), "and each is coinSvg's own drawing, ring, shape, letter and place: " + JSON.stringify(pair8.filter(([a, b]) => a !== b).slice(0, 2)));
+      "Prices draws each book's letter in its mark thumb, priced and not yet priced alike, named by its shape, the Ring bare: " + JSON.stringify(heads8));
+    /* the thumbs carry the hue of each book by its index (the Ring, a book with no mark, none) */
+    const kinds8 = [...D8.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark")].map((s) => ([...s.classList].find((c) => /^amb-kind-\d$/.test(c)) || ""));
+    ok(JSON.stringify(kinds8) === JSON.stringify(["amb-kind-1", "amb-kind-2", "amb-kind-3", "amb-kind-4", ""]), "and each head's thumb carries its book's hue by its index, the Ring none: " + JSON.stringify(kinds8));
     /* Home first, as it opens: Order again and the order under Coming up */
     const home8 = { again: [...D8.querySelectorAll(IN8("#pHome .htile"))], rows: [...D8.querySelectorAll(IN8("#pHome .salt-inbox-row"))] };
     all8.push(...census8(D8.getElementById("pHome")));
@@ -23945,8 +23949,8 @@ await (async () => {
     "and it is ONE page, byte for byte but its nonce, so the door says nothing about which it was: "
     + JSON.stringify(got.map((x, i) => [x.what, bare[i].length])));
   ok(/This link is not open/.test(bare[0]) && /Ask the person who sent it to you[.]/.test(bare[0])
-    && /name="viewport"/.test(bare[0]) && /url[(][/]fonts[/]/.test(bare[0]) && !/Not found/.test(bare[0]),
-    "it says the link is not open and whom to ask, with a viewport and the brand faces, never the bare Not found");
+    && /name="viewport"/.test(bare[0]) && !/url[(][/]fonts[/]/.test(bare[0]) && /<body class="amb">/.test(bare[0]) && !/Not found/.test(bare[0]),
+    "it says the link is not open and whom to ask, with a viewport, on Ambient (the device's own face, 15 Nov 2026), never the bare Not found");
   ok(bare[0] !== board.split('nonce="' + nonceOf({ body: board }) + '"').join(""), "and an open link is still its board, the control");
   ok(/<title>Link not open<\/title>/.test(bare[0]) && !/Price list/.test(bare[0]) && /<title>Price list<\/title>/.test(board),
     "the shut page's tab says the link is not open, never Price list, and the board's still says Price list");
@@ -24157,8 +24161,8 @@ await (async () => {
   try {
     Dm.getElementById("pw").value = pass;
     Dm.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 200 && !Dm.querySelector("#oArea [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
-    Dm.querySelector('#oArea [data-row="20260925000000-a1"]').click();
+    for (let i = 0; i < 200 && !Dm.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    Dm.querySelector('#pOrder [data-row="20260925000000-a1"]').click();
     const pn = Dm.getElementById("payNow"); if (pn) pn.click();
     const t = shown(), keysShown = Object.keys(EN).filter((k) => k.includes(".") && t.includes(k)), slots = t.match(/[{][A-Za-z0-9]+[}]/g) || [];
     ok(!!Dm.querySelector(".oscreen") && !Dm.getElementById("paySheet").hidden && /To pay now/.test(t) && /Did you send|How you pay/.test(t) && /What happened, step by step/.test(t)
@@ -24343,10 +24347,10 @@ await (async () => {
   try {
     D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 200 && !D.querySelector("#oArea [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
     look();
     const went = [await tap('button[data-t="prices"]'), await tap('button[data-t="stmt"]'), await tap('button[data-t="card"]'), await tap('button[data-t="order"]'),
-      await tap('#oArea [data-row="20260925000000-a1"]'), await tap("#payNow")];
+      await tap('#pOrder [data-row="20260925000000-a1"]'), await tap("#payNow")];
     ok(went.every(Boolean) && !!D.querySelector(".oscreen") && !D.getElementById("paySheet").hidden && marked.size > 100 && !left.size,
       "every word drawn on Home, Prices, Account, Rewards, Orders, an order and the pay sheet is the table's: " + JSON.stringify({ went, marked: marked.size, left: [...left] }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
@@ -24401,7 +24405,8 @@ await (async () => {
   const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
     ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
     ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Admin", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
-  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="(?:night|tide)"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+  /* 15 Nov 2026, the move to Ambient: no theme on the root, the device choosing light or dark */
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
   const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
   ok(pages.every(([, h]) => h.length > 1000) && !off.length,
     "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
@@ -25624,7 +25629,8 @@ await (async () => {
   /* 24 Sep 2026: the tab follows the mark alone, so an associate with no card yet still reaches their
      links; a panel with no card says when it comes and carries the links (behaviour: "S1 1.40") */
   /* S7 7.1: the tab is Rewards, a place on the bar and the rail, hidden on both until the account is an associate's */
-  ok(/id="tCard" data-t="card" hidden/.test(page6) && /class="salt-appbar__item" data-t="card" hidden/.test(page6) && /placeHide\('card',!assoc\);/.test(page6),
+  /* 15 Nov 2026, the move to Ambient: one tab bar, so one button */
+  ok(/<button type="button" class="amb-tab" id="tCard" data-t="card" hidden/.test(page6) && (page6.match(/data-t="card"/g) || []).length === 1 && /placeHide\('card',!assoc\);/.test(page6),
     "the place starts hidden and is shown to an associate alone");
   ok(/card:pCard\}/.test(page6) && /PANEL\[k\]\.hidden=k!==t;/.test(page6), "and its panel is switched with the other places");
   ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
@@ -27041,8 +27047,8 @@ await (async () => {
       && /Two groups of four, like abcd-efgh\./.test(text) && /Pasting the whole message works: we keep only the password\./.test(text),
       "the door says Sign in, what to sign in with, and how each field is written");
     const tick = D.getElementById("rem"), tickText = tick.closest("label").textContent;
-    ok(tick.checked && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
-    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now */
+    ok(tick.checked && tick.getAttribute("role") === "switch" && tick.classList.contains("amb-switch") && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
+    const help = [...gate.querySelectorAll(".amb-field__hint")].find((x) => /lost your password or your link, ask us/.test(x.textContent));   /* 1 Nov 2026: one sentence now; 16 Nov 2026: the system's field hint under the form */
     ok(!!help && /ask us for a new sign-in link\./.test(help.textContent)
       && (help.compareDocumentPosition(D.getElementById("go")) & D.defaultView.Node.DOCUMENT_POSITION_PRECEDING) !== 0,
       "and beneath Sign in: Lost your password or your link? Ask us for a new sign-in link");
@@ -27266,8 +27272,8 @@ await (async () => {
     let opened = null;
     try { opened = JSON.parse(await C310.decryptWith(await C310.unwrapKey(ho.body.token, ho.body.wrap), env310)); } catch (e) { opened = null; }
     ok(!!opened && opened.statements[0].body === "<p>Mine</p>", "and the key it mints unwraps this account's own content key, which opens the statement");
-    ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".salt-code")
-      && D.getElementById("keepCode").classList.contains("salt-field__input--code"),
+    ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".amb-field")
+      && D.getElementById("keepCode").classList.contains("amb-input--code"),
       "the code is shown in the system's Code field, four and four, and Copy is ready");
     const sheetText = D.getElementById("keepCard").textContent;
     ok(D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3 && /Add to Home Screen/.test(sheetText)
@@ -28296,10 +28302,10 @@ await (async () => {
     } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
-  const order = () => [...D.getElementById("gate").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
+  const order = () => [...D.getElementById("gate").querySelector("main").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
   try {
     const before = order();
-    ok(/p\.lead \| doorBox$/.test(before), "the fixture: the heading, the lead, then the door's box: " + before);
+    ok(/header\.amb-hero \| doorBox$/.test(before), "the fixture: the hero (the heading and the lead), then the door's box: " + before);   /* 16 Nov 2026, the move to Ambient: the door is a shell, its hero holding the heading and the lead */
     const signIn = async () => { D.getElementById("rem").checked = false; D.getElementById("pw").value = passO;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true })); };
     await signIn();
@@ -28406,7 +28412,7 @@ await (async () => {
     st.dead.add(st.last);
     await until(() => !D.getElementById("outSheet").hidden);
     const sheet = D.getElementById("outSheet");
-    const toCode = D.getElementById("toCode"), help = [...sheet.querySelectorAll(".salt-insight")].find((p) => /new sign-in link/.test(p.textContent));
+    const toCode = D.getElementById("toCode"), help = [...sheet.querySelectorAll(".amb-field__hint")].find((p) => /new sign-in link/.test(p.textContent));
     ok(sheet.contains(toCode) && !!help && !toCode.hidden,
       "the Sheet carries I have a sign-in code and the help line under the form: " + JSON.stringify({ code: sheet.contains(toCode), help: !!help }));
     toCode.click();
@@ -30281,7 +30287,7 @@ await (async () => {
       /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
       for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
-      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+      const pay = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       /* S6 6.8: the ways are the pay sheet's tiles; cash withheld is shown, dashed and off, with the reason as its line */
       for (let i = 0; i < 150 && !d.querySelector('#payBody input[name="payHow"]'); i++) await new Promise((r) => setTimeout(r, 20));
       return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.nextSibling.querySelector(".salt-option__detail").textContent : ""));
@@ -30523,7 +30529,7 @@ await (async () => {
     /* S5: the order's own screen, and its ways to pay behind its one Pay */
     await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
-    const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
+    const payNow = () => [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent));
     await until(payNow); if (payNow()) payNow().click();
     /* S6 6.8: the rail a customer chooses on the site is cash, in the pay sheet; its id is carried as Confirm's was */
     await until(() => d.querySelector('#payBody input[name="payHow"][value="cod"]'));
@@ -31681,7 +31687,8 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const list = () => d.querySelector("#pOrder [data-olist]");
-  const seq = () => [...list().children].filter((x) => !x.classList.contains("otabs")).map((x) => x.getAttribute("data-row") || x.textContent);
+  /* 16 Nov 2026, the move to Ambient: the list is the Filters, a line of what is to pay, then each part's heading over its list of Rows; the sequence reads the headings, the rows by id and the fold */
+  const seq = () => [...list().children].filter((x) => !x.classList.contains("otabs") && !x.classList.contains("ocol__pay")).flatMap((x) => x.tagName === "UL" ? [...x.children].map((li) => (li.querySelector("[data-row]") || li).getAttribute("data-row")) : [x.getAttribute("data-row") || x.textContent]);
   const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
@@ -31690,7 +31697,7 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
     const s0 = seq();
     ok(s0[0] === "Needs you" && s0[1] === OWES && s0[2] === SAID && s0[3] === "Open" && s0[4] === OPEN
-      && /RM 90.00 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
+      && /RM 90.00 to pay/.test(row(OWES).textContent) && /a reply for you/i.test(row(SAID).textContent),
       "Needs you comes first, with the order that has money to pay and the one with a reply not yet read, then Open: " + JSON.stringify(s0));
     const fold = list().querySelector("button.olater");
     ok(!!fold && fold.textContent === "2 earlier orders" && fold.getAttribute("aria-expanded") === "false"
@@ -31702,17 +31709,17 @@ await (async () => {
       "opening the fold draws them under it: " + JSON.stringify(seq()));
     const r = row(OWES);
     /* Counter Batch A P5: an order is a card, the day and time on top with the state, then the mark and size, the why and the figure */
-    ok(r.tagName === "BUTTON" && r.classList.contains("ocard") && !!r.querySelector(".salt-coin") && /1 unit/.test(r.textContent)
-      && !!r.querySelector(".ocard__top .salt-status") && /23 Sep 2026, 09:00/.test((r.querySelector(".ocard__when") || {}).textContent)
-      && /RM 90.00 to pay/.test((r.querySelector(".ocard__what") || {}).textContent)
-      && (r.querySelector(".ocard__total") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+    ok(r.tagName === "BUTTON" && r.classList.contains("amb-row") && !!r.querySelector(".amb-thumb--mark") && /1 unit/.test(r.textContent)
+      && /^Confirmed/.test((r.querySelector(".amb-row__sub") || {}).textContent) && /23 Sep 2026/.test((r.querySelector(".amb-row__age") || {}).textContent)
+      && /RM 90.00 to pay/.test((r.querySelector(".amb-row__sub") || {}).textContent)
+      && (r.querySelector(".amb-row__amount") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .amb-thread, .amb-journal"),
       "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
     r.click();
     const scr = d.querySelector("#pOrder .oscreen");
-    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oArea").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
+    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("pOrder").classList.contains("o-open"),
       "a tap opens that order's own screen, and on a phone the place says it is open, so the list and the form stand aside");
     const back = d.querySelector("#pOrder .oback"); if (back) back.click();
-    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oArea").classList.contains("o-open") && !!row(OWES),
+    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("pOrder").classList.contains("o-open") && !!row(OWES),
       "the way back is the list again");
   } finally { w.close(); }
 })();
@@ -31757,9 +31764,10 @@ await (async () => {
     return scr() && scr().getAttribute("data-order") === id;
   };
   /* 2 Nov 2026 (his Orders canvas, page 2): the money is the shared Bill, a settings list; a line's flag is its row's second line */
-  const lines = () => [...scr().querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [r.querySelector(".salt-settings__label").textContent,
-    r.querySelector(".salt-settings__value").textContent, (r.querySelector(".salt-settings__sub") || {}).textContent || ""]);
-  const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
+  /* 16 Nov 2026, the move to Ambient: the Bill is the system's read-only Settings (name, its second line, value); the one filled pill is Pay, the record's foot */
+  const lines = () => [...scr().querySelectorAll('[data-part="money"] .amb-setting')].map((r) => [r.querySelector(".obill__k").textContent,
+    r.querySelector(".amb-setting__value").textContent, (r.querySelector(".obill__sub") || {}).textContent || ""]);
+  const pills = () => [...scr().querySelectorAll(".amb-pill:not(.amb-pill--quiet)")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
@@ -31767,16 +31775,16 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
 
     ok(open(ADV), "the delivered, unpaid order opens");
-    const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
+    const steps = [...scr().querySelectorAll("ol.amb-steps > li")];
     /* 20 Oct 2026 (his answer, reversing "nothing about money on the track"): Paid is the fourth step, not done while unpaid */
-    ok(steps.map((s) => s.querySelector(".salt-steps__name").textContent).join("|") === "Placed|Confirmed|Ready|Paid|Delivered"
-      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[4].getAttribute("aria-current") === "step"
-      && !steps[3].classList.contains("salt-steps__step--done"),
+    ok(steps.map((s) => s.querySelector(".amb-step__title").textContent).join("|") === "Placed|Confirmed|Ready|Paid|Delivered"
+      && steps.slice(0, 3).every((s) => s.classList.contains("is-done")) && steps[4].getAttribute("aria-current") === "step"
+      && !steps[3].classList.contains("is-done"),
       "the goods' track stands at Delivered, its Paid step not done while unpaid: " + JSON.stringify(steps.map((s) => s.className)));
     const L1 = lines();
     ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90.00", ""], ["Delivery", "RM 10.00", "To Taman Contoh"], ["Still to pay", "RM 100.00", "The goods are with you"]]),
       "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
-    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100.00"]) && !scr().querySelector(".oact input"),
+    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100.00"]) && !scr().querySelector("[data-part=act] input"),
       "one next action, the filled Pay for what is still to pay, and no pay controls until it is tapped: " + JSON.stringify(pills()));
     ok(!scr().querySelector('[data-part="foot"] button') && /can no longer be cancelled/.test(part("foot").textContent),
       "with the goods already with them, the foot offers no Cancel and says why");
@@ -31785,17 +31793,17 @@ await (async () => {
     ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390.00", ""], ["Paid", "RM 200.00", ""], ["Still to pay", "RM 190.00", "Now, or when you collect"]]),
       "what is paid is a line of its own and what is left is the rest: " + JSON.stringify(lines()));
     const foot = part("foot"), cancel = foot && [...foot.querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
-    ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
+    ok(!!cancel && cancel.classList.contains("amb-action--danger") && foot.nextElementSibling === part("act") && scr().lastElementChild === part("act"), "Cancel this order stands last in the record's settings, before Pay's foot, while nothing has moved");
     const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190.00");
     if (pay) pay.click();
     /* S6 6.4: Pay opens the pay sheet for this order, where the one filled control is the sheet's */
     const shP = d.getElementById("paySheet");
-    ok(!!pay && !scr().querySelector(".oact .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190.00"
+    ok(!!pay && !scr().querySelector("[data-part=act] .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190.00"
       && shP.querySelectorAll(".salt-pill").length === 1,
       "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
     if (shP) d.getElementById("payX").click();
-    const hist = part("hist").querySelector("details.salt-plan");
-    ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
+    const hist = part("hist").querySelector("button.amb-more");
+    ok(!!hist && hist.getAttribute("aria-expanded") === "false" && /What happened, step by step/.test(hist.textContent),
       "what happened is folded under its own line");
 
     ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0.00", "Paid in full"]),
@@ -31804,7 +31812,7 @@ await (async () => {
       && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40.00"]),
       "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
     ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
-      && [...scr().querySelectorAll("ol.salt-steps > li")].every((s) => s.classList.contains("salt-steps__step--done")),
+      && [...scr().querySelectorAll("ol.amb-steps > li")].every((s) => s.classList.contains("is-done")),
       "a complete order has every step done, nothing filled and nothing to cancel");
   } finally { w.close(); }
 })();
@@ -31851,7 +31859,8 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
-  const chip = (id) => { const r = row(id), c = r && r.querySelector(".salt-status"); return c ? c.textContent : null; };
+  /* 16 Nov 2026, the move to Ambient: a row says its state as the first word of its second line */
+  const chip = (id) => { const r = row(id), c = r && r.querySelector(".amb-row__sub > span > span"); return c ? c.textContent : null; };
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
@@ -31866,13 +31875,14 @@ await (async () => {
     ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
       "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
     row("20260924000000-a6").click();
-    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    /* the history is the system's Journal, the newest first: read oldest first as before */
+    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
     ok(JSON.stringify(hist) === JSON.stringify(["Placed", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70.00 by cash on handover",
       "We recorded a payment of RM 20.00", "1 unit collected", "Complete"]),
       "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
     d.querySelector("#pOrder .oback").click();
     row("20260923000000-a7").click();
-    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
     ok(h7[1] === "Declined: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
   } finally { w.close(); }
 
@@ -31927,11 +31937,12 @@ await (async () => {
   const w = dom.window, d = w.document;
   const scr = () => d.querySelector("#pOrder .oscreen");
   const open = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click(); d.querySelector('#pOrder [data-row="' + id + '"]').click(); };
-  const bubbles = () => [...scr().querySelectorAll(".salt-thread__lines .salt-bubble")].map((b) => ({
-    side: b.classList.contains("salt-bubble--mine") ? "mine" : b.classList.contains("salt-bubble--theirs") ? "theirs" : "?",
-    text: b.querySelector(".salt-bubble__text").textContent, state: (b.querySelector(".salt-bubble__state") || {}).textContent || "",
-    isNew: !!b.querySelector(".salt-bubble__new"), failed: b.classList.contains("salt-bubble--failed"),
-    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("salt-ghost")).length }));
+  /* 16 Nov 2026, the move to Ambient: a line of the thread is the system's Message (li.amb-msg, mine as amb-msg--mine), its state in the meta, New a chip there, a failed one is-error with its retry pill in the meta */
+  const bubbles = () => [...scr().querySelectorAll(".amb-thread .amb-msg")].map((b) => ({
+    side: b.classList.contains("amb-msg--mine") ? "mine" : "theirs",
+    text: b.querySelector(".amb-msg__text").textContent, state: (b.querySelector(".amb-msg__state") || {}).textContent || "",
+    isNew: !!b.querySelector(".amb-msg__meta .amb-chip"), failed: b.classList.contains("is-error"),
+    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("amb-pill")).length }));
   const box = () => scr().querySelector('input[aria-label="Write about this order"]');
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
   const send = (t) => { box().value = t; box().dispatchEvent(new w.Event("input", { bubbles: true })); if (box().form) box().form.requestSubmit(); };
@@ -31944,12 +31955,12 @@ await (async () => {
     const b0 = bubbles();
     ok(JSON.stringify(b0) === JSON.stringify([{ side: "mine", text: "Before noon please", state: "Sent", isNew: false, failed: false, retry: 0 },
       { side: "theirs", text: "Noted, Thursday morning.", state: "", isNew: true, failed: false, retry: 0 }])
-      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".salt-thread").textContent),
+      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".amb-thread").textContent),
       "their line stands right and says Sent, his stands left marked New, and nothing says read: " + JSON.stringify(b0));
     open(B); open(A);
     ok(bubbles()[1].isNew === false, "once shown, his line is no longer New when the order is opened again: " + JSON.stringify(bubbles()[1]));
 
-    ok(!!box().form && box().form.classList.contains("salt-composer") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
+    ok(!!box().form && box().form.classList.contains("amb-compose") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
       "the composer is a form, so Return sends it, and the key says so");
     send("Thursday is fine");
     await until(() => said.length === 1);
@@ -32028,8 +32039,8 @@ await (async () => {
     box.focus(); box.value = "Could it"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.setSelectionRange(5, 5);
     phase = 1;
     await until(() => /It goes out Thursday/.test(scr().textContent));
-    const line = [...d.querySelectorAll("#pOrder .oscreen .salt-bubble--theirs")].pop();
-    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".salt-bubble__new") && /Ready to collect/.test(row(B).textContent),
+    const line = [...d.querySelectorAll("#pOrder .oscreen .amb-msg:not(.amb-msg--mine)")].pop();
+    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".amb-msg__meta .amb-chip") && /Ready to collect/.test(row(B).textContent),
       "the poll brought his answer into the open order's thread, marked New, and the other order's new state onto its row");
     ok(d.contains(box) && d.activeElement === box && box.value === "Could it" && box.selectionStart === 5,
       "the box being typed in is the same box, with its words and its caret where they were");
@@ -32040,7 +32051,7 @@ await (async () => {
        an order whose payment moved */
     d.querySelector("#pOrder .oback").click();
     row(D).click();
-    const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+    const pay = [...scr().querySelectorAll("[data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
     const part = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (part) part.click();
     const amt = d.getElementById("payAmt");
     if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
@@ -32387,7 +32398,7 @@ await (async () => {
     ok(shownOf(d) === null && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
       "on a desk nothing opens by itself, so nothing is marked seen and the row still says a reply is waiting: " + JSON.stringify({ shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
-    ok(shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
+    ok(shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .amb-msg__meta .amb-chip"),
       "a tap on its row opens it beside the list, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
   });
   /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
@@ -32517,7 +32528,7 @@ await (async () => {
   });
   await drive(async (w, d, st) => {
     d.querySelector('#pOrder [data-row="' + A + '"]').click();
-    const sm = scr(d).querySelector('[data-part="hist"] summary');
+    const sm = scr(d).querySelector('[data-part="hist"] button.amb-more');
     sm.focus();
     hand(st);
     await until(() => /Collected on/.test(part(d, "when")));
@@ -32580,7 +32591,7 @@ await (async () => {
     } finally { w.close(); }
   };
   const scr = (d) => d.querySelector("#pOrder .oscreen");
-  const lines = (d) => [...scr(d).querySelectorAll(".salt-bubble")].map((b) => b.querySelector(".salt-bubble__text").textContent + " | " + ((b.querySelector(".salt-bubble__state") || {}).textContent || "")
+  const lines = (d) => [...scr(d).querySelectorAll(".amb-msg")].map((b) => b.querySelector(".amb-msg__text").textContent + " | " + ((b.querySelector(".amb-msg__state") || {}).textContent || "")
     + ([...b.querySelectorAll("button")].some((x) => x.textContent === "Tap to try again") ? " | retry" : ""));
   const send = (w, d, t) => { const b = scr(d).querySelector("input[data-say]"); b.value = t; b.dispatchEvent(new w.Event("input", { bubbles: true })); b.form.requestSubmit(); };
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -32629,7 +32640,7 @@ await (async () => {
     const dom = new JSDOM(landingPage(u, "nf5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
-      w.matchMedia = (q) => ({ matches: wide && /min-width: *860px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *960px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
       w.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(orders || list)) } : { ok: true };
@@ -32645,25 +32656,26 @@ await (async () => {
       await go(w, d);
     } finally { w.close(); }
   };
-  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part="act"] button')].find((b) => /^Pay RM/.test(b.textContent));
-  const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
+  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part=act] button')].find((b) => /^Pay RM/.test(b.textContent));
+  /* 16 Nov 2026, the move to Ambient: the filled control is the system's solid pill (not the quiet one); Pay is the record's foot, so beside an open order New order stands quiet */
+  const filled = (d) => [...d.querySelectorAll("#pOrder .amb-pill:not(.amb-pill--quiet)")].map((b) => b.textContent);
   /* Counter Batch A P5: nothing opens by itself on a desk, so the order is tapped open first */
   await drive(true, async (w, d) => {
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
     const pay = payOf(d);
-    ok(!!d.getElementById("oNew") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["New order"]),
-      "on a desk, with New order beside the open order, its Pay is the lit ghost and New order the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+    ok(!!d.getElementById("oNew") && d.getElementById("oNew").classList.contains("amb-pill--quiet") && !!pay && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90.00"]),
+      "on a desk, with New order beside the open order, its Pay is the one filled control and New order stands quiet: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
   });
   await drive(true, async (w, d) => {
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
     const pay = payOf(d);
-    ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && pay.classList.contains("salt-pill") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90.00"]),
+    ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && !pay.classList.contains("amb-pill--quiet") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90.00"]),
       "at the limit, said in New order's place, nothing else is filled and the open order's Pay is: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
   }, full);
   await drive(false, async (w, d) => {
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
     const pay = payOf(d);
-    ok(!!pay && pay.classList.contains("salt-pill"), "on a phone the open order is the whole tab, and Pay is its filled control: " + JSON.stringify(pay && pay.className));
+    ok(!!pay && pay.classList.contains("amb-pill") && !pay.classList.contains("amb-pill--quiet"), "on a phone the open order is the whole tab, and Pay is its filled control: " + JSON.stringify(pay && pay.className));
   });
 })();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
@@ -33993,10 +34005,19 @@ await (async () => {
       if (!D.querySelector('#pOrder [data-row="' + id + '"]') && later && later.getAttribute("aria-expanded") !== "true") later.click();
       D.querySelector('#pOrder [data-row="' + id + '"]').click(); return D.querySelector('.oscreen [data-part="rate"]') || D.createElement("div"); };
     const onOld = part(OLD), oldStars = onOld.querySelectorAll("[data-star]").length, onT = part(T), tStars = onT.querySelectorAll("[data-star]").length;
-    const onQ = part(Q), qText = onQ.textContent, qFilled = [...onQ.querySelectorAll("path")].filter((x) => x.getAttribute("fill") === "currentColor").length;
+    const onQ = part(Q), qText = onQ.textContent, qFilled = onQ.querySelectorAll(".amb-rating--shown .amb-icon.is-on").length;   /* 16 Nov 2026, the move to Ambient: a rating given is the system's Rating, its marks the star icons, the given ones is-on */
     ok(oldStars === 5 && tStars === 0 && /Rated 3 of 5/.test(qText) && qFilled === 3 && onQ.querySelectorAll("[data-star]").length === 0,
       "the order itself asks for good once the two days are past, not before, and a rating given is five marks, three filled, with no star to tap: "
       + JSON.stringify({ oldStars, tStars, qText, qFilled }));
+    /* 16 Nov 2026, the move to Ambient: the rating is the system's Rating wherever it is drawn, on Home and on the order: a fieldset of five radios, each star a label whose
+       carried rule is the 44px tap target (it was a 32px button), the question its legend (seen on the order, read aloud under Home's own heading) */
+    const rateCss = ((await import("../stmt/page.js")).SITE_STYLE.match(/\.amb-rating__star \{[^}]*\}/) || [""])[0];
+    const hStars = home.querySelector("fieldset.amb-rating"), oStars = part(OLD).querySelector("fieldset.amb-rating");
+    ok(!!hStars && !!oStars && [hStars, oStars].every((g) => g.querySelectorAll("label.amb-rating__star > input.amb-rating__input[type=radio]").length === 5
+        && [...g.querySelectorAll("input[data-star]")].map((x) => x.value).join("") === "12345" && g.querySelectorAll("label.amb-rating__star > .amb-vh").length === 5 && !g.querySelector("button"))
+      && oStars.querySelector("legend").classList.contains("amb-field__label") && hStars.querySelector("legend").classList.contains("amb-vh")
+      && /width: var\(--amb-tap\)/.test(rateCss) && /height: var\(--amb-tap\)/.test(rateCss),
+      "Home's stars and the order's are the system's Rating, five radios in labels the carried rule makes 44px, the question the legend: " + JSON.stringify({ home: !!hStars, order: !!oStars, rateCss }));
     part(OLD).querySelector('[data-star="2"]').click();
     for (let i = 0; i < 200 && !/rated once/.test(part(OLD).textContent); i++) await new Promise((r) => setTimeout(r, 25));
     await work.quiet();
@@ -35302,8 +35323,8 @@ await (async () => {
       if (!D.querySelector('#pOrder [data-row="' + id + '"]') && later && later.getAttribute("aria-expanded") !== "true") later.click();
       D.querySelector('#pOrder [data-row="' + id + '"]').click();
       /* 2 Nov 2026 (his Orders canvas, page 2): the order screen's money is the Bill's settings rows, a row's flag its second line */
-      const r = [...D.querySelectorAll('.oscreen [data-part="money"] .salt-settings__row')].find((x) => /Goods/.test(x.textContent));
-      return r ? [".salt-settings__label", ".salt-settings__sub", ".salt-settings__value"].map((q) => (r.querySelector(q) || { textContent: "" }).textContent).join(" ").replace(/\s+/g, " ").trim() : ""; };
+      const r = [...D.querySelectorAll('.oscreen [data-part="money"] .amb-setting')].find((x) => /Goods/.test(x.textContent));
+      return r ? [".obill__k", ".obill__sub", ".amb-setting__value"].map((q) => (r.querySelector(q) || { textContent: "" }).textContent).join(" ").replace(/\s+/g, " ").trim() : ""; };
     const set = goods(SET), none = goods(NONE);
     ok(/RM ?90/.test(set) && /Set when we confirmed it\. You placed it at RM ?100/.test(set) && /RM ?100/.test(none) && !/placed it at/.test(none),
       "the order priced at the acknowledgement reads its price with what they placed it at beside the goods; one not priced so says nothing more: " + JSON.stringify({ set, none }));
@@ -36698,7 +36719,7 @@ await (async () => {
       d.querySelector('#pOrder [data-row="' + id + '"]').click();
       await until(() => d.querySelector("#pOrder .oscreen .ofoot"));
       const f = d.querySelector("#pOrder .oscreen .ofoot");
-      foot[id] = { cancel: [...f.querySelectorAll("button")].some((x) => t(x) === "Cancel this order"), line: t(f.querySelector(".sub2")) };
+      foot[id] = { cancel: [...f.querySelectorAll("button")].some((x) => t(x) === "Cancel this order"), line: t(f.querySelector(".onote")) };
       const back = [...d.querySelectorAll("#pOrder button")].find((x) => /^(Back|All orders|Your orders)/.test(t(x)));
       if (back) back.click();
     }
@@ -38295,9 +38316,9 @@ await (async () => {
       const r = pd.querySelector('#pOrder [data-row="' + id + '"]'); if (!r) return null;
       r.click();
       const s = pd.querySelector('#pOrder .oscreen[data-order="' + id + '"]'); if (!s) return null;
-      const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+      const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();   /* 16 Nov 2026: the Journal, newest first, read oldest first */
       /* 2 Nov 2026 (his Orders canvas, page 2): the state is the band's chip, as on his card; the heading that repeated it is gone */
-      return [s.querySelector('[data-part="head"] .salt-band__head .salt-status').textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
+      return [s.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)').textContent, s.querySelector('[data-part="when"] .onote').textContent, h[h.length - 1]];
     };
     ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Declined", "We could not take this order. Out of stock this week. Nothing is owed.", "Declined: Out of stock this week"]),
       "a decline reads Declined, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
@@ -38445,16 +38466,16 @@ await (async () => {
     for (let i = 0; i < 100 && !pd.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 50));
     pd.querySelector('#pOrder [data-row="' + o.id + '"]').click();
     const scr = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
-    const line = scr ? scr.querySelector('[data-part="when"] .salt-insight').textContent : "";
+    const line = scr ? scr.querySelector('[data-part="when"] .onote').textContent : "";
     ok(/ Closed at 2 units of the 5 ordered, RM 200.00 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
-    const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => (x.querySelector(".salt-steps__name") || x).textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
+    const steps = scr ? [...scr.querySelectorAll(".amb-step")].map((x) => (x.querySelector(".amb-step__title") || x).textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
     /* 2 Nov 2026 (his Orders canvas, page 2): a Bill row read as its name, its figure and its second line; the state is the band's chip */
     const cell = (x, q) => (x.querySelector(q) || { textContent: "" }).textContent;
-    const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => cell(x, ".salt-settings__label") + cell(x, ".salt-settings__value") + cell(x, ".salt-settings__sub")) : [];
-    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Paid", "Collected*"]) && scr.querySelector('[data-part="head"] .salt-band__head .salt-status').textContent === "Collected"
+    const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .amb-setting')].map((x) => cell(x, ".obill__k") + cell(x, ".amb-setting__value") + cell(x, ".obill__sub")) : [];
+    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Paid", "Collected*"]) && scr.querySelector('[data-part="head"] .oband__head .amb-chip:not(.oref)').textContent === "Collected"
       && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
-    const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.querySelector(".amb-journal__text").textContent).reverse();
     ok(h[h.length - 1] === "Closed at 2 units of the 5 ordered", "and what happened says it in their words: " + JSON.stringify(h));
   } finally { pw.close(); }
 
@@ -39714,14 +39735,20 @@ await (async () => {
   ok(made && existsSync(join(root72, "2026-10", "_kv")),
     "with --new-issue it is sealed as it always was, for a dispute or a position on a day");
 
-  /* A RETRY IS NOT A NEW ISSUE: the folder already holds this issue, so it regenerates in place */
+  /* 16 Nov 2026, the move to Ambient (place D): A SEALED ISSUE IS NEVER WRITTEN AGAIN BY ACCIDENT. A re-run of the issue already in the folder is refused unless it is a retry
+     asked for in so many words, because the live document's markup moved that day and a past date's documents would be redrawn in today's code. */
+  let rerun = null;
+  console.log = () => {};
+  try { await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret" }); } catch (e) { rerun = String((e && e.message) || e); } finally { console.log = quiet72; }
+  ok(rerun && /refusing to write the sealed issue of 2026-10-01 again/.test(rerun) && /--retry/.test(rerun),
+    "a same-date re-run over a sealed issue is refused, and the refusal says how to ask for a retry: " + JSON.stringify(rerun));
   let retried = null;
   console.log = () => {};
-  try { retried = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret" }); }
+  try { retried = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret", retry: true }); }
+  catch (e) { retried = null; }
   finally { console.log = quiet72; }
   ok(retried && existsSync(join(root72, "2026-10", "_kv")),
-    "a re-run of the issue already in the folder goes through without the flag, which is what a retry "
-    + "after a failure is");
+    "with a retry asked for it goes through, keeping the passwords already issued, which is what a retry after a failure is");
 
   /* AND AN ARCHIVE OF A PAST MONTH IS NOT AN ISSUE AT ALL: no record, no password, no QR */
   let arch = null;
@@ -39734,7 +39761,7 @@ await (async () => {
   /* THE COMMAND LINE SPELLS IT, and the doc says the routine is retired */
   const src72 = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
   ok(/const newIssue = process\.argv\.includes\('--new-issue'\)/.test(src72)
-    && /makeStatements\(outDir, issue, \{ archive, newIssue \}\)/.test(src72),
+    && /makeStatements\(outDir, issue, \{ archive, newIssue, retry \}\)/.test(src72) && /process\.argv\.includes\('--retry'\)/.test(src72),
     "the command line carries the flag through to the guard");
   const doc72 = readFileSync(join(REPO, "docs", "STATEMENTS.md"), "utf8");
   ok(/RETIRED/.test(doc72) && /21 Sep 2026/.test(doc72) && /--new-issue/.test(doc72),
@@ -40128,13 +40155,14 @@ await (async () => {
     return { W, D };
   };
   const shown = (D) => ["pHome", "pPrices", "pOrder", "pStmt", "pCard"].filter((id) => !D.getElementById(id).hidden).join(",");
-  const current = (D) => [...D.querySelectorAll('#tabs button[aria-current="page"]')].map((b) => (b.closest(".salt-appbar") ? "bar:" : "rail:") + b.getAttribute("data-t")).sort().join(",");
+  /* 15 Nov 2026, the move to Ambient: the bar and the rail are one tab bar, which stands up as the rail from 960px */
+  const current = (D) => [...D.querySelectorAll('#tabs button[aria-current="page"]')].map((b) => (b.closest(".amb-tabbar") ? "tab:" : "other:") + b.getAttribute("data-t")).sort().join(",");
   const a = await open({});
   try {
     const { W, D } = a, head = () => D.getElementById("placeT").textContent;
-    ok(shown(D) === "pHome" && current(D) === "bar:home,rail:home" && /^Good (morning|afternoon|evening)$/.test(head())
+    ok(shown(D) === "pHome" && current(D) === "tab:home" && /^Good (morning|afternoon|evening)$/.test(head())
       && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u,
-      "signed in, Home opens first, marked on the bar and the rail, greeted, with the username once, in the header (the rail's foot that repeated it went on 18 Oct 2026): "
+      "signed in, Home opens first, marked on the tab bar, greeted, with the username once, in the header (the rail's foot that repeated it went on 18 Oct 2026): "
       + JSON.stringify([shown(D), current(D), head()]));
     /* S7 merge: Home's To pay now is stage 6's (#payHead), its Pay #payNow */
     /* the words, not the drawing: a mark's letter (Step 1a.2) is aria-hidden */
@@ -40151,17 +40179,18 @@ await (async () => {
       && /Waiting for us to confirm/.test(D.getElementById("hComing").textContent),
       "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay and when, by the way it comes: "
       + JSON.stringify([rows("hNeeds"), rows("hComing"), D.getElementById("hComing").textContent]));
-    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3,3" && !D.querySelector('#tabs [data-n="home"]').textContent,
-      "the Orders place counts the three orders that need them, as a numeral on the bar and the rail");
-    ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
+    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3" && !D.querySelector('#tabs [data-n="home"]').textContent
+      && D.getElementById("tOrder").getAttribute("aria-label") === "Orders, 3 waiting",
+      "the Orders place counts the three orders that need them, a numeral on its tab, the tab's name saying it");
+    ok(D.getElementById("tCard").hidden && D.querySelector('.amb-tabbar button[data-t="card"]').hidden
       && D.querySelector("#pStmt #thisDevice #lock") && /^Sign out this /.test(D.getElementById("lock").textContent) && !D.querySelector("#barw #lock"),
       "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");
-    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
-    ok(shown(D) === "pOrder" && current(D) === "bar:order,rail:order" && head() === "Orders" && W.location.hash === "#orders",
+    D.querySelector('.amb-tabbar button[data-t="order"]').click();
+    ok(shown(D) === "pOrder" && current(D) === "tab:order" && head() === "Orders" && W.location.hash === "#orders",
       "a tap on Orders shows that place, marks it on both, names it in the header and writes its address: " + JSON.stringify([shown(D), current(D), head(), W.location.hash]));
-    D.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    D.querySelector('.amb-tabbar button[data-t="home"]').click();
     D.querySelector('#hNeeds [data-row="oR"]').click();
-    ok(shown(D) === "pOrder" && !!D.querySelector('#pOrder .oscreen[data-order="oR"]') && current(D) === "bar:order,rail:order",
+    ok(shown(D) === "pOrder" && !!D.querySelector('#pOrder .oscreen[data-order="oR"]') && current(D) === "tab:order",
       "a row on Home opens its order, in Orders: " + JSON.stringify(shown(D)));
   } finally { a.W.close(); }
   const b = await open({ hash: "#prices" });
@@ -40198,19 +40227,20 @@ await (async () => {
   let depth = 0, to = from;
   for (let i = from; i >= 0 && i < css.length; i++) { if (css[i] === "{") depth++; else if (css[i] === "}" && --depth === 0) { to = i; break; } }
   const wide = from >= 0 ? css.slice(from, to + 1) : "";
-  ok(/\.cshell\{display:flex;/.test(wide) && /\.cmain\{flex:1 1 auto;min-width:0\}/.test(wide)
+  /* 15 Nov 2026, the move to Ambient: the shell is Ambient's, which stands its dock up as the rail from 960px by its own width; the page's 1080px
+     block lays out the places alone */
+  ok(!/\.cshell|\.cmain/.test(wide)
     && /\.home\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide)
     && /@media \(min-width:1080px\)\{\s*\.acct\{max-width:1060px;display:grid;grid-template-columns:minmax\(0,620px\) minmax\(300px,1fr\);/.test(css)
-    && /\.pgrid\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide),
-    "from 1080px the shell stands the rail beside the main column, and Home, Account and Prices take two columns: " + JSON.stringify(wide.slice(0, 160)));
-  ok(/@media \(min-width: 1080px\) \{\s*\.salt-appbar \{ display: none; \}/.test(css) && /@media \(max-width: 1079\.98px\) \{\s*\.salt-rail\.salt-appbar__rail \{ display: none; \}/.test(css)
-    && /@media \(min-width: 1080px\) \{\s*\.salt-sheet \{\s*top: 0;\s*left: auto;/.test(css),
-    "and the page carries the recipes' own switch: the bar below 1080px, the rail from it, and the sheet a drawer on the right");
+    && /\.pgrid \{ display: grid;[^}]*\}\s*@media \(min-width: 960px\) \{ \.pgrid \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \} \}/.test(css),   /* Prices' books stand two across from 960px (the site layer), the system's own width for two columns */
+    "from 1080px Home and Account take two columns, Prices from 960px, and the page's block lays out no shell of its own: " + JSON.stringify(wide.slice(0, 160)));
+  ok(/@container amb \(min-width: 960px\) \{\s*\.amb-shell--rail > \.amb-dock \{/.test(css) && !/\.salt-appbar|\.salt-rail/.test(css),
+    "and the page carries Ambient's own switch, the dock standing up as the rail from 960px of the shell, and no salt-ds bar or rail");
   ok(!/100vw - 64px/.test(css), "the orders place no longer breaks out of a 620px column to stand wide: the column is wide itself");
   const D = new JD72(page, { url: "https://site.test/" }).window.document;
   const kids = [...D.getElementById("tabs").children].map((n) => n.tagName.toLowerCase() + "." + n.className.split(" ")[0]).join(" ");
-  ok(kids === "nav.salt-rail div.cmain nav.salt-appbar" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
-    "the markup it lays out: the rail, the main column and the bar; Home's two columns; This device beside the statement: " + kids);
+  ok(kids === "div.amb-appbar main.amb-screen div.amb-dock" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
+    "the markup it lays out: the app bar, the screen and the dock; Home's two columns; This device beside the statement: " + kids);
   /* Prices, driven: the books stand in their grid */
   const u = "abcd-efgh", pass = "fixture-pass-72", ck = await C72.contentKey("test-secret", u);
   const body = { ok: true, wrap: await C72.wrapKey(pass, ck), session: "",
@@ -40256,7 +40286,7 @@ await (async () => {
       + '<div class="hcol"><div>d</div></div></div><div class="olist"><button class="salt-inbox-row">e</button><button class="salt-inbox-row">f</button></div>';
     d.body.appendChild(x);
     const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".hcol");
-    const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q(".cshell"), "padding-bottom"),
+    const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q("#tabs"), "padding-bottom"),
       door: cs(q("#gate"), "padding-left") + "|" + cs(q("#gate"), "padding-right"),
       roster: q("#roster") ? cs(q("#roster"), "margin-top") + "|" + cs(q("#roster"), "padding-bottom") : "",
       hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].firstElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
@@ -40268,18 +40298,21 @@ await (async () => {
   const cust = lp("abcd-efgh", "npf", null), own = lp("", "npo", { master: "mpf", accounts: [] });
   const phone = read(cust, 375), phoneOwn = read(own, 375), desk = read(cust, 1280), deskOwn = read(own, 1280);
   const sides = ["top", "right", "bottom", "left"];
-  ok(phone.body.every((v, i) => v === "calc(16px + env(safe-area-inset-" + sides[i] + ", 0px))") && phone.shell === "var(--salt-bar-h)" && phone.door === "0px|0px",
-    "on a phone the body keeps 16px on every side with that side's safe area added, the shell keeps only the App bar's height under it, and the door adds nothing beside: "
-    + JSON.stringify(phone));
-  ok(phoneOwn.roster === "0px|var(--salt-bar-h)" && phoneOwn.body.join() === phone.body.join(),
-    "and Salt Admin's shell, whose own rule comes after the Counter's block, starts at the body's edge and clears the bar by the same 16px: " + JSON.stringify(phoneOwn));
+  /* 15 Nov 2026, THE MOVE TO AMBIENT: the shell is the screen, Ambient's, so the body keeps no gutter of the page's and neither shell any room for a bar:
+     Ambient's screen keeps the safe areas, its stacks the 16px gutter, and its dock clears itself (amb-screen--docked) */
+  void sides;
+  const nil = (v) => /^0(px)?$/.test(v);
+  ok(phone.body.every(nil) && nil(phone.shell) && phone.door === "0px|0px",
+    "on a phone the body keeps no gutter of the page's own, the Counter's shell no room of its own for a bar, and the door adds nothing beside: " + JSON.stringify(phone));
+  ok(phoneOwn.roster.split("|").every(nil) && phoneOwn.body.join() === phone.body.join(),
+    "and Salt Admin's shell starts at the body's edge with no room of its own for a bar either: " + JSON.stringify(phoneOwn));
   ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
     "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
   /* 5 Nov 2026 (the frame): from 1080px Salt Admin's shell is the frame, the screen tall, no padding under it (its 24px margin is the frame's height) */
-  ok(desk.body.join() === "22px,18px,60px,18px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "0px|0px"
+  ok(desk.body.every(nil) && nil(desk.shell) && desk.door === "4px|4px" && deskOwn.roster.split("|").every(nil)
     && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
-    "from 1080px nothing moves: the desk keeps its own frame, 22px from the top as the Desk is since 18 Oct 2026, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+    "from 1080px nothing moves: the body keeps no gutter, the shells none of their own, the door its 4px, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
 
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
@@ -40423,17 +40456,17 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
-  const waits = () => /A reply for you/.test((d.querySelector('#pOrder [data-row="' + A + '"]') || {}).textContent || "");
+  const waits = () => /a reply for you/i.test((d.querySelector('#pOrder [data-row="' + A + '"]') || {}).textContent || "");
   const onHome = () => !!d.querySelector('#hNeeds [data-row="' + A + '"]');
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelector("#pOrder [data-olist]"));
-    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('.amb-tabbar button[data-t="order"]').click();
     d.querySelector('#pOrder [data-row="' + A + '"]').click();
     ok(d.querySelector("#pOrder .oscreen").getAttribute("data-order") === A && !waits() && !onHome(),
       "opened in Orders, the first reply is shown and so no longer waits");
-    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    d.querySelector('.amb-tabbar button[data-t="home"]').click();
     phase = 1;
     await until(() => onHome() && waits());
     ok(onHome() && waits(), "a second reply to the order left open, come while Home shows, waits on Home and on its row");
@@ -40443,7 +40476,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 300));
     ok(waits(), "and the order left open, never drawn again, still has its reply waiting on its row: "
       + JSON.stringify((d.querySelector('#pOrder [data-row="' + A + '"]') || {}).textContent));
-    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    d.querySelector('.amb-tabbar button[data-t="home"]').click();
     ok(onHome() && [...d.querySelectorAll('#tabs [data-n="order"]')].every((c) => c.textContent === "1"),
       "and on Home, and in the Orders count");
   } finally { w.close(); }
@@ -40627,8 +40660,9 @@ await (async () => {
     /* the Orders list's own Needs you: its rows between that heading and the next */
     const onOrders = []; let inNeeds = false;
     for (const c of D.querySelector("#pOrder [data-olist]").children) {
-      if (c.tagName === "H3") { inNeeds = c.textContent === "Needs you"; continue; }
-      if (inNeeds && c.getAttribute("data-row")) onOrders.push(c.getAttribute("data-row"));
+      /* 16 Nov 2026, the move to Ambient: a heading (h2) then its list of Rows */
+      if (c.tagName === "H2") { inNeeds = c.textContent === "Needs you"; continue; }
+      if (inNeeds && c.tagName === "UL") for (const li of c.children) { const b = li.querySelector("[data-row]"); if (b) onOrders.push(b.getAttribute("data-row")); }
     }
     const count = [...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent), home = rows("hNeeds").concat(rows("hComing"));
     ok(onOrders.length === 3 && count.every((n) => n === String(onOrders.length)) && onOrders.every((id) => home.includes(id)),
@@ -40665,7 +40699,7 @@ await (async () => {
   } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
-  const btn = () => { const r = [...D.querySelectorAll("#devRows .salt-settings__row")].find((x) => x.querySelector(".salt-settings__label").textContent === "Notifications");
+  const btn = () => { const r = [...D.querySelectorAll("#devRows .salt-settings__row")].find((x) => x.querySelector(".obill__k").textContent === "Notifications");
     return r && r.querySelector("button"); };
   const signIn = async () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
@@ -40713,7 +40747,7 @@ await (async () => {
   } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
-  const btn = () => { const r = [...D.querySelectorAll("#thisDevice .salt-settings__row")].find((x) => x.querySelector(".salt-settings__label").textContent === "Notifications");
+  const btn = () => { const r = [...D.querySelectorAll("#thisDevice .salt-settings__row")].find((x) => x.querySelector(".obill__k").textContent === "Notifications");
     return r && r.querySelector("button"); };
   try {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
@@ -40836,9 +40870,9 @@ await (async () => {
     D.querySelector("#hAgain button").click();
     /* Counter Batch C, his answer 4 of 20 Oct 2026: a delivery opens with no spot picked, so one is added and Review taken to the check */
     if (D.getElementById("spAdd")) { spotAddTo(D, W, "Veloria"); if (D.getElementById("oGo")) D.getElementById("oGo").click(); }
-    for (let i = 0; i < 100 && !D.querySelector('#osheet .salt-sheet__head button[data-k="back"]'); i++) await new Promise((r) => setTimeout(r, 20));
-    const back = D.querySelector('#osheet .salt-sheet__head button[data-k="back"]'), title = D.getElementById("oshT");
-    ok(!!back && !!title && /Check your order/.test(title.textContent) && back.classList.contains("salt-orb") && cs(title).flexShrink === "1" && cs(back).flexShrink === "0",
+    for (let i = 0; i < 100 && !D.querySelector('#osheet .amb-sheet__head button[data-k="back"]'); i++) await new Promise((r) => setTimeout(r, 20));
+    const back = D.querySelector('#osheet .amb-sheet__head button[data-k="back"]'), title = D.getElementById("oshT");
+    ok(!!back && !!title && /Check your order/.test(title.textContent) && back.classList.contains("amb-circle") && cs(title).flexShrink === "1" && cs(back).flexShrink === "0",
       "the check a tile opens has its back orb beside a title that gives way, and the orb does not: " + JSON.stringify(back && [cs(back).flexShrink, cs(title).flexShrink]));
   } finally { W.close(); }
 })();
@@ -40966,14 +41000,14 @@ await (async () => {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
     /* a desk: the page asks for 860px and up (the list beside the open order) */
-    win.matchMedia = (q) => ({ matches: /min-width: ?860px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    win.matchMedia = (q) => ({ matches: /min-width: ?960px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
     win.fetch = async (path) => { const p = String(path);
       const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
       return { ok: true, status: 200, json: async () => j }; };
   } });
   const W = dom.window, D = W.document;
   const shape = () => {
-    const P = D.getElementById("pOrder"), place = D.getElementById("oArea"), col = place && place.querySelector(".olistcol"), scr = place && place.querySelector(".oscreen");
+    const P = D.getElementById("pOrder"), place = D.getElementById("oPanes"), col = place && place.querySelector(".olistcol"), scr = place && place.querySelector(".oscreen");
     const head = col && col.firstElementChild, nw = D.getElementById("oNew"), yours = col && [...col.children].find((x) => x.tagName === "H2" && x.textContent === "Your orders");
     return { first: P.firstElementChild === place, headFirst: !!head && head.id === "oTop" && head.contains(nw) && !!yours && head.compareDocumentPosition(yours) === W.Node.DOCUMENT_POSITION_FOLLOWING,
       beside: !!scr && scr.parentNode === place && col.parentNode === place, open: scr ? scr.getAttribute("data-order") : "",
@@ -40983,13 +41017,13 @@ await (async () => {
     D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
-    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    D.querySelector('.amb-tabbar button[data-t="order"]').click();
     D.querySelector('#pOrder [data-row="' + A + '"]').click();
     const s1 = shape();
     ok(s1.first && s1.headFirst && s1.beside && s1.open === A,
       "the list-and-order grid is the first thing in Orders, the lead and New order heading the list's column above Your orders, the open order beside it: " + JSON.stringify(s1));
-    ok(s1.pay.length === 1 && /salt-ghost/.test(s1.pay[0]) && !/salt-pill/.test(s1.pay[0]) && D.getElementById("oNew").classList.contains("salt-pill"),
-      "and on a desk New order is still the one filled control, the order's Pay beside it lit but not filled: " + JSON.stringify(s1.pay));
+    ok(s1.pay.length === 1 && /amb-pill--block/.test(s1.pay[0]) && !/amb-pill--quiet/.test(s1.pay[0]) && D.getElementById("oNew").classList.contains("amb-pill--quiet"),
+      "and on a desk the order's Pay, the foot of its pane, is the one filled control and New order stands quiet: " + JSON.stringify(s1.pay));
     D.querySelector('#pOrder [data-row="' + B + '"]').click();
     const s2 = shape();
     ok(s2.first && s2.headFirst && s2.beside && s2.open === B && D.querySelectorAll("#oNew").length === 1,
@@ -41160,7 +41194,7 @@ await (async () => {
     if (!doc) continue;
     /* the orders alone: the Refunds list below them prints its own dates in the same cell class (S7 7.3: both are
        Statement lines on a live statement) */
-    const days = [...doc.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
+    const days = [...doc.body.split('<h3 class="amb-section">Refunds</h3>')[0].matchAll(/<td data-label="Date">([\s\S]*?)<\/td>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
     checked++;
     if (new Set(days).size > 1) multi++;
     for (let i = 1; i < days.length; i++) if (days[i] > days[i - 1]) { wrong.push(p + " " + days[i - 1] + " then " + days[i]); break; }
@@ -41219,7 +41253,7 @@ await (async () => {
     const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
     return scr() || d; };
   const claim = () => {
-    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const pay = scr() && [...scr().querySelectorAll("[data-part=act] button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (s) { s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const g = d.getElementById("payGo"); if (g) g.click();
@@ -41233,7 +41267,7 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
     /* S7 7.1: Home opens first, and Orders is the payment page (S7 merge: Home's Pay opens the pay sheet, S6 6.4) */
-    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('.amb-tabbar button[data-t="order"]').click();
     const payPage = () => !d.getElementById("pOrder").hidden && /Payment due/.test((d.querySelector("#pOrder h2") || {}).textContent || "");
     ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && payPage(),
       "the fixture's Orders is the payment page, with its two orders below");
@@ -41253,19 +41287,19 @@ await (async () => {
     ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
       "Cancel refused: the words sit beside Cancel on that order, and the earlier answer has gone");
 
-    const box = scr().querySelector("form.salt-composer input"); box.value = "Is it ready?";
+    const box = scr().querySelector("form.amb-compose input"); box.value = "Is it ready?";
     [...scr().querySelectorAll("button")].find((b) => b.textContent === "Send").click();
     await until(() => said(d, "Refused by the fixture: say"));
     const sayLine = said(scr(), "Refused by the fixture: say");
-    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
+    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".amb-msg.is-error"),
       "Send refused: the words are back in that order's box, and the answer stands under it");
 
     st.payOk = true;
     openO("oA"); claim();
     await until(() => said(d, "Sent, waiting for us to confirm."));
     const rec = said(scr(), "Sent, waiting for us to confirm.");
-    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector(".oact button:not(.omsg)") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
-      && !/Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
+    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector("[data-part=act] button") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
+      && !/Paid in full/.test(scr().textContent) && after(scr().querySelector(".onote"), rec),
       "sent in full, Pay is gone, nothing says paid, and the answer stands under the order's state instead of vanishing with it");
 
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
@@ -41319,18 +41353,18 @@ await (async () => {
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     /* S6 6.4: every Pay opens the one pay sheet. The held page's own Pay first, then an order's, with a way, an
        account and a part chosen, so every control the sheet can draw is on it */
-    const hold = d.querySelector("#pOrder .pane"), sh = d.getElementById("paySheet");
-    const holdPills = hold ? hold.querySelectorAll(".salt-pill").length : -1;
+    const hold = d.querySelector("#pOrder .ohold"), sh = d.getElementById("paySheet");
+    const holdPills = hold ? hold.querySelectorAll(".amb-pill:not(.amb-pill--quiet)").length : -1;   /* 16 Nov 2026, the move to Ambient: the held page's box is .ohold, its controls the system's pills; its See statement is the quiet one */
     const hp = hold && [...hold.querySelectorAll("button")].find((x) => /^Pay RM/.test(x.textContent)); if (hp) hp.click();
     const byHold = !!hp && !sh.hidden;
     d.getElementById("payX").click();
     d.querySelector('#pOrder [data-row="oA"]').click();
-    const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const pay = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
     [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it").click();
     const ctrls = [hold, sh].filter(Boolean).flatMap((x) => [...x.querySelectorAll("button, a, select, input")]);
-    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input|orb|option__input)( |$)/.test(x.className));
+    const bare = ctrls.filter((x) => !/(^| )(salt-(pill|ghost|field__input|orb|option__input)|amb-pill)( |$)/.test(x.className));
     ok(byHold && !!pay && ctrls.length >= 10 && !bare.length,
       "every button, link and field on the held page and in the pay sheet is a recipe ("
       + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
@@ -41378,7 +41412,7 @@ await (async () => {
     /* S5 5.2: the pay row is in the order's own screen, behind its one Pay */
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
-    const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
+    const payA = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
     /* S6 6.4: the pay row is the pay sheet's, under Part of it */
     const partA = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (partA) partA.click();
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
@@ -41430,7 +41464,7 @@ await (async () => {
     const typed = boxOf(1);
     typed.focus(); typed.value = "Could it come on Fri"; typed.dispatchEvent(new w.Event("input", { bubbles: true }));
     typed.setSelectionRange(9, 9);
-    const replied = () => /A reply for you/.test((d.querySelector('#pOrder [data-row="oA"]') || {}).textContent || "");
+    const replied = () => /a reply for you/i.test((d.querySelector('#pOrder [data-row="oA"]') || {}).textContent || "");
     for (let i = 0; i < 100 && !replied(); i++) await new Promise((r) => setTimeout(r, 50));
     const now = boxOf(1);
     ok(replied() && now === typed,
@@ -41479,8 +41513,8 @@ await (async () => {
      Place sends it, and while it is open the sheet holds no field at all, so nothing typed can reach the order */
   const type = (f, t) => { if (f && !f.readOnly) { f.value = t; f.dispatchEvent(new w.Event("input", { bubbles: true })); } };
   const button = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t);
-  const row = (k) => { const r = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === k);
-    return r && r.querySelector(".salt-ledger__value").textContent; };
+  const row = (k) => { const r = [...d.querySelectorAll("#osheet .amb-setting")].find((x) => x.querySelector(".amb-setting__name").textContent === k);
+    return r && r.querySelector(".amb-setting__value").textContent; };
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
@@ -41570,12 +41604,12 @@ await (async () => {
     if (d.getElementById("oNew")) await startAt(d);
     /* plan version 8: Order offers the one product with a price, and the sheet a tap on it opens lists that one line */
     const sizes = [...d.querySelectorAll("#pPrices .szrow")].map((o) => o.getAttribute("data-q"));
-    const sheetLns = d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row").length;
+    const sheetLns = d.querySelectorAll("#osheet [data-sheet-lines] .amb-row").length;
     ok(!thrown.length && !/Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
       && sizes.join() === "1" && sheetLns === 1 && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
       "the Order tab draws: Order offers the one product with a price, the sheet lists its one line, and their order is there, with no Notifications pane (the bell is the saved app header): " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
-    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll(".salt-ledger").length === 1,
+    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll(".pane .amb-list").length === 1,
       "and Prices says coming soon for the one with no size rather than drawing an empty list");
   } finally { process.off("unhandledRejection", onRej); w.close(); }
 })();
@@ -41593,11 +41627,13 @@ await (async () => {
        author rules say, so that check stayed green with the page's [hidden] rule removed (tried, 24 Sep 2026) */
     /* S7 7.1: THE TABS ARE PLACES NOW, on the system's App bar, a grid whose five columns share the width (the recipe
        sizes each word to its column, measured at 320 and 150%), and on its rail from 1080px */
-    const D = dom.window.document, bar = D.querySelector("#tabs nav.salt-appbar"), rail = D.querySelector("#tabs nav.salt-rail.salt-appbar__rail");
+    /* 15 Nov 2026, THE MOVE TO AMBIENT: the places are one Ambient tab bar in the shell's dock, five tabs whose labels it cuts rather than lays over
+       a neighbour, which the shell stands up as the rail from 960px; so the rail is the same five buttons */
+    const D = dom.window.document, bar = D.querySelector("#tabs > .amb-dock > nav.amb-tabbar"), rail = bar;
     const ids = (n) => n ? [...n.querySelectorAll("button[data-t]")].map((b) => b.getAttribute("data-t")).join(",") : "";
-    ok(bar && rail && ids(bar) === "home,prices,order,stmt,card" && ids(rail) === ids(bar)
-      && bar.querySelectorAll("button.salt-appbar__item").length === 5 && rail.querySelectorAll("button.salt-rail__tab").length === 5,
-      "the places are the system's App bar and its rail, the same five on each: " + ids(bar) + " | " + ids(rail));
+    ok(bar && ids(bar) === "home,prices,order,stmt,card" && D.querySelectorAll("#tabs button[data-t]").length === 5
+      && bar.querySelectorAll("button.amb-tab").length === 5,
+      "the places are one Ambient tab bar, the five on it, which stands up as the rail from 960px: " + ids(bar));
     ok(bar.querySelector('button[data-t="card"]').hidden && rail.querySelector('button[data-t="card"]').hidden && !bar.querySelector('button[data-t="stmt"]').hidden,
       "and Rewards is hidden until an associate's account opens");
   } finally { dom.window.close(); }
@@ -41667,8 +41703,8 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
-    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/i.test(t)) || "";
+    for (let i = 0; i < 60 && !d.querySelector("#pPrices > p + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
+    const lead = [...d.querySelectorAll("#pPrices > p")].map((p) => p.textContent).find((t) => /delivery/i.test(t)) || "";
     /* S4 4.9 (his "all recommended" of 24 Sep 2026) and Step 1b: the one delivery sentence, in the customer's word for that
        step, acknowledge; still never "marked ready" */
     ok(/We tell you the charge when we confirm your order, before you pay/.test(lead) && !/marked ready/.test(lead),
@@ -41717,7 +41753,7 @@ await (async () => {
     ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen control is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
     /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
     ok(look[0] && chosen[0].classList.contains("salt-field__input") && chosen[0].closest(".salt-settings__row")
-      && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
+      && chosen[1].classList.contains("amb-segment__opt") && chosen[1].getAttribute("aria-pressed") === "true",
       "and each is still told apart: the month as the system's field in a settings row, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
   } finally { w.close(); }
 })();
@@ -41970,13 +42006,13 @@ await (async () => {
       && home.needs.join() === "20260926020000-v2cc:Ready to collect, since " + kl(-1).slice(8) + " " + MON3[+kl(-1).slice(5, 7) - 1] + " " + kl(-1).slice(0, 4),
       "an order at Ready still owing leaves Coming up, one paid in full stays, and Needs you still says what is ready to collect: " + JSON.stringify([home.coming, home.needs]));
     /* the order's own screen: due now, cash on handover or not, less what the account's money reaches on it */
-    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('.amb-tabbar button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="20260920010000-v2rr"]'));
     d.querySelector('#pOrder [data-row="20260920010000-v2rr"]').click();
     const scr = d.querySelector("#pOrder .oscreen");
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
-    const money = [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(r.querySelector(q))).join("|"));
-    scr.querySelector(".oact .salt-pill").click();
+    const money = [...scr.querySelectorAll('[data-part="money"] .amb-setting')].map((r) => [".obill__k", ".amb-setting__value", ".obill__sub"].map((q) => t(r.querySelector(q))).join("|"));
+    scr.querySelector("[data-part=act] .amb-pill").click();
     const oWays = [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join();
     const oInv = !!d.querySelector("#payBody .inv"), oTitle = t(d.getElementById("payT"));
     d.getElementById("payX").click();
@@ -41988,12 +42024,12 @@ await (async () => {
     d.querySelector("#pOrder .oback").click();
     await until(() => d.querySelector('#pOrder [data-row="20260927010000-v2kk"]'));
     d.querySelector('#pOrder [data-row="20260927010000-v2kk"]').click();
-    d.querySelector("#pOrder .oscreen .oact .salt-pill").click();
+    d.querySelector("#pOrder .oscreen [data-part=act] .amb-pill").click();
     const kWays = [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join();
     d.getElementById("payX").click();
     ok(kWays === "transfer,qr,cod", "an order not yet Ready keeps cash as its third way: " + kWays);
     /* the pay sheet from Home: the same invoice, whole */
-    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    d.querySelector('.amb-tabbar button[data-t="home"]').click();
     d.getElementById("payNow").click();
     const sb = d.getElementById("payBody"), si = sb.querySelector(".inv");
     const lines = si ? [...si.querySelectorAll(":scope > .salt-ledger__row")].map((r) => ({ row: [".salt-ledger__label", ".salt-ledger__value"].map((q) => t(r.querySelector(":scope > .salt-ledger__line " + q))).join("|"),
@@ -42018,7 +42054,7 @@ await (async () => {
     goods: 60, deliv: 0, less: 0, rate: 120 };
   const heldBy = async (parts) => {
     const dm = await open(parts, [oR], []), dd = dm.window.document;
-    try { return { head: t(dd.querySelector("#pOrder h2")), form: !!dd.getElementById("oNew"), tile: t(dd.querySelector("#pOrder .pane .salt-kpi__value")),
+    try { return { head: t(dd.querySelector("#pOrder h2")), form: !!dd.getElementById("oNew"), tile: t(dd.querySelector("#pOrder .ohold .amb-tile__figure")),
       hold: t(dd.querySelector("#payHead .salt-insight")), total: t(dd.querySelector("#homeFoot .salt-kpi__value, #payHead .salt-kpi__value")) }; }
     finally { dm.window.close(); }
   };
@@ -42119,10 +42155,10 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
-    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b)));
+    const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b)));
     if (payO) payO.click();
     ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200.00" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
-      && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder .oact .pay"),
+      && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder [data-part=act] .pay"),
       "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, Transfer chosen and no account, and nothing drawn in the order itself");
   } finally { w.close(); }
 })();
@@ -42191,7 +42227,7 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
-    [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    [...scr().querySelectorAll("[data-part=act] button")].find((b) => /^Pay RM/.test(t(b))).click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
     await until(() => d.querySelector('#payBody input[name="payInto"][value="maybank"]'));
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
@@ -42223,9 +42259,9 @@ await (async () => {
       "Not yet asks nothing more until a detail is copied or saved again; a refused Yes answers beside itself and a retry carries the same id: "
       + JSON.stringify({ once, refused, sent: st.sent }));
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; a row's flag is its second line */
-    const lines = [...scr().querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(x.querySelector(q))).join("|"));
-    const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map(t);
-    const row = t(d.querySelector('#pOrder [data-row="oA"] .ocard__what'));
+    const lines = [...scr().querySelectorAll('[data-part="money"] .amb-setting')].map((x) => [".obill__k", ".amb-setting__value", ".obill__sub"].map((q) => t(x.querySelector(q))).join("|"));
+    const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map((li) => " " + t(li.querySelector(".amb-journal__text")));
+    const row = t(d.querySelector('#pOrder [data-row="oA"] .amb-row__sub'));
     ok(lines.includes("Sent by you|RM 150.00|Waiting for us to confirm") && lines.includes("Still to pay|RM 0.00|Sent, waiting for us to confirm")
       && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150.00 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
       && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150.00 sent, waiting for us to confirm",
@@ -42257,10 +42293,10 @@ await (async () => {
     dB.querySelector('#pOrder [data-row="oB"]').click();
     const scrB = dB.querySelector("#pOrder .oscreen");
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows */
-    const lost = [...scrB.querySelectorAll('[data-part="money"] .salt-settings__row')].map((x) => t(x.querySelector(".salt-settings__label")) + "|" + t(x.querySelector(".salt-settings__value")));
-    const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map(t);
+    const lost = [...scrB.querySelectorAll('[data-part="money"] .amb-setting')].map((x) => t(x.querySelector(".obill__k")) + "|" + t(x.querySelector(".amb-setting__value")));
+    const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map((li) => " " + t(li.querySelector(".amb-journal__text")));
     ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50.00") && histB.some((x) => x.endsWith(" We have not found RM 50.00 yet"))
-      && !!scrB.querySelector(".oact .salt-pill"),
+      && !!scrB.querySelector("[data-part=act] .amb-pill"),
       "his Not found on an order shows on its row, on its money and in its history, and Pay is back: " + JSON.stringify({ why, lost, histB }));
     dB.querySelector('#tabs button[data-t="stmt"]').click();
     dB.getElementById("payNow").click();
@@ -42317,11 +42353,11 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 20));
       await new Promise((r) => setTimeout(r, 200));
-      const pane = d.querySelector("#pOrder .pane");
+      const pane = d.querySelector("#pOrder .ohold");
       const out = { tab: t(d.getElementById("tOrder")), onOrder: !d.getElementById("pOrder").hidden, home: !d.getElementById("pHome").hidden, head: t(d.querySelector("#pOrder h2")),
-        tile: pane ? [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(pane.querySelector(q))).join(" ") : "",
-        note: pane ? t(pane.querySelector(".salt-kpi__note")) : "",
-        rows: pane ? [...pane.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")) : [],
+        tile: pane ? [".amb-tile__label", ".amb-tile__figure"].map((q) => t(pane.querySelector(q))).join(" ") : "",
+        note: pane ? t(pane.querySelector(".amb-tile__delta")) : "",
+        rows: pane ? [...pane.querySelectorAll(".amb-setting")].map((r) => [".amb-setting__name > span:first-child", ".amb-setting__value", ".obill__sub"].map((q) => t(r.querySelector(q))).join("|")) : [],
         form: !!d.getElementById("oNew"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")),
         /* V2: the invoice's Less sent says what was sent against the account and that it waits */
         sent: [...d.querySelectorAll("#payHead .inv .salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")).filter((x) => /^Less sent/.test(x)).join() };
@@ -42395,7 +42431,7 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
-    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
     const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .salt-option__label")].pop());
     const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
@@ -42554,8 +42590,8 @@ await (async () => {
   };
   /* plan version 8: a size is chosen on Order, so a sheet at another size is a sheet opened again at it */
   const size = async (d, w, q) => { const c = d.querySelector('#osheet [data-k="close"]'); if (c) c.click(); await startAt(d, "salt", q); };
-  const line = (d) => [...d.querySelectorAll("#osheet .salt-insight")].map(t).join(" | ");
-  const rows = (d) => [...d.querySelectorAll("#osheet .salt-ledger__line")].map((l) => [...l.children].map(t).join(" ")).join(" | ");
+  const line = (d) => [...d.querySelectorAll("#osheet .amb-notice")].map(t).join(" | ");
+  const rows = (d) => [...d.querySelectorAll("#osheet .amb-setting")].map((l) => [...l.children].map(t).join(" ")).join(" | ");
 
   /* RM 340 owed at once; the ceiling is set at RM 440 so one salt unit (RM 100) is at it and two (RM 190) are over, and a
      sheet of salt 1 and oil 1 (RM 150) is over as one verdict though neither line is alone */
@@ -42584,14 +42620,14 @@ await (async () => {
     const money = t(d.querySelector('#pOrder .oscreen [data-part="money"]'));
     ok(/Before we hand it over/.test(money) && /Due now/.test(ready) && !/Before we hand it over/.test(ready),
       "the order says when: before we hand it over, and due now once it is ready: " + JSON.stringify([money, ready]));
-    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
     const cod = d.querySelector('#payBody input[name="payHow"][value="cod"]');
     const why = cod ? t(cod.closest(".salt-option").querySelector(".salt-option__detail")) : "";
     ok(!!payO && !!cod && cod.disabled && why === "Not offered: this order is paid in advance.",
       "its pay sheet offers no cash, the tile dashed with the reason: " + JSON.stringify([!!payO, cod && cod.disabled, why]));
     d.getElementById("payX").click();
     d.querySelector('#pOrder [data-row="oN"]').click();
-    const payN = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payN) payN.click();
+    const payN = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payN) payN.click();
     const codN = d.querySelector('#payBody input[name="payHow"][value="cod"]');
     ok(!!codN && !codN.disabled, "and an order not paid in advance still offers it");
   } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
@@ -42712,30 +42748,31 @@ await (async () => {
        with every line off are retired with the choice itself (the units change on Order; a sheet with no line is test/order-stream-p8-order.mjs).
        The sheet is the basket's two lines, a size of each product, and Continue goes straight to the check. */
     await basketAdd(d, "salt", 2); await basketAdd(d, "oil", 10); await toSheet(d);
-    const total = () => t(d.querySelector("#osheet .ototal .salt-kpi__value"));
+    const total = () => t(d.querySelector("#osheet .ototal .amb-stat__value"));
     /* a sheet that has not yet been told the way asks it (11 Nov 2026): choose Collect, then Review */
     const way = async () => { const m = d.querySelector('#osheet [data-k="mode:0"]:not([aria-pressed="true"])'); if (m) { m.click(); await new Promise((r) => setTimeout(r, 30)); } const g = d.getElementById("oGo"); if (g && g.getAttribute("aria-disabled") !== "true" && !d.getElementById("oPlace")) g.click(); };
     /* 11 Nov 2026 (his answer "Always ask"): Continue opens the form asking the way; Collect is chosen and the form stands */
     d.querySelector('#osheet [data-k="mode:0"]').click(); await until(() => d.querySelector('#osheet [data-k="mode:0"][aria-pressed="true"]'));
-    const fields = d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row").length;
-    ok(fields === 2 && total() === "RM 285.00" && !d.querySelector("#osheet input.salt-option__input"),
+    const fields = d.querySelectorAll("#osheet [data-sheet-lines] .amb-row").length;
+    ok(fields === 2 && total() === "RM 285.00" && !d.querySelector("#osheet input.amb-option__input"),
       "the sheet lists a line each for the sizes of two products from the basket, one total: " + JSON.stringify([fields, total()]));
     d.getElementById("oGo").click();
     /* a row read as its label, value and flag, the mark's drawing left out and its shape, which only a reader is told, left out too */
-    const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr").forEach((x) => x.remove()); return t(c); };
-    const rows = () => [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => [...r.querySelectorAll(".salt-ledger__label, .salt-ledger__value, .salt-ledger__flag")].map(clean).filter(Boolean).join(" "));
+    const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr, .amb-vh").forEach((x) => x.remove()); return t(c); };
+    /* 16 Nov 2026, the move to Ambient: the check's lines are the system's rows and its other rows its settings */
+    const rows = () => [...d.querySelectorAll("#osheet .amb-list > li, #osheet .amb-setting")].map((r) => [...r.querySelectorAll(".amb-row__title, .amb-row__sub, .amb-row__amount, .amb-setting__name, .amb-setting__value")].map(clean).filter(Boolean).join(" "));
     const r1 = rows();
-    ok(r1.includes("2 units RM 190.00") && r1.includes("10 units RM 95.00") && r1.includes("Total RM 285.00") && d.querySelectorAll("#osheet .mhero > *").length === 2,
+    ok(r1.includes("2 units RM 190.00") && r1.includes("10 units RM 95.00") && r1.includes("Total RM 285.00") && d.querySelectorAll("#osheet .amb-list > li").length === 2,
       "the check has a line a product, a card each, and the total: " + JSON.stringify(r1));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 1 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
-    const moved = [...d.querySelectorAll("#osheet .salt-insight--copper")].map(t);
+    const moved = [...d.querySelectorAll("#osheet .amb-notice--warn")].map(t);
     ok(posted.length === 1 && t(d.getElementById("oPlace")) === "Place at RM 289.00" && moved.length === 1 && moved[0].includes("Now RM 99.00 (was RM 95.00).") && rows().includes("Total RM 289.00"),
       "a list moved at Place is read again line by line, the moved line said, Place naming the new total, and nothing placed: " + JSON.stringify([posted.length, t(d.getElementById("oPlace")), moved]));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 3 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     const part = rows();
-    ok(posted.length === 3 && part.includes("2 units RM 190.00 Placed") && !d.getElementById("oBack").disabled,
+    ok(posted.length === 3 && part.includes("2 units Placed RM 190.00") && !d.getElementById("oBack").disabled,
       "a line refused after one placed leaves the placed line said as placed, and the check still theirs to change: " + JSON.stringify(part));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 4 && !!d.querySelector("#osheet .osent"));
@@ -42749,7 +42786,7 @@ await (async () => {
        size as a first sheet does; a second picked there makes a sheet of its own, each line under its own request id */
     d.querySelector('#osheet [data-k="close"]').click();
     await startAt(d);
-    const carried = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")];
+    const carried = [...d.querySelectorAll("#osheet [data-sheet-lines] .amb-row")];
     d.querySelector('#osheet [data-k="close"]').click();
     await basketAdd(d, "salt", 1); await basketAdd(d, "oil", 5); await toSheet(d); await way();
     d.getElementById("oPlace").click();
@@ -42763,7 +42800,7 @@ await (async () => {
     d.getElementById("oPlace").click();
     await until(() => posted.length === 8 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.getElementById("oBack").click();
-    const onForm = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => t(r.querySelector(".sr")) + "|" + t(r.querySelector(".salt-settings__label")));
+    const onForm = [...d.querySelectorAll("#osheet [data-sheet-lines] .amb-row")].map((r) => t(r.querySelector(".amb-vh")) + "|" + t(r.querySelector(".amb-row__title")));
     /* and Change again before placing keeps that sheet */
     d.getElementById("oGo").click(); d.getElementById("oBack").click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
@@ -42777,7 +42814,7 @@ await (async () => {
     await until(() => posted.length === 11 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.querySelector('#osheet [data-k="close"]').click();
     d.getElementById("pWayGo").click();
-    const reopened = [...d.querySelectorAll("#osheet [data-sheet-lines] .salt-settings__row")].map((r) => t(r.querySelector(".sr")) + "|" + t(r.querySelector(".salt-settings__label")));
+    const reopened = [...d.querySelectorAll("#osheet [data-sheet-lines] .amb-row")].map((r) => t(r.querySelector(".amb-vh")) + "|" + t(r.querySelector(".amb-row__title")));
     ok(posted[9].product === "salt" && posted[10].product === "oil" && reopened.length === 1 && /Droplet/.test(reopened[0]),
       "a sheet closed after one line is placed reopens without that product: " + JSON.stringify([reopened, posted.slice(9).map((x) => x.product)]));
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
@@ -42899,7 +42936,7 @@ await (async () => {
       } }).window;
     const D = W.document;
     const read = () => {
-      const pp = D.getElementById("pPrices"), sn = D.getElementById("stageNote"), kn = D.querySelector("#pOrder .pane .salt-kpi__note");
+      const pp = D.getElementById("pPrices"), sn = D.getElementById("stageNote"), kn = D.querySelector("#pOrder .ohold .amb-tile__delta");
       return { note: sn ? sn.textContent : null, hold: /Please pay the overdue amount/.test((D.getElementById("payHead") || {}).textContent || ""),
         prices: pp ? pp.textContent.replace(/\s+/g, " ").trim() : "", hpart: D.querySelectorAll("#hComing .hpart").length, payNow: !!D.getElementById("payNow"),
         odNote: kn ? kn.textContent : "", holdP: /prices stay open/.test(D.getElementById("pOrder").textContent),
@@ -43021,9 +43058,9 @@ await (async () => {
       d.querySelector('#pOrder [data-row="oX"]').click();
       await until(() => d.querySelector("#pOrder .oscreen"));
       const scr = d.querySelector("#pOrder .oscreen");
-      out.orderPay = [...scr.querySelectorAll(".oact button:not(.omsg)")].map(t).join();
+      out.orderPay = [...scr.querySelectorAll("[data-part=act] button")].map(t).join();
       /* 2 Nov 2026 (his Orders canvas, page 2): the Bill's settings rows; read as label, value, then the second line, as the ledger row read */
-      out.lines = [...scr.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => t(r.querySelector(q))).join(" ").trim());
+      out.lines = [...scr.querySelectorAll('[data-part="money"] .amb-setting')].map((r) => [".obill__k", ".amb-setting__value", ".obill__sub"].map((q) => t(r.querySelector(q))).join(" ").trim());
       return out;
     } finally { dom.window.close(); }
   };
@@ -43086,7 +43123,7 @@ await (async () => {
       d.querySelector('button[data-t="order"]').click();
       await until(() => t(d.getElementById("pOrder")).length > 0);
       const po = d.getElementById("pOrder");
-      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.salt-pill")].map(t).join(), form: !!po.querySelector(".oplace, form") };
+      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.amb-pill")].map(t).join(), form: !!po.querySelector(".olistcol, form") };
     } finally { dom.window.close(); }
   };
   const acct = (amount, state, answered) => ({ id: "a-" + amount, u: U, kind: "account", at: iso(-3), amount, method: "transfer", account: "maybank", state, answered });
@@ -43151,7 +43188,7 @@ await (async () => {
         d.querySelector('#pOrder [data-row="oN"]').click();
         await until(() => d.querySelector("#pOrder .oscreen"));
         /* 2 Nov 2026: a Bill row read as before, its name, its figure, then its second line (the flag it was) */
-        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .salt-settings__row')].map((x) => t(x.querySelector(".salt-settings__label")) + t(x.querySelector(".salt-settings__value")) + t(x.querySelector(".salt-settings__sub")));
+        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .amb-setting')].map((x) => t(x.querySelector(".obill__k")) + t(x.querySelector(".amb-setting__value")) + t(x.querySelector(".obill__sub")));
       }
       return out;
     } finally { dom.window.close(); }
@@ -43227,7 +43264,7 @@ await (async () => {
     d.querySelector('button[data-t="order"]').click();
     await until(() => d.querySelector('#pOrder [data-row="oR"]'));
     d.querySelector('#pOrder [data-row="oR"]').click();
-    [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))).click();
     const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
     before = !!w.localStorage.getItem("salt-stmt-payq");
     d.getElementById("payGo").click();
@@ -43268,7 +43305,7 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
   const html = lp(U, "nrr", null);
   const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
-  const pageRules = css.slice(css.indexOf(".paycheck{"));
+  const pageRules = css.slice(css.indexOf(".paycheck "));   /* 16 Nov 2026, the move to Ambient (place D): the site layer writes it */
   const who = (u) => { let h = 2166136261; for (let i = 0; i < u.length; i++) { h ^= u.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); };
   const list = [{ id: "oQ", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", total: 150, paid: 0, claimed: 0,
     payments: [], msgs: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }];
@@ -43299,11 +43336,11 @@ await (async () => {
     const h = d.querySelector("#payBody .paycheck h3");
     head = h ? { cls: h.className, text: h.textContent } : null;
     ring = !!d.querySelector("#payBody .payring");
-    mark = !!d.querySelector("#payBody .paycheck svg.glyph");
+    mark = !!d.querySelector("#payBody .paycheck svg.paycheck__mark");
   } finally { dom.window.close(); }
-  ok(head && head.cls === "salt-sheet__title" && head.text === "Did you send RM 150.00?" && !ring && mark
-    && !/\.payring/.test(css) && !/\.paycheck h3\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.salt-sheet__title\s*\{/.test(css),
-    "the question's heading is the Sheet's own title recipe, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
+  ok(head && head.cls === "amb-section" && head.text === "Did you send RM 150.00?" && !ring && mark
+    && !/\.payring/.test(css) && !/\.paycheck h3 ?\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.amb-section\s*\{/.test(css),
+    "the question's heading is the system's own section heading, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
 })();
 
 section("23 Sep 2026: an amount past its term makes the account a payment page, any amount since 28 Sep 2026");
@@ -43362,7 +43399,7 @@ await (async () => {
       return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
         stmtShown: !d.getElementById("pStmt").hidden, home: !d.getElementById("pHome").hidden, homeText: d.getElementById("pHome").textContent,
         pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
-        pay: [...d.querySelectorAll("#pOrder .pane button.salt-pill")].map((b) => b.textContent).join(), form: !!d.querySelector("#pOrder select") };
+        pay: [...d.querySelectorAll("#pOrder .ohold button.amb-pill:not(.amb-pill--quiet)")].map((b) => b.textContent).join(), form: !!d.querySelector("#pOrder select") };
     } finally { dom.window.close(); }
   };
   const held = await openWith(250.5), small = await openWith(20), owedLate = await openWith(50, 300), none = await openWith(undefined), owedOnly = await openWith(0, 300);
@@ -43490,15 +43527,16 @@ await (async () => {
     const html = await r.text();
     const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
     const urls = [...css.matchAll(/url\(\s*['"]?([^'")\s]+)/g)].map((m) => m[1]);
-    if (r.status !== 200 || urls.length < 2) { bad.push(path + ": status " + r.status + ", " + urls.length + " urls"); continue; }
+    /* 15 Nov 2026, the move to Ambient: no face is loaded (the device's own), so a page served names none, and any url() it did name must still resolve */
+    if (r.status !== 200 || urls.length) { bad.push(path + ": status " + r.status + ", " + urls.length + " urls"); continue; }
     for (const u of urls) {
       const f = await stmtWorker.fetch(new Request(new URL(u, at).href), env);
       fetched++;
       if (f.status !== 200 || f.headers.get("content-type") !== "font/woff2") bad.push(path + " asks " + new URL(u, at).pathname + ": " + f.status);
     }
   }
-  ok(!!ref && fetched >= 6 && !bad.length,
-    "every face named by the door at /s/, a guest board at /g/ and the root resolves to a font the Worker serves ("
+  ok(!!ref && fetched === 0 && !bad.length,
+    "no face is named by the door at /s/, a guest board at /g/ or the root, each served Ambient, which loads none ("
     + fetched + " fetched)" + (bad.length ? ": " + bad.join("; ") : ""));
 })();
 
@@ -43522,7 +43560,7 @@ await (async () => {
     docs++;
     /* C2 (29 Sep 2026): inside the Counter the place is the h1 and the header names the username, so the live document is an
        h2 and names the account no second time, by username or by code */
-    if (/class="who"|>Account<|<h1/.test(d.body) || d.body.includes("abcd-efgh") || d.body.includes(p) || !d.body.includes('<h2 class="stmth">Statement of account</h2>')) named.push(p);
+    if (/class="who"|>Account<|<h1/.test(d.body) || d.body.includes("abcd-efgh") || d.body.includes(p) || !d.body.includes('<h2 class="amb-section">Statement of account</h2>')) named.push(p);
     const why = siteWords(text(d.body));
     if (why) said.push(p + " " + why);
     const d0 = M.liveStatement(p, at);
@@ -43692,16 +43730,18 @@ await (async () => {
   ok(!/url\(/.test(genY.SITE_RECIPES) && !/salt-field__input\.salt-field__select/.test(genY.SITE_RECIPES) && /\.salt-field__select option \{/.test(genY.SITE_RECIPES),
     "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients, while its open list is the system's slate (18 Oct 2026)");
   const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok((pgY.match(/STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
-    "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
+  /* 15 Nov 2026, the move to Ambient: both pages carry Ambient (SITE_STYLE: its tokens and parts and the site's layer) before the page's own layer, and no recipe */
+  ok((pgY.match(/SITE_STYLE \+ PAGE_CSS \+ COIN_CSS/g) || []).length === 2 && !/STATEMENT_CSS \+ SITE_RECIPES/.test(pgY),
+    "both pages the Worker serves carry Ambient between the head and the page's own layer, and no salt-ds recipe");
   /* S13 13.3: the door's words are the table's, keyed on the element (data-w), so it is read off the page as served */
   const doorY = (await import("../stmt/page.js")).landingPage("", "n22y", null);
   ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit" data-w="door.go">/.test(doorY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   /* S7 7.1: the tabs are places on the system's App bar and rail, and the open one carries aria-current, which both draw */
-  ok(/'<button type="button" class="salt-appbar__item"' \+ placeAttrs\(t\)/.test(pgY) && /class="salt-rail__tab salt-rail__tab--solo"' \+ placeAttrs\(t, true\)/.test(pgY)
+  /* 15 Nov 2026, the move to Ambient: one Ambient tab bar */
+  ok(/'<button type="button" class="amb-tab"' \+ placeAttrs\(t, true\)/.test(pgY) && !/salt-appbar__item|salt-rail__tab/.test(pgY)
     && /b\.setAttribute\('aria-current','page'\); else b\.removeAttribute\('aria-current'\)/.test(pgY),
-    "the places are the system's, and a tap moves aria-current with the open one");
+    "the places are Ambient's tabs, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
      1a.2) stood it beside the head's card; Counter Batch A P4 put an aria-hidden glyph before the word, so the word is a text node after it */
   ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /t\.appendChild\(stateChip\(o\)\)/.test(pgY) && /top\.appendChild\(stateChip\(o\)\)/.test(pgY) && /oBandOf\(o,\{aria:tw\('oh\.order'\), chip:stateChip\(o\), when:/.test(pgY) && /top\.appendChild\(b\.chip\)/.test(pgY) && !/oband__state/.test(pgY),
@@ -43727,17 +43767,18 @@ await (async () => {
     row({ rid: "c3d", date: "2026-09-01", qty: 1, total: 90, paidCash: 40, got: 0, toGet: 0, cancelled: true, cancelledOn: "2026-09-03" }),
     row({ rid: "c3e", date: "2026-09-10", qty: 1, total: 80, paidCash: 80, got: 1, toGet: 0, paidOn: "2026-09-10", cover: true, inKindUnits: 0.5 })];
   const live = M.stmtDoc("ZZ9-TST", rows, { dates: true, brand: null, issued: "24 Sep 2026 12:00", live: true, user: "abcd-efgh", recon: [], refunds: [] });
-  const subs = [...live.matchAll(/<span class="(salt-lines__sub[^"]*)">([^<]*)<\/span>/g)].map((m) => [m[1], m[2]]);
-  const figs = subs.filter((s) => s[0] === "salt-lines__sub salt-lines__sub--figure").map((s) => s[1]), word = subs.filter((s) => s[0] === "salt-lines__sub").map((s) => s[1]);
-  ok(figs.some((t) => /^plus delivery RM 15\.00/.test(t)) && figs.some((t) => /^paid 20 Sep 2026$/.test(t)) && figs.some((t) => /^2 units still to collect$/.test(t)) && figs.some((t) => /^03 Sep 2026$/.test(t)),
-    "a delivery charge, a paid date, a unit figure and a cancelled date each carry salt-lines__sub--figure (C3): " + JSON.stringify(figs));
-  ok(word.some((t) => /on behalf of a friend/.test(t)) && word.some((t) => /to be collected and paid/.test(t)) && !figs.some((t) => /on behalf|to be collected and paid/.test(t)),
-    "a words-only sub-line keeps the plain class (C3): " + JSON.stringify(word));
-  ok(word.includes("Part paid from your reward") && !figs.includes("Part paid from your reward"), "a cover row's sub-line is words and stays plain (C3): " + JSON.stringify(word));
-  ok(figs.some((t) => /^0\.5 units? applied /.test(t)), "the in-kind units figure sub-line carries the figure class (C3): " + JSON.stringify(figs));
-  ok(figs.some((t) => /^RM 40\.00 paid, see Refunds$/.test(t)), "a cancelled row's paid-and-refunded sub-line carries the figure class (C3): " + JSON.stringify(figs));
-  const R = (await import("../stmt/statement-css.js")).SITE_RECIPES;
-  ok(/\.salt-lines__sub--figure \{ font-family: var\(--salt-font-mono\); font-variant-numeric: tabular-nums; \}/.test(R), "the shipped Counter CSS carries the system's figure recipe, pulled and never restated (C3)");
+  /* 16 Nov 2026, the move to Ambient (place D): a sub-line is the system's Table small line, figures and words alike; the table's own tabular figures set a date or a figure,
+     so the two classes of the old lines are one class and one rule of the system's */
+  const subs = [...live.matchAll(/<span class="(amb-table__sub)">([^<]*)<\/span>/g)].map((m) => m[2]);
+  ok(subs.some((t) => /^plus delivery RM 15\.00/.test(t)) && subs.some((t) => /^paid 20 Sep 2026$/.test(t)) && subs.some((t) => /^2 units still to collect$/.test(t)) && subs.some((t) => /^03 Sep 2026$/.test(t)),
+    "a delivery charge, a paid date, a unit figure and a cancelled date each stand as the system's small line (C3): " + JSON.stringify(subs));
+  ok(subs.some((t) => /on behalf of a friend/.test(t)) && subs.some((t) => /to be collected and paid/.test(t)) && !/salt-lines/.test(live),
+    "a words-only sub-line is the same small line (C3): " + JSON.stringify(subs));
+  ok(subs.includes("Part paid from your reward"), "a cover row's sub-line is words (C3): " + JSON.stringify(subs));
+  ok(subs.some((t) => /^0\.5 units? applied /.test(t)), "the in-kind units figure sub-line is the small line (C3): " + JSON.stringify(subs));
+  ok(subs.some((t) => /^RM 40\.00 paid, see Refunds$/.test(t)), "a cancelled row's paid-and-refunded sub-line is the small line (C3): " + JSON.stringify(subs));
+  const AMBCSS = (await import("../stmt/statement-css.js")).AMB_CSS;
+  ok(/\.amb-table \{[^}]*font-variant-numeric: tabular-nums/.test(AMBCSS), "the shipped Counter CSS carries the system's tabular figures for the table, pulled and never restated (C3)");
 })();
 section("S2 2.11: the Counter carries the recipes it will use, whole, in the system's order, and none of the system's notes");
 await (async () => {
@@ -43819,8 +43860,9 @@ await (async () => {
   const genF = await import("../stmt/statement-css.js");
   const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   /* the vendored file's comment is left out of what a customer is served (06 Nov 2026); the rules are the file's to the character */
-  ok(genF.FONT_FACE_CSS === fcss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s+/, "").split("url(fonts/").join("url(/fonts/") &&(pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
-    "the page carries the same @font-face rules, first, on both pages the Worker serves");
+  /* 15 Nov 2026, the move to Ambient: the faces stay generated for the sealed statements, and no page of the site carries them (the device's own face) */
+  ok(genF.FONT_FACE_CSS === fcss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s+/, "").split("url(fonts/").join("url(/fonts/") && !/FONT_FACE_CSS/.test(pgF.replace(/\/\*[\s\S]*?\*\//g, "")),
+    "the faces are generated as the vendored file holds them, and no page of the site carries them");
 })();
 
 section("C5: the Counter decodes each face and icon once per isolate, never at import");
@@ -45315,8 +45357,8 @@ await (async () => {
   const byRid = (rid) => rowsOf.find((x) => x.rid === rid);
   const docJson = JSON.stringify(doc);
   const figs = (t) => (String(t || "").match(/RM [0-9,]+\.\d\d/g) || []).map((x) => +x.slice(3).replace(/,/g, ""));
-  const lineOf = (d) => doc.body.split('<div class="salt-lines__row').find((x) => x.includes('role="cell">' + d)) || "";
-  const amtOf = (l) => (/salt-lines__amount" role="cell">([\s\S]*?)<\/div>/.exec(l) || [])[1] || "";
+  const lineOf = (d) => doc.body.split("<tr").find((x) => x.includes('<td data-label="Date">' + d)) || "";   /* 16 Nov 2026, the move to Ambient: a line is a row of the system's Table */
+  const amtOf = (l) => (/<td data-label="Amount"[^>]*>([\s\S]*?)<\/td>/.exec(l) || [])[1] || "";
 
   /* (b) OWED PLUS PAID ADDS UP TO THE ORDER AT GOODS PLUS DELIVERY, on every priced row (a pending order counts nowhere,
      the standing rule since v189, so rc03 is not one of these): the cover is never part of the arithmetic, Fable's case
@@ -49288,7 +49330,7 @@ await (async () => {
     doc.getElementById("pw").value = password;
     doc.getElementById("f").dispatchEvent(new page.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 120 && !doc.getElementById("oNew"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
-    const notice = doc.querySelector("#pOrder .salt-insight");
+    const notice = [...doc.querySelectorAll("#pOrder .otop .onote")].find((n) => /Counter is closed/.test(n.textContent));   /* 16 Nov 2026, the move to Ambient: the notice is a plain note of the list head */
     ok(!!doc.getElementById("oNew") && notice && /Counter is closed/.test(notice.textContent)
       && /confirmation may be delayed/.test(notice.textContent),
       "a closed-hours customer still sees New order and the delayed-confirmation notice");
@@ -50433,8 +50475,9 @@ await (async () => {
   await (await import("./admin-ledger.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Admin wears Night or Tide, chosen on its own (11 Oct 2026)");
-if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
+/* 15 Nov 2026, the move to Ambient: Salt Admin's Night and Tide retired with his answer of 14 Nov 2026; the section holds the rule that replaced them */
+section("15 Nov 2026, the move to Ambient: Salt Admin asks for no look, light and dark following the device");
+await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
@@ -51741,19 +51784,19 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new wd.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 80 && !d.querySelector("#pPrices .pmark"); i++) await new Promise((r) => setTimeout(r, 50));
-    const panes = [...d.querySelectorAll("#pPrices .pane")].map((p) => ({ cls: p.querySelector(".pmark").className, aria: p.querySelector(".pmark").getAttribute("aria-label"), text: p.textContent, light: (p.querySelector(".supline .salt-light") || { className: "" }).className, coin: !!p.querySelector(".pmark .salt-coin") }));
+    const panes = [...d.querySelectorAll("#pPrices .pane")].map((p) => ({ cls: p.querySelector(".pmark").className, aria: p.querySelector(".pmark").getAttribute("aria-label"), text: p.textContent, light: (p.querySelector(".pmark .amb-chip") || { className: "" }).className, coin: !!p.querySelector(".pmark .amb-thumb--mark") }));   /* 16 Nov 2026, the move to Ambient: the light is the one chip beside the mark thumb, its tone by the light */
     /* plan version 10 (03 Nov 2026): the light is no longer a border on the mark: the head is a bare coin, and the light a dot and its word under it (salt-light, plain for green) */
-    ok(panes[0].light === "salt-light salt-light--yellow" && !/sup/.test(panes[0].cls) && panes[0].coin && /Selling fast/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow dot, Selling fast in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
-    ok(panes[1].light === "salt-light salt-light--red" && !/sup/.test(panes[1].cls) && /Out of stock/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red dot and no More by");
-    ok(panes[2].light === "salt-light" && !/sup/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: the plain dot, and no day even when one is sealed");
+    ok(panes[0].light === "amb-chip" && !/sup/.test(panes[0].cls) && panes[0].coin && /Selling fast/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow dot, Selling fast in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
+    ok(panes[1].light === "amb-chip amb-chip--neg" && !/sup/.test(panes[1].cls) && /Out of stock/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red dot and no More by");
+    ok(panes[2].light === "amb-chip amb-chip--pos" && !/sup/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: the plain dot, and no day even when one is sealed");
     ok(!/sup/.test(panes[3].cls) && panes[3].light === "" && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/More by|Selling fast|Low on stock|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
-    ok(panes[4].light === "salt-light salt-light--amber" && /Low on stock/.test(panes[4].aria) && /More by 14 Oct/.test(panes[4].text), "amber: an amber dot, Low on stock in its name, More by 14 Oct under it: " + JSON.stringify(panes[4]));
+    ok(panes[4].light === "amb-chip amb-chip--warn" && /Low on stock/.test(panes[4].aria) && /More by 14 Oct/.test(panes[4].text), "amber: an amber dot, Low on stock in its name, More by 14 Oct under it: " + JSON.stringify(panes[4]));
     ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");
   } finally { wd.close(); }
   const css = lpF("abcd-efgh", "nf4", null), tokens = /:root\s*{[\s\S]*?\n}/.exec(css);
-  ok(/\.salt-light--yellow::before\s*{\s*background:\s*var\(--salt-amber\)/.test(css) && /\.salt-light::before\s*{[^}]*background:\s*var\(--salt-verdigris\)/.test(css) && /\.salt-light--red::before\s*{\s*background:\s*var\(--salt-ember\)/.test(css) && !/\.sup-(green|yellow|red)/.test(css)
-    && /\.salt-light--amber::before\s*{\s*background:\s*var\(--salt-orange\)/.test(css) && /--salt-orange:\s*#f28c18/i.test(css)
-    && tokens && /--salt-amber:\s*#[0-9a-f]{6}/i.test(tokens[0]) && !/--salt-amber:\s*#c5a059/i.test(tokens[0]), "yellow is the design system's amber token, defined in the page, and never brass");
+  /* 16 Nov 2026, the move to Ambient: the light's tones are the system's chip tones (Available positive, Low on stock warning, Out of stock negative) and Selling fast is the plain chip, never brass */
+  ok(/\.amb-chip--warn \{ color: var\(--amb-warn\); \}/.test(css) && /\.amb-chip--pos \{ color: var\(--amb-pos\); \}/.test(css) && /\.amb-chip--neg \{ color: var\(--amb-neg\); \}/.test(css) && !/\.sup-(green|yellow|red)/.test(css),
+    "the light's tones are the system's chip tones, and yellow is the plain chip");
   /* ---- 8. THE TEST ACCOUNTS hold a case of each light ---- */
   const TF = await import("../tools/testfix.mjs");
   ok(TF.FEATURES.some(([n]) => /restock light/.test(n)) && TF.missing(TF.buildAll(new Date())).length === 0, "the test accounts' fixtures hold a case of green, yellow with its day, amber and red, and nothing else is missing");

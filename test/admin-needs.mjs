@@ -18,7 +18,7 @@
  *      changed, a part he has begun on left alone, a tap in flight kept
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
 import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
-import { SITE_RECIPES } from "../stmt/statement-css.js";
+import { SITE_RECIPES, AMB_CSS } from "../stmt/statement-css.js";
 import worker from "../src/worker.js";
 import { handleMaker } from "../stmt/maker.js";
 import { world } from "./maker-queue-withdrawal.mjs";
@@ -87,11 +87,12 @@ const PRACTICE_KEYS = ["m:" + PRACTICE, "c:" + PRACTICE + ":c-x", "o:ex-1"];
 const WATCH_KEYS = ["w:hours", "w:notice"];
 /* the loan the harness keeps unsent on this phone is a To do card too (Phase 4c), among those with an age */
 const UNSENT = "u:/all/maker/inputs/loan";
-/* from 860px the tests stub matchMedia as the page asks it, so a tap opens the card beside the list */
-const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
+/* from 960px (Ambient's two columns; it was 860px before the move to Ambient, 16 Nov 2026) the tests stub matchMedia as the page asks it, so a tap opens the card beside the list */
+const wide = (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*960px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); };
 
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   const open = async (state, extra = {}) => {
     const p = await richOwnerPage({ pageWork, ...busyDay(state), ...extra });
@@ -103,16 +104,17 @@ export async function run({ ok, pageWork }) {
     /* a card since 22 Oct 2026: the kind word (then its age), who, the book's typed tag, the figure last, and what it says in full to a reader (its title's aria-label) */
     p.said = (c) => { const b = c && c.querySelector(".need-tap"); return b ? b.getAttribute("aria-label") : ""; };
     p.words = (c) => ({ kind: c.querySelector(".nkind").firstChild.textContent, who: c.querySelector(".need-who").textContent, said: p.said(c), age: (c.querySelector(".nage") || { textContent: "" }).textContent,
-      fig: c.querySelector(".nfig").textContent, tag: (c.querySelector(".ntag") || { textContent: "" }).textContent });
+      /* 16 Nov 2026, the move to Ambient (place F): the figure is Ambient's stat in the card, the book a kind chip in its title */
+      fig: (c.querySelector(".nfig .amb-stat__value") || { textContent: "" }).textContent, tag: (c.querySelector(".need-tap .amb-chip") || { textContent: "" }).textContent });
     p.buttons = (c) => [...c.querySelectorAll("button:not(.need-tap)")].map((b) => b.textContent);
     p.todo = () => p.cards().filter((c) => c.getAttribute("data-sev") === "now" && !c.hasAttribute("data-practice")).length;
     p.counts = (bar) => Object.fromEntries([...d.querySelectorAll(bar + " [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
-      const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
+      const place = (d.querySelector('.amb-tabbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
       /* 2 Nov 2026 (Orders on the canvas): Approve and Payments have no tab in the Segment; the part showing is the one whose section is in view */
       const seen = (k) => { const s = d.querySelector('[data-in="orders.' + k + '"]'); for (let e = s; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!s; };
-      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => (place === "orders" ? ["approve", "payments", "group", "ledger"].find(seen) || "" : "") }).getAttribute("data-part");
+      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"], .aparts[data-place="' + place + '"] [aria-pressed="true"]') || { getAttribute: () => (place === "orders" ? ["approve", "payments", "group", "ledger"].find(seen) || "" : "") }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     /* the 5-second read, as the page set it: the one live interval of that length */
@@ -122,7 +124,7 @@ export async function run({ ok, pageWork }) {
     return p;
   };
   const state = () => ({ approved: new Set(), newOrder: null });
-  const pills = (c) => [...c.querySelectorAll(".salt-pill")].map((b) => b.textContent);
+  const pills = (c) => [...c.querySelectorAll(".amb-pill")].map((b) => b.textContent);
 
   /* 1. THE CARDS */
   let p = await open(state());
@@ -132,11 +134,14 @@ export async function run({ ok, pageWork }) {
       "an order placed, a payment they say they sent, a message asked, a locked account and (his own work) the guest link, an ID with no account, the accounts not sent, a refused or unsent entry, "
       + "goods paid and not handed over and a step to send again are To do; money owed past term and his offer waiting on their yes are Pending; the override and the notice are FYI: "
       + JSON.stringify([p.keys("now"), p.keys("soon"), p.keys("watch")]));
-    const SHAPE = ["salt-action__kind", "salt-action__body", "salt-action__go", "salt-action__money"];
-    ok(p.cards().every((c) => c.classList.contains("salt-action") && c.classList.contains("salt-action--" + c.getAttribute("data-sev")) && c.classList.contains("ncard")
-      && same([...c.children].map((x) => x.classList[0]), SHAPE) && c.querySelector(".nkind") && c.querySelector(".need-who") && c.querySelector(".nfig.salt-action__money--lg")
-      && !c.querySelector(".salt-action__why, .need-what, .need-clock")),
-    "every card is the system's Action recipe, coloured by its severity, of one shape: kind and age, the body, the go row and the figure, with no why line, no what line and no clock");
+    /* 16 Nov 2026, the move to Ambient (place F): a card is Ambient's To-do: its head (kind and age, the state's chip), its title, the figure and the ways, the rule down its edge agreeing with the word */
+    /* 16 Nov 2026, Ambient 0.7.5 (place F): Watch is a state of its own (a plain chip, no rule), and has no control */
+    const STATE = { "Overdue": "amb-task--neg", "Due": "amb-task--warn", "Open": "", "Watch": "" };
+    ok(p.cards().every((c) => { const w = c.querySelector(".amb-task__head > .amb-chip").textContent, k = STATE[w]; const kids = [...c.children].map((x) => x.classList[0]);
+      return c.classList.contains("amb-task") && c.classList.contains("ntask") && k !== undefined && (k === "" ? !/amb-task--(neg|warn)/.test(c.className) : c.classList.contains(k))
+        && kids[0] === "amb-task__head" && kids[1] === "amb-task__title" && kids.every((x) => ["amb-task__head", "amb-task__title", "amb-task__figures", "nbody", "amb-task__acts"].includes(x))
+        && c.querySelector(".amb-task__kind.nkind") && c.querySelector(".need-who") && !c.querySelector(".amb-task__text, .need-what, .need-clock") && !/salt-/.test(c.outerHTML); }),
+    "every card is Ambient's To-do of one shape: head with kind and age and its state word, the title, the figure, the way, the rule agreeing with the word (Due while it waits on his tap, Overdue when late, Open after), no why line, no what line, no clock and no salt class");
     const order = p.words(p.card("o:ord-p3")), pay = p.words(p.card("p:ord-a1")), claim = p.words(p.card("c:" + U1 + ":c-1")), msg = p.words(p.card("m:" + U1)), lock = p.words(p.card("k:" + U3));
     ok(order.kind === "Order" && order.who === "CX1-ZED" && order.said === "Order: Agree CX1-ZED's order, 1 unit · RM 100.00" && order.tag === "Salt" && order.fig === "RM 100" && order.age === "26 h",
       "a placed order says Order and its age in hours, who by code, the book as its typed tag, the figure last, and its sentence in full to a reader: " + JSON.stringify(order));
@@ -207,18 +212,20 @@ export async function run({ ok, pageWork }) {
       "and the line opens them in place, and stays open through a redraw");
     d.querySelector('#nlist > details[data-sev="practice"]').open = false; d.querySelector('#nlist > details[data-sev="practice"]').dispatchEvent(new p.w.Event("toggle"));
     const lead = d.getElementById("nCount");
-    ok(p.todo() === 17 && lead.classList.contains("salt-insight") && lead.classList.contains("salt-insight--copper") && lead.classList.contains("nlead")
+    /* 15 Nov 2026, the move to Ambient: the lead is the line under Needs you's title in its hero */
+    ok(p.todo() === 17 && lead.classList.contains("amb-hero__sub") && !!lead.closest("#mHome > header.amb-hero")
       && lead.textContent.startsWith("RM 1,000 waits on your tap now: RM 600 to confirm, RM 400 to agree.") && !/to do now|soon/.test(lead.textContent),
     "the lead is one Insight of the money that waits on his tap now, summed off the payment and the placed-order cards of To do (RM 530 + 50 + 20 to confirm, RM 200 + 100 + 100 to agree), no practice item in it: " + lead.textContent);
 
     /* 4. THE COUNTS ON THE BARS */
-    const rail = p.counts(".salt-rail"), bar = p.counts(".salt-appbar");
+    const rail = p.counts(".amb-tabbar"), bar = p.counts(".amb-tabbar");
     ok(same(rail, { needs: "17", orders: "9", customers: "2", record: "", shop: "" }) && same(rail, bar) && +rail.needs === p.todo(),
       "Needs you counts the To do cards (his own work among them), Orders the open orders (not ended or completed), Customers the threads asked and the links waiting, "
       + "Record and Shop none, the same on the rail and on the bar, and no practice item in any: " + JSON.stringify([rail, bar]));
-    ok(same([...d.querySelectorAll("#nGlance .nkpi")].map((k) => [k.getAttribute("data-glance"), k.querySelector(".salt-kpi__label").textContent]), [["ready", "Ready"], ["approve", "To approve"], ["owed", "Receivables"]])
-      && [...d.querySelectorAll("#nGlance a.salt-kpi.salt-kpi--line")].length === 3 && d.querySelector('[data-glance="owed"] .salt-kpi__value').textContent === "RM 600" && !d.querySelector("#nGlance .salt-kpi__note, #nGlance [data-glance=stock], #nGlance [data-glance=lot]"),
-    "the glance is three one-line tiles, Ready, To approve (the second) and Receivables, with no note and no stock tile");
+    ok(same([...d.querySelectorAll("#nGlance .nkpi")].map((k) => [k.getAttribute("data-glance"), k.querySelector(".amb-tile__label").textContent]), [["ready", "Ready"], ["approve", "To approve"], ["owed", "Receivables"]])
+      && d.querySelector("#nGlance").classList.contains("amb-tiles") && [...d.querySelectorAll("#nGlance a.amb-tile")].length === 3 && d.querySelector('[data-glance="owed"] .amb-tile__figure').textContent === "RM 600"
+      && !!d.querySelector('[data-glance="owed"] progress.amb-meter') && !d.querySelector("#nGlance [data-glance=stock], #nGlance [data-glance=lot], #nGlance [class*=salt-]"),
+    "the glance is Ambient's three tiles, Ready, To approve (the second) and Receivables with its meter, no stock tile");
 
     /* 5. OPEN */
     const open1 = async (key, where, then) => {
@@ -276,10 +283,10 @@ export async function run({ ok, pageWork }) {
       && byAct(p.card("n:" + U2), "need.show-link").getAttribute("aria-label") === "Show the guest price list",
     "the guest link, the refused account, the accounts not sent and the ID with no account keep the one filled action they had, shortened to Approve, Send, Send and Show, the long form kept for a reader");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
-    ok(p.cards().every((c) => c.querySelectorAll(".salt-action__go .nbtn").length === 1 && c.querySelector(".salt-action__go .nbtn").classList.contains("salt-pill--sm") && !c.classList.contains("need--act")),
-      "a resting card has exactly one action, a small filled pill in its go row, the second choice (Decline, Show a code, Record payment) kept for the opened card");
+    ok(p.cards().every((c) => c.getAttribute("data-sev") === "watch" ? c.querySelectorAll("button:not(.need-tap)").length === 0 && c.querySelector(".amb-task__head > .amb-chip").textContent === "Watch" : c.querySelectorAll(".amb-task__acts > button").length === 1 && c.querySelector(".amb-task__acts > button").classList.contains("amb-pill--sm") && c.querySelector(".amb-task__acts > button").classList.contains("amb-pill--quiet") && !c.classList.contains("need--act")),
+      "a resting card has exactly one action, a small quiet pill in its ways row (a to-do's one control), the second choice (Decline, Show a code, Record payment) kept for the opened card");
     ok(p.cards().every((c) => !p.buttons(c).includes("Open") || c.getAttribute("data-need").startsWith("u:")) && !d.querySelector("#nlist button[data-act='need.open']:not(.need-tap)")
-      && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("button.need-tap.salt-action__title") && c.querySelector(".need-tap .need-who")),
+      && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("h3.amb-task__title > button.need-tap") && c.querySelector(".need-tap .need-who")),
     "a card has no Open button of its own (the unsent entry's pill is named Open, its act need.unsent): its title is the one tap (data-act need.open), and the card's own action stays beside it");
     ok(!d.querySelector("#nlist details[data-sev=soon], #nlist details[data-sev=watch]") && !d.querySelector("#nlist h2.nsev[data-act]"),
       "Pending and FYI are never folded, and no group heading has a tap");
@@ -290,8 +297,8 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d, pane = () => d.querySelector("#nopen .npane");
     await p.tap("need.open", "$:CX1-ZED");
-    const goes = () => [...d.querySelectorAll("#nopen .npane__go button")].map((b) => b.textContent + "/" + (b.getAttribute("aria-label") || ""));
-    ok(!!pane() && /Handed over 20 Sep 2026, due 21 Sep 2026[.]/.test(pane().textContent) && same(goes(), ["Message/", "Record/Record payment"]) && same(p.buttons(p.card("$:CX1-ZED")), ["Message"]),
+    const goes = () => [...d.querySelectorAll("#nrecord > .npane__go button, #nopen .npane__acts button")].map((b) => b.textContent + "/" + (b.getAttribute("aria-label") || ""));
+    ok(!!pane() && /Handed over 20 Sep 2026, due 21 Sep 2026[.]/.test(pane().textContent) && same(goes().sort(), ["Message/", "Record/Record payment"]) && same(p.buttons(p.card("$:CX1-ZED")), ["Message"]),
       "the opened card of money owed has the why (handed over, due) and both ways, Message and Record payment, while the resting card keeps Message alone: " + JSON.stringify(goes()));
     p.posts.length = 0;
     byAct(d, "need.owed-pay", "CX1-ZED").click(); await p.work.quiet();
@@ -310,13 +317,13 @@ export async function run({ ok, pageWork }) {
   p = await open(state());
   try {
     const d = p.d, chips = [...d.querySelectorAll(".nchips button")];
-    ok(chips.map((b) => b.firstChild.textContent).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("salt-nav__link") && b.classList.contains("nktab") && b.getAttribute("role") === "tab")
-      && chips[0].getAttribute("aria-selected") === "true" && chips[0].classList.contains("salt-nav__link--active") && d.querySelector("nav.salt-nav.nkinds > .salt-nav__links.nchips").getAttribute("role") === "tablist" && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
-    "the kinds are All, Orders, Payments, Messages, Rows and Accounts, a tablist of the system's Nav links, each with its act, All selected, and no Jump to beside them");
-    ok(same(chips.map((b) => b.querySelector(".nktab__n").textContent), ["21", "7", "4", "1", "3", "4"]) && !chips.some((b) => b.querySelector(".salt-tabs__count")),
-      "each kind carries its count of cards, practice apart (21 in all: 17 To do, 2 Pending, 2 FYI): " + chips.map((b) => b.textContent).join());
+    ok(chips.map((b) => b.firstChild.textContent.trim()).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("amb-segment__opt") && b.classList.contains("nkopt") && b.hasAttribute("aria-pressed"))
+      && chips[0].getAttribute("aria-pressed") === "true" && d.querySelector("div.amb-segment.amb-segment--wrap.nchips").getAttribute("role") === "group" && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
+    "the kinds are All, Orders, Payments, Messages, Rows and Accounts, Ambient's counted filters (a wrapped Segment), each with its act, All pressed, and no Jump to beside them");
+    ok(same(chips.map((b) => b.querySelector(".nkopt__n").textContent), ["19", "7", "4", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
+      "each kind carries its count of cards, practice and Watch apart (19 in all: 17 To do, 2 Pending; Watch is not counted, Ambient 0.7.5): " + chips.map((b) => b.textContent).join());
     p.reads.length = 0;
-    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip"));
+    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip"));
     ok(same(visible(d), KO), "with a card of every kind, every kind is on: " + visible(d));
     const kinds = {};
     for (const k of ["orders", "payments", "messages", "rows", "accounts"]) {
@@ -327,15 +334,15 @@ export async function run({ ok, pageWork }) {
     ok(Object.values(kinds).every((v) => !v.startsWith("BAD")), "each chip shows its own kind of card and no other: " + JSON.stringify(kinds));
     ok(p.reads.length === 0 && p.posts.length === 0, "and filtering reads and sends nothing: " + JSON.stringify(p.reads));
     await p.tap("need.kind.rows");
-    ok([...d.querySelectorAll(".nchips button")].map((b) => b.getAttribute("aria-selected")).join() === "false,false,false,false,true,false", "the kind he tapped is the one marked");
+    ok([...d.querySelectorAll(".nchips button")].map((b) => b.getAttribute("aria-pressed")).join() === "false,false,false,false,true,false", "the kind he tapped is the one pressed");
     /* the recipe draws the chosen Nav link from its --active class (the page sets it with aria-selected), so the mark is only as good as that selector */
-    const SELECTED = ".salt-nav__link--active";
-    ok(SITE_RECIPES.includes(SELECTED) && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED + '[aria-selected="true"]')).map((b) => b.getAttribute("data-chip")), ["rows"]),
-      "and it alone is the one the system's Nav draws as the chosen link, so it looks different from the other five");
+    const SELECTED = '.amb-segment--wrap > .amb-segment__opt[aria-pressed="true"]';
+    ok(AMB_CSS.includes(SELECTED) && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
+      "and it alone is the one Ambient draws as the chosen filter, so it looks different from the other five");
     await p.tap("need.kind.all");
     ok(p.cards().length === 12 + 10 + 2, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
-    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "17"), "FYI shows under All only, and a filter changes no count");
+    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".amb-tabbar").needs, "17"), "FYI shows under All only, and a filter changes no count");
   } finally { p.w.close(); }
 
   /* 7b. A KIND WITH NOTHING IN IT IS OFF, NEVER HIDDEN */
@@ -344,17 +351,19 @@ export async function run({ ok, pageWork }) {
     const d = p.d, kinds = new Set(p.cards().map((c) => c.getAttribute("data-kind")));
     const tabs = [...d.querySelectorAll(".nchips button")];
     ok(!kinds.has("messages") && same(visible2(d), ["all", ...["orders", "payments", "messages", "rows", "accounts"].filter((k) => kinds.has(k))]) && !visible2(d).includes("messages")
-      && tabs.length === 6 && tabs.every((b) => !b.hidden) && tabs.find((b) => b.getAttribute("data-chip") === "messages").disabled,
+      && tabs.length === 6 && tabs.every((b) => !b.hidden) && tabs.find((b) => b.getAttribute("data-chip") === "messages").getAttribute("aria-disabled") === "true" && tabs.every((b) => !b.disabled),
     "with no message waiting the Messages tab is disabled and still drawn, and each other kind present stays on: " + visible2(d));
   } finally { p.w.close(); }
-  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => !b.disabled).map((b) => b.getAttribute("data-chip")); }
+  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip")); }
 
   /* 8. A READ THAT FAILED IS SAID */
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.threads] });
   try {
     const d = p.d, line = d.getElementById("nCount").textContent, fail = d.getElementById("nFail"), home = d.getElementById("mHome");
     /* plan 1 (15 Oct 2026): the failed read leads the page, above the title, in plain words with a Retry */
-    const lead = [...home.children].find((n) => !n.hidden && !n.classList.contains("salt-eyebrow"));
+    /* 15 Nov 2026, the move to Ambient: the place's hero opens it, and the failed read is the first thing after it */
+    /* 16 Nov 2026 (place F): it stands first in the head's stack, under the hero */
+    const lead = [...home.querySelector(":scope > .amb-stack:not(#unsentBar)").children].find((n) => !n.hidden);
     ok(fail && !fail.hidden && lead === fail && fail.getAttribute("role") === "alert" && /^Couldn't read orders and rows and messages[.]/.test(fail.textContent)
       && byAct(fail, "need.retry") && byAct(fail, "need.retry").textContent === "Retry" && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
     "a failed read is the first thing on the page, \"Couldn't read orders and rows and messages.\" with a Retry, and the cards of what could be read stand: " + (fail && fail.textContent) + " | " + line);
@@ -477,10 +486,10 @@ export async function run({ ok, pageWork }) {
     const s2 = state();
     p.w.close();
     p = await open(s2);
-    ok(!p.card("o:ord-new") && p.counts(".salt-rail").needs === "17", "(a day without the order)");
+    ok(!p.card("o:ord-new") && p.counts(".amb-tabbar").needs === "17", "(a day without the order)");
     s2.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
     await p.tick();
-    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".salt-rail").needs === "18" && p.counts(".salt-appbar").needs === "18" && p.counts(".salt-appbar").orders === "10"
+    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".amb-tabbar").needs === "18" && p.counts(".amb-tabbar").needs === "18" && p.counts(".amb-tabbar").orders === "10"
       && p.todo() === 18 && p.d.getElementById("nCount").textContent.startsWith("RM 1,300 waits on your tap now: RM 600 to confirm, RM 700 to agree."),
     "an order placed since the last read is drawn at the next tick, counted on both bars and in the lead: " + p.d.getElementById("nCount").textContent);
 

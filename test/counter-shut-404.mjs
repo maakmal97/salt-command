@@ -31,9 +31,12 @@ export async function run({ ok }) {
       && d.querySelector(".panel").firstElementChild === mark
       && hs.join() === "h1" && d.querySelector("h1").textContent === W.EN[h] && d.querySelector("p.lead").textContent === W.EN[p] && d.title === W.EN[title],
       `${name} is the app's ring over its one heading and its line, with its own tab title: ` + JSON.stringify([hs, d.title]));
-    ok(/<html[^>]* data-theme="(?:night|tide)"/.test(html) && /translate="no"/.test(html) && /name="viewport"/.test(html) && /name="robots" content="noindex/.test(html) && !/<script/i.test(html)
-      && /[.]appmark\{display:block/.test(html) && /url\(\/fonts\//.test(html) && !/https?:\/\//.test(html),
-      `${name} is themed (Night while Tide is off, 19 Oct 2026), kept from the translator and from search, with a viewport, the frame's own faces and spacing for the ring, no script and no address`);
+    /* 15 Nov 2026, the move to Ambient: the page follows the device, light or dark, on Ambient's head, and loads no face (the device's own) */
+    ok(!/<html[^>]* data-theme=/.test(html) && /<meta name="color-scheme" content="light dark">/.test(html) && /<body class="amb">/.test(html) && /translate="no"/.test(html)
+      && /name="viewport"/.test(html) && /name="robots" content="noindex/.test(html) && !/<script/i.test(html)
+      /* the icon sprite's xmlns names SVG's namespace, which nothing fetches; any other address is refused */
+      && /[.]appmark\{display:block/.test(html) && !/url\(|@font-face/.test(html) && !/https?:\/\/(?!www\.w3\.org\/2000\/svg")/.test(html),
+      `${name} follows the device on Ambient's head, kept from the translator and from search, with a viewport, spacing for the ring, no face loaded, no script and no address`);
     /* 19 Oct 2026: whole words, so a salt- recipe class or a word such as desktop is not a name */
     const words = visible(html), src = html.replace(/<style[\s\S]*?<\/style>/g, " ");
     ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/\b(salt|command|counter|desk)\b(?![-(])/i.test(src)

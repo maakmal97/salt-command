@@ -8,16 +8,16 @@
  * (test/counter-tablet.mutations.json, run with tools/section.mjs).
  *   1  the customer's tablet rules exist at their widths, the script's own width follows them, and none is under .adm
  *   2  a sheet of the customer's and one of Salt Admin's are placed alike at 375, 768, 861, 1000 and 1280px
- *   3  the order sheet's tiles are two columns, in the 560px dialog at 768px (not the 364px each had in a sheet as wide as the screen) and in the drawer at 861px
+ *   3  the order sheet is the system's dialog (a card at most 560px wide, from the foot of the screen below 720px) and its two ways are one Segment of two equal options, side by side, at 768px and at 861px
+ *      (16 Nov 2026, the move to Ambient: the tiles in two columns of the salt- options are the Segment's two options)
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE as PG_SITE_STYLE } from "../stmt/page.js";
 import { startAt } from "./counter-b-kit.mjs";
 
 export async function run({ ok }) {
   const html = landingPage("abcd-efgh", "tablet-nonce", null);
-  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice(PG_SITE_STYLE.length);   /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's and the site's */
   const sheet = new JSDOM("<style>" + all + "</style>").window.document.styleSheets[0];
   const sel = (r) => r.selectorText.replace(/\s*,\s*/g, ",");
   const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => ({ sel: sel(x), css: x.style.cssText })) }));
@@ -26,26 +26,17 @@ export async function run({ ok }) {
   const DIALOG = "(min-width:768px)and(max-width:859.98px)", DRAWER = "(min-width:860px)and(max-width:1079.98px)", FROM = "(min-width:860px)", BELOW = "(max-width:859.98px)", SHEET = ".salt-sheet:not(.adm)";
 
   /* THE CUSTOMER'S TABLET RULES EXIST, EACH AT ITS WIDTH, AND NONE IS UNDER .adm */
+  /* 16 Nov 2026, the move to Ambient (place D): the Sheets are the system's dialog (a foot sheet, a card from 720px), so the page writes no tablet rule for one */
   const WANT = [
-    ["a sheet is a dialog in the middle of the screen from 768 to 859px", DIALOG, SHEET, [/top: 50%/, /left: 50%/, /width: min\(560px/, /max-height: calc\(100% - 64px\)/, /transform: translate\(-50%, ?-50%\)/, /animation-name: salt-sheet-fade/]],
-    ["the dialog draws no grabber", DIALOG, SHEET + " .salt-sheet__grab", [/display: none/]],
-    ["from 860px a sheet is the 460px drawer on the right", DRAWER, SHEET, [/top: 0/, /left: auto/, /width: min\(460px, ?100%\)/, /max-height: none/, /animation-name: salt-sheet-slide/]],
-    ["the drawer draws no grabber", DRAWER, SHEET + " .salt-sheet__grab", [/display: none/]],
-    ["the drawer's head is spaced as the system's own drawer is", DRAWER, SHEET + " .salt-sheet__head", [/padding-top: var\(--salt-space-5\)/]],
-    /* Orders: the list beside the open order from 860px, as on his page, and not from the rail's 1080px */
-    ["from 860px the list and the open order are two columns", FROM, ".oplace", [/display: grid/, /grid-template-columns: minmax\(0, ?5fr\) minmax\(0, ?6fr\)/]],
-    ["the open order is sticky and scrolls inside itself from 860px", FROM, ".oscreen", [/position: sticky/, /top: 24px/, /overflow-y: auto/, /max-height: calc\(100vh - 48px\)/]],
-    ["its way back is not drawn from 860px", FROM, ".oback", [/display: none/]],
-    ["below 860px the open order is the whole tab and takes the list's place", BELOW, "#pOrder.o-open>:not(.oplace)", [/display: none/]],
-    ["and the list is not drawn beside it", BELOW, ".oplace.o-open>.olistcol", [/display: none/]],
-    ["between 860 and 1080px, where the App bar is still fixed, the order's height gives up the bar's", DRAWER, ".oscreen", [/max-height: calc\(100vh - 48px - var\(--salt-bar-h\)/, /env\(safe-area-inset-bottom/]],
-    ["and Orders alone takes the page's width there, its heading with it", DRAWER, "#pOrder,.cshell[data-place=order] .chead", [/max-width: none/]]
+    /* 16 Nov 2026, the move to Ambient: Orders' list beside the open order is the system's split of panes, from the shell's 960px, and the page writes no rule for it (the
+       rows that pinned .oplace, .oscreen, .oback and the 860px grid were the page's old layout; the checks below say the place is the system's and the script follows 960px) */
   ];
   const missing = WANT.filter(([, q, s, res]) => { const css = at(q, s); return !css || !res.every((re) => re.test(css)); }).map((w) => w[0]);
   /* the page's own script follows the style: the list is beside an order from 860px, so one is open by itself from there (it was 1080px), and the shell says which place it shows */
   const SCRIPT = [
-    ["the script asks for 860px to open an order beside the list", /function oWide\(\)\{ try\{ return !!\(window\.matchMedia&&window\.matchMedia\('\(min-width: 860px\)'\)\.matches\)/],
-    ["and drops it when the width falls below 860px", /var oMq=window\.matchMedia&&window\.matchMedia\('\(min-width: 860px\)'\);/],
+    ["the script asks for the system's 960px to put an order beside the list", /function oWide\(\)\{ try\{ return !!\(window\.matchMedia&&window\.matchMedia\('\(min-width: 960px\)'\)\.matches\)/],
+    ["and draws again when the width crosses it", /var oMq=window\.matchMedia&&window\.matchMedia\('\(min-width: 960px\)'\);/],
+    ["the place holds the system's split of panes, the list then the record", /id="oPanes" class="amb-split amb-split--panes"/],
     ["the shell names the place it shows", /tab=t; tabs\.setAttribute\('data-place',t\);/]
   ];
   missing.push(...SCRIPT.filter(([, re]) => !re.test(html)).map((s) => s[0]));
@@ -56,8 +47,8 @@ export async function run({ ok }) {
   const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859)[.]98px/.test(m.q)).flatMap((m) => m.rules.map((r) => r.sel));
   const ours = fam.flatMap((s) => s.split(",")).filter((s) => OURS.test(s) && !/\.adm\.asheet/.test(s));
   const under = ours.filter((s) => /\.adm\b/.test(s.replace(/:not\(\.adm\)/g, "")));
-  ok(!missing.length && !rail.length && ours.length >= 12 && !under.length,
-    "the customer's tablet rules are there, a centred 560px dialog from 768 to 859px, the 460px drawer and the list beside the open order from 860px, and none is under .adm (" + ours.length
+  ok(!missing.length && !rail.length && ours.length === 0 && !under.length,
+    "the customer's page writes no tablet rule: its Sheets are the system's dialog and the list beside the open order is the system's split of panes from 960px, and none is under .adm (" + ours.length
       + " rules; missing: " + (missing.join(" | ") || "none") + "; waiting for the rail: " + (rail.join(" | ") || "none") + "; under .adm: " + (under.join(" | ") || "none") + ")");
 
   /* THE CASCADE A WIDTH READS. jsdom applies no width query, so a page's html is rewritten so that every query that holds at a width reads `all` (the phone frame's section does the same),
@@ -65,7 +56,7 @@ export async function run({ ok }) {
   const holds = (q, px) => q.split(",").some((one) => { const fs = one.split(/\band\b/).map((s) => s.trim()).filter(Boolean);
     return fs.length > 0 && fs.every((f) => { const x = /^\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)$/.exec(f); return !!x && (x[1] === "min" ? px >= +x[2] : px <= +x[2]); }); });
   const atWidth = (h, px) => h.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, px) ? "@media all{" : m));
-  const PLACE = ["position", "top", "right", "bottom", "left", "width", "max-height", "transform", "animation-name", "border-radius"];
+  const PLACE = ["position", "top", "right", "bottom", "left", "width", "max-width", "max-height", "transform", "border-radius"];
   const placed = (win, el) => { const c = win.getComputedStyle(el); return PLACE.map((p) => p + ":" + c.getPropertyValue(p)).join(" "); };
 
   /* THE TWO PAGES PLACE A SHEET ALIKE: a sheet of the customer's and a sheet of his read the same placement at a phone, a portrait tablet, a landscape tablet and a laptop */
@@ -73,13 +64,14 @@ export async function run({ ok }) {
     const WIDTHS = [375, 768, 861, 1000, 1280], owner = landingPage("", "tablet-nonce", { master: "fixture-master", accounts: [] });
     const rows = WIDTHS.map((px) => {
       const a = new JSDOM(atWidth(html, px)), b = new JSDOM(atWidth(owner, px));
-      const r = { px, customer: placed(a.window, a.window.document.getElementById("paySheet")), his: placed(b.window, b.window.document.getElementById("lookSheet")) };
+      const r = { px, customer: placed(a.window, a.window.document.getElementById("paySheet")), his: placed(b.window, b.window.document.getElementById("vaultSheet")) };   /* 15 Nov 2026: his look Sheet is gone; the unlock Sheet is his */
       a.window.close(); b.window.close();
       return r;
     });
-    const at768 = rows.find((r) => r.px === 768).customer, at861 = rows.find((r) => r.px === 861).customer;
-    ok(rows.every((r) => r.customer === r.his) && /top:50%/.test(at768) && /width:min\(560px/.test(at768) && /top:0px/.test(at861) && /width:min\(460px/.test(at861),
-      "a sheet of the customer's and one of his are placed alike at 375, 768, 861, 1000 and 1280px, a dialog 560px wide at 768 and the 460px drawer from 861: " + JSON.stringify(rows.filter((r) => r.customer !== r.his)));
+    /* 16 Nov 2026, the move to Ambient (place D): both pages' Sheets are the system's dialog, so they are placed alike by its own rule: from the foot of a phone, a card in the middle from 720px */
+    const at768 = rows.find((r) => r.px === 768).customer;
+    ok(rows.every((r) => r.customer === r.his) && /position:fixed/.test(at768) && /max-width:560px/.test(at768) && !/\.salt-sheet:not/.test(html),
+      "a sheet of the customer's and one of his are placed alike at 375, 768, 861, 1000 and 1280px, by the system's own dialog rule and no rule of the page's (the card from 720px is Ambient's, which jsdom does not read): " + JSON.stringify(rows.filter((r) => r.customer !== r.his)));
   }
 
   /* THE ORDER SHEET'S TILES ARE TWO UP, and at 768px a dialog holds them: in a sheet as wide as the screen each was 364px, in a dialog of 560px each is 280px at most */
@@ -111,14 +103,16 @@ export async function run({ ok }) {
         d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
         for (let i = 0; i < 200 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 15));
         if (d.getElementById("oNew")) await startAt(d);   /* plan version 8: a size tapped on Order opens the sheet */
-        const box = d.querySelector("#osheet .salt-sheet"), grids = [...d.querySelectorAll("#osheet .salt-options__grid")].filter((g) => g.children.length > 1);
-        return { box: box ? placed(w, box) : "", grids: grids.map((g) => ({ kids: g.children.length, cols: w.getComputedStyle(g).getPropertyValue("grid-template-columns") })) };
+        const box = d.getElementById("osheet"), segs = [...d.querySelectorAll("#osheet .amb-segment")].filter((g) => g.children.length > 1);
+        const cs = box ? w.getComputedStyle(box) : null;
+        return { box: cs ? ["max-width:" + cs.getPropertyValue("max-width"), "width:" + cs.getPropertyValue("width"), "position:" + cs.getPropertyValue("position")].join(" ") : "",
+          segs: segs.map((g) => ({ kids: g.children.length, display: w.getComputedStyle(g).getPropertyValue("display"), grows: [...g.children].map((o) => w.getComputedStyle(o).getPropertyValue("flex-grow")) })) };
       } finally { w.close(); }
     };
     const a = await read(768), b = await read(861);
     /* plan version 8 (03 Nov 2026): the size tiles left the new order's sheet (an amendment's keeps them), so its one grid of two columns is the two ways */
-    const two = (r) => r.grids.length >= 1 && r.grids.every((g) => /^repeat\(2, ?minmax\(0, ?1fr\)\)$/.test(g.cols));
-    ok(two(a) && two(b) && /top:50%/.test(a.box) && /width:min\(560px/.test(a.box) && /top:0px/.test(b.box) && /width:min\(460px/.test(b.box),
-      "the order sheet's two ways are two columns, in the 560px dialog at 768px and in the drawer at 861px: " + JSON.stringify({ a, b }));
+    const two = (r) => r.segs.length >= 1 && r.segs.every((g) => g.kids === 2 && g.display === "flex" && g.grows.every((x) => x === "1"));
+    ok(two(a) && two(b) && /max-width:560px/.test(a.box) && /max-width:560px/.test(b.box) && /position:fixed/.test(a.box),
+      "the order sheet is the system's dialog, at most 560px, and its two ways are two equal options side by side at 768px and at 861px: " + JSON.stringify({ a, b }));
   }
 }

@@ -37,9 +37,9 @@ export async function run({ ok, pageWork }) {
     enter(d, "record"); await p.work.quiet();
     const f = d.querySelector('#makerInputs section.maker-input[data-form="sale-or-purchase"]');
     const A = (a) => byAct(f, a), t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
-    const typeRow = () => { const c = A("record.trade.direction"); return c && c.closest(".salt-settings__row"); };
+    const typeRow = () => { const c = A("record.trade.direction"); return c && c.closest(".amb-field"); };
     /* the Segment is the radiogroup its option buttons stand in; byAct finds an option */
-    const dir = () => { const c = A("record.trade.direction"); return c && (c.closest('[role="radiogroup"]') || c); };
+    const dir = () => { const c = A("record.trade.direction"); return c && (c.closest(".amb-segment") || c); };
     const note = f && f.querySelector("[data-new-sale]");
     ok(!!f && !!note && !note.hidden && /new sale is placed on their own page/.test(t(note)) && !!typeRow() && typeRow().hidden && dir().value === "purchase"
       && t(A("record.trade.send")) === "Record the purchase",

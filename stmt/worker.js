@@ -39,7 +39,7 @@
  * must never be able to reach the ledger's code even by accident.
  */
 import { placeSearch } from "./place.js";
-import { landingPage, boardPage, shutPage, notFoundPage, joinPage, MON3, mtileSvg } from "./page.js";
+import { landingPage, boardPage, shutPage, notFoundPage, joinPage, MON3, markThumbHtml } from "./page.js";
 import { mintJoin, readJoin, listJoins, joinsBy, setJoin, sendJoin, addedJoin, keyJoin, waitJoin, joinOpen, joinMine, joinOwner, JOIN_OPEN_MAX } from "./join.js";
 import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
@@ -1480,15 +1480,16 @@ const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
 export async function testStatement() {
   const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);   /* the Kuala Lumpur day */
   const dmy = day.slice(8) + " " + MON3[+day.slice(5, 7) - 1] + " " + day.slice(0, 4);
-  const body = '<h2 class="stmth">Test account</h2>'
-    + '<p class="meta">This account is for trying the page out. Nothing on it is on the book, '
+  /* 16 Nov 2026, the move to Ambient: the system's Table, as the live statement draws it (tools/make_statements.mjs) */
+  const body = '<h2 class="amb-section">Test account</h2>'
+    + '<p class="amb-basis">This account is for trying the page out. Nothing on it is on the book, '
     + "and nothing it orders reaches the ledger.</p>"
-    + '<div class="salt-lines" role="table" aria-label="Your orders"><div class="salt-lines__head" role="row">'
-    + '<div class="salt-lines__date" role="columnheader">Date</div><div class="salt-lines__what" role="columnheader">Quantity</div>'
-    + '<div class="salt-lines__amount" role="columnheader">Amount</div><div class="salt-lines__state" role="columnheader">Status</div></div>'
-    + '<div class="salt-lines__row" role="row" data-m="' + day.slice(0, 7) + '"><div class="salt-lines__date" role="cell">' + dmy + "</div>"
-    + '<div class="salt-lines__what" role="cell">' + mtileSvg("salt", "1 unit") + '</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
-    + '<div class="salt-lines__state salt-lines__state--verdigris" role="cell">settled</div></div></div>';
+    + '<table class="amb-table amb-table--stack" data-lines="orders"><caption class="amb-vh">Your orders</caption><thead><tr>'
+    + '<th scope="col">Date</th><th scope="col">Quantity</th><th scope="col" class="is-num">Amount</th><th scope="col">Status</th></tr></thead><tbody>'
+    + '<tr data-m="' + day.slice(0, 7) + '" data-d="' + day + '" data-g="100" data-dv="0" data-b="0"><td data-label="Date">' + dmy + "</td>"
+    + '<td data-label="Quantity"><span class="stm-cell"><span class="stm-q">' + markThumbHtml("salt", "md") + '<span class="amb-vh">Cube</span><span class="stm-size">1 unit</span></span></span></td>'
+    + '<td data-label="Amount" class="is-num"><span class="stm-cell"><span class="stm-fig">RM 100.00</span></span></td>'
+    + '<td data-label="Status"><span class="stm-cell"><span class="amb-chip amb-chip--pos"><span class="amb-chip__dot"></span>settled</span></span></td></tr></tbody></table>';
   return { v: 1, issued: day, body };
 }
 function testPrices() {

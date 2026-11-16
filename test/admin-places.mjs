@@ -12,8 +12,7 @@
  *   8  every rule of his page in PAGE_CSS sits under .adm, so the customer's page and a guest's are drawn as they were
  * Drawn by the maker harness (test/maker-act.mjs), with a log of every read the page makes. */
 import { JSDOM } from "jsdom";
-import { landingPage } from "../stmt/page.js";
-import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
+import { landingPage, SITE_STYLE } from "../stmt/page.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
@@ -67,7 +66,7 @@ async function drawn(opts) {
   const tap = async (act) => { log.length = 0; const c = byAct(p.d, act); if (!c) return ["MISSING " + act]; c.click(); await p.work.quiet(); return gets(); };
   const where = () => {
     const place = [...p.d.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m"));
-    const part = [...p.d.querySelectorAll(".aparts button[aria-selected='true']")].map((b) => b.parentNode.getAttribute("data-place") + "/" + b.getAttribute("data-part"));
+    const part = [...p.d.querySelectorAll(".aparts button[aria-selected='true'], .aparts button[aria-pressed='true']")].map((b) => b.parentNode.getAttribute("data-place") + "/" + b.getAttribute("data-part"));
     /* 2 Nov 2026: a part with no tab in the Segment (Approve, Payments, Group, Ledger) is the address's */
     if (!part.length && new Set(place).size === 1 && place[0] === "orders") {
       const here = ["approve", "payments", "group", "ledger"].find((k) => shown(p.d.querySelector('[data-in="orders.' + k + '"]')));
@@ -79,6 +78,7 @@ async function drawn(opts) {
 }
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
+/* 15 Nov 2026, the move to Ambient: his places are one tab bar (.amb-tabbar), which Ambient stands up as the rail from 960px */
 export async function run({ ok, pageWork }) {
   /* the busy day, with two orders that are over: a cancelled and a declined one */
   const over = (j) => { const o = { u: "abcd-efgh", product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100 };
@@ -89,8 +89,8 @@ export async function run({ ok, pageWork }) {
     /* 1. THE FIVE PLACES */
     const bar = (sel) => [...d.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m") + ":" + b.textContent.replace(/\d+$/, "").trim());
     const want = PLACES.map((m, i) => m + ":" + LABELS[i]);
-    ok(same(bar(".salt-appbar"), want) && same(bar(".salt-rail"), want),
-      "Salt Admin has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".salt-appbar"), bar(".salt-rail")]));
+    ok(same(bar(".amb-tabbar"), want) && same(bar(".amb-tabbar"), want),
+      "Salt Admin has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".amb-tabbar"), bar(".amb-tabbar")]));
     ok(!/Maker/.test([...d.querySelectorAll(".place, #roster h1, #roster h2, #roster .eyebrow")].map((e) => e.textContent).join(" ")),
       "and none of its items, headings or eyebrows says Maker, a name that is retired on screen");
 
@@ -104,11 +104,13 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
     /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
     /* 2 Nov 2026: Orders' four parts are one Segment, as Customers' */
-    const recipe = (s) => (["customers", "orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record"].includes(s.getAttribute("data-place")) ? ["salt-nav__links", "salt-nav__link"] : ["salt-tabs", "salt-tabs__pill"]);
-    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
-      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && b.getAttribute("role") === "tab"))
+    const recipe = (s) => (["customers", "orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record"].includes(s.getAttribute("data-place")) ? ["amb-segment", "amb-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
+    /* 16 Nov 2026, the move to Ambient (place I): Record's three and Shop's six are Ambient's Segment, a group of pressed buttons, not a tablist */
+    const ambStrip = (s) => ["shop", "record"].includes(s.getAttribute("data-place"));
+    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === (ambStrip(s) ? "group" : "tablist") && s.getAttribute("aria-label")
+      && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && (ambStrip(s) ? !b.hasAttribute("role") : b.getAttribute("role") === "tab")))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs, or Customers' slider, or Shop's, Orders' and Record's Nav bar tabs, a tablist of tabs, and Needs you has none");
+    "a strip is the system's tabs, or Customers' and Orders' slider, or Shop's and Record's Segment, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
@@ -119,7 +121,7 @@ export async function run({ ok, pageWork }) {
     ok(p.where() === "orders orders/open" && pills === "false,true,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/todo", "and a place he comes back to opens on its first part again: " + p.where());
-    const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
+    const counts = [...d.querySelectorAll(".amb-tabbar [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
     ok(counts.some((c) => c === "customers=2") && !counts.some((c) => /^shop=/.test(c)),
       "Customers carries the threads asked and the guest links waiting, and Shop has none (the counts are proved in test/admin-needs.mjs): " + JSON.stringify(counts));
 
@@ -135,7 +137,7 @@ export async function run({ ok, pageWork }) {
     /* a part shows a menu of its forms by name, and a retained input above it; a form is shown when its row is tapped (test/admin-orders.mjs) */
     const formsIn = (part) => {
       const kept = [...d.querySelectorAll("#makerInputs .maker-input")].filter(shown).map((f) => (f.querySelector("h3") || {}).textContent);
-      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-settings__label").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
+      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".amb-setting__name").textContent);   /* 27 Oct 2026 (Record in the language of Shop's This device): a menu row is a settings row, its name the label, three words at most */
       return kept.concat(rows);
     };
     const byPart = {};
@@ -255,7 +257,8 @@ export async function run({ ok, pageWork }) {
     const html = (o) => landingPage("", "places-nonce", o), ownerHtml = html({ master: "fixture-master", accounts: [] }), customerHtml = html(undefined);
     const style = (h) => (h.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1];
     const body = (h) => h.replace(/<style[^>]*>[\s\S]*?<\/style>/g, "");
-    const css = style(ownerHtml).slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+    /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's tokens, its parts and the site's layer (SITE_STYLE) */
+    const css = style(ownerHtml).slice(SITE_STYLE.length);
     const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
     const rules = [];
     const walk = (list) => { for (const rule of list) { if (rule.selectorText) rules.push(rule.selectorText); else if (rule.cssRules) walk(rule.cssRules); } };

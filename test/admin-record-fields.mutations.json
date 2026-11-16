@@ -1,116 +1,21 @@
 [
-  {
-    "name": "a field in a form keeps its label over it",
-    "file": "stmt/owner.js",
-    "find": "function makerRowMode(parent){ return !!(parent&&parent.closest&&parent.closest('section.maker-input,#makerInputs,.odecide')); }",
-    "replace": "function makerRowMode(parent){ return false; }"
-  },
-  {
-    "name": "every row stands in a list of its own",
-    "file": "stmt/owner.js",
-    "find": "    if(last&&last.classList.contains('maker-list')) return last;\n",
-    "replace": ""
-  },
-  {
-    "name": "a dropdown keeps its label over it",
-    "file": "stmt/owner.js",
-    "find": "      if(makerRowMode(root)){ makerRow(root,L[0],select); return select; }\n",
-    "replace": ""
-  },
-  {
-    "name": "Stock count's fields keep their labels",
-    "file": "stmt/owner.js",
-    "find": "parent.closest('section.maker-input,#makerInputs,.odecide')",
-    "replace": "parent.closest('section.maker-input,.odecide')"
-  },
-  {
-    "name": "a name runs to four words",
-    "file": "stmt/owner.js",
-    "find": "makerField(box,['On the shelf','record.count.units']",
-    "replace": "makerField(box,['Units on the shelf','record.count.units']"
-  },
-  {
-    "name": "a short choice stays tiles",
-    "file": "stmt/owner.js",
-    "find": "    if(makerRowMode(root)&&makerSegFits(items,none)) return makerSegRow(root,label,items);\n",
-    "replace": ""
-  },
-  {
-    "name": "a Segment option loses its tile's key",
-    "file": "stmt/owner.js",
-    "find": "var b=actOn(el('button','salt-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));",
-    "replace": "var b=actOn(el('button','salt-segment__opt',item.label),L[1],String(item.value));"
-  },
-  {
-    "name": "a Segment option is not a radio",
-    "file": "stmt/owner.js",
-    "find": "b.type='button'; b.setAttribute('role','radio'); b.setAttribute('data-value',String(item.value));",
-    "replace": "b.type='button'; b.setAttribute('data-value',String(item.value));"
-  },
-  {
-    "name": "a tap on the Segment tells no one",
-    "file": "stmt/owner.js",
-    "find": "pick(String(item.value)); s.dispatchEvent(new Event('change',{bubbles:true})); });",
-    "replace": "pick(String(item.value)); });"
-  },
-  {
-    "name": "the Segment shows no choice",
-    "file": "stmt/owner.js",
-    "find": "b.setAttribute('aria-checked',String(on)); if(on){ cur=v; s.style.setProperty('--i',String(i)); }",
-    "replace": "if(on){ cur=v; s.style.setProperty('--i',String(i)); }"
-  },
-  {
-    "name": "the books are drawn marks again",
-    "file": "stmt/owner.js",
-    "find": "if(item.mark) face.appendChild(productTag(item.mark));\n",
-    "replace": "if(item.mark) face.appendChild(bookMark(item.mark,28));\n"
-  },
-  {
-    "name": "a figure is not in mono",
-    "file": "stmt/owner.js",
-    "find": "input.inputMode='decimal'; input.classList.add('salt-field__input--mono'); }",
-    "replace": "input.inputMode='decimal'; }"
-  },
-  {
-    "name": "a figure is set left",
-    "file": "stmt/page.js",
-    "find": ".adm .maker-input input[type=number]{text-align:right}",
-    "replace": ""
-  },
-  {
-    "name": "the pill keeps the browser's width",
-    "file": "stmt/page.js",
-    "find": ".adm .maker-input>.mfoot>.btn.salt-pill{flex:1 1 auto;width:auto;height:48px;",
-    "replace": ".adm .maker-input>.mfoot>.btn.salt-pill{height:48px;"
-  },
-  {
-    "name": "the pill crosses the pane too",
-    "file": "stmt/page.js",
-    "find": "@media (min-width:860px){.adm .maker-input>.mfoot{justify-content:flex-end}.adm .maker-input>.mfoot>.btn.salt-pill{flex:0 1 auto;min-width:240px;max-width:100%}}",
-    "replace": ""
-  },
-  {
-    "name": "Add a book stays a ghost",
-    "file": "stmt/owner.js",
-    "find": "b.className='salt-settings__row salt-settings__row--action'+(danger?' salt-settings__row--danger':'');",
-    "replace": "b.className='salt-ghost'+(danger?' salt-settings__row--danger':'');"
-  },
-  {
-    "name": "Remove this book is not a danger row",
-    "file": "stmt/owner.js",
-    "find": "        },false),'Remove this book',makerList(row),true);",
-    "replace": "        },false),'Remove this book',makerList(row),false);"
-  },
-  {
-    "name": "the trip's line is a plain message",
-    "file": "stmt/owner.js",
-    "find": "tripNote=el('p','salt-settings__foot','Same buyer, same day;",
-    "replace": "tripNote=el('p','msg','Same buyer, same day;"
-  },
-  {
-    "name": "the empty segment option is keyed by nothing",
-    "file": "stmt/owner.js",
-    "find": "(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));\n        b.type='button'",
-    "replace": "(L[2]?L[2]+'-':'')+item.value);\n        b.type='button'"
-  }
+ {"name":"a dropdown's label is not Ambient's","file":"stmt/owner.js","find":"      wrap.appendChild(el('span','amb-field__label',words));","replace":"      wrap.appendChild(el('span','mlabel',words));"},
+ {"name":"a dropdown is not in Ambient's select","file":"stmt/owner.js","find":"if(control) wrap.appendChild(control.tagName==='SELECT'?sSelect(control):control);","replace":"if(control) wrap.appendChild(control);"},
+ {"name":"a dropdown keeps its label over it","file":"stmt/owner.js","find":"      if(makerRowMode(root)){ makerRow(root,L[0],select); return select; }\n","replace":""},
+ {"name":"Stock count's fields keep their labels","file":"stmt/owner.js","find":"parent.closest&&parent.closest('section.maker-input,#makerInputs')","replace":"parent.closest&&parent.closest('section.maker-input')"},
+ {"name":"a name runs to four words","file":"stmt/owner.js","find":"makerField(box,['On the shelf','record.count.units']","replace":"makerField(box,['Units on the shelf','record.count.units']"},
+ {"name":"a short choice stays tiles","file":"stmt/owner.js","find":"    if(makerSegFits(items,none)) return makerSegRow(root,label,items);\n","replace":""},
+ {"name":"a Segment option loses its tile's key","file":"stmt/owner.js","find":"var b=actOn(el('button','amb-segment__opt',item.label),L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));","replace":"var b=actOn(el('button','amb-segment__opt',item.label),L[1],String(item.value));"},
+ {"name":"a Segment is not a group","file":"stmt/owner.js","find":"s.setAttribute('role','group'); s.setAttribute('aria-labelledby',name.id);","replace":"s.setAttribute('aria-labelledby',name.id);"},
+ {"name":"a tap on the Segment tells no one","file":"stmt/owner.js","find":"pick(String(item.value)); s.dispatchEvent(new Event('change',{bubbles:true})); });","replace":"pick(String(item.value)); });"},
+ {"name":"the Segment shows no choice","file":"stmt/owner.js","find":"b.setAttribute('aria-pressed',String(on)); if(on) cur=v; }); };","replace":"if(on) cur=v; }); };"},
+ {"name":"the books are drawn marks again","file":"stmt/owner.js","find":"if(item.mark) title.appendChild(bookChip(item.mark)); else title.textContent=item.label;","replace":"if(item.mark) title.appendChild(bookMark(item.mark,28)); else title.textContent=item.label;"},
+ {"name":"a figure is not in the Ambient input","file":"stmt/owner.js","find":"ai=actOn(el('input','amb-input'),L[1],L[2]);","replace":"ai=actOn(el('input'),L[1],L[2]);"},
+ {"name":"a wheel stops at 100","file":"stmt/owner.js","find":"for(q=26;q<=200;q++) a.push(q); return a; }","replace":"for(q=26;q<=100;q++) a.push(q); return a; }"},
+ {"name":"the pill keeps the browser's width","file":"stmt/owner.js","find":"parent.appendChild(host); b.classList.add('amb-pill--block'); }","replace":"parent.appendChild(host); }"},
+ {"name":"the pill is no foot","file":"stmt/owner.js","find":"host=el('div','amb-foot mfoot');","replace":"host=el('div','mfoot');"},
+ {"name":"Add a book stays a ghost","file":"stmt/owner.js","find":"b.className='amb-action'+(danger?' amb-action--danger':''); b.textContent=words;","replace":"b.className='salt-ghost'+(danger?' amb-action--danger':''); b.textContent=words;"},
+ {"name":"Remove this book is not a danger row","file":"stmt/owner.js","find":"        },false),'Remove this book',row.appendChild(sGroup(null,'maker-remove')).list,true);","replace":"        },false),'Remove this book',row.appendChild(sGroup(null,'maker-remove')).list,false);"},
+ {"name":"the trip's line is a plain message","file":"stmt/owner.js","find":"tripNote=el('p','amb-field__hint','Same buyer, same day;","replace":"tripNote=el('p','msg','Same buyer, same day;"},
+ {"name":"the empty segment option is keyed by nothing","file":"stmt/owner.js","find":"(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));\n        b.type='button'; b.setAttribute('data-value',String(item.value)); b.setAttribute('aria-pressed','false');","replace":"(L[2]?L[2]+'-':'')+item.value);\n        b.type='button'; b.setAttribute('data-value',String(item.value)); b.setAttribute('aria-pressed','false');"}
 ]

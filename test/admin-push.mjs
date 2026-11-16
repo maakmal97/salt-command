@@ -247,7 +247,7 @@ export async function run({ ok, pageWork }) {
     };
     const b1 = await bell();
     /* 26 Oct 2026, his word: one Switch, off without colour; it presses Turn on or Turn off, kept hidden */
-    ok(b1.state() === "Off" && b1.sw.getAttribute("aria-checked") === "false" && b1.on.hidden && b1.off.hidden && b1.on.getAttribute("data-act") === "alerts.on" && b1.off.getAttribute("data-act") === "alerts.off"
+    ok(b1.state() === "Off" && b1.sw.checked === false && b1.on.hidden && b1.off.hidden && b1.on.getAttribute("data-act") === "alerts.on" && b1.off.getAttribute("data-act") === "alerts.off"
       && b1.asked === 0 && b1.regs.length === 0 && b1.posts().length === 0,
       "Shop > This device draws Notifications Off with Turn on, and opening the page asks nothing, registers nothing and files nothing: " + JSON.stringify([b1.state(), b1.asked, b1.regs, b1.posts()]));
     b1.sw.click(); await b1.p.work.quiet();
@@ -258,9 +258,9 @@ export async function run({ ok, pageWork }) {
       "it subscribes with the Counter's VAPID key from /push/key: " + JSON.stringify(b1.subscribed.length));
     ok(filed.length === 1 && filed[0].route === "/all/push/subscribe" && same(filed[0].body, { endpoint: "https://push.example/admin-bell", keys: A.keys }),
       "it files the endpoint and both keys at /all/push/subscribe: " + JSON.stringify(filed));
-    ok(b1.state() === "On" && b1.sw.getAttribute("aria-checked") === "true" && !b1.sw.disabled, "and says On, the switch on: " + b1.state());
+    ok(b1.state() === "On" && b1.sw.checked === true && !b1.sw.disabled, "and says On, the switch on: " + b1.state());
     b1.sw.click(); await b1.p.work.quiet();
-    ok(same(b1.posts().map((x) => x.route), ["/all/push/subscribe", "/all/push/unsubscribe"]) && same(b1.posts()[1].body, { endpoint: "https://push.example/admin-bell" }) && b1.unsub === 1 && b1.state() === "Off" && b1.sw.getAttribute("aria-checked") === "false",
+    ok(same(b1.posts().map((x) => x.route), ["/all/push/subscribe", "/all/push/unsubscribe"]) && same(b1.posts()[1].body, { endpoint: "https://push.example/admin-bell" }) && b1.unsub === 1 && b1.state() === "Off" && b1.sw.checked === false,
       "Turn off tells the site to forget the endpoint, drops the phone's own subscription and says Off: " + JSON.stringify([b1.posts().map((x) => x.route), b1.unsub, b1.state()]));
     const b2 = await bell({ answer: "denied" });
     b2.sw.click(); await b2.p.work.quiet();

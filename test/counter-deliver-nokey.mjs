@@ -67,7 +67,7 @@ async function drive({ keys, test = false }) {
     d.getElementById("oGo").click();
     await wait(() => !!d.getElementById("oPlace"));
     d.getElementById("oPlace").click();
-    const note = () => txt(d.querySelector('#osheet .salt-sheet__foot [role="status"]'));
+    const note = () => txt(d.querySelector('#osheet .osheet__foot [role="status"]'));
     await wait(() => posts.length > 0 || /could not be read/i.test(note()));
     return { posts, keyAsks, said: note(), slipAsked: asked.filter((s) => /slip/.test(s)).length };
   } finally { w.close(); }

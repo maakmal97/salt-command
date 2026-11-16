@@ -1,4 +1,9 @@
-/* test/counter-order-detail.mjs: AN ORDER'S OWN SCREEN, AS HE CHOSE IT (Counter Batch A, P7, his decisions of 18 Oct 2026).
+/* 16 Nov 2026, the move to Ambient: the band is a chip, a line and a foot on the system's plain classes; the steps are the system's Steps (it numbers and draws
+ * them, each saying Done, Now or Next); the Bill is its read-only Settings; Details is the system's More and what it opens; the way to a point is a small pill that says
+ * Directions. Pay is the Foot of the record; the Message button went with it (the composer stands in view on every order, and the check says so). Each re-aimed check
+ * says what it now holds; none was dropped.
+ *
+ * test/counter-order-detail.mjs: AN ORDER'S OWN SCREEN, AS HE CHOSE IT (Counter Batch A, P7, his decisions of 18 Oct 2026).
  *
  * The head is a band: the order's short reference, its state as the heading, what it is, and while it waits at one of his points, the point and a
  * pin that opens their maps app. The track is drawn marks with the moment of each step and Next on the step to come. The money reads like a
@@ -89,67 +94,70 @@ export async function run({ ok, pageWork }) {
     try {
       await own.work.quiet(); own.d.querySelector('[data-act="nav.orders"]').click(); await own.work.quiet();
       const card = own.card("ord-a1"), oref = card && card.querySelector("[data-ref]");
-      ok(!!oref && t(oref) === refR && oref.classList.contains("salt-band__ref"), "Salt Admin's card for the same order shows the same reference, so one they quote finds it: " + (oref && t(oref)));
+      ok(!!oref && t(oref) === refR && oref.classList.contains("oref"), "Salt Admin's card for the same order shows the same reference, so one they quote finds it: " + (oref && t(oref)));
     } finally { own.w.close(); }
 
     /* ---- 2: the band, the point and its pin ---- */
-    const hR = part(sR, "head"), pin = hR && hR.querySelector("a.salt-pin");
-    ok(!!hR && hR.classList.contains("salt-band") && /* 2 Nov 2026 (his Orders canvas, page 2): the state word is the chip's, in the band's head; the heading that repeated it is gone */
-      t(hR.querySelector(".salt-band__head .salt-status")) === "Ready to collect" && !hR.querySelector("h3.state, .oband__state") && t(hR.querySelector(".oband__point")) === "At Point Z9",
+    const hR = part(sR, "head"), pin = hR && hR.querySelector("a.opin");
+    ok(!!hR && hR.classList.contains("oband") && /* 2 Nov 2026 (his Orders canvas, page 2): the state word is the chip's, in the band's head; the heading that repeated it is gone */
+      t(hR.querySelector(".oband__head .amb-chip:not(.oref)")) === "Ready to collect" && !hR.querySelector("h3.state, .oband__state") && t(hR.querySelector(".oband__point")) === "At Point Z9",
       "the head is a band, its state the chip's word and the point it waits at under what it is: " + t(hR));
     ok(!!pin && pin.getAttribute("href") === "https://maps.apple.com/?ll=3.14786,101.69369&q=Point%20Z9" && pin.getAttribute("aria-label") === "Directions to Point Z9, opens your maps app"
-      && !!pin.querySelector('svg[aria-hidden="true"]') && pin.target === "_blank" && /noopener/.test(pin.rel),
+      && t(pin) === "Directions" && pin.classList.contains("amb-pill") && pin.target === "_blank" && /noopener/.test(pin.rel),
       "the pin opens their maps app at the point's place, named by its code alone: " + (pin && pin.getAttribute("href")));
     const A2 = await open("Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36");
-    const pinA = part(await screen(A2, R), "head").querySelector("a.salt-pin");
+    const pinA = part(await screen(A2, R), "head").querySelector("a.opin");
     const G = await open("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36");
-    const pinG = part(await screen(G, R), "head").querySelector("a.salt-pin");
+    const pinG = part(await screen(G, R), "head").querySelector("a.opin");
     ok(!!pinA && pinA.getAttribute("href") === "geo:3.14786,101.69369?q=3.14786,101.69369(Point%20Z9)" && !!pinG && pinG.getAttribute("href") === "https://www.google.com/maps/search/?api=1&query=3.14786,101.69369",
       "on Android the pin is the geo: link its maps app takes, anywhere else Google Maps at the place: " + JSON.stringify([pinA && pinA.getAttribute("href"), pinG && pinG.getAttribute("href")]));
-    ok(!part(sD, "head").querySelector("a.salt-pin") && !part(sD, "head").querySelector(".oband__point") && !part(sB, "head").querySelector("a.salt-pin"),
+    ok(!part(sD, "head").querySelector("a.opin") && !part(sD, "head").querySelector(".oband__point") && !part(sB, "head").querySelector("a.opin"),
       "once collected, or before it is ready, there is no point line and no pin in the band");
 
     /* ---- 3: the steps ---- */
     const steps = [...part(sR, "steps").querySelectorAll("li")];
-    const view = steps.map((li) => [t(li.querySelector(".salt-steps__name")), !!li.querySelector(".salt-steps__mark svg"), t(li.querySelector(".salt-steps__time")),
-      li.classList.contains("salt-steps__step--done") ? "done" : li.classList.contains("salt-steps__step--now") ? "now" : li.classList.contains("salt-steps__step--next") ? "next" : ""]);
+    const view = steps.map((li) => [t(li.querySelector(".amb-step__title")), t(li.querySelector(":scope > .amb-chip")), t(li.querySelector(".amb-step__text")),
+      li.classList.contains("is-done") ? "done" : li.classList.contains("is-now") ? "now" : ""]);
     /* 20 Oct 2026 (his yes): the moments are read off the order's own history, never a clock read later, which crossed a minute (CI red on e4833483) */
     const hm = (iso) => { const k = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hourCycle: "h23", day: "2-digit" }).formatToParts(new Date(iso));
       const g = (ty) => k.find((x) => x.type === ty).value; return g("hour") + ":" + g("minute"); };
     const today = (iso) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(iso)) === new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
     const wantT = R.history.slice(0, 3).map((h) => (today(h.at) ? hm(h.at) : null));
-    ok(part(sR, "steps").querySelector("ol").classList.contains("salt-steps--marks") && view.every((v) => v[1]) && view.map((v) => v[0]).join("|") === "Placed|Confirmed|Ready|Paid|Collected"
-      && view.map((v) => v[3]).join("|") === "done|done|now||next" && view[4][2] === "Next" && /^RM [0-9.]+\/[0-9.]+$/.test(view[3][2])
+    ok(part(sR, "steps").querySelector("ol").classList.contains("amb-steps") && view.map((v) => v[0]).join("|") === "Placed|Confirmed|Ready|Paid|Collected"
+      && view.map((v) => v[1]).join("|") === "Done|Done|Now||Next" && view.map((v) => v[3]).join("|") === "done|done|now||" && /^RM [0-9.]+\/[0-9.]+$/.test(view[3][2])
       && view.slice(0, 3).every((v, i) => (wantT[i] ? v[2] === wantT[i] : /^\d\d \w{3} \d{4}$/.test(v[2]))),
-      "each step is a drawn mark with the moment it happened, Paid fourth with how much of what while part paid, and Next on the goods' step to come: " + JSON.stringify(view));
+      "each step is the system's Step saying Done, Now or Next, with the moment it happened, Paid fourth with how much of what while part paid, and Next on the goods' step to come: " + JSON.stringify(view));
 
-    const stB = [...part(sB, "steps").querySelectorAll("li")].map((li) => t(li.querySelector(".salt-steps__time")));
+    const stBl = [...part(sB, "steps").querySelectorAll("li")], stB = stBl.map((li) => t(li.querySelector(".amb-step__text")));
     const hmAt = (s) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(s));
     const dayIs = (s) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(s)) === new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
     const at = (s, v) => (dayIs(s) ? v === hmAt(s) : /^dd w{3} d{4}$/.test(v));
-    ok(at(B.history[0].at, stB[0]) && at(B.history[1].at, stB[1]) && stB[2] === "Next" && stB[3] === "",
+    ok(at(B.history[0].at, stB[0]) && at(B.history[1].at, stB[1]) && t(stBl[2].querySelector(".amb-chip")) === "Next" && stB[2] === "" && stB[3] === "",
       "a step that happened today shows its time of day, an earlier one its day, and only the step to come says Next: " + JSON.stringify(stB));
     /* ---- 4: the money ---- */
     /* 2 Nov 2026 (his Orders canvas, page 2): the money is the Bill's settings rows; the way and the day are a row's second line, read after its name as the receipt line read them; the due line is the total row, last, its figure in ember */
-    const rows = [...part(sR, "money").querySelectorAll(".salt-settings__row")].map((r) => [t(r.querySelector(".salt-settings__label")), t(r.querySelector(".salt-settings__value")),
-      r.classList.contains("salt-settings__row--total") && r.classList.contains("obill--due") && !!r.querySelector(".salt-settings__value--due"), t(r.querySelector(".salt-settings__sub"))]);
+    const rows = [...part(sR, "money").querySelectorAll(".amb-setting")].map((r) => [t(r.querySelector(".obill__k")), t(r.querySelector(".amb-setting__value")),
+      r.classList.contains("obill__total") && r.classList.contains("obill--due") && !!r.querySelector(".obill__due"), t(r.querySelector(".obill__sub"))]);
     const paidRows = rows.filter((r) => /^Paid/.test(r[0])).map((r) => [r[0] + r[3], r[1]]);
     ok(paidRows.length === 2 && /^PaidBy DuitNow Transfer, \d\d \w{3} \d{4}$/.test(paidRows[0][0]) && paidRows[0][1] === "RM 30.00" && /^PaidBy cash on handover, \d\d \w{3} \d{4}$/.test(paidRows[1][0]) && paidRows[1][1] === "RM 10.00",
       "each payment we have stands on its own line with its way and its day: " + JSON.stringify(paidRows));
     const due = rows.find((r) => r[0] === "Still to pay");
     ok(!!due && due[1] === "RM 55.00" && due[2] === true && rows[rows.length - 1] === due, "and what is still to pay stands last, apart, as the receipt's due line: " + JSON.stringify(rows));
 
-    /* ---- 5: Message on every stage, Details with no note ---- */
+    /* ---- 5: the composer on every stage, Pay as the foot, Details with no note ---- */
     const sX = await screen(S, X), sA = await screen(S, A);
-    const msgs = [sA, sB, sR, sD, sX].map((s) => { const b = part(s, "act").querySelector("[data-msg]"); return b ? t(b) : null; });
-    ok(msgs.every((m) => m === "Message"), "Message stands on the order's screen at every stage, placed, confirmed, ready, done and cancelled: " + JSON.stringify(msgs));
+    const says = [sA, sB, sR, sD, sX].map((s) => !!part(s, "say").querySelector("form.amb-compose input[data-say]"));
+    ok(says.every((m) => m === true), "the composer stands on the order's screen at every stage, placed, confirmed, ready, done and cancelled: " + JSON.stringify(says));
+    const sRf = await screen(S, R), footR = part(sRf, "act"), footA = part(await screen(S, A), "act");
+    ok(footR.classList.contains("amb-foot") && footR.hidden === false && !!footR.querySelector("button.amb-pill--block[data-back]") && sRf.lastElementChild === footR && footA.hidden === true,
+      "and Pay is the record's foot, the last thing on an order that owes, and nothing on one still to be confirmed");
     const sR2 = await screen(S, R);
-    part(sR2, "act").querySelector("[data-msg]").click();
-    ok(S.d.activeElement === sR2.querySelector("input[data-say]"), "and a tap on it takes them to the order's composer");
-    const det = part(sR2, "details").querySelector("details"), dl = [...det.querySelectorAll(".salt-ledger__row")].map((r) => t(r.querySelector(".salt-ledger__label")) + "=" + t(r.querySelector(".salt-ledger__value")));
-    ok(!!det && dl.length === 4 && /^Ordered at=\d\d \w{3} \d{4}, \d\d:\d\d$/.test(dl[0]) && dl[1] === "Way=Collect" && dl[2] === "Point=Point Z9" && dl[3] === "Reference=" + refR && !/Note/.test(t(det)),
-      "Details holds when it was ordered, the way, the point and the reference, and no note: " + JSON.stringify(dl));
-    const dD = [...part(await screen(S, D), "details").querySelectorAll(".salt-ledger__row")].map((r) => t(r));
+    const det = part(sR2, "details"), more = det.querySelector("button.amb-more"), box = det.querySelector(".amb-settings"), dl = [...box.querySelectorAll(".amb-setting")].map((r) => t(r.querySelector(".amb-setting__name")) + "=" + t(r.querySelector(".amb-setting__value")));
+    ok(!!more && more.getAttribute("aria-expanded") === "false" && box.hidden === true && dl.length === 4 && /^Ordered at=\d\d \w{3} \d{4}, \d\d:\d\d$/.test(dl[0]) && dl[1] === "Way=Collect" && dl[2] === "Point=Point Z9" && dl[3] === "Reference=" + refR && !/Note/.test(t(det)),
+      "Details is folded under the system's More and holds when it was ordered, the way, the point and the reference, and no note: " + JSON.stringify(dl));
+    more.click(); await until(() => box.hidden === false);
+    ok(box.hidden === false && more.getAttribute("aria-expanded") === "true", "and More opens it");
+    const dD = [...part(await screen(S, D), "details").querySelectorAll(".amb-setting")].map((r) => t(r));
     ok(dD.some((x) => x === "PointCollected at Point Z8"), "an order collected says where it was collected: " + JSON.stringify(dD));
   } catch (e) { ok(false, "counter-order-detail stopped on an error: " + (e && e.stack)); }
   finally { wins.forEach((w) => w.close()); }

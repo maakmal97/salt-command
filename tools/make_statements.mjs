@@ -36,7 +36,7 @@ import { priceList, priceDigest, priceSteps } from "./pricelist.mjs";
    what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
    node builtins. */
-import { psymSvg, mtileSvg, PSHAPE, MON3, PSYM } from "../stmt/page.js";
+import { psymSvg, markThumbHtml, PSHAPE, MON3, PSYM } from "../stmt/page.js";
 /* plan version 7 (One list): a live line carries its day, goods, delivery and book as data, so the Counter joins it to the order that holds it.
    The book is its index in the Counter's own mark table (PSYM), never a product word; no key and nothing the line does not already say. */
 const BOOK_INDEX = Object.keys(PSYM).filter((k) => k !== "_");
@@ -368,7 +368,7 @@ function stmtDoc(party,rows,o){
      before v695 keep the letterhead they were sent with. The correction is for what is live. */
   const marked=!(o&&o.archive);
   /* F8 (his answers of 28 Sep 2026): his letter in every mark and none under 20 px; an issue's table keeps its mark beside the
-     size, and the live document's marks are cards (lineTile, below) */
+     size, and the live document's marks are the system's thumbs (bookRows, below) */
   const markOf=(p,px)=>!marked?'':'<span class="pm">'+psymSvg(p,px||20)
     +'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
   /* EVERY TABLE IN ITS OWN SCROLL BOX (stage 1 of the Counter redesign, 24 Sep 2026): the orders table is
@@ -385,17 +385,22 @@ function stmtDoc(party,rows,o){
   const goods=lines?'goods':'salt';
   /* HIS ANSWER OF 28 SEP 2026, "It will be rendered cards in the statement": each mark of the live document is a card, the
      mark a button and its caption under it, the size in words and no shape word, as on the Counter's own cards (mtileSvg) */
-  const lineTile=(p,q)=>mtileSvg(p,units(q));
-  const tiles=(ps,qOf)=>'<span class="mtiles">'+ps.map(p=>lineTile(p,qOf(p))).join('')+'</span>';
-  const lineList=(label,heads,rowsHtml,mark)=>'<div class="salt-lines salt-lines--list" role="table" aria-label="'+label+'"'+(mark?' data-lines="'+mark+'"':'')+'><div class="salt-lines__head" role="row">'
-    +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
+  /* 16 Nov 2026, THE MOVE TO AMBIENT (place D): the live document is Ambient's own parts, never a salt- class. Its orders and refunds are the system's Table
+     (stacked on a phone, every td named by its heading), its marks the system's thumb (the hue by the book's index, the shape named aloud and never
+     a product word), its foot a group of settings. An issue (not live) keeps the markup it was sent with. */
+  const shapeOf=p=>esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._);
+  const bookRows=(ps,qOf)=>ps.map(p=>'<li><div class="amb-setting">'+markThumbHtml(p,'md')+'<span class="amb-vh">'+shapeOf(p)+'</span><span class="amb-setting__name">'+units(qOf(p))+'</span></div></li>').join('');
+  const lineList=(label,heads,rowsHtml,mark)=>'<table class="amb-table amb-table--stack"'+(mark?' data-lines="'+mark+'"':'')+'><caption class="amb-vh">'+label+'</caption><thead><tr>'
+    +heads.map((h,i)=>'<th scope="col"'+(i===2?' class="is-num"':'')+'>'+h+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
+  const chipOf=(word,tone)=>'<span class="amb-chip'+(tone?' amb-chip--'+tone:'')+'"><span class="amb-chip__dot"></span>'+word+'</span>';
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   /* C5 (29 Sep 2026): the live footer's figures carry RM as its lines do; an issue's footer is as it was sent */
   const fig=v=>(o.live?'RM ':'')+money(v);
   /* 28 Oct 2026 (his yes, the statement in the language): the live footer is the settings list's rows, a name at the left and its figure at the right;
      an issue keeps the footer it was sent with. lg is the old row's own class, rc the recipe row's. */
   const trow=(label,val,lg,rc)=>lines
-    ?'<div class="tr'+(lg?' '+lg:'')+' salt-settings__row'+(rc?' '+rc:'')+'"><span class="salt-settings__label">'+label+'</span>'+(val===''?'':'<span class="salt-settings__value">'+val+'</span>')+'</div>'
+    ?'<li><div class="amb-setting'+(/(^| )big( |$)/.test(lg||'')?' stm-big':'')+'"><span class="amb-setting__name">'+label+'</span>'
+      +(val===''?'':'<span class="amb-setting__value'+(/(^| )due( |$)/.test(lg||'')?' amb-neg':'')+'">'+val+'</span>')+'</div></li>'
     :'<div class="tr'+(lg?' '+lg:'')+'"><span>'+label+'</span><span>'+val+'</span></div>';
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
   /* AN UNDATED ROW PRINTS AN EMPTY CELL, NOT "Invalid Date" (29 Aug 2026, the one
@@ -504,28 +509,31 @@ function stmtDoc(party,rows,o){
        words, stacked on a phone and a table from about 600px of the list's own width. Only the live document: it is
        read inside the Counter, which carries the recipe, while an issue is a standalone file and keeps its table. */
     if(lines){
-      /* C3 (29 Sep 2026): a sub-line that is a date or a figure carries the system's salt-lines__sub--figure, a words-only one does not */
-      const sub=(t,f)=>t?'<span class="salt-lines__sub'+(f?' salt-lines__sub--figure':'')+'">'+t+'</span>':'';
+      /* C3 (29 Sep 2026): a sub-line that is a date or a figure; 16 Nov 2026: the Table's own small line (amb-table__sub) */
+      const sub=t=>t?'<span class="amb-table__sub">'+t+'</span>':'';
       /* C4 (29 Sep 2026): EVERY FULLY PAID ROW SAYS WHEN, under its state word, the same day or later; it was said only when
          the money came on a later day, so a reader could not tell paid the same day from no date known */
       const paidSaid=(o.dates&&r.paidOn)?'paid '+e(dLong(r.paidOn)):'';
-      const [word,tone,subs]=r.cancelled?['cancelled','',[[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',1],
-          [(r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'',1]]]
+      /* the state is a chip, its word and its dot (a debt coloured as a loss, a settled line as a gain, the rest plain) */
+      const [word,tone,subs]=r.cancelled?['cancelled','',[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',
+          (r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'']]
         :r.state==='Written off'?['written off','',[]]
         :r.gift?['no charge','',[]]
-        :r.pendingOrder?['ordered','steel',[['to be collected and paid']]]
-        :due?['RM '+money(r.owed)+' due','ember',[]]
-        :owedUnits?['paid in full','verdigris',[[paidSaid,1],[units(r.toGet)+' still to collect',1]]]
-        :['settled','verdigris',[[paidSaid,1]]];
-      return '<div class="salt-lines__row'+(r.cancelled?' salt-lines__row--cancelled':'')+'" role="row"'
+        :r.pendingOrder?['ordered','',['to be collected and paid']]
+        :due?['RM '+money(r.owed)+' due','neg',[]]
+        :owedUnits?['paid in full','pos',[paidSaid,units(r.toGet)+' still to collect']]
+        :['settled','pos',[paidSaid]];
+      const cell=(label,inner,cls)=>'<td data-label="'+label+'"'+(cls?' class="'+cls+'"':'')+'>'+inner+'</td>';
+      return '<tr'+(r.cancelled?' class="is-off"':'')
         +(r.date?' data-m="'+e(r.date.slice(0,7))+'" data-d="'+e(r.date)+'"':'')
         +' data-g="'+(+(+r.total||0).toFixed(2))+'" data-dv="'+(+(+r.delivery||0).toFixed(2))+'" data-b="'+bookIx(r.product)+'">'
-        +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+'</div>'
-        +'<div class="salt-lines__what" role="cell">'+lineTile(r.product,r.qty)+sub(r.resale?'on behalf of a friend':'')
-          +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'',1)+'</div>'
-        +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.cover?coverSaid():'')
-          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery)+tripSaid(r):'',1)+'</div>'
-        +'<div class="salt-lines__state'+(tone?' salt-lines__state--'+tone:'')+'" role="cell">'+word+subs.map(x=>sub(...x)).join('')+'</div></div>';
+        +cell('Date',r.date?e(dLong(r.date)):moved)
+        +cell('Quantity','<span class="stm-cell"><span class="stm-q">'+markThumbHtml(r.product,'md')+'<span class="amb-vh">'+shapeOf(r.product)+'</span><span class="stm-size">'+units(r.qty)+'</span></span>'
+          +sub(r.resale?'on behalf of a friend':'')
+          +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</span>')
+        +cell('Amount','<span class="stm-cell"><span class="stm-fig">'+(r.gift?'nil':'RM '+money(r.total))+'</span>'+sub(r.cover?coverSaid():'')
+          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery)+tripSaid(r):'')+'</span>','is-num')
+        +cell('Status','<span class="stm-cell">'+chipOf(word,tone)+subs.map(sub).join('')+'</span>')+'</tr>';
     }
     /* v690, HIS INSTRUCTION OF 18 SEP 2026: NOTHING A CUSTOMER SEES IS BOUND TO A MONTH. The
        document carries every order from the start, and the page filters it, so the month each row
@@ -570,7 +578,7 @@ function stmtDoc(party,rows,o){
    o.brand ? '<p class="eyebrow">'+e(o.brand)+'</p>' : '',
    /* C2 (29 Sep 2026): inside the Counter the place is the page's h1 and its header names the username, so the live
       document's title is an h2 and it names the account no second time; an issue is a page of its own */
-   o.live?'<h2 class="stmth">Statement of account</h2>':'<h1>Statement of account</h1>',
+   o.live?'<h2 class="amb-section">Statement of account</h2>':'<h1>Statement of account</h1>',
    /* the period line has to survive the reader checking it against the rows. Once a
       pending order can sit outside the window, a statement headed "to 02 Aug" can carry
       a line dated 03 Aug, and saying nothing about that is the sort of small
@@ -588,7 +596,7 @@ function stmtDoc(party,rows,o){
       written, and the moment is printed to the minute so a reader can tell two of them apart. */
    (o.live
      /* 28 Oct 2026 (his word on the statement, "less word"): one sentence, the moment first */
-     ? '<p class="meta">Live statement &middot; as at '+e(o.issued)+'</p>'
+     ? '<p class="amb-basis">Live statement &middot; as at '+e(o.issued)+'</p>'
      : '<p class="meta">Issued '+e(o.issued)+
      (o.archive
        ? ' &middot; every order placed up to '+e(dLong(o.to))+', shown as the account stands today'
@@ -597,18 +605,17 @@ function stmtDoc(party,rows,o){
             ?', plus any order agreed and not yet actioned':''):''))+'</p>'),
    who&&!o.live?'<p class="whol gap1">Account</p>':'',
    who&&!o.live?'<div class="who">'+e(who)+'</div>':'',
-   '<div class="rule"></div>',
+   o.live?'':'<div class="rule"></div>',
    rows.length?(lines?lineList('Your orders',['Date','Quantity','Amount','Status'],body,'orders')
      :box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>'))
-     :'<p class="meta">'+(o.live?'No orders yet.':'No orders in this period.')+'</p>',
-   ((o.refunds||[]).length&&lines?'<h3 class="whol gap2">Refunds</h3>'
+     :'<p class="'+(o.live?'amb-basis':'meta')+'">'+(o.live?'No orders yet.':'No orders in this period.')+'</p>',
+   ((o.refunds||[]).length&&lines?'<h3 class="amb-section">Refunds</h3>'
      +lineList('Refunds',['Date','Reason','Amount','Status'],o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(r=>
-       '<div class="salt-lines__row" role="row"'+(r.date?' data-m="'+e(String(r.date).slice(0,7))+'"':'')+'><div class="salt-lines__date" role="cell">'+e(dLong(r.date))+'</div>'
-       +'<div class="salt-lines__what" role="cell">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</div>'
-       +'<div class="salt-lines__amount" role="cell">RM '+money(r.amount)+'</div>'
-       +(r.paidOn?'<div class="salt-lines__state salt-lines__state--verdigris" role="cell">paid '+e(dLong(r.paidOn))+'</div>'
-                 :'<div class="salt-lines__state salt-lines__state--steel" role="cell">owed to you</div>')+'</div>').join('')):''),
+       '<tr'+(r.date?' data-m="'+e(String(r.date).slice(0,7))+'"':'')+'><td data-label="Date">'+e(dLong(r.date))+'</td>'
+       +'<td data-label="Reason">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
+       +'<td data-label="Amount" class="is-num">RM '+money(r.amount)+'</td>'
+       +'<td data-label="Status">'+(r.paidOn?chipOf('paid '+e(dLong(r.paidOn)),'pos'):chipOf('owed to you',''))+'</td></tr>').join('')):''),
    ((o.refunds||[]).length&&!lines?'<p class="whol gap2">Refunds</p>'
      +box('<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
      +(o.archive?o.refunds:o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
@@ -617,12 +624,12 @@ function stmtDoc(party,rows,o){
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
                                   :'<span class="due">owed to you</span>')+'</td></tr>').join('')
      +'</tbody></table>'):''),
-   '<div class="tot'+(lines?' salt-settings':'')+'">',
+   lines?'<div class="amb-settings tot"><ul class="amb-settings__list">':'<div class="tot">',
    /* the count must match what was actually totalled, or the footer says three orders
       over a figure covering two, which is the first thing a careful reader checks */
    (lines?trow((rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')+(!marked?', '+n2(T.qty)+' unit':''),fig(T.total))
-     +(marked?'<div class="tr salt-settings__row salt-settings__row--tiles">'+tiles(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p])+'</div>':'')
-     +(T.cxN?trow(T.cxN+' cancelled, not counted','','sub','salt-settings__row--muted'):'')
+     +(marked?bookRows(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p]):'')
+     +(T.cxN?trow(T.cxN+' cancelled, not counted','','sub'):'')
    :'<div class="tr"><span>'+(rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')
      /* v782: one figure a book, marked, and never one figure over two books. Where the account
         holds a single book this reads exactly as it always did, with its mark in front.
@@ -630,7 +637,6 @@ function stmtDoc(party,rows,o){
         the BOOK's own PROD_ORDER and not alphabetically, which put oil first on the first draft of
         this line. A book the order does not name sorts last rather than being dropped. */
      +(!marked?', '+n2(T.qty)+' unit'
-        : lines ? tiles(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p])
         : ', '+bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+n2(T.qtyBy[p])+' unit').join(' &middot; '))
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
      +'</span><span>'+fig(T.total)+'</span></div>'),
@@ -638,23 +644,24 @@ function stmtDoc(party,rows,o){
    (lines&&T.delivery>0.009?trow('Delivery',fig(T.delivery)):''),
    trow('Paid',fig(T.paid)),
    (T.writtenOff>0.009?trow('Written off',fig(T.writtenOff)):''),
-   (T.defaultUncharged>0.009?trow('Not handed over on written-off orders',fig(T.defaultUncharged),'','salt-settings__row--text'):''),
-   (T.cxPaid>0.009?trow('of which on cancelled orders',fig(T.cxPaid),'sub','salt-settings__row--text'):''),
+   (T.defaultUncharged>0.009?trow('Not handed over on written-off orders',fig(T.defaultUncharged),''):''),
+   (T.cxPaid>0.009?trow('of which on cancelled orders',fig(T.cxPaid),'sub'):''),
    /* say plainly which part of the total has not happened yet, so the ordered figure
       and the paid figure can be reconciled without him having to ask why they differ */
-   (T.pendN?trow('of which not yet collected or paid',fig(T.pendVal+(lines?T.pendDel:0)),'sub','salt-settings__row--text'):''),
-   trow(T.owed>0.009?'Outstanding':'Balance',T.owed>0.009?fig(T.owed):'nil','big'+(T.owed>0.009?'':' clear')),
+   (T.pendN?trow('of which not yet collected or paid',fig(T.pendVal+(lines?T.pendDel:0)),'sub'):''),
+   trow(T.owed>0.009?'Outstanding':'Balance',T.owed>0.009?fig(T.owed):'nil','big'+(T.owed>0.009?' due':' clear')),
    (refundOwed>0.009?trow('Owed to you',fig(refundOwed),'big'):''),
-   '</div>',
+   lines?'</ul></div>':'</div>',
    /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
       read as though nothing else is outstanding, which is exactly the misreading a
       dispute about undelivered salt would turn on. */
    /* ONE LINE A BOOK, marked, and never a sum over two (v782's rule, which this block broke until
       stage 1 of the Counter redesign, 24 Sep 2026): two of one book and one and a half of another
       are not three and a half of anything. An archive keeps the one figure it was issued with. */
-   (T.toGet>0.009?'<div class="owed">'+(lines?'<h3 class="owedl">Still to collect</h3>':'<p class="owedl">Still to collect</p>')
+   (T.toGet>0.009&&lines?'<div class="amb-settings owed"><h3 class="amb-settings__head">Still to collect</h3><ul class="amb-settings__list">'
+     +bookRows(bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009)),p=>T.toGetBy[p])+'</ul></div>'
+   :T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
      +(!marked ? '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>'
-       : lines ? tiles(bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009)),p=>T.toGetBy[p])
        : bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
            .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>unit</span></p>').join(''))
      +'</div>':''),
@@ -682,6 +689,40 @@ function stmtDoc(party,rows,o){
         took and what was held back by agreement. It does not name the arrangement the
         salt went against, because a statement is not the place to restate a private
         settlement, and it invites the question instead. */
+     /* 16 Nov 2026 (place D): the live document's workings in the system's parts, the same sentences and figures: steps as short paragraphs under a heading,
+        a table as the Table, a walk of figures as a group of settings */
+     if(lines){
+       const calc=rs=>'<div class="amb-settings"><ul class="amb-settings__list">'+rs.map(([k,v,big])=>'<li><div class="amb-setting'+(big?' stm-big':'')+'"><span class="amb-setting__name">'+k
+         +'</span><span class="amb-setting__value">'+v+'</span></div></li>').join('')+'</ul></div>';
+       const prose=(t,b)=>'<div class="amb-prose"><p><strong>'+(++st)+'. '+t+'</strong></p>'+(b?'<p>'+b+'</p>':'')+'</div>';
+       const walk=(gone,less)=>calc([['Bought',uw(R.order.qty)],[less,'&minus; '+uw(gone)],['Deliverable',uw(R.deliverable)],['Less already collected','&minus; '+uw(R.collected)],
+         [R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding',uw(R.owed),1]]);
+       if(R.noLegs){
+         const gone=R.unitsOff;
+         return '<div class="amb-stack"><h3 class="amb-section">How your '+e(dLong(R.order.date))+' order was settled</h3>'
+           +prose('The order was paid in full.',uw(R.order.qty)+' at '+fig(R.order.total/R.order.qty)+' a unit is '+fig(R.order.total)+', received as '+pays+'.')
+           +prose('Part of it was not handed over, by agreement.','<b>'+uw(gone)+'</b> of that order was held back and applied to a separate '
+             +'arrangement between us, rather than being collected or refunded. No money changed hands on it.')
+           +prose(R.owed>0.009?'So the '+goods+' still due to you are what is left.':'So the balance of the order was collected in full.','')
+           +walk(gone,'Less applied by agreement')
+           +'<p class="amb-basis">If your own record of that arrangement differs from this, say so and it will be gone through line by line.</p></div>';
+       }
+       const th=(h,n)=>'<th scope="col"'+(n?' class="is-num"':'')+'>'+h+'</th>';
+       return '<div class="amb-stack"><h3 class="amb-section">'+(R.owed>0.009?'How the '+uw(R.owed)+' '+(+R.owed>1?'are':'is')+' arrived at':'How your '+e(dLong(R.order.date))+' order was settled')+'</h3>'
+         +prose('Earlier orders were not paid in full.','')
+         +'<table class="amb-table amb-table--stack"><caption class="amb-vh">Earlier orders</caption><thead><tr>'+th('Order')+th('Quantity',1)+th('Billed',1)+th('Paid in cash',1)+th('Short',1)+'</tr></thead><tbody>'
+         +R.legs.map(l=>'<tr><td data-label="Order">'+e(dLong(l.date))+'</td><td data-label="Quantity" class="is-num">'+uw(l.qty)+'</td><td data-label="Billed" class="is-num">'+fig(l.billed)
+           +'</td><td data-label="Paid in cash" class="is-num">'+fig(l.paid)+'</td><td data-label="Short" class="is-num">'+fig(l.short)+'</td></tr>').join('')
+         +'</tbody><tfoot><tr><th scope="row">Carried forward</th><td data-label="Quantity"></td><td data-label="Billed"></td><td data-label="Paid in cash"></td><td data-label="Short" class="is-num">'+fig(R.shortTot)+'</td></tr></tfoot></table>'
+         +prose('That '+fig(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in '+goods+' rather than cash.',
+           fig(R.shortTot)+' at '+fig(R.rate)+' a unit is <b>'+uw(R.unitsOff)+'</b>, withheld from that order by agreement. No money changed hands and those goods stayed on the shelf.')
+         +prose('The '+e(dLong(R.order.date))+' order itself is paid in full.',uw(R.order.qty)+' at '+fig(R.order.total/R.order.qty)+' a unit is '+fig(R.order.total)+', received as '+pays+'.')
+         +prose(R.owed>0.009?'So the '+goods+' due to you are what you bought, less what settled the balance, less what you have taken.'
+           :'So the '+goods+' due to you were what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.','')
+         +walk(R.unitsOff,'Less applied to the '+fig(R.shortTot)+' balance')
+         +'<p class="amb-basis">'+R.legs.map(l=>e(dLong(l.date))).join(' and ')+' show as settled at the top of this statement because that balance was cleared '
+         +'here, in '+goods+', rather than in cash. Nothing about them is still owed in money.</p></div>';
+     }
      if(R.noLegs){
        const gone=R.unitsOff, took=R.collected;
        return '<div class="rec"><p class="recl">How your '+e(dLong(R.order.date))+' order was settled</p>'
@@ -733,7 +774,7 @@ function stmtDoc(party,rows,o){
        +'here, in '+goods+', rather than in cash. Nothing about them is still owed in money.</p>'
        +'</div>';}).join(''),
    (o.live
-     ? '<p class="note">Amounts in RM, from our records at the time shown; tell us if anything differs.</p>'
+     ? '<p class="amb-basis">Amounts in RM, from our records at the time shown; tell us if anything differs.</p>'
      : '<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>'),
    '</div></body></html>'].join('\n');
 }
@@ -1093,6 +1134,14 @@ export async function makeStatements(outDir, issue, opts) {
         .map(f => (/^(?:statement_.+?|_review)_(\d{4}-\d{2}-\d{2})\.html$/.exec(f) || [])[1])
         .filter(Boolean))].sort()
     : [];
+  /* 16 Nov 2026 (the move to Ambient, place D): A SEALED ISSUE IS NEVER WRITTEN AGAIN. The live document's markup moved to the system's parts that day, and
+     a same-date re-run over a set already sealed and sent would redraw its documents in today's code under a past date: a dated record is not corrected in
+     place. A retry after a failure is still possible, but asked for in so many words (--retry). An archive holds no
+     record and is not sealed, so it is let through. */
+  if (!archive && prior.includes(issue) && !(opts && opts.retry)) {
+    throw new Error("refusing to write the sealed issue of " + issue + " again into " + outDir + ": it already holds that set, and its documents may have been sent. "
+      + "Nothing was written. A retry after a failure is asked for: --retry.");
+  }
   if (prior.length && !prior.includes(issue)) {
     throw new Error("refusing to write a second issue into " + outDir + ": it already holds a set "
       + "issued " + prior.join(", ") + ", and those files may have been sent. Nothing was written.");
@@ -1339,7 +1388,7 @@ export async function makeStatements(outDir, issue, opts) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const args = process.argv.slice(2).filter(a => a !== '--archive' && a !== '--new-issue');
+  const args = process.argv.slice(2).filter(a => a !== '--archive' && a !== '--new-issue' && a !== '--retry');
   const archive = process.argv.includes('--archive');
   const newIssue = process.argv.includes('--new-issue');   /* v772: the monthly routine is retired */
   const outDir = args[0], issue = args[1] || new Date().toISOString().slice(0, 10);
@@ -1348,7 +1397,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (outDir) console.error('the desk is no longer an input: statements build from ledger/book.json and engine/position.mjs (v388 removed the statement functions from the desk).');
     process.exit(2);
   }
-  makeStatements(outDir, issue, { archive, newIssue }).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
+  const retry = process.argv.includes('--retry');   /* 16 Nov 2026: a same-date re-run over a sealed issue is refused unless asked for */
+  makeStatements(outDir, issue, { archive, newIssue, retry }).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
 }
 
 /** The body of an issued document, without its QR: what the publish tool and the suite read. */

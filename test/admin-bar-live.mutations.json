@@ -1,10 +1,10 @@
 [
- {"name":"the bar has no chips","file":"stmt/page.js","find":"<div class=\"salt-deskbar__chips\" id=\"aBarChips\"","replace":"<div class=\"salt-deskbar__chips\" id=\"aBarChipsGone\""},
- {"name":"the counts never reach the bar","file":"stmt/owner.js","find":"    barLive(draftGroups(pendingRows()).length);\n","replace":""},
- {"name":"Needs you is one off","file":"stmt/owner.js","find":"chip('needs','now','Needs you',n.needs)","replace":"chip('needs','now','Needs you',n.needs+1)"},
+ {"name":"the bar of chips comes back","file":"stmt/page.js","find":"        + '<main class=\"amb-screen amb-screen--docked\">'\n        /* 12 OCT 2026 (PHASE 4c)","replace":"        + '<header class=\"abar\"><div id=\"aBarChips\"></div></header><main class=\"amb-screen amb-screen--docked\">'\n        /* 12 OCT 2026 (PHASE 4c)"},
+ {"name":"the counts never reach the tabs","file":"stmt/owner.js","find":"[].slice.call(document.querySelectorAll('[data-count=\"'+m+'\"]')).forEach(function(c){ tabCount(c,n); });","replace":"void 0;"},
+ {"name":"a tab's name does not say what waits","file":"stmt/page.js","find":"l=n?w+', '+n+' waiting':w;","replace":"l=w;"},
+ {"name":"Shop gets a count","file":"stmt/owner.js","find":"    setCount('orders', ordOpenCount());","replace":"    setCount('orders', ordOpenCount()); setCount('shop', 1);"},
  {"name":"Approve counts rows, not groups","file":"stmt/owner.js","find":"barLive(draftGroups(pendingRows()).length)","replace":"barLive(pendingRows().length)"},
- {"name":"Approve never goes quiet or loud","file":"stmt/owner.js","find":"'<button type=\"button\" class=\"salt-deskbar__act'+(n.approve?'':' is-zero')","replace":"'<button type=\"button\" class=\"salt-deskbar__act is-zero'"},
- {"name":"Approve opens Orders' first part","file":"stmt/owner.js","find":"k==='approve'?'approve':k==='customers'?'messages':''","replace":"k==='customers'?'messages':''"},
- {"name":"the bar reads another place's count","file":"stmt/owner.js","find":"['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count=\"'+k+'\"]');","replace":"['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count=\"needs\"]');"},
- {"name":"the bar says where he is again","file":"stmt/page.js","find":"+ '<div class=\"salt-deskbar__live\"><div class=\"salt-deskbar__chips\" id=\"aBarChips\"","replace":"+ '<div class=\"salt-deskbar__live\"><div class=\"salt-deskbar__where\"><span class=\"salt-deskbar__view\" id=\"aWhereView\"></span></div><div class=\"salt-deskbar__chips\" id=\"aBarChips\""}
+ {"name":"Approve is not named with its rows","file":"stmt/owner.js","find":"apSay=rows?'Approve, '+rows+' to approve':'Approve';","replace":"apSay='Approve';"},
+ {"name":"Approve leaves Orders' hero","file":"stmt/page.js","find":"aHero(\"Orders\", '<p class=\"amb-hero__sub\" id=\"makerReviewStatus\">Reading.</p>', { heat: true, approve: !test })","replace":"aHero(\"Orders\", '<p class=\"amb-hero__sub\" id=\"makerReviewStatus\">Reading.</p>', { heat: true }) + '<button type=\"button\" class=\"amb-pill\" id=\"aApprove\" data-act=\"bar.approve\">Approve</button>'"},
+ {"name":"Approve opens Orders' first part","file":"stmt/owner.js","find":"  if(aApprove) aApprove.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); });","replace":"  if(aApprove) aApprove.addEventListener('click', function(){ showPlace('orders','',{fresh:true,push:true}); });"}
 ]

@@ -61,11 +61,13 @@ export async function run({ ok, pageWork }) {
 
   try {
     /* ---- 1 and 2: owed */
+    /* 16 Nov 2026, the move to Ambient: the glance is a list of Ambient settings rows (a name, a value with its note muted, the due figure neg), the figure Home's stat */
+    const fig = (e) => { const v = e && e.querySelector(".amb-setting__value"); return v && v.firstChild ? v.firstChild.textContent.trim() : ""; };
     const A = await open({ toPay: 46 }), g = A.d.getElementById("aGlance"), owed = g && g.querySelector('[data-glance="owed"]');
-    const home = t(A.d.querySelector("#homeFoot .salt-kpi__value"));
-    const o = { first: A.d.getElementById("acct").firstElementChild === g, firstItem: g && g.firstElementChild === owed, label: t(owed && owed.querySelector(".salt-glance__label")),
-      value: t(owed && owed.querySelector(".salt-glance__value")), home, due: !!owed && owed.classList.contains("salt-glance__item--due"), note: t(owed && owed.querySelector(".salt-glance__note")),
-      href: owed ? owed.getAttribute("href") : "", recipe: !!g && g.classList.contains("salt-glance") };
+    const home = t(A.d.querySelector("#payHead .amb-stat__value"));
+    const o = { first: A.d.getElementById("acct").firstElementChild === g, firstItem: g && g.querySelector("li").firstElementChild === owed, label: t(owed && owed.querySelector(".amb-setting__name")),
+      value: fig(owed), home, due: !!owed && !!owed.querySelector(".amb-setting__value.amb-neg"), note: t(owed && owed.querySelector(".amb-muted")),
+      href: owed ? owed.getAttribute("href") : "", recipe: !!g && g.classList.contains("amb-settings") };
     ok(o.first && o.firstItem && o.recipe && o.label === "To pay now" && o.value === "RM 46.00" && o.value === home && o.due && /^Pay by /.test(o.note) && o.href === "#o=o-owe",
       "the glance heads Account, To pay now first at the very figure Home's tile shows, in ember, with when it is due and a link to its order: " + JSON.stringify(o));
     owed.click();
@@ -74,7 +76,7 @@ export async function run({ ok, pageWork }) {
 
     /* ---- 3: the thread and the statement */
     const th = g.querySelector('[data-glance="thread"]'), st = g.querySelector('[data-glance="stmt"]');
-    const s3 = { th: t(th && th.querySelector(".salt-glance__value")), thHref: th ? th.getAttribute("href") : "", st: t(st && st.querySelector(".salt-glance__value")), stNote: t(st && st.querySelector(".salt-glance__note")) };
+    const s3 = { th: fig(th), thHref: th ? th.getAttribute("href") : "", st: fig(st), stNote: t(st && st.querySelector(".amb-muted")) };
     ok(s3.th === "A new reply" && s3.thHref === "#thread" && s3.st === "Up to date" && /^As at \d\d \w{3} \d{4}/.test(s3.stNote),
       "the thread item says a reply is waiting, and the statement item says up to date as at its moment: " + JSON.stringify(s3));
     th.click();
@@ -84,10 +86,10 @@ export async function run({ ok, pageWork }) {
     const S = await open({ toPay: 46 });
     S.claims.push(sent(46)); S.polls.forEach((fn) => fn()); await S.work.quiet();
     const so = S.d.querySelector('#aGlance [data-glance="owed"]');
-    ok(!!so && so.tagName === "DIV" && t(so.querySelector(".salt-glance__value")) === "RM 0.00" && t(so.querySelector(".salt-glance__note")) === "Nothing to pay now.",
+    ok(!!so && so.tagName === "DIV" && fig(so) === "RM 0.00" && t(so.querySelector(".amb-muted")) === "Nothing to pay now.",
       "once a claim covering it comes in on the poll, with no order moved, the strip reads RM 0.00 in words and links nowhere: " + (so ? so.outerHTML.slice(0, 160) : "(none)"));
     const Z = await open({ toPay: 0 }), zo = Z.d.querySelector('#aGlance [data-glance="owed"]');
-    ok(!!zo && zo.tagName === "DIV" && t(zo.querySelector(".salt-glance__value")) === "RM 0.00" && t(zo.querySelector(".salt-glance__note")) === "Nothing to pay now." && !zo.classList.contains("salt-glance__item--due"),
+    ok(!!zo && zo.tagName === "DIV" && fig(zo) === "RM 0.00" && t(zo.querySelector(".amb-muted")) === "Nothing to pay now." && !zo.querySelector(".amb-neg"),
       "with nothing to pay it reads RM 0.00 and says so in words, not in ember and with no link: " + (zo ? zo.outerHTML.slice(0, 160) : "(none)"));
 
     /* ---- 5: no roster code */
@@ -102,8 +104,8 @@ export async function run({ ok, pageWork }) {
     /* the Orders list, on its Done part when asked: an ended order is listed there */
     const listed = async (X, id, part) => {
       X.d.querySelector('#tabs button[data-t="order"]').click();
-      if (part) { const seg = [...X.d.querySelectorAll('.otabs .salt-segment__opt')].find((b) => t(b).startsWith(part)); if (seg) seg.click(); }
-      await until(() => !!X.d.querySelector('.ocard[data-row="' + id + '"]'), 60); return X.d.querySelector('.ocard[data-row="' + id + '"]');
+      if (part) { const seg = [...X.d.querySelectorAll('.otabs .amb-segment__opt')].find((b) => t(b).startsWith(part)); if (seg) seg.click(); }
+      await until(() => !!X.d.querySelector('#pOrder [data-row="' + id + '"]'), 60); return X.d.querySelector('#pOrder [data-row="' + id + '"]');
     };
     const R = await open({ toPay: 0, orders: chain }), rc = await listed(R, "o-new");
     if (rc) rc.click();
@@ -113,13 +115,14 @@ export async function run({ ok, pageWork }) {
     await until(() => !!R.d.querySelector('#pOrder .oscreen[data-order="o-owe"]'), 60);
     ok(!!link && !!R.d.querySelector('#pOrder .oscreen[data-order="o-owe"]'), "6: the link to the order this one replaced opens it: " + (link ? t(link) : "(no link)"));
 
-    /* ---- 7 (1 Nov 2026): an order their credit paid reads paid: its Paid step is done and its card says Paid in full, as dueOf says nothing is owed */
+    /* 16 Nov 2026, the move to Ambient: the order is the system's Row (#pOrder [data-row]), its filters the system's, its Paid step the system's Step (is-done), its words lower case after the state.
+       ---- 7 (1 Nov 2026): an order their credit paid reads paid: its Paid step is done and its card says Paid in full, as dueOf says nothing is owed */
     const credited = (o) => [Object.assign({}, o, { status: "done", total: 20, delivery: 0, paid: 0, credit: 20 })];
     const K = await open({ toPay: 0, orders: credited }), card = await listed(K, "o-owe", "Done"), cardSaid = t(card);
     if (card) card.click();
     await until(() => !!K.d.querySelector('#pOrder .oscreen[data-order="o-owe"] [data-step="paid"]'), 80);
     const step = K.d.querySelector('#pOrder .oscreen[data-order="o-owe"] [data-step="paid"]');
-    ok(!!step && step.classList.contains("salt-steps__step--done") && /Paid in full/.test(cardSaid),
+    ok(!!step && step.classList.contains("is-done") && /paid in full/i.test(cardSaid),
       "7: an order their credit paid has its Paid step done and its card says Paid in full: " + JSON.stringify({ step: step ? step.className : null, card: cardSaid }));
   } catch (e) { ok(false, "counter-glance stopped on an error: " + (e && e.stack)); }
   finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }

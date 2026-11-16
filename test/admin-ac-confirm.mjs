@@ -38,7 +38,7 @@ export async function run({ ok, pageWork }) {
     await click("nav.needs");
     /* 22 Oct 2026 (canvas Needs you): the card marks its age in ember once late; the minutes and his usual stand in the open card beside the list from 860px */
     const ageOf = (k) => d.querySelector('#nlist [data-need="' + k + '"] .nage');
-    p.w.matchMedia = (q) => ({ matches: /min-width:s*860px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} });
+    p.w.matchMedia = (q) => ({ matches: /min-width:s*960px/.test(q) && !/max-width/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} });
     const clockIn = async (k) => { d.querySelector('#nlist [data-need="' + k + '"] .need-tap').click(); await p.work.quiet(); return d.querySelector("#nopen .npane [data-clock]"); };
     const nl = await clockIn("o:ord-late"), ns = await clockIn("o:ord-soon");
     delete p.w.matchMedia;
@@ -64,7 +64,7 @@ export async function run({ ok, pageWork }) {
     await click("nav.shop"); await click("part.shop.hours");
     /* 26 Oct 2026 (Hours as settings): the confirm time is a row of Now, its figure beside it, how many measured said to a reader */
     const band = d.getElementById("makerConfirm"), fig = band && band.querySelector('[data-glance="confirm"]');
-    ok(!!fig && fig.getAttribute("data-confirm") === "45" && t(fig) === "45 min" && /^30 measured/.test(t(band.querySelector(".sr"))),
+    ok(!!fig && fig.getAttribute("data-confirm") === "45" && t(fig) === "45 min" && /^30 measured/.test(t(band.querySelector(".amb-vh"))),
       "Shop hours draws his confirm time and how many are measured: " + t(band));
   } finally { p.w.close(); }
 
@@ -73,7 +73,7 @@ export async function run({ ok, pageWork }) {
     await q.work.quiet();
     byAct(q.d, "nav.shop").click(); await q.work.quiet(); byAct(q.d, "part.shop.hours").click(); await q.work.quiet();
     const band = q.d.getElementById("makerConfirm"), fig = band && band.querySelector('[data-glance="confirm"]');
-    ok(!!fig && t(fig) === "Not yet" && /^7 measured; customers see a figure from 10[.]$/.test(t(band.querySelector(".sr"))) && !band.querySelector("[data-confirm]"),
+    ok(!!fig && t(fig) === "Not yet" && /^7 measured; customers see a figure from 10[.]$/.test(t(band.querySelector(".amb-vh"))) && !band.querySelector("[data-confirm]"),
       "under ten measured, it says so and draws no figure: " + t(band));
   } finally { q.w.close(); }
 }

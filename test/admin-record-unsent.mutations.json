@@ -9,5 +9,5 @@
  {"name":"the card opened says nothing of it","file":"stmt/owner.js","find":"          tap.addEventListener('click',function(){ shut(open.hidden); });\n","replace":""},
  {"name":"only the code is the tap","file":"stmt/page.js","find":".adm .unsent-card .need-tap::after{content:\"\";position:absolute;inset:0}","replace":""},
  {"name":"the tap covers the pill","file":"stmt/page.js","find":".adm .unsent-card>.salt-action__go{position:relative;z-index:1}","replace":""},
- {"name":"the card beside the menu takes the wide pill","file":"stmt/page.js","find":".adm .reclist .ncard .nbtn{width:72px;min-width:72px;max-width:72px;padding:0 4px}","replace":".adm .reclist .ncard .nbtn{width:120px;min-width:120px;max-width:120px;padding:0 4px}"}
+ {"name":"the menu's column takes a card rule of the page's","file":"stmt/page.js","find":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n","replace":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .reclist .ncard{height:90px}\n"}
 ]

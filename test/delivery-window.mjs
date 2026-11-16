@@ -155,7 +155,7 @@ export async function run({ ok }) {
       "as soon as it can is chosen to start with, and the window reads its day and its four hours: " + opt.textContent);
     ok(!d.getElementById("oWant") && !d.querySelector('#osheet [data-k^="when:"]'), "a delivery is never asked for a day");
     opt.click();
-    const hint = [...d.querySelectorAll("#osheet .salt-field__hint")].map((x) => x.textContent).join(" | ");
+    const hint = [...d.querySelectorAll("#osheet .amb-field__hint")].map((x) => x.textContent).join(" | ");
     ok(/Delivery will be between 09:00 and 10:00 on /.test(hint), "a window partly inside the hours says the part inside: " + hint);
     /* Counter Batch C, his answer 4 of 20 Oct 2026: the area lives in a spot, picked through Add a spot, so the window is chosen first and the spot after */
     d.getElementById("spAdd").click(); await new Promise((r) => setTimeout(r, 60));
@@ -200,6 +200,10 @@ export async function run({ ok }) {
     const opts = () => [...d.querySelectorAll('#osheet [data-k^="win:"]')], own = () => opts().find((b) => b.getAttribute("aria-pressed") === "true");
     ok(await wait(() => opts().length === 8) && own() && own().getAttribute("data-k") !== "win:0" && new RegExp(", " + String(wNow).padStart(2, "0") + ":00 to ").test(own().textContent),
       "amending an order whose window has begun keeps that window chosen, never silently As soon as it can: " + JSON.stringify([running, [...d.querySelectorAll('#osheet [data-k^="win:"]')].map((b) => b.getAttribute("data-k") + "=" + b.getAttribute("aria-pressed"))]));
+    /* 16 Nov 2026, the move to Ambient: an amendment's sizes stand under their book's mark thumb, named by its shape for the reader alone */
+    const lg = d.querySelector("#osheet fieldset.amb-options > legend");
+    ok(!!lg && !!lg.querySelector(".amb-thumb--mark") && /^(Cube|Droplet|Lozenge|Capsule|Starburst|Ring)$/.test(((lg.querySelector(".amb-vh") || {}).textContent || "").trim()) && !!d.querySelector('#osheet input[data-k^="size"]'),
+      "amending an order, the sheet's sizes stand under their book's mark thumb, named by its shape for the reader alone: " + (lg ? lg.innerHTML.slice(0, 160) : "no legend"));
     d.getElementById("oGo").click();
     const check = (d.getElementById("osheet") || {}).textContent || "";
     ok(check.includes(W.EN["sh.winRow"]) && new RegExp("between " + String(wNow).padStart(2, "0") + ":00 and ").test(check),
