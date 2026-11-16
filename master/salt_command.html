@@ -12251,7 +12251,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1520","d":"15 Nov 2026","t":"THE MOVE TO AMBIENT BEGINS","n":["<b>AMBIENT IS CARRIED; NOTHING CHANGES ON SCREEN YET.</b> The first part of the move to Ambient, your main design system: Ambient 0.7 is carried into the repository and checked against its lock on every build, and salt's market heat is read off its stock cover, tight at 7 days or under and soft past 14, ready for Salt Admin's screens to take their colour from it. Salt Admin moves next, then the Counter, then the Desk."]}];
+const evolution=[{"v":"v1521","d":"16 Nov 2026","t":"NO REGULARS CARD ON NEEDS YOU","n":["<b>THE REGULARS CARD IS GONE.</b> Salt Admin's Needs you no longer shows a card for regulars who are due, late or lapsed; it asked nothing of you. The reminder still wakes them by itself, the win-back is still offered at their next Accept, and each one's habit still stands on their account and on the Desk's Clients. The week's new buyers line stays."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12413,7 +12413,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Nov 2026, 21:44 KL';
+const LAST_UPDATED='16 Nov 2026, 09:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
