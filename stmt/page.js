@@ -101,7 +101,6 @@ const PAGE_CSS = `
   min-width:64px;padding:10px 10px 8px;border:1px solid var(--salt-edge-field);border-radius:var(--salt-radius-sm);
   background:var(--salt-glass);color:var(--salt-brass);line-height:1;vertical-align:middle}
 .mtile .psym{display:block}
-
 .mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
   color:var(--salt-text);white-space:nowrap;line-height:1.2}
 .mlab{display:inline-flex;align-items:center;gap:12px}
@@ -126,11 +125,7 @@ const PAGE_CSS = `
   color:var(--salt-text-muted)}
 .msg.bad{color:var(--salt-ember)}
 .msg.wait{color:var(--salt-text-muted)}
-/* Phase 3b: a refusal's Details, the server's own words under the plain sentence, to copy */
-.adm .rdet{margin:8px 0 0}
 /* Phase 4c: a Details control opens a list of names and values (an id, a moment, a row's figures); a long value wraps and stays at the right */
-.adm .rdet .salt-ledger{margin:8px 0 0}
-.adm .rdet .salt-ledger__value{white-space:normal;overflow-wrap:anywhere;text-align:right}
 .adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
 /* 15 Nov 2026, the move to Ambient: the bar of lines (#barw), the header (.chead, .cbar), the rail and the App bar went: the shell's hero names the place, his read-only
    line and a lapse are notices under it, and the places are one dock, which Ambient stands up as the rail from 960px */
@@ -144,11 +139,9 @@ const PAGE_CSS = `
 @media (max-width:1079.98px){
   .gate{padding:0}
 }
-
 @media (min-width:1080px){
 .panel{max-width:none}
 }
-
 .panel{max-width:620px;margin:0 auto}
 .panel h2:not(.salt-settings__head),.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
@@ -157,7 +150,6 @@ const PAGE_CSS = `
    inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
 .mos{max-width:620px;margin:0 0 22px}
 .mos .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
-
 @media (min-width:1080px){
   .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
   /* Counter Batch A: the glance runs across both columns, This device beside Messages and the statement under it */
@@ -194,29 +186,19 @@ const PAGE_CSS = `
    a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
    a part has hidden leaves no gap behind it. */
 .adm .aplace{min-width:0}
-.adm #oOrders{max-width:760px}
 .adm .aparts{margin:0 0 20px}
 .adm .maker-input.unsent{display:flex;flex-direction:column;gap:10px;margin:0 0 10px}
 .adm .nkinds{margin:0 0 16px;padding:0;gap:0}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
-.adm .aparts.salt-segment{max-width:30rem}
-.adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 2 Nov 2026 (his Orders canvas): the Segment of four stands 16px over the lead, the lead 24px over the list and the list 24px over More, Shop's grid */
 .adm .aparts[data-place="orders"],.adm .aparts[data-place="customers"]{margin:0 0 16px}
-.adm #oOrders>.abody{gap:24px}
-.adm .ordlead{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-.adm .ordlead:empty{display:none}
-.adm .ordlead>.salt-pill{width:100%;margin:0}
 /* 20 Oct 2026: a placed order's three moves in one row */
 .adm .abody{display:flex;flex-direction:column;gap:28px}
 .adm .aplace input{max-width:100%}
-.adm .maker-card{margin:14px 0}
 .adm .maker-card:not(.salt-approve){padding:16px}
 .adm .maker-card:not(.salt-approve)>*+*{margin-top:12px}
-.adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 /* 13 Oct 2026 (stress): an answer drawn under the control that asked (Save, Make a link, Refresh) is scrolled to clear of the bar, as a card's own line is */
 .adm .osaid{scroll-margin:24px 0 112px}
-.adm .maker-card>.maker-say:empty{margin-top:0}
 /* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an
    empty answer line) and the shut queue fold's body */
 .adm .salt-approve>.maker-say:empty{display:none}
@@ -226,36 +208,10 @@ const PAGE_CSS = `
 /* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
    the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
    The right gutter is the + orb's, which stands over the page at the corner. */
-.adm .maker-foot{display:flex;flex-direction:column;gap:8px}
-.adm .maker-foot.has{position:sticky;z-index:10;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);margin:16px -4px -4px;padding:12px 76px 8px 4px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
-.adm .maker-foot__acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.adm .maker-foot__acts:empty{display:none}
-.adm .maker-foot__acts .btn{margin-top:0;width:auto;flex:1 1 11rem}
-.adm .maker-foot .maker-say{margin:0}
-@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
-@media (min-width:1080px){.adm #makerReview .maker-foot.has{padding-right:4px}}
 .adm .maker-queue-action{min-width:var(--amb-tap);min-height:var(--amb-tap)}
 /* 22 Oct 2026 (canvas Needs you): the Agree inputs two by two, Goods and Delivery, then When and Other across both */
 /* 2 Nov 2026 (his Orders canvas, page 2, "The open order, both sides"): the open order on Shop's grid, no card around it: its parts 24px apart, every glass
    edge on the column's edge, the stage's pill 16px under its group, the figures two by two (four across in a column of their own) */
-.adm .maker-card.ocard{display:flex;flex-direction:column;gap:24px;margin:0;padding:0}
-.adm .maker-card.ocard>*+*{margin-top:0}
-.adm .odecide{display:flex;flex-direction:column;gap:24px;min-width:0}
-.adm .odecide:empty{display:none}
-.adm .odecide__part{display:flex;flex-direction:column;min-width:0}
-.adm .odecide__part>.ostagerows,.adm .odecide__part>.orecord,.adm .odecide__part>.ocashrows{margin-top:16px}
-.adm .odecide__part>.salt-options,.adm .odecide__part>.salt-settings+.salt-settings{margin-top:12px}
-.adm .ostagerows:empty,.adm .oclaims:empty,.adm .odecide .salt-insight:empty{display:none}
-.adm .odecide__part>.salt-insight,.adm .odecide__part>.msg{margin:6px 16px 0}
-.adm .obillnote{margin:12px 0 0}
-.adm .oagree .salt-settings__row>.salt-field__input,.adm .oagree .salt-settings__row>.salt-field__select{flex:0 1 168px;min-width:0;text-align:right}
-.adm .ofigs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.adm .ogoods__units{margin-left:auto}
-.adm .ofigsec .salt-insight{margin:6px 16px 12px}
-.adm .oquick{display:flex;flex-wrap:wrap;gap:8px}
-.adm .oquick:empty{display:none}
-.adm .omsgs__rows,.adm .omsgs__none{margin-top:16px}
-.adm .onext__body{padding:0 0 12px}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .adm .maker-field .lbl{margin-top:0}
 /* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
@@ -265,61 +221,16 @@ const PAGE_CSS = `
 /* 25 Oct 2026 (Record redesign P6): a reward held or an offset offered stacks as cards; what is left on a loan one ledger line, its figure at the right */
 .adm .maker-rewards,.adm .maker-offers{display:flex;flex-direction:column;gap:10px}
 .adm .maker-reward .salt-action__go,.adm .maker-offer .salt-action__go{flex-direction:column;align-items:stretch;gap:6px}
-/* 25 Oct 2026 (Record redesign P7): the code a new customer gets, and a changed one's code after, one ledger line, the code in mono at the right */
-.adm [data-form="correct-a-row"] .undomove{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;border-bottom:1px solid var(--salt-line-faint)}
-.adm [data-form="correct-a-row"] .undomove>.maker-facts{flex:1 1 auto;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adm [data-form="correct-a-row"] .undomove>button{flex:none;margin:0}
-/* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
-.adm #oLedger{display:flex;flex-direction:column;gap:24px}
-.adm #oLedger .lead{margin:0}
-.adm .ledgrp h2{margin:0 0 8px}
-.adm .ledgrp .salt-table-wrap{min-width:0}
-.adm .ledgrp .salt-table th,.adm .ledgrp .salt-table td{white-space:nowrap}
-.adm .ledgrp .salt-table td.l,.adm .ledgrp .salt-table th.l{text-align:left}
-.adm .ledgrp small{display:block;color:var(--salt-mist)}
-.adm .ledgrp .rnone{margin:0}
-/* 4 NOV 2026 (his word: the three tables aligned): ONE COLUMN LAYOUT for Open, Pending and the latest twenty, fixed and the same in each, so a column
-   stands in one place down the page; under 1000px each still scrolls inside its own box, and a long word is cut, never pushed into the next column. */
-.adm .ledgrp .ledtable{table-layout:fixed;min-width:1000px}
-.adm .ledgrp .ledtable th,.adm .ledgrp .ledtable td{overflow:hidden;text-overflow:ellipsis}
-.adm .ledgrp .ledtable small{white-space:normal}
-.adm .ledtable .lc1{width:10%}.adm .ledtable .lc2{width:12%}.adm .ledtable .lc3{width:11%}.adm .ledtable .lc4{width:10%}.adm .ledtable .lc5{width:7%}
-.adm .ledtable .lc6{width:11%}.adm .ledtable .lc7{width:14%}.adm .ledtable .lc8{width:11%}.adm .ledtable .lc9{width:14%}
 /* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
    a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
    its quick buttons, every one 44px. */
 /* 25 Oct 2026 (his Shop canvas): a date's name is wider than a weekday's, so the dates keep their own column */
 /* 25 Oct 2026 (his Shop canvas): the points, a plain table; the code and place fields side by side, Add beside a line, Save across */
 /* 26 Oct 2026, his word: This device is the system's Settings list; the row's field and its one button */
-/* 26 Oct 2026, his word ("the same design language", iPad and Mac included): Practice, Notice and This device are lists of settings; from
-   860px one readable column, as a Mac's settings, never spread across the width */
-.adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
-.adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 /* 26 Oct 2026 (his word): Hours in the same language. The week and the dates are lists, a row a day; the open day's rows and Now's hold are
    rows of a list; a group after a group stands 24px down; from 860px every part of Shop is one 640px column, the open day beside the week */
 .adm .anow-src{color:var(--salt-mist-bright)}
 .adm .ahold-seg{flex:0 0 180px}
-/* 27 Oct 2026: a choice of two or three words in a row of Record's forms, as Hold as is on Hours */
-.adm .maker-slip{display:block;max-width:100%;height:auto}
-/* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
-   that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
-.adm #makerClaims{display:flex;flex-direction:column;gap:8px}
-.adm #makerClaims .salt-inbox-row__title{gap:6px}
-.adm #makerClaims .rnone{margin:0}
-.adm .maker-slipbox{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-/* 20 Oct 2026: the delivery address on his order card, sealed or open */
-.adm .adspot{padding:20px 24px;margin:12px 0 0;display:flex;flex-direction:column;gap:12px}
-.adm .adspot>*,.adm .adspot__open>*{margin:0}
-.adm .adspot__top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.adm .adspot__open{display:flex;flex-direction:column;gap:12px}
-.adm .adspot__acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.adm .adspot__maps svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
-.adm .adspot__note:empty{display:none}
-.adm .maker-slipbox>*{margin:0}
-.adm .maker-slip-open{display:block;min-width:var(--salt-tap);min-height:var(--salt-tap);max-width:100%;padding:0;background:var(--salt-well);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);overflow:hidden;line-height:0;cursor:zoom-in}
-.adm .maker-slip-open .maker-slip{max-height:120px;width:auto}
-.adm .maker-slipbox.open .maker-slip-open{width:100%;cursor:zoom-out}
-.adm .maker-slipbox.open .maker-slip-open .maker-slip{max-height:none;width:100%}
 /* 12 OCT 2026 (PHASE 4b): THE ONE UNLOCK. A place that needs it says Locked in the page's small line with the one Unlock beside it (44px, the ghost's own); a name put beside
    a code is quieter than the code and wraps under it when the row is narrow */
 .adm .maker-name{margin-left:8px;font-weight:400;color:var(--salt-text-muted)}
@@ -328,32 +239,15 @@ body.ended>*:not(#aEnded){display:none}
 /* 15 Nov 2026, the move to Ambient: his shell is Ambient's (the app bar, the screen, the dock that stands up as the rail from 960px); the salt-ds frame, the Desk bar
    and the rail went, with their rules */
 /* 15 Nov 2026, the move to Ambient: the hours are a glass chip in Needs you's hero, said in its word (barDraw) */
-
-
 .adm .ncard .need-who--code{flex:none}
-
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-/* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
-   card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
-   and has its way back. From 860px up to the rail's 1080 the page widens for Orders alone, the other places keeping their 600px column. */
-.adm .ordlist{display:flex;flex-direction:column;gap:24px}
-.adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
 /* 21 Oct 2026 (canvas V39, his answer (a)): FROM 1080PX AN OPEN ORDER TAKES THE LIST'S PLACE, as on a phone, and fills the page; the rail's
    Orders closes it. This reverses his split of 11 Oct 2026 at that width: the list and the card stand side by side from 860 to 1080 only.
    From 1180 the card lays out in columns, two, then three from 1440 (decision, record, insight), filled by ordLayout in stmt/owner.js. */
-@media (max-width:859.98px),(min-width:1080px){
-  .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}
-}
-@media (min-width:860px){
-  .adm #oOrders{max-width:none}
-}
 @media (min-width:860px) and (max-width:1079.98px){
   .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
   .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
-.adm .ordcols{display:grid;gap:24px;align-items:start}
-.adm .ordcols--2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.adm .ordcol{display:flex;flex-direction:column;gap:24px;min-width:0}
 /* in a column the row of three is Agree on its own line over Change terms and Decline, and three columns across, the band's goods total stands under the units */
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
@@ -372,10 +266,6 @@ body.ended>*:not(#aEnded){display:none}
 }
 /* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, so the orb's corner, the room kept for it and its
    stand-down under a foot went with the frame */
-/* the order's stage pill in its foot: no gap above it, and an empty foot is not drawn; across two columns it keeps the decision's width */
-.adm .ofoot>.ordlead{margin:0}
-.adm .ofoot:has(>.ordlead:empty){display:none}
-@media (min-width:1180px){.adm .ordcols--2~.ofoot>.ordlead{width:calc(50% - 12px)}}
 /* a form's foot: its pill, Discard beside it while an entry is half sent */
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 /* 25 Oct 2026 (Record redesign P1): the parts a text tab row of three, and a form's row one shape and one height: its name and one line in the display face, a count of
@@ -450,44 +340,27 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ncard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
 .adm .need .salt-action__money{width:4.5rem;justify-self:end;padding-top:0}
 @media (max-width:860px){.adm .need .salt-action__kind{grid-column:1 / 2}}
-/* 2 Nov 2026 (his Orders canvas): a row's ask stands under it, wrapping its question over a full line and its two ghosts beneath */
-.adm .ordcard--ask{flex-wrap:wrap}
 /* 2 Nov 2026: the code in a table row is a link that fills its cell's height, so the 44px target holds in the table of Orders and of Customers alike */
 .adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}
-.adm div.oask,.adm .oask__in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.adm div.oask{flex:1 1 100%;padding-bottom:8px}
-.adm .oask__q{flex:1 1 100%}
 /* 15 Nov 2026, the move to Ambient: the live line and the clock are the hero's time line, a word and the digits in the ink, the mesh carrying no other */
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
 /* 20 Oct 2026: the order's band in four lines (the action, the goods, the way and moment, the minutes waited), the placed card's copper edge */
-.adm .ohead--placed{box-shadow:inset 3px 0 0 var(--salt-copper)}
-.adm .ogoods__who{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
 .adm .oway,.adm .omoment{display:inline-flex;align-items:center;gap:8px}
 .adm .omoment{font-family:var(--salt-font-mono)}
-.adm .oband__icon{width:16px;height:16px;flex:none;fill:none;stroke:var(--salt-brass);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
-.adm .oclock__track{display:block}
-.adm .obagain{display:inline-flex;align-items:center;gap:8px}
-.adm .ordsteps{--salt-steps-n:5;padding:20px 12px}
-/* 20 Oct 2026, P5: the band's link to a sheet */
-.adm .osheetlink{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;margin:0;padding:6px 0 0;border:0;border-top:1px solid var(--salt-line);background:none;color:var(--salt-brass);font:inherit;font-family:var(--salt-font-mono);cursor:pointer}
 /* 20 Oct 2026: the Bill, its figures in one right column */
-.adm .ordsteps .salt-steps__name,.adm .ordsteps .salt-steps__time{white-space:nowrap}
 .adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote.bad{color:var(--salt-ember)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
-
 /* V5 (his answer of 29 Sep 2026): a locked account still sees Home and Rewards, greyed out and not to be tapped */
 .lockd{opacity:.45;pointer-events:none;user-select:none}
-
 /* v696: the five stand above anything minted against a customer, each under its own line */
-
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
@@ -496,38 +369,27 @@ body.ended>*:not(#aEnded){display:none}
    S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
    after it, took that Account's two columns from 1080px when the stages were merged */
 /* 2 Nov 2026 (his Orders canvas, page 2): the open account on Shop's grid, its parts 24px apart, the one pill 16px under its rows */
-
 /* 25 Oct 2026 (the Customers canvas, P2): an account is glass cards, its head first: the state and age, the code and username, the figure large at the
    right; a ledger of the standing; their waiting line with Reply. Sign-in two by two, Sign out everywhere the width of the card. Nothing wraps. */
 /* 3 Nov 2026 (the account on Shop's grid): every part a group with no glass of its own, its mist head 6px over its list (the recipe's), a second list or a
    table 12px under the first, the groups 24px apart; in columns from 1080px each group keeps 24px under it, the answer of the last list 6px under it */
-
-
 /* 26 Oct 2026 (the Customers canvas, P3 and P4): Their %, This customer, the reward and Partner, each a glass card: a book a tab, the stepper's figure large
    between two 48px buttons, their prices a plain table, the actions two by two; nothing wraps */
-
 /* 26 Oct 2026 (the Customers canvas, P5): the threads are Needs you's cards, their last line quiet beside the code; the open thread the system's Thread, its head
    the code and what they owe */
-
 /* 26 Oct 2026 (the Customers canvas, P6): a link is Needs you's card, Opens over its count in the figure's place; its address, QR and moves under it */
-
 /* 26 Oct 2026 (the Customers canvas, P7): a book's typed tag and how many; the associates cards on a phone and one plain table from 860px; the reward a Meter */
-
 /* 26 Oct 2026 (the Customers canvas, P8; his yes to Asks C and D): from 1080px the accounts are one plain table (his Customers canvas, 2 Nov 2026); an account opened fills
    the page in columns, two and three from 1440px, as an open order does, the list and its way back as on a phone; Links and Associates use the width */
-
 .adm .ncard .need-lead{flex:none;font-family:var(--salt-font-display)}
 .adm .ncard .nfig--opens{flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
 .adm .ncard.off{opacity:.7}
 .adm .ncard .need-line{font-family:var(--salt-font-display);font-size:var(--salt-text-sm)}
-
 /* 5 Nov 2026 (the pane): the head holds the code, what they owe and Close; the lines; what else he may do; the foot his box and Send */
-
 .adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
-
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
 #roster .salt-orb[data-back]{margin:0 0 16px}
@@ -546,12 +408,10 @@ body.ended>*:not(#aEnded){display:none}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
 /* 14 OCT 2026 (the layout rework): a guest link is one row (summary), the address, QR and moves under it once opened; accounts are rows with one state; an associate's
    code has room beside its marks and its figures stand in a ledger; a customer's loans stand on their card as rows of figures */
-
 .rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
 .rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
 .rlinks .msg:empty{display:none}
 .rlinks .rlnext{margin:16px 0 10px}
-
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px; on his page
    a sheet is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px (a landscape iPad). Only placement is written here (position, inset, width,
@@ -1185,13 +1045,15 @@ const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)
    on him; Open lists Agreed, Ready and Out or paid each under its own head. Payments, Group and Ledger are action rows in a More group at the foot of the list, and
    Approve has no control of its own: the bar's Approve reaches it, and #orders/approve still opens it. Every part keeps its act and its address. */
 const ADMIN_ORDER_STAGES = ["todo", "open", "done", "ended"];
-const ordSegment = () => '<div class="salt-segment salt-segment--tight aparts" role="tablist" aria-label="Orders" data-place="orders">'
-  + ADMIN_ORDER_STAGES.map((k) => '<button type="button" role="tab" class="salt-segment__opt" data-part="' + k + '" data-act="part.orders.' + k + '" aria-selected="' + (k === "todo" ? "true" : "false") + '">'
-    + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + (k === "todo" ? '<span class="salt-segment__count" hidden></span>' : "") + "</button>").join("") + "</div>";
-const ordMore = (test) => '<section class="amore" aria-label="More" data-in="orders.todo orders.open orders.done orders.ended"><h2 class="salt-settings__head">More</h2><div class="salt-settings amore__list" data-place="orders">'
-  + ["payments", "group", "ledger"].filter((k) => !test || TEST_PARTS.orders.includes(k)).map((k) => '<button type="button" class="salt-settings__row salt-settings__row--action" data-part="' + k + '" data-act="part.orders.' + k + '">'
-    + '<span class="salt-settings__label">' + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '</span>' + (k === "payments" ? '<span class="salt-settings__value" data-n="payments"></span>' : "")
-    + '<span class="salt-settings__mark" aria-hidden="true">›</span></button>').join("") + "</div></section>";
+/* 16 Nov 2026, the move to Ambient (place G): the four stages are Ambient's Segment, each with its count, one with none dimmed (aria-disabled, the count 0: stmt/owner.js paintOrdCounts);
+   More is a settings group, a row a part with its way in at the right, Payments carrying the count of what they say they sent */
+const ordSegment = () => '<div class="amb-stack"><div class="amb-segment aparts" role="group" aria-label="Orders" data-place="orders">'
+  + ADMIN_ORDER_STAGES.map((k) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.orders.' + k + '" aria-pressed="' + (k === "todo" ? "true" : "false") + '">'
+    + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class="amb-segment__count" hidden></span></button>').join("") + "</div></div>";
+const ordMore = (test) => '<div class="amb-settings amore" data-in="orders.todo orders.open orders.done orders.ended"><h3 class="amb-settings__head">More</h3><ul class="amb-settings__list amore__list" data-place="orders">'
+  + ["payments", "group", "ledger"].filter((k) => !test || TEST_PARTS.orders.includes(k)).map((k) => '<li><button type="button" class="amb-setting" data-part="' + k + '" data-act="part.orders.' + k + '">'
+    + '<span class="amb-setting__name">' + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '</span>' + (k === "payments" ? '<span class="amb-setting__value" data-n="payments"></span>' : "")
+    + AMB.glyph("next", "sm") + "</button></li>").join("") + "</ul></div>";
 const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? ordSegment()
@@ -1298,9 +1160,11 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, approve: !test })
         + adminParts("orders", test)
         + '<div class="abody">'
-        + '<section id="oSplit" data-in="orders.todo orders.open orders.done orders.ended" aria-label="Orders">'
-        + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen salt-pane"></div></div></section>'
-        + ordMore(test)
+        /* 16 Nov 2026, the move to Ambient (place G): the orders are two panes, the queue (its groups, then More) and the record, which ends in its one main action as its foot;
+           from 960px they stand side by side, below it the open order takes the list's place and has its way back */
+        + '<div id="oSplit" class="amb-split amb-split--panes" data-in="orders.todo orders.open orders.done orders.ended" role="region" aria-label="Orders">'
+        + '<div class="amb-stack ordqueue"><div id="makerOrderList" class="ordlist"></div>' + ordMore(test) + '</div>'
+        + '<div class="amb-stack ordrecord"><p class="amb-empty" id="ordnone">Choose an order.</p><div id="makerReview" class="ordopen"></div></div></div>'
         /* 16 Nov 2026 (the move to Ambient, place F): Approve is one stack of Ambient's approvals (stmt/owner.js drawDeskRows), a save bar over them once a card is
            chosen (apBarDraw), and the queue a fold shut by default, titled and counted */
         + '<section id="oApprove" class="amb-stack" data-in="orders.approve" aria-label="Rows to approve">'
@@ -1308,15 +1172,17 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div id="makerDrafts" class="apstack"></div>'
         + '<details id="makerQueue" class="nfold"><summary class="amb-section" data-act="record.queue-toggle"><span id="makerQueueCount">0</span> <span id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
         + '<div id="makerQueueReview" class="apstack" aria-live="polite"></div></details></section>'
-        + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
-        + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
-        + '<p class="lead">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
-        + '<div id="makerPools" aria-live="polite"></div></section>'
+        /* 16 Nov 2026, the move to Ambient (place G): Payments is a list of rows and the open claim's card in two panes (drawMakerClaims draws both into #makerClaims), Group orders a form and its pools
+           in one stack, and the mini ledger Ambient's tables, which stack by the shell's width and never scroll sideways */
+        + '<section class="amb-stack" data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 class="amb-section" id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" class="amb-split amb-split--panes" aria-live="polite"></div></section>'
+        + '<section class="amb-stack" data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 class="amb-section" id="makerPoolsTitle">Group orders</h2>'
+        + '<p class="amb-field__hint">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
+        + '<div id="makerPools" class="amb-stack" aria-live="polite"></div></section>'
         /* 16 Oct 2026: THE MINI LEDGER, three tables of the folded book in this order: Open orders, Pending orders and the latest twenty. Every other part of Orders
            is shut while it shows (stmt/owner.js, loadLedger). */
-        + '<div id="oLedger" data-in="orders.ledger"><p class="lead" id="ledgerStatus" role="status">Reading.</p><section class="ledgrp" id="led-tie" aria-label="Order and book"></section>'
-        + [["open", "Open orders"], ["pending", "Pending orders"], ["recent", "Latest 20 orders"]].map(([k, w]) => '<section class="ledgrp" aria-labelledby="led-' + k + '-h"><h2 id="led-' + k + '-h">' + w
-          + '</h2><div class="salt-table-wrap" id="led-' + k + '" tabindex="0" role="region" aria-labelledby="led-' + k + '-h"></div></section>').join("") + "</div>"
+        + '<div id="oLedger" class="amb-stack" data-in="orders.ledger"><p class="amb-field__hint" id="ledgerStatus" role="status">Reading.</p><section class="amb-stack ledgrp" id="led-tie" aria-label="Order and book"></section>'
+        + [["open", "Open orders"], ["pending", "Pending orders"], ["recent", "Latest 20 orders"]].map(([k, w]) => '<section class="amb-stack ledgrp" aria-labelledby="led-' + k + '-h"><h2 class="amb-section" id="led-' + k + '-h">' + w
+          + '</h2><div id="led-' + k + '" role="region" aria-labelledby="led-' + k + '-h"></div></section>').join("") + "</div>"
         + "</div></div>"
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
