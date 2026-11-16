@@ -70,8 +70,11 @@
 }
 /* a screen with a dock under it leaves the dock's height clear, so its last row can be reached */
 .amb-screen--docked { padding-bottom: var(--amb-bleed); scroll-padding-bottom: var(--amb-bleed); }
-/* a place: one of an app's places in its one screen, every other one [hidden]. It draws no box, so what it
-   holds is laid out as the screen's own: its stacks, and a split of panes that fills the screen */
+/* a place: one of an app's places in its one screen, every other one [hidden]. A place may hold places (the
+   parts of a place, one shown at a time), three deep at most. None draws a box, so what the shown chain holds is
+   laid out as the screen's own: its stacks, and a split of panes at its end that fills the screen. A hidden place
+   anywhere in the chain, or a hidden split, leaves the screen scrolling as one. The panes rule weighs the same
+   whatever the depth (the deeper chains in :where), so the save bar's room and the rail's own padding keep their order */
 .amb-place { display: contents; }
 .amb-wrap { width: min(100%, var(--amb-measure)); margin-inline: auto; }
 .amb-wrap--narrow { --amb-measure: 440px; }
@@ -94,7 +97,7 @@
 .amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }
 .amb-stack > * { min-width: 0; }
 /* one block after another in a screen keeps the gap a stack keeps inside itself */
-:is(.amb-screen, .amb-screen > .amb-place) > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-space-4); }
+:is(.amb-screen, .amb-place) > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-space-4); }
 
 /* ---- The mesh: a mood's three stops over its base, fading into the base at the foot ---- */
 /* Painted as gradients, never as blurred discs: a blur filter on a layer this size is drawn
@@ -1298,11 +1301,11 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
    the window, which an app's shell is. */
 @container amb (min-width: 960px) {
   @media (min-height: 640px) {
-    .amb-screen:has(> .amb-split--panes, > .amb-place:not([hidden]) > .amb-split--panes) { display: flex; flex-direction: column; overflow-y: hidden; }
-    .amb-screen:has(> .amb-split--panes, > .amb-place:not([hidden]) > .amb-split--panes) > :not(.amb-split--panes), .amb-screen:has(> .amb-split--panes, > .amb-place:not([hidden]) > .amb-split--panes) > .amb-place > :not(.amb-split--panes) { flex: none; }
-    .amb-shell--rail > .amb-screen:has(> .amb-split--panes, > .amb-place:not([hidden]) > .amb-split--panes) { padding-bottom: var(--amb-safe-bottom); }
-    :is(.amb-screen, .amb-screen > .amb-place) > .amb-split--panes { position: relative; flex: 1 1 0; min-height: 0; grid-template-columns: minmax(280px, min(340px, 45%)) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: stretch; }
-    :is(.amb-screen, .amb-screen > .amb-place) > .amb-split--panes::before { content: ""; position: absolute; z-index: 1; inset: 0 0 auto; height: var(--amb-space-6); background: linear-gradient(to bottom, var(--amb-base), transparent); pointer-events: none; }
+    .amb-screen:is(:has(> .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])), :where(:has(> .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])))) { display: flex; flex-direction: column; overflow-y: hidden; }
+    .amb-screen:is(:has(> .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])), :where(:has(> .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])))) > :not(.amb-split--panes), .amb-screen:is(:has(> .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])), :where(:has(> .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])))) .amb-place > :not(.amb-split--panes) { flex: none; }
+    .amb-shell--rail > .amb-screen:is(:has(> .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])), :where(:has(> .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])))) { padding-bottom: var(--amb-safe-bottom); }
+    :is(.amb-screen, .amb-place) > .amb-split--panes { position: relative; flex: 1 1 0; min-height: 0; grid-template-columns: minmax(280px, min(340px, 45%)) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+    :is(.amb-screen, .amb-place) > .amb-split--panes::before { content: ""; position: absolute; z-index: 1; inset: 0 0 auto; height: var(--amb-space-6); background: linear-gradient(to bottom, var(--amb-base), transparent); pointer-events: none; }
     .amb-split--panes > .amb-stack { align-content: start; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-block: calc(var(--amb-space-6) + var(--amb-space-1)) var(--amb-space-6); scroll-padding-top: calc(var(--amb-space-6) + var(--amb-space-1)); }
     .amb-split--panes > .amb-stack:has(> .amb-foot) { padding-bottom: 0; scroll-padding-bottom: calc(2 * var(--amb-pill-h) + var(--amb-space-6)); }
   }
@@ -1326,10 +1329,12 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 /* Over a dock the ground runs on from the foot down to the screen's foot and the dock floats over it, so
    nothing that scrolls shows between the pill and the dock or under the dock. It is drawn where the foot's
    record ends the screen, so it never covers what follows, and it takes the taps meant for what it hides. */
-.amb-screen--docked > .amb-stack:last-child > .amb-foot::after,
-.amb-screen--docked > .amb-place > .amb-stack:last-child > .amb-foot::after,
-.amb-screen--docked > .amb-place > .amb-split:last-child > .amb-stack:last-child > .amb-foot::after,
-.amb-screen--docked > .amb-split:last-child > .amb-stack:last-child > .amb-foot::after { content: ""; position: absolute; inset: 100% 0 auto; height: calc(var(--amb-tabbar-h) + var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px)); background: var(--amb-base); pointer-events: auto; }
+/* In a place, the record that ends the screen is the last thing shown: what follows it is hidden. The rules weigh
+   no more than a foot, so where the dock is a rail, in panes and in print the ground's `content: none` wins */
+:where(.amb-screen--docked > .amb-stack:last-child) > .amb-foot::after,
+:where(.amb-screen--docked .amb-place > .amb-stack:not(:has(~ :not([hidden])))) > .amb-foot::after,
+:where(.amb-screen--docked .amb-place > .amb-split:not(:has(~ :not([hidden]))) > .amb-stack:last-child) > .amb-foot::after,
+:where(.amb-screen--docked > .amb-split:last-child > .amb-stack:last-child) > .amb-foot::after { content: ""; position: absolute; inset: 100% 0 auto; height: calc(var(--amb-tabbar-h) + var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px)); background: var(--amb-base); pointer-events: auto; }
 /* a control taken to by the keyboard comes to rest above the dock and the foot */
 .amb-screen--docked:has(.amb-foot) { scroll-padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px) + 2 * var(--amb-pill-h)); }
 @container amb (min-width: 960px) {
@@ -1342,9 +1347,9 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 }
 /* on paper the panes are one column that runs on and the foot stays where it stands, with no fade */
 @media print {
-  .amb-screen:has(> .amb-split--panes, > .amb-place:not([hidden]) > .amb-split--panes) { display: block; overflow: visible; }
-  :is(.amb-screen, .amb-screen > .amb-place) > .amb-split--panes { grid-template-rows: none; }
-  :is(.amb-screen, .amb-screen > .amb-place) > .amb-split--panes::before { display: none; }
+  .amb-screen:is(:has(> .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])), :where(:has(> .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])))) { display: block; overflow: visible; }
+  :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-rows: none; }
+  :is(.amb-screen, .amb-place) > .amb-split--panes::before { display: none; }
   .amb-split--panes > .amb-stack { overflow: visible; }
   .amb-foot { position: static; margin: 0; padding: 0; background: none; }
   .amb-foot::after { content: none; }
@@ -1421,7 +1426,7 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 .amb-shell:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen--docked { padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); scroll-padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); }
 @container amb (min-width: 960px) {
   .amb-shell--rail > .amb-dock > .amb-savebar { position: absolute; bottom: 0; left: calc(100% + var(--amb-dock-inset) + var(--amb-space-4)); width: min(520px, calc(100cqi - 100% - 3 * var(--amb-dock-inset) - 2 * var(--amb-space-4) - var(--amb-safe-left) - var(--amb-safe-right))); }
-  .amb-shell--rail:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); }
+  .amb-shell.amb-shell--rail:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); }
 }
 
 /* ---- Toast: a capsule from the top. A popover where the browser has them, so it shows over an open sheet. ---- */
