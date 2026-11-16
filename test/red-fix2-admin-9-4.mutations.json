@@ -1,0 +1,14 @@
+[
+ {
+  "name": "the heading goes with an empty list (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "else if(!nodev) dh.remove();",
+  "replace": "else dh.remove();"
+ },
+ {
+  "name": "a device's Sign out is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "so=aPill('Sign out','acct.device-signout',d.id,true,true)",
+  "replace": "so=aPill('Sign off','acct.device-signout',d.id,true,true)"
+ }
+]

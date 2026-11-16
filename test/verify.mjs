@@ -17125,10 +17125,12 @@ await (async () => {
     const A = pageAt(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), "/all", { "cf-access-jwt-assertion": tok });
     const DA = A.document;
     /* 26 Oct 2026: a link is a card with its panel (address, QR, moves) under it; its group is the heading of the section it sits in */
-    const cardOf = (id) => [...DA.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
-    const groupOf = (id) => { const c = cardOf(id), g = c && c.closest(".ngroup"); return g ? g.querySelector(".nsev").textContent : null; };
+    /* 17 Nov 2026, the move to Ambient (the second red fix): a link is an Ambient row (li.glrow, data-glink) with its panel (li.glpanel, data-link) after it; its group is the heading of the section it sits in */
+    const rowOf = (id) => DA.querySelector('#glist .glrow[data-glink="' + id + '"]');
+    const cardOf = (id) => DA.querySelector('#glist .glpanel[data-link="' + id + '"]');
+    const groupOf = (id) => { const c = rowOf(id), g = c && c.closest("section.agroup"); return g ? g.querySelector(".ghead").textContent : null; };
     DA.querySelector('button[data-m="customers"]').click(); DA.querySelector('[data-act="part.customers.links"]').click();
-    ok(await until(() => cardOf(keep) && cardOf(drop)) && groupOf(keep) === "Waiting on you" && groupOf(drop) === "Waiting on you",
+    ok(await until(() => rowOf(keep) && rowOf(drop)) && groupOf(keep) === "Waiting on you" && groupOf(drop) === "Waiting on you",
       "both links wait on him before he decides: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
     const de = cardOf(drop) && [...cardOf(drop).querySelectorAll("button")].find((b) => b.textContent === "Decline");
     if (de) de.click();
@@ -17136,7 +17138,7 @@ await (async () => {
       && (await site("/g/" + drop)).status === 404 && (await site("/g/" + third)).status === 404,
       "a tap on Decline marks it declined, and the door answers the same 404 it gives a pending or unknown id");
     ok(await until(() => groupOf(drop) !== "Waiting on you") && groupOf(keep) === "Waiting on you"
-      && /not approved/.test(cardOf(drop).textContent) && /^Declined/.test(cardOf(drop).previousElementSibling.querySelector(".nkind").textContent)
+      && /not approved/.test(cardOf(drop).textContent) && /^Declined/.test(rowOf(drop).querySelector(".amb-row__sub").textContent)
       && ![...cardOf(drop).querySelectorAll("button")].some((b) => b.textContent === "Decline"),
       "the declined link leaves Waiting on you and says Not approved, while the pending one still waits there: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
 
@@ -17150,7 +17152,7 @@ await (async () => {
     ok(await until(() => DP.querySelectorAll("#pCard .glink").length >= 3),
       "their panel lists their links: " + DP.querySelectorAll("#pCard .glink").length);
     /* S8 8.1: the state is a word in the system's chip, Waiting where it said Waiting to be approved */
-    const words = [...DP.querySelectorAll("#pCard .glink .gstate")].map((x) => x.textContent);
+    const words = [...DP.querySelectorAll("#pCard .glink .amb-row__sub")].map((x) => x.textContent.split(",")[0]);   /* 17 Nov 2026, the move to Ambient (the second red fix): the state is the first word of the row's sub line */
     ok(words.filter((w) => w === "Not approved").length === 1 && words.filter((w) => w === "Waiting").length === 2,
       "the declined link reads Not approved and only the two still pending read Waiting: " + JSON.stringify(words));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
@@ -17252,12 +17254,12 @@ await (async () => {
       "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
-    const said = [...D.querySelectorAll("#payHead .msg")].map((x) => x.textContent);
+    const said = [...D.querySelectorAll("#payHead .amb-prose p")].map((x) => x.textContent);   /* 17 Nov 2026, the move to Ambient (the second red fix): a line of words is an amb-prose paragraph, no longer .msg */
     ok(said.includes("RM 40.00 sent, waiting for us to confirm.") && !D.getElementById("payNow"),
       "and the account's claims come with his route, so his view says what was sent and is waiting, as theirs does, with no Pay: " + JSON.stringify(said));
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && pCard.querySelector(".glink .gstate").textContent === "Waiting"
+    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && pCard.querySelector(".glink .amb-row__sub").textContent.startsWith("Waiting")   /* 17 Nov 2026, the move to Ambient (the second red fix): the state is the first word of the row's sub line */
       && ![...pCard.querySelectorAll("button")].some((b) => /Make a link|Withdraw/.test(b.textContent)),
       "an associate's links are drawn as they see them, with nothing that mints or withdraws: " + JSON.stringify([...pCard.querySelectorAll("button")].map((b) => b.textContent)));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -17307,10 +17309,10 @@ await (async () => {
     const D = win.document;
     /* ---- S9 9.2: Accounts, a row opening each account's card; the four controls on the one with no account ---- */
     D.querySelector('button[data-m="customers"]').click();
-    /* 2 Nov 2026 (Customers on the canvas): a settings row, its state word in the row's second line (.salt-settings__sub) */
+    /* 2 Nov 2026 (Customers on the canvas): a settings row, its state word in the row's second line (.amb-row__sub) */ /* 17 Nov 2026, the move to Ambient (the second red fix): now .amb-row__sub */
     const rowOf = (u) => D.querySelector('#rlist .arow[data-u="' + u + '"]');
-    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).querySelector(".salt-settings__sub").textContent) && rowOf(uA)), "Accounts lists both usernames as settings rows, and says the one has no account");
-    const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
+    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).querySelector(".amb-row__sub").textContent) && rowOf(uA)), "Accounts lists both usernames as settings rows, and says the one has no account");
+    const cardOf = (u) => { rowOf(u).querySelector(".arow__open").click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button */ return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
     const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
     /* S9 9.3: the account's screen, its one filled Send a sign-in link and the four other ways beside it */
     const five = ["Send a sign-in link", "Show a code", "View as them", "Copy password", "Sign out everywhere"];
@@ -17634,7 +17636,7 @@ await (async () => {
     /* S9 9.2: the tick is on the account's own card, opened from its row */
     /* 25 OCT 2026: the Sent tick is gone; Mark as sent on the card replaces it, and there is no unticking */
     const mark = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return null;
-      if (!D.querySelector("#aopen .scard") || !D.querySelector("#aopen .scard").textContent.includes(u)) r.click();
+      if (!D.querySelector("#aopen .scard") || !D.querySelector("#aopen .scard").textContent.includes(u)) r.querySelector(".arow__open").click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button */
       const c = D.querySelector("#aopen .scard"); return c && [...c.querySelectorAll("button")].find((b) => b.textContent === "Mark as sent"); };
     ok(await until(() => mark(uA)) && head() === "0 of 2 sent", "Accounts opens on nothing sent: " + head());
     mark(uA).click();
@@ -17690,7 +17692,7 @@ await (async () => {
     place().click();
     ok(await until(() => D.getElementById("osheet") && /Order placed/.test(D.getElementById("osheet").textContent)), "the order is placed and the sheet says so");
     D.getElementById("tCard").click();
-    const box = () => [...pCard.querySelectorAll(".pane")].find((x) => /Your links/.test(x.textContent));
+    const box = () => [...pCard.querySelectorAll(".rlinks")].find((x) => /Your links/.test(x.textContent));   /* 17 Nov 2026, the move to Ambient (the second red fix): the links box is .rlinks, no longer a .pane */
     ok(await until(() => box() && box().querySelectorAll(".glink").length === RF.MAX_PER_ASSOC - 1),
       "the card lists their links");
     /* THE BOX IS REDRAWN AFTER THE PLACEMENT, by a withdrawal, or the check below would read the box
@@ -17924,11 +17926,11 @@ await (async () => {
       const list87 = D87.getElementById("rlist").textContent;
       /* 2 Nov 2026 (Customers on the canvas): the card is a settings row; its word and age the row's second line, its figure the row's value */
       const card87 = D87.querySelector('#rlist .arow[data-u="aaaa-bbbb"]');
-      const kind87 = card87 ? card87.querySelector(".salt-settings__sub").textContent.replace(/\s+/g, " ").trim() : "", fig87 = card87 ? card87.querySelector(".salt-settings__value--lg").textContent.replace(/\s+/g, " ").trim() : "";
-      if (card87) card87.click();
+      const kind87 = card87 ? card87.querySelector(".amb-row__sub").textContent.replace(/\s+/g, " ").trim() : "", fig87 = kind87;   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's sub line carries the word, the age and the sum together; the row's own button opens it */
+      if (card87) card87.querySelector(".arow__open").click();
       await new Promise((r) => setTimeout(r, 60));
       /* 2 Nov 2026 (his Orders canvas, page 2): the standing is a settings list now, a row a line */
-      const stand87 = [...D87.querySelectorAll("#aopen .astand .salt-settings__row")].map((l) => l.textContent.replace(/\s+/g, " ").trim());
+      const stand87 = [...D87.querySelectorAll("#aopen .astand .amb-setting")].map((l) => l.textContent.replace(/\s+/g, " ").trim());
       ok(D87.getElementById("oAccts").hidden === false && D87.getElementById("mHome").hidden === true
         && /CX0-AA/.test(list87) && /CX1-BB/.test(list87) && /^Owed/.test(kind87) && /272/.test(fig87) && stand87.some((x) => x.startsWith("Opened14 Sep")),
         "a tap on Accounts draws every account with its word and its last open: " + JSON.stringify({ kind87, fig87, stand87 }));
@@ -18135,10 +18137,10 @@ await (async () => {
     const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "customers",
       "a tap on Customers opens its Accounts and marks it the current place");
-    ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-settings__row") && !!r.closest(".salt-settings") && !!r.closest("section[data-sev]") && !!r.querySelector(".acode") && !r.classList.contains("ncard")),
-      "every roster account is a row, drawn as a settings row inside its severity group's list");
+    ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("amb-row") && !!r.closest(".amb-list") && !!r.closest("section[data-sev]") && !!r.querySelector(".acode") && !r.classList.contains("ncard")),
+      "every roster account is a row, drawn as an Ambient row inside its severity group's list");
     /* 25 OCT 2026: a row is its state and age, then the sum; when and how it was opened and sent now live on the opened card's ledger */
-    const kind = (u) => (rowOf(u).querySelector(".salt-settings__sub") || {}).textContent || "", fig = (u) => (rowOf(u).querySelector(".salt-settings__value--lg") || {}).textContent || "";
+    const kind = (u) => (rowOf(u).querySelector(".amb-row__sub") || {}).textContent || "", fig = kind;   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's sub line carries the state, the age and the sum together */
     ok(/^Owed/.test(kind(uO)) && /RM 272/.test(fig(uO)),
       "a row says what they owe in its kind and its figure: " + JSON.stringify([kind(uO), fig(uO)]));
     ok(/^Locked/.test(kind(uL)) && kind(uN).startsWith("No account") && !/No account yet/.test(kind(uN)) && /^Not (sent|opened)/.test(kind(uF)),
@@ -18154,18 +18156,18 @@ await (async () => {
     const got = Object.fromEntries(Object.keys(want).map((f) => [f, shown(f)]));
     ok(Object.keys(want).every((f) => got[f] === want[f].slice().sort().join()), "each filter shows what it names and nothing else: " + JSON.stringify(got));
     shown("owes");
-ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-selected") === "true"
-      && [...D.querySelectorAll("#afil button[data-f]")].filter((b) => b.getAttribute("aria-selected") === "true").length === 1,
+ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-pressed") === "true"
+      && [...D.querySelectorAll("#afil button[data-f]")].filter((b) => b.getAttribute("aria-pressed") === "true").length === 1,
       "and the filter in force is the one pressed");
     shown("all");
 
     /* a row opens the account, and the way back closes it */
-    rowOf(uO).click();
+    rowOf(uO).querySelector(".arow__open").click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button opens it, the li is the row */
     ok(D.getElementById("oAccts").classList.contains("open") && !D.getElementById("aopen").hidden
       && /CX0-OW/.test(D.querySelector("#aopen .scard").textContent) && rowOf(uO).getAttribute("aria-current") === "true",
       "a row opens its account's card and is marked the open one");
     /* 2 Nov 2026 (his Orders canvas, page 2): the standing is a settings list, its figure the row's .salt-settings__value */
-    const stand = (k) => ((D.querySelector('#aopen .scard .astand [data-line="' + k + '"] .salt-settings__value') || {}).textContent) || "";
+    const stand = (k) => ((D.querySelector('#aopen .scard .astand [data-line="' + k + '"] .amb-setting__value') || {}).textContent) || "";
     ok(stand("Opened") === "14 Sep 2026 by link" && stand("Marked sent") === "03 Sep 2026" && stand("Notifications") === "On",
       "and its ledger says when and how it was last opened, when it was marked sent and that notifications are on: " + JSON.stringify([stand("Opened"), stand("Marked sent"), stand("Notifications")]));
     D.querySelector('#aopen button[data-back="accounts"]').click();
@@ -18216,7 +18218,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const cust = await (await site("/")).text();
-    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" aria-live="polite"><span class="salt-settings__label" id="lockT" data-w="dev.out">Sign out this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" aria-live="polite"><span id="lockT" data-w="dev.out">Sign out this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");   /* 17 Nov 2026, the move to Ambient (the second red fix): the label is a bare span in the danger action */
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
@@ -18225,7 +18227,7 @@ await (async () => {
     const D = win.document;
     D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "the account is on Accounts");
-    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button opens it */
     const view = [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them");
     ok(!!view && !view.disabled, "its card offers View as them");
     view.click();
@@ -19078,8 +19080,8 @@ await (async () => {
     delete win.matchMedia;
     D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     /* 25 OCT 2026: an open is read from the opened card's Opened line, no longer from the row */
-    const opened = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return ""; r.click();
-      const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .salt-settings__value'); return v ? v.textContent : ""; };
+    const opened = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return ""; r.querySelector(".arow__open").click();
+      const c = D.querySelector("#aopen .scard"); const v = c && c.textContent.includes(u) && c.querySelector('.astand [data-line="Opened"] .amb-setting__value'); return v ? v.textContent : ""; };   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button; the standing's value is .amb-setting__value */
     ok(await until(() => opened(us[0]) === "03 Sep 2026 by code") && opened(us[1]) === "03 Sep 2026 by code",
       "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([opened(us[0]), opened(us[1])]));
     ok(opened(us[2]) === "03 Sep 2026 by password" && opened(us[3]) === "03 Sep 2026",
@@ -19721,7 +19723,8 @@ await (async () => {
     /* 3 Nov 2026 (the account on Shop's grid): a device is a settings row, kept or not on its second line, and its Sign out the ember row under it */
     ok(await until(() => /Phones and computers2/.test(story()) && /iPhone, SafariKept since .*, used .*?Sign out/.test(story()) && /Windows computer, EdgeNot kept, signed in .*?Sign out/.test(story())),
       "the account lists its two devices under Phones and computers, each with its own Sign out: " + JSON.stringify(story()));
-    const outOf = (label) => { const r = [...card().querySelectorAll("[data-story] .adevs > .salt-settings__row")].find((x) => x.textContent.startsWith(label)); return r && r.nextElementSibling; };
+    /* 17 Nov 2026, the move to Ambient (the second red fix): a device is an Ambient row and its Sign out the pill in the row's trail, no longer the ember row under it */
+    const outOf = (label) => { const r = [...card().querySelectorAll("[data-story] .adevs > .amb-row")].find((x) => x.textContent.startsWith(label)); return r && r.querySelector('[data-act="acct.device-signout"]'); };
     outOf("Windows computer, Edge").click();
     ok(await until(() => /Phones and computers1/.test(story()) && !/Windows computer, Edge/.test(story().split("Phones and computers")[1])), "one tap on a device's Sign out ends it and the list follows: " + JSON.stringify(story()));
     const pill = () => card().querySelector(".apill");
@@ -19733,7 +19736,7 @@ await (async () => {
     ok(await until(() => D.getElementById("ynGo")) && /Sign out everywhere[?]/.test(D.getElementById("ynSheet").textContent), "one tap only asks, on the Sheet");
     D.getElementById("ynGo").click();
     ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled && pill().textContent === "Share the link",
-      "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".aend + .anote") || {}).textContent));
+      "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".aend .anote") || {}).textContent));
     /* ---- an account closed while its link and its story are still on their way: their landing throws nothing ----
        28 Sep 2026: jsdom from 30.1.0 keeps a closed window's document, so the late answers draw into it, harmlessly; what
        is held is that nothing they do throws into the next section's time. The answers are held until the page has
@@ -19760,7 +19763,7 @@ await (async () => {
       await until(() => / accounts$/.test(D3.getElementById("mFoot").textContent));
       D3.querySelector('button[data-m="customers"]').click();
       await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
-      D3.querySelector('#rlist [data-u="' + u + '"]').click();
+      D3.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button */
       ok(await until(() => gate.seen.includes("account") && !!D3.querySelector("#aopen .apill")), "the account opened, its story is on its way");
       D3.querySelector("#aopen .apill").click();
       ok(await until(() => gate.seen.includes("signin")), "and so is the link its first tap makes");
@@ -19956,7 +19959,7 @@ await (async () => {
     const D = win.document;
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     const openAcct = async (x) => { D.querySelector('button[data-m="customers"]').click();
-      await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
+      await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"] .arow__open').click(); };   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button */
     const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
     const pill = (x) => card(x) && card(x).querySelector(".apill");
     /* 2 Nov 2026 (his Orders canvas, page 2): Sign out everywhere asks on the Sheet, answered yes; its line follows the end list (.aend) */
@@ -19965,7 +19968,7 @@ await (async () => {
       sob().click();
       if (!await until(() => D.getElementById("ynGo"))) return false;
       D.getElementById("ynGo").click();
-      return until(() => /Signed out|Nothing was signed in/.test((card(x).querySelector(".aend + .anote") || {}).textContent || ""));
+      return until(() => /Signed out|Nothing was signed in/.test((card(x).querySelector(".aend .anote") || {}).textContent || ""));   /* 17 Nov 2026, the move to Ambient (the second red fix): the answer line is the last child of the .aend group */
     };
 
     /* ---- the account's own Send, copied ---- */
@@ -20051,7 +20054,7 @@ await (async () => {
     D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
     const pill = () => card() && card().querySelector(".apill");
-    const note = () => ((card() && card().querySelector(".apill + .anote")) || {}).textContent || "";
+    const note = () => ((card() && card().querySelector(".asign .anote")) || {}).textContent || "";   /* 17 Nov 2026, the move to Ambient (the second red fix): the answer line is the Sign-in group's foot, no longer beside the pill */
     ok(await until(() => pill() && !pill().disabled) && await work.quiet() && tries.length === 0 && pill().textContent === "Send a sign-in link",
       "the account opens and makes nothing: " + JSON.stringify([pill() && pill().textContent, tries.length]));
     pill().click();
@@ -20253,8 +20256,8 @@ await (async () => {
         sob().click();
         if (!await until(() => D.getElementById("ynGo"))) return "";
         D.getElementById("ynGo").click();
-        await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".aend + .anote") || {}).textContent || ""));
-        return (card().querySelector(".aend + .anote") || {}).textContent || "";
+        await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".aend .anote") || {}).textContent || ""));
+        return (card().querySelector(".aend .anote") || {}).textContent || "";
       };
       return { shared, pill, until, make, signOutAll, quiet: () => work.quiet() };
     };
@@ -20348,14 +20351,14 @@ await (async () => {
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     /* 25 OCT 2026: the row says only its state; when and how it was last opened is the opened card's Opened line */
-    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button */
     /* 2 Nov 2026 (his Orders canvas, page 2): the standing's rows are settings rows */
-    const chip = () => ((D.querySelector('#aopen .scard .astand [data-line="Opened"] .salt-settings__value') || {}).textContent) || "";
+    const chip = () => ((D.querySelector('#aopen .scard .astand [data-line="Opened"] .amb-setting__value') || {}).textContent) || "";
     ok(/^[0-9]{2} \w{3} [0-9]{4} by code$/.test(chip()), "the opened card says the last open was by code, one word for the three roads: " + chip());
     /* 3 Nov 2026 (the account on Shop's grid): a way in is a settings row, the road it took leading its second line */
-    const ways = () => [...D.querySelectorAll('#aopen [data-story] .astory__list > .salt-settings__row')];
-    const rows = () => ways().map((r) => (r.querySelector(".salt-settings__label") || {}).textContent);
-    const flags = () => ways().map((r) => ((r.querySelector(".salt-settings__sub") || {}).textContent) || "");
+    const ways = () => [...D.querySelectorAll('#aopen [data-story] .astory__list > .amb-row')];   /* 17 Nov 2026, the move to Ambient (the second red fix): a way in is an Ambient row, its title the road and its sub the road it took */
+    const rows = () => ways().map((r) => (r.querySelector(".amb-row__title") || {}).textContent);
+    const flags = () => ways().map((r) => ((r.querySelector(".amb-row__sub") || {}).textContent) || "");
     ok(await until(() => rows().includes("Code")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code", "Code", "Password", "Code"])
       && /^Typed in/.test(flags()[0]) && /^Copied across/.test(flags()[1]) && /^Scanned at the counter/.test(flags()[3]),
       "and How they signed in says Code for the three, the road each took under its line: " + JSON.stringify([rows(), flags()]));
@@ -25653,7 +25656,8 @@ await (async () => {
   ok(/card:pCard\}/.test(page6) && /PANEL\[k\]\.hidden=k!==t;/.test(page6), "and its panel is switched with the other places");
   ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped; since 12 Oct 2026 (Phase 5) it is the system's tab pill, and the page states only its 44px */
-  ok(/\.mos \.salt-tabs__pill\{min-height:var\(--salt-tap\);min-width:var\(--salt-tap\)\}/.test(page6) && !/\.mos button/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
+  /* 17 Nov 2026, the move to Ambient (the second red fix): the month is Ambient's select (amb-field mos over amb-select and amb-input, whose control is the system's 44px), no longer a row of pills; no button rule and no small-control override stands on it */
+  ok(/el\('label','amb-field mos'\)/.test(page6) && /sel=el\('select','amb-input'\)/.test(page6) && !/salt-tabs__pill/.test(page6) && !/\.mos button/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
 })();
 section("S14 14.1: the publish learns the pool, marks a spare in the clear, never retires one, and the door opens it for nobody");
@@ -26569,7 +26573,7 @@ await (async () => {
     d9.querySelector('button[data-t="card"]').click();
     for (let i = 0; i < 60 && !/Your links/.test(d9.getElementById("pCard").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const txt9 = () => d9.getElementById("pCard").textContent;
-    ok(/Your links/.test(txt9()) && [...d9.querySelectorAll("#pCard .glink .gstate")].some((x) => x.textContent === "Waiting"),
+    ok(/Your links/.test(txt9()) && [...d9.querySelectorAll("#pCard .glink .amb-row__sub")].some((x) => x.textContent.startsWith("Waiting")),   /* 17 Nov 2026, the move to Ambient (the second red fix): the state is the first word of the row's sub line */
       "the panel loads their links and says the one waiting is waiting: " + JSON.stringify(txt9().slice(0, 60)));
     ok(!/https:\/\/site\.test\/g\/aaaa-bbbb/.test(txt9()),
       "and a link that is still waiting shows no address at all, because nothing can open it yet");
@@ -28786,7 +28790,7 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     const card = () => [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u));
-    const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.click(); k = card(); }
+    const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.querySelector(".arow__open").click();   /* 17 Nov 2026, the move to Ambient (the second red fix): the row's own button */ k = card(); }
       return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
     ok(await until(() => !!btn()) && btn().textContent === "Sign out everywhere", "each account's card carries Sign out everywhere");
     /* 2 Nov 2026 (his Orders canvas, page 2): Sign out everywhere asks on the Sheet in place of "Tap again"; Keep sends nothing, the go signs out */

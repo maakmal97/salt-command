@@ -1,0 +1,14 @@
+[
+ {
+  "name": "the Opened line is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "standRow('Opened',",
+  "replace": "standRow('Opnd',"
+ },
+ {
+  "name": "a way in loses its title class (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "tx.appendChild(el('span','amb-row__title',title)); if(sub) tx.appendChild(el('span','amb-row__sub',sub)); li.appendChild(tx);\n    if(when!=null)",
+  "replace": "tx.appendChild(el('span','amb-row__ttl',title)); if(sub) tx.appendChild(el('span','amb-row__sub',sub)); li.appendChild(tx);\n    if(when!=null)"
+ }
+]
