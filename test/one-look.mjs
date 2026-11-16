@@ -87,31 +87,27 @@ export async function run({ ok }) {
     const railToday = (d.querySelector('#tabs .tab[data-s="today"] .navct') || {}).textContent || "", barToday = (app.querySelector('[data-count="today"]') || {}).textContent;
     ok(railToday !== "" && barToday === railToday, "O5.3 the bar carries the rail's counts: " + J([railToday, barToday]));
   } finally { w.close(); }
-  /* O6, O8: Salt Admin's and the Counter's markup and rules */
+  /* O6, O7, O8: 16 Nov 2026, THE MOVE TO AMBIENT (0.7.9). Salt Admin and the Counter are Ambient work screens, so his answers are Ambient's own rules and tokens:
+     the bar beside the rail over what scrolls, to the screen's foot, the rail --amb-rail-foot (24px) above it and --amb-rail-gap (20px) from its column, and the
+     cap once the screen has moved (ambient.js marks the shell data-amb-moved; what scrolls is then drawn from the bar's middle down). jsdom lays nothing out and
+     drops container rules, so they are read as the served text; the measured figures are the probe's. The site's own layer restates none of it. */
   {
-    const html = landingPage("", "ol-nonce", { master: "fixture-master", accounts: [] });
-    const d = new JSDOM(html, { virtualConsole: new VirtualConsole() }).window.document, { at } = rulesOf(d.styleSheets);
-    const g = d.getElementById("roster"), kids = g ? [...g.children] : [], col = kids.find((k) => k.classList.contains("salt-frame__col"));
-    ok(!!g && g.classList.contains("salt-frame--side") && kids[0] && kids[0].classList.contains("salt-rail") && !!col
-      && col.firstElementChild && col.firstElementChild.matches("header.abar.salt-frame__bar") && !!col.querySelector(":scope > .amain.salt-frame__main")
-      && !kids.some((k) => k.matches("header")),
-      "O6.1 Salt Admin wears the side frame: the rail its full height, then a column of the bar over what scrolls: " + J(kids.map((k) => k.tagName + "." + k.className)));
-    const gate = at(Q, ".gate.adm");
-    ok(/--salt-frame-h: calc\(100dvh - 22px\)/.test(gate) && /margin-bottom: -60px/.test(gate) && /padding: 0(px)?/.test(gate),
-      "O6.2 Salt Admin's frame runs to the screen's foot at the page's own edge, as the Desk's: " + gate);
-    const counter = landingPage("0000-0000", "ol-nonce"), { at: cat } = rulesOf(sheetsOf(counter));
-    ok(/gap: 20px/.test(cat(Q, ".cshell")), "O8 the Counter's rail stands 20px from its column, as the Desk's and Salt Admin's: " + cat(Q, ".cshell"));
-  }
-  /* O7: the cap, driven on the Counter's page and Salt Admin's */
-  for (const [who, html] of [["the Counter", landingPage("0000-0000", "ol-nonce")], ["Salt Admin", landingPage("", "ol-nonce", { master: "fixture-master", accounts: [] })]]) {
-    const dom = new JSDOM(html, { runScripts: "dangerously", pretendToBeVisual: true, url: "https://counter.fixture.test/", virtualConsole: new VirtualConsole(),
-      beforeParse(win) { win.fetch = () => new Promise(() => {}); win.scrollTo = () => {}; win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }); } });
-    const win = dom.window, b = win.document.body;
-    const move = (y) => { Object.defineProperty(win, "pageYOffset", { configurable: true, value: y }); win.dispatchEvent(new win.Event("scroll")); return b.classList.contains("salt-stuck"); };
-    const still = move(0), moved = move(120), back = move(2);
-    const rule = rulesOf(win.document.styleSheets).top(who === "Salt Admin" ? ".adm:where(.salt-stuck *) .abar" : "body.salt-stuck .chead.salt-deskbar");
-    ok(!still && moved && !back && [24, 48, 72, 96].every((y) => new RegExp("0(px)? -" + y + "px 0(px)? 0(px)? var\\(--salt-obsidian\\)").test(rule)),
-      "O7 on " + who + ", once the page has moved the bar casts the Desk's cap, and not before: " + J([still, moved, back, rule.slice(0, 80)]));
-    win.close();
+    const { AMB_CSS, AMB_TOKENS, AMB_JS, SITE_CSS } = await import("../stmt/statement-css.js");
+    const flat = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
+    const amb = flat(AMB_CSS), tok = flat(AMB_TOKENS + AMB_CSS), site = flat(SITE_CSS);
+    const shellOf = (html, id) => { const d = new JSDOM(html, { virtualConsole: new VirtualConsole() }).window.document, g = d.getElementById(id); return { d, g, kids: g ? [...g.children].map((k) => k.tagName.toLowerCase() + "." + [...k.classList].join(".")) : [] }; };
+    const A = shellOf(landingPage("", "ol-nonce", { master: "fixture-master", accounts: [] }), "roster"), C = shellOf(landingPage("0000-0000", "ol-nonce"), "tabs");
+    const work = (x) => !!x.g && x.g.matches(".amb-shell.amb-shell--rail") && x.kids[0] === "div.amb-appbar" && /^main\.amb-screen\.amb-screen--docked/.test(x.kids[1]) && /^div\.amb-dock/.test(x.kids[2] || "");
+    ok(work(A) && /\.amb-shell--rail > \.amb-appbar \{ left: calc\(var\(--amb-rail-w\) \+ var\(--amb-dock-inset\) \+ var\(--amb-rail-gap\)\); \}/.test(amb)
+      && !/(\.amb-appbar|\.amb-screen|\.amb-dock)[^{,]*\{[^}]*(left|right|inset|position|top|bottom|padding|margin|width)\s*:/.test(site),
+      "O6.1 Salt Admin is Ambient's work screen: the app bar beside the rail, not across it, over the screen that scrolls under it; the site's layer restates none of it: " + J(A.kids));
+    ok(/--amb-rail-foot: 24px;/.test(tok) && /\.amb-shell--rail > \.amb-dock \{ inset: calc\(var\(--amb-dock-inset\) \+ var\(--amb-safe-top\)\) auto calc\(var\(--amb-rail-foot\) \+ var\(--amb-safe-bottom\)\)/.test(amb)
+      && /--amb-pane-room: 20px;/.test(tok) && !/--amb-rail-foot|--amb-pane-room|--amb-dock-inset/.test(site),
+      "O6.2 what scrolls runs to the screen's foot with 20px of room at a pane's sides, the rail 24px above the foot, by Ambient's tokens alone");
+    ok(work(A) && work(C) && AMB_JS.includes('shell.toggleAttribute("data-amb-moved", moved)') && /\.amb-shell\[data-amb-moved\] > \.amb-screen--docked \{ clip-path: inset\(calc\(var\(--amb-bar-h\) - var\(--amb-tap\) \/ 2\) 0 0 0\); \}/.test(amb)
+      && [A, C].every((x) => [...x.d.querySelectorAll("script")].some((s) => s.textContent.includes('toggleAttribute("data-amb-moved"'))) && !/data-amb-moved|clip-path|salt-stuck/.test(site),
+      "O7 on Salt Admin and the Counter, once the screen has moved the shell is marked and what scrolls is drawn from the bar's middle down, Ambient's cap, not the page's");
+    ok(work(C) && /--amb-rail-gap: 20px;/.test(tok) && /\.amb-shell--rail > \.amb-screen \{ --amb-inset-l: calc\(var\(--amb-rail-w\) \+ var\(--amb-dock-inset\) \+ var\(--amb-rail-gap\)/.test(amb) && !/--amb-inset-l|--amb-rail-gap/.test(site),
+      "O8 the Counter's rail stands 20px from its column, as Salt Admin's, by Ambient's --amb-rail-gap: " + J(C.kids));
   }
 }

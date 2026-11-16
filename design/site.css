@@ -26,7 +26,7 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .nfail > .amb-pill, .unsent-note > .amb-pill { margin-inline-start: auto; flex: none; }
 .unsent-note > span { flex: 1 1 auto; min-width: 0; }
 /* the list: a group a word, a card a task; the whole card is its title's tap, the ways above it */
-.nlist { display: grid; gap: var(--amb-space-5); }
+.nlist { display: grid; gap: var(--amb-pane-gap); }
 .nlist > .ngroup, .nlist > .nfold, .nopen, #nrecord { display: grid; gap: var(--amb-space-3); }
 .apstack { display: grid; gap: var(--amb-space-3); }
 .nlist > .nfold > summary { display: flex; align-items: center; min-height: var(--amb-tap); cursor: pointer; }
@@ -93,9 +93,10 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .amb-setting__name.anow-title[data-now="open"] { color: var(--amb-pos); }
 .codeline__code { font-family: var(--amb-font-mono); white-space: nowrap; }
 /* the menu's lists stand in the stack's rhythm */
-#makerMenu, #makerMenu > [data-in] { display: grid; gap: var(--amb-space-4); min-width: 0; }
+#makerMenu, #makerMenu > [data-in] { display: grid; gap: var(--amb-pane-gap); min-width: 0; }
 #makerMenu > [data-in]:empty { display: none; }
 
+/* 16 Nov 2026, Ambient 0.7.9 (his answer 1): the site's own lists of panes stand Ambient's --amb-pane-gap apart, 14px; it writes no shadow and no scroll state */
 /* ---- Counter: Home, Today and Rewards ---- */
 /* a part of Home, of the reward card and of the links takes no place of its own: its heading, its list and its notes stand in the stack, so
    Ambient's gaps and insets are the only ones. The boxes stay because each is drawn afresh and put on the page only where it reads differently. */
@@ -115,7 +116,7 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 #pWay, #bkBar { display: contents; }
 #pPrices > p { margin: 0; font-size: var(--amb-text-subhead); }
 /* two books across from 960px, the system's own width for two columns */
-.pgrid { display: grid; gap: var(--amb-space-4); align-items: start; }
+.pgrid { display: grid; gap: var(--amb-pane-gap); align-items: start; }
 @media (min-width: 960px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* a book's pane: its heading (the mark thumb and the light chip), the stepper, the figure and Add, the basket line, the sizes */
 .pane { display: grid; gap: var(--amb-space-3); min-width: 0; }
@@ -323,7 +324,7 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 
 /* ---- Salt Admin: Orders, Payments, Group orders, the Ledger check and the open order (place G) ---- */
 /* the queue is a grid of groups; its notes and its Show more stand in the stack's rhythm. The record's wrappers stand aside so its foot is the last thing of its stack. */
-.ordlist { display: grid; gap: var(--amb-space-5); min-width: 0; align-content: start; }
+.ordlist { display: grid; gap: var(--amb-pane-gap); min-width: 0; align-content: start; }
 .ordlist > .amb-empty { padding-block: var(--amb-space-6); }
 .ordlist > .amb-pill { justify-self: start; }
 #makerReview, #makerReview > .maker-card { display: contents; }
@@ -457,7 +458,7 @@ body.ended > *:not(#aEnded) { display: none; }
 .panel p.lead { color: var(--amb-ink-2); font-size: var(--amb-text-subhead); line-height: 1.6; margin: 0 0 18px; }
 .mos { max-width: 620px; margin: 0 0 22px; }
 @media (min-width: 1080px) {
-  .acct { max-width: 1060px; display: grid; grid-template-columns: minmax(0, 620px) minmax(300px, 1fr); column-gap: 40px; row-gap: 28px; align-items: start; }
+  .acct { max-width: 1060px; display: grid; grid-template-columns: minmax(0, 620px) minmax(300px, 1fr); column-gap: 40px; row-gap: var(--amb-pane-gap); align-items: start; }
   #aGlance { grid-column: 1 / -1; }
   #aThread, .acct__main { grid-column: 1; }
   .devcard { grid-column: 2; grid-row: 2 / span 2; }
@@ -485,7 +486,7 @@ body.ended > *:not(#aEnded) { display: none; }
 .adm .aplace { min-width: 0; }
 .adm .aparts { margin: 0 0 20px; }
 .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin: 0 0 16px; }
-.adm .abody:not(.amb-place) { display: flex; flex-direction: column; gap: 28px; }
+.adm .abody:not(.amb-place) { display: flex; flex-direction: column; gap: var(--amb-pane-gap); }
 .adm .aplace input { max-width: 100%; }
 .adm .maker-input.unsent { display: flex; flex-direction: column; gap: 10px; margin: 0 0 10px; }
 .adm #makerBulletinCurrent { overflow-wrap: anywhere; }
