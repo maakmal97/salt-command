@@ -32,7 +32,7 @@
  {"name":"any hash is trusted","file":"stmt/page.js","find":"&&(!h||!!placeOf(h)||h==='#thread'||!!orderIn(h));","replace":";"},
  {"name":"any path is trusted","file":"stmt/page.js","find":"    return (p==='/'||p==='/app')&&(!h","replace":"    return (p||true)&&(!h"},
  {"name":"a place written into the address drops the mark of the Sheet's entry","file":"stmt/page.js","find":"history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]);","replace":"history.replaceState(null,'',location.pathname+location.search+'#'+p[2]);"},
- {"name":"the shut page and the 404 carry a script","file":"stmt/page.js","find":"    + '<div class=\"panel\">' + inner + \"</div></body></html>\";\n}\n\n/** The landing page.","replace":"    + '<script nonce=\"' + nonce + '\">window.addEventListener(\"popstate\",function(){});</script><div class=\"panel\">' + inner + \"</div></body></html>\";\n}\n\n/** The landing page."},
+ {"name":"the shut page and the 404 carry a script","file":"stmt/page.js","find":"inner + \"</main></div></body></html>\";","replace":"inner + \"</main></div><script nonce=\\\"\" + nonce + \"\\\">window.addEventListener(\\\"popstate\\\",function(){});</script></body></html>\";"},
  {"name":"Back closes the order sheet without giving the focus back","file":"stmt/page.js","find":"      bkOpen('o',sheetDismiss);\n","replace":"      bkOpen('o',function(){ if(draft.busy) return false; osh.opener=null; sheetClose(); });\n"},
  {"name":"the focus goes to the Continue drawn before","file":"stmt/page.js","find":"if(op&&!op.isConnected&&op.id&&document.getElementById(op.id)) op=document.getElementById(op.id);","replace":""}
 ]

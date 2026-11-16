@@ -48,8 +48,8 @@
  {
   "name": "the empty guest page still draws the goods and size lines",
   "file": "stmt/page.js",
-  "find": "+ (products.length ? '<p class=\"lead\">'",
-  "replace": "+ (true ? '<p class=\"lead\">'"
+  "find": "(products.length ? note(wd(\"board.goods\")",
+  "replace": "(true ? note(wd(\"board.goods\")"
  },
  {
   "name": "the printed board card says drift again",

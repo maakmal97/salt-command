@@ -94,10 +94,10 @@ export async function run({ ok, pageWork }) {
     const own = rulesOf(pageCss), heavy = own.filter(([, b]) => /^(600|700|bold|bolder)$/.test(decl(b, "font-weight"))).map((r) => r[0]);
     ok(heavy.length === 0, `the page's own layer sets no weight over 500 (heavier: ${heavy.slice(0, 6).join(" | ") || "none"})`);
     const h1 = own.filter(([sel]) => sel.split(",").some((x) => /(^|\s)h1\b/.test(x.trim()))).map((r) => r[0]);
-    const gateH1 = own.filter(([sel, , m]) => !m && sel === ".gate h1");
-    ok(h1.every((x) => /^(\.gate h1|\.panel h2:not\(\.salt-settings__head\),\.panel h1\.gh)$/.test(x)) && !own.some(([sel]) => /amb-hero/.test(sel))
-      && gateH1.length === 1 && decl(gateH1[0][1], "font-size") === "1.75rem",
-      "a place's heading is Ambient's hero title: the page's layer styles no h1 but the door's and a guest page's, and nothing of the hero: " + JSON.stringify(h1));
+    /* 16 Nov 2026, the move to Ambient (place E): the door, the link page, the code screen and the guest pages are Ambient shells with heroes, so the page's layer
+       styles no h1 at all and nothing of the hero */
+    ok(h1.length === 0 && !own.some(([sel]) => /amb-hero/.test(sel)),
+      "a place's heading is Ambient's hero title: the page's layer styles no h1, and nothing of the hero: " + JSON.stringify(h1));
     const body = own.filter(([sel]) => sel === "body" || sel === "html");
     ok(body.length === 0 && !own.some(([sel]) => /\.gate\.adm|\.amain\b/.test(sel)), "the body is Ambient's: the page pads no body and sizes no frame of his");
     ok(!own.some(([sel]) => /\.abar\b|\.salt-deskbar|\.cbar\b|\.chead\b|\.crtitle|\.crbrand|\.salt-rail|\.salt-appbar/.test(sel)), "and none of the old bar, rail or header is styled");
