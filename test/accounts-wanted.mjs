@@ -1,11 +1,14 @@
 /* test/accounts-wanted.mjs: A NEW ID'S ACCOUNT IS ASKED FOR UNTIL IT IS THERE (17 Nov 2026, his "Both A and B"; src/accounts-wanted.js).
  *   A1  an approved roster draft of a statement kind, its code in no value of the published map, waits; a held code, a -R bucket, a supplier,
  *       one approved over a day ago and an unreadable row do not
- *   A2  the rungs: nothing before 6 minutes after the newest approval, one ask at 6, 15 and 30, the rung mark written before the ask, then silent
+ *   A2  the rungs: nothing before 11 minutes after the newest approval, one ask at 11, 20 and 40, the rung mark written before the ask, then silent
  *   A3  a code the map holds asks nothing, and a newer approval starts the rungs again
+ *   A4  a newer approval bound while an older one waits does not start the rungs again (Fable's review of 17 Nov 2026)
+ *   A5  the laptop's pool top-up refuses while an approved Add ID waits for the day's export (tools/stmt-account.mjs poolHold)
  * The cron's wiring and a run GitHub never started are driven in section "Publish on change" 5c and 5d (test/verify.mjs).
  * Every assertion is red under its own mutation (test/accounts-wanted.mutations.json). */
 import { codesWaiting, accountsWanted, ACCOUNT_WANTED_KEY } from "../src/accounts-wanted.js";
+import { poolHold } from "../tools/stmt-account.mjs";
 
 const J = JSON.stringify;
 class MiniKV {
@@ -31,11 +34,11 @@ export async function run({ ok }) {
   const asks = [];
   const want = async (why) => { asks.push({ why, mark: await kv.get(ACCOUNT_WANTED_KEY, "json") }); return true; };
   const seq = [];
-  for (const m of [5, 6, 7, 14, 15, 29, 30, 60]) seq.push([m, await accountsWanted(env, at(m), want)]);
+  for (const m of [10, 11, 12, 19, 20, 39, 40, 80]) seq.push([m, await accountsWanted(env, at(m), want)]);
   const did = seq.filter(([, r]) => r.did).map(([m, r]) => [m, r.tries]);
-  ok(J(did) === J([[6, 1], [15, 2], [30, 3]]) && asks.length === 3 && asks.every((a) => a.why === "account for CA9-NEW" && a.mark && a.mark.tries >= 1)
-    && seq.find(([m]) => m === 30)[1].last === true && seq.find(([m]) => m === 60)[1].silent === true,
-    "A2 one ask at 6, 15 and 30 minutes, each with its rung already marked, the last said, then silent: " + J({ did, asks, last: seq.slice(-1) }));
+  ok(J(did) === J([[11, 1], [20, 2], [40, 3]]) && asks.length === 3 && asks.every((a) => a.why === "account for CA9-NEW" && a.mark && a.mark.tries >= 1)
+    && seq.find(([m]) => m === 40)[1].last === true && seq.find(([m]) => m === 80)[1].silent === true,
+    "A2 one ask at 11, 20 and 40 minutes, each with its rung already marked, the last said, then silent: " + J({ did, asks, last: seq.slice(-1) }));
 
   /* A3 */
   const kv2 = new MiniKV(); await kv2.put("stmt-users", J({ "abcd-efgh": "CA9-NEW" }));
@@ -43,9 +46,24 @@ export async function run({ ok }) {
   const held = await accountsWanted({ SALT_LEDGER: db([draft("CA9-NEW", "customer", 0)]), SALT_QUEUE: kv2 }, at(20), async (why) => asks2.push(why));
   const kv3 = new MiniKV(), asks3 = [];
   const w3 = async (why) => asks3.push(why);
-  for (const m of [6, 15, 30, 31]) await accountsWanted({ SALT_LEDGER: db([draft("CA9-NEW", "customer", 0)]), SALT_QUEUE: kv3 }, at(m), w3);
+  for (const m of [11, 20, 40, 41]) await accountsWanted({ SALT_LEDGER: db([draft("CA9-NEW", "customer", 0)]), SALT_QUEUE: kv3 }, at(m), w3);
   const newer = [];
-  for (const m of [36, 40]) newer.push(await accountsWanted({ SALT_LEDGER: db([draft("CA9-NEW", "customer", 0), draft("CC3-TWO", "customer", 30)]), SALT_QUEUE: kv3 }, at(m), w3));
+  for (const m of [41, 45]) newer.push(await accountsWanted({ SALT_LEDGER: db([draft("CA9-NEW", "customer", 0), draft("CC3-TWO", "customer", 30)]), SALT_QUEUE: kv3 }, at(m), w3));
   ok(!held.did && asks2.length === 0 && asks3.length === 4 && asks3[3] === "account for CA9-NEW, CC3-TWO" && newer[0].did && newer[0].tries === 1 && !newer[1].did,
     "A3 a code the map holds asks nothing; a newer approval after the last rung starts the rungs again, naming both: " + J({ held, asks3, newer }));
+
+  /* A4: CC3-TWO's rungs run out, then it binds; CA9-NEW still waits, older: nothing starts again */
+  const kv4 = new MiniKV(), asks4 = [];
+  const two = () => ({ SALT_LEDGER: db([draft("CA9-NEW", "customer", 0), draft("CC3-TWO", "customer", 30)]), SALT_QUEUE: kv4 });
+  for (const m of [41, 50, 70]) await accountsWanted(two(), at(m), async (why) => asks4.push(why));
+  await kv4.put("stmt-users", J({ "zzzz-yyyy": "CC3-TWO" }));
+  const after = [];
+  for (const m of [71, 72, 90]) after.push(await accountsWanted(two(), at(m), async (why) => asks4.push(why)));
+  ok(asks4.length === 3 && after.every((x) => !x.did && x.silent),
+    "A4 once a newer ID binds, an older one still waiting does not ring its rungs again: " + J({ asks4, after }));
+
+  /* A5 */
+  const none = poolHold([]), one = poolHold([{ row: J({ code: "CA9-NEW", kind: "customer" }) }]);
+  ok(none === "" && /^refused: CA9-NEW is booked but not yet in git's statements\/_users\.json/.test(one) && /gh workflow run cloud-commit\.yml -f export=true/.test(one),
+    "A5 the pool top-up refuses while an Add ID waits for the export, naming it and the way on; with none waiting it goes: " + J({ none, one }));
 }

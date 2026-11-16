@@ -2502,7 +2502,8 @@ async function wantPublish(env, reason, now = new Date()) {
 const RUN_WAITING = ["queued", "pending", "waiting", "requested"];
 /* 17 Nov 2026: A RUN GITHUB NEVER STARTED COVERS NOTHING. On 16 Nov 2026 a dispatch sat `queued` with no job for 35 minutes, covering every
    mark behind it. A run still `queued` at the run's own level has not reached the lock (the lock is the job's), so a newer dispatch replaces
-   nothing: the re-dispatch that day ran at once beside it. Past STUCK_MIN it no longer counts as cover. */
+   nothing: the re-dispatch that day ran at once beside it. Past STUCK_MIN it is asked for its jobs (Fable's review of 17 Nov 2026: whether GitHub shows a
+   run whose chain waits on the lock as queued is unverified), and only a run with no chain job at all is passed over; a chain job waiting still covers. */
 const STUCK_MIN = 10;
 const runStuck = (run, now) => run.status === "queued" && Number.isFinite(Date.parse(run.created_at)) && now - Date.parse(run.created_at) > STUCK_MIN * 60000;
 async function cloudCommitWaiting(env, now = Date.now()) {
@@ -2515,13 +2516,15 @@ async function cloudCommitWaiting(env, now = Date.now()) {
     const j = await r.json();
     if (!j || !Array.isArray(j.workflow_runs)) return said("no workflow_runs");
     for (const run of j.workflow_runs) {
-      if (!run || run.status === "completed" || runStuck(run, now)) continue;
-      if (RUN_WAITING.includes(run.status)) return run.id || 1;
+      if (!run || run.status === "completed") continue;
+      const stuck = runStuck(run, now);
+      if (RUN_WAITING.includes(run.status) && !stuck) return run.id || 1;
       const jr = await get("runs/" + run.id + "/jobs");
       if (!jr.ok) return said(await ghRefusal(jr, "jobs of " + run.id));
       const jj = await jr.json();
       if (!jj || !Array.isArray(jj.jobs)) return said("no jobs for " + run.id);
       if (jj.jobs.some((x) => x && x.name === "chain" && RUN_WAITING.includes(x.status))) return run.id || 1;
+      if (stuck) continue;
     }
     return 0;
   } catch (e) { return said(String((e && e.message) || e)); }

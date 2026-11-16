@@ -37,6 +37,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { contentKey, newPassword, newUsername, makeVerifier, wrapKey, unwrapKey, encryptText, encryptWith, decryptWith, userFor, usersJson, USERNAME_RE } from "./stmt-crypto.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { newestIssue, freeSpares, POOL_SIZE, POOL_LOW } from "./stmt-pool.mjs";
+import { spawnSync } from "node:child_process";
+import { d1Rows, commandArgs } from "./d1json.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -315,6 +317,23 @@ export async function mintPool(root, opts = {}) {
   return out;
 }
 
+/* A TOP-UP WAITS FOR THE EXPORT (17 Nov 2026). With the Book as the source an Add ID is bound by every publish from the export's watermark
+   (tools/roster-export.mjs), to "the next" free spare, sorted by username, against git's _users.json; git learns the binding only at the day's
+   export, which marks that roster draft committed. A spare minted in between that sorts ahead of the one it took would make the next publish
+   bind that customer to a different username, and the account they were handed would stop opening. So the pool is not topped up while an
+   approved roster draft is uncommitted, and a D1 that will not answer refuses too: fail closed. */
+export function poolHold(rows) {
+  const codes = (rows || []).map((r) => { try { return JSON.parse(r.row || "{}").code; } catch (e) { return null; } }).filter(Boolean);
+  return codes.length ? "refused: " + codes.join(", ") + (codes.length === 1 ? " is" : " are")
+    + " booked but not yet in git's statements/_users.json, and a spare minted now could move " + (codes.length === 1 ? "its" : "their")
+    + " account to another username. Wait for the day's export (after 00:23 MYT), or dispatch it: gh workflow run cloud-commit.yml -f export=true, then git pull and run this again" : "";
+}
+function unexportedRoster() {
+  const sql = "SELECT row FROM draft WHERE status='approved' AND committed_at IS NULL AND collection='roster'";
+  const r = spawnSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)], { cwd: REPO, shell: true, encoding: "utf8" });
+  return d1Rows({ code: r.status, out: r.stdout || "" });
+}
+
 async function main() {
   const check = process.argv.includes("--check");
   const mint = process.argv.includes("--mint");
@@ -322,6 +341,12 @@ async function main() {
     const at = process.argv.indexOf("--count");
     const count = at >= 0 ? Number(process.argv[at + 1]) : POOL_SIZE;
     if (!Number.isInteger(count) || count < 0) { console.error("--count takes a whole number of spare accounts"); process.exit(2); }
+    if (!check) {
+      const d = unexportedRoster();
+      if (d.error) { console.error("refused: D1 did not say whether an Add ID waits for the export (" + d.error + "); run it again"); process.exit(1); }
+      const held = poolHold(d.rows);
+      if (held) { console.error(held); process.exit(1); }
+    }
     const p = await mintPool(join(REPO, "statements"), { count, check });
     console.log((check ? "would mint " : "minted ") + p.minted.length + " spare account(s) into " + p.issue
       + "; the pool holds " + (check ? p.free + " free, " + (p.free + p.minted.length) + " after a run" : p.free + " free"));
