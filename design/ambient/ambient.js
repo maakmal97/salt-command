@@ -214,6 +214,28 @@
   /* a sheet that closes takes its last words with it, so it does not greet the next opening with
      them. Words still waiting to be written when it closed were never heard: say them where the
      reader now is. */
+  /* the cap (0.7.9): a work screen marks its shell data-amb-moved once its hero has passed under the app bar, or,
+     with no hero, once it or a pane of it that runs under the bar has moved; the stylesheet then draws what scrolls
+     from the bar's middle down. Read on every scroll (in the capture phase, since a scroll does not bubble), and again
+     on a resize, a page shown again, any hidden attribute changed, and load, so a mark never outlives its cause */
+  function shown(el) { return el && el.getClientRects().length > 0; }
+  function cap(sc) {
+    var shell = sc && sc.parentElement, bar = shell && shell.querySelector(":scope > .amb-appbar");
+    if (!bar || !sc.classList.contains("amb-screen--docked")) return;
+    var foot = bar.getBoundingClientRect().bottom, hero = [].filter.call(sc.querySelectorAll(":scope > .amb-hero, :scope .amb-place:not([hidden]) > .amb-hero"), shown)[0];
+    var moved = hero ? hero.getBoundingClientRect().bottom <= foot : sc.scrollTop > 4;
+    [].forEach.call(sc.querySelectorAll(".amb-split--panes > .amb-stack"), function (s) { if (shown(s) && s.scrollTop > 4 && s.getBoundingClientRect().top < foot) moved = true; });
+    shell.toggleAttribute("data-amb-moved", moved);
+  }
+  function caps() { [].forEach.call(document.querySelectorAll(".amb-shell > .amb-screen--docked"), cap); }
+  document.addEventListener("scroll", function (e) {
+    var el = e.target;
+    cap(el && el.classList && el.classList.contains("amb-screen") ? el : el && el.closest && el.closest(".amb-screen"));
+  }, true);
+  window.addEventListener("resize", caps);
+  window.addEventListener("pageshow", caps);
+  new MutationObserver(caps).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", caps); else caps();
   document.addEventListener("close", function (e) {
     var live = e.target && e.target.nodeName === "DIALOG" ? e.target.querySelector(":scope > [data-amb-live]") : null;
     if (!live) return;

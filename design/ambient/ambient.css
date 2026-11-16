@@ -82,7 +82,7 @@
 /* A frame: a shell shown at a phone's size inside another page (a mock-up, a board, a preview).
    An app never uses one: its one shell is the screen. The frame holds what the shell fixes. */
 .amb-frame { width: min(100%, 390px); margin-inline: auto; }
-.amb-frame > .amb-shell { height: 760px; border: 1px solid var(--amb-line-field); border-radius: 40px; transform: translateZ(0); --amb-mesh-h: 330px; --amb-safe-top: 0px; --amb-safe-bottom: 0px; }
+.amb-frame > .amb-shell { height: 760px; border: 1px solid var(--amb-line-field); border-radius: 40px; transform: translateZ(0); --amb-mesh-h: 330px; --amb-safe-top: 0px; --amb-safe-bottom: 0px; --amb-bar-h: calc(var(--amb-space-2) + var(--amb-tap)); }
 .amb-frame--wide { width: 100%; }
 .amb-frame--wide > .amb-shell { height: 660px; border-radius: var(--amb-radius-lg); }
 .amb-frame__name { margin: 0 0 var(--amb-space-2); font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink-2); text-align: center; }
@@ -1425,8 +1425,8 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
    line is one line, cut short rather than grown into the room kept for it */
 .amb-shell:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen--docked { padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); scroll-padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); }
 @container amb (min-width: 960px) {
-  .amb-shell--rail > .amb-dock > .amb-savebar { position: absolute; bottom: 0; left: calc(100% + var(--amb-dock-inset) + var(--amb-space-4)); width: min(520px, calc(100cqi - 100% - 3 * var(--amb-dock-inset) - 2 * var(--amb-space-4) - var(--amb-safe-left) - var(--amb-safe-right))); }
-  .amb-shell.amb-shell--rail:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom)); }
+  .amb-shell--rail > .amb-dock > .amb-savebar { position: absolute; bottom: 0; left: calc(100% + var(--amb-rail-gap) + var(--amb-space-4)); width: min(520px, calc(100cqi - 100% - 2 * var(--amb-dock-inset) - var(--amb-rail-gap) - 2 * var(--amb-space-4) - var(--amb-safe-left) - var(--amb-safe-right))); }
+  .amb-shell.amb-shell--rail:has(> .amb-dock > .amb-savebar + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); }
 }
 
 /* ---- Toast: a capsule from the top. A popover where the browser has them, so it shows over an open sheet. ---- */
@@ -1562,13 +1562,13 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 /* ---- Wider still: from 960px a shell that asks for it stands its dock up as a rail, and a
    split lays a list beside what it opens ---- */
 @container amb (min-width: 960px) {
-  .amb-shell--rail > .amb-dock { inset: calc(var(--amb-dock-inset) + var(--amb-safe-top)) auto calc(var(--amb-dock-inset) + var(--amb-safe-bottom)) calc(var(--amb-dock-inset) + var(--amb-safe-left)); justify-content: flex-start; width: var(--amb-rail-w); margin: 0; }
+  .amb-shell--rail > .amb-dock { inset: calc(var(--amb-dock-inset) + var(--amb-safe-top)) auto calc(var(--amb-rail-foot) + var(--amb-safe-bottom)) calc(var(--amb-dock-inset) + var(--amb-safe-left)); justify-content: flex-start; width: var(--amb-rail-w); margin: 0; }
   .amb-shell--rail > .amb-dock > .amb-tabbar { order: -1; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; padding: var(--amb-space-3) var(--amb-space-2); border-radius: var(--amb-radius-lg); }
   .amb-shell--rail > .amb-dock > .amb-mini { margin-top: auto; border-radius: var(--amb-radius-lg); }
   .amb-shell--rail > .amb-dock .amb-eq { display: none; }
   .amb-shell--rail > .amb-dock .amb-tab { flex: none; flex-direction: row; justify-content: flex-start; gap: var(--amb-space-3); padding: 0 var(--amb-space-3); font-size: var(--amb-text-subhead); }
-  .amb-shell--rail > .amb-screen { --amb-inset-l: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset) + var(--amb-safe-left)); padding-bottom: calc(var(--amb-space-6) + var(--amb-safe-bottom)); scroll-padding-bottom: 0; }
-  .amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset)); }
+  .amb-shell--rail > .amb-screen { --amb-inset-l: calc(var(--amb-rail-w) + var(--amb-dock-inset) + var(--amb-rail-gap) + var(--amb-safe-left)); padding-bottom: calc(var(--amb-space-6) + var(--amb-safe-bottom)); scroll-padding-bottom: 0; }
+  .amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + var(--amb-dock-inset) + var(--amb-rail-gap)); }
   .amb-split { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); align-items: start; gap: var(--amb-space-6); }
 }
 
@@ -1726,7 +1726,49 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   .amb-shell--page > * { --amb-page-side: max(var(--amb-page-gutter), (100cqi - var(--amb-page-max)) / 2); }
   .amb-shell--page > .amb-screen { --amb-inset-l: max(var(--amb-safe-left), var(--amb-page-side)); --amb-inset-r: max(var(--amb-safe-right), var(--amb-page-side)); }
   .amb-shell--page > .amb-appbar { left: max(0px, var(--amb-page-side) - var(--amb-safe-left)); right: max(0px, var(--amb-page-side) - var(--amb-safe-right)); }
-  .amb-shell--page.amb-shell--rail > .amb-screen { --amb-inset-l: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset) + max(var(--amb-safe-left), var(--amb-page-side))); }
+  .amb-shell--page.amb-shell--rail > .amb-screen { --amb-inset-l: calc(var(--amb-rail-w) + var(--amb-dock-inset) + var(--amb-rail-gap) + max(var(--amb-safe-left), var(--amb-page-side))); }
   .amb-shell--page.amb-shell--rail > .amb-dock { left: calc(var(--amb-dock-inset) + max(var(--amb-safe-left), var(--amb-page-side))); }
-  .amb-shell--page.amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + 2 * var(--amb-dock-inset) + max(0px, var(--amb-page-side) - var(--amb-safe-left))); }
+  .amb-shell--page.amb-shell--rail > .amb-appbar { left: calc(var(--amb-rail-w) + var(--amb-dock-inset) + var(--amb-rail-gap) + max(0px, var(--amb-page-side) - var(--amb-safe-left))); }
 }
+
+/* ---- Work screens (0.7.9): the owner's answers of 16 Nov 2026, on a docked screen in a shell with an app bar.
+   A document, a dashboard, a deck or a paper has no dock, so keeps its look, and no shared token moves. The look is
+   bounded at the next shell, so a framed mock-up inside a work screen keeps its own. ---- */
+@scope (.amb-shell:has(> .amb-appbar) > .amb-screen--docked) to (.amb-shell) {
+  /* one shadow: a page's own panes cast it; a tile or a plate casts none, and a pane, a task, a settings group or
+     a verdict inside another casts none. Panes, and a work screen's own blocks, stand --amb-pane-gap apart */
+  .amb-stack { gap: var(--amb-pane-gap); }
+  :scope > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split),
+  .amb-place > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-pane-gap); }
+  .amb-tile:not(.amb-tiles--strip > .amb-tile), .amb-plate { box-shadow: none; }
+  :is(.amb-pane, .amb-task, .amb-settings__list, .amb-verdict) :is(.amb-pane, .amb-task, .amb-settings__list, .amb-verdict) { box-shadow: none; }
+}
+/* the app bar over what scrolls: once a hero has passed under the bar, or with no hero once the screen or a pane
+   under the bar has moved, ambient.js marks the shell (data-amb-moved) and what scrolls is drawn only from the bar's
+   middle down, the bar's cap. At rest, and while any of a hero stands below the bar, its mesh stands whole. A control
+   the keyboard takes to comes to rest under the bar, never in the clip */
+.amb-shell[data-amb-moved] > .amb-screen--docked { clip-path: inset(calc(var(--amb-bar-h) - var(--amb-tap) / 2) 0 0 0); }
+:where(.amb-shell:has(> .amb-appbar)) > .amb-screen--docked { scroll-padding-top: calc(var(--amb-bar-h) + var(--amb-space-2)); }
+@media not print {
+  /* a work screen with no hero opens a bar and --amb-space-5 down */
+  :where(.amb-shell:has(> .amb-appbar)) > .amb-screen--docked:not(:has(> .amb-hero, .amb-place:not([hidden]) > .amb-hero)) { padding-top: calc(var(--amb-bar-h) + var(--amb-space-5)); scroll-padding-top: calc(var(--amb-bar-h) + var(--amb-space-5)); }
+  @container amb (min-width: 960px) {
+    @media (min-height: 640px) {
+      /* in panes standing first, the panes run under the bar themselves: the screen opens nothing, each pane opens a
+         bar and a gap. With filters or a notice before the split the screen keeps its opening and the panes add none */
+      :where(.amb-shell:has(> .amb-appbar)) > .amb-screen--docked:not(:has(> .amb-hero, .amb-place:not([hidden]) > .amb-hero)):is(:has(> .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])), :where(:has(> .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])))):not(:has(:not([hidden], .amb-place) ~ .amb-split--panes:not([hidden]))) { padding-top: 0; }
+      :where(.amb-shell:has(> .amb-appbar)) > .amb-screen--docked:not(:has(> .amb-hero, .amb-place:not([hidden]) > .amb-hero)):not(:has(:not([hidden], .amb-place) ~ .amb-split--panes:not([hidden]))) .amb-split--panes > .amb-stack { padding-top: calc(var(--amb-bar-h) + var(--amb-space-5)); scroll-padding-top: calc(var(--amb-bar-h) + var(--amb-space-5)); }
+    }
+  }
+}
+@container amb (min-width: 960px) {
+  @media (min-height: 640px) {
+    /* room at each pane's outer side, so its shadow is never cut flat at the pane's edge: never past the screen's own
+       inset there, so nothing scrolls sideways; the foot's ground reaches across the same room */
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child { margin-left: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-l))); padding-left: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-l))); }
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child { margin-right: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-r))); padding-right: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-r))); }
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child > .amb-foot { margin-left: calc(-1 * (var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-l)))); padding-left: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-l))); }
+    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child > .amb-foot { margin-right: calc(-1 * (var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-r)))); padding-right: calc(var(--amb-space-4) + min(var(--amb-pane-room), var(--amb-inset-r))); }
+  }
+}
+@media print { .amb-shell[data-amb-moved] > .amb-screen--docked { clip-path: none; } }

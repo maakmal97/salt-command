@@ -1,10 +1,10 @@
 {
-  "version": "0.7.8",
-  "commit": "c783bb6d01d8d27e558b2fa096b70ec2c000062d",
-  "tokens": "acbfa94479f42bae138986278c2f500612b2ed92344bbacd5d4bc87616cda62d",
+  "version": "0.7.9",
+  "commit": "f87e8ea74ee3ecfb7570d0dd3da788b4c01955f7",
+  "tokens": "46417dd349fbd5fb9ff48b72f0b7d9969d3bd94b68fb01a6e823358d4124541e",
   "files": {
-    "ambient.css": "25b8a3f79c56a44b645503bb4d8d15cc9285bda4615f9ec5ec8276a2324028e2",
-    "ambient.js": "ac7668d039eb675cce27eaf188329cbf6f68a402e6d87b2767627e7d78493215",
+    "ambient.css": "1a5d25960f6cdc8b9c25305b406a19abf1be5532b4e82e84089ad9b3bfe1a8d2",
+    "ambient.js": "db2332a0205e84c67eaad0343a43b54fdd035f6e0fca9ac206c5b5c70247e0d8",
     "icons.svg": "0eff228fb9dad9bf5254c0102498cf2665fe79e311ee68e78e183f2bfd4b1a04"
   }
 }
