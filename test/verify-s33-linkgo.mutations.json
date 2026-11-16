@@ -1,0 +1,14 @@
+[
+ {
+  "name": "Continue stays a ghost again",
+  "file": "stmt/page.js",
+  "find": "linkGo.className='amb-pill amb-pill--block amb-pill--quiet';",
+  "replace": "linkGo.className='amb-pill amb-pill--block';"
+ },
+ {
+  "name": "Continue stays a salt-ds ghost",
+  "file": "stmt/page.js",
+  "find": "linkGo.className='amb-pill amb-pill--block amb-pill--quiet';",
+  "replace": "linkGo.className='btn salt-ghost';"
+ }
+]

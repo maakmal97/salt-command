@@ -21,21 +21,22 @@ export async function run({ ok, pageWork }) {
     const d = p.d, quiet = () => p.work.quiet();
     enter(d, "record"); await quiet();
     const sec = (k) => d.querySelector('#makerInputs section.unsent[data-key="' + k + '"]');
-    const shape = (s) => { const c = s && s.querySelector("article.ncard"); return c ? [...c.children].map((x) => x.classList.contains("nkind") ? "kind" : x.classList.contains("salt-action__body") ? "body" : x.classList.contains("salt-action__go") ? "go" : x.classList.contains("nfig") ? "fig" : x.className) : null; };
+    /* 16 Nov 2026, the move to Ambient (end pass): the card is Ambient's task, as Needs you's is: a head (kind, age, chip), the title, the figure, the way on */
+    const shape = (s) => { const c = s && s.querySelector("article.unsent-card"); return c ? [...c.children].map((x) => x.classList.contains("amb-task__head") ? "head" : x.classList.contains("amb-task__title") ? "title" : x.classList.contains("amb-task__figures") ? "fig" : x.classList.contains("amb-task__acts") ? "go" : x.className) : null; };
     /* 1 */
     const heads = [...d.querySelectorAll("#makerInputs .unsent-head")].map((h) => [h.getAttribute("data-in"), t(h)]);
-    const saleCard = sec("sale") && sec("sale").querySelector("article.ncard");
-    const tag = saleCard && saleCard.querySelector(".need-tap .salt-producttag");
-    ok(J(heads) === J([["record.entry", "Unsent"]])   /* 27 Oct 2026: the head is one word, the tab says where */ && ["sale", "stock-count", "loan"].every((k) => J(shape(sec(k))) === J(["kind", "body", "go", "fig"]))
-      && saleCard.classList.contains("salt-action--now") && /^Sale · \d+ (min|h|d)$/.test(t(saleCard.querySelector(".nkind")))
-      && !!tag && tag.classList.contains("salt-producttag--salt") && t(saleCard.querySelector(".need-who--code")) === "CX2-ZED" && t(saleCard.querySelector(".nfig")) === "RM 58"
-      && t(sec("stock-count").querySelector(".need-who")) === "Unsent stock count" && t(sec("stock-count").querySelector(".nfig")) === "",
+    const saleCard = sec("sale") && sec("sale").querySelector("article.unsent-card");
+    const tag = saleCard && saleCard.querySelector(".need-tap .amb-chip");
+    ok(J(heads) === J([["record.entry", "Unsent"]]) && !!d.querySelector("#makerInputs h2.amb-section.unsent-head")   /* 27 Oct 2026: the head is one word, the tab says where */ && ["sale", "stock-count"].every((k) => J(shape(sec(k))) === J(k === "sale" ? ["head", "title", "fig", "go"] : ["head", "title", "go"])) && J(shape(sec("loan"))).includes("head")
+      && saleCard.classList.contains("amb-task") && saleCard.classList.contains("amb-task--warn") && /^Sale · \d+ (min|h|d)$/.test(t(saleCard.querySelector(".nkind"))) && t(saleCard.querySelector(".amb-chip--warn")) === "Unsent"
+      && !!tag && /\bamb-kind-1\b/.test(tag.className) && t(saleCard.querySelector(".need-who--code")) === "CX2-ZED" && /RM 58/.test(t(saleCard.querySelector(".nfig")))
+      && t(sec("stock-count").querySelector(".need-who")) === "Unsent stock count" && !sec("stock-count").querySelector(".nfig"),
       "under one Unsent, each entry is the one shape, kind and age, the typed book and the code (the word where there is none), the pill and the figure: " + J([heads, t(saleCard)]));
     /* 2 */
-    const go = [...saleCard.querySelectorAll(".salt-action__go button")];
-    const open = sec("sale").querySelector(".unsent-open"), ways = [...open.querySelectorAll(".unsent-ways button")];
-    ok(go.length === 1 && t(go[0]) === "Resend" && go[0].getAttribute("aria-label") === "Send again" && go[0].classList.contains("salt-pill") && go[0].classList.contains("nbtn") && go[0].getAttribute("data-act") === "record.retained.retry"
-      && open.hidden && J(ways.map((b) => [t(b), b.getAttribute("data-act"), b.classList.contains("salt-ghost"), b.classList.contains("salt-ghost--danger")]))
+    const go = [...saleCard.querySelectorAll(".amb-task__acts button")];
+    const open = sec("sale").querySelector(".unsent-open"), ways = [...open.querySelectorAll(".unsent-ways li button")];
+    ok(go.length === 1 && t(go[0]) === "Resend" && go[0].getAttribute("aria-label") === "Send again" && go[0].classList.contains("amb-pill") && !go[0].classList.contains("amb-pill--quiet") && go[0].getAttribute("data-act") === "record.retained.retry"
+      && open.hidden && J(ways.map((b) => [t(b), b.getAttribute("data-act"), b.classList.contains("amb-action"), b.classList.contains("amb-action--danger")]))
         === J([["Update and send", "record.retained.review", true, false], ["Discard", "record.retained.cancel", true, true]])
       && /^A sale you sent on .* was not confirmed[.] Send it again, or update it first[.]$/.test(t(open.querySelector('[role="status"]'))),
       "one pill, Resend (spoken Send again); Update and send and Discard, the refusing one, wait in the opened card with the sentence: " + J([go.map(t), ways.map(t), t(open)]));
@@ -49,8 +50,10 @@ export async function run({ ok, pageWork }) {
     /* 4 */
     const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     /* 16 Nov 2026, the move to Ambient (place I): the menu's column is Ambient's stack, so the page's 72px card columns beside it went; the card itself is Needs you's (builder F draws it) */
-    ok(!/\.adm \.reclist/.test(css) && /\.adm \.unsent-ways\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(css)
-      && /\.adm \.unsent-card \.need-tap::after\{content:"";position:absolute;inset:0\}/.test(css) && /\.adm \.unsent-card>\.salt-action__go\{position:relative;z-index:1\}/.test(css),
-      "the menu's column adds no card rule of the page's own, its second choices lie two up, and the whole card is the tap, its pill above it");
+    /* 16 Nov 2026, the move to Ambient (end pass): the card is Needs you's task (.ntask), so the whole card is the tap and its ways stand above it by the rules the list's card has; the second choices are a settings list */
+    const flat = css.replace(/\s+/g, " ");
+    ok(!/\.adm \.reclist/.test(css) && /\.ntask \.need-tap::after \{ content: ""; position: absolute; inset: 0; \}/.test(flat) && /\.ntask \.amb-task__acts, \.ntask \.nbody \{ position: relative; z-index: 1; \}/.test(flat)
+      && saleCard.classList.contains("ntask") && !!open.querySelector(".amb-settings.unsent-ways > ul.amb-settings__list"),
+      "the card is the list's task, so the whole card is the tap and its pill stands above it, and its second choices are a settings list");
   } finally { p.w.close(); }
 }

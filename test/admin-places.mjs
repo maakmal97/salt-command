@@ -13,6 +13,7 @@
  * Drawn by the maker harness (test/maker-act.mjs), with a log of every read the page makes. */
 import { JSDOM } from "jsdom";
 import { landingPage, SITE_STYLE } from "../stmt/page.js";
+import { SITE_CSS } from "../stmt/statement-css.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
@@ -104,20 +105,20 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
     /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
     /* 2 Nov 2026: Orders' four parts are one Segment, as Customers' */
-    const recipe = (s) => (["orders"].includes(s.getAttribute("data-place")) ? ["salt-segment", "salt-segment__opt"] : ["shop", "record", "customers"].includes(s.getAttribute("data-place")) ? ["amb-segment", "amb-segment__opt"] : ["salt-tabs", "salt-tabs__pill"]);
-    /* 16 Nov 2026, the move to Ambient (place I): Record's three and Shop's six are Ambient's Segment, a group of pressed buttons, not a tablist */
-    const ambStrip = (s) => ["shop", "record", "customers"].includes(s.getAttribute("data-place"));
+    /* 16 Nov 2026, the move to Ambient (places G and I, end pass): every strip, Orders' four, Customers', Record's three and Shop's six, is Ambient's Segment, a group of pressed buttons, not a tablist */
+    const recipe = () => ["amb-segment", "amb-segment__opt"];
+    const ambStrip = () => true;
     ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === (ambStrip(s) ? "group" : "tablist") && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && (ambStrip(s) ? !b.hasAttribute("role") : b.getAttribute("role") === "tab")))
       && !d.querySelector("#mHome .aparts"),
-    "a strip is the system's tabs, or Customers' and Orders' slider, or Shop's and Record's Segment, and Needs you has none");
+    "a strip is Ambient's Segment, a group of pressed buttons, and Needs you has none");
 
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
     await p.tap("nav.orders");
     ok(p.where() === "orders orders/todo", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
     await p.tap("part.orders.open");
-    const pills = stripsOf("orders").flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("aria-selected")).join();
+    const pills = stripsOf("orders").flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("aria-pressed")).join();   /* 16 Nov 2026: a Segment's option is pressed, not selected */
     ok(p.where() === "orders orders/open" && pills === "false,true,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/todo", "and a place he comes back to opens on its first part again: " + p.where());
@@ -167,7 +168,7 @@ export async function run({ ok, pageWork }) {
       const none = {};
       for (const [part] of PARTS.orders.filter(([k]) => !["group", "payments", "ledger", "approve"].includes(k))) {
         await empty.tap("part.orders." + part);
-        none[part] = [...empty.d.querySelectorAll("#makerOrderList .salt-settings__foot")].filter(shown).map((e) => e.textContent).join();
+        none[part] = [...empty.d.querySelectorAll("#makerOrderList .amb-empty")]   /* 16 Nov 2026: Ambient's empty line */.filter(shown).map((e) => e.textContent).join();
       }
       await empty.tap("part.orders.approve");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
@@ -257,8 +258,9 @@ export async function run({ ok, pageWork }) {
     const html = (o) => landingPage("", "places-nonce", o), ownerHtml = html({ master: "fixture-master", accounts: [] }), customerHtml = html(undefined);
     const style = (h) => (h.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1];
     const body = (h) => h.replace(/<style[^>]*>[\s\S]*?<\/style>/g, "");
-    /* 15 Nov 2026, the move to Ambient: the page's own layer follows Ambient's tokens, its parts and the site's layer (SITE_STYLE) */
-    const css = style(ownerHtml).slice(SITE_STYLE.length);
+    /* 16 Nov 2026, the move to Ambient (end pass): PAGE_CSS is empty, so nothing follows Ambient's tokens, its parts and the site's layer (SITE_STYLE); the layer is the site's end pass,
+       what the older layer left that something still draws, cut from SITE_CSS by its head */
+    const css = (SITE_CSS.indexOf("/* ---- The end pass") >= 0 ? SITE_CSS.slice(SITE_CSS.indexOf("/* ---- The end pass")) : "") + (style(ownerHtml).length === SITE_STYLE.length ? "" : "x{");
     const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
     const rules = [];
     const walk = (list) => { for (const rule of list) { if (rule.selectorText) rules.push(rule.selectorText); else if (rule.cssRules) walk(rule.cssRules); } };
@@ -271,14 +273,14 @@ export async function run({ ok, pageWork }) {
     const OUTSIDE = ["vbar", "quote", "ended", "aEnded"];
     const his = rules.flatMap(split).filter((sel) => tokens(sel).some((t) => t !== "adm" && !OUTSIDE.includes(t) && ownerOnly(t)));
     const loose = his.filter((sel) => !/^[.]adm[\s.#:\[>+~]|^[.]adm$/.test(sel));
-    ok(rules.length > 100 && his.length > 40 && loose.length === 0 && /id="roster" class="[^"]*\badm\b/.test(body(ownerHtml)),
-      "every rule of PAGE_CSS that styles something only his page draws sits under .adm, so the customer's page and a guest's are drawn as they were ("
+    ok(rules.length > 50 && his.length > 25 && loose.length === 0 && /id="roster" class="[^"]*\badm\b/.test(body(ownerHtml)),
+      "every rule of the site's end pass that styles something only his page draws sits under .adm, so the customer's page and a guest's are drawn as they were ("
         + his.length + " of " + rules.length + " rules)" + (loose.length ? ", and these do not: " + JSON.stringify(loose) : ""));
     /* and the other way (Phase 1b, the reviewer's instrument): a rule under .adm that names nothing only his page draws is a shared rule moved under it, and the
        customer's page and a guest's would lose it. Every rule under .adm carries a class or an id that his page draws and the customer's page and its script do not. */
     const under = rules.flatMap(split).filter((sel) => /^[.]adm([\s.#:\[>+~]|$)/.test(sel));
     const moved = under.filter((sel) => !tokens(sel).some((t) => t !== "adm" && ownerOnly(t)));
-    ok(under.length > 60 && moved.length === 0,
+    ok(under.length > 25 && moved.length === 0,
       "every rule under .adm names a class or an id only his page draws, so none is a shared rule moved under it (" + under.length + " rules)"
         + (moved.length ? ", and these name none: " + JSON.stringify(moved) : ""));
   } finally { w.close(); }

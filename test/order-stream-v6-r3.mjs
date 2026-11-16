@@ -183,7 +183,8 @@ export async function run({ ok, pageWork }) {
     for (const n of [2, 1, 0]) {
       const p = await K.open({ ok, pageWork, assoc: true, card: card(n) }); pages.push(p);
       await K.until(() => /first week|Rewards|reward/i.test(K.txt(p.d.getElementById("pCard"))), 60);
-      said.push([...p.d.querySelectorAll("#pCard p.sub2")].map(K.txt).filter((x) => /first week/.test(x)));
+      /* 16 Nov 2026, the move to Ambient: the line is a note of the card, Ambient's prose (hSay), no longer a .sub2 */
+      said.push([...p.d.querySelectorAll("#pCard .amb-prose p")].map(K.txt).filter((x) => /first week/.test(x)));
     }
     ok(JSON.stringify(said) === JSON.stringify([["2 orders from people you brought in counted, in their first week."], ["1 order from someone you brought in counted, in their first week."], []]),
       "P1 the associate's card counts the first-week orders of people they brought in, and says nothing at none: " + JSON.stringify(said));

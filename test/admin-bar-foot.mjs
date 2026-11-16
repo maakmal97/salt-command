@@ -22,7 +22,8 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     const d = p.d, roster = d.getElementById("roster"), dock = roster && roster.lastElementChild;
     /* 1 */
-    ok(!!dock && dock.classList.contains("amb-dock") && dock.children.length === 1 && dock.firstElementChild.matches("nav.amb-tabbar")
+    /* 16 Nov 2026, the move to Ambient (end pass): the dock also holds Approve's save bar (#apBar, hidden until a card is ticked), so the tab bar is its one nav and its last child */
+    ok(!!dock && dock.classList.contains("amb-dock") && dock.lastElementChild.matches("nav.amb-tabbar") && dock.querySelectorAll(":scope > nav").length === 1 && [...dock.children].every((c) => c === dock.lastElementChild || c.id === "apBar")
       && dock.querySelectorAll(".amb-tab.place").length === 5 && !d.querySelector(".salt-appbar, .salt-rail"),
       "his places are one Ambient dock, the shell's last child, its tab bar the five places, and no other bar of places stands");
     /* 2: the page's own layers, read as served after Ambient */
@@ -31,7 +32,9 @@ export async function run({ ok, pageWork }) {
     const shellSel = /(^|[\s,>+~])(html|body|:root|\.amb-shell|\.amb-screen|\.amb-dock|\.amb-tabbar|\.amb-tab|#roster|#tabs)(?=[\s,{.:[#>]|$)/;
     const hits = [...own.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim()).filter((sel) => sel.split(",").some((x) => shellSel.test(" " + x.trim())))
       /* the site ground, the ended page and print (which hides the dock and the app bar) are the page's to say */
-      .filter((sel) => sel !== "body.amb" && sel !== "body.ended>*:not(#aEnded)" && sel !== ".mos,.amb-dock,.amb-appbar" && !/^#roster \.(abarlive|salt-orb)/.test(sel));
+      /* 16 Nov 2026, the move to Ambient (end pass): the selectors are the site layer's, spaced as written; the hero's time line on Home and a late age's colour frame nothing */
+      .map((sel) => sel.replace(/\s*([>,+~])\s*/g, "$1"))
+      .filter((sel) => sel !== "body.amb" && sel !== "body.ended>*:not(#aEnded)" && sel !== ".mos,.amb-dock,.amb-appbar" && !/^#roster \.(abarlive|salt-orb|ntask)/.test(sel) && !/amb-hero__time$/.test(sel));
     ok(own.length > 1000 && hits.length === 0, "nothing of the page's own layer re-frames or re-sizes the shell, its screen, its dock, the body or the root: " + JSON.stringify(hits.slice(0, 6)));
     /* 3 */
     const amb = strip(AMB_CSS);

@@ -37,17 +37,19 @@ const subjects = (sel) => sel.split(",").map((s) => s.trim()).filter(Boolean).ma
 export async function run({ ok, pageWork }) {
   const { landingPage } = await import("../stmt/page.js");
   const { STATEMENT_CSS, SITE_RECIPES, AMB_CSS } = await import("../stmt/statement-css.js");
-  const { SITE_STYLE } = await import("../stmt/page.js");
+  const { SITE_STYLE, AMB_STYLE } = await import("../stmt/page.js");
+  const { SITE_CSS } = await import("../stmt/statement-css.js");
   const { RECIPE_HEADS } = await import("../tools/stmt-style.mjs");
   const OWNER_SRC = readFileSync(join(REPO, "stmt", "owner.js"), "utf8"), PAGE_SRC = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   const ds = strip(readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"));
 
   /* ---- the page's own layer, cut from the style it is served in: Ambient's tokens and parts, the site's layer, then PAGE_CSS (15 Nov 2026) ---- */
   const allCss = (landingPage("abcd-efgh", "nct", null).match(/<style[^>]*>([\s\S]*?)<\/style>/) || ["", ""])[1];
-  const cutAt = allCss.startsWith(SITE_STYLE) ? SITE_STYLE.length : -1, pageCss = cutAt >= 0 ? allCss.slice(cutAt) : "";
-  const R = rulesOf(pageCss);
-  ok(cutAt > 0 && R.length > 300 && pageCss.includes(".adm .rnone") && !allCss.includes(SITE_RECIPES.slice(0, 300)) && !allCss.includes(STATEMENT_CSS.slice(0, 300)),
-    `the page's own layer is read off the style it is served in (${R.length} rules after Ambient's), and no salt-ds recipe or statement stylesheet is served before it`);
+  /* 16 Nov 2026, the move to Ambient (end pass): PAGE_CSS is empty, so nothing is served after Ambient's tokens and parts and the site's layer, and the page's own layer is the end pass of
+     design/site.css (what the older layer left that something still draws), cut from SITE_CSS by its head; every rule of the site's layer is read where a check says the site's layer */
+  const END = SITE_CSS.indexOf("/* ---- The end pass"), pageCss = END >= 0 ? SITE_CSS.slice(END) : "", R = rulesOf(pageCss), SITE_ALL = rulesOf(SITE_CSS);
+  ok(END > 0 && R.length >= 60 && pageCss.includes(".adm .rnone") && allCss === SITE_STYLE && !allCss.includes(SITE_RECIPES.slice(0, 300)) && !allCss.includes(STATEMENT_CSS.slice(0, 300)),
+    `the page's own layer is the end pass of the site's (${R.length} rules), nothing is served after the site's layer, and no salt-ds recipe or statement stylesheet is served before it`);
 
   /* ---- 1. the three recipes Salt Admin was drawing by hand are carried whole, every rule of them as the system holds it ---- */
   const heads = ["/* ---- Metric row ---- */", "/* ---- Table (synced to the desk", "/* ---- Product tag:"];
@@ -131,64 +133,41 @@ export async function run({ ok, pageWork }) {
     `and the rules deleted in Phase 5 have not come back, nor has the danger tone been stated again beside the system's (back: ${gone.join(" ") || "none"})`);
 
   /* ---- the generated stylesheet's two themes ---- */
-  const toks = (css, re) => Object.fromEntries([...((strip(css).match(re) || ["", ""])[1]).matchAll(/--salt-([\w-]+):\s*([^;]+);/g)].map((x) => [x[1], x[2].trim()]));
-  const NIGHT = toks(STATEMENT_CSS, /:root\s*\{([^}]*)\}/), TIDE = { ...NIGHT, ...toks(STATEMENT_CSS, /:root\[data-theme="tide"\]\s*\{([^}]*)\}/) };
-  const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
-  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-  const HEX = /^#[0-9a-f]{6}$/i, hex2 = (n) => Math.round(n).toString(16).padStart(2, "0");
-  const resolve = (T, k) => { let v = T[k]; for (let i = 0; i < 6 && /^var\(--salt-([\w-]+)\)$/.test(v || ""); i++) v = T[/^var\(--salt-([\w-]+)\)$/.exec(v)[1]]; return v; };
-  /* the glass of a card over the slate is the lightest ground a text colour sits on (white at 3 or 4.5 per cent) */
-  const glassOver = (T) => { const m = /rgba\(\s*255,\s*255,\s*255,\s*([\d.]+)\)/.exec(T.glass || ""), g = resolve(T, "slate"); if (!m || !HEX.test(g || "")) return null;
-    const a = +m[1], ch = [1, 3, 5].map((i) => parseInt(g.slice(i, i + 2), 16) * (1 - a) + 255 * a); return "#" + ch.map(hex2).join(""); };
+  /* ---- 3. text colour (16 Nov 2026, the move to Ambient): every colour the page's layer sets as text is one of Ambient's tokens, whose 4.5:1 on its grounds is Ambient's own check; no literal and no salt- token ---- */
+  const colours = SITE_ALL.map(([, body]) => decl(body, "color")).filter(Boolean), used = new Set(colours.map((v) => (/^var\(--amb-([\w-]+)\)$/.exec(v) || [])[1]).filter(Boolean));
+  const stray = colours.filter((v) => !/^(var\(--amb-[\w-]+\)|inherit|currentColor)$/.test(v));
+  ok(["ink", "ink-2", "neg", "pos", "accent"].every((k) => used.has(k)) && R.some(([, b]) => /^var\(--amb-ink-2\)$/.test(decl(b, "color"))), `the colours the site's layer sets as text are read off it (${used.size}: ${[...used].sort().join(" ")})`);
+  ok(stray.length === 0 && !/--salt-/.test(pageCss) && !/salt-/.test(R.map((r) => r[0]).join(" ")),
+    `and each is an Ambient token, never a literal or a salt- token, so each holds the contrast Ambient's tokens hold on both themes (stray: ${stray.join(", ") || "none"})`);
+  /* the danger tone is Ambient's alarm: stated once by the system, and the page restates none */
+  ok(!/\.salt-ghost/.test(allCss) && /(^|\} )\.amb-action--danger \{ color: var\(--amb-neg\); \}/.test(AMB_CSS.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ")) && !R.some(([sel]) => /danger/.test(sel)),
+    "a move that refuses rests in Ambient's alarm, from the system's own rule, and the page's layer states no danger tone of its own");
 
-  /* ---- 3. text contrast, PAGE_CSS alone: every colour it sets as text, on each theme's ground, slate and glass ---- */
-  const used = new Set();
-  for (const [, body] of R) {
-    const c = /^var\(--salt-([\w-]+)\)$/.exec(decl(body, "color")); if (c) used.add(c[1]);
-    for (const tone of ["status-tone", "ghost-tone", "sev"]) { const t = /^var\(--salt-([\w-]+)\)$/.exec(decl(body, "--salt-" + tone)); if (t) used.add(t[1]); }
-  }
-  used.delete("ink-on-accent"); used.delete("slate");
-  const lowest = (T) => {
-    const grounds = [T.obsidian, T.slate, glassOver(T)].filter(Boolean);
-    const rows = [...used].map((k) => { const h = resolve(T, k); return [k, HEX.test(h || "") ? Math.min(...grounds.map((g) => ratio(h, g))) : 0]; });
-    return { weak: rows.filter((r) => r[1] < 4.5).map((r) => r[0] + " " + (r[1] ? r[1].toFixed(2) : "unresolved")), low: rows.sort((a, b) => a[1] - b[1])[0], n: grounds.length };
-  };
-  const ln = lowest(NIGHT), lt = lowest(TIDE);
-  ok(used.size >= 6 && ["brass", "ember", "verdigris", "text-muted"].every((k) => used.has(k)) && ln.n === 3, `the colours PAGE_CSS sets as text are read off it (${used.size}: ${[...used].sort().join(" ")})`);
-  ok(ln.weak.length === 0 && lt.weak.length === 0,
-    `and each holds 4.5:1 on obsidian, slate and a card's glass over it, on Night (lowest ${ln.low[0]} ${ln.low[1].toFixed(2)}) and on Tide (lowest ${lt.low[0]} ${lt.low[1].toFixed(2)}); short: ${ln.weak.concat(lt.weak).join(", ") || "none"}`);
-  /* the danger ghost's tone is the system's alarm: stated once in the recipes, and the alarm holds the same measure on both themes */
-  const danger = rulesOf(SITE_RECIPES).filter(([sel]) => sel === ".salt-ghost--danger");
-  const alarm = [NIGHT, TIDE].map((T) => Math.min(...[T.obsidian, T.slate, glassOver(T)].map((g) => ratio(resolve(T, "alarm"), g))));
-  ok(danger.length === 1 && /--salt-ghost-tone:\s*var\(--salt-alarm\)/.test(danger[0][1]) && alarm.every((r) => r >= 4.5),
-    `a ghost that refuses rests in the alarm, from the system's own recipe, which holds 4.5:1 on both themes (Night ${alarm[0].toFixed(2)}, Tide ${alarm[1].toFixed(2)})`);
-
-  /* ---- 4. the type floor: nothing the page or its statement layer sets is under the system's 11px ---- */
-  const px = (v, T) => { const t = /^var\(--salt-([\w-]+)\)$/.exec(v); if (t) v = resolve(T, t[1]) || ""; const m = /^([\d.]+)(px|rem)$/.exec(v); return m ? parseFloat(m[1]) * (m[2] === "rem" ? 16 : 1) : null; };
-  const sizes = [...R, ...rulesOf(STATEMENT_CSS)].map(([sel, body]) => [sel, decl(body, "font-size")]).filter(([, v]) => v && !/^(inherit|[\d.]+(em|%))$/.test(v));
-  const small = sizes.filter(([, v]) => !(px(v, NIGHT) >= 11));
-  ok(sizes.length > 40 && small.length === 0, `no font size is under 11px (${sizes.length} read; under: ${small.map((s) => s[0].slice(0, 40) + " " + s[1]).join(" | ") || "none"})`);
+  /* ---- 4. the type floor (16 Nov 2026, the move to Ambient): nothing the site's layer sets is under Ambient's 12px floor ---- */
+  const AMBTOK = Object.fromEntries([...AMB_STYLE.matchAll(/--amb-([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  const px = (v) => { const t = /^var\(--amb-([\w-]+)\)$/.exec(v); if (t) v = AMBTOK[t[1]] || ""; if (/^max\(/.test(v)) return 16; const m = /^([\d.]+)(px|rem)$/.exec(v); return m ? parseFloat(m[1]) * (m[2] === "rem" ? 16 : 1) : null; };
+  const sizes = SITE_ALL.map(([sel, body]) => [sel, decl(body, "font-size")]).filter(([, v]) => v && !/^(inherit|[\d.]+(em|%))$/.test(v));
+  const small = sizes.filter(([, v]) => !(px(v) >= 12));
+  ok(sizes.length > 25 && small.length === 0, `no font size the site's layer sets is under 12px (${sizes.length} read; under: ${small.map((s) => s[0].slice(0, 40) + " " + s[1]).join(" | ") || "none"})`);
 
   /* ---- 5. the taps: a control the page sizes is 44px both ways, and a native box smaller than that sits in a label that is ---- */
-  const CONTROL = /^(button|input|select|textarea|a)(\.|:|\[|$)|\[type=|\.salt-(ghost|pill|tabs__pill|orb|field__input|option__face)\b|\.(btn|fld|szrow)\b/;
+  const CONTROL = /^(button|input|select|textarea|a)(\.|:|\[|$)|\[type=|\.amb-(pill|circle|action|input|switch|segment__opt|tab)\b|\.(btn|fld|szrow)\b/;
   const under = [];
-  for (const [sel, body] of R) for (const s of subjects(sel)) {
+  for (const [sel, body] of SITE_ALL) for (const s of subjects(sel)) {
     if (!CONTROL.test(s.last.replace(/::?[\w-]+(\([^)]*\))?/g, ""))) continue;
-    for (const p of ["min-height", "min-width", "height", "width"]) { const v = decl(body, p); if (!v) continue; const n = px(v, NIGHT); if (n !== null && n < 44) under.push(s.sel + " " + p + " " + v); }
+    for (const p of ["min-height", "min-width", "height", "width"]) { const v = decl(body, p); if (!v) continue; const n = px(v); if (n !== null && n < 44) under.push(s.sel + " " + p + " " + v); }
   }
   /* 16 Nov 2026, the move to Ambient (place D): the native boxes that stood in a label (Keep me signed in, the pay radios) are the system's Switch and Options now, so the page sizes no control under 44px */
   ok(under.length === 0,
     `no control the page sizes is under 44px either way (${under.length} under: ${under.join(" | ") || "none"})`);
-  /* 22 Oct 2026 (canvas Needs you): Needs you's kinds are tabs of the Nav bar, 48px tall and a third or a sixth of the row wide, no longer pills; 28 Oct 2026: the month filter is a select in a settings row, no strip */
-  const strips = [".mos .salt-tabs__pill", ".adm .aparts .salt-tabs__pill"];
-  ok(strips.every((s) => R.some(([sel, b]) => sel === s && /min-height:\s*var\(--salt-tap\)/.test(b) && /min-width:\s*var\(--salt-tap\)/.test(b))) && /--salt-tap:\s*44px/.test(ds)
-    && R.some(([sel, b]) => sel === ".adm .nktab" && /min-height:\s*48px/.test(b)),
-    "and every tab strip the page draws sets its pills to the system's 44px token both ways, which is 44px, and Needs you's kind tabs are 48px tall");
-  const recipeTap = [".salt-ghost", ".salt-pill", ".salt-field__input"].filter((c) => !rulesOf(SITE_RECIPES).some(([sel, b]) => sel.split(",").map((x) => x.trim()).includes(c) && /min-height:\s*var\(--salt-tap\)/.test(b)));
-  ok(recipeTap.length === 0, `the ghost, the pill and the field carry the 44px in the recipes themselves (without: ${recipeTap.join(" ") || "none"})`);
+  /* 16 Nov 2026, the move to Ambient (end pass): the month filter is Ambient's select and every strip of parts its Segment, so the page sets no tab pill of its own and the kind tabs (.nktab) are gone; the 44px is Ambient's token, which its tab, segment option and small pill all carry */
+  const AMBR = rulesOf(AMB_CSS), tap44 = (sel) => AMBR.some(([s, b]) => s.split(",").map((x) => x.trim()).includes(sel) && /min-height:\s*var\(--amb-tap\)/.test(b));
+  ok(!SITE_ALL.some(([sel]) => /salt-tabs|nktab/.test(sel)) && AMBTOK.tap === "44px" && [".amb-pill--sm", ".amb-segment__opt", ".amb-tab"].every(tap44),
+    "and no tab strip's pill is sized by the page: the strips are Ambient's Segment and select, whose options, tabs and small pills carry the 44px token, which is 44px");
+  ok(!/\.nktab|salt-nav/.test(OWNER_SRC.replace(/\/\*[\s\S]*?\*\//g, "") + PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")), "and Needs you's kind tabs are not drawn: nothing names the older tab (nktab) or its Nav bar");
 
   /* ---- 6. the markup wears the recipes: Salt Admin, drawn on its busiest day, and read for every label, every guest link, the report card, the hours and a book named on a row ---- */
-  const labelsBad = (d) => [...d.querySelectorAll(".lbl")].filter((n) => !(n.tagName === "LEGEND" ? n.classList.contains("salt-options__legend--label") && n.classList.contains("salt-options__legend") : n.classList.contains("salt-field__label"))).map((n) => n.tagName + " " + n.textContent.slice(0, 24));
+  const labelsBad = (d) => [...d.querySelectorAll(".lbl, label.amb-field > span:not([class])")].map((n) => n.tagName + " " + n.textContent.slice(0, 24));
   const row = { id: "AX1-ZED", bought: 100, soldFor: 50, introduced: 20, onward: 1, referred: 2, share: 12, rank: 1, stars: 2, founder: true, reward: { earned: 2, taken: 1, left: 1, next: 0.4 } };
   const p = await richOwnerPage({ pageWork, assocAnswer: (j) => ({ ...j, products: [{ product: "salt", name: "salt", rows: [row] }] }) });
   try {
@@ -205,9 +184,8 @@ export async function run({ ok, pageWork }) {
     }
     ok(forms >= 10 && seen >= 25 && bad.length === 0, `every label on Record's ${forms} forms is the system's Field label, and every legend its label modifier (${seen} read; bare: ${bad.slice(0, 3).join(" | ") || "none"})`);
     /* 18 Oct 2026: a select is the system's, so its open list is the Desk's slate under salt ink (.salt-field__select option) and never the well this page once set */
-    ok(sels >= 10 && selBad.length === 0 && rulesOf(SITE_RECIPES).some(([sel, b, m]) => !m && sel === ".salt-field__select option" && decl(b, "background") === "var(--salt-slate)" && decl(b, "color") === "var(--salt-salt)")
-      && !R.some(([sel]) => /(^|[\s>+~,])option\b/.test(sel)),
-      `every select on Record's forms wears the system's select, whose open list is slate under salt ink as on the Desk, and the page sets no list colour of its own (${sels} read; bare: ${selBad.slice(0, 3).join(" ") || "none"})`);
+    ok(sels >= 10 && selBad.length === 0 && !SITE_ALL.some(([sel]) => /(^|[\s>+~,])option\b/.test(sel)),
+      `every select on Record's forms wears Ambient's input, whose open list is the device's own, and the page sets no list colour of its own (${sels} read; bare: ${selBad.slice(0, 3).join(" ") || "none"})`);
 
     /* a book on a row wears the Product tag, the book's mark in it and no word for the book (his word of 12 Oct 2026), its hue the book's own accent token, and no style attribute (the Counter's policy refuses one) */
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.approve"));
@@ -255,8 +233,8 @@ export async function run({ ok, pageWork }) {
     const every = await richOwnerPage({ pageWork, slip: true, probe: true });
     try {
       await drawEverything(every);
-      const above = [...every.d.querySelectorAll("label.maker-field .lbl")];
-      ok(above.length >= 4 && labelsBad(every.d).length === 0 && above.every((n) => n.classList.contains("salt-field__label")),
+      const above = [...every.d.querySelectorAll("label.amb-field > .amb-field__label")];
+      ok(above.length >= 4 && labelsBad(every.d).length === 0,
         `every field that keeps its label above it wears the system's Field label (${above.length} read; bare: ${labelsBad(every.d).slice(0, 3).join(" | ") || "none"})`);
     } finally { every.w.close(); }
   } finally { p.w.close(); }

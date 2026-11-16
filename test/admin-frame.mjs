@@ -53,7 +53,8 @@ export async function run({ ok, pageWork }) {
       "F1.1 his shell is the screen's height and never scrolls: " + rule(".amb-shell").replace(/\s+/g, " "));
     ok(/position: absolute;/.test(rule(".amb-screen")) && /overflow-y: auto;/.test(rule(".amb-screen")) && /position: absolute;/.test(rule(".amb-dock")),
       "F1.2 its screen is the one box that scrolls, and the dock (the rail from 960px) stands still over it");
-    ok(/\.amb-screen:has\(> \.amb-split--panes\) \{ display: flex; flex-direction: column; overflow-y: hidden; \}/.test(amb) && /overflow-y: auto;/.test(rule(".amb-split--panes > .amb-stack")),
+    /* 16 Nov 2026, the move to Ambient (end pass): a screen holds still for a split that is its own child or the last of a place, Ambient's nested places (0.7.7) */
+    ok(/\.amb-screen:has\(> \.amb-split--panes(, > \.amb-place:not\(\[hidden\]\) > \.amb-split--panes)?\) \{ display: flex; flex-direction: column; overflow-y: hidden; \}/.test(amb) && /overflow-y: auto;/.test(rule(".amb-split--panes > .amb-stack")),
       "F1.3 from 960px a split of panes holds the screen still and each stack scrolls by itself: " + rule(".amb-split--panes > .amb-stack").replace(/\s+/g, " "));
     ok(/position: sticky;/.test(rule(".amb-foot")) && /background: linear-gradient\(to bottom, transparent, var\(--amb-base\)/.test(rule(".amb-foot")) && !/border|backdrop-filter/.test(rule(".amb-foot")),
       "F1.4 a record's foot is held at its foot over a fade of the ground, seamless: no box and no edge behind the pill");
@@ -68,9 +69,9 @@ export async function run({ ok, pageWork }) {
       && !d.querySelector("#roster.salt-frame, .salt-frame__main, .salt-frame__bar") && d.querySelector("#roster > .amb-dock > nav.amb-tabbar") !== null,
       "F2.1 his shell is Ambient's: its screen the one scroll box, docked, and its dock the places; no salt-ds frame");
     /* 16 Nov 2026, the move to Ambient (places F, H and I): Needs you's card (#nopen) is drawn in the record's column #nrecord of Ambient's split, an account and a thread are the second stack of Ambient's panes (#aside, #chatside), and Shop's open day is the second stack of its panes; none carries salt-pane */
-    const panes = ["#makerReview"].filter((s) => !has(s, "salt-pane"));
+    const panes = [...d.querySelectorAll(".salt-pane")].map((e) => e.id || e.className);   /* 16 Nov 2026 (end pass): no record carries the older pane; each is a stack of Ambient's split */
     ok(["#aside", "#chatside"].every((q) => !!d.querySelector(q) && d.querySelector(q).classList.contains("amb-stack") && !!d.querySelector(q).closest(".amb-split--panes")) && d.querySelector("#aside").previousElementSibling.id === "rlist" && d.querySelector("#chatside").previousElementSibling.id === "makerChatList", "F2.2b an account and a thread are the second pane of a split, their list the first");
-    ok(!panes.length && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an order, Shop's open day) for its builder's split; not: " + J(panes));
+    ok(!panes.length && !!d.querySelector("#makerReview") && has("#nrecord", "amb-stack") && !!d.querySelector(".amb-split > #nrecord") && has("#makerDayPane", "amb-stack") && !!d.querySelector("#makerDayPane").closest(".amb-split--panes"), "F2.2 every record that opens beside a list keeps its place (Needs you's card, an order, Shop's open day) for its builder's split; not: " + J(panes));
     const css = html.replace(/<script[\s\S]*?<\/script>/g, "");
     ok(!/--salt-frame-h|salt-frame__main|\.gate\.adm/.test(css),
       "F3.1 nothing sizes a frame any more: no --salt-frame-h, no frame column, no .gate.adm");
@@ -134,8 +135,9 @@ export async function run({ ok, pageWork }) {
       enter(d, "orders", "todo"); await p.work.quiet();
       await click(d.querySelector('#makerOrderList [data-act="order.open"]'));
       const oc = d.querySelector("#makerReview > .maker-card"), of = oc && oc.lastElementChild;
-      ok(!!of && of.classList.contains("salt-pane__foot") && !!of.querySelector(".ordlead > .salt-pill") && !of.closest(".ordcols")
-        && !!oc.querySelector(".ordcols--2") && !of.querySelector('[data-act="order.decline"]') && !!oc.querySelector('.ordend [data-act="order.decline"]'),
+      /* 16 Nov 2026, the move to Ambient (end pass): the foot is Ambient's (amb-foot) and the stage's pill its pill */
+      ok(!!of && of.classList.contains("amb-foot") && !!of.querySelector(".amb-pill") && !of.closest(".odecide, .ordend")
+        && !!oc.querySelector(".odecide") && !of.querySelector('[data-act="order.decline"]') && !!oc.querySelector('.ordend [data-act="order.decline"]'),
         "F8 an order's stage pill is the card's foot, last and outside the two columns; Decline the order stays in the ends: " + (of ? of.className + " " + of.textContent.slice(0, 40) : "no card"));
       enter(d, "record", "entry"); await p.work.quiet();
       await click(byAct(d, "record.form", "sale-or-purchase"));
@@ -159,7 +161,7 @@ export async function run({ ok, pageWork }) {
       const keys = [...d.querySelectorAll("#nlist [data-need]")].map((x) => x.getAttribute("data-need")), mine = keys.filter((k) => !/^[op]:/.test(k))[0];
       if (mine) await click(d.querySelector('#nlist [data-need="' + mine + '"] .need-tap'));
       const go = d.querySelector("#nrecord > .npane__go");
-      ok(!!of2 && of2.classList.contains("salt-pane__foot") && !!of2.querySelector(".salt-pill") && !!go && go.classList.contains("amb-foot") && go.parentElement.lastElementChild === go,
+      ok(!!of2 && of2.classList.contains("amb-foot") && !!of2.querySelector(".amb-pill") && !!go && go.classList.contains("amb-foot") && go.parentElement.lastElementChild === go,
         "F10.2 Needs you's open card: an order's stage pill is its card's foot, and a card with ways of its own has them as its foot, last: " + J([!!of2, mine, go && go.className]));
     } finally { p.w.close(); }
   }

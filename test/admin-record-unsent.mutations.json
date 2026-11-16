@@ -1,13 +1,14 @@
 [
  {"name":"no heading over the unsent cards","file":"stmt/owner.js","find":"if(!headed[part]){ headed[part]=true; var head=","replace":"if(false){ headed[part]=true; var head="},
- {"name":"the card loses its typed book","file":"stmt/owner.js","find":"if(typeof body.product==='string'&&body.product) tap.appendChild(productTag(body.product));","replace":""},
- {"name":"the figure is left off the card","file":"stmt/owner.js","find":"el('span','salt-action__money salt-action__money--lg nfig',+body.total>0.004?rmShort(body.total):'')","replace":"el('span','salt-action__money salt-action__money--lg nfig','')"},
+ {"name":"the card loses its book's chip","file":"stmt/owner.js","find":"if(typeof body.product==='string'&&body.product) tap.appendChild(bookChip(body.product));","replace":""},
+ {"name":"the figure is left off the card","file":"stmt/owner.js","find":"if(+body.total>0.004){ var figs=","replace":"if(false){ var figs="},
  {"name":"the kind has no age","file":"stmt/owner.js","find":"var age=u.at?ageOf(u.at):''; if(age){","replace":"var age=u.at?ageOf(u.at):''; if(false){"},
  {"name":"the pill keeps its old words","file":"stmt/owner.js","find":"['Resend','Update and send','Discard'].forEach(","replace":"['Send again','Update and send','Discard'].forEach("},
- {"name":"Discard does not refuse in its colour","file":"stmt/owner.js","find":"index?'salt-ghost'+(index===2?' salt-ghost--danger':''):'salt-pill salt-pill--sm nbtn'","replace":"index?'salt-ghost':'salt-pill salt-pill--sm nbtn'"},
- {"name":"the second choices stand on the card","file":"stmt/owner.js","find":"};(index?ways:go).appendChild(button);","replace":"};go.appendChild(button);"},
+ {"name":"Discard does not refuse in its colour","file":"stmt/owner.js","find":"index?aAct(aBtn(label,'',act),index===2)","replace":"index?aAct(aBtn(label,'',act),false)"},
+ {"name":"the second choices stand on the card","file":"stmt/owner.js","find":"if(index){ var li=el('li'); li.appendChild(button); waysList.appendChild(li); } else go.appendChild(button);","replace":"go.appendChild(button);"},
  {"name":"the card opened says nothing of it","file":"stmt/owner.js","find":"          tap.addEventListener('click',function(){ shut(open.hidden); });\n","replace":""},
- {"name":"only the code is the tap","file":"stmt/page.js","find":".adm .unsent-card .need-tap::after{content:\"\";position:absolute;inset:0}","replace":""},
- {"name":"the tap covers the pill","file":"stmt/page.js","find":".adm .unsent-card>.salt-action__go{position:relative;z-index:1}","replace":""},
- {"name":"the menu's column takes a card rule of the page's","file":"stmt/page.js","find":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n","replace":".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n.adm .reclist .ncard{height:90px}\n"}
+ {"name":"only the code is the tap","file":"stmt/statement-css.js","find":".ntask .need-tap::after { content: \\\"\\\"; position: absolute; inset: 0; }\\n","replace":""},
+ {"name":"the tap covers the pill","file":"stmt/statement-css.js","find":".ntask .amb-task__acts, .ntask .nbody { position: relative; z-index: 1; }\\n","replace":""},
+ {"name":"the card is not the list's task","file":"stmt/owner.js","find":"card=el('article','amb-task amb-task--warn ntask unsent-card')","replace":"card=el('article','amb-task amb-task--warn unsent-card')"},
+ {"name":"the chip does not say Unsent","file":"stmt/owner.js","find":"el('span','amb-chip amb-chip--warn','Unsent')","replace":"el('span','amb-chip amb-chip--warn','Held')"}
 ]
