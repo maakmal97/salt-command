@@ -1196,6 +1196,17 @@ button.amb-setting:focus-visible, a.amb-setting:focus-visible, .amb-disclose > s
 .amb-disclose[open] > summary > .amb-disclose__mark { transform: rotate(180deg); }
 .amb-disclose__text { max-width: var(--amb-measure); margin: 0; padding: 0 var(--amb-space-6) var(--amb-space-3) 0; font-size: var(--amb-text-subhead); line-height: 1.45; color: var(--amb-ink-2); overflow-wrap: anywhere; }
 .amb-disclose__text + .amb-disclose__text { margin-top: calc(-1 * var(--amb-space-1)); }
+/* a fold (0.7.12): the same part at a section's size, standing in a stack. Its head is a section's head with the
+   turning chevron, the whole of it the one control; its body holds rows to tap, words, or a pill */
+.amb-disclose--fold { border-bottom: 0; }
+.amb-disclose__head { display: flex; align-items: center; justify-content: space-between; gap: var(--amb-space-3); min-height: var(--amb-tap); cursor: pointer; touch-action: manipulation; list-style: none; }
+.amb-disclose__title { min-width: 0; margin: 0; font-size: var(--amb-text-title3); font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+.amb-disclose__body { display: grid; gap: var(--amb-space-2); min-width: 0; padding-top: var(--amb-space-2); }
+.amb-disclose__body > .amb-list { margin-inline: 0; }
+.amb-disclose__body > .amb-disclose__text { padding: 0; }
+.amb-disclose__body > .amb-disclose__text + .amb-disclose__text { margin-top: 0; }
+/* a pill in a fold stands at its start, as wide as its words; only a block pill runs the width */
+.amb-disclose__body > .amb-pill:not(.amb-pill--block) { justify-self: start; }
 @container amb (max-width: 20rem) {
   .amb-option { grid-template-columns: 22px minmax(0, 1fr); }
   .amb-option__figure { grid-column: 2; grid-row: auto; text-align: left; }
@@ -1533,6 +1544,7 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 
 /* ---- A pointer, where there is one ---- */
 @media (hover: hover) {
+  .amb-disclose__head:hover > .amb-disclose__mark { color: var(--amb-ink); }
   a.amb-row:hover .amb-row__title, button.amb-row:hover .amb-row__title, .amb-row__main:hover .amb-row__title, button.amb-plate__row:hover .amb-plate__value { color: var(--amb-accent); }
   .amb-action:hover, .amb-tab:hover, .amb-contents__link:hover { background: var(--amb-hover); }
   .amb-pill:hover:not(:disabled):not([aria-disabled="true"]) { opacity: .88; }
