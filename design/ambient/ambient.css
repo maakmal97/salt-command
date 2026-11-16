@@ -1336,7 +1336,8 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 .amb-foot > * { pointer-events: auto; }
 .amb-foot > .amb-pill { max-width: 36rem; }
 .amb-screen--docked .amb-foot { --amb-foot-at: calc(var(--amb-tabbar-h) + var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px) - var(--amb-bleed)); --amb-foot-under: var(--amb-dock-inset); }
-.amb-shell:has(> .amb-dock > .amb-mini) { --amb-foot-mini: calc(var(--amb-mini-h) + var(--amb-peek)); }
+/* the room is kept only while the mini bar shows: a mini carrying hidden keeps none */
+.amb-shell:has(> .amb-dock > .amb-mini:not([hidden])) { --amb-foot-mini: calc(var(--amb-mini-h) + var(--amb-peek)); }
 /* Over a dock the ground runs on from the foot down to the screen's foot and the dock floats over it, so
    nothing that scrolls shows between the pill and the dock or under the dock. It is drawn where the foot's
    record ends the screen, so it never covers what follows, and it takes the taps meant for what it hides. */
