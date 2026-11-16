@@ -33,7 +33,7 @@ export async function run({ ok, pageWork }) {
     /* 2 Nov 2026: a ready order whose goods are all out says Collected, never "To hand over", and its moment the day they went */
     await go("paid");
     const OUT = await tap("ord-out"), ohd = OUT && OUT.querySelector(".ohead");
-    ok(!!ohd && t(ohd.querySelector(".oband__head .salt-status")) === "Collected" && /Collected/.test(t(ohd)), "goods all out: the chip says Collected, not To hand over: " + (ohd && t(ohd).slice(0, 120)));
+    ok(!!ohd && t(ohd.querySelector(".oband__head .amb-chip:not([data-ref])")) === "Collected" && /Collected/.test(t(ohd)), "goods all out: the chip says Collected, not To hand over: " + (ohd && t(ohd).slice(0, 120)));
     /* 2 Nov 2026: Ended's line counts every order shown into a word, so its parts add up to its total */
     await go("ended");
     const endLine = t(d.getElementById("makerReviewStatus")), endN = Number((/^(\d+) ended order/.exec(endLine) || [])[1]);
@@ -45,8 +45,8 @@ export async function run({ ok, pageWork }) {
     /* 20 Oct 2026 (canvas V11): the action as a chip by the reference. 2 Nov 2026 (his Orders canvas, page 2): the Counter's own band, its foot the book's
        tag, the buyer's code and the units at the right; the goods' total is the Bill's */
     /* 16 Nov 2026, the move to Ambient: the shared band is plain classes on the site's layer (place C); his chip and his foot are his own until his side is redrawn */
-    ok(!!head && head.classList.contains("oband") && t(head.querySelector(".oband__head .salt-status")) === "To hand over"
-      && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(t(head.querySelector(".oband__head > [data-ref]"))) && t(head.querySelector(".oband__foot .ogoods__units")) === "2 units"
+    ok(!!head && head.classList.contains("oband") && t(head.querySelector(".oband__head .amb-chip:not([data-ref])")) === "To hand over"
+      && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(t(head.querySelector(".oband__head > [data-ref]"))) && t(head.querySelector(".oband__foot .mq")) === "2 units"
       && t(head.querySelector(".oband__foot .ogoods__who")) === "CX1-ZED" && /^Ready /.test(t(head.querySelector(".oband__when .omoment"))),
       "his order's head is the band: the action as a chip by the short reference, the moment and the way, the buyer and the units: " + t(head));
     ok(t(head.querySelector(".oway")) === "Collect at Z9", "a collection says where: " + t(head && head.querySelector(".oway")));
@@ -67,7 +67,7 @@ export async function run({ ok, pageWork }) {
     await go("confirmed");
     const A = await tap("ord-ad"), due = A && A.querySelector(".ordmoney .obill__due") && A.querySelector(".ordmoney .obill__due").closest(".amb-setting");
     ok(!!due && /^Owed/.test(t(due)) && /RM 70/.test(t(due)) && t(A.querySelector(".ohead .oway")) === "Lirau · ASAP · +RM 10.00 delivery"
-      && t(A.querySelector(".ohead .oband__head .salt-status")) === "To make ready",
+      && t(A.querySelector(".ohead .oband__head .amb-chip:not([data-ref])")) === "To make ready",
       "something owed stands in the due row, and a delivery says where to and when, as the customer reads it: " + t(due) + " / " + t(A && A.querySelector(".oway")));
     /* 5 (20 Oct 2026, canvas V21, V24): the Bill, headed so, Goods, Delivery cost, the Total, then what is paid and owed */
     /* 2 Nov 2026: the Bill is the Counter's (oBillOf), a settings list under its grey head; the total's name heavier */

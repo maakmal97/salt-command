@@ -55,8 +55,9 @@ export async function run({ ok, pageWork }) {
   const missing = wanted.filter(([sel, body, media]) => !carried.includes(squash(media ? "" : sel + " {" + body + "}"))).map((r) => r[0]);
   ok(heads.every((h) => RECIPE_HEADS.includes(h)) && new Set(RECIPE_HEADS).size === RECIPE_HEADS.length && wanted.length >= 18 && missing.length === 0 && !SITE_RECIPES.includes("/*"),
     `Table, Product tag and Metric row are in the recipes the page carries, ${wanted.length} rules whole and in the system's words, with none of its notes (missing: ${missing.join(" ") || "none"})`);
-  ok(!/salt-producttag/.test(PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")) && /salt-producttag/.test(OWNER_SRC),
-    "and the Product tag is drawn by Salt Admin's script alone: nothing a customer's page draws names it, so a book is still a mark there and never a word");
+  /* 16 Nov 2026, the move to Ambient (place G): the typed tag is Ambient's chip now, so neither script names the older tag */
+  ok(!/salt-producttag/.test(PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")) && !/salt-producttag/.test(OWNER_SRC.replace(/\/\*[\s\S]*?\*\//g, "")),
+    "and the Product tag is Ambient's chip: neither script draws the older tag, and a customer's page still shows a mark and never a word");
 
   /* ---- 1a. Counter Batch A's recipes (salt-ds 1.7.0, 18 Oct 2026): each new head is carried once, every rule of it whole as the system holds it, @media
      ones included, so the batch's markup wears them and the page restates none ---- */
@@ -210,21 +211,21 @@ export async function run({ ok, pageWork }) {
 
     /* a book on a row wears the Product tag, the book's mark in it and no word for the book (his word of 12 Oct 2026), its hue the book's own accent token, and no style attribute (the Counter's policy refuses one) */
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.approve"));
-    const bare = (x) => { const g = x.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((t) => t.replaceWith("[tag]")); return g.textContent.trim(); };
-    const line = [...d.querySelectorAll("#makerDrafts .maker-facts")].find((x) => x.querySelector(".salt-producttag--oil"));
-    const tag = line && line.querySelector(".salt-producttag");
-    /* 25 Oct 2026 (canvas Salt Admin Orders): on Orders the tag is typed, the book's name in its hue as on Needs you, and no mark */
-    ok(!!tag && tag.classList.contains("salt-producttag--oil") && !tag.querySelector("svg.psym") && tag.textContent.trim() === "Oil"
+    const bare = (x) => { const g = x.cloneNode(true); g.querySelectorAll(".amb-chip").forEach((t) => t.replaceWith("[tag]")); return g.textContent.trim(); };
+    const line = [...d.querySelectorAll("#makerDrafts .apline")].find((x) => x.querySelector(".amb-chip.amb-kind-2"));
+    const tag = line && line.querySelector(".amb-chip");
+    /* 16 Nov 2026 (place G): on Orders a book is its chip, its name in ink and its hue on the dot, and no mark */
+    ok(!!tag && /amb-kind-[1-6]/.test(tag.className) && !tag.querySelector("svg.psym") && tag.textContent.trim() === "Oil"
       && /^1 unit \[tag\], RM 100\.00$/.test(bare(line))
-      && !!tag.querySelector(".salt-producttag__dot[aria-hidden='true']") && !tag.hasAttribute("style") && !tag.querySelector("[style]"),
-    "a book on a row to approve wears the typed Product tag with its dot, its name in its hue and no mark: " + (line ? line.textContent : "no line"));
-    const figs = d.querySelector("#makerDrafts article.salt-approve > .salt-metrics.salt-metrics--sm");
-    ok(!!figs && [...figs.children].every((c) => c.querySelector(".salt-metrics__label") && c.querySelector(".salt-metrics__value")) && figs.children.length === 2,
-      "and the cost and margin under it are the Metric row, a label over its figure");
+      && !!tag.querySelector(".amb-chip__dot") && !tag.hasAttribute("style") && !tag.querySelector("[style]"),
+    "a book on a row to approve wears the book's chip with its dot, its name in ink and no mark: " + (line ? line.textContent : "no line"));
+    const figs = d.querySelector("#makerDrafts article.amb-task .apfigs");
+    ok(!!figs && [...figs.children].every((c) => c.querySelector(".amb-stat__label") && c.querySelector(".amb-stat__value")) && figs.children.length === 2,
+      "and the cost and margin under it are Ambient's stats, a label over its figure");
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.group"));
-    const pool = [...d.querySelectorAll("#makerPools .maker-row")].find((x) => x.querySelector(".salt-producttag"));
-    ok(!!pool && pool.querySelector(".salt-producttag").classList.contains("salt-producttag--salt") && /^\[tag\], 1 unit each\. 3 of 10 units in, 1 joined\./.test(bare(pool)) && !/salt/i.test(bare(pool)) && pool.querySelector(".salt-producttag").textContent.trim() === "Salt",
-      "a group order's row shows its book on the typed Product tag too, and no word for it beside the tag: " + (pool ? bare(pool).slice(0, 60) : "no row"));
+    const pool = [...d.querySelectorAll("#makerPools .amb-task")].find((x) => x.querySelector(".amb-task__head .amb-kind-1"));
+    ok(!!pool && pool.querySelector(".amb-task__head .amb-chip.amb-kind-1").textContent.trim() === "Salt" && /^1 unit each$/.test(pool.querySelector(".amb-task__title").textContent) && /3 of 10 units/.test(pool.textContent) && /Joined1/.test(pool.textContent.replace(/\s+/g, "")),
+      "a group order is a task headed by its book's chip, and no word for it beside the chip: " + (pool ? pool.textContent.slice(0, 80) : "no row"));
 
     /* the hours are the week chart (20 Oct 2026, canvas V63), a button a day; the table is gone */
     await click(byAct(d, "nav.shop")); await click(byAct(d, "part.shop.hours")); audit();

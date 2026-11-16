@@ -159,7 +159,7 @@
   "name": "a book on Orders is its mark again",
   "file": "stmt/owner.js",
   "find": "book.appendChild(bookChip(r.product));",
-  "replace": "book.appendChild(bookMark(r.product,20));"
+  "replace": "book.appendChild(psym(r.product,20));"
  },
  {
   "name": "a cell loses its column's label (16 Nov 2026)",

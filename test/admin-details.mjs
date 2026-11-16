@@ -17,7 +17,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const ISO = "2026-10-10T08:00:00.000Z", C1 = "abcd-efgh:c-1", C2 = "abcd-efgh:c-2";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 /* a Details list as [name, value] pairs, in the order drawn */
-const pairs = (box) => [...box.querySelectorAll(".salt-ledger__row")].map((r) => [r.querySelector(".salt-ledger__label").textContent, r.querySelector(".salt-ledger__value").textContent]);
+const pairs = (box) => [...box.querySelectorAll(".amb-setting")].map((r) => [r.querySelector(".amb-setting__name").textContent, r.querySelector(".amb-setting__value").textContent]);
 /* the text of a card with its Details taken out: what a person reads down it */
 const bare = (card) => { const c = card.cloneNode(true); [...c.querySelectorAll("details")].forEach((x) => x.remove()); return c.textContent; };
 const detailsOf = (card, act, key) => { const s = byAct(card, act, key); return s && s.parentElement; };
@@ -36,7 +36,7 @@ export async function run({ ok, pageWork }) {
     await p.click(byAct(d, "nav.orders"));
     /* 20 Oct 2026 (canvas V36): an order's card has no Details; the band carries the short reference, the moment and the way */
     const card = p.card("ord-p1");
-    ok(!!card && !detailsOf(card, "order.details", "ord-p1") && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test((card.querySelector(".ohead .salt-band__ref") || {}).textContent || ""),
+    ok(!!card && !detailsOf(card, "order.details", "ord-p1") && /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test((card.querySelector(".ohead [data-ref]") || {}).textContent || ""),
       "an order's card has no Details fold, its short reference in the band's corner");
     ok(!bare(card).includes("ord-p1") && ![...card.querySelectorAll(".maker-facts")].some((f) => /^Reference/.test(f.textContent)),
       "the card itself does not read the reference out: " + bare(card).slice(0, 160));
@@ -54,7 +54,7 @@ export async function run({ ok, pageWork }) {
     ok(!!box && !box.open && same(pairs(box), [["Reference", "c-1"], ["Sent", "10 Oct 2026, 16:00"], ["Slip", "Attached"]]),
       "a claim's card has Details, shut, with the claim's reference, when it was sent and that a slip is attached: " + JSON.stringify(box && pairs(box)));
     ok(!!card && !/(^|[^a-z])c-1([^a-z0-9]|$)/.test(bare(card)), "and the card does not read the id out: " + (card && bare(card).slice(0, 200)));
-    const flags = [...card.querySelectorAll(".maker-quote .salt-insight")].map((x) => x.textContent);
+    const flags = [...card.querySelectorAll(".maker-quote .amb-field__hint")].map((x) => x.textContent);
     ok(flags.includes("Row reference: s-9, Price: RM 5.00") && flags.includes("Already counted") && !flags.some((t) => /[{}"]/.test(t)),
       "a flag that is not a sentence is worded as names and values, and a sentence is as it came, never JSON: " + JSON.stringify(flags));
     await p.click(byAct(d, "claim.open", C1));
@@ -81,7 +81,7 @@ export async function run({ ok, pageWork }) {
     ok(!!box && !/\b(salt|oil|candy|rice|gas)\b/i.test(box.textContent), "and no book's name is read out in it: " + (box && box.textContent));
     ok(!!row && !row.querySelector("pre") && !/[{}[\]"]/.test(box.textContent), "never JSON: no preformatted block and no brace or quote in it: " + (box && box.textContent));
     const trip = d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]');
-    const tp = trip ? [...trip.querySelectorAll(".rdet--row .salt-ledger--plain")].map(pairs) : [];
+    const tp = trip ? [...trip.querySelectorAll(".rdet--row .amb-settings")].map(pairs) : [];
     ok(!!trip && tp.length === 2 && same(tp[1], [["Reference", "d-3"], ["Units", "1 unit"], ["Price", "RM 50.00"], ["Trip", "t1"]]) && !d.querySelector('#makerDrafts [data-maker-card="draft:d-3"]'),
     "a trip's second row has its own detail, under its own reference, in the trip's one card: " + JSON.stringify(tp));
     const held = d.querySelector('#makerQueueReview [data-key="2026-10-09T14:11:05.000Z"]'), refused = d.querySelector('#makerQueueReview [data-key="q-2"]');
@@ -104,6 +104,6 @@ export async function run({ ok, pageWork }) {
     await p.work.quiet();
     ok(boxes.length >= 2 && heads.length >= 2 && boxes.every((b) => b.querySelector("summary").getAttribute("data-act")) && p.posts.length === 0,
       "opening every Details on Orders > Approve sends nothing, and each is a control with an act: " + boxes.length + " " + JSON.stringify(p.posts));
-    ok(boxes.every((b) => b.querySelector(".salt-ledger") && b.querySelectorAll(".salt-ledger__row").length >= 1), "each holds a list of names and values");
+    ok(boxes.every((b) => b.querySelector(".amb-settings") && b.querySelectorAll(".amb-setting").length >= 1), "each holds a list of names and values");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

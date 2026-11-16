@@ -116,14 +116,15 @@ export async function run({ ok, pageWork }) {
     /* 2 Nov 2026 (his Orders canvas, his answers of 31 Oct 2026): THE PARTS ARE ONE SEGMENT OF FOUR, To do, Open, Done and Ended, To do carrying its count; Payments, Group and
        Ledger are action rows under More; Approve has no control here, the bar's Approve its road */
     const strips = [...d.querySelectorAll('.aparts[data-place="orders"]')], seg = strips[0], tabs = seg ? [...seg.querySelectorAll("[data-part]")] : [];
-    ok(strips.length === 1 && seg.classList.contains("salt-segment") && seg.getAttribute("role") === "tablist" && seg.style.getPropertyValue("--n") === "4"
-      && tabs.map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent).join() === "todo:To do,open:Open,done:Done,ended:Ended"
-      && tabs.every((b) => b.classList.contains("salt-segment__opt") && b.getAttribute("role") === "tab" && !b.hidden),
-    "Orders draws one Segment of four, To do, Open, Done and Ended, each a tab with its act: " + JSON.stringify(tabs.map((b) => b.getAttribute("data-part"))));
-    const more = [...d.querySelectorAll(".amore__list > button")];
-    ok(more.map((b) => b.getAttribute("data-part") + ":" + b.querySelector(".salt-settings__label").textContent).join() === "payments:Payments they sent,group:Group orders,ledger:Ledger check"
-      && more.every((b) => b.classList.contains("salt-settings__row--action") && /^part[.]orders[.]/.test(b.getAttribute("data-act")) && !!b.querySelector(".salt-settings__mark")),
-    "and Payments they sent, Group orders and Ledger check are action rows in a More group at the foot: " + more.map((b) => b.getAttribute("data-part")).join());
+    /* 16 Nov 2026, the move to Ambient (place G): the Segment is Ambient's, a part pressed, and More a settings group of rows with their way in at the right */
+    ok(strips.length === 1 && seg.classList.contains("amb-segment") && seg.getAttribute("role") === "group"
+      && tabs.map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent.trim()).join() === "todo:To do,open:Open,done:Done,ended:Ended"
+      && tabs.every((b) => b.classList.contains("amb-segment__opt") && b.hasAttribute("aria-pressed") && !b.hidden),
+    "Orders draws one Segment of four, To do, Open, Done and Ended, each a part with its act: " + JSON.stringify(tabs.map((b) => b.getAttribute("data-part"))));
+    const more = [...d.querySelectorAll(".amore__list > li > button")];
+    ok(more.map((b) => b.getAttribute("data-part") + ":" + b.querySelector(".amb-setting__name").textContent).join() === "payments:Payments they sent,group:Group orders,ledger:Ledger check"
+      && more.every((b) => b.classList.contains("amb-setting") && /^part[.]orders[.]/.test(b.getAttribute("data-act")) && !!b.querySelector("svg.amb-icon")),
+    "and Payments they sent, Group orders and Ledger check are rows in a More group at the foot: " + more.map((b) => b.getAttribute("data-part")).join());
     const reach = [];
     for (const part of ["approve", "payments", "group", "ledger", "ended", "open", "todo"]) { await p.tap("part.orders." + part); const w = p.where(); if (w !== "orders/" + part) reach.push(part + ">" + w); }
     ok(reach.length === 0, "and every part is still reached at its own act and address, Approve by the bar: " + JSON.stringify(reach));
@@ -133,31 +134,31 @@ export async function run({ ok, pageWork }) {
     const cardOf = (id) => { const r = byAct(d, "order.open", id); return r && r.closest(".ordcard"); };
     const part = (id, cls) => { const x = cardOf(id) && cardOf(id).querySelector("." + cls); return x ? x.textContent : null; };
     const pillOf = (id) => { const c = cardOf(id), b = c && c.querySelector('[data-act="order.move"]'); return b ? b.textContent : ""; };
-    const subOf = (id) => part(id, "salt-settings__sub");
+    const subOf = (id) => part(id, "amb-row__sub");
     const sizeRow = byAct(d, "order.open", "ord-p3"), sizeWords = (sizeRow.textContent.match(/units?/g) || []).length;
     ok(sizeWords === 1 && /collect 1 unit/.test(subOf("ord-p3")),
       "a row says the size once, in its units, under the book and the code: " + sizeRow.textContent);
     const row = byAct(d, "order.open", "ord-p3"), c3 = cardOf("ord-p3");
-    ok(row && row.tagName === "A" && row.classList.contains("ordrow") && row.classList.contains("salt-settings__text") && !!c3 && c3.classList.contains("salt-settings__row")
-      && !!row.querySelector(".salt-producttag--salt") && /^Salt/.test(row.querySelector(".salt-settings__label").textContent) && !row.querySelector("svg.psym, .mtile")
-      && /^CX1-ZED/.test(part("ord-p3", "ocode")) && part("ord-p3", "salt-settings__value--lg") === "RM 100" && subOf("ord-p3") === "Placed · collect 1 unit · 26 h"
-      && row.querySelector(".salt-settings__sub").classList.contains("salt-settings__sub--why") && pillOf("ord-p3") === "Agree",
-    "a row is the settings list's: the book's typed tag, who by code, what it is and how long in copper while it waits on him, the figure, Agree its move: " + (row && row.textContent) + " " + pillOf("ord-p3"));
-    ok(part("ord-p2", "salt-settings__value--lg") === "RM 110" && /^Placed · deliver 1 unit/.test(subOf("ord-p2")) && / 1 h$/.test(subOf("ord-p2")),
+    ok(row && row.tagName === "A" && row.classList.contains("ordrow") && row.classList.contains("amb-row__main") && !!c3 && c3.classList.contains("amb-row") && c3.tagName === "LI"
+      && !!row.querySelector(".amb-thumb") && !row.querySelector("svg.psym, .mtile")
+      && /^CX1-ZED/.test(part("ord-p3", "ocode")) && part("ord-p3", "amb-row__amount") === "RM 100" && subOf("ord-p3") === "Placed · collect 1 unit · 26 h"
+      && row.querySelector(".amb-row__sub").classList.contains("ordwhy") && pillOf("ord-p3") === "Agree",
+    "a row is Ambient's: the book's thumb, who by code, what it is and how long in the stronger ink while it waits on him, the figure, Agree its move: " + (row && row.textContent) + " " + pillOf("ord-p3"));
+    ok(part("ord-p2", "amb-row__amount") === "RM 110" && /^Placed · deliver 1 unit/.test(subOf("ord-p2")) && / 1 h$/.test(subOf("ord-p2")),
       "and the figure is the goods and the delivery, the way says how it goes: " + byAct(d, "order.open", "ord-p2").textContent);
     ok(/^Practice/.test(subOf("ex-1")) && pillOf("ex-1") === "" && !p.rowsShown().some((id) => /Waiting on you/.test(byAct(d, "order.open", id).textContent)),
       "a practice order says practice and carries no move: " + JSON.stringify(["ord-p3", "ex-1"].map((id) => [subOf(id), pillOf(id)])));
     /* every row is the one shape: the link, the figure, then the move when it has one */
-    const shape = (id) => [...cardOf(id).children].map((x) => x.tagName + "." + (x.className.split(" ").filter((k) => /^(ordrow|salt-settings__value|salt-ghost)$/.test(k)).join("") || "-")).join();
+    const shape = (id) => [...cardOf(id).children].map((x) => x.tagName + "." + (x.className.split(" ").filter((k) => /^(ordrow|amb-row__trail)$/.test(k)).join("") || "-")).join();
     const shapes = p.rowsShown().map(shape);
-    ok(shapes.length === 8 && shapes.every((x) => /^A[.]ordrow,SPAN[.]salt-settings__value(,BUTTON[.]salt-ghost)?$/.test(x)),
+    ok(shapes.length === 8 && shapes.every((x) => /^A[.]ordrow,SPAN[.]amb-row__trail$/.test(x)) && p.rowsShown().every((id) => [...cardOf(id).querySelector(".amb-row__trail").children].map((c) => c.className.split(" ")[0]).join() === "amb-row__amount" || [...cardOf(id).querySelector(".amb-row__trail").children].map((c) => c.className.split(" ")[0]).join() === "amb-row__amount,amb-pill"),
       "every row has the same parts in the same order: " + JSON.stringify(shapes));
     await byAct(d, "part.orders.todo").click(); await p.work.quiet();
-    const why = (id) => { const n = byAct(d, "order.open", id).querySelector(".salt-settings__sub"); return n.textContent.split(" · ")[0] + (n.classList.contains("salt-settings__sub--why") ? " (copper)" : ""); };
+    const why = (id) => { const n = byAct(d, "order.open", id).querySelector(".amb-row__sub"); return n.textContent.split(" · ")[0] + (n.classList.contains("ordwhy") ? " (copper)" : ""); };
     ok(why("ord-a1") === "Says sent RM 530 (copper)" && why("ord-a2") === "Send again (copper)" && pillOf("ord-a1") === "Received",
       "a payment they say they sent and a stage he rejected say which in copper, and a payment's move is Received: " + JSON.stringify(["ord-a1", "ord-a2"].map((id) => [why(id), pillOf(id)])));
     await byAct(d, "part.orders.open").click(); await p.work.quiet();
-    ok(["ord-r2", "ord-r3"].every((id) => !byAct(d, "order.open", id).querySelector(".salt-settings__sub--why") && ["Handed", "Message", ""].includes(pillOf(id))),
+    ok(["ord-r2", "ord-r3"].every((id) => !byAct(d, "order.open", id).querySelector(".ordwhy") && ["Handed", "Message", ""].includes(pillOf(id))),
       "and an order that waits on nothing is a quiet row, its move the goods' next step: " + JSON.stringify(["ord-r2", "ord-r3"].map((id) => [why(id), pillOf(id)])));
     await byAct(d, "part.orders.todo").click(); await p.work.quiet();
     ok(p.posts.length === 0 && !p.reads.some((r) => /preview/.test(r)),
@@ -173,7 +174,7 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.enter("ended");
-    const shownClosed = p.rowsShown(), note = [...d.querySelectorAll("#makerOrderList .salt-settings__foot")].filter(shown).map((e) => e.textContent);
+    const shownClosed = p.rowsShown(), note = [...d.querySelectorAll("#makerOrderList .amb-field__hint")].filter(shown).map((e) => e.textContent);
     /* 2 Nov 2026: the one that also waits on him stands in To do, so Ended lists the fifty and the note still counts all fifty-one against every closed order */
     ok(shownClosed.length === 50 && !shownClosed.includes("ord-x1") && !shownClosed.includes("ord-z55") && same(note, ["51 of 56 closed orders are shown."]),
       "Ended lists fifty ended orders, the one that also waits on you standing in To do, and its note counts what it shows against every closed order: " + shownClosed.length + " " + JSON.stringify(note));
@@ -188,20 +189,21 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.enter();
     /* 2 Nov 2026: To do carries the count of the orders that wait on him (practice not counted), Payments they sent the claims, and no other part a count */
-    const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".salt-segment__count, [data-n]"); return (b.firstChild.textContent || b.querySelector(".salt-settings__label").textContent) + ":" + (c && !c.hidden ? c.textContent : ""); };
-    ok(same(["todo", "open", "done", "ended", "payments", "group"].map(pill), ["To do:7", "Open:", "Done:", "Ended:", "Payments they sent:2", "Group orders:"]),
-      "To do carries the count of the orders that wait on him (practice not counted), Payments they sent the claims, and the rest none: " + JSON.stringify(["todo", "open", "done", "ended", "payments", "group"].map(pill)));
+    const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".amb-segment__count, [data-n]"); return (b.querySelector(".amb-setting__name") ? b.querySelector(".amb-setting__name").textContent : b.firstChild.textContent.trim()) + ":" + (c && !c.hidden ? c.textContent : ""); };
+    ok(same(["todo", "open", "done", "ended", "payments", "group"].map(pill), ["To do:7", "Open:3", "Done:0", "Ended:0", "Payments they sent:2", "Group orders:"])
+      && byAct(d, "part.orders.done").getAttribute("aria-disabled") === "true" && byAct(d, "part.orders.ended").getAttribute("aria-disabled") === "true" && !byAct(d, "part.orders.open").hasAttribute("aria-disabled"),
+      "each stage carries the count of the orders it holds (practice not counted), one with none dimmed, Payments they sent the claims: " + JSON.stringify(["todo", "open", "done", "ended", "payments", "group"].map(pill)));
     ok(p.where() === "orders/todo" && !d.getElementById("makerReviewTitle") && !/Choose an order to see it here/.test(d.getElementById("oOrders").textContent)
       && !d.querySelector("#oSplit > h2") && d.getElementById("oSplit").getAttribute("aria-label") === "Orders",
     "the page opens on To do, where orders wait, with no repeated Orders heading and no floating placeholder: " + p.where());
     ok(!(d.getElementById("makerReview").textContent), "and the detail column is empty, not an invitation, until an order is chosen");
-    /* 2 Nov 2026: from 860px and under 1080px, where the list stands beside the card (from 1080px the list is a table and an open order fills the page) */
-    p.w.matchMedia = (q) => ({ matches: /min-width:860px/.test(q) && !/min-width:1[0-9]{3}px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    /* 16 Nov 2026 (Ambient, place G): from 960px nothing opens by itself, the second pane saying Choose an order until one is chosen */
+    p.w.matchMedia = (q) => ({ matches: /min-width:960px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} });
     await p.tap("part.orders.open");
-    ok(same(p.cardsIn(), ["ord-r1"]) && byAct(d, "order.open", "ord-r1").getAttribute("aria-current") === "true",
-      "from 860px the first order of the part opens in the detail column by itself: " + JSON.stringify(p.cardsIn()));
-    await p.tap("part.orders.todo");
-    ok(same(p.cardsIn(), ["ord-p1"]), "and so does the first of the next part he moves to: " + JSON.stringify(p.cardsIn()));
+    ok(same(p.cardsIn(), []) && !d.getElementById("ordnone").hidden && /Choose an order/.test(d.getElementById("ordnone").textContent),
+      "from 960px no order opens by itself, and the second pane says Choose an order: " + JSON.stringify(p.cardsIn()));
+    await p.tapRow("ord-r1");
+    ok(same(p.cardsIn(), ["ord-r1"]) && d.getElementById("ordnone").hidden, "and a tap opens it there, the invitation going");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   p = await open(state(), { review: (j) => { day(state())(j); j.orders = j.orders.filter((o) => o.status !== "placed"); return j; } });
   try {
@@ -265,7 +267,13 @@ export async function run({ ok, pageWork }) {
     await p.enter();
     await p.tapRow("ord-p2");
     /* 20 Oct 2026 (canvas V35): no back link; a tap on Orders in the rail or the app bar closes the card */
-    ok(!byAct(d, "order.back") && !d.querySelector("#makerReview [data-back]"), "a card has no back link of its own");
+    /* 16 Nov 2026 (Ambient, place G): below 960px the card takes the list's place and a pill of its own, All orders, goes back; the site layer hides it where the panes stand side by side */
+    const back = byAct(d, "order.back");
+    ok(!!back && back.getAttribute("data-back") === "orders" && back.classList.contains("aback") && back.classList.contains("amb-pill") && d.querySelector("#makerReview [data-back]") === back,
+      "a card has one way back, the pill All orders, which closes it");
+    back.click(); await p.work.quiet();
+    ok(p.cardsIn().length === 0 && !d.getElementById("oSplit").classList.contains("open"), "and it closes the card");
+    await p.tapRow("ord-p2");
     byAct(d, "nav.orders").click(); await p.work.quiet();
     ok(p.cardsIn().length === 0 && !d.getElementById("oSplit").classList.contains("open") && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current")
       && d.activeElement === byAct(d, "order.open", "ord-p2") && p.rowsShown().length === 8,
@@ -316,62 +324,22 @@ export async function run({ ok, pageWork }) {
     ok(same(tops, [[0, 0]]) && into.length === 0, "below 860px a row tap takes him to the top of the card, its way back showing: " + JSON.stringify([tops, into]));
     byAct(d, "nav.orders").click(); await p.work.quiet();
     tops.length = 0; into.length = 0;
-    w.matchMedia = (q) => ({ matches: /min-width:860px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    w.matchMedia = (q) => ({ matches: /min-width:960px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
     await p.tapRow("ord-p3");
     ok(tops.length === 0 && same(into, [["makerReview", '{"block":"nearest"}']]),
-      "from 860px a tap on a low row leaves the page where it is and brings the card into view: " + JSON.stringify([tops, into]));
+      "from 960px a tap on a low row leaves the page where it is and brings the card into view: " + JSON.stringify([tops, into]));
   } catch (e) { ok(false, "scrolling stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
-  /* 4. THE SPLIT, from 860px */
+  /* 4. THE SPLIT, from 960px (16 Nov 2026, the move to Ambient, place G): two panes of Ambient's split, the shell's rules standing the queue and the record side by side */
   {
-    const { html, media, at } = ownerCss();
-    /* 21 Oct 2026 (canvas V39, his answer (a)): side by side from 860 to 1080px only; from 1080 an open order takes the list's place, as below 860 */
-    const split = at("(min-width:860px)and(max-width:1079.98px)", ".adm .ordgrid")[0] || "";
-    ok(/max-width: none/.test(at("(min-width:860px)", ".adm #oOrders")[0] || ""), "from 860px Orders takes the page's whole width, so the list and the card have room: " + at("(min-width:860px)", ".adm #oOrders")[0]);
-    const phone = at("(max-width:859.98px)", ".adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus")[0] || "";
-    const phoneAny = media.filter((m) => m.q === "(max-width:859.98px),(min-width:1080px)").flatMap((m) => m.rules).join(" ");
-    ok(/display: grid/.test(split) && /grid-template-columns: minmax\(280px,360px\) minmax\(0,1fr\)/.test(split),
-      "from 860 to 1080px the list and the card stand side by side, the list 280 to 360px: " + split);
-    ok(/\.adm #oSplit\.open \.ordlist/.test(phoneAny) && /display: none/.test(phoneAny) && /#makerReview/.test(phoneAny),
-      "below 860px and from 1080px an open card takes the list's place, and with none open the card's place is not shown: " + phoneAny.slice(0, 200));
-    /* the App bar stays fixed along the foot until 1080px, so in that band the sticky card's foot is kept above it: its height gives up the bar's */
-    const inBand = at("(min-width:860px)and(max-width:1079.98px)", ".adm #makerReview"), band = inBand.find((r) => /salt-bar-h/.test(r)) || "", plain = inBand.find((r) => /position: sticky/.test(r)) || "";
-    ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band) && /max-height: calc[(]100vh - 48px[)]/.test(plain) && at("(min-width:860px)", ".adm #makerReview").every((r) => !/sticky/.test(r)),
-      "between 860 and 1080px, where the App bar is still fixed, the sticky card's height gives up the bar's, and from 1080px the card is the page, never sticky: " + band + " | " + plain);
-    const d = new JSDOM(html).window.document;
-    const grid = d.querySelector("#oSplit .ordgrid");
-    ok(!!grid && [...grid.children].map((c) => c.id).join() === "makerOrderList,makerReview" && !!d.querySelector("#oOrders #oSplit"),
-      "the list comes first in the markup and the card second, in the section that Orders' four stages show: " + (grid && [...grid.children].map((c) => c.id).join()));
+    const { html } = ownerCss();
+    const d = new JSDOM(html).window.document, split = d.getElementById("oSplit");
+    ok(!!split && split.matches(".amb-split.amb-split--panes") && [...split.children].map((c) => c.className.split(" ")[0]).join() === "amb-stack,amb-stack" && !!d.querySelector("#oOrders #oSplit")
+      && split.children[0].querySelector("#makerOrderList") && split.children[1].querySelector("#makerReview"),
+      "the queue comes first in the markup and the record second, two panes of one split in the place Orders' four stages show");
+    ok(/@container amb \(max-width: 959px\)\s*\{[^}]*#oSplit\.open \.ordqueue[^}]*#oSplit:not\(\.open\) \.ordrecord[^}]*display: none/.test(html.replace(/\s+/g, " ").replace(/ \}/g, "}")) || /#oSplit\.open \.ordqueue, #oSplit:not\(\.open\) \.ordrecord/.test(html),
+      "below 960px an open order takes the queue's place, and with none open the record's place is not shown");
   }
-
-  /* 4b. RECORD'S FORM IS A PANE (Phase 4a): the menu and a retained input one column, the forms the pane beside it from 860px and in the menu's place below it */
-  {
-    const { html, media, at } = ownerCss();
-    /* 16 Nov 2026, the move to Ambient (place I): Record's menu and its form are Ambient's panes (two columns from 960px, the pane scrolling by itself), the page adding only the invitation's and the way back's stand-down */
-        ok(!/\.adm \.recgrid|\.adm \.recpane|\.adm \.reclist/.test(html.replace(/<script[\s\S]*?<\/script>/g, "")),
-      "the page lays out none of Record's menu and form open: Ambient's panes stand them side by side from 960px (the grid is read below)");
-    ok(/@container amb \(max-width: 959px\) \{ \.recgrid\.open \.reclist, \.recnone \{ display: none; \}/.test(html) && /\.recgrid\.open \.recnone \{ display: none; \}/.test(html),
-      "below 960px a form open takes the menu's place, and the pane's invitation to choose one is not drawn once one is open");
-    ok(/@container amb \(min-width: 960px\) \{ #makerFormBack \{ display: none; \} \}/.test(html) && !/\.adm #oRecord\{/.test(html) && !/#oApprove\{/.test(html),
-      "from 960px the way back is not drawn (the menu is beside the form) and the rows to approve are Ambient's stack (place F), the page keeping no rule for them");
-    const d = new JSDOM(html).window.document;
-    ok(!!d.querySelector("#makerInputs") && d.querySelector("#makerInputs").getAttribute("data-in") === "record.entry record.customers record.pricing",
-      "the forms stand in Record's one section, which Entry, Customers and Pricing show");
-  }
-  p = await open();
-  try {
-    await p.tap("nav.record");
-    const grid = p.d.getElementById("makerFormGrid"), list = grid && grid.querySelector(".reclist"), pane = grid && grid.querySelector(".recpane");
-    /* 5 Nov 2026 (the frame): the form's pane is the frame's pane too */
-    ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "amb-stack reclist,amb-stack recpane" && grid.classList.contains("recgrid") && grid.classList.contains("amb-split--panes") && !grid.classList.contains("open")
-      && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 15
-      && !list.querySelector("section[data-form]") && !!pane.querySelector(".recnone"),
-    "the menu and the retained input stand in one column and the 15 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));
-    /* a sweep (every move to a place or a part) puts the menu back whatever hid it */
-    const menu0 = p.d.getElementById("makerMenu"); menu0.hidden = true;
-    await p.tap("nav.shop"); await p.tap("nav.record");
-    ok(menu0.hidden === false, "a menu hidden by anything is drawn again the next time Record is entered");
-  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 5. A CUSTOMER'S QUESTION ON AN ORDER is a To do card on Needs you, counted as an account thread's is */
   const base = await open(state());
@@ -406,11 +374,11 @@ export async function run({ ok, pageWork }) {
     ok(p.where() === "orders/todo" && same(p.cardsIn(), ["ord-r1"]) && byAct(d, "order.open", "ord-r1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open"),
       "its Open goes to Orders, To do where it waits on him, with that order's card open and its row marked: " + p.where() + " " + JSON.stringify(p.cardsIn()));
     /* 2 Nov 2026 (Orders on the canvas): an order with a question of theirs waits on him wherever it stands, so To do lists it, its second line copper and saying asked, the practice one saying practice, and the declined one too */
-    const sub = (id) => byAct(d, "order.open", id).querySelector(".salt-settings__sub");
-    ok(p.rowsShown().includes("ord-r1") && p.rowsShown().includes("ex-2") && /^Asked a question/.test(sub("ord-r1").textContent) && sub("ord-r1").classList.contains("salt-settings__sub--why")
+    const sub = (id) => byAct(d, "order.open", id).querySelector(".amb-row__sub");
+    ok(p.rowsShown().includes("ord-r1") && p.rowsShown().includes("ex-2") && /^Asked a question/.test(sub("ord-r1").textContent) && sub("ord-r1").classList.contains("ordwhy")
       && /^Practice/.test(sub("ex-2").textContent),
     "To do lists the order with its question, its second line copper and saying asked, and the practice one saying practice: " + p.rowsShown().join());
-    ok(p.rowsShown().includes("ord-c9") && /^Asked a question/.test(sub("ord-c9").textContent) && sub("ord-c9").classList.contains("salt-settings__sub--why"),
+    ok(p.rowsShown().includes("ord-c9") && /^Asked a question/.test(sub("ord-c9").textContent) && sub("ord-c9").classList.contains("ordwhy"),
       "and so does the declined one with its question, marked as well: " + p.rowsShown().join());
     await p.tap("nav.needs");
     await p.tap("need.open", "om:ord-c9");

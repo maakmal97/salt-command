@@ -222,7 +222,7 @@ export async function run({ ok, pageWork }) {
     ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("amb-sheet") && many().length === 0 && p.confirms.length === 0,
       "Confirm opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
     ok(p.title() === "Decide 1 card?" && /1 to reject/.test(sh.textContent) && !/to approve/.test(sh.textContent) && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /New sale, 1 unit/.test(sh.textContent)
-      && /Each is decided as drafted\. One that cannot go stays here with why and how to fix it; the rest go\./.test(sh.textContent) && sh.querySelectorAll(".salt-ledger__row").length === 1,
+      && /Each is decided as drafted\. One that cannot go stays here with why and how to fix it; the rest go\./.test(sh.textContent) && sh.querySelectorAll(".amb-row").length === 1,
     "the Sheet is titled for the cards, lists those to reject by code, size, kind and figure, and says each is decided as drafted: " + sh.textContent);
     ok(!!p.inSheet("ask.go", "approve:confirm") && !!p.inSheet("ask.keep", "approve:confirm") && !!p.inSheet("ask.close", "approve:confirm")
       && sh.querySelector(".amb-sheet__body").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Confirm 1" && p.inSheet("ask.keep").textContent === "Not yet",
@@ -303,7 +303,7 @@ export async function run({ ok, pageWork }) {
     ok(bar().querySelector(".apbar__line").textContent === "1 to approve · 1 to reject", "the bar counts both ways: " + bar().textContent);
     confirm().click(); await p.work.quiet();
     ok(p.title() === "Decide 2 cards?" && /1 to approve/.test(p.sheet().textContent) && /1 to reject/.test(p.sheet().textContent) && p.inSheet("ask.go").textContent === "Confirm 2"
-      && p.sheet().querySelectorAll(".salt-ledger__row").length === 3, "the Sheet lists the cards to approve, then those to reject, every row of each: " + p.sheet().textContent);
+      && p.sheet().querySelectorAll(".amb-row").length === 3, "the Sheet lists the cards to approve, then those to reject, every row of each: " + p.sheet().textContent);
     holder.refuse["d-1"] = "Add the date";
     p.inSheet("ask.go").click(); await p.work.quiet();
     ok(many().length === 1 && same(many()[0].body, { approve: ["d-1"], reject: ["d-2", "d-3"] }), "and one request carries both lists: " + J(many()));

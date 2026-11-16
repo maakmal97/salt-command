@@ -73,7 +73,7 @@ export async function run({ ok, pageWork }) {
     await go(p, byAct(p.d.getElementById("apBar"), "approve.confirm"));
     const sh = sheet(p);
     ok(!!sh && t(p.d.getElementById("ynT")) === "Decide 2 cards?" && many(p).length === 0, "L3 a Reject among the picks asks on the Sheet, sending nothing as it opens");
-    ok(!!sh && /Their %, −20%/.test(t(sh)) && !!sh.querySelector(".salt-ledger__label .salt-producttag--salt") && !/RM 0\.00/.test(t(sh)),
+    ok(!!sh && /Their %, −20%/.test(t(sh)) && !!sh.querySelector(".amb-row .amb-thumb.amb-kind-1") && !/RM 0\.00/.test(t(sh)),
       "L3 the Sheet's row for a Their % card says the figure, its book the typed tag, and no RM 0.00: " + t(sh).slice(0, 240));
   } catch (e) { ok(false, "admin-approve-lean stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 

@@ -74,7 +74,6 @@ const PAGE_CSS = `
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
-.pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS CAPTION UNDER IT. The pressed ghost's edge and glass, the mark at
    28px, the caption in the mono face: the size in words, "2.5 units" (12 Oct 2026, his word: the mark stands alone, so no shape word
    is drawn, here or beside any mark; the reader is told the shape in .sr). The statement's lines take it too. */
@@ -84,7 +83,6 @@ const PAGE_CSS = `
 .mtile .psym{display:block}
 .mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
   color:var(--salt-text);white-space:nowrap;line-height:1.2}
-.mlab{display:inline-flex;align-items:center;gap:12px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 /* the confirmation, one plain list of what is about to be ordered */
@@ -135,7 +133,6 @@ const PAGE_CSS = `
   .devcard{grid-column:2;grid-row:2 / span 2}
   .ahelp{grid-column:2}
 }
-.salt-ledger--plain .salt-ledger__value{white-space:nowrap}
 /* a pane is the system's glass card (12 Oct 2026, Phase 5: salt-glass-card beside pane in the markup); here is its padding and its gap */
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
@@ -218,19 +215,6 @@ body.ended>*:not(#aEnded){display:none}
 /* 15 Nov 2026, the move to Ambient: the hours are a glass chip in Needs you's hero, said in its word (barDraw) */
 .adm .ncard .need-who--code{flex:none}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-/* 21 Oct 2026 (canvas V39, his answer (a)): FROM 1080PX AN OPEN ORDER TAKES THE LIST'S PLACE, as on a phone, and fills the page; the rail's
-   Orders closes it. This reverses his split of 11 Oct 2026 at that width: the list and the card stand side by side from 860 to 1080 only.
-   From 1180 the card lays out in columns, two, then three from 1440 (decision, record, insight), filled by ordLayout in stmt/owner.js. */
-@media (min-width:860px) and (max-width:1079.98px){
-  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
-  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
-}
-/* in a column the row of three is Agree on its own line over Change terms and Decline, and three columns across, the band's goods total stands under the units */
-@media (min-width:860px) and (max-width:1079.98px){
-  /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
-  .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
-  /* here these panes scroll inside themselves, so a foot rides the pane's own foot */
-}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
    short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
    columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
@@ -369,7 +353,6 @@ body.ended>*:not(#aEnded){display:none}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
-#roster .salt-orb[data-back]{margin:0 0 16px}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
 /* #glist as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is more specific than .glink alone */

@@ -230,7 +230,7 @@ export async function run({ ok }) {
     /* Change the order is a Sheet (Phase 4c, glossary 5.2): its fields are found in the sheet, and the Sheet's own action is Send the change */
     const sheet = () => doc.getElementById("ynSheet");
     const field = (label) => {
-      const wrap = sheet() && [...sheet().querySelectorAll("label")].find((l) => l.querySelector(".salt-field__label") && l.querySelector(".salt-field__label").textContent === label);
+      const wrap = sheet() && [...sheet().querySelectorAll("label")].find((l) => l.querySelector(".amb-field__label") && l.querySelector(".amb-field__label").textContent === label);
       return wrap && wrap.querySelector("input");
     };
     const sheetGo = () => doc.getElementById("ynGo").click();
@@ -239,7 +239,7 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => button(ACK, "Change the order"));
     const first = opened(ACK);
-    ok(!!first && first.querySelector(".salt-sheet__title").textContent === "Change the order" && !!field("Units") && !!field("Price (goods)") && !!field("Delivery")
+    ok(!!first && first.querySelector(".amb-sheet__title").textContent === "Change the order" && !!field("Units") && !!field("Price (goods)") && !!field("Delivery")
       && field("Units").value === "3" && field("Price (goods)").value === "285" && field("Delivery").value === "5" && doc.getElementById("ynGo").textContent === "Send the change"
       && !button("20261006090002-pla", "Change the order") && !button(ACK, "Send the change"),
       "An agreed order offers Change the order, a Sheet of the size, the goods' price and the delivery as they stand and Send the change; an order not yet agreed does not, and nothing stands down the card.");

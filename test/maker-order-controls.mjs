@@ -399,7 +399,7 @@ export async function run({ ok }) {
       "A cancelled order carrying a rejected cancellation offers it again, under a request id: " + JSON.stringify(posts[4]));
 
     /* the reasons are asked on the sheet a Decline or a Cancel opens, as option tiles and a field of his own words */
-    const tilesOf = () => [...doc.querySelectorAll("#ynSheet .salt-option__label")].map((l) => l.textContent);
+    const tilesOf = () => [...doc.querySelectorAll("#ynSheet .amb-option__title")].map((l) => l.textContent);
     await until(() => button("20261003090003-del", "Decline the order"));
     button("20261003090003-del", "Decline the order").click();
     const tilesDel = tilesOf();
@@ -410,7 +410,7 @@ export async function run({ ok }) {
     ok(tilesDel.includes("Cannot deliver there") && !tilesAck.includes("Cannot deliver there") && tilesAck.includes("Prices changed") && posts.length === 5,
       "The reason for a place delivery cannot reach is offered only on an order to be delivered, and neither sheet sent anything: " + JSON.stringify([tilesDel, tilesAck]));
     button("20261003090003-del", "Decline the order").click();
-    [...doc.querySelectorAll("#ynSheet .salt-option input")].find((r) => r.getAttribute("data-act") === "order.reason-stock").click();
+    [...doc.querySelectorAll("#ynSheet .amb-option input")].find((r) => r.getAttribute("data-act") === "order.reason-stock").click();
     ok(doc.querySelector('#ynSheet [data-act="order.reason"]').value === "We do not have enough in hand this week.",
       "A reason picked fills the reason box.");
     reviewBody.orders = reviewBody.orders.filter((o) => o.id !== "20261003090003-del");   /* the Desk's next read no longer lists it */

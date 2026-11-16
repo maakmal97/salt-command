@@ -20,7 +20,7 @@ export async function run({ ok, pageWork }) {
     const sel = byAct(d, "order.fee", "ord-p2"), opts = sel ? [...sel.options] : [];
     const read = () => ({ value: sel.value, on: opts.map((o) => o.selected ? 1 : 0).join("") });
     /* 1 */
-    ok(!!sel && sel.tagName === "SELECT" && sel.closest("label").querySelector(".salt-settings__label").textContent === "Delivery, RM"
+    ok(!!sel && sel.tagName === "SELECT" && sel.closest("label").querySelector(".amb-field__label").textContent === "Delivery, RM"
       && J(opts.map((o) => [o.value, o.textContent])) === J([["", "Choose"], ["0", "0"], ["10", "10"], ["15", "15"], ["other", "Other"]])
       && read().value === "" && read().on === "10000",
       "a delivery's charge is one select, its options Choose, 0, 10, 15 and Other, Choose selected while none is chosen: " + J(sel && read()));
@@ -40,11 +40,11 @@ export async function run({ ok, pageWork }) {
     ok(J(read()) === J({ value: "10", on: "00100" }) && shut() && !!pv && pv.body.delivery === 10,
       "RM 10 shuts Other's field again, and the figures are read at RM 10: " + J(pv && pv.body));
     /* 4 */
-    const grid = sel.closest(".oagree"), row = sel.closest(".salt-settings__row"), css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+    const grid = sel.closest(".oagree"), row = sel.closest(".amb-field"), css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     const goods = byAct(d, "order.total", "ord-p2");
-    ok(!!grid && !!row && row.parentElement.matches(".salt-settings") && !!goods && goods.closest(".salt-settings") === row.parentElement
-      && sel.classList.contains("salt-field__select") && sel.classList.contains("salt-field__input")
-      && css.includes(".adm .oagree .salt-settings__row>.salt-field__input,.adm .oagree .salt-settings__row>.salt-field__select{flex:0 1 168px;min-width:0;text-align:right}"),
-      "the select stands in Agree's settings list with Goods, the system's select at its row's right");
+    /* 16 Nov 2026, the move to Ambient (place G): the select is Ambient's, in Agree's stack of fields with Goods */
+    ok(!!grid && grid.matches(".amb-stack") && !!row && row.parentElement === grid && !!goods && goods.closest(".oagree") === grid
+      && !!sel.closest(".amb-select") && sel.classList.contains("amb-input") && !/\.oagree \.salt-/.test(css),
+      "the select stands in Agree's stack of fields with Goods, Ambient's select");
   } finally { p.w.close(); }
 }

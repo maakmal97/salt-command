@@ -50,7 +50,7 @@ export async function run({ ok, pageWork }) {
     const chip = d.querySelector('#makerReview [data-row="sr1"] [data-road]');
     ok(!!chip && chip.getAttribute("data-road") === "hand" && /Hand fold/.test(chip.textContent), "R5: a book row's card says its road beside its stage: " + (chip && chip.textContent));
     await tap("order.open", "trip:t1792000000000");
-    const det = [...d.querySelectorAll("#makerReview .rdet .salt-ledger__row")].map((r) => r.textContent);
+    const det = [...d.querySelectorAll("#makerReview .rdet .amb-setting")].map((r) => r.textContent);
     ok(det.filter((t) => t.replace(/\s+/g, "") === "RoadDeskentry").length === 1,"R5: a trip's details name its road once: " + det.join(" | "));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 

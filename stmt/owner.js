@@ -4828,7 +4828,7 @@ export const OWNER_JS = `
     row.setAttribute('data-rowof',e.id);
     var open=el('a','amb-row__main ordrow'); open.setAttribute('href','#orders'); open.setAttribute('data-order',e.id); actOn(open,'order.open',e.id); open.setAttribute('aria-label',f.aria);
     if(f.tags[0]) open.appendChild(markThumb(f.tags[0],'md'));
-    var tx=el('span','amb-row__text'), ti=el('span','amb-row__title'), sub=el('span','amb-row__sub'+(f.subTone==='late'?' amb-neg':''),f.sub);
+    var tx=el('span','amb-row__text'), ti=el('span','amb-row__title'), sub=el('span','amb-row__sub'+(f.subTone==='late'?' amb-neg':f.subTone==='why'?' ordwhy':''),f.sub);
     ti.appendChild(whoTag(el('span','ocode',f.code),f.who)); ordTagNodes(f,ti); tx.appendChild(ti); tx.appendChild(sub); open.appendChild(tx);
     row.appendChild(open);
     var tr=el('span','amb-row__trail'); tr.appendChild(el('span','amb-row__amount',rmShort(f.total)));
@@ -4962,9 +4962,9 @@ export const OWNER_JS = `
     var n={todo:0,open:0,done:0,ended:0};
     Object.keys(ordEntries).forEach(function(k){
       var e=ordEntries[k]; if(e.order&&e.order.test) return;
-      String(e.parts||'').split(' ').forEach(function(t){ var st=t.replace('orders.',''); if(Object.prototype.hasOwnProperty.call(n,st)) n[st]++; });
+      var st=String(e.parts||'').replace('orders.',''); if(Object.prototype.hasOwnProperty.call(n,st)) n[st]++;
     });
-    ['done','ended'].forEach(function(st){ if((ordClosedAll[st]||0)>n[st]) n[st]=ordClosedAll[st]; });
+    ['done','ended'].forEach(function(st){ if(n[st]>=ordShown(st)&&(ordClosedAll[st]||0)>n[st]) n[st]=ordClosedAll[st]; });
     ordCountN=n; ordSegPaint();
     var pay=waitingClaims().filter(function(x){ return !x.test; }).length, pn=document.querySelector('.amore__list [data-n="payments"]');
     if(pn) pn.textContent=pay?String(pay):'';
@@ -7235,7 +7235,6 @@ export const OWNER_JS = `
     return String(text==null?'':text).replace(BOOKS,function(w,k,at,all){ var before=all.slice(0,at); return /\\bthe\\s+$/i.test(before)?'book':/(^|[.!?]\\s)$/.test(before)?'The book':'the book'; });
   }
   function bookLetter(product){ var k=String(product||'').toLowerCase(); return Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k].l:''; }
-  function bookMark(product,px){ var w=el('span','pwith'); w.appendChild(psym(product,px||20)); w.appendChild(el('span','sr',pshape(product))); return w; }
   function bookTile(product,q){ return markThumb(product,'md'); }
   function bookItem(product){ return {value:product,label:pshape(product),mark:product}; }
   /* 12 Oct 2026 (Phase 5): A BOOK ON A ROW WEARS THE SYSTEM'S PRODUCT TAG, the book's mark in it and its own accent as its hue (PRODUCTS.accent in ledger/book.json is

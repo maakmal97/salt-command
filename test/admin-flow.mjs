@@ -209,7 +209,7 @@ export async function run({ ok, pageWork }) {
     const rowOf = (k) => p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]');
     /* 2 Nov 2026 (Orders on the canvas): Open lists a row under its stage's head, Agreed, Ready or Out or paid */
     const headOf = (k) => { const r = rowOf(k), sec = r && r.closest("section[data-in]"); return sec ? sec.getAttribute("data-in") + "/" + sec.getAttribute("aria-label") : null; };
-    ok(headOf("row:fa1") === "orders.open/Agreed" && /RM 110$/.test(text(rowOf("row:fa1").closest(".ordcard").querySelector(".salt-settings__value--lg")))
+    ok(headOf("row:fa1") === "orders.open/Agreed" && /RM 110$/.test(text(rowOf("row:fa1").closest(".ordcard").querySelector(".amb-row__amount")))
       && headOf("row:fp1") === "orders.open/Out or paid",
     "a row of the book is a row under its stage, Agreed or Out or paid, with its figure: " + text(rowOf("row:fa1")));
     const seen = (n) => { for (let e = n; e; e = e.parentElement) if (e.hidden) return false; return !!n; };
@@ -227,8 +227,8 @@ export async function run({ ok, pageWork }) {
     ok(n0 === 50 && done() === 61, "Done shows fifty and Show 50 more the rest: " + J([n0, done()]));
     await p.tap("order.open", "row:fa1");
     const card = p.card("row:fa1");
-    ok(!!card && /Owed RM 110\.00 Paid RM 0\.00 Handed 0 of 1 unit/.test(text(card.querySelector(".salt-metrics"))) && !!byAct(card, "row.cancel", "fa1"),
-      "the row's card reads owed, paid and handed, with Cancel while nothing is out: " + text(card && card.querySelector(".salt-metrics")));
+    ok(!!card && /^Owed\s?RM 110\.00\s?Paid\s?RM 0\.00\s?Handed\s?0 of 1 unit$/.test(text(card.querySelector(".ometrics"))) && !!byAct(card, "row.cancel", "fa1"),
+      "the row's card reads owed, paid and handed, with Cancel while nothing is out: " + text(card && card.querySelector(".ometrics")));
     await p.tap("row.handover", "fa1");
     p.type(byAct(p.card("row:fa1"), "row.pay-amount", "fa1"), "60");
     await p.tap("row.pay", "fa1");

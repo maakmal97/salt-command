@@ -38,7 +38,7 @@ export async function run({ ok, pageWork }) {
     p.tapRow = async (id) => { const r = byAct(p.d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
     p.cardOf = (id) => [...p.d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
     p.accept = () => p.d.querySelector("#makerReview [data-accept]");
-    p.say = () => (p.d.querySelector("#makerReview .salt-insight[role=status]") || { textContent: "" }).textContent;
+    p.say = () => (p.d.querySelector("#makerReview .amb-field__hint[role=status]") || { textContent: "" }).textContent;
     return p;
   };
 
@@ -128,36 +128,35 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await p.tapRow("ord-p1");
     /* Counter Batch A (18 Oct 2026): the order's chip carries the customer page's glyph before its word, aria-hidden */
-    const chipP1 = p.cardOf("ord-p1").querySelector(".ohead .salt-status"), gP1 = chipP1 ? [...chipP1.querySelectorAll("svg")] : [];
-    ok(!!chipP1 && chipP1.textContent === "To agree" && gP1.length === 1 && chipP1.firstChild === gP1[0] && gP1[0].getAttribute("aria-hidden") === "true"
-      && gP1[0].getAttribute("data-g") === "dot" && gP1[0].classList.contains("salt-status__glyph"),
-      "a placed order's chip on Salt Admin leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
+    const chipP1 = p.cardOf("ord-p1").querySelector(".ohead .oband__head .amb-chip");
+    ok(!!chipP1 && chipP1.textContent === "To agree" && chipP1.firstChild.classList.contains("amb-chip__dot") && chipP1.classList.contains("amb-chip--warn"),
+      "a placed order's chip on Salt Admin is Ambient's, its dot first and its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
     /* 25 Oct 2026 (canvas Salt Admin Orders): the band names the book by its typed tag beside the code and draws no mark; the reply's fold says Answer */
     /* 2 Nov 2026 (his Orders canvas, page 2): the band's foot holds the typed tag and the code; the Answer fold is gone, its composer stands in view under Messages */
     const bandP1 = p.cardOf("ord-p1").querySelector(".ohead"), footP1 = bandP1.querySelector(".oband__foot")   /* 16 Nov 2026, the move to Ambient: the shared band, steps, Bill and thread are the system's parts (place C) */, compP1 = p.cardOf("ord-p1").querySelector('.omsgs form.amb-compose [data-act="order.reply-text"]');
-    ok(!!footP1.querySelector(".salt-producttag--salt") && !bandP1.querySelector(".ogoods__tile, svg.psym") && /CX1-ZED/.test(footP1.textContent)
+    ok(!!footP1.querySelector(".amb-thumb") && !bandP1.querySelector(".ogoods__tile, svg.psym") && /CX1-ZED/.test(footP1.textContent)
       && !!compP1 && !compP1.closest("details") && !p.cardOf("ord-p1").querySelector('details[data-fold="answer"]') && !byAct(d, "order.answer"),
-      "the band names the book by its typed tag beside the code, no mark, and the reply's box stands in view under Messages, no Answer fold: " + (compP1 ? "composer" : "none"));
+      "the band names the book by its thumb beside the code, and the reply's box stands in view under Messages, no Answer fold: " + (compP1 ? "composer" : "none"));
     /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
     const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
     const tail = (id) => [...p.cardOf(id).querySelectorAll(".ordend [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
     /* 2 Nov 2026 (his Orders canvas, page 2): the lead holds the stage's ONE filled pill; every other move is an action row of its stage part (.ostagerows, .oagainrows), and the card's end is an ember row */
     const leadActs = (id) => [...leadOf(id).querySelectorAll("[data-act]")].filter((e) => !e.hidden).map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
-    const isRow = (e) => !!e && e.matches(".salt-settings__row.salt-settings__row--action") && !e.matches(".salt-ghost, .salt-pill, .btn");
-    const pillsOf = (id) => [...p.cardOf(id).querySelectorAll(".salt-pill")].filter((b) => !b.hidden);
+    const isRow = (e) => !!e && e.matches(".amb-action") && !e.matches(".amb-pill, .btn");
+    const pillsOf = (id) => [...p.cardOf(id).querySelectorAll(".amb-pill:not(.amb-pill--quiet):not(.amb-pill--sm)")].filter((b) => !b.hidden);
     const rowOf = (id) => leadOf(id), rowActs = (id) => leadActs(id);
     const decl = byAct(d, "order.decline", "ord-p1");
     ok(same(moves(), []) && !foot().classList.contains("has") && same(rowActs("ord-p1"), ["order.accept"]) && same(pillsOf("ord-p1").map((b) => b.getAttribute("data-act")), ["order.accept"])
-      && isRow(decl) && decl.classList.contains("salt-settings__row--danger") && !decl.closest(".maker-foot") && same(tail("ord-p1"), ["order.decline"]) && decl.parentElement.classList.contains("ordend")
+      && isRow(decl) && decl.classList.contains("amb-action--danger") && !decl.closest(".maker-foot") && same(tail("ord-p1"), ["order.decline"]) && !!decl.closest(".ordend")
       /* 5 Nov 2026 (the pane): the card ends with its feet (the maker foot, then the pinned foot holding the lead), so the ends' list is the last thing before them, and Decline is never in either */
-      && [...p.cardOf("ord-p1").children].filter((x) => !x.matches(".maker-foot, .ofoot")).pop() === decl.parentElement && !decl.closest(".ofoot") && !leadOf("ord-p1").querySelector(".ordterms"),
+      && [...p.cardOf("ord-p1").children].filter((x) => !x.matches(".maker-foot, .ofoot")).pop() === decl.closest(".ordend") && !decl.closest(".ofoot") && !leadOf("ord-p1").querySelector(".ordterms"),
       "a placed order's Agree is the card's one filled pill and Decline the order its last row, an ember action row, never in a sticky foot, and no terms line restates the band: " + JSON.stringify([moves(), rowActs("ord-p1"), tail("ord-p1")]));
     const terms = p.cardOf("ord-p1").querySelector(".oagreesec > .oagree");
-    ok(!byAct(d, "order.terms", "ord-p1") && !p.cardOf("ord-p1").querySelector('details[data-fold="terms"]') && !!terms && !!terms.querySelector('label.salt-settings__row > .salt-settings__label + [data-act="order.total"]'),
-      "and the terms are in view, no Change terms and no fold: the goods' price is a settings row of the card, its input at the right");
+    ok(!byAct(d, "order.terms", "ord-p1") && !p.cardOf("ord-p1").querySelector('details[data-fold="terms"]') && !!terms && !!terms.querySelector('label.amb-field > .amb-field__label + [data-act="order.total"]'),
+      "and the terms are in view, no Change terms and no fold: the goods' price is Ambient's field of the card");
     const oDec = terms.closest(".odecide");
     /* 5 Nov 2026 (the pane, his answer B): Agree is no longer drawn under the terms but pinned in the card's foot, its last child, so the terms stand under the head and the track and the lead is the foot's */
-    ok(leadOf("ord-p1").parentElement === p.cardOf("ord-p1").lastElementChild && leadOf("ord-p1").parentElement.matches(".salt-pane__foot.ofoot") && !!terms.closest(".oagreesec") && !terms.closest(".oagreesec").contains(leadOf("ord-p1"))
+    ok(leadOf("ord-p1") === p.cardOf("ord-p1").lastElementChild && leadOf("ord-p1").matches(".amb-foot.ofoot") && !!terms.closest(".oagreesec") && !terms.closest(".oagreesec").contains(leadOf("ord-p1"))
       && oDec.previousElementSibling.classList.contains("amb-steps") && p.cardOf("ord-p1").querySelector(".amb-steps").previousElementSibling.classList.contains("ohead") && oDec.nextElementSibling.classList.contains("obill"),
       "and the terms stand under the card's head and its track, Agree under them, ahead of the Bill");
     /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
@@ -168,7 +167,7 @@ export async function run({ ok, pageWork }) {
       && JSON.stringify(stepsP1.map((s) => s.querySelector(".amb-step__title").textContent)) === JSON.stringify(["Placed", "Agreed", "Ready", "Paid", "Collected"])
       && stepsP1[0].classList.contains("is-now") && /Now/.test(stepsP1[0].querySelector(".amb-chip").textContent) && /Next/.test(stepsP1[1].querySelector(".amb-chip").textContent),
       "the card's track is the marked steps, five with Paid fourth, Placed now and Next on Agreed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
-    ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
+    ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && rowOf("ord-p1").lastElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("amb-pill")
       && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".oagree")) & 2),
       "Agree is the filled pill first in its lead, under the rows it sends, and not in the foot");
     await p.tapRow("ord-p2");
@@ -176,7 +175,7 @@ export async function run({ ok, pageWork }) {
       "a delivery with no charge chosen has Decline the order as the card's last row and no Agree: " + JSON.stringify([moves(), rowActs("ord-p2"), tail("ord-p2")]));
     const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
     /* 5 Nov 2026 (the pane): the lead is the card's pinned foot, not a part of his decision */
-    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && !!leadOf("ord-p2").closest(".ofoot") && p.cardOf("ord-p2").contains(leadOf("ord-p2")),
+    ok(!!wait() && wait().textContent === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").matches(".ofoot") && p.cardOf("ord-p2").contains(leadOf("ord-p2")),
       "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
     const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
     const compP2 = p.cardOf("ord-p2").querySelector('.omsgs form.amb-compose [data-act="order.reply-text"]');
@@ -185,7 +184,7 @@ export async function run({ ok, pageWork }) {
     ok(d.activeElement === byAct(d, "order.fee", "ord-p2") && p.posts.length === postsBefore, "and the stand-in takes him to the charge, and sends nothing");
     const pickFee = async (v) => { const sel = byAct(d, "order.fee", "ord-p2"); sel.value = v; sel.dispatchEvent(new d.defaultView.Event("change", { bubbles: true })); await p.work.quiet(); };
     await pickFee("10");
-    ok(same(moves(), []) && rowOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
+    ok(same(moves(), []) && rowOf("ord-p2").lastElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
     await pickFee("15");
     await pickFee("10");
     await p.tapRow("ord-p4");
@@ -196,17 +195,17 @@ export async function run({ ok, pageWork }) {
     await part("todo");
     await p.tapRow("ord-a1");
     /* 2 Nov 2026: the lead holds the one pill, their way's Ready; the other Ready is a row beside Change the order; their claims are rows of Money received; Cancel the order is the last row */
-    const a1rows = [...p.cardOf("ord-a1").querySelectorAll(".ostagerows > [data-act], .oclaims > [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => /^order\.(ready|claim)/.test(a) && !/cancel-retained$/.test(a));
-    ok(same(moves(), []) && same(tail("ord-a1"), ["order.cancel"]) && isRow(byAct(d, "order.cancel", "ord-a1")) && same(leadActs("ord-a1"), ["order.ready-collect"]) && byAct(d, "order.ready-collect").classList.contains("salt-pill")
+    const a1rows = [...p.cardOf("ord-a1").querySelectorAll(".ostagerows li > [data-act], .oclaims li > [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => /^order\.(ready|claim)/.test(a) && !/cancel-retained$/.test(a));
+    ok(same(moves(), []) && same(tail("ord-a1"), ["order.cancel"]) && isRow(byAct(d, "order.cancel", "ord-a1")) && same(leadActs("ord-a1"), ["order.ready-collect"]) && byAct(d, "order.ready-collect").classList.contains("amb-pill")
       && same(a1rows, ["order.ready-deliver", "order.claim-received", "order.claim-not-found", "order.claim-received", "order.claim-not-found"]),
       "an agreed order's one main action, Ready to collect, is the filled pill at the top, Ready to deliver a row beside it, their claim's answer rows of Money received, and Cancel the order its last row: " + JSON.stringify([moves(), leadActs("ord-a1"), a1rows]));
     ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")) && !!byAct(d, "order.amend").closest(".ostagerows") && !!byAct(d, "order.claim-received").closest(".oclaims"),
       "while its claims, Received and Amend stay in the body of the card, rows of its parts");
     await p.tapRow("ord-a2");
     /* 2 Nov 2026: Agree again's pill stays in the foot; the stages he rejected, offered again, and Not needed are rows of .oagainrows in his decision */
-    const again2 = [...p.cardOf("ord-a2").querySelectorAll(".odecide > .oagainrows > [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
+    const again2 = [...p.cardOf("ord-a2").querySelectorAll(".odecide > .oagainrows li > [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
     ok(same(moves(), ["order.accept-again"]) && again2.includes("order.again-pay") && again2.includes("order.again-drop-cancel") && again2.includes("order.again-drop-move") && again2.includes("order.again-drop-amend") && !again2.includes("order.again-drop") && !again2.includes("order.again-drop-pay")
-      && [...p.cardOf("ord-a2").querySelectorAll(".oagainrows > [data-act]")].filter((e) => !/cancel-retained/.test(e.getAttribute("data-act"))).every(isRow) && tail("ord-a2").includes("order.cancel") && !byAct(d, "order.ready-collect") && foot().classList.contains("has"),
+      && [...p.cardOf("ord-a2").querySelectorAll(".oagainrows li > [data-act]")].filter((e) => !/cancel-retained/.test(e.getAttribute("data-act"))).every(isRow) && tail("ord-a2").includes("order.cancel") && !byAct(d, "order.ready-collect") && foot().classList.contains("has"),
       "an order with a rejected pending row has Accept again first in its foot, which stands along the card, with the stages he rejected offered again as rows of his decision: " + JSON.stringify([moves(), again2]));
     await part("ready");
     await p.tapRow("ord-r1");
@@ -214,7 +213,7 @@ export async function run({ ok, pageWork }) {
     const hp = byAct(d, "order.handed-units", "ord-r1").closest(".odecide__part");
     /* 5 Nov 2026 (the pane): Handed over, the one pill, is the card's pinned foot; its units and the tiles stay in the Handover part */
     ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && hp.contains(e)) && !!byAct(d, "order.handed") && leadOf("ord-r1").contains(byAct(d, "order.handed")) && !!byAct(d, "order.handed").closest(".ofoot")
-      && byAct(d, "order.handed-units", "ord-r1").closest("label.salt-settings__row") && !!(byAct(d, "order.handed-units").compareDocumentPosition(byAct(d, "order.handed")) & 4),
+      && byAct(d, "order.handed-units", "ord-r1").closest("label.amb-field") && !!(byAct(d, "order.handed-units").compareDocumentPosition(byAct(d, "order.handed")) & 4),
       "a ready order's Cancel the order is its last row, and Handed over with its units and the tiles that make it a close stand at the top, the units first: " + JSON.stringify(moves()));
     byAct(d, "order.pay", "ord-r1").click(); await p.work.quiet();
     ok(!!foot().querySelector("[data-maker-say]") && /Choose Bank or Cash first/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
@@ -231,10 +230,11 @@ export async function run({ ok, pageWork }) {
     await p.tapRow("ord-c1");
     ok(!!foot() && !foot().classList.contains("has") && moves().length === 0, "a closed order has no moves, and its foot does not stand along the card: " + JSON.stringify(moves()));
     /* the foot stands along the card's foot as the card scrolls: the page's, clear of the App bar, and from 860px the card's own */
-    const ruleOf = cssRules(p.w);
-    const base =ruleOf(".adm .maker-foot.has")[0], wide = ruleOf(".adm #makerReview .maker-foot.has", "(min-width:860px)")[0];
-    ok(!!base && base.getPropertyValue("position") === "sticky" && /--salt-bar-h/.test(base.getPropertyValue("bottom")) && !!wide && wide.getPropertyValue("bottom") === "0px",
-      "the foot of a card with moves is sticky, clear of the App bar, and from 860px sticks to the card's own foot: " + (base && base.cssText));
+    /* 16 Nov 2026, the move to Ambient (place G): the card's foot is Ambient's, the record's last child and the one that stands at its pane's foot; the older sticky foot is gone */
+    await part("todo"); await p.tapRow("ord-p1");
+    const styles = [...d.querySelectorAll("style")].map((x) => x.textContent).join("\n");
+    ok(p.cardOf("ord-p1").lastElementChild.matches(".amb-foot.ofoot") && /\.amb-foot \{ position: sticky/.test(styles) && !/\.maker-foot\.has\{/.test(styles),
+      "the foot of the open order is Ambient's, sticky at its pane's foot, and the page's own sticky foot rule is gone");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3. THE CARD ASKS ON THE PAGE'S SHEET, NEVER A NATIVE CONFIRM (his decision 4 of 11 Oct 2026) */
@@ -259,20 +259,20 @@ export async function run({ ok, pageWork }) {
     await tapRow("ord-p1");
     byAct(d, "order.decline", "ord-p1").click(); await p.work.quiet();
     const sh = sheetOf();
-    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && sends("/move").length === 0 && calls.length === 0,
+    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("amb-sheet") && sends("/move").length === 0 && calls.length === 0,
       "Decline opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
-    ok(/Decline this order/.test(sh.querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /2 units/.test(sh.textContent) && /RM 200\.00/.test(sh.textContent) && !!sh.querySelector(".mtile"),
+    ok(/Decline this order/.test(sh.querySelector(".amb-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /2 units/.test(sh.textContent) && /RM 200\.00/.test(sh.textContent) && !!sh.querySelector(".amb-thumb"),
       "the Sheet restates the order, by its code, its mark, its size and its figure: " + sh.textContent);
-    const tiles = [...sh.querySelectorAll(".salt-option input[type=radio]")].map((r) => r.getAttribute("data-act"));
+    const tiles = [...sh.querySelectorAll(".amb-option input[type=radio]")].map((r) => r.getAttribute("data-act"));
     ok(same(tiles, ["order.reason-stock", "order.reason-price"]) && !!inSheet("order.reason", "ord-p1") && !!inSheet("order.ask-go", "ord-p1") && !!inSheet("order.ask-keep", "ord-p1") && !!inSheet("order.ask-close", "ord-p1"),
-      "the reason is asked on the system's option tiles, the place line only on an order to be delivered, and the sheet's controls carry their acts: " + JSON.stringify(tiles));
+      "the reason is asked on Ambient's choice, the place line only on an order to be delivered, and the sheet's controls carry their acts: " + JSON.stringify(tiles));
     inSheet("order.reason-stock", "ord-p1").click();
     const reason = inSheet("order.reason", "ord-p1");
     ok(reason.value === "We do not have enough in hand this week." && inSheet("order.reason-stock").checked, "a tile fills the reason with the Desk's line: " + reason.value);
     reason.value = "Sold out until Friday."; reason.dispatchEvent(new w.Event("input", { bubbles: true }));
-    ok([...sh.querySelectorAll(".salt-option input[type=radio]")].every((r) => !r.checked), "and typing his own words clears the tile");
-    ok(!!sh.querySelector("fieldset.salt-options .salt-options__legend") && sh.querySelector(".salt-sheet__foot").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
-      "Decline order is the one danger action, in the Sheet's foot");
+    ok([...sh.querySelectorAll(".amb-option input[type=radio]")].every((r) => !r.checked), "and typing his own words clears the tile");
+    ok(!!sh.querySelector("fieldset.amb-options > legend.amb-field__label") && sh.querySelector(".amb-sheet__body").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("amb-action--danger"),
+      "Decline order is the one danger action, in the Sheet");
 
     /* Tab stays inside the sheet, across its tiles and its field */
     const focusables = [...sh.querySelectorAll("button, input")].filter((x) => !(x.type === "radio" && !x.checked && [...sh.querySelectorAll("input[type=radio]")].some((r) => r.checked && r.name === x.name)));
@@ -286,7 +286,7 @@ export async function run({ ok, pageWork }) {
 
     /* the four ways out send nothing, and focus returns to the control that opened it */
     for (const [name, close] of [["Keep the order", () => inSheet("order.ask-keep").click()], ["the close control", () => inSheet("order.ask-close").click()],
-      ["the scrim", () => d.getElementById("ynScrim").click()], ["Escape", () => key(d.body, "Escape")]]) {
+      ["the scrim", () => sheetOf().dispatchEvent(new w.MouseEvent("click", { bubbles: true, clientX: -1, clientY: -1 }))], ["Escape", () => key(d.body, "Escape")]]) {
       if (!sheetOf()) { byAct(d, "order.decline", "ord-p1").click(); await p.work.quiet(); }
       close(); await p.work.quiet();
       ok(!sheetOf() && sends("/move").length === 0 && d.activeElement === byAct(d, "order.decline", "ord-p1"), name + " closes the sheet, sends nothing, and gives focus back to Decline");
@@ -311,7 +311,7 @@ export async function run({ ok, pageWork }) {
     /* a delivery's reasons include the place line; no reason sends no note */
     await tapRow("ord-p2");
     byAct(d, "order.decline", "ord-p2").click(); await p.work.quiet();
-    ok(same([...sheetOf().querySelectorAll(".salt-option input[type=radio]")].map((r) => r.getAttribute("data-act")), ["order.reason-stock", "order.reason-place", "order.reason-price"]),
+    ok(same([...sheetOf().querySelectorAll(".amb-option input[type=radio]")].map((r) => r.getAttribute("data-act")), ["order.reason-stock", "order.reason-place", "order.reason-price"]),
       "an order to be delivered is also offered the place line");
     inSheet("order.ask-go").click(); await p.work.quiet();
     ok(sends("/move").length === 2 && same(Object.keys(sends("/move")[1].body).sort(), ["rid", "status"]), "and a Decline with no reason sends none: " + JSON.stringify(sends("/move")[1] && sends("/move")[1].body));
@@ -319,7 +319,7 @@ export async function run({ ok, pageWork }) {
     /* Cancel: what is lost and what becomes of the money is said, and a retry carries the request id it had */
     await part("todo"); await tapRow("ord-a1");
     byAct(d, "order.cancel", "ord-a1").click(); await p.work.quiet();
-    ok(/Cancel this order/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && /Nothing is paid on it/.test(sheetOf().textContent) && sends("/move").length === 2,
+    ok(/Cancel this order/.test(sheetOf().querySelector(".amb-sheet__title").textContent) && /Nothing is paid on it/.test(sheetOf().textContent) && sends("/move").length === 2,
       "Cancel on an unpaid order says nothing is paid on it, and sends nothing as it opens");
     inSheet("order.ask-keep").click(); await p.work.quiet();
     await part("ready"); await tapRow("ord-r1");
@@ -342,7 +342,7 @@ export async function run({ ok, pageWork }) {
     ok(!sheetOf() && d.querySelector("#makerReview fieldset[data-close]").hidden && byAct(d, "order.handed", "ord-r1").textContent === "Handed over, 3 units", "at the full size the close is not offered: its tiles are hidden and the one button is the handover");
     units.value = "2"; units.dispatchEvent(new p.w.Event("input", { bubbles: true }));
     byAct(d, "order.handed-rest", "all").click(); byAct(d, "order.handed", "ord-r1").click(); await p.work.quiet();
-    ok(/Finish this order at 2 of 3 units/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("salt-ghost--danger") && sends("/handed").length === 0,
+    ok(/Finish this order at 2 of 3 units/.test(sheetOf().querySelector(".amb-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("amb-action--danger") && sends("/handed").length === 0,
       "a close asks on the sheet, naming the units, and sends nothing as it opens");
     inSheet("order.ask-go").click(); await p.work.quiet();
     const closed = sends("/handed");
@@ -352,7 +352,7 @@ export async function run({ ok, pageWork }) {
     /* Offer again: a stage he rejected, asked on the sheet, sent under a request id */
     await part("todo"); await tapRow("ord-x1");
     byAct(d, "order.again-pay", "ord-x1").click(); await p.work.quiet();
-    ok(/Send the payment again/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
+    ok(/Send the payment again/.test(sheetOf().querySelector(".amb-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("amb-action--danger"),
       "offering a stage again asks on the sheet and sends nothing as it opens");
     inSheet("order.ask-go").click(); await p.work.quiet();
     const again = sends("/again");
@@ -401,7 +401,7 @@ export async function run({ ok, pageWork }) {
     /* 18 Oct 2026: the head's money is the customer's lines, a label and its figure a row */
     /* 2 Nov 2026 (his Orders canvas, page 2): the Bill is a settings list, a row a label (its second line apart) and its figure at the right; Money received's head is an h2 */
     const head = (id) => [...cardOf(id).querySelectorAll(".ordmoney .amb-setting")].map((l) => [l.querySelector(".obill__k"), l.querySelector(".amb-setting__value")].map((c) => (c ? c.textContent : "")).join(" ")).join(" ");
-    const money = (c) => c.querySelector('h2.salt-settings__head[data-sect="money"]');
+    const money = (c) => c.querySelector('h2.amb-section[data-sect="money"]');
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await tapRow("ord-p1");
     ok(/^Goods RM 200\.00 Total RM 200\.00$/.test(head("ord-p1")) && /At the list price/.test(cardOf("ord-p1").querySelector(".ordmoney .ocost").textContent) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet"),

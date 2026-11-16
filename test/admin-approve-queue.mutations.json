@@ -362,8 +362,8 @@
  {
   "name": "a book on Orders is its mark again",
   "file": "stmt/owner.js",
-  "find": "function bookTag(product){ return productTag(product); }",
-  "replace": "function bookTag(product){ return bookMark(product,20); }"
+  "find": "if(product) p.appendChild(bookChip(product));",
+  "replace": "if(product) p.appendChild(psym(product,20));"
  },
  {
   "name": "the Confirm bar stands in the tab bar, not before it",

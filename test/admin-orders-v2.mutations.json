@@ -14,8 +14,8 @@
  {
   "name": "the Segment is a plain group again",
   "file": "stmt/page.js",
-  "find": "'<div class=\"amb-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">'",
-  "replace": "'<div class=\"amb-stack aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">'"
+  "find": "<div class=\"amb-stack\"><div class=\"amb-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
+  "replace": "<div class=\"amb-stack\"><div class=\"amb-stack aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
  },
  {
   "name": "a part carries no count",
@@ -60,10 +60,10 @@
   "replace": "b.removeAttribute('aria-disabled');"
  },
  {
-  "name": "the code link in a row is a small target",
-  "file": "stmt/page.js",
-  "find": ".adm .salt-table--rows tbody th a{display:flex;align-items:center;min-height:var(--salt-tap)}",
-  "replace": ".adm .salt-table--rows tbody th a{display:inline}"
+  "name": "a row's trail loses its move (16 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "var g=ordMoveGhost(e,f); if(g) tr.appendChild(g);",
+  "replace": ""
  },
  {
   "name": "a move is a quiet pill",
@@ -102,10 +102,10 @@
   "replace": "var owes='';"
  },
  {
-  "name": "late is not ember",
+  "name": "late is not in the loss colour",
   "file": "stmt/owner.js",
-  "find": "f.cellTone=f.why||f.placed?'copper':owes&&f.late?'ember':'';",
-  "replace": "f.cellTone=f.why||f.placed?'copper':'';"
+  "find": "(f.subTone==='late'?' amb-neg':f.subTone==='why'?' ordwhy':'')",
+  "replace": "(f.subTone==='why'?' ordwhy':'')"
  },
  {
   "name": "the code is no link",
