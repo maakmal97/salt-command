@@ -30,16 +30,16 @@
   "replace": ""
  },
  {
-  "name": "a field is marked short again (16 Nov 2026: the mark is gone, a form's fields are Ambient's)",
+  "name": "a settings row is marked short again (16 Nov 2026: the mark is gone, a form's fields are Ambient's)",
   "file": "stmt/owner.js",
-  "find": "var L=labOf(label), l=el('label','amb-field'); l.appendChild(el('span','amb-field__label',L[0]));",
-  "replace": "var L=labOf(label), l=el('label','amb-field maker-field--short'); l.appendChild(el('span','amb-field__label',L[0]));"
+  "find": "function sRead(name,value,cls){ var d=el('div','amb-setting'+(cls?' '+cls:''));",
+  "replace": "function sRead(name,value,cls){ var d=el('div','amb-setting maker-field--short'+(cls?' '+cls:''));"
  },
  {
-  "name": "a field that keeps its label above is marked short (16 Nov 2026: with no mark drawn, a mark is the fault)",
+  "name": "a mark of the old short field is drawn again (16 Nov 2026: with no mark in the page, a mark is the fault)",
   "file": "stmt/owner.js",
-  "find": "var f=el('label','amb-field'); f.appendChild(el('span','amb-field__label',label));",
-  "replace": "var f=el('label','amb-field maker-field--short'); f.appendChild(el('span','amb-field__label',label));"
+  "find": "function sRead(name,value,cls){ var d=el('div','amb-setting'+(cls?' '+cls:''));",
+  "replace": "function sRead(name,value,cls){ var d=el('div','amb-setting'+(cls?' '+cls:'')); d.className+=' maker-field--short';"
  },
  {
   "name": "the page sizes Shop again on a laptop",
@@ -148,5 +148,11 @@
   "file": "stmt/statement-css.js",
   "find": ".amb-sheet { inset: 0; height: fit-content; max-width: 480px;",
   "replace": ".amb-sheet { inset: 0; height: fit-content; max-width: 560px;"
+ },
+ {
+  "name": "the page sets the Sheet's own width",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } .amb-sheet { max-width: 560px; }"
  }
 ]

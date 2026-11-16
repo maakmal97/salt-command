@@ -76,9 +76,11 @@ export async function run({ ok, pageWork }) {
     const flat = AMB_CSS.replace(/\s+/g, " ");
     ok(/@media \(min-width: 720px\) \{[^@]*?\.amb-sheet \{ inset: 0; height: fit-content; max-width: 480px;/.test(flat),
       "from 720px a sheet is Ambient's card, 480px at most, in the middle of the window");
-    const sheetRules = [...new JSDOM("<style>" + SITE_CSS + "</style>").window.document.styleSheets[0].cssRules].flatMap((r) => (r.cssRules ? [...r.cssRules] : [r])).filter((r) => r.selectorText && /asheet|amb-sheet|salt-sheet/.test(r.selectorText));
-    ok(!sheetRules.some((r) => /asheet|salt-sheet/.test(r.selectorText)), "the page keeps no rule for a Sheet of his: none names .asheet or the older sheet, whatever the width: " + sheetRules.map((r) => r.selectorText).join(" | "));
-    ok(!sheetRules.some((r) => /(^|;)\s*(background|color|border|box-shadow|font)/.test(";" + r.style.cssText)), "and none of the site's rules for a Sheet writes a colour, a type or a surface");
+    /* read as text: a style parser that stops at the first rule it cannot read would leave these two empty */
+    const flatCss = SITE_CSS.replace(/\/\*[\s\S]*?\*\//g, ""), sheetBlocks = [...flatCss.matchAll(/([^{}]*(?:asheet|amb-sheet|salt-sheet)[^{}]*)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2]]);
+    ok(!/\.asheet|salt-sheet/.test(flatCss), "the page keeps no rule for a Sheet of his: none names .asheet or the older sheet, whatever the width: " + sheetBlocks.map((b) => b[0]).join(" | "));
+    ok(!sheetBlocks.some(([sel, body]) => sel.split(",").some((x) => /^(dialog)?\.amb-sheet([.:]\S*)?$/.test(x.trim())) && /(^|;)\s*(background|color|border|box-shadow|font|max-width|width)/.test(";" + body)),
+      "and none of the site's rules for the Sheet itself writes a colour, a type, a surface or a width (what is inside a Sheet is the page's)");
     const mine = (h) => new JSDOM(h).window.document;
     /* 15 Nov 2026, the move to Ambient: the look's choice Sheet is gone from both pages (light and dark follow the device) */
     const lone = mine(landingPage("", "n", null));
@@ -132,7 +134,7 @@ export async function run({ ok, pageWork }) {
       const marked = fields.filter((f) => f.classList.contains("maker-field--short")), others = fields.filter((f) => !f.classList.contains("maker-field--short"));
       /* v1377: Order for them's own box, the one form outside Record with a marked field and a text field, is gone (it opens their page), so
          what holds is that any field marked short is a number, a date or a time */
-      ok(rowsOk && marked.every((f) => SHORT.includes(kind(f))) && !others.some((f) => f.classList.contains("maker-field--short")),   /* the cards also hand-build a few number fields that carry no mark */
+      ok(rowsOk && !/maker-field--short/.test(html) && marked.every((f) => SHORT.includes(kind(f))) && !others.some((f) => f.classList.contains("maker-field--short")),   /* the cards also hand-build a few number fields that carry no mark */
         "the sale and new customer forms are Ambient's fields with no field marked short, and the fields that keep their label above mark the short ones, a number, a date or a time, and no other text or select field: " + rowsOk + " " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
     } catch (e) { ok(false, "the form stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   }

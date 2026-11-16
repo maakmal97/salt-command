@@ -18,7 +18,7 @@
 import { FROZEN_BOOK } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { richOwnerPage, byAct, cardOf, drawEverything } from "./maker-act.mjs";
-import { landingPage } from "../stmt/page.js";
+import { landingPage, PSYM } from "../stmt/page.js";
 import { OWNER_JS } from "../stmt/owner.js";
 
 /* the glossary's old words, as the page used to say them (a phrase each, none of them a word the glossary kept) */
@@ -355,16 +355,18 @@ export async function run({ ok, pageWork }) {
     const { d, work } = b;
     await work.quiet();
     byAct(d, "nav.orders").click(); await work.quiet();
+    /* 16 Nov 2026, the move to Ambient (end pass): the list's rows lead with the mark thumb, so the one tile left to read is the open order card's foot, which the first row opens */
+    const first = d.querySelector('#makerOrderList [data-act="order.open"]'); if (first) { first.click(); await work.quiet(); }
     const tiles = [...d.querySelectorAll(".mtile")];
     const seen = (t) => t.textContent.replace(t.querySelector(".sr")?.textContent || "", "");
     /* 18 Oct 2026 (clarity, part 3): a ROW's tile says the size once, in its caption, so its reader line is the shape alone and the caption is not hidden from a reader */
     const rowTile = (t) => !!t.closest(".ordrow"), SHAPE_ONLY = new RegExp("^(" + SHAPES.join("|") + ")$");
-    const wrong = tiles.filter((t) => !SIZE.test(t.querySelector(".mq")?.textContent || "") || !(rowTile(t) ? SHAPE_ONLY : SHAPE_SIZE).test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
+    const wrong = tiles.filter((t) => !SIZE.test(t.querySelector(".mq")?.textContent || "") || !(rowTile(t) ? SHAPE_ONLY : SHAPE_SIZE).test(t.querySelector(".sr")?.textContent || "") || !t.querySelector(".amb-thumb--mark svg")
       || t.querySelector(".mq")?.getAttribute("aria-hidden") !== (rowTile(t) ? null : "true") || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
     /* 25 Oct 2026 (canvas Salt Admin Orders): an order on Orders names its book by its typed tag, as Needs you does, and draws no mark; a mark still drawn keeps the rule */
     const orows = [...d.querySelectorAll("#makerOrderList .ordrow")];
     /* 16 Nov 2026, the move to Ambient (end pass): an order's row leads with the book's mark thumb, hidden from a reader (the row's own aria-label names the book), and draws no older mark */
-    ok(orows.length >= 4 && orows.every((r) => !!r.querySelector(".amb-thumb--mark[class*='amb-kind-']") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
+    ok(orows.length >= 4 && tiles.length >= 1 && orows.every((r) => !!r.querySelector(".amb-thumb--mark[class*='amb-kind-']") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
       "each order on Orders names its book by its typed tag and draws no mark, and a mark still drawn says its size beneath, no word for the book and no shape word, a reader told the shape and the size: " + orows.length + " rows; " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.orders").click(); await work.quiet();
     byAct(d, "part.orders.approve").click(); await work.quiet();
@@ -387,7 +389,8 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.needs").click(); await work.quiet();
     /* 16 Nov 2026, the move to Ambient (place F): on Needs you a book is Ambient's kind chip, the name in ink with its hue on the dot, and no drawn mark */
     const tags = [...d.querySelectorAll("#nlist section .amb-chip[class*='amb-kind-']")].map((x) => [x.className, x.textContent, !!x.querySelector(".amb-chip__dot")]);
-    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && /^amb-chip amb-kind-[1-6]$/.test(c) && /^[A-Z][a-z]+$/.test(w))
+    const PSYMK = Object.keys(PSYM).filter((k) => k !== "_");   /* 16 Nov 2026 (end pass): a chip's word is the book its hue index names */
+    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && /^amb-chip amb-kind-[1-6]$/.test(c) && /^[A-Z][a-z]+$/.test(w) && PSYMK[+/amb-kind-(\d)/.exec(c)[1] - 1] === w.toLowerCase())
       && !d.querySelector("#nlist section svg.psym"),
       "Needs you names a book by its kind chip, Salt with its hue on the dot, and draws no mark: " + JSON.stringify(tags.slice(0, 3)));
   } finally { b.w.close(); }
