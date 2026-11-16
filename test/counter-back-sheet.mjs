@@ -165,14 +165,14 @@ export async function run({ ok, pageWork }) {
     }
     {
       const T = await open();
-      tab(T, "stmt"); await until(() => T.d.querySelector("#aThread [data-thread]"));
-      const tr = T.d.querySelector("#aThread [data-thread]"); tr.focus(); tr.click();
-      kinds.push(["the thread", T, () => shown(T, "thSheet"), () => !!T.d.activeElement && T.d.activeElement.hasAttribute("data-thread")]);
+      tab(T, "stmt"); await until(() => T.d.querySelector('#aGlance [data-glance="thread"]'));
+      const tr = T.d.querySelector('#aGlance [data-glance="thread"]'); tr.focus(); tr.click();
+      kinds.push(["the thread", T, () => shown(T, "thSheet"), () => !!T.d.activeElement && T.d.activeElement.hasAttribute("data-glance")]);
     }
     {
       const V = await open();
-      tab(V, "stmt"); await until(() => [...V.d.querySelectorAll("#devSlot button")].some((b) => /^Sign in another device/.test(b.textContent.trim())));
-      const dv = [...V.d.querySelectorAll("#devSlot button")].find((b) => /^Sign in another device/.test(b.textContent.trim())); dv.focus(); dv.click();
+      tab(V, "stmt"); await until(() => [...V.d.querySelectorAll("#devRows button")].some((b) => /^Sign in another device/.test(b.textContent.trim())));
+      const dv = [...V.d.querySelectorAll("#devRows button")].find((b) => /^Sign in another device/.test(b.textContent.trim())); dv.focus(); dv.click();
       kinds.push(["Sign in another device", V, () => shown(V, "devSheet"), () => !!V.d.activeElement && /^Sign in another device/.test(V.d.activeElement.textContent.trim())]);
     }
     {
@@ -222,8 +222,8 @@ export async function run({ ok, pageWork }) {
         ownRes.push([name, up, await until(() => !shown(H, "paySheet") && stateIs(H, 0))]);
       }
       const T = await open();
-      tab(T, "stmt"); await until(() => T.d.querySelector("#aThread [data-thread]"));
-      T.d.querySelector("#aThread [data-thread]").click(); const upT = stateIs(T, 1); T.d.getElementById("thX").click();
+      tab(T, "stmt"); await until(() => T.d.querySelector('#aGlance [data-glance="thread"]'));
+      T.d.querySelector('#aGlance [data-glance="thread"]').click(); const upT = stateIs(T, 1); T.d.getElementById("thX").click();
       ownRes.push(["the thread, its orb", upT, await until(() => !shown(T, "thSheet") && stateIs(T, 0))]);
       if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); const upL = stateIs(Lk, 1); Lk.d.getElementById("lookX").click();
@@ -235,8 +235,8 @@ export async function run({ ok, pageWork }) {
       ownRes.push(["the bell, Done", upB, await until(() => !shown(Bl, "bellSheet") && stateIs(Bl, 0))]);
       const So = await open({ orders: [A], fast: true }); So.st.down = true; await until(() => shown(So, "outSheet"), 300); await until(() => stateIs(So, 1)); const upS = stateIs(So, 1); So.d.getElementById("outX").click();
       ownRes.push(["the signed-out Sheet, its orb", upS, await until(() => !shown(So, "outSheet") && stateIs(So, 0))]);
-      const Dv = await open(); tab(Dv, "stmt"); await until(() => [...Dv.d.querySelectorAll("#devSlot button")].some((b) => /^Sign in another device/.test(b.textContent.trim())));
-      [...Dv.d.querySelectorAll("#devSlot button")].find((b) => /^Sign in another device/.test(b.textContent.trim())).click(); const upD = stateIs(Dv, 1); Dv.d.getElementById("devX").click();
+      const Dv = await open(); tab(Dv, "stmt"); await until(() => [...Dv.d.querySelectorAll("#devRows button")].some((b) => /^Sign in another device/.test(b.textContent.trim())));
+      [...Dv.d.querySelectorAll("#devRows button")].find((b) => /^Sign in another device/.test(b.textContent.trim())).click(); const upD = stateIs(Dv, 1); Dv.d.getElementById("devX").click();
       ownRes.push(["Sign in another device, its orb", upD, await until(() => !shown(Dv, "devSheet") && stateIs(Dv, 0))]);
       const Q = await open({ orders: [A, B, Cc, D, E, F] }); const cb = await openLimit(Q);
       cb.click(); await until(() => Q.d.getElementById("ynSheet")); const upQ = stateIs(Q, 2); Q.d.getElementById("ynKeep").click();
@@ -252,7 +252,7 @@ export async function run({ ok, pageWork }) {
     {
       const H = await open({ list: [part(0), part(1)] }); H.d.getElementById("payNow").click(); H.d.getElementById("payX").click(); await until(() => stateIs(H, 0));
       await goBack(H); leaveRes.push(["Pay", await until(() => stateIs(H, null))]);
-      const T = await open(); tab(T, "stmt"); await until(() => T.d.querySelector("#aThread [data-thread]")); T.d.querySelector("#aThread [data-thread]").click(); T.d.getElementById("thX").click(); await until(() => stateIs(T, 0));
+      const T = await open(); tab(T, "stmt"); await until(() => T.d.querySelector('#aGlance [data-glance="thread"]')); T.d.querySelector('#aGlance [data-glance="thread"]').click(); T.d.getElementById("thX").click(); await until(() => stateIs(T, 0));
       await goBack(T); leaveRes.push(["the thread", await until(() => stateIs(T, null))]);
       if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); Lk.d.getElementById("lookX").click(); await until(() => stateIs(Lk, 0));

@@ -40,7 +40,7 @@ export async function run({ ok, pageWork }) {
     /* 26 Oct 2026, his word: the customer's This device is a list of settings too; a browser that cannot take notifications says Not here in
        its row and why on the one line under the list */
     /* 16 Nov 2026, the move to Ambient (place D): This device is the system's settings group, a row a name and one control or value */
-    const devList = A.d.querySelector("#thisDevice .amb-settings #devRows"), devLabels = devList ? [...devList.querySelectorAll(".amb-setting__name")].map((n) => n.textContent) : [];
+    const devList = A.d.querySelector("#thisDevice .amb-settings #devRows"), devLabels = devList ? [...devList.querySelectorAll('li[data-dev="own"] .amb-setting__name')].map((n) => n.textContent) : [];   /* 17 Nov 2026, the move to Ambient (Fable's review): This device is one list, the other devices' rows in it after these */
     const pushRow = devList && [...devList.querySelectorAll(".amb-setting")].find((r) => r.querySelector(".amb-setting__name").textContent === "Notifications");
     ok(!!devList && J(devLabels) === J(["Notifications"]) && !!pushRow && (pushRow.querySelector(".amb-setting__value") || {}).textContent === "Not here"
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),

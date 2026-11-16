@@ -90,7 +90,7 @@ export async function run({ ok }) {
   const lbl = (e) => (e ? (e.id || e.tagName) : "nothing");
   /* the controls are found by what they say, as a person finds them, and not by the key the page keeps to find them again */
   const payBtn = (root) => [...root.querySelectorAll("button")].find((b) => /^Pay RM/.test(b.textContent.trim()));
-  const anotherBtn = (pg) => [...pg.d.querySelectorAll("#devSlot button")].find((b) => /^Sign in another device/.test(b.textContent.trim()));
+  const anotherBtn = (pg) => [...pg.d.querySelectorAll("#devRows button")].find((b) => /^Sign in another device/.test(b.textContent.trim()));
 
   try {
     /* ---- 4: the pay sheet gives the focus back to the Pay that opened it */

@@ -254,9 +254,9 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .amb-settings.tot, .amb-settings.owed { max-width: none; }
 .amb-sheet .amb-table { margin: 0; }
 /* Account: one stack, the device above the statement; from 960px the device and its help stand in a second column */
-#aGlance, #aThread { display: contents; }
-#aGlance > .amb-settings, #aThread > .amb-list { max-width: none; }
-#aThread > .amb-list, #acct .amb-stack > .amb-list { margin-inline: 0; }
+#aGlance { display: contents; }
+#aGlance > .amb-settings { max-width: none; }
+#acct .amb-stack > .amb-list { margin-inline: 0; }
 .mfil[hidden] { display: none; }
 .mfil .amb-field { max-width: 24rem; }
 .mfnote { margin: 0; }
@@ -273,11 +273,11 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .keepsteps .glyph, .keeppage .glyph, .amb-basis .glyph { display: inline-block; vertical-align: middle; margin: 0 2px; }
 @container amb (min-width: 960px) {
   #acct { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; column-gap: var(--amb-space-6); }
-  #acct > #aGlance, #acct > #aThread, #acct > .acct__main { grid-column: 1; }
+  #acct > #aGlance, #acct > .acct__main { grid-column: 1; }
   #acct > #thisDevice, #acct > #aHelp { grid-column: 2; }
-  #acct { grid-template-rows: auto auto 1fr auto; }
-  #acct > #thisDevice { grid-row: 1 / span 3; }
-  #acct > #aHelp { grid-row: 4; }
+  #acct { grid-template-rows: auto 1fr auto; }
+  #acct > #thisDevice { grid-row: 1 / span 2; }
+  #acct > #aHelp { grid-row: 3; }
   #acct > .acct__main { align-self: start; }
 }
 /* the door: one form in the stack; the password's Show stands beside its field, the field's own hint under both */
@@ -467,7 +467,7 @@ body.ended > *:not(#aEnded) { display: none; }
 @media (min-width: 1080px) {
   .acct { max-width: 1060px; display: grid; grid-template-columns: minmax(0, 620px) minmax(300px, 1fr); column-gap: 40px; row-gap: var(--amb-pane-gap); align-items: start; }
   #aGlance { grid-column: 1 / -1; }
-  #aThread, .acct__main { grid-column: 1; }
+  .acct__main { grid-column: 1; }
   .devcard { grid-column: 2; grid-row: 2 / span 2; }
   .ahelp { grid-column: 2; }
 }

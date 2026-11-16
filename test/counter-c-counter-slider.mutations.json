@@ -8,8 +8,8 @@
  {
   "name": "a Look row comes back",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'",
-  "replace": "<div class=\"amb-settings devlist\"><div id=\"lookRow\"><span class=\"lookset\"></span></div><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'"
+  "find": "'<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\">'",
+  "replace": "'<div class=\"amb-settings devlist\"><div id=\"lookRow\"><span class=\"lookset\"></span></div><ul class=\"amb-settings__list\" id=\"devRows\">'"
  },
  {
   "name": "the part entered is not pressed (16 Nov 2026)",
@@ -74,14 +74,14 @@
  {
   "name": "This device is no settings list",
   "file": "stmt/page.js",
-  "find": "'<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'",
-  "replace": "'<div class=\"devlist\"><ul id=\"devRows\"></ul>'"
+  "find": "'<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\">'",
+  "replace": "'<div class=\"devlist\"><ul id=\"devRows\">'"
  },
  {
   "name": "no short value where notifications cannot come",
   "file": "stmt/page.js",
-  "find": "devRows.appendChild(devRow(tw('push.h'),why,devValue(tw('push.notHere'))));",
-  "replace": "devRows.appendChild(devRow(tw('push.h'),why));"
+  "find": "own.push(devRow(tw('push.h'),why,devValue(tw('push.notHere')))); }",
+  "replace": "own.push(devRow(tw('push.h'),why)); }"
  },
  {
   "name": "the line under the list says nothing",
