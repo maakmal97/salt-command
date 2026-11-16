@@ -27,7 +27,7 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .unsent-note > span { flex: 1 1 auto; min-width: 0; }
 /* the list: a group a word, a card a task; the whole card is its title's tap, the ways above it */
 .nlist { display: grid; gap: var(--amb-pane-gap); }
-.nlist > .ngroup, .nlist > .nfold, .nopen, #nrecord { display: grid; gap: var(--amb-space-3); }
+.nlist > .ngroup, .nlist > .nfold, .nopen, #nrecord { display: grid; gap: var(--amb-pane-gap); }
 .apstack { display: grid; gap: var(--amb-space-3); }
 .nlist > .nfold > summary { display: flex; align-items: center; min-height: var(--amb-tap); cursor: pointer; }
 .ntask { position: relative; }
