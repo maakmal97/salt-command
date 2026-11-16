@@ -62,9 +62,11 @@ const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentEle
 /* the owner page's own stylesheet, read as rules (jsdom applies no media query, so a rule is looked up by its query and selector) */
 function ownerCss() {
   const html = landingPage("", "orders-nonce", { master: "fixture-master", accounts: [] });
-  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  /* 16 Nov 2026, the move to Ambient (0.7.9): the page serves no salt-ds stylesheet, so its whole style is read; the old slice by the salt-ds length cut a
+     rule in half whenever the site's layer changed length */
+  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1];
   const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
-  const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => x.selectorText + "{" + x.style.cssText + "}") }));
+  const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].filter((x) => x.style).map((x) => x.selectorText + "{" + x.style.cssText + "}") }));
   const at = (q, sel) => media.filter((m) => m.q === q).flatMap((m) => m.rules).filter((r) => r.startsWith(sel + "{"));
   const top = (sel) => [...sheet.cssRules].filter((r) => r.selectorText === sel).map((r) => r.selectorText + "{" + r.style.cssText + "}");
   return { html, media, at, top };
