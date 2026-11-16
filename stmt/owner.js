@@ -2621,6 +2621,9 @@ export const OWNER_JS = `
           var bar=document.getElementById('unsentBar'); if(!bar) return;
           var list=unsentList(), n=list.length;
           bar.textContent=''; bar.hidden=!n;
+          /* 16 Nov 2026 (the move to Ambient): the banner stands under the hero of the place he is in, as Ambient's Notice does */
+          var hostId={needs:'mHome',orders:'oOrders',customers:'oCustomers',record:'oRecord',shop:'oShop'}[placeNow], host=hostId&&document.getElementById(hostId), hero=host&&host.querySelector(':scope > .amb-hero');
+          if(hero&&bar.previousElementSibling!==hero) hero.parentNode.insertBefore(bar, hero.nextSibling);
           if(!n) return;
           var one=n===1, c=bannerCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
             why:one?unsentSaid(list[0])+' Open it to send it again, update it or discard it.':'They were sent from this phone and not confirmed. Open them to send them again, update them or discard them.',
@@ -6445,14 +6448,14 @@ export const OWNER_JS = `
     return out.slice(0,2);
   }
   function nowAfter(fg){
-    var tb=el('table','apnow'), hd=el('tr'), body=el('tbody'), thead=el('thead');
-    [['',''],['Now','col'],['After','col']].forEach(function(h){ var th=el('th','',h[0]); if(h[1]) th.setAttribute('scope','col'); hd.appendChild(th); });
+    var tb=el('table','amb-table apnow'), hd=el('tr'), body=el('tbody'), thead=el('thead');
+    [['',''],['Now','col'],['After','col']].forEach(function(h,i){ var th=el('th',i?'is-num':'',h[0]); if(h[1]) th.setAttribute('scope','col'); hd.appendChild(th); });
     thead.appendChild(hd); tb.appendChild(thead);
     [['Paid',rm(fg.now.paid),rm(fg.after.paid)],['Owed',rm(fg.now.owed),rm(fg.after.owed)],['Handed over',handedSay(fg.now),handedSay(fg.after)]].forEach(function(r){
       var tr=el('tr'), th=el('th','',r[0]); th.setAttribute('scope','row'); tr.appendChild(th);
-      tr.appendChild(el('td','',r[1]));
-      var td=el('td');
-      if(r[1]!==r[2]){ td.className='apchg'; td.appendChild(el('strong','',r[2])); } else td.textContent=r[2];
+      tr.appendChild(el('td','is-num',r[1]));
+      var td=el('td','is-num');
+      if(r[1]!==r[2]){ td.className='is-num apchg'; td.appendChild(el('strong','',r[2])); } else td.textContent=r[2];
       tr.appendChild(td); body.appendChild(tr);
     });
     tb.appendChild(body); return tb;
@@ -6469,16 +6472,26 @@ export const OWNER_JS = `
     var e=d.entry||{}, c=e.claim||(e.fulfil&&e.fulfil.claim)||e.claimId, id=c&&typeof c==='object'?c.id:c;
     return makerClaims.filter(function(x){ return String(x.id)===String(id); })[0]||null;
   }
+  /* 16 Nov 2026 (the move to Ambient, place F): a list of read-only settings (Ambient's rows), the drafter's own words above it */
+  function apPairs(pairs){
+    var rows=pairs.filter(function(p){ return p[1]!=null&&p[1]!==''; }).map(function(p){ return amb.setting(p[0],String(p[1])); });
+    return amb.node(amb.settings('',rows));
+  }
+  function apDetailBox(act,key,pairs){
+    var box=el('details','rdet apdet');
+    box.appendChild(actOn(el('summary','amb-pill amb-pill--sm amb-pill--quiet','Details'),act,key));
+    box.appendChild(apPairs(pairs)); return box;
+  }
   function apDetails(g,src){
-    var panel=el('div','rdet rdet--row'); panel.hidden=true;
+    var panel=el('div','rdet rdet--row apdet'); panel.hidden=true;
     /* 18 Oct 2026, CLARITY PART 4: where the entry came from lives here, and the row's id in the list below; the head leads with the customer and the sale */
-    if(src) panel.appendChild(el('p','maker-facts salt-approve__entry',src));
+    if(src) panel.appendChild(el('p','amb-task__text apentry',src));
     g.drafts.forEach(function(d,i){
-      if(g.drafts.length>1) panel.appendChild(el('h4','',(g.trip?'Row ':'Move ')+(i+1)+' of '+g.drafts.length+': '+moveWord(d)));
-      if(d.reasoning) panel.appendChild(el('p','salt-approve__reason',noBook(d.reasoning)));
-      (d.flags||[]).forEach(function(f){ panel.appendChild(el('p','salt-insight apnote',noBook(f))); });
+      if(g.drafts.length>1) panel.appendChild(el('h4','amb-section',(g.trip?'Row ':'Move ')+(i+1)+' of '+g.drafts.length+': '+moveWord(d)));
+      if(d.reasoning) panel.appendChild(el('p','amb-task__text apreason',noBook(d.reasoning)));
+      (d.flags||[]).forEach(function(f){ panel.appendChild(el('p','amb-task__text apnote',noBook(f))); });
       /* the draft's reference and the row in his words, and the row's id where the drafter left it off the row */
-      panel.appendChild(detailList(rowPairs(d.row,d.id).concat(d.row&&d.row.rid||!draftRid(d)?[]:[['Row reference',draftRid(d)]])));
+      panel.appendChild(apPairs(rowPairs(d.row,d.id).concat(d.row&&d.row.rid||!draftRid(d)?[]:[['Row reference',draftRid(d)]])));
     });
     return panel;
   }
@@ -6499,20 +6512,22 @@ export const OWNER_JS = `
     var bar=document.getElementById('apBar'); if(!bar) return;
     var gs=apGroups(), A=gs.filter(function(g){ return apPick[g.lead.id]==='a'; }), R=gs.filter(function(g){ return apPick[g.lead.id]==='r'; });
     bar.textContent=''; bar.hidden=!(A.length+R.length);
+    try{ drawNeedOpen(false); }catch(e){}
     if(bar.hidden) return;
-    bar.appendChild(el('span','apbar__line',[A.length?A.length+' to approve':'',R.length?R.length+' to reject':''].filter(Boolean).join(' · ')));
-    var clear=actOn(el('button','salt-ghost','Clear'),'approve.clear'); clear.type='button';
+    bar.appendChild(el('span','amb-savebar__text apbar__line',[A.length?A.length+' to approve':'',R.length?R.length+' to reject':''].filter(Boolean).join(' \u00b7 ')));
+    var acts=el('span','apbar__acts');
+    var clear=actOn(el('button','amb-pill amb-pill--sm amb-pill--quiet','Clear'),'approve.clear'); clear.type='button';
     clear.addEventListener('click',function(){ apPick={}; drawMaker(); });
-    var go=actOn(el('button','salt-pill salt-pill--sm','Confirm'),'approve.confirm'); go.type='button'; ynTag(go,'approve:confirm');
+    var go=actOn(el('button','amb-pill amb-pill--sm amb-pill--accent','Confirm'),'approve.confirm'); go.type='button'; ynTag(go,'approve:confirm');
     go.addEventListener('click',function(){ apConfirm(go,A,R); });
-    bar.appendChild(clear); bar.appendChild(go);
+    acts.appendChild(clear); acts.appendChild(go); bar.appendChild(acts);
   }
   /* 12 Nov 2026 (his Approve review): ticking a card and tapping Confirm is already the second look, so a batch of approvals goes on Confirm. The Sheet asks
      only when a Reject is among them: a rejected row a site order made is written onto that order, and that is asked first. */
   function apConfirm(go,A,R){
     var n=A.length+R.length, extra=[];
-    if(A.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--a',A.length+' to approve')); A.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
-    if(R.length){ extra.push(el('p','salt-eyebrow apsheet apsheet--r',R.length+' to reject')); R.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
+    if(A.length){ extra.push(el('p','amb-section apsheet apsheet--a',A.length+' to approve')); A.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
+    if(R.length){ extra.push(el('p','amb-section apsheet apsheet--r',R.length+' to reject')); R.forEach(function(g){ g.drafts.forEach(function(d){ extra.push(deskAskRow(d)); }); }); }
     var asked=R.length?ownerAsk(go,'approve:confirm',{title:'Decide '+n+(n===1?' card?':' cards?'), extra:extra, plain:true,
       say:['Each is decided as drafted. One that cannot go stays here with why and how to fix it; the rest go.'],
       go:'Confirm '+n, keep:'Not yet'}):Promise.resolve(true);
@@ -6538,86 +6553,101 @@ export const OWNER_JS = `
     Object.keys(apPick).forEach(function(k){ if(!liveIds[k]) delete apPick[k]; });
     Object.keys(apRefused).forEach(function(k){ if(!liveDrafts[k]) delete apRefused[k]; });
     if(apDone){
-      var dn=el('div','salt-glass-card salt-glass-card--radius-lg apdone'); dn.setAttribute('role','status');
-      if(apDone.error) dn.appendChild(el('p','msg bad',apDone.error));
+      var dn;
+      if(apDone.error) dn=amb.node(amb.notice(apDone.error,true));
       else {
-        dn.appendChild(el('span','salt-eyebrow apdone__head',(apDone.a+apDone.r)+' decided'+(apDone.refused?', '+apDone.refused+' refused':'')));
         var parts=[apDone.a?apDone.a+' approved':'',apDone.r?apDone.r+' rejected':''].filter(Boolean);
-        dn.appendChild(el('span','apdone__line',parts.length?parts.join(' and ')+(apDone.a?'. They fold together, one version.':'.'):'Nothing went. The refused cards say why below.'));
+        dn=amb.node(amb.notice(parts.length?parts.join(' and ')+(apDone.a?'. They fold together, one version.':'.'):'Nothing went. The refused cards say why below.',false,(apDone.a+apDone.r)+' decided'+(apDone.refused?', '+apDone.refused+' refused':'')));
       }
+      dn.classList.add('apdone'); dn.setAttribute('role','status');
       draftRoot.appendChild(dn);
     }
     var ticks=live.filter(apTickable);
     if(ticks.length){
-      var hr=el('div','aphead'); hr.appendChild(el('span','aphead__n',ticks.length+' to decide'));
+      var hr=el('div','aphead'); hr.appendChild(el('h2','amb-section aphead__n',ticks.length+' to decide'));
       /* 12 Nov 2026 (his Approve review): Approve all beside one card is that card's Approve, so it stands from two */
       if(ticks.length>1){
-        var all=actOn(el('button','salt-ghost','Approve all'),'approve.all'); all.type='button';
+        var all=actOn(el('button','amb-pill amb-pill--sm amb-pill--quiet','Approve all'),'approve.all'); all.type='button';
         all.addEventListener('click',function(){ ticks.forEach(function(g){ if(!apGone(g)) apPick[g.lead.id]='a'; }); apDone=null; drawMaker(); });
         hr.appendChild(all);
       }
       draftRoot.appendChild(hr);
     }
     live.forEach(function(g){
-      var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
-      var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
-      /* the head: the customer's code and the book's mark */
+      /* 16 Nov 2026 (the move to Ambient, place F): AN APPROVAL IS AMBIENT'S, the figures that decide first (the cost and his margin stay, the hard rule), then why it
+         was flagged, then the two small pills: Approve and Reject choose, and the card says which in its chip */
+      var draft=g.lead, pick=apPick[draft.id], gone=apGone(g), claim=g.drafts.some(draftClaim);
+      var card=el('article','amb-task apcard'+(pick==='r'?' ap--r':pick==='a'?' ap--a':gone?' ap--r':'')), head=el('div','amb-task__head apphead');
+      card.setAttribute('data-maker-card','draft:'+draft.id); draftRoot.appendChild(card);
+      var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','amb-task__kind apparty');
+      /* the head: the customer's code, and the state of the card */
       party.appendChild(document.createTextNode(draftParty(draft)||(isMarketDraft(draft)?'Median Price':'no code')));
-      if(g.tripMoves) party.appendChild(document.createTextNode(' · '+tripMoveRows(g).length+' books, one order'));
-      else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' ')); party.appendChild(productTag(draft.product)); }
+      if(g.tripMoves) party.appendChild(document.createTextNode(' \u00b7 '+tripMoveRows(g).length+' books, one order'));
+      else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' ')); party.appendChild(nBook(draft.product)); }
       head.appendChild(party);
-      card.appendChild(head);
       var kind=groupKind(g), verb=kind==='other'?entryWord(draft.entry||{}):AP_WORD[kind], fg=groupFigures(g), closed=kind==='close'?closeSay(g):'';
-      card.appendChild(el('h3','apverb',verb+(closed?': '+closed:'')));
+      if(gone) head.appendChild(el('span','amb-chip amb-chip--neg','Refused')); else if(pick) head.appendChild(el('span','amb-chip'+(pick==='a'?' amb-chip--pos':' amb-chip--neg'),pick==='a'?'To approve':'To reject'));
+      card.appendChild(head);
+      card.appendChild(el('h3','amb-task__title apverb',verb+(closed?': '+closed:'')));
+      var figs=[];
       if(fg&&fg.now) card.appendChild(nowAfter(fg));
       else if(g.tripMoves) tripMoveRows(g).forEach(function(r){
         /* each line of the order: its mark and row, then its Now and After as the Desk sent them; nothing is added up here */
-        var h=el('p','maker-facts apline'); h.appendChild(productTag(r.product)); h.appendChild(document.createTextNode(' '+r.rid)); card.appendChild(h);
+        var h=el('p','amb-task__text apline'); h.appendChild(nBook(r.product)); h.appendChild(document.createTextNode(' '+r.rid)); card.appendChild(h);
         if(r.fg) card.appendChild(nowAfter(r.fg));
       });
       else if(!draft.amends){
         g.drafts.forEach(function(d){
-          if(tierSets(d).length) tierLines(d).forEach(function(p){ card.appendChild(p); });
-          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','maker-facts apsays',firstSentence(d.reasoning))); }
-          else card.appendChild(bookLine(d.qty,d.product||'salt',d.total));
-          var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
-        if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip: Approve decides both.':g.drafts.length+' books, one trip: Approve decides all of them.'));
+          if(tierSets(d).length){
+            var many=Object.keys((d.row||{}).tiers||{}).length>1;
+            tierSets(d).forEach(function(s){ var p=el('p','amb-task__text aptier'), was=tierWas(d,s); if(many) p.appendChild(document.createTextNode(s.code+' ')); p.appendChild(nBook(s.product)); p.appendChild(document.createTextNode(' '+tierWord(s.v)+(was?', was '+was:''))); card.appendChild(p); });
+          }
+          else if(noFigure(d)){ if(d.reasoning) card.appendChild(el('p','amb-task__text apsays',firstSentence(d.reasoning))); }
+          else {
+            var bl=el('p','amb-task__text apline');
+            if(d.qty==null) bl.appendChild(document.createTextNode(rm(d.total)));
+            else { bl.appendChild(document.createTextNode(units(d.qty)+(d.product?' ':''))); if(d.product) bl.appendChild(nBook(d.product)); bl.appendChild(document.createTextNode(', '+rm(d.total))); }
+            card.appendChild(bl);
+          }
+          figs=figs.concat(readingFigures(d)); });
+        if(figs.length){ var fr=el('div','amb-task__figures apfigs'); figs.forEach(function(f){ fr.appendChild(amb.node(amb.stat(f[0],f[1]))); }); card.appendChild(fr); }
+        if(g.trip) card.appendChild(el('p','amb-task__text',g.drafts.length===2?'Two books, one trip: Approve decides both.':g.drafts.length+' books, one trip: Approve decides all of them.'));
       }
-      if(fg&&fg.approvedBefore) card.appendChild(el('p','salt-insight aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
-      askLines(g).forEach(function(line){ var p=el('p','salt-insight apflag'), bang=el('span','apbang','!'); bang.setAttribute('aria-hidden','true'); p.appendChild(bang); p.appendChild(document.createTextNode(' '+line)); card.appendChild(p); });
-      var claim=g.drafts.some(draftClaim);
-      if(claim){
-        /* 18 Oct 2026, CLARITY PART 4: the claim's answer is on its payment card, and this opens that card (Orders > Payments, the claim's card open) */
-        var to=actOn(el('button','salt-ghost aplink','Open the payment card'),'approve.to-payment',draft.id); to.type='button';
-        to.addEventListener('click', function(){ var c=claimOf(draft); if(c) makerClaimOpen=c.u+':'+c.id; goPlace('orders','payments')(); });
-        card.appendChild(to);
-      }
+      if(fg&&fg.approvedBefore) card.appendChild(el('p','amb-task__text aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
+      var asks=askLines(g);
+      if(asks.length){ var fl=el('ul','amb-task__flags apflags'); asks.forEach(function(line){ var li=el('li','apflag'); li.appendChild(el('span','amb-chip amb-chip--warn',line)); fl.appendChild(li); }); card.appendChild(fl); }
       var panel=apDetails(g,[from?'from '+from:'',when].filter(Boolean).join(', '));
-      var more=actOn(el('button','salt-ghost salt-ghost--sm apmore','Details'),'row.proposed'); more.type='button'; more.setAttribute('aria-expanded','false');
+      var more=actOn(el('button','amb-pill amb-pill--sm amb-pill--quiet apmore','Details'),'row.proposed'); more.type='button'; more.setAttribute('aria-expanded','false');
       more.addEventListener('click',function(){ var open=more.getAttribute('aria-expanded')!=='true'; more.setAttribute('aria-expanded',String(open)); panel.hidden=!open; });
       head.appendChild(more);
-      var gone=apGone(g);
       if(gone){
-        var rb=el('div','aprefused'); rb.appendChild(el('span','salt-status salt-status--ember','Refused'));
-        var w=el('p','aprefused__why'); w.appendChild(el('b',null,'Why: ')); w.appendChild(document.createTextNode(gone.why)); rb.appendChild(w);
-        var fx=el('p','aprefused__fix'); fx.appendChild(el('b',null,'To fix: ')); fx.appendChild(document.createTextNode(gone.fix)); rb.appendChild(fx);
+        var rb=amb.node(amb.notice('',true,'Refused')); rb.classList.add('aprefused');
+        var rs=rb.querySelector('span');
+        var w=el('span','aprefused__why'); w.appendChild(el('b',null,'Why: ')); w.appendChild(document.createTextNode(gone.why)); rs.appendChild(w);
+        var fx=el('span','aprefused__fix'); fx.appendChild(el('b',null,'To fix: ')); fx.appendChild(document.createTextNode(gone.fix)); rs.appendChild(fx);
         card.appendChild(rb);
       }
-      if(!claim){
-        var pick=apPick[draft.id], acts=el('div','salt-approve__actions apticks'); acts.setAttribute('role','group'); acts.setAttribute('aria-label','Decide this card'); card.appendChild(acts);
-        var approve=actOn(el('button',pick==='a'?'salt-pill salt-pill--sm':'salt-ghost',approveLabel(g)),'draft.approve'); approve.type='button'; approve.setAttribute('aria-pressed',String(pick==='a'));
-        /* 25 Oct 2026 (canvas Salt Admin Orders, salt-ds 1.17.0): a ticked Reject is the danger pill, the weight of a ticked Approve */
-        var reject=actOn(el('button',pick==='r'?'salt-pill salt-pill--sm salt-pill--danger':'salt-ghost',g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject'),'draft.reject'); reject.type='button'; reject.setAttribute('aria-pressed',String(pick==='r'));
+      var acts=el('div','amb-task__acts apticks');
+      if(claim){
+        /* 18 Oct 2026, CLARITY PART 4: the claim's answer is on its payment card, and this opens that card (Orders > Payments, the claim's card open) */
+        var to=actOn(el('button','amb-pill amb-pill--sm amb-pill--quiet aplink','Open the payment card'),'approve.to-payment',draft.id); to.type='button';
+        to.addEventListener('click', function(){ var c=claimOf(draft); if(c) makerClaimOpen=c.u+':'+c.id; goPlace('orders','payments')(); });
+        acts.appendChild(to);
+      } else {
+        acts.setAttribute('role','group'); acts.setAttribute('aria-label','Decide this card');
+        var approve=actOn(el('button','amb-pill amb-pill--sm'+(pick==='a'?'':' amb-pill--quiet'),approveLabel(g)),'draft.approve'); approve.type='button'; approve.setAttribute('aria-pressed',String(pick==='a'));
+        var reject=actOn(el('button','amb-pill amb-pill--sm'+(pick==='r'?'':' amb-pill--quiet'),g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject'),'draft.reject'); reject.type='button'; reject.setAttribute('aria-pressed',String(pick==='r'));
         approve.addEventListener('click',function(){ apChose(g,'a'); }); reject.addEventListener('click',function(){ apChose(g,'r'); });
         acts.appendChild(approve); acts.appendChild(reject);
-        if(pick) card.classList.add(pick==='a'?'ap--a':'ap--r'); else if(gone) card.classList.add('ap--r');
       }
+      card.appendChild(acts);
       card.appendChild(panel);
       makerFoot(card,'draft:'+draft.id);
     });
     (makerData.refused||[]).filter(function(r){ return !suiteRow(r); }).forEach(function(refused){
-      var card=makerCard(draftRoot);
-      card.appendChild(el('p','salt-insight',notTaken(refused.why)));
+      var card=el('article','amb-task amb-task--neg aprefusedrow'), rh=el('div','amb-task__head');
+      rh.appendChild(el('span','amb-task__kind','The Desk')); rh.appendChild(el('span','amb-chip amb-chip--neg','Refused')); card.appendChild(rh); draftRoot.appendChild(card);
+      card.appendChild(el('p','amb-task__text',notTaken(refused.why)));
     });
     if(!pendingRows.length&&!(makerData.refused||[]).filter(function(r){ return !suiteRow(r); }).length) draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));
     if(queueRoot){
@@ -6634,17 +6664,20 @@ export const OWNER_JS = `
       if(bad.length){ var ub=el('p','msg bad',unreadableLine(bad)); ub.setAttribute('data-unreadable',''); queueRoot.appendChild(ub); }
       if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
       held.forEach(function(entry){
-        var card=makerCard(queueRoot), title=entry.state==='refused'?'The Desk refused this entry':'Entry waiting for the Desk'; card.setAttribute('data-key',entry.id);
-        card.appendChild(el('h4','',title));
-        card.appendChild(el('p','maker-facts',entryLine(entry)+', '+(entry.state==='refused'?'refused':'waiting for the Desk')+'.'));
-        if(entry.device) card.appendChild(el('p','maker-facts','From another device.'));
-        if(entry.seenAt) card.appendChild(el('p','maker-facts','Seen '+fmtWhen(entry.seenAt)+'.'));
-        if(entry.why) card.appendChild(el('p','salt-insight',noBook(entry.why)));
-        card.appendChild(detailBox('queue.details',entry.id,[['Reference',entry.id],['Sent',fmtWhen(isoAt(entry.id)||entry.date)],['State',entry.state==='refused'?'Refused':'Waiting for the Desk']]));
+        var card=el('article','amb-task apcard apqueued'+(entry.state==='refused'?' amb-task--neg':'')), title=entry.state==='refused'?'The Desk refused this entry':'Entry waiting for the Desk'; card.setAttribute('data-key',entry.id);
+        queueRoot.appendChild(card);
+        var qh=el('div','amb-task__head'); qh.appendChild(el('span','amb-task__kind','Queue')); qh.appendChild(el('span','amb-chip'+(entry.state==='refused'?' amb-chip--neg':''),entry.state==='refused'?'Refused':'Waiting')); card.appendChild(qh);
+        card.appendChild(el('h3','amb-task__title',title));
+        card.appendChild(el('p','amb-task__text',entryLine(entry)+', '+(entry.state==='refused'?'refused':'waiting for the Desk')+'.'));
+        if(entry.device) card.appendChild(el('p','amb-task__text','From another device.'));
+        if(entry.seenAt) card.appendChild(el('p','amb-task__text','Seen '+fmtWhen(entry.seenAt)+'.'));
+        if(entry.why) card.appendChild(el('p','amb-task__text',noBook(entry.why)));
+        card.appendChild(apDetailBox('queue.details',entry.id,[['Reference',entry.id],['Sent',fmtWhen(isoAt(entry.id)||entry.date)],['State',entry.state==='refused'?'Refused':'Waiting for the Desk']]));
         if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
         if(entry.canWithdraw||entry.canRetry){
           var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);
-          var action=makerClaimButton(card,[entry.canRetry?'Finish the withdrawal':'Withdraw this entry','queue.withdraw'],function(button){
+          var qacts=el('div','amb-task__acts'); card.appendChild(qacts);
+          var action=makerClaimButton(qacts,[entry.canRetry?'Finish the withdrawal':'Withdraw this entry','queue.withdraw'],function(button){
             /* his decision 4 of 11 Oct 2026: asked on the page's Sheet; finishing a withdrawal already begun asks nothing, as it did not */
             function withdraw(){
               button.disabled=true;
@@ -6669,7 +6702,7 @@ export const OWNER_JS = `
               .then(function(yes){ if(yes) withdraw(); });
           },false);
           ynTag(action,'queue:'+entry.id);
-          action.classList.add('maker-queue-action');
+          ambBtn(action,true); action.classList.add('maker-queue-action');
         }
       });
     }
@@ -7419,7 +7452,7 @@ export const OWNER_JS = `
     /* 22 Oct 2026: rm, the money the card is about (its figure), and tap, the money tap it waits on (confirm or agree), which the Insight sums */
     var full=function(){ return Object.assign({sev:sev, kind:kind, word:word, key:key, at:at||''}, o); };
     return {sev:sev, kind:kind, key:key, at:at||'', practice:!!o.practice, counts:o.counts!==false, n:needN++, rm:+o.rm>0?+o.rm:0, tap:o.tap||'', order:o.order||'', make:function(){
-      var c=needCard(full());
+      var c=needTask(full());
       if(tweak) tweak(c);
       return c;
     }, pane:function(){
@@ -7437,38 +7470,55 @@ export const OWNER_JS = `
       return JSON.stringify([key, ord||null, acc||null, ord?[makerCashHeld[ord.id]||null, makerCashSaid[ord.id]||null]:null]);
     }};
   }
-  /* the Action recipe's own parts: the kind word, the body (who and what, then why), the age in the money's place, the way there. Since 22 Oct 2026 this is
-     the unsent banner's alone (it keeps its Open over every place); a card of the list is needCard below. c._add puts an action before Open. */
+  /* 16 NOV 2026, THE MOVE TO AMBIENT (place F): THE UNSENT BANNER is Ambient's Notice with its one quiet pill, Open, over every place until its entry is sent
+     or discarded; unsentPlace stands it under the shown place's hero. The title says how many and since when, the sentence what to do. */
   function bannerCard(o){
-    /* 14 Oct 2026: THE WHOLE CARD IS THE TAP. The title is the one real button (data-act need.open, keyboard and screen reader), its ::after
-       stretched over the card; a card's own actions stand above that. No Open button: a card with no way of its own has no go row. */
-    var tap=!!o.open&&!o.keepOpen;
-    var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':'')), body=el('div','salt-action__body'), title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')),
-      go=el('div','salt-action__go'), op=null;
-    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', o.open); }
+    var age=ageOf(o.at), c=el('div','amb-notice need unsent-note'), t=el('span'), b=el('b','amb-notice__title',o.who+' '+o.what+(age?' \u00b7 '+age:''));
+    c.setAttribute('data-sev',o.sev);
+    c.appendChild(amb.node(amb.glyph('info')));
+    t.appendChild(b); t.appendChild(document.createTextNode(o.why||'')); c.appendChild(t);
+    if(o.open&&o.keepOpen){ var op=ambBtn(pill(['Open',o.act||'need.open',o.key]),true); op.addEventListener('click', o.open); c.appendChild(op); }
+    return c;
+  }
+  /* a Salt button drawn as Ambient's pill: its salt- classes go, the small pill stays, and a quiet one is a second choice. A disabled or aria state stays as it was. */
+  function ambBtn(b, quiet){
+    [].slice.call(b.classList).forEach(function(k){ if(k.indexOf('salt-')===0||k==='nbtn') b.classList.remove(k); });
+    b.classList.add('amb-pill','amb-pill--sm'); if(quiet) b.classList.add('amb-pill--quiet');
+    return b;
+  }
+  /* a book's name in ink with its hue on the dot: Ambient's kind chip (the book's index in PSYM's order) */
+  function nBook(product){ var k=String(product||'').toLowerCase().replace(/[^a-z]/g,''); return amb.node(amb.kindChip(k, k.charAt(0).toUpperCase()+k.slice(1))); }
+  /* the action register's words on a to-do: Overdue when late, Due while it waits on his tap now, Open after. The group's word (Now, Soon, Watch) stays over the list. */
+  function needTone(o){ return o.late?['neg','Overdue']:o.sev==='now'?['warn','Due']:o.sev==='watch'?['','Watch']:['','Open']; }
+  /* THE CARD OF THE LIST (16 Nov 2026): Ambient's To-do. Line one the kind and its age and the state's chip; the title its one button (the whole card is the tap,
+     the title's ::after stretched over it in site.css), a book's chip before the code; the money the card is about as its one figure; the way on a row of
+     quiet small pills, made once the first is added; notes and an ask stand between, made once something writes to them. */
+  function needTask(o){
+    var tap=!!o.open, age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'', st=needTone(o);
+    var c=el('article','amb-task'+(st[0]?' amb-task--'+st[0]:'')+' ntask'), head=el('div','amb-task__head'), kd=el('span','amb-task__kind nkind',o.word),
+      title=el('h3','amb-task__title'), tp=el(tap?'button':'span','need-title'+(tap?' need-tap':'')), go=el('div','amb-task__acts ngo'), bodyEl=null;
+    if(tap){ tp.type='button'; actOn(tp,o.act||'need.open',o.key); tp.addEventListener('click', function(){ if(typeof o.onTap==='function') o.onTap(); else needOpen(o); }); }
     c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
-    c.appendChild(el('span','salt-action__kind',o.word));
-    /* 17 Oct 2026 (Salt Admin clarity, part 2): THE TITLE SAYS WHAT TO DO, verb first, then who: head + code + rest. The figure and the book's mark stand under it. */
-    var what=null;
-    if(o.what||o.mark){ what=el(o.head?'p':'span','need-what'); if(o.mark) what.appendChild(bookMark(o.mark)); if(o.what) what.appendChild(document.createTextNode((o.mark?' ':'')+o.what)); }
-    if(o.head){
-      var hd=el('span','need-head'); hd.appendChild(document.createTextNode(o.head)); hd.appendChild(whoTag(el('span','need-who',o.who),o.who));
-      if(o.rest) hd.appendChild(document.createTextNode(o.rest));
-      title.appendChild(hd);
-    }else title.appendChild(whoTag(el('span','need-who',o.who),o.who));
-    if(o.practice) title.appendChild(chip('mist','Practice'));
-    if(what&&!o.head) title.appendChild(what);
-    body.appendChild(title);
-    if(what&&o.head) body.appendChild(what);
-    if(o.why) body.appendChild(el('p','salt-action__why',o.why));
-    c.appendChild(body);
-    c.appendChild(el('span','salt-action__money salt-action__money--nil',ageOf(o.at)));
-    /* the banner over every place keeps its Open: it is not a list's card */
-    if(o.open&&o.keepOpen){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); c.appendChild(go); }
-    /* a card with an action of its own sets its ways on a row under the body, so a wide button never squeezes what it says */
-    c._body=body; c._add=function(b){ if(!go.parentNode) c.appendChild(go); c.classList.add('need--act'); go.insertBefore(b, op); };
+    if(age){ kd.appendChild(document.createTextNode(' \u00b7 ')); kd.appendChild(el('span','nage'+(o.late?' nage--late':''),age)); }
+    head.appendChild(kd); head.appendChild(el('span','amb-chip'+(st[0]?' amb-chip--'+st[0]:''),st[1])); c.appendChild(head);
+    if(o.mark) tp.appendChild(nBook(o.mark));
+    tp.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(tt)?' need-who--code':''),tt),tt));
+    if(tap) tp.setAttribute('aria-label', o.word+': '+[(o.head||'')+(o.who||'')+(o.rest||''), o.what].filter(Boolean).join(', '));
+    title.appendChild(tp); c.appendChild(title);
+    if(+o.rm>0.004){ var f=el('div','amb-task__figures'), s=amb.node(amb.stat('Amount',rmShort(o.rm))); s.classList.add('nfig'); f.appendChild(s); c.appendChild(f); }
+    Object.defineProperty(c,'_body',{get:function(){ if(!bodyEl){ bodyEl=el('div','nbody'); c.insertBefore(bodyEl, go.parentNode===c?go:null); } return bodyEl; }, configurable:true});
+    c._grow=function(){ c.classList.add('need--grow'); };
+    c._add=function(b){
+      if(o.sev==='watch') return;   /* Ambient 0.7.5: Watch is a state with nothing to do yet, so it has no control (its title opens it) */
+      var grown=c.classList.contains('need--grow');
+      if(go.children.length&&!grown) return;
+      var filled=!b.classList.contains('salt-ghost')&&!b.classList.contains('salt-ghost--lit');
+      ambBtn(b, !(grown&&filled&&!go.children.length));
+      if(!go.parentNode) c.appendChild(go);
+      go.appendChild(b);
+    };
     return c;
   }
   /* 22 OCT 2026 (canvas Needs you, his comments on the card): ONE SHAPE AND ONE HEIGHT, 76px on a phone and 80px wide. Line one is the kind and the age, the
@@ -7515,22 +7565,28 @@ export const OWNER_JS = `
      every way of its row, the second choice (Decline, Show a code, Record payment) among them, the first filled and the rest ghosts. An order's or an
      account's card stands under it (item.below), where its own ways are, so the head of an order draws none of its own. */
   function needPane(o){
-    var c=el('section','npane'), body=el('div','npane__body'), go=el('div','npane__go salt-pane__foot'), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'';
+    var st=needTone(o), age=o.age!=null?o.age:ageOf(o.at), tt=o.title||o.who||'', bodyEl=null;
+    var c=el('article','amb-task npane'+(st[0]?' amb-task--'+st[0]:'')), head=el('div','amb-task__head'), k=el('span','amb-task__kind npane__kind',o.word);
     c.setAttribute('data-pane', o.key); c.setAttribute('aria-label', 'The open card');
-    var k=el('span','salt-eyebrow salt-eyebrow--'+SEVC[o.sev]+' npane__kind', o.word);
-    if(age){ k.appendChild(document.createTextNode(' · ')); k.appendChild(el('span','nage'+(o.late?' nage--late':''),age)); }
-    c.appendChild(k);
-    var h=el('h2','salt-title npane__title');
+    if(age){ k.appendChild(document.createTextNode(' \u00b7 ')); k.appendChild(el('span','nage'+(o.late?' nage--late':''),age)); }
+    head.appendChild(k); head.appendChild(el('span','amb-chip'+(st[0]?' amb-chip--'+st[0]:''),st[1])); c.appendChild(head);
+    var h=el('h2','amb-task__title npane__title');
     if(o.head||o.rest){ if(o.head) h.appendChild(document.createTextNode(o.head)); h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(o.who)?' need-who--code':''),o.who),o.who)); if(o.rest) h.appendChild(document.createTextNode(o.rest)); }
     else { var pt=o.say||tt; h.appendChild(whoTag(el('span','need-who'+(CODE_RE.test(pt)?' need-who--code':''),pt),pt)); }
     c.appendChild(h);
-    if(o.what||o.mark){ var w=el('p','salt-action__why npane__what'); if(o.mark) w.appendChild(productTag(o.mark)); if(o.what) w.appendChild(el('span',null,o.what)); c.appendChild(w); }
-    if(o.why) c.appendChild(el('p','salt-action__why npane__why',o.why));
+    if(o.what||o.mark){ var w=el('p','amb-task__text npane__what'); if(o.mark) w.appendChild(nBook(o.mark)); if(o.what) w.appendChild(el('span',null,(o.mark?' ':'')+o.what)); c.appendChild(w); }
+    if(o.why) c.appendChild(el('p','amb-task__text npane__why',o.why));
     /* an order's head draws no ways (its card under it has them) and so no ask, which the list's card holds; the Offer's keeps its ask-once Withdraw */
-    var own=!o.order||!!o.ways;
-    c.appendChild(body); if(own) c.appendChild(go);
-    c._body=body; c._full=true; c._grow=function(){}; c._noWays=!own;
-    c._add=function(b){ if(!own) return; b.classList.remove('salt-pill--md'); if(b.classList.contains('salt-pill')) b.classList.add('salt-pill--sm'); b.classList.add('nbtn'); go.appendChild(b); };
+    var own=!o.order||!!o.ways, go=el('div','amb-foot npane__go'), acts=el('div','amb-task__acts npane__acts');
+    Object.defineProperty(c,'_body',{get:function(){ if(!bodyEl){ bodyEl=el('div','npane__body'); c.insertBefore(bodyEl, acts.parentNode===c?acts:null); } return bodyEl; }, configurable:true});
+    c._go=go; c._full=true; c._grow=function(){}; c._noWays=!own;
+    /* the first filled action is the record's one main action, the foot (drawNeedOpen stands it last in the column); every other way a quiet pill under the words */
+    c._add=function(b){
+      if(!own) return;
+      var filled=!b.classList.contains('salt-ghost')&&!b.classList.contains('salt-ghost--lit');
+      if(filled&&!go.children.length){ ambBtn(b,false); b.classList.remove('amb-pill--sm'); b.classList.add('amb-pill--block'); go.appendChild(b); return; }
+      ambBtn(b,true); if(!acts.parentNode) c.appendChild(acts); acts.appendChild(b);
+    };
     return c;
   }
   /* a card's main button, on the card: it opens the full card where that action has inputs the card asks for, or asks in place where it is money */
@@ -7555,7 +7611,13 @@ export const OWNER_JS = `
      redraw of the list, as the cards are; the card under it only when what it stands on changes, and never while a field of it is in use, so a redraw never
      takes a tap or a figure he is typing off it. A card gone from the list closes it. wide() is the two panes' width, which the page's CSS shares at 860px. */
   var nopen=document.getElementById('nopen'), nOpenKey=null, needLast=[];
-  function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:860px)').matches); }
+  function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:960px)').matches); }
+  /* the record's one main action stands last in its column (Ambient's foot), outside #nopen, and goes with the card */
+  function nFoot(nh){
+    var rec=nopen.parentNode, old=rec.querySelector(':scope > .npane__go'); if(old) rec.removeChild(old);
+    var sv=document.getElementById('apBar');   /* 16 Nov 2026 (Ambient 0.7.5): while the save bar shows, saving is the one main action and no record has a foot */
+    if(nh&&nh._go&&nh._go.children.length&&!(sv&&!sv.hidden)) rec.appendChild(nh._go);
+  }
   /* an account's Open on a phone goes to its card on Customers */
   function openNeed(u){ showPlace('customers','accounts',{fresh:true,push:true}); openCard(u); }
   /* 22 Oct 2026 (Fable's review): a field with the focus holds the card; a tap does not, or the card would never follow what the tap did */
@@ -7565,11 +7627,12 @@ export const OWNER_JS = `
     [].slice.call(nlist.querySelectorAll('[data-need]')).forEach(function(c){
       if(it&&c.getAttribute('data-need')===nOpenKey) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });
     if(!it){
+      nFoot(null);
       /* Fable's review: a tap that moved its order on takes the card off the list, so the pane keeps that order's answer in view until his next tap */
       var was=nopen.getAttribute('data-order'), said=was&&makerSaid[was];
       nOpenKey=null;
       if(said){ if(nopen.getAttribute('data-said')!==said){ nopen.textContent=''; nopen.removeAttribute('data-key'); nopen.setAttribute('data-said',said); nopen.hidden=false;
-        var sl=el('p','salt-insight npane__said',said); sl.setAttribute('role','status'); nopen.appendChild(sl); } return; }
+        var sl=el('p','amb-task__text npane__said',said); sl.setAttribute('role','status'); nopen.appendChild(sl); } return; }
       if(nopen.firstChild||!nopen.hidden){ nopen.hidden=true; nopen.textContent=''; nopen.removeAttribute('data-key'); nopen.removeAttribute('data-order'); mHome.classList.remove('open'); }
       return;
     }
@@ -7577,6 +7640,7 @@ export const OWNER_JS = `
     mHome.classList.add('open'); nopen.hidden=false;
     var head=nopen.querySelector(':scope > .npane'), low=nopen.querySelector(':scope > .npane-x'), nh=it.pane();
     if(head) nopen.replaceChild(nh, head); else nopen.insertBefore(nh, nopen.firstChild);
+    nFoot(nh);
     if(!low){ low=el('div','npane-x'); nopen.appendChild(low); }
     var sig=it.belowSig();
     if(force||(low.getAttribute('data-sig')!==sig&&!nopenInUse())){ low.textContent=''; low.setAttribute('data-sig', sig); it.below(low); }
@@ -8080,11 +8144,11 @@ export const OWNER_JS = `
     if(nFail.hidden!==!bad.length) nFail.hidden=!bad.length;   /* R4: written only when it differs, as the stock's tick redraws the lead */
     if(!bad.length) return;
     if(!nRetry){
-      nFail.textContent=''; nFail.appendChild(el('p','nfail__what'));
-      nRetry=pill(['Retry','need.retry']); nRetry.addEventListener('click', function(){ nRetry.disabled=true; nRetry.textContent='Reading.'; readNeeds(true); });
+      nFail.textContent=''; nFail.appendChild(amb.node(amb.glyph('info'))); nFail.appendChild(el('span','nfail__what'));
+      nRetry=ambBtn(pill(['Retry','need.retry']),true); nRetry.addEventListener('click', function(){ nRetry.disabled=true; nRetry.textContent='Reading.'; readNeeds(true); });
       nFail.appendChild(nRetry);
     }
-    var fw='Couldn\\'t read '+andList(bad)+'.'; if(nFail.firstChild.textContent!==fw) nFail.firstChild.textContent=fw;
+    var fw='Couldn\\'t read '+andList(bad)+'.'; var fwn=nFail.querySelector('.nfail__what'); if(fwn.textContent!==fw) fwn.textContent=fw;
     if(!needsReading){ if(nRetry.disabled) nRetry.disabled=false; if(nRetry.textContent!=='Retry') nRetry.textContent='Retry'; }
   }
   /* 22 OCT 2026 (canvas Needs you): THE LEAD IS ONE INSIGHT. What waits on his tap in money, summed off the cards that wait on a money tap of his (a payment
@@ -8140,7 +8204,7 @@ export const OWNER_JS = `
       if(!group.length) return;
       /* 22 Oct 2026 (his comment, "doesn't have to be collapsible"): every group stands open under its one word, with no count */
       var box=el('section','ngroup'); box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]);
-      var h=el('h2','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]); h.setAttribute('data-sev', s[0]);
+      var h=el('h2','amb-section nsev', s[1]); h.setAttribute('data-sev', s[0]);
       box.appendChild(h); nlist.appendChild(box);
       group.forEach(function(i){ box.appendChild(i.make()); });
     });
@@ -8148,7 +8212,7 @@ export const OWNER_JS = `
     if(practiceList.length){
       var pb=el('details','nfold'); pb.setAttribute('data-sev','practice'); if(nFoldOpen.practice) pb.open=true;
       pb.addEventListener('toggle', function(){ nFoldOpen.practice=pb.open; });
-      var ph=el('summary','salt-eyebrow salt-eyebrow--mist nsev','Practice: '+practiceList.length); ph.setAttribute('data-sev','practice'); ph.setAttribute('data-act','need.fold.practice');
+      var ph=el('summary','amb-section nsev','Practice: '+practiceList.length); ph.setAttribute('data-sev','practice'); ph.setAttribute('data-act','need.fold.practice');
       pb.appendChild(ph); practiceList.forEach(function(i){ pb.appendChild(i.make()); }); nlist.appendChild(pb);
     }
     drawNeedOpen(false);
@@ -8158,20 +8222,20 @@ export const OWNER_JS = `
      22 Oct 2026 (canvas Needs you): the count stands beside the word on its tab, and a kind with nothing at all is dimmed and cannot be chosen. */
   function drawKindCounts(items){
     var n={all:0}, have={all:1}, ready=needsReady();
-    items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
+    items.forEach(function(i){ have[i.kind]=1; if(i.practice||i.sev==='watch') return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
     [].forEach.call(document.querySelectorAll('.nchips button'), function(b){
-      var k=b.getAttribute('data-chip'), c=b.querySelector('.nktab__n');
-      if(!c){ c=el('span','nktab__n'); b.appendChild(c); }
+      var k=b.getAttribute('data-chip'), c=b.querySelector('.nkopt__n');
+      if(!c){ c=el('span','amb-segment__count nkopt__n'); b.appendChild(c); }
       var said=ready?String(n[k]||0):'';
       if(c.textContent!==said) c.textContent=said;
       var none=ready&&!have[k];
-      if(b.disabled!==none) b.disabled=none;
+      if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }
     });
   }
   /* the chosen kind's tab: selected, and the Nav bar's active link */
   function kindMark(){
     [].forEach.call(document.querySelectorAll('.nchips button'), function(x){
-      var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-selected', on?'true':'false'); x.classList.toggle('salt-nav__link--active', on);
+      var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-pressed', on?'true':'false');
     });
   }
   /* 21 Oct 2026 (P7): THE GLANCE heads Needs you. 22 Oct 2026 (canvas Needs you): three single-line KPI tiles, each a link to Orders. Ready (brass): the
@@ -8198,14 +8262,14 @@ export const OWNER_JS = `
     if(g.getAttribute('data-sig')===sig) return;
     g.setAttribute('data-sig',sig); g.textContent='';
     tiles.forEach(function(t){
-      var a=el('a','salt-kpi salt-kpi--line salt-kpi--'+t[4]+' nkpi'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
-      a.appendChild(el('span','salt-kpi__label',t[2]));
+      var a=el('a','amb-tile nkpi'); a.href=t[0]; a.setAttribute('data-glance',t[1]); a.setAttribute('data-act','need.glance.'+t[1]);
+      a.appendChild(el('span','amb-tile__label',t[2]));
+      a.appendChild(el('span','amb-tile__figure',t[3]));
       if(t[5]!=null){
         a.classList.add('nkpi--owed'); a.setAttribute('aria-label',t[2]+', '+t[3]+': '+t[6]+' paid of '+t[7]+' agreed');
-        var m=el('span','salt-meter salt-meter--verdigris'), tr=el('span','salt-meter__track'), f=el('span','salt-meter__fill');
-        m.setAttribute('aria-hidden','true'); f.style.setProperty('--salt-fill',String(t[5])); tr.appendChild(f); m.appendChild(tr); a.appendChild(m);
+        var m=el('progress','amb-meter'); m.max=100; m.value=t[5]; m.setAttribute('aria-hidden','true'); a.appendChild(m);
+        a.appendChild(el('span','amb-tile__delta amb-muted',t[6]+' paid of '+t[7]));
       }
-      a.appendChild(el('span','salt-kpi__value',t[3]));
       g.appendChild(a);
     });
   }
@@ -8236,7 +8300,7 @@ export const OWNER_JS = `
      out. Read with the tiles and again on each tick of the Needs you poll, so a re-seed shows within the poll; a failed read leaves the tiles to say so. */
   /* 04 Nov 2026 (his four steps): the Counter's words and the design system's four light colours as chips, worst first */
   var STOCK_WORD={green:'Available',yellow:'Selling fast',amber:'Low on stock',red:'Out of stock'}, STOCK_RANK={red:0,amber:1,yellow:2,green:3},
-    STOCK_TONE={green:'verdigris',yellow:'amber',amber:'orange',red:'ember'};
+    STOCK_TONE={green:'pos',yellow:'',amber:'warn',red:'neg'};   /* 16 Nov 2026: Ambient's tones; Selling fast plain, with its word */
   /* a figure of the table: up to two places, a minus sign under nought, no unit (the head says Units) */
   function stockFig(n){ var v=Math.round((+n||0)*100)/100; return (v<0?'\u2212':'')+Math.abs(v).toLocaleString('en-MY',{maximumFractionDigits:2}); }
   function drawStockBooks(){
@@ -8258,43 +8322,30 @@ export const OWNER_JS = `
     if(s.hidden) s.hidden=false;
     if(s.getAttribute('data-sig')===sig) return;
     s.setAttribute('data-sig',sig); s.textContent='';
-    var head=el('div','nstock__head'), h=el('h2','salt-eyebrow salt-eyebrow--copper','Stock by book');
+    /* 16 Nov 2026 (the move to Ambient): ONE TABLE, which stands as labelled lines on a phone (Ambient's stack table) and in columns from 720px: the book's
+       chip (its hue on the dot, its name in ink), the light as a chip with its dot and word, then the figures, the meter of what is agreed of the shelf, the
+       cover and the next lot. */
+    var h=el('h2','amb-section','Stock by book'); h.setAttribute('data-head','');
     if(glanceStock.today) h.title='As measured on '+glanceDay(glanceStock.today);
-    head.appendChild(h); head.appendChild(el('span','salt-status salt-status--mist','Units'+(glanceStock.today?' · measured '+glanceDay(glanceStock.today):'')));
-    s.appendChild(head);
-    var chipOf=function(r){ return r.light?el('span','salt-status salt-status--'+STOCK_TONE[r.light],STOCK_WORD[r.light]):null; };
-    var meterOf=function(r,line){
-      var m=el('div','salt-meter'+(r.ember?' salt-meter--ember':'')), tr=el('div','salt-meter__track'), f=el('div','salt-meter__fill');
-      if(line){ var ln=el('div','salt-meter__line'), a=el('span',null,'Agreed '), b=el('span',null,'Free ');
-        a.appendChild(el('b',null,r.agreed)); a.appendChild(document.createTextNode(' of '+r.shelf)); b.appendChild(el('b',null,r.free)); ln.appendChild(a); ln.appendChild(b); m.appendChild(ln); }
-      else m.setAttribute('aria-hidden','true');
-      f.style.setProperty('--salt-fill',String(r.fill)); tr.appendChild(f); m.appendChild(tr); return m;
-    };
-    /* a phone: a row a book */
-    var list=el('div','salt-glass-card salt-glass-card--radius-lg nstock__list');
-    rows.forEach(function(r){
-      var row=el('div','nstock__row'), top=el('div','nstock__top'), who=el('span','nstock__who'), cv=el('span','nstock__cover','Cover '), lot=el('div','nstock__lot','Next lot ');
-      row.setAttribute('data-book',r.p); who.appendChild(productTag(r.p)); var c=chipOf(r); if(c) who.appendChild(c);
-      cv.appendChild(el('b',null,r.cover)); top.appendChild(who); top.appendChild(cv); row.appendChild(top);
-      row.appendChild(meterOf(r,true)); lot.appendChild(el('b',null,r.lot)); row.appendChild(lot);
-      list.appendChild(row);
-    });
-    s.appendChild(list);
-    /* from 860px: the plain table */
-    var wrap=el('div','salt-glass-card salt-glass-card--radius-lg nstock__table'), tb=el('table','salt-table salt-table--plain'), cg=el('colgroup'), th=el('thead'), hr=el('tr'), bd=el('tbody');
+    h.appendChild(el('span','amb-section__note','Units'+(glanceStock.today?' \u00b7 measured '+glanceDay(glanceStock.today):'')));
+    s.appendChild(h);
+    var chipOf=function(r){ return r.light?amb.node('<span class="amb-chip'+(STOCK_TONE[r.light]?' amb-chip--'+STOCK_TONE[r.light]:'')+'"><span class="amb-chip__dot"></span>'+esch(STOCK_WORD[r.light])+'</span>'):null; };
+    var tb=el('table','amb-table amb-table--stack'), th=el('thead'), hr=el('tr'), bd=el('tbody');
     tb.appendChild(el('caption','sr','Stock by book, worst first'));
-    [12,17,9,10,10,11,9,22].forEach(function(w){ var c=el('col'); c.style.setProperty('width',w+'%'); cg.appendChild(c); }); tb.appendChild(cg);
-    [['Book',1],['Light',1],['Shelf'],['Agreed'],['Free'],['Of shelf',1],['Cover'],['Next lot',1]].forEach(function(x){ var c=el('th',x[1]?'salt-table__left':null,x[0]); c.setAttribute('scope','col'); hr.appendChild(c); });
+    var cols=[['Book'],['Light'],['Shelf',1],['Agreed',1],['Free',1],['Of shelf'],['Cover',1],['Next lot']];
+    cols.forEach(function(x){ var c=el('th',x[1]?'is-num':null,x[0]); c.setAttribute('scope','col'); hr.appendChild(c); });
     th.appendChild(hr); tb.appendChild(th);
     rows.forEach(function(r){
-      var tr=el('tr'), b=el('th','salt-table__left'); tr.setAttribute('data-book',r.p); b.setAttribute('scope','row'); b.appendChild(productTag(r.p)); tr.appendChild(b);
-      var lc=el('td','salt-table__left'), c=chipOf(r); if(c) lc.appendChild(c); tr.appendChild(lc);
-      tr.appendChild(el('td',null,r.shelf)); tr.appendChild(el('td',null,r.agreed)); tr.appendChild(el('td',r.neg?'nfree--neg':null,r.free));
-      var mc=el('td','salt-table__left'); mc.appendChild(meterOf(r,false)); tr.appendChild(mc);
-      tr.appendChild(el('td',null,r.cover)); tr.appendChild(el('td','salt-table__left',r.lot));
+      var tr=el('tr'), cell=function(label,cls,text){ var td=el('td',cls,text); td.setAttribute('data-label',label); tr.appendChild(td); return td; };
+      tr.setAttribute('data-book',r.p);
+      cell('Book').appendChild(nBook(r.p));
+      var lc=cell('Light'), c=chipOf(r); if(c) lc.appendChild(c);
+      cell('Shelf','is-num',r.shelf); cell('Agreed','is-num'+(r.ember?' amb-neg':''),r.agreed); cell('Free','is-num'+(r.neg?' amb-neg nfree--neg':''),r.free);
+      var mc=cell('Of shelf'), m=el('progress','amb-meter'); m.max=100; m.value=r.fill; m.setAttribute('aria-label','Agreed '+r.agreed+' of '+r.shelf); mc.appendChild(m);
+      cell('Cover','is-num',r.cover); cell('Next lot',null,r.lot);
       bd.appendChild(tr);
     });
-    tb.appendChild(bd); wrap.appendChild(tb); s.appendChild(wrap);
+    tb.appendChild(bd); s.appendChild(tb);
   }
   /* a kind chosen from its tab (22 Oct 2026: Jump to is gone, every kind is in view) */
   function nPick(k){ nKind=k; kindMark(); drawNeeds(); }
@@ -8695,7 +8746,7 @@ export const OWNER_JS = `
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
     var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; } showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
-    if(k){ nPick(k.getAttribute('data-chip')); return; }
+    if(k){ if(k.getAttribute('aria-disabled')!=='true') nPick(k.getAttribute('data-chip')); return; }
     var t=ev.target.closest('button[data-part]');
     /* 2 Nov 2026: the Accounts tab, tapped while an account is open, returns to the list, as the way back does */
     if(t&&aOpen&&t.parentNode.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);

@@ -41,7 +41,7 @@ export async function run({ ok, pageWork }) {
     /* 4 */
     const offer = () => d.querySelector('#nlist [data-need="f:ord-p4"]');
     const posts = () => p.wire.filter((x) => /\/all\/maker\/orders\/ord-p4\/withdraw/.test(x)).length;
-    ok(!!offer() && t(offer().querySelector(".salt-action__kind")).startsWith("Offer") && !!byAct(offer(), "need.withdraw") && t(byAct(offer(), "need.withdraw")) === "Withdraw"
+    ok(!!offer() && t(offer().querySelector(".nkind")).startsWith("Offer") && !!byAct(offer(), "need.withdraw") && t(byAct(offer(), "need.withdraw")) === "Withdraw"
       && !d.querySelector('#nlist [data-need="o:ord-p4"]'), "an offer waiting on their yes is one Pending card with Withdraw, and no Agree card");
     await click(byAct(offer(), "need.withdraw"));
     ok(/^Take back your offer of RM [0-9,.]+ to CX1-ZED\?$/.test(t(offer().querySelector(".nask"))) && posts() === 0, "Withdraw asks once on the card and sends nothing yet: " + t(offer().querySelector(".nask")));

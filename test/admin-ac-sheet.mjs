@@ -27,7 +27,7 @@ export async function run({ ok, pageWork }) {
     /* 3 */
     await click(byAct(d, "nav.needs"));
     const n1 = d.querySelector('#nlist [data-need="o:ord-s1"]');
-    const said = n1 && n1.querySelector(".need-tap") ? n1.querySelector(".need-tap").getAttribute("aria-label") : "", fig = n1 ? t(n1.querySelector(".nfig")) : "";
+    const said = n1 && n1.querySelector(".need-tap") ? n1.querySelector(".need-tap").getAttribute("aria-label") : "", fig = n1 ? t(n1.querySelector(".nfig .amb-stat__value")) : "";
     ok(!!n1 && /2 orders on one sheet/.test(said) && fig === "RM 150" && !d.querySelector('#nlist [data-need="o:ord-s2"]') && !!d.querySelector('#nlist [data-need="o:ord-s3"]'),
       "Needs you shows one card for the sheet, saying how many and the sum of both orders, none for its second order, and the lone order its own: " + said + " | " + fig);
     /* 1 */

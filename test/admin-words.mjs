@@ -382,10 +382,11 @@ export async function run({ ok, pageWork }) {
     "the report card's book headings are the typed Product tag, the name in its hue with its dot, and no drawn mark: " + JSON.stringify(heads));
     /* 22 Oct 2026: on Needs you a book is its typed Product tag, the name in its hue with its dot, and no drawn mark */
     byAct(d, "nav.needs").click(); await work.quiet();
-    const tags = [...d.querySelectorAll("#nlist section .salt-producttag")].map((x) => [x.className, x.textContent, !!x.querySelector(".salt-producttag__dot")]);
-    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && new RegExp("^salt-producttag salt-producttag--([a-z]+) ntag$").test(c) && w.toLowerCase() === c.split("--")[1].split(" ")[0] && /^[A-Z][a-z]+$/.test(w))
+    /* 16 Nov 2026, the move to Ambient (place F): on Needs you a book is Ambient's kind chip, the name in ink with its hue on the dot, and no drawn mark */
+    const tags = [...d.querySelectorAll("#nlist section .amb-chip[class*='amb-kind-']")].map((x) => [x.className, x.textContent, !!x.querySelector(".amb-chip__dot")]);
+    ok(tags.length >= 3 && tags.every(([c, w, dot]) => dot && /^amb-chip amb-kind-[1-6]$/.test(c) && /^[A-Z][a-z]+$/.test(w))
       && !d.querySelector("#nlist section svg.psym"),
-      "Needs you names a book by its typed Product tag, Salt in its own hue, and draws no mark: " + JSON.stringify(tags.slice(0, 3)));
+      "Needs you names a book by its kind chip, Salt with its hue on the dot, and draws no mark: " + JSON.stringify(tags.slice(0, 3)));
   } finally { b.w.close(); }
 
   /* 7. THE WHOLE PAGE, DRAWN: NO BOOK NAME IN ANY WORD, ARIA NAME OR TITLE, AND NO SHAPE WORD DRAWN (his word of 12 Oct 2026). The names are read off the book (ledger/book.json PRODUCTS),
@@ -411,7 +412,7 @@ export async function run({ ok, pageWork }) {
     const rowLabels = new Set([...all.d.querySelectorAll(".ordcard[aria-label]")].map((e) => e.getAttribute("aria-label")));
     const named = seenWords.filter(([t]) => BOOK_NAMED.test(t) && !rowLabels.has(t)).map(([t]) => t.slice(0, 80));
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
-    const typed = [...all.d.body.querySelectorAll(".salt-producttag")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.className.split("--")[1].split(" ")[0], x.textContent.trim()]);
+    const typed = [...all.d.body.querySelectorAll(".salt-producttag, .amb-chip[class*='amb-kind-']")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.classList.contains("salt-producttag") ? x.className.split("--")[1].split(" ")[0] : x.textContent.trim().toLowerCase(), x.textContent.trim()]);
     ok(seenWords.length > 400 && named.length === 0 && typed.length > 0 && typed.every(([k, w]) => k === w.toLowerCase() && BOOK_NAMES.includes(k)),
       "no book is named anywhere on Salt Admin, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "), but in its typed Product tag, which names its own book: "
       + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)) + "; " + typed.length + " tags");

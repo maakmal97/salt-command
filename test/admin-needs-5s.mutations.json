@@ -14,5 +14,5 @@
  {"name":"every tick rewrites the bar","file":"stmt/owner.js","find":"if(lv.getAttribute('data-on')===String(on)) return;","replace":"if(false) return;"},
  {"name":"every tick rewrites the hours","file":"stmt/owner.js","find":"    if(hrs.getAttribute('data-txt')!==txt+tone){","replace":"    if(true){"},
  {"name":"a quiet tick sets the banner again","file":"stmt/owner.js","find":"    if(nFail.hidden!==!bad.length) nFail.hidden=!bad.length;","replace":"    nFail.hidden=!bad.length;"},
- {"name":"the same failure writes its words again","file":"stmt/owner.js","find":"if(nFail.firstChild.textContent!==fw) nFail.firstChild.textContent=fw;","replace":"nFail.firstChild.textContent=fw;"}
+ {"name":"the same failure writes its words again","file":"stmt/owner.js","find":"var fwn=nFail.querySelector('.nfail__what'); if(fwn.textContent!==fw) fwn.textContent=fw;","replace":"nFail.querySelector('.nfail__what').textContent=fw;"}
 ]
