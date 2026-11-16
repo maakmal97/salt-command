@@ -1,0 +1,16 @@
+[
+ {"name":"A1 a held code still waits","file":"src/accounts-wanted.js","find":"!Number.isFinite(at) || now.getTime() - at > DAY_MS || held.has(code)","replace":"!Number.isFinite(at) || now.getTime() - at > DAY_MS"},
+ {"name":"A1 a bucket waits","file":"src/accounts-wanted.js","find":"!code || /-R$/.test(code) ||","replace":"!code ||"},
+ {"name":"A1 a supplier waits","file":"src/accounts-wanted.js","find":" || !STATEMENT_KINDS.includes(row.kind)) continue;","replace":") continue;"},
+ {"name":"A1 an old approval waits for ever","file":"src/accounts-wanted.js","find":" || now.getTime() - at > DAY_MS ||","replace":" ||"},
+ {"name":"A2 the first rung at once","file":"src/accounts-wanted.js","find":"export const ACCOUNT_RUNGS_MIN = [11, 20, 40];","replace":"export const ACCOUNT_RUNGS_MIN = [0, 20, 40];"},
+ {"name":"A2 the ask before its rung mark","file":"src/accounts-wanted.js","find":"  await env.SALT_QUEUE.put(ACCOUNT_WANTED_KEY, JSON.stringify({ newest, tries: tries + 1, at: now.toISOString() }));\n  await want(\"account for \" + codes.join(\", \"));","replace":"  await want(\"account for \" + codes.join(\", \"));\n  await env.SALT_QUEUE.put(ACCOUNT_WANTED_KEY, JSON.stringify({ newest, tries: tries + 1, at: now.toISOString() }));"},
+ {"name":"A2 rings for ever","file":"src/accounts-wanted.js","find":"  if (tries >= ACCOUNT_RUNGS_MIN.length) return { codes, tries, silent: true };\n","replace":"  if (tries >= ACCOUNT_RUNGS_MIN.length) return { codes, tries, silent: true, ...(await want(\"account for \" + codes.join(\", \")), {}) };\n"},
+ {"name":"A2 asks every minute","file":"src/accounts-wanted.js","find":"  if (age < ACCOUNT_RUNGS_MIN[tries]) return { codes, tries };\n","replace":""},
+ {"name":"A3 a newer approval does not restart","file":"src/accounts-wanted.js","find":"const tries = mark && typeof mark.newest === \"string\" && newest <= mark.newest ? (mark.tries || 0) : 0;","replace":"const tries = mark ? (mark.tries || 0) : 0;"},
+ {"name":"A4 any change of the newest restarts","file":"src/accounts-wanted.js","find":"const tries = mark && typeof mark.newest === \"string\" && newest <= mark.newest ? (mark.tries || 0) : 0;","replace":"const tries = mark && mark.newest === newest ? (mark.tries || 0) : 0;"},
+ {"name":"A5 the top-up never waits","file":"tools/stmt-account.mjs","find":"  return codes.length ? \"refused: \"","replace":"  return false ? \"refused: \""},
+ {"name":"A6 the pool sorts by username alone","file":"tools/stmt-pool.mjs","find":"a.batch - b.batch || (a.u","replace":"0 || (a.u"},
+ {"name":"A6 a top-up takes batch 1 again","file":"tools/stmt-account.mjs","find":"  return top + 1;\n}","replace":"  return 1;\n}"},
+ {"name":"A6 an old spare reads as batch 1","file":"tools/stmt-pool.mjs","find":"Number.isInteger(rec.batch) ? rec.batch : 0 }","replace":"Number.isInteger(rec.batch) ? rec.batch : 1 }"}
+]

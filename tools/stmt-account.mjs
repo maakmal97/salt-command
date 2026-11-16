@@ -28,7 +28,7 @@
  *
  *   node tools/stmt-account.mjs --check    say who has no account, write nothing
  *   node tools/stmt-account.mjs --mint     mint one for each of them
- *   node tools/stmt-account.mjs --pool     top the pool of spare accounts up to ten free (D15);
+ *   node tools/stmt-account.mjs --pool     top the pool of spare accounts up to fifty free (D15);
  *                                          --count N for another figure, --check to write nothing
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
@@ -37,6 +37,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { contentKey, newPassword, newUsername, makeVerifier, wrapKey, unwrapKey, encryptText, encryptWith, decryptWith, userFor, usersJson, USERNAME_RE } from "./stmt-crypto.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { newestIssue, freeSpares, POOL_SIZE, POOL_LOW } from "./stmt-pool.mjs";
+import { spawnSync } from "node:child_process";
+import { d1Rows, commandArgs } from "./d1json.mjs";
+import { againIfLapsed } from "./cloudflare.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -287,6 +290,14 @@ export async function mintAccounts(root, opts = {}) {
    every time and a second run mints nothing. A spare is a username no code holds and no record
    carries, sealed exactly as an account is but around an empty bundle, marked `spare: true`. Its plain
    password is filed under the USERNAME in _passwords.json, a spare having no code yet. */
+/* the batch a top-up's spares carry: one past every batch in the issue, a spare from before 17 Nov 2026 being batch 0 */
+export function nextBatch(kvDir) {
+  let top = 0;
+  for (const f of readdirSync(kvDir).filter((x) => x.endsWith(".json"))) {
+    try { const b = JSON.parse(readFileSync(join(kvDir, f), "utf8")).batch; if (Number.isInteger(b) && b > top) top = b; } catch (e) { /* not a record */ }
+  }
+  return top + 1;
+}
 export async function mintPool(root, opts = {}) {
   const here = resolve(root);
   const count = opts.count == null ? POOL_SIZE : opts.count;
@@ -294,7 +305,7 @@ export async function mintPool(root, opts = {}) {
   const usersFile = join(here, "_users.json");
   const users = existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {};
   const free = freeSpares(here, users).length;
-  const out = { issue, free, minted: [], wrote: 0 };
+  const out = { issue, free, minted: [], wrote: 0, batch: nextBatch(kvDir) };
   const taken = new Set(Object.values(users).concat(kvNames));
   const pwFile = join(here, issue, "_passwords.json");
   const passwords = existsSync(pwFile) ? JSON.parse(readFileSync(pwFile, "utf8")) : {};
@@ -305,7 +316,7 @@ export async function mintPool(root, opts = {}) {
     out.minted.push(u);
     if (opts.check) continue;
     const pw = newPassword();
-    const rec = await sealRecord(key, master, u, pw, { v: 1, issued: issueDate, statements: [] }, issueDate, { spare: true });
+    const rec = await sealRecord(key, master, u, pw, { v: 1, issued: issueDate, statements: [] }, issueDate, { spare: true, batch: out.batch });
     writeFileSync(join(kvDir, u + ".json"), JSON.stringify(rec) + "\n", "utf8");
     passwords[u] = pw;
     out.wrote++;
@@ -315,6 +326,25 @@ export async function mintPool(root, opts = {}) {
   return out;
 }
 
+/* A TOP-UP WAITS FOR THE EXPORT (17 Nov 2026). With the Book as the source an Add ID is bound by every publish from the export's watermark
+   (tools/roster-export.mjs), to "the next" free spare, sorted by username, against git's _users.json; git learns the binding only at the day's
+   export, which marks that roster draft committed. A spare minted in between that sorts ahead of the one it took would make the next publish
+   bind that customer to a different username, and the account they were handed would stop opening. So the pool is not topped up while an
+   approved roster draft is uncommitted, and a D1 that will not answer refuses too: fail closed. This is the SECOND lock (Fable's re-check of
+   17 Nov 2026: D1 is read at mint time, the hazard is git's state at push time); the first is that a top-up can never change "the next" spare,
+   since each new spare carries a batch after every spare before it and freeSpares sorts by batch first (tools/stmt-pool.mjs). */
+export function poolHold(rows) {
+  const codes = (rows || []).map((r) => { try { return JSON.parse(r.row || "{}").code; } catch (e) { return null; } }).filter(Boolean);
+  return codes.length ? "refused: " + codes.join(", ") + (codes.length === 1 ? " is" : " are")
+    + " booked but not yet in git's statements/_users.json, and a spare minted now could move " + (codes.length === 1 ? "its" : "their")
+    + " account to another username. Wait for the day's export (after 00:23 MYT), or dispatch it: gh workflow run cloud-commit.yml -f export=true, then git pull and run this again" : "";
+}
+function unexportedRoster() {
+  const sql = "SELECT row FROM draft WHERE status='approved' AND committed_at IS NULL AND collection='roster'";
+  const r = againIfLapsed(() => spawnSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)], { cwd: REPO, shell: true, encoding: "utf8" }));
+  return d1Rows({ code: r.status, out: r.stdout || "" });
+}
+
 async function main() {
   const check = process.argv.includes("--check");
   const mint = process.argv.includes("--mint");
@@ -322,6 +352,12 @@ async function main() {
     const at = process.argv.indexOf("--count");
     const count = at >= 0 ? Number(process.argv[at + 1]) : POOL_SIZE;
     if (!Number.isInteger(count) || count < 0) { console.error("--count takes a whole number of spare accounts"); process.exit(2); }
+    if (!check) {
+      const d = unexportedRoster();
+      if (d.error) { console.error("refused: D1 did not say whether an Add ID waits for the export (" + d.error + "); run it again"); process.exit(1); }
+      const held = poolHold(d.rows);
+      if (held) { console.error(held); process.exit(1); }
+    }
     const p = await mintPool(join(REPO, "statements"), { count, check });
     console.log((check ? "would mint " : "minted ") + p.minted.length + " spare account(s) into " + p.issue
       + "; the pool holds " + (check ? p.free + " free, " + (p.free + p.minted.length) + " after a run" : p.free + " free"));

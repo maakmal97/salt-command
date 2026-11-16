@@ -90,13 +90,13 @@ in the newest issue's `_kv` marked `spare: true`, free while no code in `_users.
 username (`tools/stmt-pool.mjs`). The publish writes it like any record and so never retires it,
 marks it `spare` in the clear as it marks `assoc`, and lists it nowhere: no sheet row, no roster line,
 no count. The site's door answers a spare with its one refusal, his master included, until a code holds it.
-**The laptop mints them**, never CI: `node tools/stmt-account.mjs --pool` tops the pool up to ten free
+**The laptop mints them**, never CI: `node tools/stmt-account.mjs --pool` tops the pool up to fifty free (ten until 17 Nov 2026)
 (`--count N` for another figure, `--check` to write nothing) and, as `--mint` does, refuses without a
 master that unwraps a record and a key that opens one that is not a spare, `$env:STMT_KEY` winning over
 the file. Each is sealed as an account is, around an empty bundle, its password under the master as
 `pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet; once
 bound it stays there, and a `make_statements` retry and Send look under the username after the code.
-`tools/update.mjs` warns with that line when fewer than three are free.
+`tools/update.mjs` warns with that line when fewer than ten are free.
 **The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its
 username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
 publish in the same run seals the live statement and price list into it, so a walk-in signs in within
@@ -2404,8 +2404,8 @@ none (an Amend of one of them restores it); each line agreed wakes the customer 
 **Walk-in ready** (plan version 4, his answer E: everyone has an account, a walk-in account always ready). At the stall he adds the customer at
 Add ID (name and locality, his passphrase); the fold binds the next free spare account (D15), the run's publish opens it, and Show a code signs
 their phone in. The publish counts the free spares into the `sheet` record (`spares`, a number and no username), `/all/sheet` answers it, and
-Salt Admin's Needs you shows one FYI card, Accounts, when fewer than `POOL_LOW` (3) are left; the fold says the same after a binding that leaves
-fewer (`poolNote`), with the line that makes `POOL_SIZE` (10) again. **Record's new sale is retired** (his answer of 03 Nov 2026, "Remove it
+Salt Admin's Needs you shows one FYI card, Accounts, when fewer than `POOL_LOW` (10) are left; the fold says the same after a binding that leaves
+fewer (`poolNote`), with the line that makes `POOL_SIZE` (50) again. **Record's new sale is retired** (his answer of 03 Nov 2026, "Remove it
 now"): with no row chosen, Record's Sale or purchase form records a purchase alone and says a new sale is placed on their own page (Order for
 them, with Handed over and paid now); a sale's row still changes there; Gift, Redeem, loans and the stock count stay. The server's
 `/inputs/sale` road stays, unreached from Salt Admin, as recovery, as the raw queue does.

@@ -1,10 +1,11 @@
 /* test/order-stream-v6.mjs: plan version 4, part 4a (his answer E, everyone has an account: a walk-in account always ready). A walk-in takes the
- * next free spare account at Add ID (D15, tools/fold.mjs), so Salt Admin's Needs you says when fewer than three are left (tools/stmt-pool.mjs
+ * next free spare account at Add ID (D15, tools/fold.mjs), so Salt Admin's Needs you says when fewer than ten are left (three until 17 Nov 2026) (tools/stmt-pool.mjs
  * POOL_LOW), as the last publish counted them (the `sheet` record's `spares`, read through /all/sheet). FYI, no button. Drawn by the maker
  * harness (test/maker-act.mjs). The publish's count is checked in section "S14 14.1" and the Worker's answer in "v687" (test/verify.mjs), their
  * mutations in test/order-stream-v6-publish.mutations.json and test/order-stream-v6-worker.mutations.json, run against those sections. */
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
-import { POOL_LOW } from "../tools/stmt-pool.mjs";
+import { readFileSync } from "node:fs";
+import { POOL_LOW, POOL_SIZE } from "../tools/stmt-pool.mjs";
 import { poolNote } from "../tools/fold.mjs";
 
 const J = JSON.stringify;
@@ -20,13 +21,17 @@ export async function run({ ok, pageWork }) {
         buttons: c.querySelectorAll("button.salt-pill, button.nbtn").length } : null;
     } finally { p.w.close(); }
   };
-  const two = await seen(2), none = await seen(0), three = await seen(3), old = await seen(undefined);
+  const two = await seen(2), none = await seen(0), nine = await seen(9), ten = await seen(10), old = await seen(undefined);
   ok(!!two && two.sev === "watch" && two.who === "2 ready accounts left" && /^Accounts/.test(two.kind) && two.buttons === 0,
     "W1 with two ready accounts left, Needs you says so as one FYI card, Accounts, with nothing to tap: " + J(two));
   ok(!!none && none.who === "No ready accounts left", "W2 with none left it says so: " + J(none));
-  ok(!three && !old && POOL_LOW === 3, "W3 at three or more, or from a publish that counted none, no card: " + J([three, old]));
-  ok(/2 ready accounts left after this Add ID: node tools\/stmt-account\.mjs --pool on the laptop makes 10 again/.test(poolNote(1, 2)) && poolNote(0, 2) === "" && poolNote(1, 3) === "",
-    "W4 the fold says so when its binding leaves fewer than three, with the line that makes ten again; nothing bound, or three left, says nothing: " + J([poolNote(1, 2), poolNote(0, 2), poolNote(1, 3)]));
+  ok(!!nine && nine.who === "9 ready accounts left" && !ten && !old && POOL_LOW === 10,
+    "W3 at nine a card, at ten or more, or from a publish that counted none, no card: " + J([nine, ten, old]));
+  const ownerLow = /\n  var POOL_LOW=(\d+);\n/.exec(readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8"));
+  ok(!!ownerLow && Number(ownerLow[1]) === POOL_LOW && POOL_SIZE === 50,
+    "W5 Salt Admin's low mark is the pool's own (two copies, one figure), and the pool is fifty: " + J([ownerLow && ownerLow[1], POOL_LOW, POOL_SIZE]));
+  ok(/2 ready accounts left after this Add ID: node tools\/stmt-account\.mjs --pool on the laptop makes 50 again/.test(poolNote(1, 2)) && poolNote(0, 2) === "" && poolNote(1, 10) === "",
+    "W4 the fold says so when its binding leaves fewer than ten, with the line that makes fifty again; nothing bound, or ten left, says nothing: " + J([poolNote(1, 2), poolNote(0, 2), poolNote(1, 10)]));
 
   /* R1 to R3, part 4b (his answer of 03 Nov 2026, "Remove it now"): Record's form records no new sale; a sale's row still changes there */
   const rows = (j) => { j.catalog.rows = [{ rid: "row-1", party: "CX1-ZED", product: "salt", date: "2026-09-01", qty: 2, total: 200, direction: "SELL", cash: 50, movedUnits: 1, delivery: 0, handover: "collected" }]; return j; };
