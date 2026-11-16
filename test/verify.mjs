@@ -22971,8 +22971,10 @@ await (async () => {
 
     /* the page: Accounts, the account's card, Show a code */
     const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
-    const seen = { handover: null, copied: 0, shared: 0 };
+    const seen = { handover: null, copied: 0, shared: 0, modal: 0 };
     win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      /* 17 Nov 2026, the move to Ambient (the moderator's three): jsdom has no showModal, so a stand-in counts the page's modal opens */
+      w.HTMLDialogElement.prototype.showModal = function () { seen.modal++; this.setAttribute("open", ""); };
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: async () => { seen.copied++; } } });
       w.navigator.share = async () => { seen.shared++; };
@@ -23000,9 +23002,14 @@ await (async () => {
     /* 16 Nov 2026, the move to Ambient (the red fix): the Sheet is a native dialog (amb-sheet), its scrim the dialog's own backdrop and its close Ambient's circle */
     const sheet = () => D.querySelector("dialog.amb-sheet.ho[role=dialog]"), scrim = () => (sheet() && sheet().tagName === "DIALOG" ? sheet() : null);
     ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
-      && !!scrim() && !!sheet().querySelector("button.amb-circle[aria-label=Close]")
+      && !!sheet().querySelector("button.amb-circle[aria-label=Close]")
       && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
       "the tap opens the system's Sheet at once, saying a code is being made, with focus inside it");
+    /* 17 Nov 2026, the move to Ambient (the moderator's three): Ambient's dialog has no scrim element, so what stands behind an open sheet is the dialog opened MODAL
+       (its ::backdrop) and Ambient's own non-empty .amb-sheet::backdrop rule, which the page's own layer does not blank */
+    const bd = /[.]amb-sheet::backdrop\s*[{]([^}]*)[}]/g, bdRules = [...(html.matchAll(bd))].map((m) => m[1].trim());
+    ok(seen.modal === 1 && sheet().hasAttribute("open") && bdRules.length >= 1 && bdRules.every((r) => /background:\s*var\(--amb-scrim\)/.test(r)),
+      "behind the open sheet stands the dialog's own backdrop: it is opened modal and the served CSS gives .amb-sheet::backdrop a scrim");
     ok(await until(() => !!D.getElementById("hoC")), "and the code is drawn once it is made");
     const inp = D.getElementById("hoC"), code = inp.value;
     ok(inp.readOnly && inp.classList.contains("amb-input--code") && inp.closest(".amb-field") && /^[a-z2-9]{4} [a-z2-9]{4}$/.test(code)
@@ -40397,7 +40404,9 @@ await (async () => {
        way, Review waiting for a spot; one added, the check reads as before */
     const onSize = D.querySelector("#osheet [data-sheet-lines] .amb-row"), waits = !!(D.getElementById("oGo") && (D.getElementById("oGo").getAttribute("aria-disabled") === "true")) && !!D.getElementById("spAdd");
     if (D.getElementById("spAdd")) { spotAddTo(D, a.W, "Veloria"); if (D.getElementById("oGo")) D.getElementById("oGo").click(); }
-    ok(onSize && /2 units/.test(onSize.textContent) && waits && /Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+    ok(onSize && /2 units/.test(onSize.textContent) && waits && /Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units"
+      /* 17 Nov 2026, the move to Ambient (the moderator's three): the hero is not only found by its selector, it shows the size as its title, the book's mark and, in its own list, the place the order goes to */
+      && hero().querySelector(".amb-row__title").textContent.trim() === "2 units" && !!hero().querySelector(".amb-thumb--mark") && /Delivered to Veloria/.test(D.querySelector("#osheet .amb-settings__list").textContent) && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
       && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
       "a tap opens the sheet at the same size and way with no spot picked, and with one added the check reads today's price without the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
     D.getElementById("oPlace").click();

@@ -16,5 +16,23 @@
   "file": "stmt/page.js",
   "find": "S.q.setAttribute('data-st','q');",
   "replace": "S.q.setAttribute('data-st','qq');"
+ },
+ {
+  "name": "the check's line shows a size off by one (17 Nov 2026, the moderator's three)",
+  "file": "stmt/page.js",
+  "find": "title:unitsOf(l.q,l.unit), sub:one?'':l.placed",
+  "replace": "title:unitsOf(l.q+1,l.unit), sub:one?'':l.placed"
+ },
+ {
+  "name": "the check's line has no mark (17 Nov 2026, the moderator's three)",
+  "file": "stmt/page.js",
+  "find": "thumb:markThumb(l.product,'md'), title:unitsOf(l.q,l.unit), sub:one?'':l.placed",
+  "replace": "title:unitsOf(l.q,l.unit), sub:one?'':l.placed"
+ },
+ {
+  "name": "the check names no place (17 Nov 2026, the moderator's three)",
+  "file": "stmt/page.js",
+  "find": "tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));\n    if(c.mode==='deliver'&&(c.pin",
+  "replace": "tw('sh.deliveredTo',{p:''}):tw('sh.youCollect'));\n    if(c.mode==='deliver'&&(c.pin"
  }
 ]

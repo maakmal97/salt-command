@@ -65,6 +65,10 @@ export async function run({ ok, pageWork }) {
     ok(parseFloat(d7) >= 10.5, "D7: the Network groups' headers are at least 10.5px: " + d7);
 
     /* D8 */
+    /* 17 Nov 2026, the move to Ambient (the moderator's three): the D8 mutation ("a Noticed list says simply again", the single-order card's
+       "may simply not be due yet") is KNOWN-UNNOTICED. Its subject is no longer drawn: since v1508 noticedDraw (master line 18728) drops
+       cust:oneanddone, so the sentence lives only in the snapshot's obs and no place on the Desk shows it. The check below still guards every
+       drawn place; the mutation stays listed to say so, and is not to be counted as proved. */
     const d8 = JSON.parse(String(w.eval("(function(){var said={};VIEWS.forEach(function(v){switchTab(v.id);[v.lead].concat(v.parts).forEach(function(p){switchTab(p);var s=document.getElementById('sec-'+v.id),t=s?s.textContent:'';var m=t.match(/[^.]{0,60}\\bsimply\\b[^.]{0,30}/i);if(m)said[p]=m[0];});});return JSON.stringify(said);})()")));
     ok(Object.keys(d8).length === 0, "D8: no place on the Desk says simply: " + J(d8));
   } finally {

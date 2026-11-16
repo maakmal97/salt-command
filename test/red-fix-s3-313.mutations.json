@@ -28,5 +28,17 @@
   "file": "stmt/owner.js",
   "find": "var x=el('button','amb-circle'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close');",
   "replace": "var x=el('button','amb-circ'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close');"
+ },
+ {
+  "name": "the sheet opens with no modal call, so nothing stands behind it (17 Nov 2026, the moderator's three)",
+  "file": "stmt/page.js",
+  "find": "    try{ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }catch(e){ d.setAttribute('open',''); }\n  }\n  function sheetOpen(",
+  "replace": "    try{ d.setAttribute('open',''); }catch(e){ d.setAttribute('open',''); }\n  }\n  function sheetOpen("
+ },
+ {
+  "name": "the site layer blanks the sheet's backdrop (17 Nov 2026, the moderator's three)",
+  "file": "stmt/statement-css.js",
+  "find": "export const SITE_CSS = \"/* design/site.css:",
+  "replace": "export const SITE_CSS = \"dialog.amb-sheet::backdrop{background:none}\\n/* design/site.css:"
  }
 ]
