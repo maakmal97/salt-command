@@ -82,8 +82,17 @@ export async function run({ ok, pageWork }) {
     ok(/\.odecide__part \{ min-width: 0; margin-top: var\(--amb-space-3\); \}/.test(css), "a part of his decision stands a section gap under the Steps");
 
     /* A7 (Fable's second round, A): a queue row's code never breaks at its dash, and its sub line is one line ending in an ellipsis */
-    ok(/\.ordcard \.ocode \{ font-family: var\(--amb-font-mono\); white-space: nowrap; \}/.test(css) && /\.ordcard \.amb-row__sub \{ display: block; white-space: nowrap; text-overflow: ellipsis; \}/.test(css) && /\.ordcard > \.amb-row__trail \{ flex: 0 1 auto; flex-wrap: wrap;/.test(css),
+    ok(/\.ordcard \.ocode \{ font-family: var\(--amb-font-mono\); white-space: nowrap; \}/.test(css) && /\.ordcard \.amb-row__sub \{ display: block; white-space: nowrap; text-overflow: ellipsis; \}/.test(css) && /\.ordcard > \.amb-row__trail \{ flex: 0 0 auto; flex-direction: column; align-items: flex-end;/.test(css),
       "a queue row's customer code stays whole (its trail wraps rather than cutting it) and its sub line ends in an ellipsis on one line");
+    /* A9 (E): a queue row's trail is one column at its own width, so the sub line takes the room up to it (a wrapped row trail kept its wide basis and left about 50px empty at 1440) */
+    ok(/\.ordcard > \.amb-row__trail \{ flex: 0 0 auto; flex-direction: column; align-items: flex-end; row-gap: var\(--amb-space-1\); \}/.test(css) && !/\.ordcard > \.amb-row__trail \{[^}]*flex-wrap/.test(css),
+      "a queue row's trail is a column at its own width, never a wrapping row, so the sub line runs to it");
+    /* A10 (F): Orders' empty record pane is Shop's form, a head over a one-row card, and keeps its id and its show and hide */
+    enter(d, "orders", "todo"); await p.work.quiet();
+    const none = d.getElementById("ordnone"), ownSrc = readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8");
+    ok(!!none && none.classList.contains("amb-settings") && t(cardOf(none)) === "Choose an order." && t(none.querySelector(":scope > h3.amb-settings__head")) === "No order open" && !none.matches("p, .amb-empty")
+      && /var none=document\.getElementById\('ordnone'\); if\(none\) none\.hidden=!!e;/.test(ownSrc),
+    "Orders' empty record pane is a head over a one-row card (No order open), its id and its hiding kept");
     /* A8 (D): an unsent card's Resend is the small pill it is drawn as, its acts row not stretching it */
     ok(/\.unsent-card \.amb-task__acts > \.amb-pill \{ flex: none; max-width: none; \}/.test(css) && /aPill\(label,act,undefined,true\)/.test(readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8")),
       "Resend is a small filled pill (amb-pill--sm) at its own width, not a block");

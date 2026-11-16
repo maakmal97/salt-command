@@ -152,7 +152,7 @@
  {
   "name": "a queue row's trail may not wrap again, so a wide move pill cuts the code",
   "file": "stmt/statement-css.js",
-  "find": ".ordcard > .amb-row__trail { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: var(--amb-space-1); }",
+  "find": ".ordcard > .amb-row__trail { flex: 0 0 auto; flex-direction: column; align-items: flex-end; row-gap: var(--amb-space-1); }",
   "replace": ""
  },
  {
@@ -166,5 +166,23 @@
   "file": "stmt/owner.js",
   "find": "aPill(label,act,undefined,true);\n            if(!index) button",
   "replace": "aPill(label,act,undefined,false);\n            if(!index) button"
+ },
+ {
+  "name": "a queue row's trail wraps as a row again, leaving its sub line short",
+  "file": "stmt/statement-css.js",
+  "find": ".ordcard > .amb-row__trail { flex: 0 0 auto; flex-direction: column; align-items: flex-end; row-gap: var(--amb-space-1); }",
+  "replace": ".ordcard > .amb-row__trail { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: var(--amb-space-1); }"
+ },
+ {
+  "name": "Orders' empty pane is a loose centred line again",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-settings\" id=\"ordnone\"><h3 class=\"amb-settings__head\">No order open</h3><ul class=\"amb-settings__list\"><li><div class=\"amb-setting\"><span class=\"amb-setting__name\">Choose an order.</span></div></li></ul></div>",
+  "replace": "<p class=\"amb-empty\" id=\"ordnone\">Choose an order.</p>"
+ },
+ {
+  "name": "Orders' empty pane head says something else",
+  "file": "stmt/page.js",
+  "find": "No order open</h3>",
+  "replace": "Nothing open</h3>"
  }
 ]

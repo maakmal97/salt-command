@@ -364,7 +364,8 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 /* 17 Nov 2026 (Fable's review, A): a code never breaks at its dash or is cut when a wide move pill takes the room (the trail wraps its amount over the pill instead); the sub line stays one line and ends in an ellipsis */
 .ordcard .ocode { font-family: var(--amb-font-mono); white-space: nowrap; }
 .ordcard .amb-row__sub { display: block; white-space: nowrap; text-overflow: ellipsis; }
-.ordcard > .amb-row__trail { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: var(--amb-space-1); }
+/* 17 Nov 2026: the trail is one column (the amount over the move) at its own width, so the sub line takes every pixel up to it: a wrapped row trail kept its wide basis and left about 50px empty */
+.ordcard > .amb-row__trail { flex: 0 0 auto; flex-direction: column; align-items: flex-end; row-gap: var(--amb-space-1); }
 .omore { margin-inline-start: var(--amb-space-2); vertical-align: middle; }
 /* from 960px the two panes stand side by side; below it the one open takes the list's place and a way back stands over it */
 #ordnone[hidden] { display: none; }
