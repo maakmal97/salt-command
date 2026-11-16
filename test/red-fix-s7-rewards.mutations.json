@@ -1,0 +1,8 @@
+[
+ {
+  "name": "Rewards' lines do not stack (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var t=el('table','amb-table amb-table--stack'), th=el('thead'), tr=el('tr');",
+  "replace": "var t=el('table','amb-table'), th=el('thead'), tr=el('tr');"
+ }
+]

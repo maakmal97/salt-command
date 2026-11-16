@@ -1,0 +1,14 @@
+[
+ {
+  "name": "a row is no Ambient row (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var b=el(p.tag||'button','amb-row'+(p.meter?' amb-row--meter':''));",
+  "replace": "var b=el(p.tag||'button','amb-rw'+(p.meter?' amb-row--meter':''));"
+ },
+ {
+  "name": "a list of rows is no Ambient list (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "function hList(rows){ var ul=el('ul','amb-list amb-list--ruled');",
+  "replace": "function hList(rows){ var ul=el('ul','amb-lst amb-list--ruled');"
+ }
+]

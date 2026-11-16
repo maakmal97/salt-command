@@ -1,0 +1,44 @@
+[
+ {
+  "name": "the figure's value loses its stat class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "d.appendChild(el('span','amb-stat__value',value)); return d; }",
+  "replace": "d.appendChild(el('span','amb-stat__val',value)); return d; }"
+ },
+ {
+  "name": "a row's figure loses its amount class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "if(p.amount) tr.appendChild(el('span','amb-row__amount',p.amount));",
+  "replace": "if(p.amount) tr.appendChild(el('span','amb-row__amt',p.amount));"
+ },
+ {
+  "name": "the sheet's figure loses its tile class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__figure',value));",
+  "replace": "t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__fig',value));"
+ },
+ {
+  "name": "a line's goods and paid are not its detail (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "sub.appendChild(el('span','invd',",
+  "replace": "sub.appendChild(el('span','invx',"
+ },
+ {
+  "name": "the sheet's sum loses its value class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "r.appendChild(el('span','amb-setting__value',v)); li.appendChild(r); gl.appendChild(li); return r;",
+  "replace": "r.appendChild(el('span','amb-setting__val',v)); li.appendChild(r); gl.appendChild(li); return r;"
+ },
+ {
+  "name": "a reason that repeats the state word says it twice (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "if(w.toLowerCase().indexOf(sw.toLowerCase())===0) w=",
+  "replace": "if(false) w="
+ },
+ {
+  "name": "Home's Pay is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var pb=el('button','amb-pill amb-pill--block',tw('pay.payRm',{rm:rm(tot)}));",
+  "replace": "var pb=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('pay.payRm',{rm:rm(tot)}));"
+ }
+]

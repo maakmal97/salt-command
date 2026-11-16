@@ -1,0 +1,32 @@
+[
+ {
+  "name": "a page carries the coin's layer again (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "'\">' + SITE_STYLE + PAGE_CSS + \"</style></head>\" + BODY_OPEN",
+  "replace": "'\">' + SITE_STYLE + PAGE_CSS /* COIN_CSS */ + \"</style></head>\" + BODY_OPEN"
+ },
+ {
+  "name": "Log in is not the block pill (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "wt(\"button\", 'class=\"amb-pill amb-pill--block\" id=\"go\" type=\"submit\"', \"door.go\")",
+  "replace": "wt(\"button\", 'class=\"amb-pill\" id=\"go\" type=\"submit\"', \"door.go\")"
+ },
+ {
+  "name": "the find field is not mono (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "<input class=\"amb-input mono\" id=\"rq\" type=\"search\"",
+  "replace": "<input class=\"amb-input\" id=\"rq\" type=\"search\""
+ },
+ {
+  "name": "the state chip is no Ambient chip (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var c=el('span',(cls?cls+' ':'')+'amb-chip'+tone);",
+  "replace": "var c=el('span',(cls?cls+' ':'')+'amb-chp'+tone);"
+ },
+ {
+  "name": "Practice is no settings row (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "function sSwitchRow(label,act,key,on){ var row=el('label','amb-setting')",
+  "replace": "function sSwitchRow(label,act,key,on){ var row=el('label','amb-row')"
+ }
+]

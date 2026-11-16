@@ -241,7 +241,7 @@ export async function run({ ok, pageWork }) {
       const ack = p.card("ord-a1");
       await p.click(byAct(ack, "order.ready-collect"));
       const sheet = p.d.getElementById("ynSheet"), picks = sheet ? [...sheet.querySelectorAll('[data-act="order.point"]')] : [];
-      ok(!!sheet && picks.length === 1 && picks[0].textContent === "Point A2" && picks[0].classList.contains("salt-ghost") && p.d.getElementById("ynGo").hidden,
+      ok(!!sheet && picks.length === 1 && picks[0].textContent === "Point A2" && picks[0].classList.contains("amb-pill--quiet") && p.d.getElementById("ynGo").hidden,   /* 16 Nov 2026, the move to Ambient (the red fix): a point is Ambient's quiet pill */
         "Ready to collect opens the Sheet over his points, one ghost a point and no other action: " + picks.map((b) => b.textContent).join());
       await p.click(picks[0]);
       const mv = p.posts.filter((x) => x.route === "/all/maker/orders/ord-a1/move").map((x) => x.body);

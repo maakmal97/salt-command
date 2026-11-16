@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the sheet's figure loses its tile class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__figure',value));",
+  "replace": "t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__fig',value));"
+ }
+]

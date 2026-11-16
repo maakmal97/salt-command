@@ -1172,7 +1172,7 @@ export const OWNER_JS = `
     var group=null, list=null, gname=null;
     seq.forEach(function(r,i){
       if(heads[i]){ gname=heads[i]; group=el('section','agroup glinks'); group.setAttribute('aria-label',heads[i]); group.appendChild(el('h2','amb-section ghead',heads[i])); list=el('ul','amb-list amb-list--ruled'); group.appendChild(list); glist.appendChild(group); }
-      var declined=r.declined===true, pending=r.approved===false&&!declined, shut=pending||declined;
+      var declined=r.declined===true, pending=r.approved===false&&!declined&&!r.revoked, shut=pending||declined;   /* 16 Nov 2026 (the red fix): a pending link its associate withdrew waits on nobody, and its way is Restore */
       var word=pending?'Waiting':declined?'Declined':r.revoked?'Withdrawn':r.standing?'Standing':r.opens?'Opened':'Never opened';
       var age=pending?ageOf(r.made):r.opens?stampDay(r.last):stampDay(r.made);
       var lead=r.standing?'':isAssoc(r)?(shut?'Made by ':'Via '):'', who=r.standing?'Median Price list':isAssoc(r)?codeByUser(r.by):(r.label||'Link');

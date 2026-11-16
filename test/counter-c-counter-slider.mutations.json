@@ -1,20 +1,110 @@
 [
- {"name":"the recipe not carried","file":"stmt/statement-css.js","find":".salt-segment {\\n  --n: 2;","replace":".salt-segmentx {\\n  --n: 2;"},
- {"name":"a Look row comes back","file":"stmt/page.js","find":"<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'","replace":"<div class=\"amb-settings devlist\"><div id=\"lookRow\"><span class=\"lookset\"></span></div><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'"},
- {"name":"the sync ignores aria-selected","file":"stmt/page.js","find":"var on=x.getAttribute('aria-selected')==='true'||x.getAttribute('aria-pressed')==='true';","replace":"var on=x.getAttribute('aria-pressed')==='true';"},
- {"name":"the sync leaves the active class","file":"stmt/page.js","find":"x.classList.toggle('salt-segment__opt--active',on); if(on) at=k;","replace":"if(on) at=k;"},
- {"name":"Record falls back to pills","file":"stmt/page.js","find":"const ADMIN_NAVS = [\"record\"];","replace":"const ADMIN_NAVS = [];"},
- {"name":"Customers stays pills","file":"stmt/page.js","find":"const ADMIN_SLIDERS = [\"customers\"];","replace":"const ADMIN_SLIDERS = [];"},
- {"name":"every place a slider","file":"stmt/page.js","find":"seg = !cls && ADMIN_SLIDERS.includes(p), nav","replace":"seg = !cls, nav"},
- {"name":"the part entered is not selected","file":"stmt/owner.js","find":"      b.setAttribute('aria-selected', on?'true':'false');","replace":"      b.setAttribute('aria-selected', 'false');"},
- {"name":"the thumb does not follow a part","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('.aparts.salt-segment'),segSync);\n","replace":""},
- {"name":"the sync counts hidden options","file":"stmt/page.js","find":"return x.tagName==='BUTTON'&&!x.hidden; }), at=0;","replace":"return x.tagName==='BUTTON'; }), at=0;"},
- {"name":"the months become a slider","file":"stmt/page.js","find":"<div id=\"mfil\" class=\"mfil\" hidden></div><p class=\"mfnote amb-basis\"","replace":"<div id=\"mfil\" class=\"amb-segment mfil\" hidden></div><p class=\"mfnote amb-basis\""},
- {"name":"Orders' four parts become the Nav bar's tabs","file":"stmt/page.js","find":"'<div class=\"salt-segment salt-segment--tight aparts\" role=\"tablist\" aria-label=\"Orders\" data-place=\"orders\">'","replace":"'<div class=\"salt-nav__links aparts\" role=\"tablist\" aria-label=\"Orders\" data-place=\"orders\">'"},
- {"name":"This device is no settings list","file":"stmt/page.js","find":"'<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'","replace":"'<div class=\"devlist\"><ul id=\"devRows\"></ul>'"},
- {"name":"no short value where notifications cannot come","file":"stmt/page.js","find":"devRows.appendChild(devRow(tw('push.h'),why,devValue(tw('push.notHere'))));","replace":"devRows.appendChild(devRow(tw('push.h'),why));"},
- {"name":"the line under the list says nothing","file":"stmt/page.js","find":"    if(note) note.textContent=why||said||'';\n","replace":""},
- {"name":"the Orders tabs are not the system Filters","file":"stmt/page.js","find":"'amb-segment amb-segment--wrap otabs'","replace":"'salt-segment otabs'"},
- {"name":"a tap does not press the tab","file":"stmt/page.js","find":"b.setAttribute('aria-pressed',t[0]===cur?'true':'false');","replace":"b.setAttribute('aria-pressed','false');"},
- {"name":"the counts lose their class","file":"stmt/page.js","find":"b.appendChild(el('span','amb-segment__count',String(oOf(t[0]).length)));","replace":"b.appendChild(el('span','x',String(oOf(t[0]).length)));"}
+ {
+  "name": "the recipe not carried",
+  "file": "stmt/statement-css.js",
+  "find": ".salt-segment {\\n  --n: 2;",
+  "replace": ".salt-segmentx {\\n  --n: 2;"
+ },
+ {
+  "name": "a Look row comes back",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'",
+  "replace": "<div class=\"amb-settings devlist\"><div id=\"lookRow\"><span class=\"lookset\"></span></div><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'"
+ },
+ {
+  "name": "the part entered is not pressed (16 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected'); }",
+  "replace": "if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', 'false'); b.removeAttribute('aria-selected'); }"
+ },
+ {
+  "name": "the strip's options leave Ambient's class (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "'<button type=\"button\" class=\"amb-segment__opt\" data-part=\"' + k + '\" data-act=\"part.' + p",
+  "replace": "'<button type=\"button\" class=\"salt-segment__opt\" data-part=\"' + k + '\" data-act=\"part.' + p"
+ },
+ {
+  "name": "Record's strip is a salt-ds slider (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' aparts\"",
+  "replace": "<div class=\"salt-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' aparts\""
+ },
+ {
+  "name": "Customers has no strip (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "p === \"shop\" || p === \"record\" || p === \"customers\"\n  ?",
+  "replace": "p === \"shop\" || p === \"record\"\n  ?"
+ },
+ {
+  "name": "Shop's parts do not wrap (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' aparts\"",
+  "replace": "\"\" + ' aparts\""
+ },
+ {
+  "name": "Orders' parts are a salt-ds slider (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
+  "replace": "<div class=\"salt-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
+ },
+ {
+  "name": "a hidden option is the one pressed (16 Nov 2026)",
+  "file": "stmt/owner.js",
+  "find": "var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;\n      b.setAttribute('aria-selected'",
+  "replace": "var on=b.parentNode.getAttribute('data-place')===placeNow&&(b.getAttribute('data-part')===partNow||b.hidden);\n      b.setAttribute('aria-selected'"
+ },
+ {
+  "name": "the kinds are no wrapping Segment (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-segment amb-segment--wrap nchips\"",
+  "replace": "'<div class=\"amb-segment nchips\""
+ },
+ {
+  "name": "the months become a slider",
+  "file": "stmt/page.js",
+  "find": "<div id=\"mfil\" class=\"mfil\" hidden></div><p class=\"mfnote amb-basis\"",
+  "replace": "<div id=\"mfil\" class=\"amb-segment mfil\" hidden></div><p class=\"mfnote amb-basis\""
+ },
+ {
+  "name": "Orders' parts lose their counts (16 Nov 2026)",
+  "file": "stmt/page.js",
+  "find": "ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class=\"amb-segment__count\" hidden></span></button>').join(\"\") + \"</div></div>\";",
+  "replace": "ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '</button>').join(\"\") + \"</div></div>\";"
+ },
+ {
+  "name": "This device is no settings list",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"></ul>'",
+  "replace": "'<div class=\"devlist\"><ul id=\"devRows\"></ul>'"
+ },
+ {
+  "name": "no short value where notifications cannot come",
+  "file": "stmt/page.js",
+  "find": "devRows.appendChild(devRow(tw('push.h'),why,devValue(tw('push.notHere'))));",
+  "replace": "devRows.appendChild(devRow(tw('push.h'),why));"
+ },
+ {
+  "name": "the line under the list says nothing",
+  "file": "stmt/page.js",
+  "find": "    if(note) note.textContent=why||said||'';\n",
+  "replace": ""
+ },
+ {
+  "name": "the Orders tabs are not the system Filters",
+  "file": "stmt/page.js",
+  "find": "'amb-segment amb-segment--wrap otabs'",
+  "replace": "'salt-segment otabs'"
+ },
+ {
+  "name": "a tap does not press the tab",
+  "file": "stmt/page.js",
+  "find": "b.setAttribute('aria-pressed',t[0]===cur?'true':'false');",
+  "replace": "b.setAttribute('aria-pressed','false');"
+ },
+ {
+  "name": "the counts lose their class",
+  "file": "stmt/page.js",
+  "find": "b.appendChild(el('span','amb-segment__count',String(oOf(t[0]).length)));",
+  "replace": "b.appendChild(el('span','x',String(oOf(t[0]).length)));"
+ }
 ]

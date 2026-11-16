@@ -1,0 +1,32 @@
+[
+ {
+  "name": "the question's box is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var box=el('div','paycheck');",
+  "replace": "var box=el('div','paychk');"
+ },
+ {
+  "name": "the sent-and-waiting line is left out (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "body.appendChild(setW(el('p','amb-basis'),'pay.tell'));",
+  "replace": "0;"
+ },
+ {
+  "name": "a Home line is no prose (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "function hSay(t,id,cls,live){ var d=el('div','amb-prose')",
+  "replace": "function hSay(t,id,cls,live){ var d=el('div','amb-pr')"
+ },
+ {
+  "name": "a row's reason is left out (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "s.appendChild(st); if(w) s.appendChild(document.createTextNode(', '+lcFirst(w))); return s;",
+  "replace": "s.appendChild(st); return s;"
+ },
+ {
+  "name": "Yes, I sent it is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var yes=el('button','amb-pill amb-pill--block',tw('pay.yes',{rm:rm(w.amt)}));",
+  "replace": "var yes=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('pay.yes',{rm:rm(w.amt)}));"
+ }
+]

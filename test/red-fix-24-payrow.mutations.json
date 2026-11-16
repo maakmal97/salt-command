@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the pay row takes the statement's amt name (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var row=el('label','amb-field payamt')",
+  "replace": "var row=el('label','amb-field amt')"
+ }
+]

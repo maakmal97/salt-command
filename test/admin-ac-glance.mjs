@@ -59,7 +59,8 @@ export async function run({ ok, pageWork }) {
     const waiting = d.querySelectorAll("#makerDrafts .apcard").length;
     ok(waiting === 2, "To approve's 2 is the cards waiting under Approve: " + waiting);
     w.location.hash = "#orders/open"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
-    const lit = d.querySelector('.aparts button[data-part="open"][aria-selected="true"]');
+    /* 16 Nov 2026, the move to Ambient (the red fix): the parts are Ambient's Segment, the chosen option pressed */
+    const lit = d.querySelector('.aparts button[data-part="open"][aria-pressed="true"]');
     ok(!!lit && !d.getElementById("oOrders").hidden, "and Ready's tile lands on Orders at Open, which holds the ready orders");
     w.location.hash = "#needs"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
     /* 2 */

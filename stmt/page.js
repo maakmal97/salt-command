@@ -806,7 +806,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="amb-stack afind">'
         + '<div class="amb-notice alead" id="alead" hidden>' + AMB.glyph("info") + '<span id="aleadT"></span></div>'
         + '<div class="amb-search">' + AMB.glyph("search", "sm")
-        + '<input class="amb-input" id="rq" type="search" autocapitalize="none" autocorrect="off" '
+        + '<input class="amb-input mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>'
         + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
           '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
@@ -6027,7 +6027,8 @@ const CLIENT_JS = `
   /* the second line of an order's row: its state as a word, then why it is here */
   function hSub(o,what){
     var s=el('span'), st=el('span',(o.status==='acknowledged'||o.status==='done'||oPayable(o))&&!(o.status==='ready'&&!movedAll(o))?'amb-pos':null,stateWord(o));
-    s.appendChild(st); if(what) s.appendChild(document.createTextNode(', '+lcFirst(what))); return s;
+    var w=String(what||''), sw=stateWord(o); if(w.toLowerCase().indexOf(sw.toLowerCase())===0) w=w.slice(sw.length).replace(/^[,.\s]+/,'');   /* 16 Nov 2026 (the red fix): a reason that opens with the state's own word says it once */
+    s.appendChild(st); if(w) s.appendChild(document.createTextNode(', '+lcFirst(w))); return s;
   }
   /* the Orders row, with Home's own sentence for why it is here */
   function homeRow(o,what){
@@ -6177,6 +6178,7 @@ const CLIENT_JS = `
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z={price:priceAt(P,a.q)};
       var b=hRow({attrs:{'data-hagain':'1'}, thumb:markThumb(a.product), title:unitsOf(a.q,P.unit),
         sub:a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})});
+      b.querySelector('.amb-row__sub').classList.add('mono');   /* 16 Nov 2026 (the red fix): the price is a figure, and figures are mono (C19) */
       b.addEventListener('click',function(){ if(a.start) goOrder(a.product,a.q); else againOpen(a,b); });
       return b;
     })));

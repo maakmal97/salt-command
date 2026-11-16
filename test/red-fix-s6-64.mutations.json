@@ -1,0 +1,32 @@
+[
+ {
+  "name": "the sheet's figure loses its tile class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__figure',value));",
+  "replace": "t.appendChild(el('span','amb-tile__label',label)); t.appendChild(el('span','amb-tile__fig',value));"
+ },
+ {
+  "name": "a way's name loses its title class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "lab.appendChild(wayGlyph(w.g)); lab.appendChild(el('span','amb-option__title',tw(w.label)));",
+  "replace": "lab.appendChild(wayGlyph(w.g)); lab.appendChild(el('span','amb-option__ttl',tw(w.label)));"
+ },
+ {
+  "name": "a plate's value loses its class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "tx.appendChild(el('span','amb-plate__label',label)); tx.appendChild(el('span','amb-plate__value',value));",
+  "replace": "tx.appendChild(el('span','amb-plate__label',label)); tx.appendChild(el('span','amb-plate__val',value));"
+ },
+ {
+  "name": "the sheet's I have paid is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var go=el('button','amb-pill amb-pill--block',tw('pay.iPaid'));",
+  "replace": "var go=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('pay.iPaid'));"
+ },
+ {
+  "name": "a way's detail loses its sub class (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "lab.appendChild(el('span','amb-option__sub',w.detail?tw(w.detail):a?tw('pay.fromApp',{a:a.name}):tw('pay.fromAppAny')));",
+  "replace": "lab.appendChild(el('span','amb-option__s',w.detail?tw(w.detail):a?tw('pay.fromApp',{a:a.name}):tw('pay.fromAppAny')));"
+ }
+]

@@ -1,0 +1,26 @@
+[
+ {
+  "name": "the stat is no Ambient stat (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "function hStat(label,value){ var d=el('div','amb-stat');",
+  "replace": "function hStat(label,value){ var d=el('div','amb-st');"
+ },
+ {
+  "name": "a row's figure is left out (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "if(p.amount) tr.appendChild(el('span','amb-row__amount',p.amount));",
+  "replace": "if(p.amount) 0;"
+ },
+ {
+  "name": "Home's Pay is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "var pb=el('button','amb-pill amb-pill--block',tw('pay.payRm',{rm:rm(tot)}));",
+  "replace": "var pb=el('button','amb-pill amb-pill--quiet amb-pill--block',tw('pay.payRm',{rm:rm(tot)}));"
+ },
+ {
+  "name": "a row's reason is left out (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "s.appendChild(st); if(w) s.appendChild(document.createTextNode(', '+lcFirst(w))); return s;",
+  "replace": "s.appendChild(st); return s;"
+ }
+]

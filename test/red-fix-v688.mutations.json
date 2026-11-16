@@ -1,0 +1,20 @@
+[
+ {
+  "name": "an account's tap is renamed (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "el('button','amb-row__main arow__open')",
+  "replace": "el('button','amb-row__main arow__op')"
+ },
+ {
+  "name": "the account's sum loses its mark (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "fb.classList.add('ahead__fig');",
+  "replace": "fb.classList.add('ahead__fg');"
+ },
+ {
+  "name": "Send a sign-in link is a quiet pill (16 Nov 2026, the red fix)",
+  "file": "stmt/owner.js",
+  "find": "b=el('button','amb-pill amb-pill--block apill','Send a sign-in link')",
+  "replace": "b=el('button','amb-pill amb-pill--quiet amb-pill--block apill','Send a sign-in link')"
+ }
+]

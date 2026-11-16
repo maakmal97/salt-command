@@ -1,0 +1,8 @@
+[
+ {
+  "name": "a month chosen does not move the card (16 Nov 2026, the red fix)",
+  "file": "stmt/page.js",
+  "find": "sel.addEventListener('change',function(){ cardMonth=sel.value; drawCard(); });",
+  "replace": "sel.addEventListener('change',function(){ drawCard(); });"
+ }
+]
