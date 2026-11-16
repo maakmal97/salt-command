@@ -23826,23 +23826,25 @@ await (async () => {
     } });
   const D8 = dom8.window.document;
   const until8 = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return !!f(); };
-  /* a mark on the page: its size, its letter, and whether it is the Ring; the page's glyphs are not marks */
+  /* a mark on the page: its size, its letter, and whether it is the Ring; the page's glyphs are not marks.
+     17 Nov 2026, the move to Ambient (the third red fix): a mark standing alone is the system's mark thumb (span.amb-thumb--mark: the shape
+     path and his letter as .amb-thumb__word, sm 36px, md 44px, the default 56px, lg 72px), which replaced the salt coin and svg.psym. */
   const RING8 = /A8\.6 8\.6/;
-  /* plan version 10 (03 Nov 2026): a mark that stands alone is a coin (span.salt-coin, 44, 56 or 72px by its size class), a mark under 28px keeps svg.psym; both carry his letter and both are marks */
-  const MARK8 = "svg.psym:not(.glyph), .salt-coin", IN8 = (scope) => scope + " svg.psym:not(.glyph), " + scope + " .salt-coin", COINPX8 = { sm: 44, md: 56, lg: 72 };
-  const census8 = (root) => [...root.querySelectorAll(MARK8)].map((s) => s.classList.contains("salt-coin")
-    ? ({ px: COINPX8[[...s.classList].map((c) => /^salt-coin--(\w+)$/.exec(c)).filter(Boolean).map((m) => m[1])[0]] || 0, ring: RING8.test(s.querySelector("path.salt-coin__shape").getAttribute("d")), lets: [...s.querySelectorAll("text.salt-coin__let")].map((t) => t.textContent).join("") })
-    : ({ px: +s.getAttribute("width"), ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
-  /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
-  /* C19 (29 Sep 2026): Home's start and again tiles say the unit under the mark, the size and its word alone */
-  const shapes8 = /^[A-Z]?[\d,]+(\.\d+)?units?$/;
-  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && shapes8.test(seen8(t).replace(/\s+/g, "")); };
+  const MARK8 = ".amb-thumb--mark", IN8 = (scope) => scope + " " + MARK8, THUMBPX8 = { sm: 36, md: 44, lg: 72 };
+  const census8 = (root) => [...root.querySelectorAll(MARK8)].map((s) => ({
+    px: THUMBPX8[[...s.classList].map((c) => /^amb-thumb--(sm|md|lg)$/.exec(c)).filter(Boolean).map((m) => m[1])[0]] || 56,
+    ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll(".amb-thumb__word")].map((t) => t.textContent).join("") }));
+  /* a card's mark: its holder shows, beside the thumb, one figure in words and no shape word (the shape word is .amb-vh, read aloud only) */
+  const shapes8 = /^[\d,]+(\.\d+)?units?$/;
+  const holder8 = (s) => s.closest(".mtile, button, li, td, .amb-row, .amb-setting, .stm-q") || s.parentNode;
+  const said8 = (s) => { const t = holder8(s).querySelector(".amb-row__title, .amb-setting__name, .stm-size, .mq"); return t ? t.textContent.replace(/\s+/g, "") : ""; };
+  const inCard8 = (s) => shapes8.test(said8(s));
   const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
     D8.getElementById("f").dispatchEvent(new dom8.window.Event("submit", { bubbles: true, cancelable: true }));
-    const up8 = await until8(() => D8.querySelectorAll("#pPrices h2.pmark").length === 5 && D8.querySelector(IN8("#pCard .pane"))
-      && D8.querySelector(IN8("#pOrder [data-row]")) && D8.querySelector(IN8("#pHome .htile")));
+    const up8 = await until8(() => D8.querySelectorAll("#pPrices h2.pmark").length === 5 && D8.querySelector(IN8("#pCard .hprod"))
+      && D8.querySelector(IN8("#pOrder [data-row]")) && D8.querySelector(IN8("#pHome [data-hagain]")));
     /* 16 Nov 2026, the move to Ambient: a book's head on Prices is the mark thumb (the one drawing of a mark standing alone), its letter the thumb's word */
     const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector(".amb-thumb--mark");
       return [h.getAttribute("aria-label"), (s.querySelector(".amb-thumb__word") || { textContent: "" }).textContent, [...s.classList].filter((c) => /^amb-thumb--(sm|md|lg)$/.test(c)).map((c) => c.slice(11))[0] || ""].join(":"); });
@@ -23852,7 +23854,7 @@ await (async () => {
     const kinds8 = [...D8.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark")].map((s) => ([...s.classList].find((c) => /^amb-kind-\d$/.test(c)) || ""));
     ok(JSON.stringify(kinds8) === JSON.stringify(["amb-kind-1", "amb-kind-2", "amb-kind-3", "amb-kind-4", ""]), "and each head's thumb carries its book's hue by its index, the Ring none: " + JSON.stringify(kinds8));
     /* Home first, as it opens: Order again and the order under Coming up */
-    const home8 = { again: [...D8.querySelectorAll(IN8("#pHome .htile"))], rows: [...D8.querySelectorAll(IN8("#pHome .salt-inbox-row"))] };
+    const home8 = { again: [...D8.querySelectorAll(IN8("#pHome [data-hagain]"))], rows: [...D8.querySelectorAll(IN8("#pHome #hComing"))] };
     all8.push(...census8(D8.getElementById("pHome")));
     /* Orders: the row, then its own screen */
     D8.querySelector('button[data-t="order"]').click();
@@ -23876,8 +23878,8 @@ await (async () => {
     /* an associate says who it is for first (S4 4.7), or Review waits */
     const me8 = D8.querySelector('#osheet button[data-k="for:0"]'); if (me8) me8.click();
     if (D8.getElementById("oGo")) D8.getElementById("oGo").click();
-    await until8(() => D8.querySelector(IN8("#osheet .mhero")));
-    const check8 = [...D8.querySelectorAll(IN8("#osheet .mhero"))], checkRows8 = [...D8.querySelectorAll(IN8("#osheet .salt-ledger"))];
+    await until8(() => D8.querySelector(IN8("#osheet .amb-sheet__body li.amb-row")));
+    const check8 = [...D8.querySelectorAll(IN8("#osheet .amb-sheet__body li.amb-row"))], checkRows8 = [...D8.querySelectorAll(IN8("#osheet .salt-ledger"))];
     all8.push(...census8(D8.getElementById("osheet")));
     all8.push(...census8(D8.getElementById("pPrices")), ...census8(D8.getElementById("pCard")));
     const bad8 = all8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
@@ -23902,9 +23904,11 @@ await (async () => {
   ok(gr8.status === 200 && gm8.length === 6 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEVPOP" && gm8.filter((m) => m.ring).every((m) => !m.lets)
     && gm8.every((m) => m.px >= 20),
     "the guest board draws its five books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
-  ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'Geist Mono'/.test(gcss8)
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the board is Ambient's and draws the letter as the thumb's word in the device's own face (15 Nov 2026), so its
+     styles carry the thumb's word rule and its policy admits no face beyond its own */
+  ok(/\.amb-thumb__word\s*\{[^}]*font-weight:\s*800/.test(gcss8) && /\.amb-thumb--mark\s*\{/.test(gcss8) && !/font-family: 'Geist Mono'/.test(gcss8)
     && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
-    "and the board's own styles carry the letter's mono face, whose file its policy lets load");
+    "and the board's own styles carry the letter's thumb word rule, whose face is the device's, and its policy lets its own files load");
 
   /* ---- the live statement: its marks are cards, lettered, none under 20px; an archive draws none ---- */
   const MS8 = await import("../tools/make_statements.mjs");
@@ -23917,7 +23921,7 @@ await (async () => {
     docs8++;
     const sd = new JD8("<body>" + d.body + "</body>").window.document;
     sm8s.push(...census8(sd));
-    loose8s.push(...[...sd.querySelectorAll("svg.psym")].filter((s) => !inCard8(s)).map(() => p));
+    loose8s.push(...[...sd.querySelectorAll(MARK8)].filter((s) => !inCard8(s)).map(() => p));
   }
   const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
   ok(docs8 > 3 && sm8s.length > docs8 && !sbad8.length && !loose8s.length,
@@ -23926,7 +23930,9 @@ await (async () => {
   const oI8 = { from: null, to: "2026-09-28", completed: true, open: true, pending: true, dates: true, issued: "28 Sep 2026" };
   const im8 = [];
   for (const p of [...new Set(bk8.sales.map((x) => POS8.ownerCode(x.customer)))].filter((p) => !POS8.isBucket(p)).slice(0, 6))
-    im8.push(...census8(new JD8(MS8.stmtDoc(p, MS8.stmtRows(p, oI8), oI8)).window.document));
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a new ISSUE's table is the sealed format and still draws the app's own svg.psym, not the thumb */
+    im8.push(...[...new JD8(MS8.stmtDoc(p, MS8.stmtRows(p, oI8), oI8)).window.document.querySelectorAll("svg.psym:not(.glyph)")].map((s) =>
+      ({ px: +s.getAttribute("width"), ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") })));
   const ibad8 = im8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
   ok(im8.length > 3 && !ibad8.length, "and a new issue's table draws every mark lettered and none under 20px: " + JSON.stringify({ marks: im8.length, bad: ibad8.slice(0, 3) }));
 })();
