@@ -11636,14 +11636,12 @@ await (async () => {
   const w = S.costsFrom(syn, { gone: 50, fresh: 1234.4, a: 3, b: "slow" });
   ok(JSON.stringify(w) === JSON.stringify({ a: 10, fresh: 1230 }), "--write-costs keeps only the sections verify.mjs has, in its order, in whole tens of milliseconds: " + JSON.stringify(w));
 
-  /* the shard count: three asked, three on four cores and two on two; unasked, the fewest the cores, the memory and the memory
-     free allow (09 Oct 2026): the laptop four, beside two runs two, a 24-core 128 GB machine ten, a runner two */
-  const gb = (total, free) => ({ total: total * S.GB, free: free * S.GB });
+  /* the shard count: three asked, three on four cores and two on two; unasked, the whole machine, the cores less one, never
+     under two (16 Nov 2026): the laptop fifteen, a 24-core machine 23, a 4-core runner three, a 2-core one two */
   const got = { four: S.jobsFor(["--jobs", "3"], 4), two: S.jobsFor(["--jobs", "3"], 2), laptop12: S.jobsFor(["--jobs", "12"], 16),
-    laptop: S.jobsFor([], 16, gb(31.5, 20)), busy: S.jobsFor([], 16, gb(31.5, 4)), big: S.jobsFor([], 24, gb(128, 100)),
-    mid: S.jobsFor([], 16, gb(64, 50)), runner: S.jobsFor([], 4, gb(16, 14)) };
-  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, laptop: 4, busy: 2, big: 10, mid: 8, runner: 2 }),
-    "asked counts hold to the cores; unasked, the laptop runs four, two beside other runs, a big machine ten, a runner two: " + JSON.stringify(got));
+    ci: S.jobsFor(["--jobs", "2"], 4), laptop: S.jobsFor([], 16), big: S.jobsFor([], 24), runner: S.jobsFor([], 4), small: S.jobsFor([], 2) };
+  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, ci: 2, laptop: 15, big: 23, runner: 3, small: 2 }),
+    "asked counts hold to the cores; unasked, the whole machine: the laptop fifteen, a big machine 23, a runner three, never under two: " + JSON.stringify(got));
 
   /* both suite steps ask for three, and the file reaches the runner */
   const runs = (f) => (readFileSync(join(REPO, ".github", "workflows", f), "utf8").replace(/\r\n/g, "\n").match(/^\s+run: npm (?:test|run test)\b.*$/gm) || []).map((l) => l.trim());

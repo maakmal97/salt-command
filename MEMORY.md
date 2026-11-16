@@ -505,6 +505,9 @@
 ## No Regulars card on Needs you (v1521)
 - Live as v1521 (`26d0518d`, 16 Nov 2026; Cloud commit `43786220047`: chain green with "The phone is serving it", three suite parts green), his word "Remove it" (do not ask again): Salt Admin's Needs you draws no card for regulars due, late or lapsed (`habitNeed`, act `need.habit` gone); the New buyers FYI line stays (`readBuyers`). The reminder, the win-back at Accept, the account's Habit line and the Desk's Clients are unchanged; the Desk catalogue still sends `habits`, now read by nobody on Salt Admin. Pushed with the local gate red only on `ambient-ds` main having moved to 0.7.5 since v1520's pull (passes on the lock, as CI runs it); that pull is the Ambient move's.
 
+## The suite on the whole laptop (16 Nov 2026)
+- His word "the fastest, the laptop using all of its resources": `npm test` unasked runs the cores less one (15 on the Core Ultra 7 255H, 16 cores, 31.5 GB), reversing the memory fit of 09 Oct 2026. Measured back to back from about 13 GB free: 4 shards 8.6 min, 8 7.1, 12 6.9, 15 6.5, free memory at nought from 8; the run after the change 5.5 min from 18.5 GB free (12,478 passed, 1 failed: v522, the local gate's Ambient lock). Run one suite at a time. Once at 15 shards S4 4.5 read the bell's ask twice (`asked: 2`), a timing flake under load, green on the other runs. CI is unchanged (`--part i/3 --jobs 2`).
+
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
 
