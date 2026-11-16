@@ -1472,7 +1472,9 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '</div>'
     + "</div></div>"
     + '<div id="pPrices" class="amb-stack" hidden></div>'
-    + '<div id="pOrder" hidden><div id="oPanes" class="amb-split amb-split--panes"></div></div>'
+    /* 16 Nov 2026, the move to Ambient (0.7.5): Orders is one of the screen's places (amb-place, no box of its own), so its two panes stand as the
+       screen's own and scroll apart from 960px wide and 640px tall, the open order's foot at its pane's foot */
+    + '<div id="pOrder" class="amb-place" hidden><div id="oPanes" class="amb-split amb-split--panes"></div></div>'
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
     + '<div id="pCard" class="amb-stack" hidden></div>'
     + "</main>" + placesDock() + "</div>"

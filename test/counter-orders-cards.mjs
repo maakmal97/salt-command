@@ -135,6 +135,10 @@ export async function run({ ok }) {
     const po = W.d.getElementById("oPanes");
     ok(po.classList.contains("amb-split") && po.classList.contains("amb-split--panes") && !!W.d.querySelector("#oPanes > .olistcol.amb-stack") && !W.d.querySelector("#pOrder .ocols"),
       "from 960px the place holds the system's split of panes with the list as its first stack, and no columns of its own");
+    /* 16 Nov 2026, the move to Ambient (0.7.5): the place is one of the screen's places, straight in the screen, its split its last child, so the panes stand as the screen's own and scroll apart */
+    const pl = W.d.getElementById("pOrder");
+    ok(pl.classList.contains("amb-place") && pl.parentElement.classList.contains("amb-screen") && pl.lastElementChild === po && [...pl.parentElement.querySelectorAll(":scope > .amb-place")].every((p) => p === pl ? !p.hidden : p.hidden),
+      "Orders is one of the screen's places, straight in the screen with its split last, and it alone is shown");
     ok(!!W.d.querySelector("#pOrder .otabs") && !!W.d.querySelector("#pOrder .ocol__pay") && t(W.d.querySelector("#pOrder .ocol__pay")) === "RM 95.00 to pay"
       && JSON.stringify(ids(list(W))) === JSON.stringify(want([A, B, R])),
       "the filters stand there too and say what is to pay across the orders, the list holding the open orders under the folded earlier ones: " + JSON.stringify({ pay: t(W.d.querySelector("#pOrder .ocol__pay")), ids: ids(list(W)) }));
