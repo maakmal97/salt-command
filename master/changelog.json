@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1525",
+  "d": "17 Nov 2026",
+  "t": "AN ORDER'S WAY CAN BE CHANGED",
+  "n": [
+   "<b>COLLECT OR DELIVER, AFTER THE FACT.</b> Salt Admin's Change the order has a Way: Collect or Deliver. A collected order can become a delivery with its charge in one change, and back. Once goods are out, the row's handover follows. Choosing Collect empties the delivery charge. It waits under Approve like any change of an order.",
+   "<b>A REJECTED CHANGE OF WAY PUTS ITSELF BACK.</b> If you reject it under Approve, the order takes the row's way again on the next pass, so the order and the book never disagree about it. A group order stays collect.",
+   "<b>THE REFUSALS SAY WHY.</b> A delivery charge on a collection, and every other reason Change the order can be refused, now reads in words on Salt Admin instead of \"The Counter could not do that\"."
+  ]
+ },
+ {
   "v": "v1524",
   "d": "17 Nov 2026",
   "t": "A NEW CUSTOMER'S ACCOUNT IS NEVER LEFT WAITING",
