@@ -6237,6 +6237,8 @@ const CLIENT_JS = `
      rail from 960px, so it needs no place or height of its own. A tap opens the order; the pin is its own link beside it. Home's only. */
   function lastMoved(o){ var h=o.history||[]; return h.length&&h[h.length-1].at?h[h.length-1].at:o.at; }
   function liveShow(){ var n=document.getElementById('hLive'); if(n) n.hidden=!(tab==='home'&&n.hasAttribute('data-live')); }
+  /* 17 Nov 2026 (Fable's review, B): the mini bar's moment says its day: Today, 00:01 on the Kuala Lumpur day, else the date in the page's own date words */
+  function miniWhen(iso){ var w=stepWhen(iso); return /^[0-9]{1,2}:[0-9]{2}$/.test(w)?tw('today.aria')+', '+w:w; }
   function homeLive(){
     var box=el('div'); box.hidden=true; if(!session||view||!orders.length) return box;
     var o=orders.filter(function(x){ return !oClosed(x); }).sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); })[0];
@@ -6245,7 +6247,7 @@ const CLIENT_JS = `
     var th=markThumb(o.product,'md'); box.appendChild(th);   /* 17 Nov 2026 (Fable's review): the mini bar's coin is the shape alone, never a letter cut at its edge */
     var tx=el('span','amb-mini__text'), waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
     tx.appendChild(el('span','amb-vh',pshape(o.product))); tx.appendChild(el('span','amb-mini__title',stateWord(o)));
-    tx.appendChild(el('span','amb-mini__sub',stepWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));
+    tx.appendChild(el('span','amb-mini__sub',miniWhen(lastMoved(o))+(waits?', '+tw('pt.at',{c:o.point}):'')));
     box.appendChild(tx);
     var go=el('button','amb-circle amb-circle--plain hlivego'); go.type='button'; go.setAttribute('aria-label',tw('hl.h')); go.appendChild(ambIcon('next'));
     box.appendChild(go);

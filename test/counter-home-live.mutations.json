@@ -1,0 +1,3 @@
+[
+ {"name":"the mini bar reads a bare time","file":"stmt/page.js","find":"miniWhen(lastMoved(o))+(waits?","replace":"stepWhen(lastMoved(o))+(waits?"}
+]

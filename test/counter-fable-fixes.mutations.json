@@ -178,5 +178,23 @@
   "file": "stmt/page.js",
   "find": "        L.classList.add('amb-list--full');\n",
   "replace": ""
+ },
+ {
+  "name": "the mini bar reads a bare time again",
+  "file": "stmt/page.js",
+  "find": "miniWhen(lastMoved(o))+(waits?",
+  "replace": "stepWhen(lastMoved(o))+(waits?"
+ },
+ {
+  "name": "the mini bar says Today for every day",
+  "file": "stmt/page.js",
+  "find": "return /^[0-9]{1,2}:[0-9]{2}$/.test(w)?tw('today.aria')+', '+w:w; }",
+  "replace": "return tw('today.aria')+', '+w; }"
+ },
+ {
+  "name": "the screen reserves the mini bar's room while it is hidden",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell:has(> .amb-dock > .amb-mini[hidden]) { --amb-foot-mini: 0px; --amb-bleed: calc(var(--amb-tabbar-h) + var(--amb-safe-bottom) + 36px); }",
+  "replace": ""
  }
 ]

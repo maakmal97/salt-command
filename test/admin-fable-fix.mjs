@@ -11,6 +11,7 @@
  *       a part of his decision stands a section gap under the Steps
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
+import { readFileSync } from "node:fs";
 import { landingPage, SITE_STYLE } from "../stmt/page.js";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
@@ -79,5 +80,12 @@ export async function run({ ok, pageWork }) {
     ok(/\.amb-split--panes > \.amb-stack:last-child \.amb-settings, \.amb-split--panes > \.amb-stack:last-child \.amb-foot > \.amb-pill \{ max-width: none; \}/.test(css),
       "the second pane's group and the foot take the pane's width");
     ok(/\.odecide__part \{ min-width: 0; margin-top: var\(--amb-space-3\); \}/.test(css), "a part of his decision stands a section gap under the Steps");
+
+    /* A7 (Fable's second round, A): a queue row's code never breaks at its dash, and its sub line is one line ending in an ellipsis */
+    ok(/\.ordcard \.ocode \{ font-family: var\(--amb-font-mono\); white-space: nowrap; \}/.test(css) && /\.ordcard \.amb-row__sub \{ display: block; white-space: nowrap; text-overflow: ellipsis; \}/.test(css) && /\.ordcard > \.amb-row__trail \{ flex: 0 1 auto; flex-wrap: wrap;/.test(css),
+      "a queue row's customer code stays whole (its trail wraps rather than cutting it) and its sub line ends in an ellipsis on one line");
+    /* A8 (D): an unsent card's Resend is the small pill it is drawn as, its acts row not stretching it */
+    ok(/\.unsent-card \.amb-task__acts > \.amb-pill \{ flex: none; max-width: none; \}/.test(css) && /aPill\(label,act,undefined,true\)/.test(readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8")),
+      "Resend is a small filled pill (amb-pill--sm) at its own width, not a block");
   } finally { p.w.close(); }
 }

@@ -136,5 +136,35 @@
   "file": "stmt/statement-css.js",
   "find": ".odecide__part { min-width: 0; margin-top: var(--amb-space-3); }",
   "replace": ".odecide__part { min-width: 0; }"
+ },
+ {
+  "name": "a queue row's code may wrap at its dash again",
+  "file": "stmt/statement-css.js",
+  "find": ".ordcard .ocode { font-family: var(--amb-font-mono); white-space: nowrap; }",
+  "replace": ".ordcard .ocode { font-family: var(--amb-font-mono); overflow-wrap: anywhere; }"
+ },
+ {
+  "name": "a queue row's sub line wraps again",
+  "file": "stmt/statement-css.js",
+  "find": ".ordcard .amb-row__sub { display: block; white-space: nowrap; text-overflow: ellipsis; }",
+  "replace": ".ordcard .amb-row__sub { display: block; }"
+ },
+ {
+  "name": "a queue row's trail may not wrap again, so a wide move pill cuts the code",
+  "file": "stmt/statement-css.js",
+  "find": ".ordcard > .amb-row__trail { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: var(--amb-space-1); }",
+  "replace": ""
+ },
+ {
+  "name": "Resend stretches to the acts row again",
+  "file": "stmt/statement-css.js",
+  "find": ".unsent-card .amb-task__acts > .amb-pill { flex: none; max-width: none; }",
+  "replace": ""
+ },
+ {
+  "name": "Resend is drawn as a block pill",
+  "file": "stmt/owner.js",
+  "find": "aPill(label,act,undefined,true);\n            if(!index) button",
+  "replace": "aPill(label,act,undefined,false);\n            if(!index) button"
  }
 ]

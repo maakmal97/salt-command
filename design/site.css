@@ -34,6 +34,8 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .ntask .need-tap:focus-visible { outline: none; }
 .ntask .need-tap:focus-visible::after { outline: 2px solid var(--amb-accent); outline-offset: 2px; border-radius: inherit; }
 .ntask .amb-task__acts, .ntask .nbody { position: relative; z-index: 1; }
+/* 17 Nov 2026 (Fable's review, D): an unsent card's Resend is the small pill it is drawn as, not stretched to 22rem by the task's acts row */
+.unsent-card .amb-task__acts > .amb-pill { flex: none; max-width: none; }
 .ntask .need-who--code, .npane .need-who--code { font-family: var(--amb-font-mono); }
 .ntask[aria-current="true"] { outline: 2px solid var(--amb-accent); outline-offset: -2px; }
 #roster .ntask .nage--late { color: var(--amb-neg); }
@@ -137,6 +139,10 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .hbook { margin: 0; }
 /* the live order is the dock's mini bar, a tap anywhere on it opening the order */
 .amb-mini[data-live] { cursor: pointer; }
+/* 17 Nov 2026 (Fable's review, C): Ambient's bleed under a docked screen, and its foot's ground, hold the mini bar's room (its height and the peek) whether or not a mini bar shows, and the Counter
+   keeps the mini bar in the dock, hidden, off Home: an open order's foot then rested about 95px above the dock on bare ground. While the mini bar is hidden the room is left out of both. The bleed is
+   Ambient's own sum without the mini bar: the tab bar, the safe area, and 36px (the dock's inset twice and the 12px, which this layer may not name: the one-look check); it moves with Ambient's. */
+.amb-shell:has(> .amb-dock > .amb-mini[hidden]) { --amb-foot-mini: 0px; --amb-bleed: calc(var(--amb-tabbar-h) + var(--amb-safe-bottom) + 36px); }
 
 /* ---- Counter: Shop, the order sheet and spots ---- */
 /* the way, the notices and the book panes stand in Shop's stack; the way's box and the basket's bar take no place of their own */
@@ -355,7 +361,10 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 #makerReview, #makerReview > .maker-card { display: contents; }
 .ordopen:empty { display: none; }
 /* a row: the code in the mono face, a trip's other books a plain chip beside it */
-.ordcard .ocode { font-family: var(--amb-font-mono); overflow-wrap: anywhere; }
+/* 17 Nov 2026 (Fable's review, A): a code never breaks at its dash or is cut when a wide move pill takes the room (the trail wraps its amount over the pill instead); the sub line stays one line and ends in an ellipsis */
+.ordcard .ocode { font-family: var(--amb-font-mono); white-space: nowrap; }
+.ordcard .amb-row__sub { display: block; white-space: nowrap; text-overflow: ellipsis; }
+.ordcard > .amb-row__trail { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: var(--amb-space-1); }
 .omore { margin-inline-start: var(--amb-space-2); vertical-align: middle; }
 /* from 960px the two panes stand side by side; below it the one open takes the list's place and a way back stands over it */
 #ordnone[hidden] { display: none; }

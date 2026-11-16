@@ -106,6 +106,18 @@ export async function run({ ok }) {
       "This device is one group of one list: Notifications first, the other devices and the ways in, and Sign out last as the danger action: " + JSON.stringify(rows.map((r) => t(r).slice(0, 24))));
     ok(narrow.d.querySelectorAll("#devSlot button, #devSlot li").length === 0, "and nothing loose stands under it: the line under the group is the only thing in the slot");
 
+    /* ---- 22 (B): the mini bar's moment says its day: "Today, 00:01" on the Kuala Lumpur day, the date on any other */
+    const NEW = ord("20261117090004-aa04", { at: iso(1), history: [{ at: iso(1), status: "placed", by: "customer" }] });
+    const OLD = ord("20261110090005-aa05", { at: iso(4320), history: [{ at: iso(4320), status: "placed", by: "customer" }] });
+    const subOf = async (o) => { const w = await open({ orders: [o] }); await until(() => w.d.querySelector(".amb-mini[data-live] .amb-mini__sub")); const m = w.d.querySelector(".amb-mini[data-live] .amb-mini__sub"); return m ? t(m) : ""; };
+    const sNew = await subOf(NEW), sOld = await subOf(OLD);
+    ok(/^Today, [0-9]{2}:[0-9]{2}$/.test(sNew) && /^[0-9]{2} [A-Z][a-z]{2} 2026$/.test(sOld),
+      "the mini bar reads Today, 00:01 for a move today and the date for another day, never a bare time: " + JSON.stringify([sNew, sOld]));
+
+    /* ---- 23 (C): the mini bar's room is reserved over the foot only while it shows (Ambient reserves it whenever one is in the dock, hidden or not) */
+    ok(/\.amb-shell:has\(> \.amb-dock > \.amb-mini\[hidden\]\) \{ --amb-foot-mini: 0px; --amb-bleed: calc\(var\(--amb-tabbar-h\) \+ var\(--amb-safe-bottom\) \+ 36px\); \}/.test(SITE_CSS),
+      "an open order's screen and foot reserve no bleed room for a mini bar that is not shown");
+
     /* ---- 18: no hero of the Counter carries a bare clock */
     ok(narrow.d.querySelectorAll("#tabs header.amb-hero").length === 1 && narrow.d.querySelectorAll("#tabs .amb-hero__time, #tabs [data-clock]").length === 0,
       "the Counter's hero carries no bare clock: the time is not drawn there");
