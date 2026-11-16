@@ -7825,24 +7825,15 @@ export const OWNER_JS = `
     return item('watch','watch','Accounts','x:pool', sheetAt||'', {who:'Accounts', title:t, what:t, counts:false,
       why:'A walk-in takes one at Add ID, so run the pool on the laptop to make ten again.', open:(wide()?function(){}:null)});
   }
-  /* 13 NOV 2026 (the price band's version 3, the customers): ONE CARD FOR THE REGULARS WHO NEED A WORD, read off the Desk's catalogue (habits: due, late or lapsed, lapsed first, then late,
-     then due, the larger margin a month first). It is To do while one has lapsed (a win-back is his tap, at their next Accept) and FYI while they are only due or late. Its tap opens the first
-     one's account; the rest are named in its why. A second line, FYI, says the week's new buyers. Nothing here prices. */
-  var habitsNow=null, buyersNow=null, habitsRead=false;
-  function readHabits(){
+  /* 13 Nov 2026 (the price band's version 3, the customers): one FYI line says the week's new buyers, read off the Desk's catalogue. Nothing here prices.
+     16 Nov 2026, his word "Remove it": NO CARD FOR THE REGULARS due, late or lapsed. It asked nothing of him: the reminder wakes them by itself (stmt/remind.js),
+     the win-back waits for their next Accept, and their habit stands on their account (habitRows) and on the Desk's Clients. */
+  var buyersNow=null, buyersRead=false;
+  function readBuyers(){
     return refs('/all/maker/inputs').then(function(j){
-      var c=(j&&j.catalog)||{}; habitsRead=true;
-      if(changed('habits',[c.habits||[],c.buyers||null])){ habitsNow=Array.isArray(c.habits)?c.habits:[]; buyersNow=c.buyers&&typeof c.buyers==='object'?c.buyers:null; drawNeeds(); }
+      var c=(j&&j.catalog)||{}; buyersRead=true;
+      if(changed('buyers',c.buyers||null)){ buyersNow=c.buyers&&typeof c.buyers==='object'?c.buyers:null; drawNeeds(); }
     },function(){});
-  }
-  function habitSay(h){ return h.code+' '+h.state+', '+(+h.since)+' d, usual '+units(h.usual); }
-  function habitNeed(hs){
-    var first=hs[0], lapsed=hs.some(function(h){ return h.state==='lapsed'; }), go=function(){ acctFor(first.code); };
-    var named=hs.slice(0,5).map(habitSay), more=hs.length>5?'; '+(hs.length-5)+' more':'';
-    return item(lapsed?'now':'watch','accounts','Regulars','x:habits', '', {who:habitSay(first), title:habitSay(first), mark:'salt', rm:0,
-      what:hs.length+(hs.length===1?' regular is':' regulars are')+' past their usual gap', why:named.join('; ')+more+'.', open:go}, function(c){
-      mainButton(c,'Open','need.habit','x:habits', go);
-    });
   }
   function buyersNeed(b){
     var t=(b.count>0?b.count+' new this week':'No new buyers this week')+(b.introduced>0?', '+b.introduced+' through an associate':'')+(b.back>0?', '+b.back+' came back':'')+(b.thin?'. Thin against the weeks before':'');
@@ -8128,7 +8119,6 @@ export const OWNER_JS = `
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
     if(sheetSpares!=null&&sheetSpares<POOL_LOW) L.push(poolNeed(sheetSpares));
-    if(habitsNow&&habitsNow.length) L.push(habitNeed(habitsNow));
     if(buyersNow&&(buyersNow.count>0||buyersNow.thin)) L.push(buyersNeed(buyersNow));
     if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
     if(owed) owed.goods.forEach(function(r){ if(r&&r.rid) L.push(goodsNeed(r)); });
@@ -8397,7 +8387,7 @@ export const OWNER_JS = `
     /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
     /* 13 Nov 2026 (the price band's version 3): the regulars who need a word and the week's new buyers, read with the Desk's catalogue once and on a Retry, never on the poll's tick; a failed read keeps what was read and says nothing (it is not what he waits on) */
-    if(!TESTING&&(!tick||!habitsRead)) jobs.push(readHabits());
+    if(!TESTING&&(!tick||!buyersRead)) jobs.push(readBuyers());
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
     /* 22 Oct 2026: the poll's tick reads the stock again (Stock by book), a failure keeping what was read */
     if(tick&&glanceStock&&!glanceStockOut) jobs.push(refs('/all/maker/stock').then(function(j){ glanceStock=j; drawGlanceAll(); redrawLead(); },function(){}));

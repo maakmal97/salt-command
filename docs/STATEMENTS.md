@@ -2909,7 +2909,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `bar.approve` | Orders' hero, Approve, its one main action (the bar's until 15 Nov 2026), named with the rows to approve | Goes to Orders > Approve; its name counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
-| `need.habit` | Needs you card for the regulars who are due, late or lapsed | Opens the first one's account on Customers (the card's why names the rest). |
 | `order.winback` | Order card, Agree, the win-back line | Fills Goods with the win-back price the preview suggests for a lapsed regular and reads the figures again; nothing is sent until his Accept. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |

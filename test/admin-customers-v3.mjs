@@ -48,35 +48,13 @@ export async function run({ ok, pageWork }) {
   const open = async (o = {}) => { const p = await richOwnerPage({ pageWork, ...o }); await p.work.quiet(); await p.work.quiet(); return p; };
   const need = (p, key) => p.d.querySelector('[data-need="' + key + '"]');
 
-  /* 2: Needs you's card */
+  /* 2: no card for the regulars (16 Nov 2026, his word "Remove it": it asked nothing of him; the reminder and the win-back act by themselves) */
   {
     const p = await open({ before: (w) => { w.matchMedia = (q) => ({ matches: /min-width:\s*860px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {} }); }, inputsAnswer: habitsAnswer(HABITS, { count: 3, introduced: 1, back: 2, thin: false }) });
-    const c = need(p, "x:habits"), grp = c && c.closest(".ngroup");
-    const t = c ? c.querySelector(".salt-action__title").textContent : "";
-    ok(!!c && grp.getAttribute("data-sev") === "now" && /CX4-ZED lapsed, 35 d, usual 1 unit/.test(t) && !!c.querySelector(".salt-producttag") && p.d.querySelectorAll('[data-need="x:habits"]').length === 1
-      && /3 regulars are past their usual gap/.test(c.querySelector(".need-tap").getAttribute("aria-label")),
-    "Needs you has one To do card for the regulars when one has lapsed, naming the first and counting the rest, with the book's tag: " + (grp && grp.getAttribute("data-sev")) + " " + t);
-    const q = await open({ inputsAnswer: habitsAnswer(HABITS.slice(1), null) });
-    const c2 = need(q, "x:habits");
-    ok(!!c2 && c2.closest(".ngroup").getAttribute("data-sev") === "watch" && /CX1-ZED late, 14 d, usual 2 units/.test(c2.textContent) && !need(q, "x:buyers"),
-      "with none lapsed the card is FYI and the first is the late one: " + (c2 && c2.closest(".ngroup").getAttribute("data-sev")));
-    const r = await open({ inputsAnswer: habitsAnswer([], null) });
-    ok(!need(r, "x:habits"), "with nobody to name there is no card");
-    /* the card lists them in its why, in the opened card beside the list */
-    const wide = need(p, "x:habits") && need(p, "x:habits").querySelector(".need-tap");
-    if (wide) { wide.click(); await p.work.quiet(); }
-    const pane = p.d.querySelector('[data-pane="x:habits"]');
-    ok(!!pane && /CX4-ZED lapsed, 35 d, usual 1 unit; CX1-ZED late, 14 d, usual 2 units; CX3-ZED due, 8 d, usual 1 unit\./.test(pane.textContent),
-      "the opened card lists every regular in the Desk's order: " + (pane && pane.textContent.slice(0, 200)));
-  }
-
-  /* 3: its tap opens the account */
-  {
-    const p = await open({ inputsAnswer: habitsAnswer(HABITS, null), extra: (route) => route === "/all/maker/customer-of/CX4-ZED" ? { ok: true, reading: { customer: false } } : undefined });
-    const go = byAct(p.d, "need.habit", "x:habits");
-    if (go) { go.click(); await p.work.quiet(); await p.work.quiet(); }
-    const a = p.d.querySelector("#aopen [data-u]") || p.d.querySelector("#aopen .oacct"), shownAcct = p.d.getElementById("aopen") && shown(p.d.getElementById("aopen"));
-    ok(!!go && shownAcct && /CX4-ZED/.test(p.d.getElementById("aopen").textContent), "the card's Open goes to the first regular's account, CX4-ZED: " + (a && a.textContent.slice(0, 80)));
+    const cards = [...p.d.querySelectorAll("[data-need]")].map((c) => c.getAttribute("data-need"));
+    ok(!need(p, "x:habits") && !byAct(p.d, "need.habit", "x:habits") && !/Regulars|past their usual gap|CX4-ZED lapsed/.test(p.d.getElementById("needs") ? p.d.getElementById("needs").textContent : p.d.body.textContent)
+      && !!need(p, "x:buyers"),
+    "Needs you draws no card for the regulars, a lapsed one included, and still says the week's new buyers: " + cards.join(","));
   }
 
   /* 4: the new buyers */
