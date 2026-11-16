@@ -147,7 +147,6 @@ export const OWNER_JS = `
       var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;
       b.setAttribute('aria-selected', on?'true':'false');
       if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected'); }   /* 16 Nov 2026 (Ambient): Record's and Shop's parts are a Segment, pressed not selected */
-      if(b.classList.contains('nktab')) b.classList.toggle('salt-nav__link--active', on);
       /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
       var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
     ordSegPaint();
@@ -382,17 +381,6 @@ export const OWNER_JS = `
   /* S9 fix: a code his counter showed is scanned; a customer's own is copied across; key, before the two were told apart */
   var HOWW={link:'Sign-in link', qr:'Code', copy:'Code', key:'Code', code:'Code', password:'Password', passkey:'Passkey'};
   var HOWT={qr:'Scanned at the counter', copy:'Copied across', code:'Typed in'};
-  /* 3 Nov 2026 (the account on Shop's grid): a line of the account is a settings row: its name, a second line under it when there is one, a word at the
-     right; aval is that word, ember when hot */
-  function lineRow(label, value, flag){
-    var r=el('div','salt-settings__row'), tx=el('div','salt-settings__text');
-    tx.appendChild(el('span','salt-settings__label',label));
-    if(flag) tx.appendChild(el('span','salt-settings__sub',flag));
-    r.appendChild(tx);
-    if(value){ var v=el('span','salt-settings__value'); v.appendChild(value); r.appendChild(v); }
-    return r;
-  }
-  function aval(t, hot){ return el('span',hot?'nage--late':null,t); }
   function onWhat(where){ return where?' on '+String(where).replace(/^An? /,function(m){ return m.toLowerCase(); }):''; }
   /* an event of the account, read only: what it was and where, and when; a row with a control of its own stands as Ambient's row does, the control at its trail */
   function aEvent(title, sub, when, hot){
@@ -976,10 +964,9 @@ export const OWNER_JS = `
      on him or is late), then its age and the sum; his own credit in ember. A move's answer stands under its row. */
   function aBtn(word, cls, act, key){ var b=actOn(el('button',cls,word),act,key); b.type='button'; return b; }
   function aPill(word, act, key, sm, quiet){ return aBtn(word,'amb-pill'+(sm?' amb-pill--sm':'')+(quiet?' amb-pill--quiet':''),act,key); }
-  /* an action row of a settings list: what a ghost on its own row was, the one that ends or removes in ember */
-  function asRow(b,danger){ return aAct(b,danger); }
+  /* an action row of a settings list: the one that ends or removes in ember */
   function aAct(b, danger){
-    [].slice.call(b.classList).forEach(function(c){ if(/^(salt-|amb-pill|amb-circle|btn$)/.test(c)) b.classList.remove(c); });
+    [].slice.call(b.classList).forEach(function(c){ if(/^(amb-pill|amb-circle|btn$)/.test(c)) b.classList.remove(c); });
     b.classList.add('amb-action'); if(danger) b.classList.add('amb-action--danger'); return b;
   }
   /* a group of settings: its head, its list (add puts a node in a row of it), and the one line under it */
@@ -2674,24 +2661,28 @@ export const OWNER_JS = `
         keys.sort(function(a,b){ var x=unsentRead(a).at||'~', y=unsentRead(b).at||'~'; return x<y?-1:x>y?1:(a<b?-1:1); });
         keys.forEach(function(key){
           var path=key.slice('saltMakerPending:'.length),saved,part=retainedPart(path),u=unsentRead(key),body={};
-          if(!headed[part]){ headed[part]=true; var head=el('h2','salt-eyebrow salt-eyebrow--copper ghead unsent-head','Unsent'); head.setAttribute('data-in','record.'+part); head.setAttribute('data-formmenu',''); parent.appendChild(head); }
+          if(!headed[part]){ headed[part]=true; var head=el('h2','amb-section ghead unsent-head','Unsent'); head.setAttribute('data-in','record.'+part); head.setAttribute('data-formmenu',''); parent.appendChild(head); }
           var section=makerForm(part);section.classList.add('unsent');section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3','sr','Unsent entry'));
           try{ body=(JSON.parse(localStorage.getItem(key))||{}).body||{}; }catch(e){}
-          var word=unsentWord(u), card=el('article','salt-action salt-action--now ncard unsent-card'), kind=el('span','salt-action__kind nkind',word.charAt(0).toUpperCase()+word.slice(1));
+          /* 16 Nov 2026, the move to Ambient (end pass): an unsent entry is Ambient's task, as Needs you's card is: its kind and age and the state's chip, the title its one button
+             (the whole card is its tap, site.css), the book's chip before the code, the sum as the one figure, Resend its one pill; the second choices wait in the card opened */
+          var word=unsentWord(u), card=el('article','amb-task amb-task--warn ntask unsent-card'), head2=el('div','amb-task__head'), kind=el('span','amb-task__kind nkind',word.charAt(0).toUpperCase()+word.slice(1));
           var age=u.at?ageOf(u.at):''; if(age){ kind.appendChild(document.createTextNode(' · ')); kind.appendChild(el('span','nage',age)); }
-          var cbody=el('div','salt-action__body'), tap=actOn(el('button','salt-action__title need-tap'),'record.retained.open',path.split('/').pop()), go=el('div','salt-action__go');
+          var title=el('h3','amb-task__title'), tap=actOn(el('button','need-title need-tap'),'record.retained.open',path.split('/').pop()), go=el('div','amb-task__acts ngo');
           tap.type='button'; tap.setAttribute('aria-expanded','false');
-          if(typeof body.product==='string'&&body.product) tap.appendChild(productTag(body.product));
+          if(typeof body.product==='string'&&body.product) tap.appendChild(bookChip(body.product));
           tap.appendChild(whoTag(el('span','need-who'+(u.who?' need-who--code':''),u.who||'Unsent '+word),u.who));
           tap.setAttribute('aria-label','Unsent '+word+(u.who?' for '+u.who:'')+(age?', '+age:''));
-          cbody.appendChild(tap); card.appendChild(kind); card.appendChild(cbody); card.appendChild(go);
-          card.appendChild(el('span','salt-action__money salt-action__money--lg nfig',+body.total>0.004?rmShort(body.total):''));
+          head2.appendChild(kind); head2.appendChild(el('span','amb-chip amb-chip--warn','Unsent')); card.appendChild(head2);
+          title.appendChild(tap); card.appendChild(title);
+          if(+body.total>0.004){ var figs=el('div','amb-task__figures'), fig=amb.node(amb.stat('Amount',rmShort(body.total))); fig.classList.add('nfig'); figs.appendChild(fig); card.appendChild(figs); }
+          card.appendChild(go);
           section.appendChild(card);
           var open=el('div','unsent-open'); open.hidden=true; section.appendChild(open);
           var shut=function(on){ open.hidden=!on; tap.setAttribute('aria-expanded',on?'true':'false'); };
           var gone=function(){ section.remove(); if(!parent.querySelector('.maker-input.unsent[data-in="record.'+part+'"]')){ var h=parent.querySelector('.unsent-head[data-in="record.'+part+'"]'); if(h) h.remove(); } };
           tap.addEventListener('click',function(){ shut(open.hidden); });
-          var status=makerStatus(open), ways=el('div','unsent-ways');
+          var status=makerStatus(open), ways=el('div','amb-settings unsent-ways'), waysList=el('ul','amb-settings__list'); ways.appendChild(waysList);
           parent.appendChild(section);
           try{saved=makerSaved(path);status.textContent=unsentSaid(u)+' Send it again, or update it first.';}
           catch(error){refusal(status,error);}
@@ -2722,7 +2713,7 @@ export const OWNER_JS = `
             }catch(error){refusal(status,error);shut(true);}
           };
           ['Resend','Update and send','Discard'].forEach(function(label,index){
-            var button=actOn(el('button',index?'salt-ghost'+(index===2?' salt-ghost--danger':''):'salt-pill salt-pill--sm nbtn',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
+            var act=['record.retained.retry','record.retained.review','record.retained.cancel'][index], button=index?aAct(aBtn(label,'',act),index===2):aPill(label,act,undefined,true);
             if(!index) button.setAttribute('aria-label','Send again');
             button.onclick=async function(){
               if(index===2){
@@ -2731,7 +2722,7 @@ export const OWNER_JS = `
               }
               var controls=section.querySelectorAll('button');controls.forEach(function(control){control.disabled=true;});
               try{await run(index===1);}finally{controls.forEach(function(control){control.disabled=false;});}
-            };(index?ways:go).appendChild(button);
+            };if(index){ var li=el('li'); li.appendChild(button); waysList.appendChild(li); } else go.appendChild(button);
           });
         });
       }
@@ -4123,7 +4114,7 @@ export const OWNER_JS = `
     var n={};
     try{ unsentList().forEach(function(u){ var p=retainedPart(u.path); n[p]=(n[p]||0)+1; }); }catch(e){}
     [].forEach.call(document.querySelectorAll('.aparts[data-place="record"] [data-part]'),function(b){
-      var c=b.querySelector('.nktab__n,.amb-segment__count'); if(c){ c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):''; if(c.classList.contains('amb-segment__count')) c.hidden=!c.textContent; } });
+      var c=b.querySelector('.amb-segment__count'); if(c){ c.textContent=n[b.getAttribute('data-part')]?String(n[b.getAttribute('data-part')]):''; if(c.classList.contains('amb-segment__count')) c.hidden=!c.textContent; } });
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -7275,7 +7266,7 @@ export const OWNER_JS = `
     return sets.map(function(s){
       var p=el('p','maker-facts aptier'), was=tierWas(d,s);
       if(many) p.appendChild(document.createTextNode(s.code+' '));
-      p.appendChild(productTag(s.product)); p.appendChild(document.createTextNode(' '+tierWord(s.v)+(was?', was '+was:'')));
+      p.appendChild(bookChip(s.product)); p.appendChild(document.createTextNode(' '+tierWord(s.v)+(was?', was '+was:'')));
       return p;
     });
   }
@@ -7283,8 +7274,9 @@ export const OWNER_JS = `
   function noFigure(d){ return d.qty==null&&d.total==null; }
   /* what a Desk row is, in the order a person says it: the kind, the size, the sum; its book is the mark its card draws before these words (needCard, mark) */
   function rowWhat(d){ var e=d.entry||{}; return [entryWord(e), d.qty==null?'':units(d.qty), rm(d.total)].filter(Boolean).join(', '); }
-  function ghost(t, lit){ var L=labOf(t), b=actOn(el('button','salt-ghost'+(lit?' salt-ghost--lit':''),L[0]),L[1],L[2]); b.type='button'; return b; }
-  function pill(t){ var L=labOf(t), b=actOn(el('button','salt-pill salt-pill--md',L[0]),L[1],L[2]); b.type='button'; return b; }
+  /* 16 Nov 2026, the move to Ambient: a second choice is Ambient's quiet pill and a main one its pill; ambBtn sizes either */
+  function ghost(t){ var L=labOf(t), b=actOn(el('button','amb-pill amb-pill--quiet',L[0]),L[1],L[2]); b.type='button'; return b; }
+  function pill(t){ var L=labOf(t), b=actOn(el('button','amb-pill',L[0]),L[1],L[2]); b.type='button'; return b; }
   /* an age in the hours a customer has waited: minutes under the first, days from the third */
   function ageOf(iso){
     var t=Date.parse(iso); if(!(t>0)) return '';
@@ -7329,9 +7321,9 @@ export const OWNER_JS = `
     if(o.open&&o.keepOpen){ var op=ambBtn(pill(['Open',o.act||'need.open',o.key]),true); op.addEventListener('click', o.open); c.appendChild(op); }
     return c;
   }
-  /* a Salt button drawn as Ambient's pill: its salt- classes go, the small pill stays, and a quiet one is a second choice. A disabled or aria state stays as it was. */
+  /* a button drawn as Ambient's small pill, and a quiet one is a second choice. A disabled or aria state stays as it was. */
   function ambBtn(b, quiet){
-    [].slice.call(b.classList).forEach(function(k){ if(k.indexOf('salt-')===0||k==='nbtn') b.classList.remove(k); });
+    b.classList.remove('nbtn');
     b.classList.add('amb-pill','amb-pill--sm'); if(quiet) b.classList.add('amb-pill--quiet');
     return b;
   }
@@ -7363,7 +7355,7 @@ export const OWNER_JS = `
       if(o.sev==='watch') return;   /* Ambient 0.7.5: Watch is a state with nothing to do yet, so it has no control (its title opens it) */
       var grown=c.classList.contains('need--grow');
       if(go.children.length&&!grown) return;
-      var filled=!b.classList.contains('salt-ghost')&&!b.classList.contains('salt-ghost--lit');
+      var filled=!b.classList.contains('amb-pill--quiet');
       ambBtn(b, !(grown&&filled&&!go.children.length));
       if(!go.parentNode) c.appendChild(go);
       go.appendChild(b);
@@ -7377,7 +7369,6 @@ export const OWNER_JS = `
      whole card is still the tap, the title its button stretched over it, read in full to a reader. c._add takes the first action alone, and every action of
      the row once the card has grown (it asks once, or runs a turn), when the row stands under the body. */
   var CODE_RE=/^[A-Z]+[0-9]+-[A-Z0-9-]+$/;
-  function productTag(product){ return bookChip(product); }
   /* 22 OCT 2026 (canvas Needs you): A CARD TAPPED OPENS BESIDE THE LIST FROM 860PX, every kind of it; below 860px it goes to its place, as before */
   function needOpen(o){ if(wide()){ nOpenKey=o.key; drawNeedOpen(true); return; } o.open(); }
   /* THE OPENED CARD, the card in full: its kind and age, the title in words, verb first, what and why with the book's typed tag, the clock of an order, and
@@ -7402,7 +7393,7 @@ export const OWNER_JS = `
     /* the first filled action is the record's one main action, the foot (drawNeedOpen stands it last in the column); every other way a quiet pill under the words */
     c._add=function(b){
       if(!own) return;
-      var filled=!b.classList.contains('salt-ghost')&&!b.classList.contains('salt-ghost--lit');
+      var filled=!b.classList.contains('amb-pill--quiet');
       if(filled&&!go.children.length){ ambBtn(b,false); b.classList.remove('amb-pill--sm'); b.classList.add('amb-pill--block'); go.appendChild(b); return; }
       ambBtn(b,true); if(!acts.parentNode) c.appendChild(acts); acts.appendChild(b);
     };
@@ -7552,9 +7543,9 @@ export const OWNER_JS = `
       var r=strangerLink();
       if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
       silverOpen[a.username]=true;
-      var box=el('div','glink salt-glass-card salt-glass-card--radius-md'), img=document.createElement('img'), cp=ghost(['Copy link',at+'.copy-link']);
-      box.appendChild(el('code','gu',r.url));
-      img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; box.appendChild(img);
+      var box=el('figure','amb-codeframe glink'), fld=el('div','amb-codeframe__field'), img=document.createElement('img'), cp=ghost(['Copy link',at+'.copy-link']), cap=el('figcaption','amb-codeframe__caption');
+      cap.appendChild(el('code','gu',r.url));
+      img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; fld.appendChild(img); box.appendChild(fld); box.appendChild(cap);
       cp.addEventListener('click', async function(){
         try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
       });
@@ -7779,12 +7770,12 @@ export const OWNER_JS = `
       if(c._grow) c._grow();
       if(!c._full){ var tw=fin?(did===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
         :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.');
-        c._body.appendChild(el('p','salt-action__why',did+' of '+n+' sent. '+tw)); }
+        c._body.appendChild(el('p','amb-task__text',did+' of '+n+' sent. '+tw)); }
       var ticks=el('div','achips');
       t.rows.forEach(function(x, k){ var did=t.sent.indexOf(x.username)>=0;
         ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
       c._body.appendChild(ticks);
-      if(fin){ var dn=ghost(['Done','need.turn-done'], true); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); c._add(dn); }
+      if(fin){ var dn=ghost(['Done','need.turn-done']); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); c._add(dn); }
       else {
         var sh=pill(['','need.turn-share']); sh.textContent=t.copied?'Sent it':'Share'; sh.disabled=!t.j||!!t.busy; sh.addEventListener('click', turnShare);
         var sk=ghost(['Skip','need.turn-skip']); sk.disabled=!!t.busy; sk.addEventListener('click', function(){ if(turn.busy) return; turn.i++; turnStep(); });
