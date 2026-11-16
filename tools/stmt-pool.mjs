@@ -13,10 +13,12 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-/* about ten, his figure: every spare is one more small record on every publish. The laptop's chain
-   says the pool is low under POOL_LOW, and one line tops it up to POOL_SIZE again. */
-export const POOL_SIZE = 10;
-export const POOL_LOW = 3;
+/* fifty, his "Both A and B" of 17 Nov 2026 (ten until then, his figure of 24 Sep): every spare is one more small record on every
+   publish, and only the laptop mints one (the master), so the pool is large enough that the laptop is seldom asked. Salt Admin
+   says the pool is low under POOL_LOW (stmt/owner.js carries the same figure, pinned by the suite), and one line tops it up to
+   POOL_SIZE again. */
+export const POOL_SIZE = 50;
+export const POOL_LOW = 10;
 
 /** The issue the publish reads: the newest YYYY-MM folder holding a _kv. */
 export function newestIssue(root) {

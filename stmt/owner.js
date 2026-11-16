@@ -7672,13 +7672,13 @@ export const OWNER_JS = `
   }
   /* 28 OCT 2026 (his word): A RED SUITE IS THE DESK INFORMING HIM, never his entry to fix. cloud-commit writes it as the refusal suite:<version> and clears
      every one on the next green suite (tools/drafts.mjs --clear-suite-notices), so it is one FYI line, the newest version alone, with no button */
-  /* plan version 4, part 4a (his answer E, walk-in ready): A WALK-IN TAKES THE NEXT READY ACCOUNT at Add ID, so Needs you says when fewer than three are
-     left (tools/stmt-pool.mjs POOL_LOW), as the last publish counted them; the laptop's pool makes ten again. FYI: nothing to tap here */
-  var POOL_LOW=3;
+  /* plan version 4, part 4a (his answer E, walk-in ready): A WALK-IN TAKES THE NEXT READY ACCOUNT at Add ID, so Needs you says when fewer than ten are
+     left (tools/stmt-pool.mjs POOL_LOW, the same figure, pinned by the suite), as the last publish counted them; the laptop's pool makes fifty again. FYI: nothing to tap here */
+  var POOL_LOW=10;
   function poolNeed(n){
     var t=n===0?'No ready accounts left':n+' ready account'+(n===1?'':'s')+' left';
     return item('watch','watch','Accounts','x:pool', sheetAt||'', {who:'Accounts', title:t, what:t, counts:false,
-      why:'A walk-in takes one at Add ID, so run the pool on the laptop to make ten again.', open:(wide()?function(){}:null)});
+      why:'A walk-in takes one at Add ID, so run the pool on the laptop to make fifty again.', open:(wide()?function(){}:null)});
   }
   /* 13 Nov 2026 (the price band's version 3, the customers): one FYI line says the week's new buyers, read off the Desk's catalogue. Nothing here prices.
      16 Nov 2026, his word "Remove it": NO CARD FOR THE REGULARS due, late or lapsed. It asked nothing of him: the reminder wakes them by itself (stmt/remind.js),

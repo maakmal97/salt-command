@@ -1,0 +1,5 @@
+[
+ {"name":"W3 Salt Admin warns at three again","file":"stmt/owner.js","find":"  var POOL_LOW=10;","replace":"  var POOL_LOW=3;"},
+ {"name":"W5 the pool stays ten","file":"tools/stmt-pool.mjs","find":"export const POOL_SIZE = 50;","replace":"export const POOL_SIZE = 10;"},
+ {"name":"W3 the pool's low mark stays three","file":"tools/stmt-pool.mjs","find":"export const POOL_LOW = 10;","replace":"export const POOL_LOW = 3;"}
+]

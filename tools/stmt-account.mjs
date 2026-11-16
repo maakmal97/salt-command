@@ -28,7 +28,7 @@
  *
  *   node tools/stmt-account.mjs --check    say who has no account, write nothing
  *   node tools/stmt-account.mjs --mint     mint one for each of them
- *   node tools/stmt-account.mjs --pool     top the pool of spare accounts up to ten free (D15);
+ *   node tools/stmt-account.mjs --pool     top the pool of spare accounts up to fifty free (D15);
  *                                          --count N for another figure, --check to write nothing
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
