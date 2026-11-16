@@ -6,7 +6,7 @@
  * jsdom lays nothing out, so the rules are proved as each surface's served stylesheets and markup, and two behaviours (the bar of places, the cap)
  * by driving the page. The measured pages (the bar and the rail at one place on all three at 1180, 1440 and 1920, 16px down on a phone; panes 14px
  * apart; one drop shadow on a page's own panes, none inside one) are the Chromium probe's, in the version's notes.
- *   O1  the recipe: a glass card casts the lighter desk shadow, a card inside a card none
+ *   O1  the recipe: a glass card casts no drop shadow (16 Nov 2026, his "you can still see the shadow"), a card inside a card none
  *   O2  the recipe's side frame: the bar laid over the column's one cell, the column one bar and a gap down, room for a shadow at each side, drawn
  *       from the bar's middle, running to the frame's foot with the rail --salt-frame-foot above it
  *   O3  the Desk: panes one under another 14px apart (not inside a grid that spaces them); a tile, and a pane inside a pane, no drop shadow; the
@@ -41,7 +41,7 @@ export async function run({ ok }) {
   {
     const { at, top } = rulesOf(new JSDOM("<style>" + SITE_RECIPES + "</style>").window.document.styleSheets);
     const card = top(".salt-glass-card"), inner = top(".salt-glass-card .salt-glass-card");
-    ok(/box-shadow: var\(--salt-shadow-desk\)/.test(card) && !/var\(--salt-shadow\)/.test(card), "O1.1 a glass card casts the lighter desk shadow on every surface: " + card.slice(0, 200));
+    ok(/box-shadow: inset 0(px)? 1px 0(px)? var\(--salt-highlight\)/.test(card) && !/--salt-shadow/.test(card), "O1.1 a glass card casts no drop shadow on any surface, its highlight alone: " + card.slice(0, 200));
     ok(/box-shadow: inset 0(px)? 1px 0(px)? var\(--salt-highlight\)/.test(inner) && !/--salt-shadow/.test(inner), "O1.2 a card inside a card casts no drop shadow, its highlight alone: " + inner);
     const col = at(Q, ".salt-frame__col"), bar = at(Q, ".salt-frame__col > .salt-frame__bar"), main = at(Q, ".salt-frame__col > .salt-frame__main"),
       pane = at(Q, ".salt-frame__col > .salt-frame__main .salt-pane"), rail = at(Q, ".salt-frame--side > .salt-rail");
@@ -62,9 +62,10 @@ export async function run({ ok }) {
     ok(/margin-top: 14px/.test(top(STACK)) && /margin-top: 0(px)?/.test(top(":is(.two,.kpis) > :is(.card,.chartbox,.quotecard,.pend)")),
       "O3.1 the Desk's panes one under another stand 14px apart, as the Counter's, and a grid's own gap is left alone: " + J([top(STACK), top(":is(.two,.kpis) > :is(.card,.chartbox,.quotecard,.pend)")]));
     const flat = (s) => d.styleSheets && [...d.styleSheets].flatMap((x) => [...x.cssRules]).filter((r) => r.selectorText && sel(r).split(",").map((x) => x.trim()).includes(s) && !r.media).map((r) => r.style.cssText).pop() || "";
-    const tile = flat(".kpi"), nested = [...d.styleSheets].flatMap((x) => [...x.cssRules]).filter((r) => r.selectorText && /\) :is\(\.kpi,\.card/.test(sel(r))).map((r) => r.style.cssText).pop() || "";
-    ok(/^box-shadow: inset 0(px)? 1px 0(px)? var\(--salt-highlight\);?$/.test(tile) && /^box-shadow: inset 0(px)? 1px 0(px)? var\(--salt-highlight\);?$/.test(nested),
-      "O3.2 a tile, and a pane inside a pane, cast no drop shadow on the Desk, as on Salt Admin and the Counter: " + J([tile, nested]));
+    /* 16 Nov 2026, his "you can still see the shadow": no pane casts one, so every box-shadow a .kpi or .card rule sets is the highlight alone */
+    const casts = [...d.styleSheets].flatMap((x) => [...x.cssRules]).filter((r) => r.selectorText && !r.media && sel(r).split(",").map((x) => x.trim()).some((s) => s === ".kpi" || s === ".card") && r.style.boxShadow).map((r) => r.style.boxShadow);
+    ok(casts.length > 0 && casts.every((b) => /^inset 0(px)? 1px 0(px)? var\(--salt-highlight\)$/.test(b)),
+      "O3.2 a tile and a pane cast no drop shadow on the Desk, as on Salt Admin and the Counter: " + J(casts));
     ok(/padding: 16px 18px/.test(top(".card,.pend,.quotecard")) && /padding: 16px/.test(at("(max-width:860px)", ".card,.pend,.quotecard"))
       /* jsdom drops a max() declaration, so the phone's gutter is read off the rule as the page serves it */
       && /@media\(max-width:560px\)\{\s*\.wrap\{padding-top:calc\(16px \+ var\(--safetop\)\);padding-left:max\(16px,var\(--safeleft\)\);padding-right:max\(16px,var\(--saferight\)\);\}/.test([...d.querySelectorAll("style")].map((x) => x.textContent).join("")) && /--dbtop: 16px/.test(at("(max-width:560px)", ":root")),

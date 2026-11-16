@@ -1,11 +1,5 @@
 [
  {
-  "name": "O1.1 a glass card casts the heavy shadow again",
-  "file": "stmt/statement-css.js",
-  "find": "box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);\\n}\\n\\n.salt-glass-card .salt-glass-card",
-  "replace": "box-shadow: var(--salt-shadow), inset 0 1px 0 var(--salt-highlight);\\n}\\n\\n.salt-glass-card .salt-glass-card"
- },
- {
   "name": "O1.2 a card inside a card casts its shadow",
   "file": "stmt/statement-css.js",
   "find": ".salt-glass-card .salt-glass-card { box-shadow: inset 0 1px 0 var(--salt-highlight); }",
@@ -46,18 +40,6 @@
   "file": "master/salt_command.html",
   "find": ":is(.two,.kpis)>:is(.card,.chartbox,.quotecard,.pend){margin-top:0;}",
   "replace": ""
- },
- {
-  "name": "O3.2 a tile casts the drop shadow again",
-  "file": "master/salt_command.html",
-  "find": ".kpi,\n:is(.kpi,.card,",
-  "replace": ":is(.kpi,.card,"
- },
- {
-  "name": "O3.2 a pane inside a pane casts the drop shadow again",
-  "file": "master/salt_command.html",
-  "find": "details.rcard,.apcal,.apside,.ledsum,.updbox) :is(.kpi,.card,.chartbox,.quotecard,.evo,.pend,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox){",
-  "replace": "details.rcard,.apcal,.apside,.ledsum,.updbox) :is(.zz){"
  },
  {
   "name": "O3.3 the Desk's card keeps its old padding",
@@ -160,5 +142,17 @@
   "file": "stmt/statement-css.js",
   "find": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); }",
   "replace": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); } #tabs { --amb-rail-gap: 28px; }"
+ },
+ {
+  "name": "O1.1 a glass card casts the desk shadow again",
+  "file": "stmt/statement-css.js",
+  "find": "\\n  box-shadow: inset 0 1px 0 var(--salt-highlight);\\n}\\n\\n.salt-glass-card .salt-glass-card",
+  "replace": "\\n  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);\\n}\\n\\n.salt-glass-card .salt-glass-card"
+ },
+ {
+  "name": "O3.2 a pane casts the drop shadow again",
+  "file": "master/salt_command.html",
+  "find": ".ledsum,.updbox{\n  background:var(--salt-glass);border:1px solid var(--salt-line);\n  box-shadow:inset 0 1px 0 var(--salt-highlight);}",
+  "replace": ".ledsum,.updbox{\n  background:var(--salt-glass);border:1px solid var(--salt-line);\n  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}"
  }
 ]

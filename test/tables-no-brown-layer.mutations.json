@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the layer names a panel again",
+  "file": "design/desk.css",
+  "find": "  --hair:var(--salt-line-faint);",
+  "replace": "  --panel:var(--salt-panel);--hair:var(--salt-line-faint);"
+ }
+]
