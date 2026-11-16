@@ -370,6 +370,9 @@ a.amb-row:active, button.amb-row:active, .amb-row__main:active { transform: scal
   transition: background-color var(--amb-dur-fast) var(--amb-ease-fast), color var(--amb-dur-fast) var(--amb-ease-fast);
 }
 .amb-segment__opt[aria-pressed="true"] { background: var(--amb-pill); color: var(--amb-on-pill); }
+/* a chip in an option is its own small ground, so it keeps the ink on it whether the option is pressed or not */
+.amb-segment__opt .amb-chip:not(.amb-chip--pos, .amb-chip--neg, .amb-chip--warn) { color: var(--amb-ink); }
+.amb-segment__opt[aria-disabled="true"] .amb-chip:not(.amb-chip--pos, .amb-chip--neg, .amb-chip--warn) { color: var(--amb-ink-3); }
 .amb-segment__count { font-variant-numeric: tabular-nums; font-weight: 500; }
 /* an option with nothing behind it: dimmed, still read and reached by the keyboard; pressing it does nothing */
 .amb-segment__opt[aria-disabled="true"] { color: var(--amb-ink-3); cursor: default; }
@@ -1139,6 +1142,13 @@ textarea.amb-input { min-height: 96px; padding-block: 12px; resize: none; }
 .amb-option__title { grid-column: 2; font-size: var(--amb-text-callout); font-weight: 600; line-height: 1.3; }
 .amb-option__sub { grid-column: 2; font-size: var(--amb-text-footnote); line-height: 1.35; color: var(--amb-ink-2); text-wrap: pretty; }
 .amb-option__figure { grid-column: 3; grid-row: 1 / span 2; font-size: var(--amb-text-callout); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+/* a lead glyph: what the option is, drawn between its mark and its words, on every option of the choice or on none */
+.amb-option:has(> .amb-option__glyph) { grid-template-columns: 22px 24px minmax(0, 1fr) auto; }
+.amb-option__glyph { grid-column: 2; grid-row: 1 / span 2; width: 24px; height: 24px; color: var(--amb-ink-2); }
+svg.amb-option__glyph:not(.amb-icon) { fill: currentColor; }
+.amb-option:has(> .amb-option__glyph) > :is(.amb-option__title, .amb-option__sub) { grid-column: 3; }
+.amb-option:has(> .amb-option__glyph) > .amb-option__figure { grid-column: 4; }
+.amb-option:has(.amb-option__input:checked) > .amb-option__glyph { color: var(--amb-ink); }
 .amb-option:has(.amb-option__input:checked) { border-color: var(--amb-accent); box-shadow: inset 0 0 0 1px var(--amb-accent); }
 .amb-option:has(.amb-option__input:checked) > .amb-option__mark { border-color: var(--amb-accent); background: radial-gradient(circle, var(--amb-accent) 0 5px, transparent 5.5px); }
 .amb-option:has(.amb-option__input:focus-visible) { outline: 2px solid var(--amb-accent); outline-offset: 2px; }
@@ -1186,6 +1196,8 @@ button.amb-setting:focus-visible, a.amb-setting:focus-visible, .amb-disclose > s
 @container amb (max-width: 20rem) {
   .amb-option { grid-template-columns: 22px minmax(0, 1fr); }
   .amb-option__figure { grid-column: 2; grid-row: auto; text-align: left; }
+  .amb-option:has(> .amb-option__glyph) { grid-template-columns: 22px 24px minmax(0, 1fr); }
+  .amb-option:has(> .amb-option__glyph) > .amb-option__figure { grid-column: 3; }
   .amb-setting { flex-wrap: wrap; }
   .amb-setting__value { max-width: none; text-align: left; }
 }
@@ -1469,6 +1481,9 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 @starting-style { .amb-sheet[open] { opacity: 0; transform: translateY(24px); } }
 .amb-sheet::backdrop { background: var(--amb-scrim); }
 .amb-sheet--full { height: calc(100dvh - var(--amb-safe-top) - var(--amb-space-6)); }
+/* a sheet stands outside the shell, so what it holds answers to the sheet's own width: a table stacks in a
+   sheet as narrow as a phone, a choice and a row of settings close up as they do on one */
+.amb-sheet { container: amb / inline-size; }
 .amb-sheet__head { display: flex; align-items: center; gap: var(--amb-space-3); padding-bottom: var(--amb-space-3); margin-bottom: var(--amb-space-2); border-bottom: 1px solid var(--amb-line); }
 .amb-sheet__title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--amb-text-body); font-weight: 700; line-height: 1.25; }
 .amb-sheet__body { display: grid; gap: var(--amb-space-3); }
@@ -1527,6 +1542,8 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
      of a few choices no wider than it needs, a row whose amount stays near its name */
   .amb-section { justify-content: flex-start; }
   .amb-segment { max-width: 30rem; }
+  /* filters wrap, so they take their row's width rather than wrap their words */
+  .amb-segment--wrap { max-width: none; }
   .amb-list { max-width: var(--amb-measure); }
   .amb-drawer { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .amb-tiles { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
