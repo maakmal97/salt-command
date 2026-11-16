@@ -20,6 +20,7 @@
 import { runDrafter, dryRunDrafter, readBook, readMirror, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck, bindBook, wayBound } from "./drafter.js";
 import { bookDirect, compareReads, readMode, versionToken, snapshotWithSource, tokenFrom, BOOK_TOKEN } from "./book-read.js";
 import { drainOutbox } from "./outbox.js";
+import { accountsWanted, ACCOUNT_RUNGS_MIN } from "./accounts-wanted.js";
 import { mapsOpen } from "../stmt/place.js";
 import { pageMode, servedBook } from "./book-page.js";
 import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, sourceMode, noteFallback, TAP_COLS } from "./book-tap.js";
@@ -2499,7 +2500,12 @@ async function wantPublish(env, reason, now = new Date()) {
    as before. Two holes are accepted: a hand-sent probe_key run waiting counts as cover though it publishes nothing, and a
    push run that turns pending between this read and the dispatch, seconds, is still replaced; the net publishes either way. */
 const RUN_WAITING = ["queued", "pending", "waiting", "requested"];
-async function cloudCommitWaiting(env) {
+/* 17 Nov 2026: A RUN GITHUB NEVER STARTED COVERS NOTHING. On 16 Nov 2026 a dispatch sat `queued` with no job for 35 minutes, covering every
+   mark behind it. A run still `queued` at the run's own level has not reached the lock (the lock is the job's), so a newer dispatch replaces
+   nothing: the re-dispatch that day ran at once beside it. Past STUCK_MIN it no longer counts as cover. */
+const STUCK_MIN = 10;
+const runStuck = (run, now) => run.status === "queued" && Number.isFinite(Date.parse(run.created_at)) && now - Date.parse(run.created_at) > STUCK_MIN * 60000;
+async function cloudCommitWaiting(env, now = Date.now()) {
   const said = (why) => { console.log("publish: the runs did not read: " + why); return null; };
   try {
     const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
@@ -2509,7 +2515,7 @@ async function cloudCommitWaiting(env) {
     const j = await r.json();
     if (!j || !Array.isArray(j.workflow_runs)) return said("no workflow_runs");
     for (const run of j.workflow_runs) {
-      if (!run || run.status === "completed") continue;
+      if (!run || run.status === "completed" || runStuck(run, now)) continue;
       if (RUN_WAITING.includes(run.status)) return run.id || 1;
       const jr = await get("runs/" + run.id + "/jobs");
       if (!jr.ok) return said(await ghRefusal(jr, "jobs of " + run.id));
@@ -2543,7 +2549,7 @@ async function publishWanted(env, ctx, now) {
      replaces it: a dispatch here would cancel a pending PUSH run, which deploys, re-seeds and retires, for a stage_only one
      that does none of those. A run that has not started reads everything when it starts, and every run publishes, so a
      waiting one covers this mark. Unreadable, nothing is sent or marked, and the next minute asks again. */
-  const waiting = await cloudCommitWaiting(env);
+  const waiting = await cloudCommitWaiting(env, now.getTime());
   if (waiting === null) return { unread: true, reason: want.reason };
   await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify(Object.assign({ at: now.toISOString(), for: want.at, reason: want.reason }, waiting ? { covered: waiting } : {})));
   if (waiting) return { covered: waiting, reason: want.reason };
@@ -2890,6 +2896,11 @@ export default {
           if (rd.did) console.log("stage re-dispatch " + rd.tries + " of " + REDISPATCH_MIN.length + " for " + rd.waiting + " approved row(s) up to " + rd.newest
             + (rd.last ? ": the last; the hourly net stands" : ""));
         } catch (e) { console.log("stage re-dispatch FAILED: " + String((e && e.stack) || e)); }
+        /* 17 Nov 2026: a new ID booked with no account yet asks for a publish, on rungs (src/accounts-wanted.js) */
+        try {
+          const aw = await accountsWanted(env, new Date(event.scheduledTime || Date.now()), (why) => wantPublish(env, why, new Date(event.scheduledTime || Date.now())));
+          if (aw.did) console.log("account wanted " + aw.tries + " of " + ACCOUNT_RUNGS_MIN.length + ": " + aw.codes.join(", ") + (aw.last ? ": the last; the four-a-day net stands" : ""));
+        } catch (e) { console.log("account wanted FAILED: " + String((e && e.stack) || e)); }
         /* 10 Oct 2026: a publish asked for since the last one, at most one dispatch every five minutes */
         try {
           const pw = await publishWanted(env, ctx, new Date(event.scheduledTime || Date.now()));

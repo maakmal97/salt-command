@@ -1,0 +1,11 @@
+[
+ {"name":"A1 a held code still waits","file":"src/accounts-wanted.js","find":"!Number.isFinite(at) || now.getTime() - at > DAY_MS || held.has(code)","replace":"!Number.isFinite(at) || now.getTime() - at > DAY_MS"},
+ {"name":"A1 a bucket waits","file":"src/accounts-wanted.js","find":"!code || /-R$/.test(code) ||","replace":"!code ||"},
+ {"name":"A1 a supplier waits","file":"src/accounts-wanted.js","find":" || !STATEMENT_KINDS.includes(row.kind)) continue;","replace":") continue;"},
+ {"name":"A1 an old approval waits for ever","file":"src/accounts-wanted.js","find":" || now.getTime() - at > DAY_MS ||","replace":" ||"},
+ {"name":"A2 the first rung at once","file":"src/accounts-wanted.js","find":"export const ACCOUNT_RUNGS_MIN = [6, 15, 30];","replace":"export const ACCOUNT_RUNGS_MIN = [0, 15, 30];"},
+ {"name":"A2 the ask before its rung mark","file":"src/accounts-wanted.js","find":"  await env.SALT_QUEUE.put(ACCOUNT_WANTED_KEY, JSON.stringify({ newest, tries: tries + 1, at: now.toISOString() }));\n  await want(\"account for \" + codes.join(\", \"));","replace":"  await want(\"account for \" + codes.join(\", \"));\n  await env.SALT_QUEUE.put(ACCOUNT_WANTED_KEY, JSON.stringify({ newest, tries: tries + 1, at: now.toISOString() }));"},
+ {"name":"A2 rings for ever","file":"src/accounts-wanted.js","find":"  if (tries >= ACCOUNT_RUNGS_MIN.length) return { codes, tries, silent: true };\n","replace":"  if (tries >= ACCOUNT_RUNGS_MIN.length) return { codes, tries, silent: true, ...(await want(\"account for \" + codes.join(\", \")), {}) };\n"},
+ {"name":"A2 asks every minute","file":"src/accounts-wanted.js","find":"  if (age < ACCOUNT_RUNGS_MIN[tries]) return { codes, tries };\n","replace":""},
+ {"name":"A3 a newer approval does not restart","file":"src/accounts-wanted.js","find":"const tries = mark && mark.newest === newest ? (mark.tries || 0) : 0;","replace":"const tries = mark ? (mark.tries || 0) : 0;"}
+]

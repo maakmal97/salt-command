@@ -1,0 +1,5 @@
+[
+ {"name":"5c the cron never asks","file":"src/worker.js","find":"          const aw = await accountsWanted(env, new Date(event.scheduledTime || Date.now()), (why) => wantPublish(env, why, new Date(event.scheduledTime || Date.now())));","replace":"          const aw = {};"},
+ {"name":"5d a stuck run still covers","file":"src/worker.js","find":"      if (!run || run.status === \"completed\" || runStuck(run, now)) continue;","replace":"      if (!run || run.status === \"completed\") continue;"},
+ {"name":"5d any queued run is stuck","file":"src/worker.js","find":"now - Date.parse(run.created_at) > STUCK_MIN * 60000;","replace":"now - Date.parse(run.created_at) > 0;"}
+]

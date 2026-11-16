@@ -37862,6 +37862,35 @@ await (async () => {
       + JSON.stringify([say(w), say(w2), say(j1), say(j2), say(d1), say(d2)]));
   }
 
+  /* ---- 5c. A NEW ID WITH NO ACCOUNT (17 Nov 2026, src/accounts-wanted.js): the minute cron marks a publish for it and sends it the same
+     minute; once the published map holds the code it asks nothing ---- */
+  {
+    const rosterDb = (rows) => ({ prepare: (sql) => { const all = async () => ({ results: /collection='roster'/.test(sql) ? rows : [] });
+      return { bind: () => ({ all, first: async () => null, run: async () => ({}) }), all, first: async () => null, run: async () => ({}) }; } });
+    const row = { row: JSON.stringify({ code: "CQ9-NEW", kind: "customer" }), decided_at: plus(-7) };
+    const kv = new KV(), env = { ...armed(kv), SALT_LEDGER: rosterDb([row]) };
+    const a = await tick(env, plus(0));
+    const kv2 = new KV(); await kv2.put("stmt-users", JSON.stringify({ "qqqq-wwww": "CQ9-NEW" }));
+    const b = await tick({ ...armed(kv2), SALT_LEDGER: rosterDb([row]) }, plus(0));
+    ok(a.n === 1 && a.hits[0].body.inputs.reason === "publish: account for CQ9-NEW" && a.hits[0].body.inputs.stage_only === "true"
+      && b.n === 0 && b.want === null,
+      "5c a new ID booked seven minutes ago with no account sends one stage_only publish named for it that minute; with the code in the published map, nothing: "
+      + JSON.stringify([say(a), say(b)]));
+  }
+
+  /* ---- 5d. A RUN GITHUB NEVER STARTED COVERS NOTHING (17 Nov 2026): a run still queued past ten minutes is passed over and the publish goes;
+     one queued nine minutes still covers it ---- */
+  {
+    const kv = new KV(), env = armed(kv);
+    await kv.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const stuck = await tick(env, plus(1), { runs: [{ id: 3, status: "queued", created_at: plus(-10.5) }, { id: 2, status: "completed" }] });
+    const kv2 = new KV(), env2 = armed(kv2);
+    await kv2.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const fresh = await tick(env2, plus(1), { runs: [{ id: 4, status: "queued", created_at: plus(-8) }] });
+    ok(stuck.n === 1 && stuck.sent && stuck.sent.covered === undefined && fresh.n === 0 && fresh.sent && fresh.sent.covered === 4,
+      "5d a run left queued past ten minutes covers nothing and the publish goes; one queued nine minutes still covers it: " + JSON.stringify([say(stuck), say(fresh)]));
+  }
+
   /* ---- 6. THE WORKFLOW'S HALF, read as text: the input is declared, named in run-name alone, and the net is four a day ---- */
   {
     const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
@@ -48613,7 +48642,7 @@ await (async () => {
   await (await import("./order-stream-v5.mjs")).run({ ok });
 })();
 
-section("v1389 One order stream, version 4: a walk-in account always ready, Needs you saying when fewer than three are left (4a)");
+section("v1389 One order stream, version 4: a walk-in account always ready, Needs you saying when fewer than ten are left (4a)");
 await (async () => {
   await (await import("./order-stream-v6.mjs")).run({ ok, pageWork });
 })();
@@ -50595,6 +50624,11 @@ await (async () => {
 section("16 Nov 2026: one look on every Salt surface, panes apart, one shadow, the bar over what scrolls, the bar of places");
 await (async () => {
   await (await import("./one-look.mjs")).run({ ok });
+})();
+
+section("17 Nov 2026: a new ID's account is asked for until it is there, on rungs at 6, 15 and 30 minutes");
+await (async () => {
+  await (await import("./accounts-wanted.mjs")).run({ ok });
 })();
 
 section("15 Nov 2026: one page width on every Salt surface, the Desk, Salt Admin and the Counter");
