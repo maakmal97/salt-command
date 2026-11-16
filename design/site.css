@@ -185,12 +185,8 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 .atable td:last-child, .atable th:last-child { padding-inline-start: var(--amb-space-5); }
 .atable tr.off { opacity: .6; }
 .aprodhead { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
-/* the filters wrap onto a second line of chips and never narrow to the width a segment keeps (Ambient caps .amb-segment at 30rem; a gap for the parts session) */
-.amb-segment--wrap { max-width: none; }
 /* the links' and the associates' lists stand in their place's stack, the way the accounts' do */
 #glist, #jlist, #clist { display: contents; }
-/* a book's chip inside a pressed choice takes the choice's own ground and ink, its dot left as the chip draws it */
-.apct__books .amb-segment__opt > .amb-chip { background: transparent; color: inherit; border-color: transparent; padding-inline: 0; }
 
 /* ---- Counter: Orders and the order card, both readers' (the band, Steps, Bill, thread) ---- */
 /* the place is the shell's two panes (#pOrder is the split): a stack never insets a stack of its own; a list or a part stands level with its heading */
@@ -248,8 +244,6 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .stm-big > .amb-setting__value:not(.amb-neg) { color: var(--amb-ink); }
 .amb-setting > .amb-thumb { flex: none; }
 .amb-settings.tot, .amb-settings.owed { max-width: none; }
-/* the Full statement is a tall sheet whose table stacks by the sheet's own width, not the shell's */
-.amb-sheet--full { container: amb / inline-size; }
 .amb-sheet .amb-table { margin: 0; }
 /* Account: one stack, the device above the statement; from 960px the device and its help stand in a second column */
 #aGlance, #aThread { display: contents; }

@@ -6262,6 +6262,18 @@ const CLIENT_JS = `
      order's own included (v694): the tile stays, dashed, with the reason in place of its line. Choosing it tells him how
      they will pay; the cash itself is his to record when he takes it, so the customer never declares it. V3: never on an
      order paid in advance, whose reason is said first, since paying at the door is not paying in advance. */
+  /* 16 Nov 2026, the move to Ambient (0.7.6): every way leads with its glyph again, Ambient's option glyph, drawn in the ink. A code and a
+     transfer are Ambient's own (qr, bank); JomPAY's receipt and cash's note are the page's own marks as filled shapes, their lines cut out
+     (evenodd), so they hold no fill, stroke or colour of their own. Every way carries one, or the choice would break Ambient's rule. */
+  var WAY_MARK={jompay:'M6.2 3.8H17.8V20.2L15.9 18.9L14 20.2L12 18.9L10 20.2L8.1 18.9L6.2 20.2ZM9 7.6V8.8H15V7.6ZM9 10.8V12H15V10.8ZM9 14V15.2H12.6V14Z',
+    cash:'M3.6 7H20.4V17H3.6ZM12 9.4A2.6 2.6 0 1 0 12 14.6A2.6 2.6 0 1 0 12 9.4ZM6 11.4V12.6H7.6V11.4ZM16.4 11.4V12.6H18V11.4Z'};
+  function wayGlyph(g){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
+    s.setAttribute('aria-hidden','true');
+    if(WAY_MARK[g]){ s.setAttribute('class','amb-option__glyph'); s.setAttribute('viewBox','0 0 24 24'); var p=document.createElementNS(NS,'path'); p.setAttribute('d',WAY_MARK[g]); p.setAttribute('fill-rule','evenodd'); s.appendChild(p); }
+    else { s.setAttribute('class','amb-icon amb-option__glyph'); var u=document.createElementNS(NS,'use'); u.setAttribute('href','#amb-'+(g==='qr'?'qr':'bank')); s.appendChild(u); }
+    return s;
+  }
   function cashWay(){
     var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', pre=!!(o&&o.prepay), no=pre||heldUnpaid();
     return {v:'cod', label:d?'pay.cashArrives':'pay.cashCollect', g:'cash', off:no,
@@ -6344,7 +6356,7 @@ const CLIENT_JS = `
       var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), mk=el('span','amb-option__mark'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
       r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off; mk.setAttribute('aria-hidden','true');
       r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
-      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',tw(w.label)));
+      lab.appendChild(r); lab.appendChild(mk); lab.appendChild(wayGlyph(w.g)); lab.appendChild(el('span','amb-option__title',tw(w.label)));
       lab.appendChild(el('span','amb-option__sub',w.detail?tw(w.detail):a?tw('pay.fromApp',{a:a.name}):tw('pay.fromAppAny')));
       fs.appendChild(lab);
     });
