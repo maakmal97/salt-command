@@ -5,7 +5,7 @@
  {"name":"the foot is never drawn","file":"stmt/page.js","find":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);","replace":"f.hidden=true;"},
  {"name":"a foot is drawn whatever is owed","file":"stmt/page.js","find":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);","replace":"f.hidden=!bundle;"},
  {"name":"the Pay does nothing","file":"stmt/page.js","find":"pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });","replace":"pb.addEventListener('click',function(){});"},
- {"name":"the sheet is cut to three lines too","file":"stmt/page.js","find":"(!full&&i>=HOME_LINES?rest:L).appendChild(r);","replace":"(i>=HOME_LINES?rest:L).appendChild(r);"},
+ {"name":"the sheet is cut to three lines too","file":"stmt/page.js","find":"      ul.appendChild(hRow({tag:'li', title:lab, sub:sub, amount:rm(x.fig)}));","replace":"      if(lines.indexOf(x)<3) ul.appendChild(hRow({tag:'li', title:lab, sub:sub, amount:rm(x.fig)}));"},
  {"name":"Home draws four lines before it folds","file":"stmt/page.js","find":"var HOME_LINES=3,","replace":"var HOME_LINES=4,"},
  {"name":"the word reads further, not more","file":"stmt/words.js","find":"\"inv.more\": \"{n} more\",","replace":"\"inv.more\": \"{n} further\","},
  {"name":"the foot goes with the rest when locked","file":"stmt/page.js","find":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);","replace":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot)||locked;"},

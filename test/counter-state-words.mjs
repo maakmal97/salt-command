@@ -299,6 +299,14 @@ export async function run({ ok }) {
       && shapesDrawn(mv).length === 0 && marks(M.d).length === 0,
       "a line of the check whose price moved at Place leads with its mark, named by its shape for the reader and drawn with no shape word: " + JSON.stringify(mv && drawnText(mv)));
 
+    /* ---- 7b: a mark in a sentence the page words again (markHtml: the pay sheet's note, its lines) is read aloud as its shape and never drawn as one
+       (16 Nov 2026, the move to Ambient: Home no longer calls markHtml, so the check drives the pay sheet, which does) */
+    const PY = await open({ orders: [R] }); tab(PY, "order");
+    await until(() => PY.d.querySelector('#pOrder [data-row="' + R.id + '"]')); PY.d.querySelector('#pOrder [data-row="' + R.id + '"]').click();
+    await until(() => PY.d.querySelector("#pOrder .amb-foot button")); PY.d.querySelector("#pOrder .amb-foot button").click();
+    const srs = [...PY.d.querySelectorAll("#paySheet .psym + .sr")], drawn = [...PY.d.querySelectorAll("#paySheet .pshape")];
+    ok(srs.length > 0 && drawn.length === 0 && srs.every((x) => SHAPES.includes(t(x))),
+      "a mark in a sentence on the pay sheet is the drawing and its shape word read aloud, and no shape word is drawn beside it: " + JSON.stringify(srs.map((x) => t(x))));
     /* ---- 8: the tile's caption is the size alone */
     /* 16 Nov 2026: the list's rows are the system's Row (no tile); the size under the mark stands in the open order's band */
     await screen(A);

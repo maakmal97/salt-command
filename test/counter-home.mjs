@@ -26,15 +26,15 @@ export async function run({ ok, pageWork }) {
   const klNow = new Date(Date.now() + 8 * 3600e3), Y = String(klNow.getUTCFullYear()), MM = ("0" + (klNow.getUTCMonth() + 1)).slice(-2);
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const ago = (h) => new Date(Date.now() - h * 3600e3).toISOString();
-  /* a line of the live statement, as tools/make_statements.mjs writes one */
-  const line = (m, product, said, extra = "") => '<div class="salt-lines__row' + extra + '" role="row" data-m="' + m + '"><div class="salt-lines__date" role="cell">1 Jan</div>'
-    + '<div class="salt-lines__what" role="cell">' + P.mtileSvg(product, said) + '</div><div class="salt-lines__amount" role="cell">RM 10.00</div>'
-    + '<div class="salt-lines__state salt-lines__state--verdigris" role="cell">settled</div></div>';
-  const liveBody = '<h2 class="stmth">Statement of account</h2><div class="salt-lines" role="table" aria-label="Your orders">'
+  /* a line of the live statement, as tools/make_statements.mjs writes one (16 Nov 2026, the move to Ambient: a row of the system's Table) */
+  const line = (m, product, said, extra = "") => '<tr' + (extra ? ' class="is-off"' : "") + ' data-m="' + m + '" data-b="' + (product === "oil" ? 1 : 0) + '"><td data-label="Date">1 Jan</td>'
+    + '<td data-label="Quantity"><span class="stm-cell"><span class="stm-q"><span class="stm-size">' + said + '</span></span></span></td><td data-label="Amount" class="is-num"><span class="stm-cell"><span class="stm-fig">RM 10.00</span></span></td>'
+    + '<td data-label="Status"><span class="stm-cell"><span class="amb-chip amb-chip--pos">settled</span></span></td></tr>';
+  const liveBody = '<h2 class="amb-section">Statement of account</h2><table class="amb-table amb-table--stack" data-lines="orders"><tbody>'
     + line(Y + "-01", "salt", "2.5 units") + line(Y + "-" + MM, "salt", "1 unit") + line(Y + "-" + MM, "oil", "3 units")
-    + line(Y + "-" + MM, "salt", "4 units", " salt-lines__row--cancelled") + line(String(+Y - 1) + "-12", "salt", "7 units") + "</div>"
-    + '<h3 class="whol gap2">Refunds</h3><div class="salt-lines" role="table" aria-label="Refunds"><div class="salt-lines__row" role="row" data-m="' + Y + "-" + MM + '">'
-    + '<div class="salt-lines__date" role="cell">1 Jan</div><div class="salt-lines__what" role="cell">Overpayment returned to you</div></div></div>';
+    + line(Y + "-" + MM, "salt", "4 units", " is-off") + line(String(+Y - 1) + "-12", "salt", "7 units") + "</tbody></table>"
+    + '<h3 class="amb-section">Refunds</h3><table class="amb-table amb-table--stack"><tbody><tr data-m="' + Y + "-" + MM + '">'
+    + '<td data-label="Date">1 Jan</td><td data-label="Reason">Overpayment returned to you</td></tr></tbody></table>';
   const card = { products: [
     { product: "salt", unit: "unit", summary: {}, lines: [], reward: { earned: 42.5, taken: 20, left: 22.5, next: 0.4, held: false } },
     { product: "oil", unit: "unit", summary: {}, lines: [], reward: { earned: 1, taken: 0, left: 1, next: 0.25, held: false } },

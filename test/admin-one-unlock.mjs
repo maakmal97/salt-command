@@ -141,7 +141,7 @@ export async function run({ ok, pageWork }) {
     "the Sheet's field hides what is typed and tells the browser not to keep it");
   field().value = "half-typed";
   d.dispatchEvent(new p.w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-  ok(sheet.hidden && field().value === "" && d.getElementById("vaultScrim").hidden, "Escape closes the Sheet and clears what was typed in it");
+  ok(sheet.hidden && field().value === "", "Escape closes the Sheet and clears what was typed in it");
   p.ask(add).click(); field().value = "half-typed"; byAct(d, "vault.close").click();
   const closedByOrb = sheet.hidden && field().value === "";
   p.ask(add).click(); field().value = "half-typed"; byAct(d, "vault.cancel").click();
@@ -171,7 +171,7 @@ export async function run({ ok, pageWork }) {
   await p.unlockFrom(p.ask(card), PASS);
   ok(readsOf(p, "/all/maker/vault") - reads1.names === 1 && readsOf(p, "/all/maker/vault/addr") - reads1.addr === 1 && readsOf(p, "/all/maker/vault/key") - reads1.key === 1,
     "one password reads the names, the places and the slip key from the Counter, once each");
-  ok(sheet.hidden && field().value === "" && d.getElementById("vaultScrim").hidden && p.state() === "Open on this phone" && d.getElementById("vaultSwitch").checked === true
+  ok(sheet.hidden && field().value === "" && p.state() === "Open on this phone" && d.getElementById("vaultSwitch").checked === true
     && [...d.querySelectorAll("input,textarea")].every((i) => i.value !== PASS) && !d.documentElement.outerHTML.includes(PASS),
     "the right password closes the Sheet, empties its field, shows the page open and is held in no field and no markup");
   ok(!!p.claim()?.querySelector('[data-act="claim.slip"]') && p.urls.made.length === 1 && p.wire.filter((w) => w.startsWith("/all/maker/slips/" + U1 + "/s-1")).length === 1
@@ -297,7 +297,7 @@ export async function run({ ok, pageWork }) {
   const sheetOpen = !h.d.getElementById("vaultSheet").hidden;
   Object.defineProperty(h.d, "hidden", { configurable: true, get: () => true });
   h.d.dispatchEvent(new h.w.Event("visibilitychange"));
-  ok(sheetOpen && h.d.getElementById("vaultSheet").hidden && h.d.getElementById("vaultScrim").hidden && h.d.getElementById("vaultPass").value === "" && h.d.getElementById("vaultSay").textContent === "",
+  ok(sheetOpen && h.d.getElementById("vaultSheet").hidden && h.d.getElementById("vaultPass").value === "" && h.d.getElementById("vaultSay").textContent === "",
     "a page hidden while the Sheet is open closes it and clears the half-typed password");
   h.w.close();
 

@@ -39,9 +39,10 @@ export async function run({ ok, pageWork }) {
     ok(!A.d.documentElement.hasAttribute("data-theme"), "and no theme is set on the page, signed in");
     /* 26 Oct 2026, his word: the customer's This device is a list of settings too; a browser that cannot take notifications says Not here in
        its row and why on the one line under the list */
-    const devList = A.d.querySelector("#thisDevice .salt-settings"), devLabels = devList ? [...devList.querySelectorAll(".salt-settings__label")].filter((n) => n.id !== "lockT").map((n) => n.textContent) : [];
-    const pushRow = devList && [...devList.querySelectorAll(".salt-settings__row")].find((r) => r.querySelector(".salt-settings__label").textContent === "Notifications");
-    ok(!!devList && J(devLabels) === J(["Notifications"]) && !!pushRow && (pushRow.querySelector(".salt-settings__value") || {}).textContent === "Not here"
+    /* 16 Nov 2026, the move to Ambient (place D): This device is the system's settings group, a row a name and one control or value */
+    const devList = A.d.querySelector("#thisDevice .amb-settings #devRows"), devLabels = devList ? [...devList.querySelectorAll(".amb-setting__name")].map((n) => n.textContent) : [];
+    const pushRow = devList && [...devList.querySelectorAll(".amb-setting")].find((r) => r.querySelector(".amb-setting__name").textContent === "Notifications");
+    ok(!!devList && J(devLabels) === J(["Notifications"]) && !!pushRow && (pushRow.querySelector(".amb-setting__value") || {}).textContent === "Not here"
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
       "This device is a list of settings, Notifications (Tide theme gone, 15 Nov 2026, the move to Ambient); with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
     const row = () => A.d.querySelector("#pOrder .otabs");
@@ -53,7 +54,7 @@ export async function run({ ok, pageWork }) {
     row().querySelector('[data-otab="pay"]').click(); await A.settle();
     ok(on() === "0010", "a tap on To pay presses it and lets go of All: " + on());
     const mf = A.d.getElementById("mfil");
-    ok(mf && mf.classList.contains("salt-settings") && !mf.classList.contains("salt-segment") && !mf.classList.contains("salt-tabs"), "the months are a select in a settings row (28 Oct 2026), never a strip of pills");
+    ok(mf && mf.classList.contains("mfil") && !mf.classList.contains("amb-segment") && !mf.querySelector(".amb-segment, .salt-tabs, .salt-segment"), "the months are a select (the system's Select, 16 Nov 2026), never a strip of pills");
 
     /* ---- 4 and 5: Salt Admin ---- */
     const errs = [], vc = new VirtualConsole(); vc.on("jsdomError", (e) => errs.push(String(e.message || e)));

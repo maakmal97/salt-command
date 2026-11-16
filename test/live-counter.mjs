@@ -267,7 +267,7 @@ async function customerPage(ok, pageWork) {
     b = R.seen.orders; const t0 = R.seen.threads;
     s.receive({ k: "thread" }); await until(() => R.seen.orders > b, 60); await R.work.quiet();
     ok(R.seen.orders === b + 1 && R.seen.threads === t0, "a thread event with the thread closed re-reads the orders, which bring it: " + JSON.stringify([R.seen.orders - b, R.seen.threads - t0]));
-    const opener = R.d.querySelector('#aGlance [data-glance="thread"]') || R.d.querySelector("#hThread .throw") || R.d.getElementById("hThread");
+    const opener = R.d.querySelector('#aGlance [data-glance="thread"]') || R.d.querySelector("#hThread [data-thread]") || R.d.getElementById("hThread");
     if (opener) opener.click(); await until(() => !R.d.getElementById("thSheet").hidden, 40); await R.work.quiet();
     b = R.seen.orders; const t1 = R.seen.threads;
     ok(!R.d.getElementById("thSheet").hidden, "(the thread sheet is open)");

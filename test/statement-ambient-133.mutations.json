@@ -1,0 +1,3 @@
+[
+ {"name":"the live title is a plain heading","file":"tools/make_statements.mjs","find":"o.live?'<h2 class=\"amb-section\">Statement of account</h2>'","replace":"o.live?'<h2 class=\"stmth\">Statement of account</h2>'"}
+]

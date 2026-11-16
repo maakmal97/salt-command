@@ -1,0 +1,4 @@
+[
+ {"name":"the help line is not the field hint","file":"stmt/page.js","find":"+ \"</form>\" + wt(\"p\", 'class=\"amb-field__hint\"', \"door.help\")","replace":"+ \"</form>\" + wt(\"p\", 'class=\"msg\"', \"door.help\")"},
+ {"name":"the remembered tick is not a switch","file":"stmt/page.js","find":"<input type=\"checkbox\" role=\"switch\" class=\"amb-switch\" id=\"rem\" checked></label>","replace":"<input type=\"checkbox\" class=\"amb-switch\" id=\"rem\" checked></label>"}
+]

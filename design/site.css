@@ -184,3 +184,95 @@ fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
 #hRate .amb-rating { margin-inline: var(--amb-space-4); }
 /* a tile and a list stand the width of the part, not the width of their words */
 .oprice > .amb-tiles, .ohold > .amb-tiles, .ohold > .amb-settings { justify-self: stretch; }
+/* ---- Counter: Account, the statement and the sheets ---- */
+/* the statement's lines (a Table of the live document): the cell's own parts stack in one box, so the stacked table reads as labelled lines */
+.stm-cell { display: grid; gap: 2px; justify-items: start; min-width: 0; }
+.stm-q { display: flex; align-items: center; gap: var(--amb-space-3); }
+.stm-size, .stm-fig { font-variant-numeric: tabular-nums; }
+.stm-fig { font-weight: 600; }
+tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decoration: line-through; }
+@container amb (min-width: 720px) { .amb-table td.is-num > .stm-cell { justify-items: end; } }
+/* the statement's foot: the figure that is owed or balanced stands heavier, as the Bill's total does */
+.stm-big > .amb-setting__name, .stm-big > .amb-setting__value { font-weight: 700; }
+.stm-big > .amb-setting__value:not(.amb-neg) { color: var(--amb-ink); }
+.amb-setting > .amb-thumb { flex: none; }
+.amb-settings.tot, .amb-settings.owed { max-width: none; }
+/* the Full statement is a tall sheet whose table stacks by the sheet's own width, not the shell's */
+.amb-sheet--full { container: amb / inline-size; }
+.amb-sheet .amb-table { margin: 0; }
+/* Account: one stack, the device above the statement; from 960px the device and its help stand in a second column */
+#aGlance, #aThread { display: contents; }
+#aGlance > .amb-settings, #aThread > .amb-list { max-width: none; }
+#aThread > .amb-list, #acct .amb-stack > .amb-list { margin-inline: 0; }
+.mfil[hidden] { display: none; }
+.mfil .amb-field { max-width: 24rem; }
+.mfnote { margin: 0; }
+.mfnote:empty { display: none; }
+#thisDevice, #aHelp { display: grid; gap: var(--amb-space-3); min-width: 0; align-content: start; }
+#thisDevice > .amb-settings, #aHelp > .amb-settings { max-width: none; }
+#thisDevice > .amb-section, #aHelp > .amb-section { margin: 0; }
+.devnote { margin: 0; padding: 0 var(--amb-space-4); font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.devnote:empty { display: none; }
+.devnote.bad, .amb-sheet .msg.bad, #gate .msg.bad, .keeppage .msg.bad { color: var(--amb-neg); }
+.keeppage { display: grid; gap: var(--amb-space-3); }
+.keeppage .kline { margin: 0; font-size: var(--amb-text-subhead); }
+.keepsteps { margin: 0; padding-left: var(--amb-space-5); display: grid; gap: var(--amb-space-2); font-size: var(--amb-text-subhead); }
+.keepsteps .glyph, .keeppage .glyph, .amb-basis .glyph { display: inline-block; vertical-align: middle; margin: 0 2px; }
+@container amb (min-width: 960px) {
+  #acct { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; column-gap: var(--amb-space-6); }
+  #acct > #aGlance, #acct > #aThread, #acct > .acct__main { grid-column: 1; }
+  #acct > #thisDevice, #acct > #aHelp { grid-column: 2; }
+  #acct { grid-template-rows: auto auto 1fr auto; }
+  #acct > #thisDevice { grid-row: 1 / span 3; }
+  #acct > #aHelp { grid-row: 4; }
+  #acct > .acct__main { align-self: start; }
+}
+/* the door: one form in the stack; the password's Show stands beside its field, the field's own hint under both */
+#doorBox, #doorBox .amb-form { max-width: 28rem; width: 100%; margin-inline: auto; }
+#doorBox .pwrow { display: flex; align-items: end; gap: var(--amb-space-3); }
+#doorBox .pwrow > .amb-field { flex: 1 1 auto; min-width: 0; }
+#gate .msg, .amb-sheet .msg, .keeppage .msg { margin: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+#gate .msg:empty, .amb-sheet .msg:empty, .keeppage .msg:empty { display: none; }
+#gate .amb-field__hint { margin: 0; }
+.ask { max-width: 28rem; }
+/* the sheets: a code frame stands in the middle, a message line leaves its box standing, a thread keeps its lines in the sheet's own scroll */
+.amb-sheet .appmark { display: none; }
+.amb-sheet .amb-codeframe { justify-self: center; margin: 0; }
+.amb-sheet .amb-plate { margin: 0; }
+.amb-sheet .amb-thread, .amb-sheet .amb-compose { margin: 0; }
+.thsheet .amb-sheet__body { max-height: 60dvh; overflow-y: auto; }
+.thempty { list-style: none; }
+.paysheet > .amb-sheet__body + .amb-sheet__body { margin-top: var(--amb-space-3); }
+.payseg { margin: 0; }
+.payflag { display: block; font-size: var(--amb-text-footnote); }
+.paycode__name { display: block; }
+.paycheck { display: grid; justify-items: center; gap: var(--amb-space-2); text-align: center; }
+.paycheck .amb-section { margin: 0; }
+.paycheck__mark { width: 32px; height: 32px; color: var(--amb-ink-2); }
+.payslip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--amb-space-2) var(--amb-space-3); }
+.payslip > p { flex-basis: 100%; margin: 0; }
+.slipthumb { border-radius: var(--amb-radius-sm); border: 1px solid var(--amb-line); }
+.paysaid { margin: 0; }
+.inv .invd { display: inline; }
+.inv .amb-list { margin: 0; }
+/* the sealed issues' old classes: an issue sent before this day still reads in the system's tokens, as lines and as a foot. Nothing draws these now. */
+.salt-lines { display: grid; border-top: 1px solid var(--amb-line); font-size: var(--amb-text-subhead); }
+.salt-lines__head { display: none; }
+.salt-lines__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--amb-space-3); padding: 10px 0; border-bottom: 1px solid var(--amb-line); }
+.salt-lines__date, .salt-lines__sub { font-size: var(--amb-text-footnote); color: var(--amb-ink-2); }
+.salt-lines__amount { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.salt-lines__sub { display: block; }
+.salt-lines__state { grid-column: 1 / -1; font-size: var(--amb-text-footnote); }
+.salt-lines__state--verdigris { color: var(--amb-pos); }
+.salt-lines__state--ember { color: var(--amb-neg); }
+.salt-lines__row--cancelled { color: var(--amb-ink-3); text-decoration: line-through; }
+.salt-settings { display: grid; border-top: 1px solid var(--amb-line); }
+.salt-settings__row { display: flex; justify-content: space-between; gap: var(--amb-space-3); padding: 10px 0; border-bottom: 1px solid var(--amb-line); }
+.salt-settings__value { font-variant-numeric: tabular-nums; font-weight: 600; }
+.salt-settings__row--muted, .salt-settings__row--text { color: var(--amb-ink-2); }
+.amb-sheet .amb-stack { padding-inline: 0; }
+.stm-cell .amb-table__sub { color: var(--amb-ink-2); font-weight: 400; }
+#devSlot { display: grid; gap: var(--amb-space-3); }
+#devSlot:empty { display: none; }
+.keeppage { padding-inline: var(--amb-space-4); }
+.keeppage > .amb-section { margin: 0; padding: 0; }

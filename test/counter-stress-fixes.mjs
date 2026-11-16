@@ -85,7 +85,7 @@ export async function run({ ok }) {
     /* plan version 9: at the limit a book's Add opens the limit step, as a size tapped did */
     await until(() => pg.d.querySelector('#pPrices [data-st="add"]')); pg.d.querySelector('#pPrices [data-st="add"]').click();
     await until(() => pg.d.querySelector('#osheet [data-k^="cancel:"]')); return pg.d.querySelector('#osheet [data-k^="cancel:"]'); };
-  const payWays = [["the close orb", (pg) => pg.d.getElementById("payX").click()], ["the scrim", (pg) => pg.d.getElementById("payScrim").click()], ["Escape", (pg) => key(pg, "Escape")]];
+  const payWays = [["the close orb", (pg) => pg.d.getElementById("payX").click()], ["the scrim", (pg) => pg.d.getElementById("paySheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))], ["Escape", (pg) => key(pg, "Escape")]];
   const sheetUp = (pg) => !pg.d.getElementById("paySheet").hidden;
   const lbl = (e) => (e ? (e.id || e.tagName) : "nothing");
   /* the controls are found by what they say, as a person finds them, and not by the key the page keeps to find them again */
@@ -141,7 +141,7 @@ export async function run({ ok }) {
     const S = await open({ orders: [A], fast: true });
     S.st.down = true;
     await until(() => !S.d.getElementById("outSheet").hidden, 300);
-    const outWays = [["the close orb", (pg) => pg.d.getElementById("outX").click()], ["the scrim", (pg) => pg.d.getElementById("outScrim").click()], ["Escape", (pg) => key(pg, "Escape")]];
+    const outWays = [["the close orb", (pg) => pg.d.getElementById("outX").click()], ["the scrim", (pg) => pg.d.getElementById("outSheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))], ["Escape", (pg) => key(pg, "Escape")]];
     const outRes = [];
     for (const [name, fn] of outWays) {
       if (S.d.getElementById("outSheet").hidden) { S.d.getElementById("lapseGo").click(); await until(() => !S.d.getElementById("outSheet").hidden, 200); }
@@ -155,7 +155,7 @@ export async function run({ ok }) {
     V.d.querySelector('button[data-t="stmt"]').click();
     await until(() => anotherBtn(V));
     const devRes = [];
-    for (const [name, fn] of [["the close orb", (pg) => pg.d.getElementById("devX").click()], ["the scrim", (pg) => pg.d.getElementById("devScrim").click()], ["Escape", (pg) => key(pg, "Escape")]]) {
+    for (const [name, fn] of [["the close orb", (pg) => pg.d.getElementById("devX").click()], ["the scrim", (pg) => pg.d.getElementById("devSheet").dispatchEvent(new pg.w.MouseEvent("click", { bubbles: true, clientX: -5, clientY: -5 }))], ["Escape", (pg) => key(pg, "Escape")]]) {
       const b = anotherBtn(V), reads = V.st.devReads;
       b.focus(); b.click();
       const was = !V.d.getElementById("devSheet").hidden; fn(V);
