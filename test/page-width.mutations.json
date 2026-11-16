@@ -36,10 +36,10 @@
   "replace": "@media (min-width:1440px){#roster > .amb-screen{max-width:1376px}}\n@media (min-width:1440px){.adm .nsplit{"
  },
  {
-  "name": "W4 the Counter's shell is held to 1240px",
+  "name": "W4 the Counter's shell is held to 1240px (re-aimed 17 Nov 2026, the second red fix)",
   "file": "stmt/page.js",
-  "find": "[hidden]{display:none!important}",
-  "replace": "[hidden]{display:none!important}\n@media (min-width:1080px){#tabs{max-width:1240px}}"
+  "find": "const PAGE_CSS = ``;",
+  "replace": "const PAGE_CSS = `@media (min-width:1080px){#tabs{max-width:1240px}}`;"
  },
  {
   "name": "W5.1 the site's layer widens Ambient's page",

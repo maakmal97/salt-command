@@ -198,10 +198,10 @@
   "replace": "\"lnk.lineWaiting\": \"Shut until we approve it. Once it opens you can share it from here.\""
  },
  {
-  "name": "W19: the vault sheet lead is two sentences again",
+  "name": "W19: the vault sheet lead is two sentences again (re-aimed 17 Nov 2026, the second red fix)",
   "file": "stmt/page.js",
-  "find": "<p class=\"lead\">One password shows names, places and slips on this phone until the page hides.</p>",
-  "replace": "<p class=\"lead\">One password opens names, places and slips. They are seen on this phone only, and lock again when the page is hidden.</p>"
+  "find": "<p class=\"amb-basis\">One password shows names, places and slips on this phone until the page hides.</p>",
+  "replace": "<p class=\"amb-basis\">One password opens names, places and slips. They are seen on this phone only, and lock again when the page is hidden.</p>"
  },
  {
   "name": "W16 the Their % line runs to two sentences",

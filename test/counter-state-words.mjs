@@ -322,7 +322,7 @@ export async function run({ ok }) {
       && t1.querySelectorAll("svg.psym").length === 1 && t1.querySelector("svg text.plet").textContent === P.PLET.salt && shapesDrawn(sv.body).length === 0,
       "the statement's server markup draws the same caption, the size alone, the Ring's name for a book with no mark, and keeps its letter: " + JSON.stringify([capOf(t1), capOf(t2)]));
     const served8 = P.landingPage(u, "n7c4", null), css8 = (served8.match(/<style[^>]*>[\s\S]*?<\/style>/) || [""])[0];
-    ok(css8.includes(".mtile{") && !/\.pshape|\.mq \.nb|max-width:11ch/.test(css8), "and the page carries no rule for a shape word, nor for the caption's comma break");
+    ok(/\.mtile\s*\{/.test(css8) && !/\.pshape|\.mq \.nb|max-width:11ch/.test(css8), "and the page carries no rule for a shape word, nor for the caption's comma break");   /* 17 Nov 2026, the move to Ambient (the second red fix): the site layer writes .mtile { with a space, as the generator formats it */
     const board = new JSDOM(P.boardPage({ prices: { week: { label: "5 to 11 Oct 2026" }, products: [
       { product: "salt", unit: "unit", sizes: [{ q: 1, price: 130 }] }, { product: "oil", unit: "unit", sizes: [{ q: 1, price: 44 }] }, { product: "tin", unit: "unit", sizes: [{ q: 1, price: 9 }] }] } }, "n7c3")).window.document;
     /* 16 Nov 2026, the move to Ambient (place E): a head is the system's mark thumb, hidden from a reader (its letter is his, never a word), the head named by its shape */

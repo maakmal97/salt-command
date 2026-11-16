@@ -36,21 +36,21 @@
   "replace": "<div id=\"oPanes\" class=\"panel\"></div>"
  },
  {
-  "name": "the page writes a tablet rule for a sheet again",
+  "name": "the page writes a tablet rule for a sheet again (re-aimed 17 Nov 2026, the second red fix)",
   "file": "stmt/page.js",
-  "find": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}",
-  "replace": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}\n@media (min-width:768px) and (max-width:859.98px){ .salt-sheet:not(.adm){top:50%} }"
+  "find": "const PAGE_CSS = ``;",
+  "replace": "const PAGE_CSS = `@media (min-width:768px) and (max-width:859.98px){ .salt-sheet:not(.adm){top:50%} }`;"
  },
  {
-  "name": "the pay sheet is placed differently from his",
+  "name": "the pay sheet is placed differently from his (re-aimed 17 Nov 2026, the second red fix)",
   "file": "stmt/page.js",
-  "find": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}",
-  "replace": "@media print{.mos,.amb-dock,.amb-appbar{display:none}}\n#paySheet{max-width:300px}"
+  "find": "const PAGE_CSS = ``;",
+  "replace": "const PAGE_CSS = `#paySheet{max-width:300px}`;"
  },
  {
-  "name": "0.7.7 the page widens the card to its old 560px",
+  "name": "0.7.7 the page widens the card to its old 560px (re-aimed 17 Nov 2026, the second red fix)",
   "file": "stmt/page.js",
-  "find": "[hidden]{display:none!important}\n",
-  "replace": "[hidden]{display:none!important}\n@media (min-width:720px){dialog.amb-sheet{max-width:560px}}\n"
+  "find": "const PAGE_CSS = ``;",
+  "replace": "const PAGE_CSS = `@media (min-width:720px){dialog.amb-sheet{max-width:560px}}`;"
  }
 ]

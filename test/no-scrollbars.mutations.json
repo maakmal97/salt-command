@@ -48,10 +48,10 @@
   "replace": ".tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}\n.tscroll::-webkit-scrollbar{height:6px;}"
  },
  {
-  "name": "B3.2 the Counter colours a bar",
+  "name": "B3.2 the Counter colours a bar (re-aimed 17 Nov 2026, the second red fix)",
   "file": "stmt/page.js",
-  "find": "[hidden]{display:none!important}",
-  "replace": "[hidden]{display:none!important}\nhtml{scrollbar-color:red transparent}"
+  "find": "const PAGE_CSS = ``;",
+  "replace": "const PAGE_CSS = `html{scrollbar-color:red transparent}`;"
  },
  {
   "name": "B3.2 Salt Admin draws its column a bar",

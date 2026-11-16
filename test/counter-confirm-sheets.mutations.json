@@ -45,7 +45,7 @@
  {"name":"the answer that keeps is a danger action too","file":"stmt/page.js","find":"var keep=el('button','amb-pill amb-pill--block',q.keep);","replace":"var keep=el('button','amb-action amb-action--danger',q.keep);"},
  {"name":"the answer that keeps is not the system's pill","file":"stmt/page.js","find":"var keep=el('button','amb-pill amb-pill--block',q.keep);","replace":"var keep=el('button','btn',q.keep);"},
  {"name":"the close control is not the system's circle","file":"stmt/page.js","find":"var x=el('button','amb-circle'); x.type='button'; x.id='ynX';","replace":"var x=el('button','btn'); x.type='button'; x.id='ynX';"},
- {"name":"the sheet restates the danger tone itself","file":"stmt/page.js","find":"[hidden]{display:none!important}","replace":"[hidden]{display:none!important}\n.ynsheet .amb-action{margin:0}"},
+ {"name":"the sheet restates the danger tone itself (re-aimed 17 Nov 2026, the second red fix)","file":"stmt/page.js","find":"const PAGE_CSS = ``;","replace":"const PAGE_CSS = `.ynsheet .amb-action{margin:0}`;"},
  {"name":"the limit is said in digits","file":"stmt/page.js","find":"function numWord(n){ return has('en','num.'+n)?tw('num.'+n):String(n); }","replace":"function numWord(n){ return String(n); }"},
  {"name":"the limit is the number open, not the limit","file":"stmt/page.js","find":"function limitLine(){ return tw('sh.limit',{n:numWord(OMAX)}); }","replace":"function limitLine(){ return tw('sh.limit',{n:numWord(openN())}); }"},
  {"name":"the word for five is wrong","file":"stmt/words.js","find":"\"num.5\": \"Five\",","replace":"\"num.5\": \"Fiv\","},

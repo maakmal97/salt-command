@@ -13,7 +13,7 @@
  {"name":"C12 the guest board keeps the plain mark","file":"stmt/page.js","find":"markThumbHtml(p.product) + '</h2><ul","replace":"psymSvg(p.product, 30) + '</h2><ul"},
  {"name":"C13 the guest board's thumb carries no letter","file":"stmt/page.js","find":"(L && L.l ? '<span class=\"amb-thumb__word\">' + esc(L.l) + \"</span>\" : \"\")","replace":"\"\""},
  {"name":"C14 no hues on the guest board","file":"stmt/page.js","find":"(b >= 0 && b < 6 ? \" amb-kind-\" + (b + 1) : \"\")","replace":"\"\""},
- {"name":"C15 the system's recipes left off the Counter's stylesheet","file":"stmt/page.js","find":"SITE_STYLE + PAGE_CSS + COIN_CSS + \"</style></head>\" + BODY_OPEN\n    + (owner","replace":"PAGE_CSS + COIN_CSS + \"</style></head>\" + BODY_OPEN\n    + (owner"},
+ {"name":"C15 the system's recipes left off the Counter's stylesheet (re-aimed 17 Nov 2026, the second red fix)","file":"stmt/page.js","find":"SITE_STYLE + PAGE_CSS + \"</style></head>\" + BODY_OPEN\n    + (owner","replace":"PAGE_CSS + \"</style></head>\" + BODY_OPEN\n    + (owner"},
  {"name":"C16 the light is not Home's chip","file":"stmt/page.js","find":"var c=hLight(s.light); c.setAttribute('aria-hidden','true'); h.appendChild(c);","replace":"var c=el('span','amb-chip',tw('sup.'+s.light)); c.setAttribute('aria-hidden','true'); h.appendChild(c);"},
  {"name":"C17 a red light is a warning chip","file":"stmt/page.js","find":"l==='red'?' amb-chip--neg':''","replace":"l==='red'?' amb-chip--warn':''"}
 ]

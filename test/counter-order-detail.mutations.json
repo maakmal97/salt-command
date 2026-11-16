@@ -25,7 +25,7 @@
   {"name": "no composer on the screen", "file": "stmt/page.js", "find": "    w.appendChild(f); w.appendChild(said);\n    return w;", "replace": "    w.appendChild(said);\n    return w;"},
   {"name": "Pay is no foot's block pill", "file": "stmt/page.js", "find": "var pb=el('button','amb-pill amb-pill--block',tw('pay.payRm',{rm:rm(oToPay(o))})); pb.type='button';\n      pb.setAttribute('data-back','pay:'+o.id);", "replace": "var pb=el('button','amb-pill amb-pill--sm',tw('pay.payRm',{rm:rm(oToPay(o))})); pb.type='button';\n      pb.setAttribute('data-back','pay:'+o.id);"},
   {"name": "Pay stands on an order still to be confirmed", "file": "stmt/page.js", "find": "    if(!view&&oOwes(o)){\n      var pb=", "replace": "    if(!view){\n      var pb="},
-  {"name": "More opens nothing", "file": "stmt/page.js", "find": "mb.setAttribute('aria-controls',id);", "replace": ""},
+  {"name": "More opens nothing (re-aimed 17 Nov 2026, the second red fix)", "file": "stmt/page.js", "find": "w.appendChild(sm); w.appendChild(body);", "replace": "w.appendChild(sm);"},
   {"name": "Details leaves out the point", "file": "stmt/page.js", "find": "    if(o.point) row(tw('od.point')", "replace": "    if(false) row(tw('od.point')"},
   {"name": "Details says Point after collection", "file": "stmt/page.js", "find": "tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point})", "replace": "tw('pt.code',{c:o.point})"},
   {"name": "Details carries a note", "file": "stmt/page.js", "find": "    row(tw('od.ref'),orderRef(o.id));\n", "replace": "    row(tw('od.ref'),orderRef(o.id)); row('Note','Two bags');\n"},
