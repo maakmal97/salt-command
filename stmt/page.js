@@ -776,7 +776,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            from 960px they stand side by side, below it the open order takes the list's place and has its way back */
         + '<div id="oSplit" class="amb-split amb-split--panes" data-in="orders.todo orders.open orders.done orders.ended" role="region" aria-label="Orders">'
         + '<div class="amb-stack ordqueue"><div id="makerOrderList" class="ordlist"></div>' + ordMore(test) + '</div>'
-        + '<div class="amb-stack ordrecord"><p class="amb-empty" id="ordnone">Choose an order.</p><div id="makerReview" class="ordopen"></div></div></div>'
+        + '<div class="amb-stack ordrecord"><div class="amb-settings" id="ordnone"><h3 class="amb-settings__head">No order open</h3><ul class="amb-settings__list"><li><div class="amb-setting"><span class="amb-setting__name">Choose an order.</span></div></li></ul></div><div id="makerReview" class="ordopen"></div></div></div>'
         /* 16 Nov 2026 (the move to Ambient, place F): Approve is one stack of Ambient's approvals (stmt/owner.js drawDeskRows), a save bar over them once a card is
            chosen (apBarDraw), and the queue a fold shut by default, titled and counted */
         + '<section id="oApprove" class="amb-stack" data-in="orders.approve" aria-label="Rows to approve">'
