@@ -638,7 +638,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    Once the desk has moved, the bar casts an obsidian cap above itself (body.dbstuck, set by the
    back-to-top control's own scroll read), so nothing slides through the gap over it. */
 :root{--dbtop:22px;--salt-bar-top:calc(var(--safetop) + var(--dbtop));}
-@media(max-width:560px){:root{--dbtop:14px;}}
+@media(max-width:560px){:root{--dbtop:16px;}}
 /* the bar is the system's .salt-deskbar, sitting where the desk binds --salt-bar-top; the cap below is the
    desk's own */
 /* THE CAP IS FOUR OBSIDIAN COPIES OF THE BAR'S OWN SHAPE, stacked above it 24px apart, so the gap over the
@@ -799,7 +799,7 @@ h2{font-size:.75rem;letter-spacing:.24em;}
   .card,.pend,.quotecard{padding:16px;}
 }
 @media(max-width:560px){
-  .wrap{padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
+  .wrap{padding-top:calc(16px + var(--safetop));padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
 }
 /* the frame runs to the screen's foot (salt-ds 1.33.0), so what scrolls leaves at the foot as a page does, never cut at a line 24px above it;
    the rail keeps its 24px under it (--salt-frame-foot) */

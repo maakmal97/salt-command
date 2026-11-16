@@ -213,6 +213,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* THE BELL (Step 1b), at the head of every view of the saved app: marked, with its call beside it, until notifications
    are on; both 44px taps */
 .chead{display:flow-root}
+/* 16 Nov 2026, his word (one way on every Salt surface): the Desk's cap, four obsidian copies of the bar's shape above it once the page has moved */
+body.salt-stuck .chead.salt-deskbar,body.salt-stuck .adm .abar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight)}
 .cbell{float:right;display:flex;align-items:center;gap:8px;margin:0 0 6px 10px}
 .cbell__orb{position:relative}
 .cbell__dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--salt-brass);display:none}
@@ -321,7 +323,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    the right. */
 @media (min-width:1080px){
   /* 15 Nov 2026, his word: the shell is salt-ds's one page width (--salt-page-max), as every surface stands (it was 1240px) */
-  .cshell{display:flex;gap:28px;align-items:flex-start;max-width:var(--salt-page-max);margin:0 auto;padding-bottom:48px}
+  .cshell{display:flex;gap:20px;align-items:flex-start;max-width:var(--salt-page-max);margin:0 auto;padding-bottom:48px}
   .cmain{flex:1 1 auto;min-width:0}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
   .chead .cclock{display:none}
@@ -944,7 +946,7 @@ body.ended>*:not(#aEnded){display:none}
      1376px from 1440px) */
   /* 16 Nov 2026: the frame runs to the screen's foot and takes back the body's whole 60px foot, so what scrolls leaves at the foot as a page does; the
      rail stands 24px above it (salt-ds 1.33.0, --salt-frame-foot), and a pane holds under the bar (the recipe) */
-  .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding-bottom:0;margin-bottom:-60px;--salt-frame-h:calc(100dvh - 22px)}
+  .gate.adm{max-width:var(--salt-page-max);margin-top:0;gap:20px;padding:0;margin-bottom:-60px;--salt-frame-h:calc(100dvh - 22px)}
   .adm .abar{margin-bottom:0}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
@@ -2557,6 +2559,10 @@ const CLIENT_JS = `
      carries some Worker functions as their own source (slotSpan, slotNext and openParts for the windows, and the one distance on his page). Each
      arrived calling a __name the page never had, so every delivery sheet threw at its windows and drew neither When nor Review. */
   var __name=function(f){ return f; };
+  /* 16 NOV 2026, his word (one way on every Salt surface): ONCE THE PAGE HAS MOVED, THE BAR CASTS THE DESK'S CAP above itself (body.salt-stuck),
+     so nothing slides through the gap over it, as the Desk's bar does (body.dbstuck) */
+  (function(){ var stuck=function(){ document.body.classList.toggle('salt-stuck',(window.pageYOffset||document.documentElement.scrollTop||0)>4); };
+    window.addEventListener('scroll',stuck,{passive:true}); })();
   /* THE TICKET INVALIDATES A FLOW THAT IS NO LONGER WANTED (04 Sep 2026 audit). A submit takes
      about a second in PBKDF2, and go.disabled does not stop the Enter key submitting a form at
      all, so a reader who pressed Enter twice had two flows in the air. Measured: he taps Lock now,

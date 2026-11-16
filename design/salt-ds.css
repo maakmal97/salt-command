@@ -2696,6 +2696,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
     margin: 0 calc(-1 * var(--salt-frame-room, 20px));
     padding: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)) var(--salt-frame-room, 20px) calc(var(--salt-frame-room, 20px) + var(--salt-frame-foot, 24px));
     scroll-padding-top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px));
+    /* what slides under the bar is drawn only from the bar's middle down, so nothing shows at its rounded corners */
+    clip-path: inset(calc(var(--salt-frame-bar-h, 64px) / 2) 0 0 0);
   }
   .salt-frame__col > .salt-frame__main .salt-pane { top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)); }
 }

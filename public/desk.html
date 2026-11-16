@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ba3689b643e6cb57";
+var SALT_BUILD_ID="baf961475a8e6c36";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4316,6 +4316,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
     margin: 0 calc(-1 * var(--salt-frame-room, 20px));
     padding: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)) var(--salt-frame-room, 20px) calc(var(--salt-frame-room, 20px) + var(--salt-frame-foot, 24px));
     scroll-padding-top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px));
+    /* what slides under the bar is drawn only from the bar's middle down, so nothing shows at its rounded corners */
+    clip-path: inset(calc(var(--salt-frame-bar-h, 64px) / 2) 0 0 0);
   }
   .salt-frame__col > .salt-frame__main .salt-pane { top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)); }
 }
@@ -5433,7 +5435,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    Once the desk has moved, the bar casts an obsidian cap above itself (body.dbstuck, set by the
    back-to-top control's own scroll read), so nothing slides through the gap over it. */
 :root{--dbtop:22px;--salt-bar-top:calc(var(--safetop) + var(--dbtop));}
-@media(max-width:560px){:root{--dbtop:14px;}}
+@media(max-width:560px){:root{--dbtop:16px;}}
 /* the bar is the system's .salt-deskbar, sitting where the desk binds --salt-bar-top; the cap below is the
    desk's own */
 /* THE CAP IS FOUR OBSIDIAN COPIES OF THE BAR'S OWN SHAPE, stacked above it 24px apart, so the gap over the
@@ -5594,7 +5596,7 @@ h2{font-size:.75rem;letter-spacing:.24em;}
   .card,.pend,.quotecard{padding:16px;}
 }
 @media(max-width:560px){
-  .wrap{padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
+  .wrap{padding-top:calc(16px + var(--safetop));padding-left:max(16px,var(--safeleft));padding-right:max(16px,var(--saferight));}
 }
 /* the frame runs to the screen's foot (salt-ds 1.33.0), so what scrolls leaves at the foot as a page does, never cut at a line 24px above it;
    the rail keeps its 24px under it (--salt-frame-foot) */
