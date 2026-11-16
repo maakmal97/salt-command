@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="127588393cc6daed";
+var SALT_BUILD_ID="bb32b76d212f2c4b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12510,7 +12510,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1522","d":"16 Nov 2026","t":"ONE LOOK ON EVERY SALT SURFACE","n":["<b>CARDS STAND APART, AND NO BLACK SHADOW.</b> On the Desk, panes one under another now sit 14px apart, as on Salt Counter; To do's book table and its Cover chart touched. A tile, and a card inside a card, no longer casts the dark drop shadow that showed through the glass below it, on the Desk, Salt Admin and the Counter alike. Cards carry the Counter's 16px padding.","<b>ONE SHADOW EVERYWHERE.</b> Every card on all three casts the same lighter shadow (salt-ds 1.33.0); the Counter's and Salt Admin's cards were heavier.","<b>WHAT SCROLLS SLIDES UNDER THE BAR.</b> From 1080px the Desk and Salt Admin no longer cut what scrolls at a line under the bar or a card's shadow at the column's sides; the page runs to the screen's foot, as the Counter's does. On a phone, Salt Admin and the Counter now cover the gap above the bar once the page moves, as the Desk did.","<b>SALT ADMIN'S BAR BESIDE THE RAIL.</b> From 1080px Salt Admin's rail runs the full height and its bar heads the column beside it, as on the Desk and the Counter; the bar and the rail now stand in the same place on all three at every width.","<b>THE DESK'S PLACES AT THE FOOT ON A PHONE.</b> Under 1080px the Desk's six places are a bar at the foot of the screen with their counts, as on Salt Admin and the Counter; the menu button still opens the rail for the theme and alerts. Its gutter and bar now start 16px in, as on the other two."]}];
+const evolution=[{"v":"v1523","d":"16 Nov 2026","t":"NO BROWN UNDER A TABLE, NO SHADOW BEHIND A CARD","n":["<b>TABLES TAKE THE CARD'S GLASS.</b> A table's head row, its first column and its Total row were painted an opaque brown on every surface, so each table carried a brown band across its card. They are now clear, the card's own glass behind them. On a phone, when a wide table is scrolled sideways, the first column is backed by the page's dark ground so the figures passing under it cannot show through; scrolled back, it is clear again.","<b>NO SHADOW BEHIND A CARD.</b> Cards, panes, the rail and the bar no longer cast a drop shadow on the Desk, Salt Admin or Salt Counter; each keeps its hairline and its top highlight. Menus that float over the page keep theirs."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12672,7 +12672,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Nov 2026, 19:41 KL';
+const LAST_UPDATED='16 Nov 2026, 20:37 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
