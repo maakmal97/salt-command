@@ -16,5 +16,41 @@
   "file": "stmt/owner.js",
   "find": "arow__open'),'acct.open'",
   "replace": "'arow__open'),'acct.opn'"
+ },
+ {
+  "name": "the card's figure row labels its cost something else",
+  "file": "stmt/owner.js",
+  "find": "figs.push(['Cost',rm(typeof reading.cost",
+  "replace": "figs.push(['Zost',rm(typeof reading.cost"
+ },
+ {
+  "name": "the card's figure row drops the cost",
+  "file": "stmt/owner.js",
+  "find": "if(reading.cost!=null) figs.push(['Cost'",
+  "replace": "if(false) figs.push(['Cost'"
+ },
+ {
+  "name": "the card's figure row reads the cost from nowhere (nought)",
+  "file": "stmt/owner.js",
+  "find": "figs.push(['Cost',rm(typeof reading.cost==='object'?reading.cost.total:reading.cost)]);",
+  "replace": "figs.push(['Cost',rm(0)]);"
+ },
+ {
+  "name": "the Details panel's row names cost in another word",
+  "file": "stmt/owner.js",
+  "find": "receivedQty:'Units received', cost:'Cost',",
+  "replace": "receivedQty:'Units received', cost:'Zost',"
+ },
+ {
+  "name": "the Details panel's row gives the cost as a bare number",
+  "file": "stmt/owner.js",
+  "find": "|delivery|freight|cost|settledRM|coverRM)$/.test(k)?rm(v)",
+  "replace": "|delivery|freight|settledRM|coverRM)$/.test(k)?rm(v)"
+ },
+ {
+  "name": "the Details panel lists no row",
+  "file": "stmt/owner.js",
+  "find": "panel.appendChild(apPairs(rowPairs(d.row,d.id).concat(",
+  "replace": "panel.appendChild(apPairs([].concat("
  }
 ]

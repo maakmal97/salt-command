@@ -50236,8 +50236,15 @@ await (async () => {
     cardOf(doc, "20260929120000-makr");
     /* 17 Nov 2026, the move to Ambient (the older reds): the Desk row's card is Ambient's task, found by its data-maker-card, no longer a .maker-card */
     let cards = doc.querySelectorAll("#makerReview [data-maker-card], #makerDrafts [data-maker-card]");
-    ok(cards.length === 2 && /Cost\s?RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
-      "the Admin review draws Desk row cost and frozen flags beside its decision");
+    /* 17 Nov 2026 (Fable's review, G): the card's cost has three sources, each asserted alone so each is proved red by its own mutation: the figure row's stat
+       (readingFigures' label, then its value, from the draft's own cost) and the Details panel's row listing (rowKey's label, then rowValue's figure) */
+    ok(cards.length === 2 && /Check before deciding/.test(cards[1].textContent), "the Admin review draws Desk row frozen flags beside its decision");
+    const figs = cards[1].querySelector(".apfigs"), cellOf = (root, label) => [...root.querySelectorAll("*")].find((n) => n.children.length === 0 && n.textContent.trim() === label);
+    ok(!!figs && !!cellOf(figs, "Cost"), "the card's figure row carries a stat labelled Cost");
+    ok(!!figs && /^Cost\s?RM 56(\.00)?$/.test(figs.firstElementChild.textContent.replace(/\s+/g, " ").trim()), "and the figure row's Cost reads RM 56 from the draft's own cost");
+    const det = cards[1].querySelector(".apdet");
+    ok(!!det && !!cellOf(det, "Cost"), "the Details panel lists the row's cost under its own word, Cost");
+    ok(!!det && /Cost\s?RM 56(\.00)?/.test(det.textContent.replace(/\s+/g, " ")) && /Cost\s?RM 56(\.00)?/.test(cards[1].textContent), "and the figure, RM 56, beside it");
     const o0 = { u: "abcd-efgh", product: "salt", qty: 1, total: 100 };
     extraReviewOrders.push({ ...o0, id: "20260929120000-ca01", status: "acknowledged" }, { ...o0, id: "20260929120000-ca02", status: "acknowledged", paid: 20 },
       { ...o0, id: "20260929120000-ca03", status: "ready", closed: { qty: 1 } }, { ...o0, id: "20260929120000-ca04", status: "acknowledged", claimed: 30 },
