@@ -1,0 +1,8 @@
+[
+ {
+  "name": "a password filed under the username is not found (17 Nov 2026, the second red fix)",
+  "file": "tools/make_statements.mjs",
+  "find": "pw = priorPw[p] || priorPw[u] || newPassword();",
+  "replace": "pw = priorPw[p] || newPassword();"
+ }
+]

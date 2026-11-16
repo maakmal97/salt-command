@@ -1,0 +1,20 @@
+[
+ {
+  "name": "the page stops telling the list the device's scheme (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "'<meta name=\"color-scheme\" content=\"light dark\">'",
+  "replace": "'<meta name=\"color-scheme\" content=\"light\">'"
+ },
+ {
+  "name": "the select's chevron is no longer laid over it (17 Nov 2026, the second red fix)",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-select > .amb-icon { position: absolute;",
+  "replace": ".amb-select > .amb-icon { position: static;"
+ },
+ {
+  "name": "the select draws its own native arrow too (17 Nov 2026, the second red fix)",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-select > .amb-input { -webkit-appearance: none; appearance: none;",
+  "replace": ".amb-select > .amb-input { -webkit-appearance: auto; appearance: auto;"
+ }
+]

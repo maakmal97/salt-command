@@ -1,0 +1,38 @@
+[
+ {
+  "name": "the first line is no longer the one standing (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "(i ? \" hidden\" : \"\") + \">\" + esc(l)",
+  "replace": "\"\" + \">\" + esc(l)"
+ },
+ {
+  "name": "a line is not escaped (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "\">\" + esc(l) + \"</span>\").join",
+  "replace": "\">\" + l + \"</span>\").join"
+ },
+ {
+  "name": "an empty notice is not hidden (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "'<span id=\"bull\" class=\"hnote hblock\"' + (lines.length ? \"\" : \" hidden\")",
+  "replace": "'<span id=\"bull\" class=\"hnote hblock\"' + \"\""
+ },
+ {
+  "name": "the notice stops turning (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "if(turns) bullTimer=setInterval(bullTurn,BULL_MS);",
+  "replace": "if(false) bullTimer=setInterval(bullTurn,BULL_MS);"
+ },
+ {
+  "name": "the lines of a new read are drawn with the old class (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "p.className='hline'; p.textContent=l;",
+  "replace": "p.className='hlinex'; p.textContent=l;"
+ },
+ {
+  "name": "a single line still draws Pause (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "pz.hidden=!turns;",
+  "replace": "pz.hidden=false;"
+ }
+]

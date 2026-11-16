@@ -23469,8 +23469,10 @@ await (async () => {
 
   /* ---- 10. THE PAGE: the confirm step, the location, the amount, and the dropdown he called bizarre ---- */
   const page94 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /\.salt-field__select option \{ background: var\(--salt-slate\); color: var\(--salt-salt\); \}/.test(page94) && !/select\.fld option\{/.test(page94)
-    && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
+  /* 17 Nov 2026, the move to Ambient (the second red fix): the open list is told the page is dark by the page's own color-scheme (light and dark follow the device), so a native list opens in the device's colours;
+     the chevron is Ambient's, drawn over a select that keeps its native list (.amb-select), and the old select.fld rules are gone */
+  ok(/<meta name="color-scheme" content="light dark">/.test(page94) && /\.amb-select > \.amb-input \{[^}]*appearance: none/.test(page94) && /\.amb-select > \.amb-icon \{[^}]*position: absolute/.test(page94)
+    && !/select\.fld\{/.test(page94) && !/select\.fld option\{/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
   /* S13 13.3: the words are the table's, served as its JSON */
   ok(page94.includes('"Review"') && page94.includes('"Check your order"') && page94.includes('"Place order"')
@@ -25225,20 +25227,20 @@ await (async () => {
   /* ---- 2. THE PAGE CARRIES IT AT FIRST PAINT, with the script's copy spliced. Counter Batch A (his decision of 18 Oct 2026, reversing
      S7 7.5's still card): the notice is in Home's Today card at its head, the first line on and the rest waiting their turn ---- */
   const door = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  const bodyAt = door.indexOf("<body>");
+  const bodyAt = door.indexOf("<body class=\"amb\">");   /* 17 Nov 2026, the move to Ambient (the second red fix): the body carries the class amb */
   ok(bodyAt > 0 && !door.slice(bodyAt, bodyAt + 120).includes('id="bull"')
-    && /<div id="pHome" class="home"><div class="hcol"><section id="today" [^>]*>[\s\S]*?<div id="bull" class="salt-notice hnote">[\s\S]*?<div class="salt-notice__lines"><p class="salt-notice__line salt-notice__line--on">Closed Friday<\/p><p class="salt-notice__line">Back Monday<\/p><\/div>/.test(door),
+    && /<div id="pHome" class="amb-split"><div class="amb-stack"><div id="today" class="amb-notice"[^>]*>[\s\S]*?<span id="bull" class="hnote hblock"[^>]*>[\s\S]*?<span class="hlines"><span class="hline">Closed Friday<\/span><span class="hline" hidden>Back Monday<\/span><\/span>/.test(door),   /* 17 Nov 2026, the move to Ambient (the second red fix): the Today card is one amb-notice, its lines spans, the next hidden while it turns */
     "the notice is no longer the first thing in the body: it is in the Today card at the head of Home, its first line on and the next waiting, not hidden");
   ok(!/bullrun|data-mode|[.]bull[{[ ]/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
     && /var BULL=\{"lines":\["Closed Friday","Back Monday"\]\}/.test(door),
     "the mode it was set in is not read, the card carries no style attribute, and the script is served its own copy of the lines alone");
   await req("/desk/bulletin", "POST", { lines: ["Tuesday <b>3</b>"], mode: "run" }, D);
   const door2 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(/<p class="salt-notice__line salt-notice__line--on">Tuesday &lt;b&gt;3&lt;\/b&gt;<\/p>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]\}/.test(door2),
+  ok(/<span class="hline">Tuesday &lt;b&gt;3&lt;\/b&gt;<\/span>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]\}/.test(door2),
     "a line is escaped on the card and in the script's copy");
   r = await J(await req("/desk/bulletin", "POST", { lines: [] }, D));
   const door3 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="salt-notice hnote" hidden>/.test(door3) && !/salt-notice__line"?>/.test(door3.replace(/<script[\s\S]*?<\/script>/g, "")) && !/Tuesday/.test(door3),
+  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<span id="bull" class="hnote hblock" hidden>/.test(door3) && !/class="hline"/.test(door3.replace(/<script[\s\S]*?<\/script>/g, "")) && !/Tuesday/.test(door3),
     "an empty set clears the key, and the page then carries the card hidden with nothing in it");
 
   /* ---- 3. THE PAGE, DRIVEN: the card draws from the served copy, turns a line every six seconds, and follows the poll ---- */
@@ -25253,12 +25255,12 @@ await (async () => {
       return { ok: false, status: 404, json: async () => ({ ok: false }) }; };
   } });
   try {
-    const d = dom.window.document, tr = () => [...d.querySelectorAll("#bull .salt-notice__line")].map((x) => x.textContent).join("|");
+    const d = dom.window.document, tr = () => [...d.querySelectorAll("#bull .hline")].map((x) => x.textContent).join("|");
     ok(tr() === "First line|Second line" && !d.getElementById("bull").hidden && ticks.includes(6000) && !ticks.includes(4000)
-      && d.querySelectorAll("#bull .salt-notice__line--on").length === 1,
+      && d.querySelectorAll("#bull .hline:not([hidden])").length === 1,
       "the page draws every line of the served notice, one on at a time, with a six-second timer to turn it: " + JSON.stringify([tr(), ticks]));
     await dom.window.eval("bullRead()");
-    ok(tr() === "Only line" && served.includes("/bulletin") && !d.querySelector("#bull [style]") && d.querySelector("#bull .salt-notice__pause").hidden,
+    ok(tr() === "Only line" && served.includes("/bulletin") && !d.querySelector("#bull [style]") && d.querySelector("#bull .hpause").hidden,
       "a read that finds a different notice redraws it, a single line standing with no Pause: " + JSON.stringify(tr()));
     await dom.window.eval("bullDraw({lines:[]})");
     ok(d.getElementById("bull").hidden && tr() === "", "and an empty notice hides the card");
@@ -26130,7 +26132,8 @@ await (async () => {
     /* the file as it reads once a spare minted into the pool is bound to this code */
     const filed = Object.assign({}, first.passwords); delete filed[code]; filed[u] = pw;
     writeFileSync(join(out, "_passwords.json"), JSON.stringify(filed, null, 2) + "\n");
-    const again = await ms3(out, "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+    /* 17 Nov 2026, the move to Ambient (the second red fix): a same-date re-run over a sealed set is refused unless a retry is asked for in so many words (retry: true, the CLI's --retry) */
+    const again = await ms3(out, "2026-09-01", { key: "test-secret", master: "mp", newIssue: true, retry: true });
     const rec = JSON.parse(readFileSync(join(out, "_kv", u + ".json"), "utf8"));
     console.log = q;
     ok(again.passwords[code] === pw && await C3.checkVerifier(pw, rec.verifier),
