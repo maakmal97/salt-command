@@ -130,11 +130,12 @@ export async function run({ ok, pageWork }) {
     try {
       const box = page.section.querySelector(".maker-reading"), text = () => box.textContent;
       /* 25 Oct 2026 (Record redesign P4): the reading is a ledger, a row a fact, its label, its figure and what stands behind it */
-      const row = (label) => { const r = box.querySelector('[data-reading="' + label + '"]'); return r ? [r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || { textContent: "" }).textContent] : null; };
+      /* 16 Nov 2026, the move to Ambient: a reading row is a settings row (.amb-setting__value), its flag the hint under it (.reading-flag) */
+      const row = (label) => { const r = box.querySelector('[data-reading="' + label + '"]'); return r ? [r.querySelector(".amb-setting__value").textContent, (r.querySelector(".reading-flag") || { textContent: "" }).textContent] : null; };
       page.change("Units", "3"); await page.work.quiet();   /* 27 Oct 2026: their price fills on the units; the price he then types is his */
       page.change("Price", "100"); await page.work.quiet();
       const warn = [...box.querySelectorAll("p.msg.bad")].map((p) => p.textContent).join("|"), margin = row("Margin over cost") || [""];
-      ok(!box.hidden && (row("Cost a unit") || [])[0] === "RM 42.00" && /^(-RM 26[.]00|RM -26[.]00) · -26%$/.test(margin[0]) && box.querySelector('[data-reading="Margin over cost"] .reading-bad')
+      ok(!box.hidden && (row("Cost a unit") || [])[0] === "RM 42.00" && /^(-RM 26[.]00|RM -26[.]00) · -26%$/.test(margin[0]) && box.querySelector('[data-reading="Margin over cost"].reading-bad')
         && (row("Floor for 3 units") || [])[0] === "RM 130.00" && /RM 30 under the Floor of RM 130/.test(warn)
         && (row("Their usual a unit") || [])[0] === "RM 140.00" && /^3 orders/.test((row("Their usual a unit") || ["", ""])[1]),
       "trade reading page: before Send the form shows cost, margin (a loss in ember), the floor, a warning under it and their usual " + text());

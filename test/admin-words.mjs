@@ -266,7 +266,7 @@ export async function run({ ok, pageWork }) {
     };
     const n1 = draw(e1), sum = n1.querySelector("details > summary"), raw = n1.querySelector("details > .rraw");
     ok(n1.firstChild.textContent === "The same sale is already on the book." && !!sum && sum.textContent === "Details" && sum.getAttribute("data-act") === "refusal.details"
-      && sum.classList.contains("salt-ghost") && !!raw && raw.textContent === e1.raw && n1.querySelector("details").open === false,
+      && sum.classList.contains("amb-pill") && sum.classList.contains("amb-pill--quiet") && !!raw && raw.textContent === e1.raw && n1.querySelector("details").open === false,
     "the sentence is drawn first, then a Details control, shut, that holds the server's own words: " + n1.textContent);
     let every = [];
     for (const m of [...MAPPED, ...GENERAL]) {
@@ -363,16 +363,18 @@ export async function run({ ok, pageWork }) {
       || t.querySelector(".mq")?.getAttribute("aria-hidden") !== (rowTile(t) ? null : "true") || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
     /* 25 Oct 2026 (canvas Salt Admin Orders): an order on Orders names its book by its typed tag, as Needs you does, and draws no mark; a mark still drawn keeps the rule */
     const orows = [...d.querySelectorAll("#makerOrderList .ordrow")];
-    ok(orows.length >= 4 && orows.every((r) => !!r.querySelector(".salt-settings__label .salt-producttag, .salt-producttag") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
+    /* 16 Nov 2026, the move to Ambient (end pass): an order's row leads with the book's mark thumb, hidden from a reader (the row's own aria-label names the book), and draws no older mark */
+    ok(orows.length >= 4 && orows.every((r) => !!r.querySelector(".amb-thumb--mark[class*='amb-kind-']") && !r.querySelector(".mtile, svg.psym")) && wrong.length === 0,
       "each order on Orders names its book by its typed tag and draws no mark, and a mark still drawn says its size beneath, no word for the book and no shape word, a reader told the shape and the size: " + orows.length + " rows; " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.orders").click(); await work.quiet();
     byAct(d, "part.orders.approve").click(); await work.quiet();
     /* 12 Nov 2026 (his Approve review): the Sheet asks only on a Reject, so the trip is chosen to reject to draw it */
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.reject").click(); await work.quiet();
     byAct(d, "approve.confirm").click(); await work.quiet();
-    const sheet = [...d.querySelectorAll("dialog.amb-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
-    ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
-      "the sheet that asks on a trip draws each of its rows as a mark with 1 unit beneath, and a reader hears a different shape for each: " + JSON.stringify(sheet));
+    /* 16 Nov 2026, the move to Ambient (end pass): a Sheet restates a row with the mark thumb (it names its shape to a reader in data-shape), the size said in the row's own words */
+    const sheet = [...d.querySelectorAll("dialog.amb-sheet .amb-thumb--mark")].map((t) => [t.getAttribute("aria-hidden"), t.getAttribute("data-shape"), !!t.querySelector("svg.amb-thumb__shape path")]);
+    ok(sheet.length === 2 && sheet.every((s) => s[0] === "true" && SHAPES.includes(s[1]) && s[2]) && new Set(sheet.map((s) => s[1])).size === 2,
+      "the sheet that asks on a trip draws each of its rows as a mark, hidden from a reader, and a reader hears a different shape for each: " + JSON.stringify(sheet));
     byAct(d, "ask.keep").click(); await work.quiet();
     byAct(d, "nav.customers").click(); await work.quiet();
     byAct(d, "part.customers.associates").click(); await work.quiet();
@@ -398,7 +400,7 @@ export async function run({ ok, pageWork }) {
   const drawnWords = (root) => {
     const out = [], walk = root.ownerDocument.createTreeWalker(root, 4);
     /* 22 Oct 2026: a book's typed Product tag is the one place its name is drawn on Salt Admin (his answer on the Needs you canvas), so its words are read apart */
-    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]") && !par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]").querySelector("svg:not(.amb-icon)")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
+    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && !(par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]") && !par.closest(".salt-producttag, .amb-chip[class*=\"amb-kind-\"]").querySelector("svg:not(.amb-icon)")) && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr, .amb-vh")]); }   /* 16 Nov 2026, the move to Ambient (end pass): Ambient's visually hidden class stands for .sr */
     root.querySelectorAll("[aria-label],[title],[placeholder],[alt]").forEach((e) => ["aria-label", "title", "placeholder", "alt"].forEach((a) => { if (e.getAttribute(a)) out.push([e.getAttribute(a), a === "aria-label"]); }));
     return out;
   };
@@ -410,7 +412,8 @@ export async function run({ ok, pageWork }) {
     await drawEverything(all);
     const seenWords = drawnWords(all.d.body);
     /* 2 Nov 2026 (Orders on the canvas): an order's row reads its books out in its aria-label, the words its typed tags draw */
-    const rowLabels = new Set([...all.d.querySelectorAll(".ordcard[aria-label]")].map((e) => e.getAttribute("aria-label")));
+    /* 16 Nov 2026, the move to Ambient (end pass): an order's row is Ambient's row, its aria-label on the row or its button */
+    const rowLabels = new Set([...all.d.querySelectorAll("[data-order][aria-label], [data-order] [aria-label]")].map((e) => e.getAttribute("aria-label")));
     const named = seenWords.filter(([t]) => BOOK_NAMED.test(t) && !rowLabels.has(t)).map(([t]) => t.slice(0, 80));
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
     const typed = [...all.d.body.querySelectorAll(".salt-producttag, .amb-chip[class*='amb-kind-']")].filter((x) => !x.querySelector("svg") && x.textContent.trim()).map((x) => [x.classList.contains("salt-producttag") ? x.className.split("--")[1].split(" ")[0] : x.textContent.trim().toLowerCase(), x.textContent.trim()]);
@@ -419,7 +422,7 @@ export async function run({ ok, pageWork }) {
       + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)) + "; " + typed.length + " tags");
     /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Confirm */
     const sheets = [];
-    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh), [...sh.querySelectorAll(".mtile")].every((t) => t.querySelector(".amb-thumb--mark svg, svg.psym") && SHAPE_WORD.test(t.querySelector(".sr")?.textContent || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
+    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".amb-thumb--mark").length, drawnWords(sh), [...sh.querySelectorAll(".amb-thumb--mark")].every((t) => t.querySelector("svg") && SHAPE_WORD.test(t.getAttribute("data-shape") || ""))]); byAct(all.d, keep).click(); await all.work.quiet(); };
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
     byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();
@@ -432,8 +435,9 @@ export async function run({ ok, pageWork }) {
       && noBook("Check the rice and the OIL rows") === "Check the book and the book rows" && noBook("Salt Admin and the Salt Counter") === "Salt Admin and the Salt Counter" && noBook("price, spared, ricer") === "price, spared, ricer"
       && seenWords.some(([t]) => / old product[.] The book costs RM 46[/]unit, quoted[.]$/.test(t)) && seenWords.some(([t]) => /^A sale of the book, priced like the book[.]$/.test(t)),
     "a sentence the Desk wrote names its book as 'the book', whole words only, the apps' own names left alone, and the Approve card draws it so: " + JSON.stringify(seenWords.map(([t]) => t).filter((t) => /book/.test(t) && /cost|sale of|cheaper/.test(t)).slice(0, 4)));
-    ok(shaped.length === 0 && [...all.d.querySelectorAll(".mtile")].every((t) => SHAPE_WORD.test(t.querySelector(".sr")?.textContent || "")) && (seenWords.some(([t, hidden]) => hidden && SHAPE_WORD.test(t)) || (!all.d.querySelector("#roster .pwith svg.psym") && !!all.d.querySelector("#roster .salt-producttag")))
-      && !all.d.querySelector("#nlist .salt-producttag svg.psym") && SHAPE_WORD.test((all.w.__owner("bookMark('salt')").querySelector(".sr") || {}).textContent || ""),
+    /* 16 Nov 2026, the move to Ambient (end pass): a mark standing alone is the mark thumb, named by its data-shape, and a book beside words is the chip */
+    ok(shaped.length === 0 && [...all.d.querySelectorAll(".amb-thumb--mark")].every((t) => SHAPE_WORD.test(t.getAttribute("data-shape") || "")) && (seenWords.some(([t, hidden]) => hidden && SHAPE_WORD.test(t)) || (!all.d.querySelector("#roster .pwith svg.psym") && !!all.d.querySelector("#roster .amb-chip[class*='amb-kind-']")))
+      && !all.d.querySelector("#nlist .amb-chip svg.psym") && SHAPE_WORD.test(all.w.__owner("markThumb('salt','md')").getAttribute("data-shape") || ""),
       /* 26 Oct 2026 (the Admin redesign landed): every book on Salt Admin is its typed tag now, so no book mark (.pwith) is left to tell a reader its shape; Help's chevrons are icons, not marks */
       "no shape word is drawn on Salt Admin, and a reader is told the shape of any mark still drawn, or none is, every book its typed tag: " + JSON.stringify([shaped.slice(0, 5), all.d.querySelectorAll("#roster .pwith svg.psym").length]));
     ok(BOOK_NAMES.length >= 5 && BOOK_NAMED.test("Candy, 2 units") && BOOK_NAMED.test("the rice") && !BOOK_NAMED.test("Salt Admin") && !BOOK_NAMED.test("a price of 5"),

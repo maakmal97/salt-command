@@ -25,9 +25,9 @@
  },
  {
   "name": "F1.5 the page sizes a setting row",
-  "file": "stmt/page.js",
-  "find": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}",
-  "replace": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}\n#roster .amb-setting{min-height:60px}"
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } #roster .amb-setting { min-height: 60px; }"
  },
  {
   "name": "F2.1 the screen is not docked",
@@ -49,9 +49,9 @@
  },
  {
   "name": "F3.1 a frame height comes back",
-  "file": "stmt/page.js",
-  "find": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}",
-  "replace": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}\n@media (min-width:1080px){.adm{--salt-frame-h:calc(100dvh - 46px)}}"
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } @media (min-width: 1080px) { .adm { --salt-frame-h: calc(100dvh - 46px); } }"
  },
  {
   "name": "F3.2 a script measures the panes again",
@@ -61,9 +61,9 @@
  },
  {
   "name": "F4.1 a foot is placed by hand under 1080px",
-  "file": "stmt/page.js",
-  "find": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}",
-  "replace": ".adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}\n@media (max-width:1079.98px){.adm{--salt-pane-foot-at:64px}}"
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } @media (max-width: 1079.98px) { .adm { --salt-pane-foot-at: 64px; } }"
  },
  {
   "name": "F4.2 the + stands down for a foot",

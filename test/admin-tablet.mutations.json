@@ -1,146 +1,152 @@
 [
-  {
-    "name": "the invitation is drawn on a phone",
-    "file": "stmt/statement-css.js",
-    "find": ".panenone { display: none; margin: 0;",
-    "replace": ".panenone { margin: 0;"
-  },
-  {
-    "name": "the tablet dialog is a rule for every Sheet, the customer's too",
-    "file": "stmt/page.js",
-    "find": "  .adm.asheet{top:50%;right:auto;",
-    "replace": "  .salt-sheet{top:50%;right:auto;"
-  },
-  {
-    "name": "the drawer is 500px wide",
-    "file": "stmt/page.js",
-    "find": ".adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;",
-    "replace": ".adm.asheet{top:0;left:auto;width:min(500px,100%);max-height:none;"
-  },
-  {
-    "name": "the tablet dialog paints a ground of its own",
-    "file": "stmt/page.js",
-    "find": "  .adm.asheet{top:50%;right:auto;",
-    "replace": "  .adm.asheet{background:var(--salt-obsidian);top:50%;right:auto;"
-  },
-  {
-    "name": "the Yes or No sheet carries no .adm or .asheet",
-    "file": "stmt/owner.js",
-    "find": "  sheetOwn=function(box){ box.classList.add('adm','asheet'); };",
-    "replace": ""
-  },
-  {
-    "name": "a short field is not marked",
-    "file": "stmt/owner.js",
-    "find": "    if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');",
-    "replace": ""
-  },
-  {
-    "name": "a text field is marked short",
-    "file": "stmt/owner.js",
-    "find": "    if(!rowed&&(type==='number'||type==='date'||type==='time')) wrap.classList.add('maker-field--short');",
-    "replace": "    wrap.classList.add('maker-field--short');"
-  },
-  {
-    "name": "the page sizes Shop again on a laptop",
-    "file": "stmt/page.js",
-    "find": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n",
-    "replace": ".adm .nkinds{margin:0 0 16px;padding:0;gap:0}\n@media (min-width:1080px){\n  .adm #oShop{max-width:760px}\n}\n"
-  },
-  {
-    "name": "a thread opens hidden",
-    "file": "stmt/owner.js",
-    "find": "var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';",
-    "replace": "var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"
-  },
-  {
-    "name": "Messages opens the first thread by itself",
-    "file": "stmt/owner.js",
-    "find": "      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);",
-    "replace": "      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"
-  },
-  {
-    "name": "the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's",
-    "file": "stmt/page.js",
-    "find": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
-    "replace": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"
-  },
-  {
-    "name": "Needs you's empty pane says Tap a card",
-    "file": "stmt/page.js",
-    "find": "<p class=\"rnone panenone\">Choose a card to see it in full.</p>",
-    "replace": "<p class=\"rnone panenone\">Tap a card</p>"
-  },
-  {
-    "name": "the week's name column takes 312px",
-    "file": "stmt/statement-css.js",
-    "find": "grid-template-columns: var(--amb-week-name) minmax(0, 1fr)",
-    "replace": "grid-template-columns: 312px minmax(0, 1fr)"
-  },
-  {
-    "name": "the unlock sheet loses .asheet",
-    "file": "stmt/page.js",
-    "find": "'<div id=\"vaultSheet\" class=\"salt-sheet adm asheet vaultsheet\"",
-    "replace": "'<div id=\"vaultSheet\" class=\"salt-sheet adm vaultsheet\""
-  },
-  {
-    "name": "a look Sheet comes back on his page",
-    "file": "stmt/page.js",
-    "find": "        + vaultSheet()\n",
-    "replace": "        + '<div id=\"lookSheet\" class=\"salt-sheet adm asheet\" hidden></div>' + vaultSheet()\n"
-  },
-  {
-    "name": "the invitation is drawn beside a card that is open",
-    "file": "stmt/statement-css.js",
-    "find": "#nopen:not([hidden]) ~ .panenone { display: none; }",
-    "replace": "#nopen:not([hidden]) ~ .panenone { display: block; }"
-  },
-  {
-    "name": "the rows to approve lie two up",
-    "file": "stmt/statement-css.js",
-    "find": ".apstack { display: grid; gap: var(--amb-space-3); }",
-    "replace": ".apstack { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--amb-space-3); }"
-  },
-  {
-    "name": "the rows to approve are not Ambient's stack",
-    "file": "stmt/page.js",
-    "find": "<section id=\"oApprove\" class=\"amb-stack\"",
-    "replace": "<section id=\"oApprove\""
-  },
-  {
-    "name": "Customers second pane does not say Choose an account",
-    "file": "stmt/page.js",
-    "find": "<p class=\"amb-empty\" id=\"anone\">",
-    "replace": "<p class=\"amb-empty\" id=\"anonx\">"
-  },
-  {
-    "name": "the sign-in code is not in the system's frame",
-    "file": "stmt/owner.js",
-    "find": "fld.appendChild(qrRects(j.qr||[])); fig.appendChild(fld);",
-    "replace": "fig.appendChild(qrRects(j.qr||[]));"
-  },
-  {
-    "name": "the thread is not the second pane",
-    "file": "stmt/page.js",
-    "find": "<div id=\"chatside\" class=\"amb-stack\">",
-    "replace": "<div id=\"chatsid\" class=\"amb-stack\">"
-  },
-  {
-    "name": "the messages are not Ambient's panes",
-    "file": "stmt/page.js",
-    "find": "<div class=\"amb-split amb-split--panes chatsplit\">",
-    "replace": "<div class=\"chatsplit\">"
-  },
-  {
-    "name": "the messages place is not the grid",
-    "file": "stmt/page.js",
-    "find": "<div class=\"chatgrid\" data-in=\"customers.messages\">",
-    "replace": "<div data-in=\"customers.messages\">"
-  },
-  {
-    "name": "the open thread is not empty until a tap",
-    "file": "stmt/page.js",
-    "find": "<div id=\"makerChatOpen\" hidden></div>",
-    "replace": "<div id=\"makerChatOpen\"></div>"
-  }
+ {
+  "name": "the invitation is drawn on a phone",
+  "file": "stmt/statement-css.js",
+  "find": ".panenone { display: none; margin: 0;",
+  "replace": ".panenone { margin: 0;"
+ },
+ {
+  "name": "the tablet dialog is a rule for every Sheet, the customer's too (16 Nov 2026: a rule for a Sheet at 768px)",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } @media (min-width: 768px) { .adm.asheet { top: 50%; } }"
+ },
+ {
+  "name": "the drawer comes back at 860px (16 Nov 2026: a rule for a Sheet at 860px)",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } @media (min-width: 860px) { .adm.asheet { width: min(500px, 100%); } }"
+ },
+ {
+  "name": "the tablet dialog paints a ground of its own (16 Nov 2026: a rule for a Sheet that paints)",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } .adm.asheet { background: var(--amb-well); }"
+ },
+ {
+  "name": "the Yes or No sheet carries no .adm or .asheet",
+  "file": "stmt/owner.js",
+  "find": "  sheetOwn=function(box){ box.classList.add('adm','asheet'); };",
+  "replace": ""
+ },
+ {
+  "name": "a field is marked short again (16 Nov 2026: the mark is gone, a form's fields are Ambient's)",
+  "file": "stmt/owner.js",
+  "find": "var L=labOf(label), l=el('label','amb-field'); l.appendChild(el('span','amb-field__label',L[0]));",
+  "replace": "var L=labOf(label), l=el('label','amb-field maker-field--short'); l.appendChild(el('span','amb-field__label',L[0]));"
+ },
+ {
+  "name": "a field that keeps its label above is marked short (16 Nov 2026: with no mark drawn, a mark is the fault)",
+  "file": "stmt/owner.js",
+  "find": "var f=el('label','amb-field'); f.appendChild(el('span','amb-field__label',label));",
+  "replace": "var f=el('label','amb-field maker-field--short'); f.appendChild(el('span','amb-field__label',label));"
+ },
+ {
+  "name": "the page sizes Shop again on a laptop",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } @media (min-width: 1080px) { .adm #oShop { max-width: 760px; } }"
+ },
+ {
+  "name": "a thread opens hidden",
+  "file": "stmt/owner.js",
+  "find": "var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';",
+  "replace": "var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"
+ },
+ {
+  "name": "Messages opens the first thread by itself",
+  "file": "stmt/owner.js",
+  "find": "      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);",
+  "replace": "      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"
+ },
+ {
+  "name": "a rule at 768px comes back outside .adm (16 Nov 2026: was the marker of where his rules begin)",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }",
+  "replace": ".adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; } @media (min-width: 768px) { .glink { margin: 0; } }"
+ },
+ {
+  "name": "Needs you's empty pane says Tap a card",
+  "file": "stmt/page.js",
+  "find": "<p class=\"rnone panenone\">Choose a card to see it in full.</p>",
+  "replace": "<p class=\"rnone panenone\">Tap a card</p>"
+ },
+ {
+  "name": "the week's name column takes 312px",
+  "file": "stmt/statement-css.js",
+  "find": "grid-template-columns: var(--amb-week-name) minmax(0, 1fr)",
+  "replace": "grid-template-columns: 312px minmax(0, 1fr)"
+ },
+ {
+  "name": "the unlock sheet loses .asheet",
+  "file": "stmt/page.js",
+  "find": "body, \"asheet vaultsheet\")",
+  "replace": "body, \"vaultsheet\")"
+ },
+ {
+  "name": "a look Sheet comes back on his page",
+  "file": "stmt/page.js",
+  "find": "        + vaultSheet()\n",
+  "replace": "        + '<div id=\"lookSheet\" class=\"salt-sheet adm asheet\" hidden></div>' + vaultSheet()\n"
+ },
+ {
+  "name": "the invitation is drawn beside a card that is open",
+  "file": "stmt/statement-css.js",
+  "find": "#nopen:not([hidden]) ~ .panenone { display: none; }",
+  "replace": "#nopen:not([hidden]) ~ .panenone { display: block; }"
+ },
+ {
+  "name": "the rows to approve lie two up",
+  "file": "stmt/statement-css.js",
+  "find": ".apstack { display: grid; gap: var(--amb-space-3); }",
+  "replace": ".apstack { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--amb-space-3); }"
+ },
+ {
+  "name": "the rows to approve are not Ambient's stack",
+  "file": "stmt/page.js",
+  "find": "<section id=\"oApprove\" class=\"amb-stack\"",
+  "replace": "<section id=\"oApprove\""
+ },
+ {
+  "name": "Customers second pane does not say Choose an account",
+  "file": "stmt/page.js",
+  "find": "<p class=\"amb-empty\" id=\"anone\">",
+  "replace": "<p class=\"amb-empty\" id=\"anonx\">"
+ },
+ {
+  "name": "the sign-in code is not in the system's frame",
+  "file": "stmt/owner.js",
+  "find": "fld.appendChild(qrRects(j.qr||[])); fig.appendChild(fld);",
+  "replace": "fig.appendChild(qrRects(j.qr||[]));"
+ },
+ {
+  "name": "the thread is not the second pane",
+  "file": "stmt/page.js",
+  "find": "<div id=\"chatside\" class=\"amb-stack\">",
+  "replace": "<div id=\"chatsid\" class=\"amb-stack\">"
+ },
+ {
+  "name": "the messages are not Ambient's panes",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-split amb-split--panes chatsplit\">",
+  "replace": "<div class=\"chatsplit\">"
+ },
+ {
+  "name": "the messages place is not the grid",
+  "file": "stmt/page.js",
+  "find": "<div class=\"chatgrid\" data-in=\"customers.messages\">",
+  "replace": "<div data-in=\"customers.messages\">"
+ },
+ {
+  "name": "the open thread is not empty until a tap",
+  "file": "stmt/page.js",
+  "find": "<div id=\"makerChatOpen\" hidden></div>",
+  "replace": "<div id=\"makerChatOpen\"></div>"
+ },
+ {
+  "name": "a Sheet's card is wider than Ambient's 480px",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-sheet { inset: 0; height: fit-content; max-width: 480px;",
+  "replace": ".amb-sheet { inset: 0; height: fit-content; max-width: 560px;"
+ }
 ]
