@@ -30,52 +30,16 @@
     "replace": "thin: false } : { count: 0 } };"
   },
   {
-    "name": "Needs you never reads the regulars",
+    "name": "Needs you never reads the buyers",
     "file": "stmt/owner.js",
-    "find": "    if(!TESTING&&(!tick||!habitsRead)) jobs.push(readHabits());\n",
+    "find": "    if(!TESTING&&(!tick||!buyersRead)) jobs.push(readBuyers());\n",
     "replace": ""
   },
   {
-    "name": "the regulars' card is always To do",
+    "name": "a card for the regulars comes back",
     "file": "stmt/owner.js",
-    "find": "return item(lapsed?'now':'watch','accounts','Regulars'",
-    "replace": "return item('now','accounts','Regulars'"
-  },
-  {
-    "name": "the regulars' card is never To do",
-    "file": "stmt/owner.js",
-    "find": "return item(lapsed?'now':'watch','accounts','Regulars'",
-    "replace": "return item('watch','accounts','Regulars'"
-  },
-  {
-    "name": "the regulars' card has no book tag",
-    "file": "stmt/owner.js",
-    "find": "title:habitSay(first), mark:'salt', rm:0,",
-    "replace": "title:habitSay(first), rm:0,"
-  },
-  {
-    "name": "the regulars' card names the wrong one first",
-    "file": "stmt/owner.js",
-    "find": "title:habitSay(first),",
-    "replace": "title:habitSay(hs[hs.length-1]),"
-  },
-  {
-    "name": "a card with nobody to name is drawn",
-    "file": "stmt/owner.js",
-    "find": "if(habitsNow&&habitsNow.length) L.push(habitNeed(habitsNow));",
-    "replace": "if(habitsNow) L.push(habitNeed(habitsNow.length?habitsNow:[{code:'ZZ1-AAA',state:'due',since:1,usual:1}]));"
-  },
-  {
-    "name": "the regulars' card's why names only the first",
-    "file": "stmt/owner.js",
-    "find": "why:named.join('; ')+more+'.'",
-    "replace": "why:named.slice(0,1).join('; ')+'.'"
-  },
-  {
-    "name": "the regulars' card opens the last account",
-    "file": "stmt/owner.js",
-    "find": "go=function(){ acctFor(first.code); };",
-    "replace": "go=function(){ acctFor(hs[hs.length-1].code); };"
+    "find": "    if(buyersNow&&(buyersNow.count>0||buyersNow.thin)) L.push(buyersNeed(buyersNow));\n",
+    "replace": "    L.push(item('now','accounts','Regulars','x:habits','',{who:'CX4-ZED lapsed, 35 d',title:'CX4-ZED lapsed, 35 d',what:'1 regular is past their usual gap',why:'CX4-ZED lapsed.'}));\n    if(buyersNow&&(buyersNow.count>0||buyersNow.thin)) L.push(buyersNeed(buyersNow));\n"
   },
   {
     "name": "the buyers' line leaves the introduced out",
