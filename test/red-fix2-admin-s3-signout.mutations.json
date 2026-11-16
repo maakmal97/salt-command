@@ -1,0 +1,8 @@
+[
+ {
+  "name": "Sign out everywhere is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "aBtn('Sign out everywhere','amb-action amb-action--danger','acct.signout-all')",
+  "replace": "aBtn('Sign out all','amb-action amb-action--danger','acct.signout-all')"
+ }
+]

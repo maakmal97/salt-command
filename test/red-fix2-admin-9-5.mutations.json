@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the lock button's attribute changes (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "id=\"lock\" aria-live=\"polite\">'",
+  "replace": "id=\"lock\" aria-live=\"off\">'"
+ }
+]

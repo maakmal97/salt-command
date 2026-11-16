@@ -1,0 +1,14 @@
+[
+ {
+  "name": "a link row is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "var row=el('li','amb-row glrow'+(r.revoked?' off':''))",
+  "replace": "var row=el('li','amb-row glrw'+(r.revoked?' off':''))"
+ },
+ {
+  "name": "the waiting group is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "heads[seq.length]='Waiting on you'; seq=seq.concat(waiting);",
+  "replace": "heads[seq.length]='Waiting'; seq=seq.concat(waiting);"
+ }
+]

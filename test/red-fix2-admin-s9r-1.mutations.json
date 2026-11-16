@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the end group is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "var endList=aGroup(null,'aend');",
+  "replace": "var endList=aGroup(null,'aendx');"
+ }
+]

@@ -55,9 +55,9 @@
  },
  {
   "name": "B3.2 Salt Admin draws its column a bar",
-  "file": "stmt/page.js",
-  "find": "/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
-  "replace": ".adm .amb-screen{scrollbar-width:auto}\n/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S"
+  "file": "stmt/statement-css.js",
+  "find": ".ahelp { grid-column: 2; }",
+  "replace": ".ahelp { grid-column: 2; } .adm .amb-screen{scrollbar-width:auto}"
  },
  {
   "name": "B4.1 the Desk rail no longer scrolls",
@@ -74,7 +74,7 @@
  {
   "name": "B4.2 Salt Admin's screen no longer scrolls",
   "file": "stmt/statement-css.js",
-  "find": ".amb-screen {\\n  --amb-inset-l: var(--amb-safe-left);\\n  position: absolute;\\n  inset: 0;\\n  overflow-x: hidden;\\n  overflow-y: auto;",
-  "replace": ".amb-screen {\\n  --amb-inset-l: var(--amb-safe-left);\\n  position: absolute;\\n  inset: 0;\\n  overflow-x: hidden;"
+  "find": ".amb-screen {\\n  --amb-inset-l: var(--amb-safe-left);\\n  --amb-inset-r: var(--amb-safe-right);\\n  position: absolute;\\n  inset: 0;\\n  overflow-x: hidden;\\n  overflow-y: auto;\\n  overscroll-behavior: contain;",
+  "replace": ".amb-screen {\\n  --amb-inset-l: var(--amb-safe-left);\\n  --amb-inset-r: var(--amb-safe-right);\\n  position: absolute;\\n  inset: 0;\\n  overflow-x: hidden;\\n  overscroll-behavior: contain;"
  }
 ]

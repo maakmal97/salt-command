@@ -170,8 +170,8 @@
  {
   "name": "Salt Admin's stepper stops at 30",
   "file": "stmt/owner.js",
-  "find": "down.disabled=whole<=lim.min; up.disabled=whole>=lim.max;",
-  "replace": "down.disabled=whole<=-30; up.disabled=whole>=30;"
+  "find": "v=Math.max(lim.min,Math.min(lim.max,v));",
+  "replace": "v=Math.max(-30,Math.min(30,v));"
  },
  {
   "name": "the Desk's preview route stops at 30",

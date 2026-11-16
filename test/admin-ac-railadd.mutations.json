@@ -1,8 +1,38 @@
 [
- {"name":"the + is not a circle","file":"stmt/page.js","find":"'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"","replace":"'<button type=\"button\" class=\"amb-pill\" id=\"oAdd\" data-act=\"nav.add\""},
- {"name":"the + draws another glyph","file":"stmt/page.js","find":"aria-label=\"Record an entry\">' + AMB.glyph(\"plus\")","replace":"aria-label=\"Record an entry\">' + AMB.glyph(\"edit\")"},
- {"name":"the rail's + comes back","file":"stmt/page.js","find":"'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"","replace":"'<button type=\"button\" id=\"oAddRail\" data-act=\"rail.add\"></button><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\""},
- {"name":"the page places the + again","file":"stmt/page.js","find":"#roster .salt-orb[data-back]{margin:0 0 16px}","replace":"#roster .salt-orb[data-back]{margin:0 0 16px}\n.adm #oAdd{position:fixed;right:16px}"},
- {"name":"the + stands on Record","file":"stmt/owner.js","find":"    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=placeNow==='record'; });","replace":"    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=false; });"},
- {"name":"the + opens Shop","file":"stmt/owner.js","find":"  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });","replace":"  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('shop','',{fresh:true,push:true}); });"}
+ {
+  "name": "the + is not a circle",
+  "file": "stmt/page.js",
+  "find": "'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"",
+  "replace": "'<button type=\"button\" class=\"amb-pill\" id=\"oAdd\" data-act=\"nav.add\""
+ },
+ {
+  "name": "the + draws another glyph",
+  "file": "stmt/page.js",
+  "find": "aria-label=\"Record an entry\">' + AMB.glyph(\"plus\")",
+  "replace": "aria-label=\"Record an entry\">' + AMB.glyph(\"edit\")"
+ },
+ {
+  "name": "the rail's + comes back",
+  "file": "stmt/page.js",
+  "find": "'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"",
+  "replace": "'<button type=\"button\" id=\"oAddRail\" data-act=\"rail.add\"></button><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\""
+ },
+ {
+  "name": "the page places the + again",
+  "file": "stmt/statement-css.js",
+  "find": ".ahelp { grid-column: 2; }",
+  "replace": ".ahelp { grid-column: 2; } .adm #oAdd{position:fixed;right:16px}"
+ },
+ {
+  "name": "the + stands on Record",
+  "file": "stmt/owner.js",
+  "find": "    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=placeNow==='record'; });",
+  "replace": "    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=false; });"
+ },
+ {
+  "name": "the + opens Shop",
+  "file": "stmt/owner.js",
+  "find": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
+  "replace": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('shop','',{fresh:true,push:true}); });"
+ }
 ]

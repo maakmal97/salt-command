@@ -134,8 +134,8 @@
  {
   "name": "the customer's Look row comes back",
   "file": "stmt/page.js",
-  "find": "'<div class=\"salt-settings devlist\"><div id=\"devRows\" class=\"devrows\"></div>'",
-  "replace": "'<div class=\"salt-settings devlist\"><div id=\"devRows\" class=\"devrows\"></div><div id=\"lookRow\"><button data-look=\"tide\"></button></div>'"
+  "find": "<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\">",
+  "replace": "<div class=\"amb-settings devlist\"><ul class=\"amb-settings__list\" id=\"devRows\"><li id=\"lookRow\"><button data-look=\"tide\"></button></li>"
  },
  {
   "name": "his Tide row comes back",

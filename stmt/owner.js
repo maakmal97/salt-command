@@ -419,7 +419,8 @@ export const OWNER_JS = `
       tr.appendChild(so); li.appendChild(tr); dl.appendChild(li);
     });
     if(s&&!s.err&&!devs.length) box.appendChild(el('p','amb-empty','None signed in. A sign-in link or a code signs them in.'));
-    if(dl.firstChild) box.appendChild(dl); else dh.remove();
+    var nodev=s&&!s.err&&!devs.length;   /* 17 Nov 2026 (the second red fix): the heading stays over its None signed in line, as it did before the move to Ambient */
+    if(dl.firstChild) box.appendChild(dl); else if(!nodev) dh.remove();
   }
   async function endOne(a, d, b){
     b.disabled=true; b.textContent='Signing out...';

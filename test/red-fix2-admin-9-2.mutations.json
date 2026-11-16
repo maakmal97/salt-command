@@ -1,0 +1,26 @@
+[
+ {
+  "name": "a roster row is no Ambient row (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "li=el('li','amb-row arow'), mv=null;",
+  "replace": "li=el('li','arow'), mv=null;"
+ },
+ {
+  "name": "a row's word is left out (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "sub.appendChild(el('span',s.sev==='now'||s.late?'amb-neg':null,s.word));",
+  "replace": "0;"
+ },
+ {
+  "name": "no filter is marked pressed after a tap (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "if(b&&b.getAttribute('aria-disabled')!=='true') filterBy(b.getAttribute('data-f'));\n  });",
+  "replace": "ev.stopPropagation(); if(b&&b.getAttribute('aria-disabled')!=='true'){ filterBy(b.getAttribute('data-f')); [].forEach.call(document.querySelectorAll('#afil button[data-f]'), function(y){ y.setAttribute('aria-pressed','false'); }); }\n  });"
+ },
+ {
+  "name": "a standing value is no setting value (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "standRow('Marked sent',dayMon(a.sent));",
+  "replace": "0;"
+ }
+]

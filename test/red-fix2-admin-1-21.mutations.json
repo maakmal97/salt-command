@@ -1,0 +1,14 @@
+[
+ {
+  "name": "a Home line is no prose (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "function hSay(t,id,cls,live){ var d=el('div','amb-prose')",
+  "replace": "function hSay(t,id,cls,live){ var d=el('div','amb-pr')"
+ },
+ {
+  "name": "a link row's state word is left out (17 Nov 2026, the second red fix)",
+  "file": "stmt/page.js",
+  "find": "var s=el('span'); s.appendChild(el('span',tone,stateWordText));",
+  "replace": "var s=el('span');"
+ }
+]

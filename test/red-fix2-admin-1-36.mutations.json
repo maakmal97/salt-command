@@ -1,0 +1,8 @@
+[
+ {
+  "name": "Mark as sent is renamed (17 Nov 2026, the second red fix)",
+  "file": "stmt/owner.js",
+  "find": "aBtn('Mark as sent','amb-action','acct.sent')",
+  "replace": "aBtn('Mark sent','amb-action','acct.sent')"
+ }
+]
