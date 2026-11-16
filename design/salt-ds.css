@@ -2682,18 +2682,19 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
      word of 21 Oct 2026); the column (__col) is the bar and under it __main, the one box that scrolls. The bar stays the column's child, so under
      1080px, where the page scrolls, it is sticky in the column as before */
   .salt-frame--side { grid-template-rows: minmax(0, 1fr); }
-  .salt-frame--side > .salt-rail { grid-row: 1; }
+  .salt-frame--side > .salt-rail { grid-row: 1; margin-bottom: var(--salt-frame-foot, 24px); }
   .salt-frame__col { grid-column: 2; grid-row: 1; align-self: stretch; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); min-width: 0; min-height: 0; }
   /* 1.33.0, his word of 16 Nov 2026 ("slide under the bar", one way on every Salt surface): the bar and __main share the column's one cell,
      the bar laid over __main's top, so what scrolls slides under the bar as a page slides under the Counter's sticky bar, never cut at a line
      below it. __main opens one bar (--salt-frame-bar-h, which the surface keeps to its bar's height) and a gap (--salt-frame-gap) down, and
-     reaches --salt-frame-room past the column at each side and its foot, so a pane's shadow is never cut flat at the column's edge; a pane
-     holds under the bar */
+     reaches --salt-frame-room past the column at each side, so a pane's shadow is never cut flat at the column's edge; a pane holds under the
+     bar. The surface sets the frame to the screen's foot (--salt-frame-h, the screen less the page's top), so what scrolls runs off the foot as
+     a page does; the rail stands --salt-frame-foot above it and the column's last line clears it by as much */
   .salt-frame__col > .salt-frame__bar { grid-area: 1 / 1; align-self: start; z-index: 3; }
   .salt-frame__col > .salt-frame__main {
     grid-area: 1 / 1;
     margin: 0 calc(-1 * var(--salt-frame-room, 20px));
-    padding: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)) var(--salt-frame-room, 20px) var(--salt-frame-room, 20px);
+    padding: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)) var(--salt-frame-room, 20px) calc(var(--salt-frame-room, 20px) + var(--salt-frame-foot, 24px));
     scroll-padding-top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px));
   }
   .salt-frame__col > .salt-frame__main .salt-pane { top: calc(var(--salt-frame-bar-h, 64px) + var(--salt-frame-gap, 20px)); }
