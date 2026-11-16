@@ -1,0 +1,207 @@
+<div class="amb-shell" data-mood="lagoon">
+  <main class="amb-screen">
+    <header class="amb-hero amb-hero--doc amb-mesh"><span class="amb-chip amb-chip--glass">Plan, 17 Nov 2026</span>
+      <h1 class="amb-hero__title">One Change sheet makes a site order editable at all six stages</h1>
+      <p class="amb-hero__sub">Today a change of an order lives in four places, each with its own stage gates. One Change row on every order opens one sheet: what you change, what it becomes underneath, and whether the customer is told, all said before you save.</p>
+      <p class="amb-hero__time">Salt Admin. Advised by Fable from the code as at v1524, with this session's uncommitted Way change.</p>
+    </header>
+    <div class="amb-doc">
+      <nav class="amb-contents" aria-label="Contents">
+        <p class="amb-contents__title">Contents</p>
+        <ol class="amb-contents__list">
+          <li><a class="amb-contents__link" href="#stands">Where it stands</a></li>
+          <li><a class="amb-contents__link" href="#sheet">The one sheet</a></li>
+          <li><a class="amb-contents__link" href="#telling">Telling the customer</a></li>
+          <li><a class="amb-contents__link" href="#versions">Four versions</a></li>
+          <li><a class="amb-contents__link" href="#asks">Your eight answers</a></li>
+        </ol>
+      </nav>
+      <div class="amb-doc__body">
+        <section class="amb-sec" id="stands">
+          <h2 class="amb-section">Where it stands <span class="amb-section__note">as at 17 Nov 2026</span></h2>
+          <div class="amb-tiles">
+            <div class="amb-tile"><span class="amb-tile__label">Stages to cover</span><span class="amb-tile__figure">6</span><span class="amb-tile__delta amb-muted">Placed, agreed, ready, paid, handed over, completed</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Your list of 17 Nov 2026.</span></div>
+            <div class="amb-tile"><span class="amb-tile__label">Places a change lives</span><span class="amb-tile__figure">4</span><span class="amb-tile__delta amb-muted">Change the order, Money received, Handed over, Change point</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Read off stmt/owner.js, 17 Nov 2026.</span></div>
+            <div class="amb-tile"><span class="amb-tile__label">Answers needed</span><span class="amb-tile__figure">8</span><span class="amb-tile__delta amb-muted">Each proposed, none decided</span><span class="amb-basis">Section 5 of this plan.</span></div>
+          </div>
+          <div class="amb-prose">
+            <p>TA95-7J2 showed the problem: Collected to Delivered with a RM 15 charge had no road at all, and the refusal said only that the Counter could not do it. This session has built the Way field on Change the order (not yet shipped); this plan is what comes after.</p>
+            <p>Two facts from the code shape it. A plain change of an agreed order wakes nobody today, so a raise after Accept is silent, while the same raise at Accept needs their yes. And the order book already takes more than Salt Admin offers: it can lower what is paid and handed over, and amend a completed order. Most of the gap is in the sheet, not underneath.</p>
+          </div>
+        </section>
+        <section class="amb-sec" id="sheet">
+          <h2 class="amb-section">The one sheet <span class="amb-section__note">one Change row, every stage</span></h2>
+          <div class="amb-prose">
+            <p>One row, Change, on every order card at every stage, opening one sheet in three groups, each field showing what it was and what it will be.</p>
+          </div>
+          <ul class="amb-list">
+            <li class="amb-row"><span class="amb-row__text"><span class="amb-row__title">Order</span><span class="amb-row__sub">Way, units, goods, delivery, when, and the point or spot</span></span></li>
+            <li class="amb-row"><span class="amb-row__text"><span class="amb-row__title">So far</span><span class="amb-row__sub">Handed over, paid</span></span></li>
+            <li class="amb-row"><span class="amb-row__text"><span class="amb-row__title">End</span><span class="amb-row__sub">Cancel or decline; reopen on a completed order</span></span></li>
+          </ul>
+          <div class="amb-prose">
+            <p>A line at the foot says what Save will do before you tap it: they will be told, told as a discount, not told, or needs their yes. One Save sends the change, then the handover, then the money, in that order.</p>
+          </div>
+          <div class="amb-stack">
+            <table class="amb-table amb-table--stack">
+              <caption>What each stage takes, and what is missing today</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Stage</th>
+                  <th scope="col">You can change</th>
+                  <th scope="col">Becomes</th>
+                  <th scope="col">Missing today</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">1 Placed</th>
+                  <td data-label="You can change">Way, units, goods, delivery, when</td>
+                  <td data-label="Becomes">The sheet is the Agree sheet: Save is Accept at those terms, or an offer where they must say yes</td>
+                  <td data-label="Missing today">Units and way change only by cancel and replace</td>
+                </tr>
+                <tr>
+                  <th scope="row">2 Agreed</th>
+                  <td data-label="You can change">Everything in Order and So far</td>
+                  <td data-label="Becomes">An amendment for Approve; a handover; a payment</td>
+                  <td data-label="Missing today">When; lowering paid or handed over, except the newest move</td>
+                </tr>
+                <tr>
+                  <th scope="row">3 Ready</th>
+                  <td data-label="You can change">The same, and the point</td>
+                  <td data-label="Becomes">The same; Change point</td>
+                  <td data-label="Missing today">No way back to Agreed; a change of way must clear or ask for a point</td>
+                </tr>
+                <tr>
+                  <th scope="row">4 Paid</th>
+                  <td data-label="You can change">The same</td>
+                  <td data-label="Becomes">Lower goods raise the refund, as now</td>
+                  <td data-label="Missing today">Lowering paid</td>
+                </tr>
+                <tr>
+                  <th scope="row">5 Handed over</th>
+                  <td data-label="You can change">The same; the way restates the row's handover</td>
+                  <td data-label="Becomes">An amendment for Approve</td>
+                  <td data-label="Missing today">Taking back an older handover</td>
+                </tr>
+                <tr>
+                  <th scope="row">6 Completed</th>
+                  <td data-label="You can change">The same</td>
+                  <td data-label="Becomes">An amendment; it opens again at Ready if it leaves them owing</td>
+                  <td data-label="Missing today">Cancel once goods are out</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> Fable's reading of decideDesk, restateTap and the maker roads, 17 Nov 2026; the gaps are not yet proved by a test.</p>
+            <div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">No more "could not do that"</span>Every sentence the Desk and the order book can refuse a change with is worded on Salt Admin, pinned by a check that reads them off the code.</span></div>
+          </div>
+        </section>
+        <section class="amb-sec" id="telling">
+          <h2 class="amb-section">Telling the customer <span class="amb-section__note">one rule</span></h2>
+          <div class="amb-prose">
+            <p>Every change to what the customer sees is told; the word is discount when it is cheaper for the same or more goods. One check in the order book decides it for each change and stamps it on the move, so the wake follows from the move itself.</p>
+          </div>
+          <div class="amb-stack">
+            <table class="amb-table amb-table--stack">
+              <caption>Which change is told, and how</caption>
+              <thead>
+                <tr>
+                  <th scope="col">The change</th>
+                  <th scope="col">Examples</th>
+                  <th scope="col">Banner</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Changes their order</th>
+                  <td data-label="Examples">Goods or delivery up, deliver becomes collect, an earlier window, fewer units</td>
+                  <td data-label="Banner">New kind changed: "Your order has changed. Open it to see what is different."</td>
+                </tr>
+                <tr>
+                  <th scope="row">A discount</th>
+                  <td data-label="Examples">Owed less for the same or more units, the delivery charge taken off</td>
+                  <td data-label="Banner">New kind discount: "You have received a discount on your order. Open your order to see it."</td>
+                </tr>
+                <tr>
+                  <th scope="row">Bookkeeping</th>
+                  <td data-label="Examples">A payment's method, the cost, the road, the book's own restate</td>
+                  <td data-label="Banner">Not told</td>
+                </tr>
+                <tr>
+                  <th scope="row">Already told</th>
+                  <td data-label="Examples">An undo, paid, handed over, point moved, an offer, a cancellation</td>
+                  <td data-label="Banner">The banner each has today, unchanged</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="amb-basis">The banner rule stands: no amount, product or name in a banner. The order page shows what was and what is.</p>
+          </div>
+        </section>
+        <section class="amb-sec" id="versions">
+          <h2 class="amb-section">Four versions <span class="amb-section__note">smallest valuable first</span></h2>
+          <div class="amb-stack">
+            <ol class="amb-steps">
+              <li class="amb-step is-now"><span class="amb-step__title">V1, the way and the telling</span><span class="amb-step__text">Ship the Way field built today; the changed and discount banners; every refusal worded; a was-and-now line on the order. Fable checks a banner sent at the tap and then rejected, a discount never on a cut in units, and an old phone reading the new kinds.</span><span class="amb-chip amb-chip--warn">Now</span></li>
+              <li class="amb-step"><span class="amb-step__title">V2, the one sheet for stages 2 to 6</span><span class="amb-step__text">Salt Admin only: the Change row and sheet over the roads that exist. Fable checks three moves from one Save against one amendment in flight and the money room.</span></li>
+              <li class="amb-step"><span class="amb-step__title">V3, a placed order</span><span class="amb-step__text">Change is the Agree sheet, and the order book takes a change of a placed order before any row exists. Fable checks an open ask or offer, a group order and a trip's one delivery.</span></li>
+              <li class="amb-step"><span class="amb-step__title">V4, the lowers and the window</span><span class="amb-step__text">Lowering paid and taking back an older handover with a reason, carried to the order by the return leg; a new window after Accept. Fable reviews in full: money, refunds, a claim waiting.</span></li>
+            </ol>
+          </div>
+        </section>
+        <section class="amb-sec" id="asks">
+          <h2 class="amb-section">Your eight answers <span class="amb-section__note">each proposed, none decided</span></h2>
+          <div class="amb-stack">
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">1. A raise after Accept: told, or their yes?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask1" value="told" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Told, no yes needed</span><span class="amb-option__sub">Keeps your 06 Oct 2026 decision that an agreed order is amendable; their yes stays at Accept only.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask1" value="yes" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">An offer they must accept</span><span class="amb-option__sub">Safer for them; a raise waits until they answer.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">2. Told when you save, or when you approve?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask2" value="tap" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">When you save, and Save is the approval</span><span class="amb-option__sub">One tap for a change inside the band, as Accept's yes already works.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask2" value="approve" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">When you approve</span><span class="amb-option__sub">Two taps; nothing reaches them until the row is booked.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">3. Discount only when cheaper for the same or more goods?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask3" value="yes" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Yes; fewer units says changed</span><span class="amb-option__sub">A smaller bill for less salt is not a discount.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask3" value="any" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Any lower bill is a discount</span><span class="amb-option__sub">Simpler, but says discount on a cut in their order.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">4. Collect becomes deliver at no charge: discount or changed?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask4" value="changed" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Changed</span><span class="amb-option__sub">Discount is kept for money alone.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask4" value="discount" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Discount</span><span class="amb-option__sub">A free delivery reads as a gift.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">5. A new window after Accept: told, or their yes?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask5" value="split" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Earlier told, later their yes</span><span class="amb-option__sub">A later window is an offer, as today at Accept.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask5" value="told" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Always told</span><span class="amb-option__sub">One rule, no waiting on them.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">6. Lowering paid, or taking back an older handover, from the sheet?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask6" value="yes" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Yes, with a reason, told as changed</span><span class="amb-option__sub">Money handed back becomes the refund row, as now.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask6" value="no" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Undo of the newest move only</span><span class="amb-option__sub">As today; older moves stay hand edits.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">7. The two banners' words as written above?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask7" value="yes" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Yes</span><span class="amb-option__sub">"Your order has changed" and "You have received a discount on your order".</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask7" value="other" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Other words</span><span class="amb-option__sub">You give them.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+            <fieldset class="amb-options amb-options--record">
+              <legend class="amb-field__label">8. Retire Money received, Handed over and Change point as rows of their own?</legend>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask8" value="yes" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Yes, once the sheet holds them</span><span class="amb-option__sub">The one stage pill stays as the fast path: Agree, Ready, Handed over, Cash received.</span></label>
+              <label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="ask8" value="keep" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Keep them beside the sheet</span><span class="amb-option__sub">Two ways to do the same thing.</span></label>
+              <p class="amb-field__hint"><strong>Proposed</strong> 17 Nov 2026</p>
+            </fieldset>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
