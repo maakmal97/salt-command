@@ -1,0 +1,146 @@
+[
+ {
+  "name": "footPlace: Home is two stacks in one column too",
+  "file": "stmt/page.js",
+  "find": "var one=window.innerWidth<960, a=st[0]",
+  "replace": "var one=false, a=st[0]"
+ },
+ {
+  "name": "footPlace: Home is one stack from 960px too",
+  "file": "stmt/page.js",
+  "find": "var one=window.innerWidth<960, a=st[0]",
+  "replace": "var one=true, a=st[0]"
+ },
+ {
+  "name": "footPlace: the parts stand in the wrong order in one column",
+  "file": "stmt/page.js",
+  "find": "(one?HOME1.slice().reverse():HOME1).forEach(",
+  "replace": "(HOME1).forEach("
+ },
+ {
+  "name": "footPlace: the Pay is left where it was",
+  "file": "stmt/page.js",
+  "find": "    if(to.lastElementChild!==f) to.appendChild(f);\n",
+  "replace": ""
+ },
+ {
+  "name": "Home's first stack draws when empty",
+  "file": "stmt/statement-css.js",
+  "find": "#pHome > .amb-stack:not(:has(*)) { display: none; }",
+  "replace": "#pHome > .amb-stack:not(:has(*)) { display: block; }"
+ },
+ {
+  "name": "a gap stands above the last stack in one column",
+  "file": "stmt/statement-css.js",
+  "find": "#pHome > .amb-stack + .amb-stack { margin-top: 0; }",
+  "replace": "#pHome > .amb-stack + .amb-stack { margin-top: 24px; }"
+ },
+ {
+  "name": "footPlace: a resize moves nothing",
+  "file": "stmt/page.js",
+  "find": "  window.addEventListener('resize',footPlace);\n",
+  "replace": ""
+ },
+ {
+  "name": "footPlace: a draw never places the foot",
+  "file": "stmt/page.js",
+  "find": "footPlace(); nothingDraw();",
+  "replace": "nothingDraw();"
+ },
+ {
+  "name": "Home stands in no place of its own",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-place\"><div id=\"pHome\"",
+  "replace": "<div class=\"amb-x\"><div id=\"pHome\""
+ },
+ {
+  "name": "Home's place stays shown beside another place",
+  "file": "stmt/page.js",
+  "find": "    var hp=pHome.parentNode; if(hp&&hp.classList.contains('amb-place')) hp.hidden=pHome.hidden;\n",
+  "replace": ""
+ },
+ {
+  "name": "the mini bar's coin keeps its letter (36px)",
+  "file": "stmt/page.js",
+  "find": "var th=markThumb(o.product,'md'); box.appendChild(th);",
+  "replace": "var th=markThumb(o.product,'sm'); box.appendChild(th);"
+ },
+ {
+  "name": "Home's stacks stand no measure",
+  "file": "stmt/statement-css.js",
+  "find": "max-width: calc(36rem + 2 * var(--amb-space-4)); justify-self: center;",
+  "replace": "max-width: none; justify-self: center;"
+ },
+ {
+  "name": "a list in Home's box keeps a second inset",
+  "file": "stmt/statement-css.js",
+  "find": "#pHome .amb-stack .amb-list { margin-inline: 0; }",
+  "replace": "#pHome .amb-stack .amb-list { margin-inline: 16px; }"
+ },
+ {
+  "name": "Account always says nothing yet",
+  "file": "stmt/page.js",
+  "find": "var want=!orders.length&&!(invTotal(nowOf())>0.004), has=",
+  "replace": "var want=true, has="
+ },
+ {
+  "name": "Account never says nothing yet",
+  "file": "stmt/page.js",
+  "find": "var want=!orders.length&&!(invTotal(nowOf())>0.004), has=",
+  "replace": "var want=false, has="
+ },
+ {
+  "name": "Account draws the thread row again",
+  "file": "stmt/page.js",
+  "find": "th.setAttribute('data-glance','thread'); gadd(th);",
+  "replace": "th.setAttribute('data-glance','thread'); gadd(th); gadd(thRow());"
+ },
+ {
+  "name": "the glance loses its Messages row",
+  "file": "stmt/page.js",
+  "find": "th.setAttribute('data-glance','thread'); gadd(th);",
+  "replace": "th.setAttribute('data-glance','thread');"
+ },
+ {
+  "name": "Sign out stands in a list of its own",
+  "file": "stmt/page.js",
+  "find": "    + '<li class=\"devout\"><button type=\"button\" class=\"amb-action amb-action--danger\" id=\"lock\" aria-live=\"polite\">'",
+  "replace": "    + '</ul><ul class=\"amb-settings__list\"><li class=\"devout\"><button type=\"button\" class=\"amb-action amb-action--danger\" id=\"lock\" aria-live=\"polite\">'"
+ },
+ {
+  "name": "the devices stand after Sign out",
+  "file": "stmt/page.js",
+  "find": "var before=kind==='own'?(first||out):out;",
+  "replace": "var before=null;"
+ },
+ {
+  "name": "the hero carries a bare clock again",
+  "file": "stmt/page.js",
+  "find": "<span id=\"cstay\"></span></p></header>'",
+  "replace": "<span id=\"cstay\"></span></p><p class=\"amb-hero__time\" data-clock></p></header>'"
+ },
+ {
+  "name": "Salt Admin's hero loses its clock",
+  "file": "stmt/page.js",
+  "find": "<span class=\"clk\" data-clock></span></p>'",
+  "replace": "<span class=\"clk\"></span></p>'"
+ },
+ {
+  "name": "the order's foot is no longer last",
+  "file": "stmt/page.js",
+  "find": "foot:oFoot, act:oAct};",
+  "replace": "act:oAct, foot:oFoot};"
+ },
+ {
+  "name": "the message box falls behind the foot",
+  "file": "stmt/page.js",
+  "find": "thread:oThread, say:oSay, details:oDetails, hist:oHist, foot:oFoot, act:oAct}",
+  "replace": "thread:oThread, details:oDetails, hist:oHist, foot:oFoot, act:oAct, say:oSay}"
+ },
+ {
+  "name": "a text of the site layer under 12px",
+  "file": "design/site.css",
+  "find": ".hbook { margin: 0; }",
+  "replace": ".hbook { margin: 0; font-size: 11px; }"
+ }
+]
