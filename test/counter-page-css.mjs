@@ -140,7 +140,7 @@ export async function run({ ok, pageWork }) {
   ok(stray.length === 0 && !/--salt-/.test(pageCss) && !/salt-/.test(R.map((r) => r[0]).join(" ")),
     `and each is an Ambient token, never a literal or a salt- token, so each holds the contrast Ambient's tokens hold on both themes (stray: ${stray.join(", ") || "none"})`);
   /* the danger tone is Ambient's alarm: stated once by the system, and the page restates none */
-  ok(!/\.salt-ghost/.test(allCss) && /\.amb-action--danger \{ color: var\(--amb-neg\); \}/.test(AMB_CSS) && !R.some(([sel]) => /danger/.test(sel)),
+  ok(!/\.salt-ghost/.test(allCss) && /(^|\} )\.amb-action--danger \{ color: var\(--amb-neg\); \}/.test(AMB_CSS.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ")) && !R.some(([sel]) => /danger/.test(sel)),
     "a move that refuses rests in Ambient's alarm, from the system's own rule, and the page's layer states no danger tone of its own");
 
   /* ---- 4. the type floor (16 Nov 2026, the move to Ambient): nothing the site's layer sets is under Ambient's 12px floor ---- */
