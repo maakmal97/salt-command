@@ -24,14 +24,14 @@ export function makerGeoText(master) {
   const position = ["PLACE_ABBR", "PLACE_GENERIC"].map(constant)
     .concat(["placeKey", "placeBare", "placeCandidates"].map(fn)).join("\n");
   const data = ["AREAS", "DISTRICTS", "PLACE_LIST", "GAZ", "PLACE_WORDS"].map(constant).join("\n");
-  const functions = ["decodeRing", "areaShape", "inShape", "areaOf", "placeWords", "placePicks",
-    "gazDecode", "areaKeys", "sha7", "placeWithin", "placeFromText", "mapsLink", "geohashPoint"].map(fn).join("\n");
+  const functions = ["decodeRing", "areaShape", "inShape", "areaOf", "placeWords", "placePicks", "localityFor",
+    "gazDecode", "areaKeys", "sha7", "placeWithin", "placeFromText", "mapsLink", "dmsPoint", "plusPoint", "geohashPoint"].map(fn).join("\n");
   const script = "(function(){\n" + data + "\n"
     + "const POSITION_ENGINE=(function(){\n" + position + "\nreturn {placeKey,placeCandidates};})();\n"
     + "let PLACED={},AREA_SHAPES={},AREA_KEYS=null,GAZ_INDEX=null;\n"
     + constant("placeTidy") + "\n" + constant("placeLocality") + "\n" + constant("geoWhere") + "\n" + constant("areaName") + "\n" + constant("gazIndex") + "\n"
     + functions + "\n" + fn("vaultMapMerge") + "\n" + fn("vaultRekeyMap") + "\n" + constant("TIP_ID") + "\n" + fn("vaultPendingOk")
-    + "\nreturn {configure:function(places){PLACED=places||{};},picks:placePicks,find:placeFromText,where:geoWhere,official:function(){return AREAS.map(function(a){return a.short;}).concat(AREAS.map(areaName),DISTRICTS.map(function(d){return d.name;}));},link:mapsLink,merge:vaultMapMerge,rekey:vaultRekeyMap,pendingOk:vaultPendingOk};\n})()";
+    + "\nreturn {configure:function(places){PLACED=places||{};},picks:placePicks,find:placeFromText,where:geoWhere,locality:localityFor,official:function(){return AREAS.map(function(a){return a.short;}).concat(AREAS.map(areaName),DISTRICTS.map(function(d){return d.name;}));},link:mapsLink,merge:vaultMapMerge,rekey:vaultRekeyMap,pendingOk:vaultPendingOk};\n})()";
   return "// GENERATED from the incumbent Desk geography by tools/maker-geosync.mjs; never edit.\n"
     + "export const MAKER_GEO_JS = " + JSON.stringify(script) + ";\n";
 }
@@ -50,7 +50,7 @@ export function placeLinkText(master) {
   };
   /* as expressions, so the owner's page, which carries this and Salt Admin's geography, declares no function twice (S3 fix) */
   const expr = (name) => fn(name).replace(new RegExp("^function " + name + "\\("), "var " + name + "=function(") + ";";
-  const script = "(function(){\n" + expr("mapsLink") + "\n" + expr("geohashPoint") + "\nreturn mapsLink;\n})()";
+  const script = "(function(){\n" + ["mapsLink", "dmsPoint", "plusPoint", "geohashPoint"].map(expr).join("\n") + "\nreturn mapsLink;\n})()";
   return "// GENERATED from the Desk's mapsLink by tools/maker-geosync.mjs; never edit.\n"
     + "export const PLACE_LINK_JS = " + JSON.stringify(script) + ";\n";
 }

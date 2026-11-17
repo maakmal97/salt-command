@@ -15883,6 +15883,19 @@ function placePicks(){
   AREAS.forEach(a=>add(a.short,r2(a.label[1]),r2(a.label[0])));
   return new Map([...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])));
 }
+/* 17 Nov 2026 (his yes to the one place field plan, D5): THE LOCALITY A POINT IS FILED WITH, worked out from the point alone and on this
+   device: the district the point stands in, then the nearest listed locality of that district within 3 km, else the listed area holding
+   the point, else the district's nearest. A pick's own label, so it files as one chosen from the list does; null outside every district */
+function localityFor(lat,lng){
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
+  const r=areaOf(lat,lng),d=r.district;if(!d)return null;
+  const km=p=>Math.hypot((p[1]-lng)*Math.cos(lat*Math.PI/180),p[0]-lat)*111.2;
+  let best=null,far=Infinity,own=null;
+  placePicks().forEach((p,label)=>{const parts=label.split(',').map(x=>x.trim());if(parts[parts.length-1]!==d.name)return;
+    const k=km(p);if(k<far){far=k;best=label;}
+    if(r.area&&!own&&parts[0]===r.area.short)own=label;});
+  return far<=3?best:own||best;
+}
 
 /* the kind and the name, unless the name already opens with the kind, as Bandar Baharu does */
 const areaName=a=>(!a.kind||a.short.toLowerCase().indexOf(a.kind+' ')===0)?a.short:a.kind.charAt(0).toUpperCase()+a.kind.slice(1)+' '+a.short;
@@ -21749,7 +21762,7 @@ async function ordTell(){
    point at all (src 'unit'); both are read after the one unlock and shown on the card, kept in ORD_PIN with the point and
    dropped with it. A unit alone measures no fee and files nothing: the fee falls back to the filed place. */
 let ORD_PIN={};
-const pinWords=p=>({label:p&&typeof p.label==='string'?p.label.slice(0,24):'',unit:p&&typeof p.unit==='string'?p.unit.slice(0,40):'',addr:p&&typeof p.addr==='string'?p.addr.slice(0,200):''});
+const pinWords=p=>({label:p&&typeof p.label==='string'?p.label.slice(0,24):'',unit:p&&typeof p.unit==='string'?p.unit.slice(0,40):'',addr:p&&typeof p.addr==='string'?p.addr.slice(0,1000):''});
 async function ordPinPoint(o){
   if(!o||!o.pin||o.mode!=='deliver'||!feeOpen()||!vaultSlipKey)return null;
   const k=o.id;if(ORD_PIN[k])return ORD_PIN[k].pt||null;
@@ -21787,7 +21800,7 @@ function ordPinLine(o){
   if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
   const named=v.label||v.unit||v.addr?`<p class="ordline ordpin ordpinname">${esc([v.label,v.unit,v.addr].filter(Boolean).join(' \u00b7 '))}</p>`:'';
   if(v.st==='unit')return named+'<p class="ordline ordpin">A unit, no exact spot: the fee is measured to their filed place.</p>';
-  if(v.st==='addr')return named+'<p class="ordline ordpin">An address, no exact spot: the fee is measured to their filed place.</p>';
+  if(v.st==='addr')return named+'<p class="ordline ordpin">An address, no exact spot: place it on Salt Admin, or the fee is measured to their filed place.</p>';
   if(v.st!=='ok')return named+`<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
   const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;
   const can=!same&&pinFileable(o);
@@ -23348,7 +23361,11 @@ function mapsLink(text){
   const pair=t=>{const x=/^\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/.exec(t==null?'':String(t));return x?pt(+x[1],+x[2]):null;};
   /* 4 Nov 2026 (his word: one convention on every surface): two figures alone, with their decimals, are a pin, as a phone's
      own location is written into the field and as some share them */
-  if(!m){const f=/^(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})$/.exec(s),p=f&&pt(+f[1],+f[2]);return p?{lat:p.lat,lng:p.lng,addr:null,src:'pin'}:null;}
+  /* 17 Nov 2026 (his yes to the one place field plan): the two figures may stand apart by a space alone, and a point in degrees or a
+     plus code is a pin too, any words after a plus code its address */
+  if(!m){const f=/^(-?\d{1,2}\.\d{3,})(?:\s*,\s*|\s+)(-?\d{1,3}\.\d{3,})$/.exec(s),p=f&&pt(+f[1],+f[2]);if(p)return {lat:p.lat,lng:p.lng,addr:null,src:'pin'};
+    const d=dmsPoint(s);if(d)return {lat:d.lat,lng:d.lng,addr:null,src:'pin'};
+    const c=plusPoint(s);return c?{lat:c.lat,lng:c.lng,addr:c.addr,src:'pin'}:null;}
   let u;try{u=new URL(m[0].replace(/[)\].,;!?']+$/,''));}catch(e){return null;}
   const dec=x=>{try{return decodeURIComponent(String(x).replace(/\+/g,' '));}catch(e){return String(x);}};
   const q=k=>u.searchParams.get(k);
@@ -23389,6 +23406,41 @@ function mapsLink(text){
     addr=words(q('address'))||words(q('q'))||words(q('name'));
   }
   return {lat:p?p.lat:null,lng:p?p.lng:null,addr:before||addr||null,src:src};
+}
+/* 17 Nov 2026 (his yes to the one place field plan): A POINT IN DEGREES, as Google copies a dropped pin (3°08'50.0"N 101°41'13.2"E)
+   and some phones write one (3.1472° N, 101.6869° E): latitude and longitude, each with its letter, in either order */
+function dmsPoint(text){
+  const x=/^(\d{1,3}(?:\.\d+)?)\s*°\s*(?:(\d{1,2}(?:\.\d+)?)\s*['′’]\s*)?(?:(\d{1,2}(?:\.\d+)?)\s*(?:"|″|”|'')\s*)?([NSEW])[\s,]+(\d{1,3}(?:\.\d+)?)\s*°\s*(?:(\d{1,2}(?:\.\d+)?)\s*['′’]\s*)?(?:(\d{1,2}(?:\.\d+)?)\s*(?:"|″|”|'')\s*)?([NSEW])$/i.exec(String(text==null?'':text).trim());
+  if(!x||[x[2],x[3],x[6],x[7]].some(v=>v!=null&&+v>=60))return null;
+  let a={v:+x[1]+(+x[2]||0)/60+(+x[3]||0)/3600,h:x[4].toUpperCase()},b={v:+x[5]+(+x[6]||0)/60+(+x[7]||0)/3600,h:x[8].toUpperCase()};
+  if('EW'.includes(a.h)&&'NS'.includes(b.h))[a,b]=[b,a];
+  if(!'NS'.includes(a.h)||!'EW'.includes(b.h))return null;
+  const lat=a.h==='S'?-a.v:a.v,lng=b.h==='W'?-b.v:b.v;
+  return Math.abs(lat)<=90&&Math.abs(lng)<=180&&(lat||lng)?{lat:Math.round(lat*1e6)/1e6,lng:Math.round(lng*1e6)/1e6}:null;
+}
+/* and A PLUS CODE, as Google Maps shows one under a place: full (6PM37VP3+PR) or short with its place after it (7VP3+PR Kuala Lumpur).
+   A short one is read from Kuala Lumpur, as Google reads one from where the phone stands, so it holds within about 50 km of the city */
+function plusPoint(text){
+  const A='23456789CFGHJMPQRVWX',RES=[20,1,0.05,0.0025,0.000125],REF=[3.139,101.687];
+  const m=/^([23456789CFGHJMPQRVWX]{4,8})\+([23456789CFGHJMPQRVWX]{2,3})(?:[\s,]+([\s\S]*))?$/i.exec(String(text==null?'':text).trim());
+  if(!m||m[1].length%2)return null;
+  const pre=m[1].toUpperCase(),post=m[2].toUpperCase();
+  const decode=c=>{let la=0,ln=0,i=0,sz=20;
+    for(;i<10&&i<c.length;i+=2){sz=RES[i/2];la+=A.indexOf(c[i])*sz;ln+=A.indexOf(c[i+1])*sz;}
+    let sa=sz,sn=sz;
+    for(;i<c.length;i++){sa/=5;sn/=4;const d=A.indexOf(c[i]);la+=Math.floor(d/4)*sa;ln+=(d%4)*sn;}
+    return [la-90+sa/2,ln-180+sn/2];};
+  let lat,lng;
+  if(pre.length===8){if(A.indexOf(pre[0])>8||A.indexOf(pre[1])>17)return null;[lat,lng]=decode(pre+post);}
+  else{
+    const pad=8-pre.length,res=Math.pow(20,2-pad/2);let la=REF[0]+90,ln=REF[1]+180,head='';
+    for(let k=0;k<pad/2;k++){const r=RES[k],a=Math.floor(la/r),b=Math.floor(ln/r);head+=A[a]+A[b];la-=a*r;ln-=b*r;}
+    [lat,lng]=decode(head+pre+post);
+    if(REF[0]+res/2<lat&&lat-res>=-90)lat-=res;else if(REF[0]-res/2>lat&&lat+res<=90)lat+=res;
+    if(REF[1]+res/2<lng)lng-=res;else if(REF[1]-res/2>lng)lng+=res;
+  }
+  const w=String(m[3]||'').replace(/\s+/g,' ').trim();
+  return Math.abs(lat)<=90&&Math.abs(lng)<=180?{lat:Math.round(lat*1e6)/1e6,lng:Math.round(lng*1e6)/1e6,addr:w&&/\p{L}/u.test(w)?w.slice(0,200):null}:null;
 }
 /* Waze's own short form, waze.com/ul/h<geohash>: the cell halved, longitude first, five bits a character */
 function geohashPoint(g){
