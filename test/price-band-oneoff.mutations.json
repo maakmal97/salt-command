@@ -382,5 +382,11 @@
   "file": "stmt/owner.js",
   "find": "wrap.appendChild(el('span','amb-field__label',ONE_OFF_WORDS.reason));",
   "replace": "void 0;"
+ },
+ {
+  "name": "Let it stand on a placed order is the quiet small pill again",
+  "file": "stmt/owner.js",
+  "find": "            makerOneOff[order.id]=why.value.trim(); delete makerOneDraft[order.id]; makerPlacedRead();\n          },true);",
+  "replace": "            makerOneOff[order.id]=why.value.trim(); delete makerOneDraft[order.id]; makerPlacedRead();\n          },false);"
  }
 ]

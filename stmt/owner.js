@@ -5603,7 +5603,7 @@ export const OWNER_JS = `
           var go=makerButton(qfigs,[ONE_OFF_WORDS.go,'order.one-off'],function(){
             if(!oneOffOk(why.value)) return;
             makerOneOff[order.id]=why.value.trim(); delete makerOneDraft[order.id]; makerPlacedRead();
-          },false);
+          },true);
           go.setAttribute('data-one-off-go',''); go.disabled=!oneOffOk(why.value);
           why.addEventListener('input',function(){ makerOneDraft[order.id]=why.value; go.disabled=!oneOffOk(why.value); });
         }
@@ -6093,7 +6093,7 @@ export const OWNER_JS = `
     var wrap=el('label','amb-field'), input=actOn(el('input','amb-input'),'order.amend-reason',order.id);
     input.type='text'; input.maxLength=120; input.required=true; input.setAttribute('data-one-off','');
     wrap.appendChild(el('span','amb-field__label',ONE_OFF_WORDS.reason)); wrap.appendChild(input);
-    makerAsk(order,opener,'amend',{title:ONE_OFF_WORDS.title, plain:true, go:ONE_OFF_WORDS.go, keep:ONE_OFF_WORDS.keep, say:[asked.say], extra:[wrap],
+    makerAsk(order,opener,'amend',{title:ONE_OFF_WORDS.title, plain:true, primary:true, go:ONE_OFF_WORDS.go, keep:ONE_OFF_WORDS.keep, say:[asked.say], extra:[wrap],
       yes:function(){
         if(!oneOffOk(input.value)) return;
         var sent=Object.assign({},body,{oneOff:input.value.trim()});

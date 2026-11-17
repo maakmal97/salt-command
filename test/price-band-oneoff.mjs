@@ -327,7 +327,7 @@ export async function run({ ok, skip }) {
     const label = why && why.closest("label") && why.closest("label").querySelector("span");
     /* 17. the ask on a placed order: the Desk's own sentence, one Reason line (required, 120 at most) and Let it stand, which waits for a reason; no Agree */
     ok(!!why && !!go && card(PL).textContent.includes(SAY_UNDER) && label && label.textContent === "Reason" && why.type === "text" && why.required && why.maxLength === 120
-      && go.textContent === "Let it stand" && go.disabled === true && !card(PL).querySelector("[data-accept]"),
+      && go.textContent === "Let it stand" && go.disabled === true && go.classList.contains("amb-pill") && !go.classList.contains("amb-pill--quiet") && !card(PL).querySelector("[data-accept]"),
       "a placed order priced outside the band shows the Desk's sentence, a Reason line and Let it stand, greyed until a reason is typed, and no Agree: "
       + JSON.stringify({ why: !!why, go: go && [go.textContent, go.disabled], said: card(PL) && card(PL).textContent.includes(SAY_UNDER) }));
     /* 18. Let it stand reads the same figures again with his reason, the reading shows the one-off in its flags, and Agree sends the same reason */

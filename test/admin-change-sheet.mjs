@@ -14,6 +14,7 @@
  *   C9  a page with a move on its way posts nothing
  *   C10 Send the change is a full-width primary button, not an action row, and Not now is the quiet pill
  *   C11 a below-Floor refusal gives the price and the Floor, not a generic failure
+ *   C12 the Desk's ask under the Floor opens Let this price stand?, whose Let it stand is the filled pill and Not now the quiet one
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct, changeSheet, POINTS_ANSWER } from "./maker-act.mjs";
 
@@ -112,6 +113,18 @@ export async function run({ ok, pageWork }) {
     ok(p.posts.length === 1 && /RM 100 is below the Floor of RM 285 for 3 units[.] Enter RM 285 or more[.]/.test(floorMessage) && !/The Counter could not do that/.test(floorMessage),
       "C11: a below-Floor refusal names both figures and does not fall back to a generic failure: " + floorMessage);
     delete p.refuse["/all/maker/orders/ord-r1/restate"];
+
+    /* C12 (17 Nov 2026, his screenshot: Let it stand drawn as a text row): the Desk's ask, with `outside`, opens the reason Sheet */
+    p.refuse["/all/maker/orders/ord-r1/restate"] = { error: "RM 185 under the Floor of RM 285 at 3 unit: a loss of RM 185 on this order. Give a reason and it stands as a one-off.",
+      outside: { side: "under", by: 185, floor: 285, ceiling: null } };
+    await changeSheet(p, cardOf("ord-r1"), { total: 100 });
+    await new Promise((r) => setTimeout(r, 0));
+    const stand = d.getElementById("ynGo"), notNow = d.getElementById("ynKeep"), standT = d.getElementById("ynT");
+    ok(standT && standT.textContent === "Let this price stand?" && stand && stand.textContent === "Let it stand" && stand.classList.contains("amb-pill") && stand.classList.contains("amb-pill--block")
+      && !stand.classList.contains("amb-action") && notNow && notNow.classList.contains("amb-pill--quiet"),
+      "C12: the ask under the Floor opens Let this price stand?, Let it stand the filled pill and Not now the quiet one: " + (stand && stand.className) + " | " + (notNow && notNow.className));
+    delete p.refuse["/all/maker/orders/ord-r1/restate"];
+    if (d.getElementById("ynKeep")) d.getElementById("ynKeep").click();
     await part("todo");
 
     /* C5 */
