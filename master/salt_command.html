@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1530","d":"17 Nov 2026","t":"A PRICE UNDER THE FLOOR, ON ANY BOOK","n":["<b>UNDER THE FLOOR, WITH A REASON.</b> On candy, oil, rice and gas, as on salt, a goods price you type under the Floor at Accept, in an offer or in Change the order is asked once, saying by how much (for example \"RM 185 under the Floor of RM 285 at 3 unit: a loss of RM 185 on this order\"). Give one line of reason and Let it stand: it goes to Approve and books at your price.","<b>MARKED, AND KEPT OUT OF THE EVIDENCE.</b> The row carries your reason as a one-off, so it is never read as what a customer usually pays or what the book trades at. The customer never sees the reason.","<b>THE FLOOR ITSELF IS UNCHANGED</b>, still the latest lot's cost times the size. Correct a row still refuses under the Floor."]}];
+const evolution=[{"v":"v1531","d":"17 Nov 2026","t":"LET IT STAND IS A BUTTON","n":["<b>A BUTTON YOU CAN SEE.</b> On Salt Admin, Let this price stand? ends with Let it stand as the filled button and Not now as the plain one, as Send the change does. On a placed order priced under the Floor, Let it stand is the filled button too.","<b>NOTHING ELSE MOVES.</b> No price, route or request changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Nov 2026, 16:42 KL';
+const LAST_UPDATED='17 Nov 2026, 17:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
