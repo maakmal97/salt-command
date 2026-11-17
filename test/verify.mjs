@@ -24024,8 +24024,10 @@ await (async () => {
     ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with a Card tab");
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    const lineOf = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape);
-      const p = h && [...h.closest(".pane").querySelectorAll("p.sub2")].find((x) => /^Reward: /.test(x.textContent)); return p ? p.textContent : ""; };
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a book's reward line is its reward row's own words (data-reward-book), in the row's title or its sub line */
+    const OF83 = { Cube: "salt", Droplet: "oil", Lozenge: "candy" };
+    const lineOf = (shape) => { const r = pCard.querySelector('[data-reward-book="' + OF83[shape] + '"]');
+      const p = r && [...r.querySelectorAll(".amb-row__title, .amb-row__sub")].find((x) => /^Reward: /.test(x.textContent)); return p ? p.textContent : ""; };
     ok(await until(() => lineOf("Cube") && lineOf("Droplet") && lineOf("Lozenge")), "each book's pane carries its reward line");
     const take = /Ask on any order to take it[.]$/;
     ok(take.test(lineOf("Cube")) && /^Reward: 0[.]6 unit to take /.test(lineOf("Cube")),
