@@ -1,0 +1,8 @@
+[
+ {
+  "name": "17 Nov 2026: an account opened under View as them no longer carries the button",
+  "file": "stmt/owner.js",
+  "find": "open=aBtn('View as them','amb-action','acct.view-as')",
+  "replace": "open=aBtn('View as me','amb-action','acct.view-as')"
+ }
+]

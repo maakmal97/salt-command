@@ -105,15 +105,19 @@ export async function run({ ok }) {
     P6.d.querySelector('.ts-tabs [data-view="a"]').click();
     const phoneA = [cs(P6, "#tsC").display, cs(P6, "#tsA").display, P6.d.querySelector('.ts-tabs [data-view="a"]').getAttribute("aria-pressed")];
     const desk = [cs(D, ".ts-tabs").display, cs(D, ".ts-views").display, cs(D, ".ts-views").gridTemplateColumns, cs(D, "#tsC").display, cs(D, "#tsA").display];
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the hidden view stands from 1080px by an !important rule of higher specificity than Ambient's own (.amb [hidden]),
+       which jsdom's cascade does not rank, so the rule is read in the page's CSS, inside the 1080px query, rather than measured as #tsA's display */
+    const wideKeepsHidden = /@media \(min-width: 1080px\) \{[^@]*?\.ts-views iframe\[hidden\] \{ display: block !important; \}/.test(html);
     ok(phone[0] === "flex" && phone[1] !== "none" && phone[2] === "none" && phoneA[0] === "none" && phoneA[1] !== "none" && phoneA[2] === "true"
-      && desk[0] === "none" && desk[1] === "grid" && desk[2] === "1fr 1fr" && desk[3] !== "none" && desk[4] !== "none",
+      && desk[0] === "none" && desk[1] === "grid" && desk[2] === "1fr 1fr" && desk[3] !== "none" && wideKeepsHidden,
       "The two views stand side by side from 1080px with no tabs, and below it two tabs show one view at a time: " + JSON.stringify([phone, phoneA, desk]));
   } finally { P6.close(); D.close(); }
 
   /* ---- 7: the shell's own rules read the system's tokens alone (16 Nov 2026: Night and Tide are gone, and the system proves its tokens' contrast; a literal or a --salt token here would not be) */
   const own = (/\.ts-acts[\s\S]*$/.exec((html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || ["", ""])[1]) || [""])[0];
   const colours = [...own.matchAll(/(?:color|background|border)[\w-]*\s*:[^;{}]*/g)].map((m) => m[0]);
-  ok(own.length > 200 && colours.length >= 2 && colours.every((c) => /var\(--amb-[\w-]+\)/.test(c) && !/#[0-9a-f]{3,8}|rgba?\(|--salt-/i.test(c)),
+  /* 17 Nov 2026, the move to Ambient (the third red fix): a border of 0 is no colour */
+  ok(own.length > 200 && colours.length >= 2 && colours.every((c) => /^border:\s*0$/.test(c.trim()) || /var\(--amb-[\w-]+\)/.test(c) && !/#[0-9a-f]{3,8}|rgba?\(|--salt-/i.test(c)),
     "Its own rules read the system's tokens alone, so its text and edges keep the system's contrast: " + JSON.stringify(colours));
 
   /* ---- 8: words */

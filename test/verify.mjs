@@ -17556,14 +17556,15 @@ await (async () => {
     /* S9 9.2: the card is the account's, opened from its row on Accounts */
     D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
-    D.querySelector("#rlist [data-u]").click();
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the row is a list item; its own button opens the account */
+    D.querySelector("#rlist [data-u] .arow__open").click();
     const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
     /* S9 9.3: Copy message left with the Send card. The account's one Send a sign-in link is made by its first tap (his
        decision 7 of 11 Oct 2026), so a share sheet he closes on the second leaves that link made and says so, and a browser
        with no share sheet copies it, or says not */
     const pill = () => D.querySelector("#aopen .scard .apill");
-    /* 5 Nov 2026 (the pane): Send a sign-in link and its answer are the card's pinned foot (.afoot); the first .anote of the card is another's line */
-    const note = () => ((D.querySelector("#aopen .scard .afoot > .anote") || {}).textContent || "");
+    /* 5 Nov 2026 (the pane): Send a sign-in link and its answer are the card's pinned foot (.afoot); the first .anote of the card is another's line; 17 Nov 2026, the move to Ambient (the third red fix): the answer is the Sign-in group's own foot (.asign), the pill the pane's foot */
+    const note = () => ((D.querySelector("#aopen .scard .asign > .anote") || {}).textContent || "");
     for (let i = 0; i < 400 && !(pill() && !pill().disabled); i++) await new Promise((r) => setTimeout(r, 25));
     ok(pill() && !pill().disabled && await work.quiet() && pill().textContent === "Send a sign-in link" && (await kv.list({ prefix: "ot:" })).keys.length === 0,
       "its row opens the account, its link not made: " + note() + " " + (pill() ? pill().textContent : "no pill"));
@@ -18459,7 +18460,7 @@ await (async () => {
     const D4 = W4.document;
     D4.querySelector('button[data-m="customers"]').click();
     await until(() => D4.querySelector('#rlist [data-u="' + u + '"]'));
-    D4.querySelector('#rlist [data-u="' + u + '"]').click();
+    D4.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();   /* 17 Nov 2026, the move to Ambient (the third red fix): the row's own button */
     [...D4.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
     ok(await until(() => shown(W4, "aEnded")), "and an account opened under View as them meets the ended session the same way");
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
@@ -19358,11 +19359,11 @@ await (async () => {
     D.querySelector('.amb-tabbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     /* 25 OCT 2026: the row says No account and offers Show; the next-update words are on the opened card */
-    const cardOf = (u) => { row(u).click(); const c = D.querySelector("#aopen .scard"); return c && c.textContent.includes(u) ? c : null; };
-    /* 2 Nov 2026 (Customers on the canvas): the row is a settings row, its code the .acode and its state the second line (.salt-settings__sub) */
-    ok(await until(() => row(uN) && row(uN).querySelector(".acode").textContent === "CX3-NO" && /^No account/.test(row(uN).querySelector(".salt-settings__sub").textContent)
+    const cardOf = (u) => { row(u).querySelector(".arow__open").click(); const c = D.querySelector("#aopen .scard"); return c && c.textContent.includes(u) ? c : null; };   /* 17 Nov 2026, the move to Ambient (the third red fix): the row opens by its own button */
+    /* 2 Nov 2026 (Customers on the canvas): the row is a settings row, its code the .acode and its state the second line (.salt-settings__sub); 17 Nov 2026, the move to Ambient (the third red fix): the state line is .amb-row__sub */
+    ok(await until(() => row(uN) && row(uN).querySelector(".acode").textContent === "CX3-NO" && /^No account/.test(row(uN).querySelector(".amb-row__sub").textContent)
       && [...row(uN).querySelectorAll("button")].some((b) => b.getAttribute("aria-label") === "Show the guest price list")
-      && row(uF) && !/No account/.test(row(uF).querySelector(".salt-settings__sub").textContent)
+      && row(uF) && !/No account/.test(row(uF).querySelector(".amb-row__sub").textContent)
       && !row(uF).querySelector('button[aria-label="Show the guest price list"]')),
       "and its Accounts row says No account and offers Show, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
     const cN = cardOf(uN), nextN = cN && cN.querySelector(".atot");
@@ -20245,7 +20246,7 @@ await (async () => {
       await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
       D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
-      D.querySelector('#rlist [data-u="' + u + '"]').click();
+      D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();   /* 17 Nov 2026, the move to Ambient (the third red fix): the row's own button */
       const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
       const pill = () => card() && card().querySelector(".apill");
       await until(() => pill() && !pill().disabled);
@@ -20411,7 +20412,7 @@ await (async () => {
     await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
-    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    D.querySelector('#rlist [data-u="' + u + '"] .arow__open').click();   /* 17 Nov 2026, the move to Ambient (the third red fix): the row's own button */
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
     /* 3 Nov 2026 (the account on Shop's grid): Last opened a row, its day and road at the right; the device with no name an older device, its Sign out under it */
     ok(await until(() => /Last openedEarlier sign-ins were not kept[.]26 Sep 2026 by password/.test(story()) && /An older deviceKept since .*?Sign out/.test(story()))
