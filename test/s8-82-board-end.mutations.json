@@ -1,0 +1,4 @@
+[
+ {"name": "the board's next step is dropped", "file": "stmt/page.js", "find": "+ note(wd(\"board.next\")) + \"</div>\", nonce", "replace": "+ \"</div>\", nonce"},
+ {"name": "the next step stands before the last price", "file": "stmt/page.js", "find": "'<div class=\"amb-stack\">' + (products.length ?", "replace": "'<div class=\"amb-stack\">' + note(wd(\"board.next\")) + (products.length ?"}
+]

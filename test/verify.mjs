@@ -23959,8 +23959,9 @@ await (async () => {
   /* ---- the board ENDS with the next step, after the last price ---- */
   const r0 = await g(open.id), board = await r0.text();
   const next = "To order, reply to the person who sent you this link.";
-  const at = board.indexOf(next), lastTable = board.lastIndexOf("</table>");
-  ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</p></div></body></html>",
+  /* 17 Nov 2026, the move to Ambient (the third red fix): each book is a list of settings rows (not a table) and the next step is the last notice of the shell */
+  const at = board.indexOf(next), lastTable = board.lastIndexOf("</ul>");
+  ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</span></div></div></main></div></body></html>",
     "the guest board ends with what to do next, after the last price: " + JSON.stringify(board.slice(-90)));
   const words0 = board.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
   ok(!/salt command|\bsalt\b|\bcounter\b/i.test(words0), "and the words carry no brand and no product");   /* 19 Oct 2026: encounter is not the counter */
