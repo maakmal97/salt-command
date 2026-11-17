@@ -43301,7 +43301,8 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       await until(() => !d.getElementById("tabs").hidden);
       await new Promise((r) => setTimeout(r, 60));
-      const out = { head: [...d.querySelectorAll("#payHead .msg")].map(t) };
+      /* 17 Nov 2026, the move to Ambient (the third red fix): To pay now's lines are paragraphs of the head, no longer .msg */
+      const out = { head: [...d.querySelectorAll("#payHead p")].map(t) };
       if (list.length) {
         d.querySelector('button[data-t="order"]').click();
         await until(() => d.querySelector('#pOrder [data-row="oN"]'));
