@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1526",
+  "d": "17 Nov 2026",
+  "t": "EVERY CHANGE OF AN ORDER IS TOLD TO THE CUSTOMER",
+  "n": [
+   "<b>A DISCOUNT IS SAID AS ONE.</b> When you change an agreed order so they owe less for the same or more units, their phone says \"You have received a discount on your order\". Fewer units, or a delivery turned into a collection, is not a discount.",
+   "<b>EVERY OTHER CHANGE IS SAID TOO.</b> A higher price, a delivery charge, a change of way or of size reads \"Your order has changed\", with a line to open it. A change made on the book reaches them the same way. An undo keeps its own words.",
+   "<b>THEIR BILL SAYS WHAT IT WAS.</b> The order's Bill on Salt Counter shows the day it was changed, or the day of the discount, and what the order was before: its size, its goods and its way. Putting a change back, or an undo, takes the line away.",
+   "<b>NO AMOUNT IN A BANNER.</b> As always, a banner names no figure, product or person; the figures are on the order."
+  ]
+ },
+ {
   "v": "v1525",
   "d": "17 Nov 2026",
   "t": "AN ORDER'S WAY CAN BE CHANGED",
