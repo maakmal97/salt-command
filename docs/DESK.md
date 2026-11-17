@@ -70,7 +70,8 @@
   (past -0.3 or +0.3) would now read as a %, and the book held none at the switch (checked on the export of 10 Nov 2026). Checks: `test/price-band.mjs`
   (the laws on eight costs), `test/lift-pct.mjs`, `test/floor-nrs.mjs`.
 - **A typed figure outside the band is asked once, then stands marked** (his answer D of 10 Nov 2026; `engine/oneoff.mjs`, pure, in no generated
-  block and imported by nothing under `stmt/`). The roads where he types a goods total on one order of a band book, Accept and its preview
+  block and imported by nothing under `stmt/`; every book under its Floor by his word of 17 Nov 2026, "I want to be able to put a price lower than
+  floor", a book with no band having no Ceiling to ask about). The roads where he types a goods total on one order, Accept and its preview
   (`previewAck`), both offer roads and an amendment of an agreed order (`restateTap`), read `outsideBand(total, floorFor, bandFor)`: under the
   Floor at the size or over the Ceiling there (`bandFor` in `src/drafter.js` reads the walk's `ceiling`, null on a book with no band). With no
   reason the answer is `bandRefusal`, 409 with `outside: {side, by, floor, ceiling}` (and `underFloor` on that side): "RM 45 under the Floor of
@@ -79,7 +80,7 @@
   line of 3 to 120 characters, no `<` or `>`; 400 otherwise) the entry carries `markOf`, `{why, side, by}`; the drafter copies it onto the new
   row or beside a Correction's fields (never among them; `markOk` or the row is not drafted), flags it ("One-off: RM 45 under the Floor, his reason:
   ...") and `stageDigest` holds it, so his yes answers it; `applyAmend` sets it on the row, deletes it on `null` (an amendment back inside the
-  band, flagged "Back inside the price band ...") and keeps what it replaced as the step's `oneOffWas`, which an undo through `restateTap` puts
+  band, flagged "No longer outside its price ...") and keeps what it replaced as the step's `oneOffWas`, which an undo through `restateTap` puts
   back. An offer keeps the reason on the row his yes was shown (`preapproval.shown.row`), so their take drafts with it and is never asked
   (`unasked`); an offer made before the version drafts unmarked. A row offered again keeps the reason its rejected draft carried. **Left out of
   the evidence**: `aPriceSomeonePaid` (the product's range, their own rates, the card's usual, Salt Admin's readings of both), the snapshot's
@@ -91,7 +92,7 @@
   tap reads them), grey only while a read is on its way; it was the greyed Figures not read for an asked reason too. **Salt Counter**: nothing; the reason goes to the Desk
   and the ledger row, never to the site, and no customer view names it. `payFault`, `rowRoom`, COGS, refunds and stock read nothing of it.
   **Not built, said**: no surface types a Median point, so that half of the plan's paragraph has nothing to check; Pricing's 30-day tally of
-  one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on salt in its old words and knows no Ceiling; an undo off
+  one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on every book in its old words and knows no Ceiling; an undo is never asked, so on any book it may put back figures under today's Floor, marked only if the step kept `oneOffWas`; an undo off
   the site road does not restore a mark; the Desk page's own overlay (`ovAmend`) does not carry the mark until the row is booked; the reason is
   free text on a public repo's ledger and nothing scans it for a name. Checks: `test/price-band-oneoff.mjs`.
 - **The price band, version 2: the market** (his answer B of 10 Nov 2026 and his answers of 11 Nov 2026; `TIER_RULE.salt.market`, the snapshot

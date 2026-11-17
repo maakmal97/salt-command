@@ -131,14 +131,14 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      ladder inverts under the RM 5 rounding: check the rate law first.
    - **A customer's price is the Median Price moved by their %, or the price he sets on one order when he acknowledges
      it, never under the Floor; the board is never repriced by it** (`total` on the preview and Accept, the
-     site keeping `asked`). **On salt a figure he types outside the band is asked once, then stands as a marked one-off** (his
-     answer D of 10 Nov 2026, `engine/oneoff.mjs`): a goods total under the Floor or over the Ceiling at its size, at Accept, in an
+     site keeping `asked`). **A figure he types under the Floor, on any book, or over salt's Ceiling, is asked once, then stands as a marked one-off** (his
+     answer D of 10 Nov 2026, `engine/oneoff.mjs`; every book under its Floor by his word of 17 Nov 2026): a goods total under the Floor or over the Ceiling at its size, at Accept, in an
      offer or in an amendment of an agreed order, is refused 409 with `outside`, saying by how much and the ringgit it gives away;
      sent again with his reason (`oneOff`, one line of 3 to 120 characters) it goes through as any Accept or amendment does and the
      ROW carries `oneOff: {why, side, by}`, which the evidence leaves out (the drafter's `aPriceSomeonePaid`, the snapshot's
      `suggestOf`, the Desk's price readers); an amendment back inside the band takes the mark off, and an undo puts back the one it
      replaced. **The reason is his alone and reaches the ledger row, so it names nobody**; no customer reads it. A book with no band
-     refuses under its Floor as it always did, and Correct a row keeps that refusal on salt too. What they paid before never lowers it (the cap retired on his decision of
+     has no Ceiling to ask about; Correct a row still refuses under the Floor on every book. What they paid before never lowers it (the cap retired on his decision of
      27 Sep 2026). **A product with neither a Median Price nor a board is not priced.** One rule, the engine's
      `cardPrice`: the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
      reads the snapshot's `cards`, and `lift` for a grid point off the board.
