@@ -276,5 +276,16 @@ export async function run({ ok }) {
     field("Units").value = "5";
     sheetGo(); await settle(4);
     ok(posts[3].body.qty === 5 && posts[3].body.total === 285, "A size changed alone is sent with the goods' price in the box, which the Desk then holds to the floor: " + JSON.stringify(posts[3]));
+    /* 17 Nov 2026 (TA95-7J2): the way is on the Sheet, opened on the order's own way; Collect empties the charge, and both are sent */
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    await until(() => button(ACK, "Change the order"));
+    opened(ACK);
+    const way = sheet() && sheet().querySelector("select[data-amend-way]");
+    ok(!!way && way.value === "deliver" && [...way.options].map((o) => o.textContent).join() === "Collect,Deliver",
+      "The Sheet carries Way, Collect or Deliver, opened on the order's own way: " + (way && way.value));
+    way.value = "collect"; way.dispatchEvent(new window.Event("change", { bubbles: true }));
+    sheetGo(); await settle(5);
+    ok(posts[4] && posts[4].body.mode === "collect" && posts[4].body.delivery === 0 && posts[4].body.qty === undefined,
+      "Collect on a delivery empties its charge and sends the way with it: " + JSON.stringify(posts[4]));
   } catch (e) { ok(false, "the owner page stopped on an error: " + (e && e.message)); } finally { browser.window.close(); }
 }

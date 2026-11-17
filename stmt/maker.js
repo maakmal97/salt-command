@@ -45,12 +45,14 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo", "oneOff"] : ["rid", "status", "note", "message", "noReply", "mode", "point"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo", "oneOff", "mode"] : ["rid", "status", "note", "message", "noReply", "mode", "point"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
   if (action === "restate") {
     const figs = ["qty", "total", "delivery"].filter((key) => body[key] !== undefined);
-    if (!figs.length) return "Say which figure changes.";
+    /* 17 Nov 2026: the way may change with the figures, or alone */
+    if (body.mode !== undefined && body.mode !== "collect" && body.mode !== "deliver") return "The way is collect or deliver.";
+    if (!figs.length && body.mode === undefined) return "Say which figure changes.";
     if (figs.some((key) => typeof body[key] !== "number" || !Number.isFinite(body[key]) || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
     if (body.undo !== undefined && (!Number.isInteger(body.undo) || body.undo < 1 || figs.length !== 3)) return "An undo names its step and the figures it puts back.";
     /* 10 Nov 2026 (his ask D): his reason for a goods total outside the price band; the Desk reads its line and its length */
@@ -976,7 +978,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
         if (texts.length) await fixtureCheck(env, found, { texts });
         let move = rest;
         if (rest.status) move = { ...rest, maker: true };   /* the same rules as a real order's, held by the order book */
-        if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0) } };
+        if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0), ...(rest.mode !== undefined ? { mode: rest.mode } : {}) } };
         if (op.action === "notfound") {
           const waiting = (found.payments || []).find((p) => p && p.claim === "waiting" && p.at === rest.claim);
           if (!waiting) return json({ ok: false, error: "That claim is not waiting any more." }, 409);

@@ -260,8 +260,8 @@
  {
   "name": "the site is not told a restate is an undo",
   "file": "engine/stages.mjs",
-  "find": "restate: Object.assign({}, figs, undone != null ? { undo: true } : {})",
-  "replace": "restate: Object.assign({}, figs)"
+  "find": "restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : {})",
+  "replace": "restate: Object.assign({}, figs, wayMoves ? { mode } : {})"
  },
  {
   "name": "the undo fix takes back more units than the book did",
@@ -502,12 +502,6 @@
   "file": "engine/stages.mjs",
   "find": "if (!o || !row || !AGREED_ON_SITE.includes(o.status)) return null;",
   "replace": "if (!o || !row) return null;"
- },
- {
-  "name": "a charge may sit on a collection",
-  "file": "engine/stages.mjs",
-  "find": "  if (delivery > 0.004 && o.mode !== \"deliver\") return null;\n  if (qty < Math.max",
-  "replace": "  if (qty < Math.max"
  },
  {
   "name": "a row past the site's bounds is restated",

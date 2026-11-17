@@ -1378,6 +1378,21 @@ export const OWNER_JS = `
     'the row has changed since the card drew it: look at it again before you send it':'The order changed since you opened it. Open it again.',
     'a yes of yours on this order is already on its way to its row':'Your yes on this order is already on its way.',
     'the mirror is being seeded: try again in a minute':'The Desk is catching up. Try again in a minute.',
+    /* 17 Nov 2026 (TA95-7J2): Change the order's own refusals (the Desk's restateTap, the order book's restate), which all fell to the general sentence */
+    'the size has to be a figure above nothing':'Units must be above zero.',
+    "the goods' price has to be a figure above nothing":'The price must be above zero.',
+    'the delivery charge has to be a figure from nothing':'Delivery is zero or more.',
+    'the way is collect or deliver':'Choose Collect or Deliver.',
+    'The way is collect or deliver.':'Choose Collect or Deliver.',
+    'a collection carries no delivery charge':'A collection has no delivery charge. Choose Deliver to charge one.',
+    'the delivery charge is a figure from nothing, and nothing on a collection':'A collection has no delivery charge. Choose Deliver to charge one.',
+    'that is what the order already says':'That is what the order already says.',
+    'the order was closed at what was handed over, so its size stays; amend the price or the delivery':'The order was closed at what was handed over, so change the price or the delivery.',
+    'a payment they say they sent waits on this order: answer it first, Received or Not found':'A payment they sent waits on this order. Answer it first.',
+    'an earlier amendment of this order is not on the book yet: wait for it to land':'An earlier change to this order is not on the book yet. Wait for it to land.',
+    'an earlier amendment of this order is waiting to be drafted':'An earlier change to this order is still being drafted.',
+    'an undo puts back figures, never the way':'An undo puts back figures, never the way.',
+    'a group order is collect only':'A group order is collect only.',
     'they have taken your offer already: its row is drafted at it':'They have already taken your offer. Its row is drafted at that price.',
     'this raises their price or changes their window: send it to them for their yes':'This raises their price or changes their window. Send it to them for their yes.',
     'nothing here needs their yes: Accept it':'Nothing here needs their yes. Accept it.',
@@ -5990,22 +6005,30 @@ export const OWNER_JS = `
      failed send is opened again as he left it; a change that landed is forgotten, as the redrawn card forgot it. */
   var amendMemo={};
   function amendOpen(order,opener){
-    var base=[order.qty,order.total,order.delivery||0].join(), memo=amendMemo[order.id], kept=memo&&memo.base===base?memo.vals:null;
+    var base=[order.qty,order.total,order.delivery||0,order.mode].join(), memo=amendMemo[order.id], kept=memo&&memo.base===base?memo.vals:null;
     function one(label,act,value){
       var wrap=el('label','amb-field'), input=actOn(el('input','amb-input'),act,order.id);
       input.type='number'; input.step='0.01'; input.min='0'; input.inputMode='decimal'; input.value=String(value); input.setAttribute('data-amend-field','');
       wrap.appendChild(el('span','amb-field__label',label)); wrap.appendChild(input); return {wrap:wrap, input:input};
     }
     var aq=one('Units','order.amend-units',kept?kept[0]:order.qty), at=one('Price (goods)','order.amend-total',kept?kept[1]:order.total), ad=one('Delivery','order.amend-delivery',kept?kept[2]:order.delivery||0);
-    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['You approve the change next, under Approve.'], extra:[aq.wrap,at.wrap,ad.wrap],
+    /* 17 Nov 2026 (TA95-7J2): the way is changed here too, collect to deliver or back, on the same change as its charge; Collect empties the
+       charge, which a collection never carries */
+    var aw=el('label','salt-field'), way=actOn(el('select','salt-field__input'),'order.amend-way',order.id);
+    [['collect','Collect'],['deliver','Deliver']].forEach(function(p){ var o=el('option','',p[1]); o.value=p[0]; way.appendChild(o); });
+    way.value=kept&&kept[3]?kept[3]:(order.mode==='deliver'?'deliver':'collect'); way.setAttribute('data-amend-way','');
+    aw.appendChild(el('span','salt-field__label','Way')); aw.appendChild(way);
+    way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; });
+    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['You approve the change next, under Approve.'], extra:[aw,aq.wrap,at.wrap,ad.wrap],
       yes:function(){
         var body={}, q=Number(aq.input.value), t=Number(at.input.value), d=Number(ad.input.value);
         if(q!==Number(order.qty)) body.qty=q;
         if(t!==Number(order.total)) body.total=t;
         if(d!==Number(order.delivery||0)) body.delivery=d;
+        if(way.value!==(order.mode==='deliver'?'deliver':'collect')) body.mode=way.value;
         if(body.qty!==undefined&&body.total===undefined) body.total=t;
         if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
-        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value]};
+        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value,way.value]};
         makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(done){
           if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id];
           var asked=makerOutside[order.id]; delete makerOutside[order.id];

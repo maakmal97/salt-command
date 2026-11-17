@@ -2933,9 +2933,10 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.again-drop-amend` | Order card (key: the order id), a amendment he rejected on an order with a row | Asks on a sheet, then files that amendment as covered; nothing is offered or drafted. |
 | `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected handover again. |
 | `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected payment again. |
-| `order.amend` | Order card, acknowledged or ready | Opens the Change the order Sheet: Units, Price (goods) and Delivery. |
+| `order.amend` | Order card, acknowledged or ready | Opens the Change the order Sheet: Way, Units, Price (goods) and Delivery. |
 | `order.amend-delivery` | The Change the order Sheet (key: the order id) | The amended delivery charge, in RM. |
 | `order.amend-total` | Same sheet | The amended goods price, in RM. |
+| `order.amend-way` | Same sheet | Collect or Deliver (17 Nov 2026); on goods already out the Correction also restates the row's handover. Collect empties Delivery. |
 | `order.amend-units` | Same sheet | The amended units. |
 | `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
 | `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, a claim's Received or Not found, or the change to the order for approval. |

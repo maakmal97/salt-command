@@ -1049,23 +1049,30 @@ export function decideDesk(order, body, at) {
     const r = body.restate, told = order.queued || {};
     if (!ROWED.includes(order.status)) return { error: "only an agreed order takes the book's figures whole", status: 409 };
     const fig = (v, lo) => isNum(v) && v >= lo && v <= 1000000;
+    /* 17 Nov 2026: the book's way, sent only where row and order contradict (engine rowWay), as the agreed order's restate takes it */
+    if (r.mode !== undefined && !MODES.includes(r.mode)) return { error: "the way is collect or deliver", status: 400 };
+    const bm = r.mode !== undefined ? r.mode : order.mode;
     if (!fig(r.qty, 0.0005) || !fig(r.total, 0.005) || !fig(r.delivery, 0) || !fig(r.paid, 0) || !fig(r.moved, 0) || r.moved > r.qty + 0.0004
-      || (r.delivery > 0 && order.mode !== "deliver")) return { error: "the book's figures are not an order's", status: 400 };
+      || (r.delivery > 0 && bm !== "deliver")) return { error: "the book's figures are not an order's", status: 400 };
     if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
     if ((+order.paid || 0) > (+told.paid || 0) + 0.004 || (+order.moved || 0) > (+told.moved || 0) + 0.0004) return { error: "the order holds a move the book has not heard yet", status: 409 };
     if (Math.abs(r.qty - order.qty) < 0.0004 && Math.abs(r.total - order.total) < 0.004 && Math.abs(r.delivery - (+order.delivery || 0)) < 0.004
-      && Math.abs(r.paid - (+order.paid || 0)) < 0.004 && Math.abs(r.moved - (+order.moved || 0)) < 0.0004) return { none: true };
-    return { ev: { kind: "restate", at, book: true, qty: +r.qty.toFixed(3), total: +r.total.toFixed(2), delivery: +r.delivery.toFixed(2), paid: +r.paid.toFixed(2), moved: +r.moved.toFixed(3) } };
+      && Math.abs(r.paid - (+order.paid || 0)) < 0.004 && Math.abs(r.moved - (+order.moved || 0)) < 0.0004 && bm === order.mode) return { none: true };
+    return { ev: Object.assign({ kind: "restate", at, book: true, qty: +r.qty.toFixed(3), total: +r.total.toFixed(2), delivery: +r.delivery.toFixed(2), paid: +r.paid.toFixed(2), moved: +r.moved.toFixed(3) }, bm !== order.mode ? { mode: bm } : {}) };
   }
   if (body && body.restate) {
     if (!PAYABLE.includes(order.status) && order.status !== "done") return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
     const r = body.restate, q = r.qty, t = r.total, d = r.delivery;
+    /* 17 Nov 2026: the way rides on the restate too (the desk's restateTap), and the charge is held to the way it leaves */
+    if (r.mode !== undefined && !MODES.includes(r.mode)) return { error: "the way is collect or deliver", status: 400 };
+    const m = r.mode !== undefined ? r.mode : order.mode;
+    if (order.pool && m !== order.mode) return { error: "a group order is collect only", status: 409 };
     if (!isNum(q) || !(q > 0) || q > 1000000 || q < (+order.moved || 0) - 0.0004) return { error: "the size has to be above nothing and not under what is handed over", status: 400 };
     if (!isNum(t) || !(t > 0) || t > 1000000) return { error: "the goods' price has to be a figure above nothing", status: 400 };
-    if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && order.mode !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
+    if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && m !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
     if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
-    if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004) return { none: true };
-    return { ev: Object.assign({ kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) }, r.undo === true ? { undo: true } : {}) };
+    if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004 && m === order.mode) return { none: true };
+    return { ev: Object.assign({ kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) }, m !== order.mode ? { mode: m } : {}, r.undo === true ? { undo: true } : {}) };
   }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
@@ -1384,7 +1391,8 @@ export function applyEvent(order, ev) {
   } else if (ev.kind === "restate") {
     /* never `closed`: that record says the order was closed short, which the customer's page reads as such */
     order.qty = ev.qty; order.total = ev.total; order.delivery = ev.delivery;
-    order.history.push({ at, status: order.status, by: "desk", note: "amended to " + ev.qty + " unit, " + ev.total.toFixed(2) + " goods, " + ev.delivery.toFixed(2) + " delivery" });
+    if (ev.mode) order.mode = ev.mode;   /* 17 Nov 2026: the way, amended with the charge */
+    order.history.push({ at, status: order.status, by: "desk", note: "amended to " + ev.qty + " unit, " + ev.total.toFixed(2) + " goods, " + ev.delivery.toFixed(2) + " delivery" + (ev.mode ? ", to " + ev.mode : "") });
     if (ev.book) {
       /* the book's money and goods, and what the ledger has been told of them with it, so the reconcile queues nothing for them */
       const q = Object.assign({}, order.queued || {});

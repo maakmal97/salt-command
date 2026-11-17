@@ -5,7 +5,7 @@
  {"name": "the Sheet opens on a size the order does not have", "file": "stmt/owner.js", "find": "one('Units','order.amend-units',kept?kept[0]:order.qty)", "replace": "one('Units','order.amend-units',kept?kept[0]:order.qty+1)"},
  {"name": "the Sheet opens without the delivery", "file": "stmt/owner.js", "find": "ad=one('Delivery','order.amend-delivery',kept?kept[2]:order.delivery||0);", "replace": "ad=one('Delivery','order.amend-delivery',kept?kept[2]:0);"},
  {"name": "the Sheet's fields are not marked", "file": "stmt/owner.js", "find": "input.inputMode='decimal'; input.value=String(value); input.setAttribute('data-amend-field','');", "replace": "input.inputMode='decimal'; input.value=String(value);"},
- {"name": "a change that did not land is not kept", "file": "stmt/owner.js", "find": "        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value]};\n", "replace": ""},
+ {"name": "a change that did not land is not kept", "file": "stmt/owner.js", "find": "        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value,way.value]};\n", "replace": ""},
  {"name": "a failed change is opened again on the order's own figures", "file": "stmt/owner.js", "find": "kept=memo&&memo.base===base?memo.vals:null;", "replace": "kept=null;"},
  {"name": "a change that landed is kept", "file": "stmt/owner.js", "find": "if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id];", "replace": ""},
  {"name": "a change with no figure changed is sent", "file": "stmt/owner.js", "find": "if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }", "replace": "if(false){ makerSay(order.id,'Change a figure first.'); return; }"},

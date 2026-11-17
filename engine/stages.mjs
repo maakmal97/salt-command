@@ -196,17 +196,22 @@ export function claimRows(book, c, fl) {
   return { alloc, entries };
 }
 /** The amendment as a Correction restating the row's size, the goods' price and the delivery charge. */
-export function amendEntry(order, code, figs, was, now) {
+export function amendEntry(order, code, figs, was, now, mode) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const books = partyOnBook(order, code);
   const said = ["qty", "total", "delivery"].filter((k) => Math.abs(figs[k] - was[k]) > 0.0004).map((k) => (k === "qty" ? "size " : k === "total" ? "goods RM " : "delivery RM ") + was[k] + " to " + figs[k]);
+  /* 17 Nov 2026: a change of way; on goods already out it restates the row's handover, before any it is the order's alone */
+  const way = mode === "deliver" ? "delivered" : mode === "collect" ? "collected" : null;
+  if (way) said.push("way " + (order.mode === "deliver" ? "delivered" : "collected") + " to " + way);
+  const fields = { qty: figs.qty, total: figs.total, delivery: figs.delivery };
+  if (way && (+order.moved || 0) > 0.0004) fields.handover = way;
   return {
     at: at.toISOString(), type: "SELL", party: books, qty: figs.qty, total: figs.total, status: "Amendment",
     raw: "Amended " + books + ", order " + order.id + ": " + said.join(", "),
     payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date: klDate(at), qty: 0, total: 0, cash: 0, kg: 0,
-      fields: { qty: figs.qty, total: figs.total, delivery: figs.delivery },
+      fields,
       note: "Amended after Accept for order " + order.id + ": " + said.join(", ") + "." }
   };
 }
@@ -688,6 +693,16 @@ export function rowOut(row) {
   return +(goods > qty + 0.0004 ? all : Math.min(qty, all)).toFixed(3);
 }
 
+/** 17 Nov 2026 (Fable's review of the way): the way a row says its order has, ONLY where the row and the order contradict each other: a charge on a
+ *  collect order is a delivery, and goods collected with no charge on a deliver order a collection. Else null, so the order keeps its own way. It heals
+ *  a change of way the site took at the tap and he then rejected under Approve; a trip row leaves the order its way, as it leaves its delivery. */
+export function rowWay(o, row, delivery) {
+  if (!o || !row || row.trip) return null;
+  if (delivery > 0.004 && o.mode !== "deliver") return "deliver";
+  if (!(delivery > 0.004) && row.handover === "collected" && o.mode === "deliver") return "collect";
+  return null;
+}
+
 export function termsFromRow(o, row, moved) {
   if (!o || !row || !AGREED_ON_SITE.includes(o.status)) return null;
   if ((o.payments || []).some((p) => p && p.claim === "waiting")) return null;
@@ -695,10 +710,10 @@ export function termsFromRow(o, row, moved) {
   const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);
   if (!(qty > 0) || !(total > 0) || !(delivery >= 0) || qty > 1000000 || total > 1000000 || delivery > 1000000) return null;   /* the site's own bounds */
   if (o.closed && Math.abs(qty - +o.qty) > 0.0004) return null;   /* closed at what was handed over, its size stays, as restateTap holds it */
-  if (delivery > 0.004 && o.mode !== "deliver") return null;
+  const way = rowWay(o, row, delivery);
   if (qty < Math.max(+o.moved || 0, +moved || 0) - 0.0004) return null;
-  if (Math.abs(qty - +o.qty) < 0.0004 && Math.abs(total - +o.total) < 0.004 && Math.abs(delivery - (+o.delivery || 0)) < 0.004) return null;
-  return { qty, total, delivery };
+  if (!way && Math.abs(qty - +o.qty) < 0.0004 && Math.abs(total - +o.total) < 0.004 && Math.abs(delivery - (+o.delivery || 0)) < 0.004) return null;
+  return Object.assign({ qty, total, delivery }, way ? { mode: way } : {});
 }
 
 /** 17 Oct 2026, his yes: A SETTLED ORDER STATES WHAT ITS ROW STATES TOO, money and goods included, since a Correction of a settled row moves them
@@ -716,11 +731,11 @@ export function settledFromRow(o, row) {
   const paid = rowPaidFor(o, row), moved = rowOut(row);
   if (!(qty > 0) || !(total > 0) || !(delivery >= 0) || !(paid >= 0) || !(moved >= 0)) return null;
   if (qty > 1000000 || total > 1000000 || delivery > 1000000 || paid > 1000000 || moved > qty + 0.0004) return null;
-  if (delivery > 0.004 && o.mode !== "deliver") return null;
+  const way = rowWay(o, row, delivery);
   if (o.closed && Math.abs(qty - +o.qty) > 0.0004) return null;
-  if (Math.abs(qty - +o.qty) < 0.0004 && Math.abs(total - +o.total) < 0.004 && Math.abs(delivery - (+o.delivery || 0)) < 0.004
+  if (!way && Math.abs(qty - +o.qty) < 0.0004 && Math.abs(total - +o.total) < 0.004 && Math.abs(delivery - (+o.delivery || 0)) < 0.004
     && Math.abs(paid - (+o.paid || 0)) < 0.004 && Math.abs(moved - (+o.moved || 0)) < 0.0004) return null;
-  return { qty, total, delivery, paid, moved };
+  return Object.assign({ qty, total, delivery, paid, moved }, way ? { mode: way } : {});
 }
 
 /** Amend after Accept (06 Oct 2026): one Correction restating size, goods and delivery. ctx: { book, room, earlier: the order's
@@ -736,12 +751,17 @@ export function restateTap(o, at, body, ctx) {
   if (!num(qty) || !(qty > 0) || qty > 1000000) return { error: "the size has to be a figure above nothing" };
   if (!num(total) || !(total > 0) || total > 1000000) return { error: "the goods' price has to be a figure above nothing" };
   if (!num(delivery) || delivery < 0 || delivery > 1000000) return { error: "the delivery charge has to be a figure from nothing" };
-  if (delivery > 0 && o.mode !== "deliver") return { error: "a collection carries no delivery charge" };
+  /* 17 Nov 2026 (his TA95-7J2): THE WAY IS AMENDABLE TOO, collect to deliver or back, on the same Correction as the charge, so the
+     order's mode and the row's handover move together; the charge is held to the way the order will have */
+  if (body && body.mode !== undefined && !["collect", "deliver"].includes(body.mode)) return { error: "the way is collect or deliver" };
+  const mode = body && body.mode !== undefined ? body.mode : o.mode;
+  if (delivery > 0 && mode !== "deliver") return { error: "a collection carries no delivery charge" };
   const ro = reasonOf(body);   /* 10 Nov 2026 (his ask D): his reason for a figure outside the band, one line */
   if (ro.error) return { error: ro.error };
   const figs = { qty: +qty.toFixed(3), total: +total.toFixed(2), delivery: +delivery.toFixed(2) };
   const was = { qty: +o.qty, total: +(+o.total).toFixed(2), delivery: +(+(o.delivery || 0)).toFixed(2) };
-  if (Math.abs(figs.qty - was.qty) < 0.0004 && figs.total === was.total && figs.delivery === was.delivery) return { status: 409, error: "that is what the order already says" };
+  const wayMoves = mode !== o.mode;
+  if (Math.abs(figs.qty - was.qty) < 0.0004 && figs.total === was.total && figs.delivery === was.delivery && !wayMoves) return { status: 409, error: "that is what the order already says" };
   if (figs.qty < (+o.moved || 0) - 0.0004) return { error: "the size cannot go under the " + o.moved + " already handed over" };
   if (o.closed && Math.abs(figs.qty - was.qty) > 0.0004) return { status: 409, error: "the order was closed at what was handed over, so its size stays; amend the price or the delivery" };
   if ((o.payments || []).some((p) => p && p.claim === "waiting")) return { status: 409, error: "a payment they say they sent waits on this order: answer it first, Received or Not found" };
@@ -779,7 +799,7 @@ export function restateTap(o, at, body, ctx) {
   if (earlier.some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
     return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
   if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
-  const entry = amendEntry(o, o.code, figs, was, at);
+  const entry = amendEntry(o, o.code, figs, was, at, wayMoves ? mode : undefined);
   entry.orderId = o.id;
   if (mark !== undefined) entry.payload.oneOff = mark;
   /* plan 4 (16 Oct 2026): AN UNDO OF THE ORDER'S NEWEST CHANGE OF TERMS comes this road, so the order keeps its row: the change must still be
@@ -787,6 +807,7 @@ export function restateTap(o, at, body, ctx) {
      undoing it sets, which the drafter and the fold check again, and the site's restate says it is an undo, which tells the customer */
   let undone = null;
   if (body && body.undo !== undefined) {
+    if (wayMoves) return { status: 409, error: "an undo puts back figures, never the way" };
     const row = book && (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
     const u = !Number.isInteger(body.undo) ? { fault: "it names no step" } : row ? POSITION_ENGINE.undoOf(row, body.undo) : { fault: "the order's row is not on the book" };
     if (u.fault) return { status: 409, error: "the undo was refused: " + u.fault };
@@ -805,7 +826,8 @@ export function restateTap(o, at, body, ctx) {
     undone = u.i;
   }
   const shown = Object.assign({ was }, figs);
+  if (wayMoves) { shown.mode = mode; shown.was.mode = o.mode || null; }
   if (over > 0.004) shown.refund = over;
   if (undone != null) shown.undo = undone;
-  return Object.assign({ entry, queueIt: true, site: { restate: Object.assign({}, figs, undone != null ? { undo: true } : {}) }, shown }, over > 0.004 ? { refund: over } : {});
+  return Object.assign({ entry, queueIt: true, site: { restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : {}) }, shown }, over > 0.004 ? { refund: over } : {});
 }
