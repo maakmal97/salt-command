@@ -1510,6 +1510,8 @@ export const OWNER_JS = `
       tone=h.open?'':paused?' ashop--paused':' ashop--closed';
       txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');
     }
+    /* 17 Nov 2026: under his maintenance switch the chip says so, to when it lifts */
+    var mu=maintUntil(); if(mu){ var mw=barWhen(mu); tone=' ashop--paused'; txt='Maintenance'+(mw?' to '+mw:''); }
     /* the glowing dot and the words, named with what a tap does */
     /* 15 Nov 2026: a glass chip in Needs you's hero, its dot for something live; Open, Closed or Paused said in its word, the mesh carrying no colour of state */
     if(hrs.getAttribute('data-txt')!==txt+tone){
@@ -6979,6 +6981,46 @@ export const OWNER_JS = `
       },true);
       box.appendChild(go);
     }
+    drawMaint(box);
+  }
+  /* 17 Nov 2026, his word: MAINTENANCE, one Switch under Now. On, it asks when the Counter is back (Kuala Lumpur, a day and a time) and Put it on
+     holds every customer page at once on the maintenance page, which says when; it lifts by itself at that time, or at once when he turns the
+     Switch off. Salt Admin is never held. Body {until} or {off: true} to /all/maker/maintenance; the hours read carries it back as maint. */
+  var mtOpen=false;
+  function maintUntil(){ var m=makerHours&&makerHours.maint, t=m&&Date.parse(m.until); return t>Date.now()?m.until:null; }
+  function drawMaint(box){
+    if(TESTING) return;
+    var filed=maintUntil(), on=!!filed||mtOpen, w=filed?barWhen(filed):'';
+    var g=sGroup('Maintenance','amaint'), list=g.list, row=sSwitchRow('Under maintenance','maint.switch',null,on), sw=row.sw; sw.id='makerMaintSw';
+    list.appendChild(sLi(row));
+    sw.addEventListener('click',function(){
+      if(sw.disabled) return;
+      if(!on){ mtOpen=true; drawMakerNow(); drawConfirm(); var f=document.querySelector('[data-act="maint.until"]'); if(f&&f.focus) f.focus(); return; }
+      if(!filed){ mtOpen=false; drawMakerNow(); drawConfirm(); var g2=document.querySelector('[data-act="maint.switch"]'); if(g2&&g2.focus) g2.focus(); return; }
+      sw.disabled=true;
+      refs('/all/maker/maintenance',{off:true}).then(function(value){ if(makerHours) makerHours.maint=value.maint; mtOpen=false; drawMakerHours(); hoursSaid('now','Maintenance off. Customers are back on.'); })
+        .catch(function(error){ sw.disabled=false; sw.checked=on; hoursSaid('now',null,error); });
+    });
+    var until=null;
+    if(on){
+      var ur=el('label','amb-setting'); until=actOn(el('input','amb-input'),'maint.until');
+      until.type='datetime-local'; until.min=klInputValue(new Date().toISOString()); until.value=klInputValue(filed||new Date(Date.now()+3600000).toISOString());
+      ur.appendChild(el('span','amb-setting__name','Back at')); ur.appendChild(until); list.appendChild(sLi(ur));
+    }
+    g.appendChild(sFoot(filed?'Customers see Under maintenance, back '+w+'. It lifts by itself then; Salt Admin stays open.'
+      :on?'Kuala Lumpur time. Customers are held at once; Salt Admin stays open.':'Customers can use the Counter.'));
+    box.appendChild(g);
+    if(on){
+      var go=el('div','anow-set'); go.setAttribute('data-amb','');
+      makerButton(go,[filed?'Change':'Put it on','maint.set'],function(){
+        var when=Date.parse(until.value+'+08:00');
+        if(!Number.isFinite(when)){ hoursSaid('now','Choose when it is back.'); return; }
+        return refs('/all/maker/maintenance',{until:new Date(when).toISOString()})
+          .then(function(value){ if(makerHours) makerHours.maint=value.maint; mtOpen=false; drawMakerHours(); hoursSaid('now','Under maintenance until '+barWhen(value.maint.until)+'.'); })
+          .catch(function(error){ hoursSaid('now',null,error); });
+      },true);
+      box.appendChild(go);
+    }
   }
   /* Salt Admin A to C (20 Oct 2026), P3: THE CONFIRM TIME, as the hourly cron filed it: the figure and what customers read, or how far it is
      from the ten it needs, or that none is filed yet. Old (over three hours) is said, since customers then see nothing. */
@@ -7878,6 +7920,12 @@ export const OWNER_JS = `
     return item('watch','watch','Hours','w:hours', '', {who:'Shop', title:said, what:said, age:'today',
       why:'The weekly hours are overridden for now.', open:goPlace('shop','hours')}, function(c){ mainButton(c,'Change','need.hours','w:hours', goPlace('shop','hours')); });
   }
+  /* 17 Nov 2026: the Counter under his maintenance switch, to the moment it lifts */
+  function maintNeed(until){
+    var said='Under maintenance until '+barWhen(until);
+    return item('watch','watch','Maintenance','w:maint', '', {who:'Shop', title:said, what:said, age:'today',
+      why:'Customers see the maintenance page; Salt Admin stays open.', open:goPlace('shop','hours')}, function(c){ mainButton(c,'Change','need.maint','w:maint', goPlace('shop','hours')); });
+  }
   function noticeNeed(lines){
     return item('watch','watch','Notice','w:notice', '', {who:'Shop', title:cut(lines.join(' · ')), what:cut(lines.join(' · ')), why:'This line is at the top of every customer account.', open:goPlace('shop','notice')},
       function(c){ mainButton(c,'Change','need.notice','w:notice', goPlace('shop','notice')); });
@@ -8064,6 +8112,7 @@ export const OWNER_JS = `
     if(turn||fresh.length) L.push(turn?turnCard(fresh.length>0):sendNeed(fresh));
     var manual=makerHours&&makerHours.status&&makerHours.status.source==='manual'&&makerHours.config&&makerHours.config.manual;
     if(manual) L.push(hoursNeed(manual));
+    if(maintUntil()) L.push(maintNeed(maintUntil()));
     if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));
     /* within a group (drawNeeds heads them To do, Pending, FYI, practice apart under its own line): 22 Oct 2026, his word, MONEY FIRST, the largest
        sum first; then the cards with no sum, the oldest first, those with no age last; then as built */
