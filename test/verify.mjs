@@ -22533,7 +22533,7 @@ await (async () => {
     const rows = [...D.querySelectorAll("#pCard .glink")];
     const txt = D.getElementById("pCard").textContent;
     /* S8 8.1: a link shows its address only once it is open; a waiting one says in words that it is shut */
-    ok(rows.length === 2 && !txt.includes(DASH) && !rows[0].querySelector("code.gu") && /Shut until we approve it/.test(rows[0].textContent) && !rows[1].querySelector("code.gu"),
+    ok(rows.length === 2 && !txt.includes(DASH) && !rows[0].querySelector(".gu") && /[Ss]hut until we approve it/.test(rows[0].textContent) && !rows[1].querySelector(".gu"),   /* 17 Nov 2026, the move to Ambient (the third red fix): the address is the plate's .gu value, and the row's sentence runs on from the state word, so shut is lower case */
       "the drawn links carry no em-dash: a waiting one says it is shut, and neither it nor a withdrawn one carries an address line: "
       + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
