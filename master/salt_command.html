@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1527","d":"17 Nov 2026","t":"ONE CHANGE SHEET ON EVERY AGREED ORDER","n":["<b>ONE ROW, CHANGE.</b> On Salt Admin every agreed, ready or completed order has one row, Change. Its sheet holds the order (way, units, price, delivery) and what has happened so far: the collection point, what is handed over, and a payment received by Bank or Cash.","<b>ONE SAVE.</b> Send the change sends the change of terms first, for Approve, then the point, the handover and the money, each as before, and stops at the first that does not go through. A line under the fields says what the customer will be told.","<b>FEWER PLACES ON THE CARD.</b> Change point, the units field and the payment amount moved into the sheet. The card keeps its one stage button (every unit handed over), their payment claims and the cash Undo. Needs you's Record and Handover open the order at Change.","<b>IT SAYS WHY IT WAITS.</b> It sends nothing while another move is on its way, and holds a payment above what is owed now until a raise it rides on is approved."]}];
+const evolution=[{"v":"v1528","d":"17 Nov 2026","t":"SALT ADMIN AND SALT COUNTER ON AMBIENT","n":["<b>ONE LOOK, AMBIENT.</b> Salt Admin and Salt Counter are drawn in Ambient's parts, light or dark as each device is set. Salt Admin takes the market's mood (Flare and Supply tight while salt is tight), Shop and a signed-out page rest in Slate, and the Counter is Lagoon. Salt Desk moves later.","<b>THE LIVE STATEMENT, RE-SEALED.</b> The live statement is drawn in Ambient too. A sealed issue is never written again: a same-date re-run over a sealed set is refused unless it says --retry.","<b>A 44PX COIN IS THE SHAPE ALONE.</b> Your letter stands on every coin of 56px and over, and on every plain mark of 20px and over (your answer of 17 Nov 2026).","<b>SAID ONCE, AND RIGHT.</b> A link's state is said once, and so is Ready to collect. Copy link says what happened in a note. An open order's History names the right kind of step. A withdrawn link offers Restore. Order again's price and Salt Admin's find field are in the figure face.","<b>FIXED ON THE WAY.</b> An account's Phones and computers heading stands over None signed in again; Record's units steppers carry their acts; three Counter words are back in the words table; a name declared twice on Salt Admin's page is declared once."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Nov 2026, 12:40 KL';
+const LAST_UPDATED='17 Nov 2026, 13:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
