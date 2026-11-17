@@ -45,7 +45,7 @@ import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
 import { ADMIN_SW_JS } from "./admin-sw.js";
 import { identity } from "./access.js";
-import { maintenance, exempt, MAINT_KEY } from "./maintenance.js";
+import { maintenance, exempt, MAINT_KEY, maintOf } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
@@ -2293,6 +2293,13 @@ const worker = {
         catch (e) { console.log("confirm FAILED: " + String((e && e.stack) || e)); }
         const slot = chaseSlot(now);
         if (slot === null) return;
+        /* 18 Nov 2026, his word: NO CUSTOMER IS WOKEN WHILE THE COUNTER IS UNDER MAINTENANCE, by his switch or MAINTENANCE_UNTIL: the chase, the
+           rating ask and the reminder all open a page that is held. Nothing is marked, so the first slot after it lifts wakes as usual. A switch
+           that cannot be read pauses nothing. */
+        let paused = Date.parse(String(env.MAINTENANCE_UNTIL || "").trim()) > now.getTime();
+        try { paused = paused || !!maintOf(await env.STMT.get(MAINT_KEY, "json"), now.getTime()); }
+        catch (e) { console.log("maintenance read FAILED: " + String((e && e.stack) || e)); }
+        if (paused) { console.log("chase: paused under maintenance"); return; }
         let woke = 0, held = 0, quiet = 0;
         const owing = new Set();
         for (const { u, orders } of await toChase(env, now)) {

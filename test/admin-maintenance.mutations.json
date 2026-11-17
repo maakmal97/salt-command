@@ -18,6 +18,8 @@
  {"name":"off sends nothing","file":"stmt/owner.js","find":"refs('/all/maker/maintenance',{off:true})","replace":"Promise.resolve({maint:null})"},
  {"name":"the bar's chip does not say Maintenance","file":"stmt/owner.js","find":"txt='Maintenance'+(mw?' to '+mw:'');","replace":"txt='Open'+(mw?' to '+mw:'');"},
  {"name":"Needs you carries no card","file":"stmt/owner.js","find":"    if(maintUntil()) L.push(maintNeed(maintUntil()));\n","replace":""},
+ {"name":"the cron wakes customers under his switch","file":"stmt/worker.js","find":"paused = paused || !!maintOf(await env.STMT.get(MAINT_KEY, \"json\"), now.getTime());","replace":"paused = paused || false;"},
+ {"name":"the cron wakes customers under MAINTENANCE_UNTIL","file":"stmt/worker.js","find":"let paused = Date.parse(String(env.MAINTENANCE_UNTIL || \"\").trim()) > now.getTime();","replace":"let paused = false;"},
  {"name":"an open page does not open again","file":"stmt/page.js","find":"if(kept) location.reload(); }","replace":"}"},
  {"name":"an open page opens again on every answer","file":"stmt/page.js","find":"if(Date.now()-mr>60000){ try{ sessionStorage.setItem('salt-maint-reload'","replace":"if(true){ try{ sessionStorage.setItem('salt-maint-reload'"}
 ]

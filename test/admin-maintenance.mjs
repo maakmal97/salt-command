@@ -178,4 +178,38 @@ export async function run({ ok, pageWork }) {
     await new Promise((r) => setTimeout(r, 600));
     ok(reloaded && st.navs === before + 1, "and it opens again once, not on every answer after: " + JSON.stringify({ navs: st.navs }));
   } finally { dom.window.close(); }
+
+  /* ---- 7: the hourly cron wakes no customer while the Counter is held, and marks nothing, so the same slot wakes once it lifts ---- */
+  const { done, ago, kl } = await import("./counter-b-kit.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const vp = await webcrypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const ckv = new Map();
+  const CSTMT = { get: async (k, type) => { const v = ckv.get(k); return v == null ? null : type === "json" ? JSON.parse(v) : v; },
+    put: async (k, v) => { ckv.set(k, v); }, delete: async (k) => { ckv.delete(k); },
+    list: async ({ prefix = "" } = {}) => ({ keys: [...ckv.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })), list_complete: true }) };
+  const cenv = { STMT: CSTMT, STMT_VAPID_PUBLIC_KEY: "maint-public", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await webcrypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const CU = "wxyz-abcd", ep = "https://push.example/" + CU;
+  ckv.set("push:" + CU + ":" + await endpointId(ep), JSON.stringify({ endpoint: ep, at: new Date().toISOString() }));
+  ckv.set("order:" + CU + ":20261101010101-mt1", JSON.stringify(done("20261101010101-mt1", ago(24 * 3), { u: CU, moved: 1, movedOn: kl(-3), paid: 0, total: 100 })));
+  const slotAt = Date.parse(kl(2) + "T02:00:00Z"), ahead = new Date(slotAt + 3600e3).toISOString().replace(/\.\d{3}Z$/, "Z");   /* 10:00 in Kuala Lumpur */
+  const realFetch = globalThis.fetch, realLog = console.log;
+  let wakes = 0;
+  const tick = async (e) => {
+    const w = []; wakes = 0;
+    await Worker.scheduled({ cron: "0 * * * *", scheduledTime: slotAt }, e, { waitUntil: (p) => w.push(p) }); await Promise.all(w);
+    return wakes;
+  };
+  globalThis.fetch = async (url, init) => (String(url).startsWith("https://push.example/") ? (wakes++, new Response("", { status: 201 })) : realFetch(url, init));
+  console.log = () => {};
+  try {
+    ckv.set("maint", JSON.stringify({ until: ahead }));
+    const underSwitch = await tick(cenv);
+    ckv.delete("maint");
+    const underEnv = await tick({ ...cenv, MAINTENANCE_UNTIL: ahead });
+    const lifted7 = await tick(cenv);
+    console.log = realLog;
+    ok(underSwitch === 0 && lifted7 === 1, "under his switch the cron wakes no customer and marks nothing, so the same slot wakes once it lifts: " + JSON.stringify({ underSwitch, lifted7 }));
+    ok(underEnv === 0 && lifted7 === 1, "and under MAINTENANCE_UNTIL the same: " + JSON.stringify({ underEnv, lifted7 }));
+  } finally { globalThis.fetch = realFetch; console.log = realLog; }
 }
