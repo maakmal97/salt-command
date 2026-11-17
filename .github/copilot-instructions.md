@@ -1,7 +1,7 @@
 # Instructions for Copilot on salt-command
 
-Read `CLAUDE.md` and `MEMORY.md` at the repo root first: they hold the project's hard rules (numbered 1 to 8 and cited from code
-and tests), the chain, and current facts. `docs/WORKING.md` covers landing, the suite and mutation proofs. The rules below come
+Read `CLAUDE.md` at the repo root first, and search `MEMORY.md` as the end of `CLAUDE.md` says (never read it whole): they hold
+the project's hard rules (numbered 1 to 8 and cited from code and tests), the chain, and current facts. `docs/WORKING.md` covers landing, the suite and mutation proofs. The rules below come
 from the owner's own standing rules, which live outside this repo; where they and `CLAUDE.md` differ, `CLAUDE.md` wins for this
 project, and the owner's word in the conversation wins over both.
 

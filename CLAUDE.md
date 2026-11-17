@@ -740,5 +740,9 @@ worktrees sit in `.worktrees\`, Claude's in `.claude\worktrees\`.
   check is proved red (`tools/section.mjs --mutations`), the sections it touches pass, the gate is OK, and CI's suite
   on that push is the full check, read after. Anything else runs the full suite before it pushes.
 
-Read @MEMORY.md beside this file (current facts) before the first action; correct it in place.
+Current facts are in `MEMORY.md` beside this file, searched rather than loaded whole (his decision of 17 Nov
+2026: it is too long to send with every prompt). Before the first action, read it from the top down to `## Known
+red in the suite` (the Worker, fold dispatch, Access, migrations and known reds every task leans on), list its
+headings (`grep -n '^## ' MEMORY.md`), read each section the task touches, and grep it for any name, id or
+version the task mentions. Correct a stale fact in place.
 History: git log; master/changelog.json is written only by tools/changelog.mjs on a bump.
