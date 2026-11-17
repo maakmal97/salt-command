@@ -1432,12 +1432,14 @@ export const OWNER_JS = `
   /*END REFUSALS*/
   /* the server's words to a plain sentence: the table above, then the two sentences the Desk composes around a figure, then the general one */
   function plainRefusal(raw){
-    var s=String(raw==null?'':raw), left;
+    var s=String(raw==null?'':raw), left, floor;
     if(Object.prototype.hasOwnProperty.call(REFUSALS,s)) return REFUSALS[s];
     if(s.indexOf('this order is ')===0) return 'This order has moved on. Read the orders again.';
     if(s.indexOf('Money is already on its way to this row.')===0) return 'Money is already on its way to this row. Decide that first.';
     left=/^This row can still take RM ([0-9][0-9,]*[.][0-9]+)/.exec(s);
     if(left) return 'This row can only take RM '+left[1]+' more.';
+    floor=/^RM ([0-9][0-9,]*[.]?[0-9]*) is under the floor of RM ([0-9][0-9,]*[.]?[0-9]*) at ([0-9][0-9.]*) unit, so it cannot be set$/.exec(s);
+    if(floor) return 'RM '+floor[1]+' is below the Floor of RM '+floor[2]+' for '+floor[3]+' unit'+(Number(floor[3])===1?'':'s')+'. Enter RM '+floor[2]+' or more.';
     return REFUSAL_GENERAL;
   }
   /* an Error for a refused move: the plain sentence is its message, the server's words .raw, and the status and the whole answer are kept for the code that reads them */
@@ -3880,13 +3882,14 @@ export const OWNER_JS = `
     var go=document.getElementById('ynGo');
     actOn(go,'order.ask-go',order.id); actOn(document.getElementById('ynKeep'),'order.ask-keep',order.id); actOn(document.getElementById('ynX'),'order.ask-close',order.id);
     if(q.plain) go.classList.remove('amb-action--danger');
+    if(q.primary){ go.classList.remove('amb-action'); go.classList.add('amb-pill','amb-pill--block'); document.getElementById('ynKeep').classList.add('amb-pill--quiet'); }
   }
   /* 12 Oct 2026 (Phase 2c, his decision 4 of 11 Oct): EVERY OTHER YES OR NO ON THIS PAGE IS THE SAME SHEET, and no native confirm is left in this script. ownerAsk opens
      ynOpen and answers a promise: true when the one action is tapped, false on the ghost, the close control, the scrim, Escape or a lapse. The Sheet tells the promise it
      has come down (the shut hook) a microtask later, so the action, which runs just after it, is read first; a flow that awaits the answer carries on as it did when the
      confirm said no, and a second tap on the action finds the Sheet gone and answers nothing. key names what is asked: its opener carries it as data-yn (ynTag), so a card
      redrawn meanwhile still has the control to give focus back to, and the Sheet's three controls carry it as their data-key. q: title, row (a node restating what is
-     asked), say (lines), extra (nodes), go, keep, plain (not a danger action). */
+     asked), say (lines), extra (nodes), go, keep, plain (not a danger action), primary (filled pill). */
   function ynTag(btn,key){ if(btn&&btn.setAttribute) btn.setAttribute('data-yn',key); return btn; }
   /* a Sheet this page opens carries .adm beside .asheet, which is how the page's CSS places it on a tablet (the Sheets stand at the body's root, outside #roster) */
   sheetOwn=function(box){ box.classList.add('adm','asheet'); };
@@ -6048,7 +6051,7 @@ export const OWNER_JS = `
     }
     [aq.input,at.input,ad.input,way,pt,hq,pay,by,rest].forEach(function(n){ if(n){ n.addEventListener('input',tellDraw); n.addEventListener('change',tellDraw); } });
     var extra=[sub('Order'),aw,aq.wrap,at.wrap,ad.wrap].concat(sofar.length?[sub('So far')].concat(sofar):[],[told]);
-    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['A change of its terms waits for you under Approve; the rest goes at once.'], extra:extra,
+    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, primary:true, go:'Send the change', keep:'Not now', say:['A change of its terms waits for you under Approve; the rest goes at once.'], extra:extra,
       yes:async function(){
         var body=terms(), np=pt&&pt.value&&pt.value!==(order.point||'')?pt.value:null, nh=hq&&Number(hq.value)>out+0.0004?Number(hq.value):null,
             np2=pay&&Number(pay.value)>0?Math.round(Number(pay.value)*100)/100:null, road=by?by.value:'';

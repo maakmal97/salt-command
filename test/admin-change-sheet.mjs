@@ -12,6 +12,8 @@
  *   C7  the one [data-amend] row Needs you's owed-money Record opens the order on (that tap itself: test/admin-needs.mjs)
  *   C8  money above what is owed now, with a terms change, posts nothing
  *   C9  a page with a move on its way posts nothing
+ *   C10 Send the change is a full-width primary button, not an action row, and Not now is the quiet pill
+ *   C11 a below-Floor refusal gives the price and the Floor, not a generic failure
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct, changeSheet, POINTS_ANSWER } from "./maker-act.mjs";
 
@@ -55,6 +57,10 @@ export async function run({ ok, pageWork }) {
       && [...sh.querySelectorAll('[data-act="order.change-by"]')].map((r) => r.value).join() === "bank,cash" && [...sh.querySelectorAll("select[data-change-field=point] option")].filter((o) => o.value).map((o) => o.value).join() === "A2,B3"
       && present(sh, "order.amend-way", "order.amend-units", "order.amend-total", "order.amend-delivery").every(Boolean),
     "C2a: at Ready (collect, units left, two points) the Sheet has Order and So far, Point, Handed over, Received now and Paid by with Bank and Cash: " + heads(sh));
+    const send = d.getElementById("ynGo");
+    ok(send && send.tagName === "BUTTON" && send.textContent === "Send the change" && send.classList.contains("amb-pill")
+      && send.classList.contains("amb-pill--block") && !send.classList.contains("amb-action") && d.getElementById("ynKeep").classList.contains("amb-pill--quiet"),
+    "C10: Send the change is a full-width primary button, not a text-like action row");
     await closeSheet();
     await part("todo"); await tapRow("ord-a1");
     sh = await changeSheet(p, cardOf("ord-a1"), { go: false });
@@ -96,6 +102,17 @@ export async function run({ ok, pageWork }) {
     await changeSheet(p, cardOf("ord-a1"), { total: 170, paid: 50, by: "bank" });
     ok(p.posts.length === 1 && p.posts[0].route.endsWith("/restate"), "C4b: a restate that is refused (409) stops the rest: nothing else is posted: " + J(p.posts.map((x) => x.route)));
     delete p.refuse["/all/maker/orders/ord-a1/restate"];
+
+    /* C11: the exact refusal from engine/stages.mjs is explained on the order card */
+    await part("open"); await tapRow("ord-r1");
+    p.posts.length = 0;
+    p.refuse["/all/maker/orders/ord-r1/restate"] = "RM 100 is under the floor of RM 285 at 3 unit, so it cannot be set";
+    await changeSheet(p, cardOf("ord-r1"), { total: 100 });
+    const floorMessage = say("ord-r1");
+    ok(p.posts.length === 1 && /RM 100 is below the Floor of RM 285 for 3 units[.] Enter RM 285 or more[.]/.test(floorMessage) && !/The Counter could not do that/.test(floorMessage),
+      "C11: a below-Floor refusal names both figures and does not fall back to a generic failure: " + floorMessage);
+    delete p.refuse["/all/maker/orders/ord-r1/restate"];
+    await part("todo");
 
     /* C5 */
     const told = (sheet) => sheet.querySelector("[data-change-told]").textContent;
