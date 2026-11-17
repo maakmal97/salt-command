@@ -457,8 +457,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   why and second choice in the open card beside the list from 860px; **no text wraps on Salt Admin's Needs you** (an ellipsis at most).
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
-  Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`) in every mark, 20 px and
-  over; it names nothing. A control holding only a mark is named by its shape
+  Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`): every coin of 56 px and
+  over and every plain mark of 20 px and over carries it; a 44 px coin is the shape alone (his answer of
+  17 Nov 2026); it names nothing. A control holding only a mark is named by its shape
   (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
   characters, which is what iOS gives a home screen; the desk's name never appears. **A customer never
   sees a level**, named or marked (D11); no name is used because none exists there (rule 2).
