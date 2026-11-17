@@ -3538,9 +3538,11 @@ const CLIENT_JS = `
      area and a floor or unit: both are read back as its address. Counter Batch C's rules stand: none picked on opening, one saved is
      picked, Remove asks nothing. */
   var SPOT_MAX=3;
+  /* 17 Nov 2026 (his yes to the one place field plan, D1): what they type or paste is kept whole, a long link included, for us to read */
+  var ADDR_MAX=1000;
   function spotKey(){ return 'salt-spots:'+user; }
   function spotPt(p){ return !!p&&typeof p==='object'&&(p.src==='gps'||p.src==='link'||p.src==='search'||p.src==='pin')&&(pinPt(p.lat,p.lng)||typeof p.link==='string'); }
-  function spotAddrOf(s){ return spotCut(typeof s.addr==='string'?s.addr:[s.unit,s.place].filter(function(x){ return typeof x==='string'&&x.trim(); }).join(', '),200); }
+  function spotAddrOf(s){ return spotCut(typeof s.addr==='string'?s.addr:[s.unit,s.place].filter(function(x){ return typeof x==='string'&&x.trim(); }).join(', '),ADDR_MAX); }
   function spotOk(s){ return !!s&&typeof s.id==='string'&&typeof s.label==='string'&&spotCut(s.label,24).length>=2&&(spotAddrOf(s).length>=5||spotPt(s.pt)); }
   function spotsRead(){
     try{ var v=JSON.parse(localStorage.getItem(spotKey())||'[]');
@@ -3550,10 +3552,11 @@ const CLIENT_JS = `
   function spotsWrite(L){ try{ localStorage.setItem(spotKey(),JSON.stringify(L.slice(0,SPOT_MAX))); return true; }catch(e){ return false; } }
   function spotCut(s,n){ return String(s||'').split(' ').filter(function(x){ return !!x; }).join(' ').slice(0,n).trim(); }
   var DOT=' '+String.fromCharCode(183)+' ';
-  function spotDetail(s){ return s.pt?tw('sp.exact'):s.addr; }
+  /* a long address, a pasted link most of all, is said in its first 60 characters on the list (17 Nov 2026) */
+  function spotDetail(s){ return s.pt?tw('sp.exact'):s.addr.length>60?s.addr.slice(0,59)+String.fromCharCode(8230):s.addr; }
   function spotPick(s){ draft.spot={id:s.id, label:s.label, addr:s.addr||'', pt:s.pt||null, once:!!s.once}; draft.place=s.label; draft.pin=s.pt||null; }
   function spotOpen(s){
-    draft.spotEdit={id:s?s.id:'', label:s?s.label:'', addr:s?s.addr||'':'', once:!!(s&&s.once)};
+    draft.spotEdit={id:s?s.id:'', label:s?s.label:tw('sp.nameDef'), addr:s?s.addr||'':'', once:!!(s&&s.once)};
     draft.pin=s&&s.pt||null; draft.pinMsg=''; draft.step='spot'; sheetDraw();
   }
   /* a field of the system: its label, the native control carrying the system's class, and its hint */
@@ -3579,7 +3582,7 @@ const CLIENT_JS = `
     else { var full=el('p','amb-field__hint',tw('sp.full')); full.id='spFull'; fs.appendChild(full); }
     return fs;
   }
-  function spotWhy(E){ return spotCut(E.label,24).length<2?tw('sp.whyName'):!draft.pin&&spotCut(E.addr,200).length<5?tw('sp.whyAddr'):''; }
+  function spotWhy(E){ return spotCut(E.label,24).length<2?tw('sp.whyName'):!draft.pin&&spotCut(E.addr,ADDR_MAX).length<5?tw('sp.whyAddr'):''; }
   function drawSpot(){
     var E=draft.spotEdit, B=osh.body;
     sheetHead(tw(E.id?'sp.editH':'sp.addH'),function(){ draft.step='form'; draft.pin=draft.spot?draft.spot.pt:null; draft.spotEdit=null; sheetDraw(); });
@@ -3595,12 +3598,12 @@ const CLIENT_JS = `
       off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; sheetDraw(); });
       af.appendChild(off);
     } else {
-      var ai=el('textarea','amb-input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=200; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
+      var ai=el('textarea','amb-input'); ai.id='spAddr'; ai.rows=3; ai.maxLength=ADDR_MAX; ai.value=E.addr; ai.autocomplete='street-address'; ai.placeholder=tw('sp.addrPh'); ai.setAttribute('data-k','spaddr');
       ai.addEventListener('input',function(){
         var p=pinRead(ai.value);
         if(p){ draft.pin=p; draft.pinMsg=''; E.addr=''; sheetDraw(); return; }
         E.addr=ai.value; spotFoot(); });
-      ai.addEventListener('change',function(){ var v=String(ai.value||'').trim(); if(/^https?:/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinBad'); var h=document.getElementById('spHint'); if(h) h.textContent=draft.pinMsg; } });
+      ai.addEventListener('change',function(){ var v=String(ai.value||'').trim(); if(/https?:[/][/]/i.test(v)&&!pinRead(v)){ draft.pinMsg=tw('sh.pinLater'); var h=document.getElementById('spHint'); if(h) h.textContent=draft.pinMsg; } });
       af.appendChild(ai);
       var here=el('button','amb-pill amb-pill--quiet',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
       here.addEventListener('click',pinHere); af.appendChild(here);
@@ -3621,7 +3624,7 @@ const CLIENT_JS = `
     go.addEventListener('click',function(){
       if(spotWhy(E)) return;
       var pt=draft.pin&&spotPt(draft.pin)?draft.pin:null;
-      var s={id:E.id||mintRid(), label:spotCut(E.label,24), addr:pt?'':spotCut(E.addr,200), pt:pt};
+      var s={id:E.id||mintRid(), label:spotCut(E.label,24), addr:pt?'':spotCut(E.addr,ADDR_MAX), pt:pt};
       /* kept on this phone by itself; Order as them keeps none on his */
       var kept=false;
       var L=act?null:spotsRead();   /* a store that cannot be read is not written: the spot serves this order alone */
