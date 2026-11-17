@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1534",
+  "d": "17 Nov 2026",
+  "t": "YOUR APPROVE MOVES THE ORDER AT ONCE",
+  "n": [
+   "<b>NO MINUTE'S WAIT.</b> When you approve a change to a Counter order, the order now follows its row on the book in the same few seconds, instead of on the Desk's next minute. It no longer shows twice, and the customer is told the new figures straight away.",
+   "<b>ORDERS THAT SHARE ONE ROW</b> are still settled by the minute pass, so they are never split.",
+   "<b>THE PLAN FOR THE REST.</b> docs/plan-instant.html: your customers' moves reaching the Desk at once, and their statement following sooner. It waits on your three answers.",
+   "<b>NOTHING ELSE MOVES.</b> No price changed."
+  ]
+ },
+ {
   "v": "v1533",
   "d": "17 Nov 2026",
   "t": "TYPE ANY PLACE",
