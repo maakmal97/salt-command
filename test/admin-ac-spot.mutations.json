@@ -80,8 +80,8 @@
  {
   "name": "a unit alone gets Maps",
   "file": "stmt/owner.js",
-  "find": "      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){",
-  "replace": "      }else if(true){"
+  "find": "var hasPt=p.src!=='unit'&&p.lat!=null&&p.lng!=null&&isFinite(p.lat)",
+  "replace": "var hasPt=true||p.lat!=null&&p.lng!=null&&isFinite(p.lat)"
  },
  {
   "name": "the opened part unmarked",
@@ -116,7 +116,13 @@
  {
   "name": "no Maps for a typed address",
   "file": "stmt/owner.js",
-  "find": "      if(p.src==='addr'&&addr){",
-  "replace": "      if(false){"
- }
+  "find": "      }else if(p.src==='addr'&&addr){",
+  "replace": "      }else if(false){"
+ },
+ {"replace":"if(false){","find":"if(!hasPt&&p.src==='addr'&&addr){","name":"9 an address with no point offers no Place it","file":"stmt/owner.js"},
+ {"replace":"kmRepaint();","find":"makerSpotOpened[order.u+'/'+order.pin]=placed; kmRepaint(); adSpotPaint(placed);","name":"9 the point placed is not kept for the card","file":"stmt/owner.js"},
+ {"replace":"var draft=await makerPairPrepare(makerVaultBase(),function(maps){ maps.places[code]=Object.assign({},filed,{addr:null}); },null);","find":"var draft=await makerPairPrepare(makerVaultBase(),function(maps){ maps.places[code]=filed; },null);","name":"10 their words are not filed with the point","file":"stmt/owner.js"},
+ {"replace":"var body={at:new Date().toISOString(),places:{}}; body.places[code]=[+p.lat,+p.lng,label];","find":"var body={at:new Date().toISOString(),places:{}}; body.places[code]=coords;","name":"10 the exact point goes in the clear","file":"stmt/owner.js"},
+ {"replace":"if(false){","find":"if(hasPt&&fileable&&!same&&!(held&&held.filed)){","name":"10 File as their place is not drawn","file":"stmt/owner.js"},
+ {"replace":"var their=null, q=el('a','amb-action adspot__maps');","find":"var their=/https:[/][/][^ ]+/.exec(addr), q=el('a','amb-action adspot__maps');","name":"11 their link is searched as words","file":"stmt/owner.js"}
 ]

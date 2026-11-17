@@ -8,6 +8,9 @@
  *      card neither fetches it nor opens it again (Fable's review)
  *   5  a unit sealed alone draws no Maps; a practice order's spot, never filed, offers no Unlock
  *   8  (11 Nov 2026) an address they typed is drawn as its Name and Address, with Maps searching those words
+ *   9  (17 Nov 2026, the one place field plan) an address with no point is placed on the card, which then draws Maps at it and File as their place
+ *   10 File as their place sends the locality worked out from the point, the point and their words sealed, and says it waits for Approve
+ *   11 a link the reader does not know opens as their own link, with Place it beside it
  * The real ECDH, HKDF and AES-GCM run in the page (the harness's webcrypto). Drawn by the maker harness (test/maker-act.mjs). */
 import { webcrypto } from "node:crypto";
 import { richOwnerPage, byAct, slipFixture } from "./maker-act.mjs";
@@ -16,7 +19,7 @@ import { readPin } from "../stmt/pin.js";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const b64 = (v) => Buffer.from(v).toString("base64");
-const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32), IDM = "e".repeat(32), IDA = "f".repeat(32);
+const U = "abcd-efgh", IDP = "a".repeat(32), IDU = "b".repeat(32), IDX = "c".repeat(32), IDL = "d".repeat(32), IDM = "e".repeat(32), IDA = "f".repeat(32), IDW = "9".repeat(32);
 /* a spot sealed as their phone seals it (stmt/page.js pinSeal): an ephemeral pair, ECDH with his public half, HKDF under 'salt-pin v1', AES-GCM */
 async function pinSeal(pubJwk, value) {
   const S = webcrypto.subtle, E = { name: "ECDH", namedCurve: "P-256" };
@@ -43,10 +46,11 @@ export async function run({ ok, pageWork }) {
     [IDU]: await pinSeal(fix.pub, { unit: "Unit 7", src: "unit" }),
     [IDL]: await pinSeal(fix.pub, { link: "https://maps.app.goo.gl/AbCdEf123", src: "link", label: "Gate" }),
     [IDM]: await pinSeal(fix.pub, { link: "https://maps.apple/p/ZzYy99", src: "link" }),
-    [IDA]: await pinSeal(fix.pub, { addr: "12 Jalan Lirau, Block B", src: "addr", label: "Home" }) };
+    [IDA]: await pinSeal(fix.pub, { addr: "12 Jalan Lirau, Block B", src: "addr", label: "Home" }),
+    [IDW]: await pinSeal(fix.pub, { addr: "Gate https://share.invented.test/p/QwErTy", src: "addr", label: "Gate" }) };
   const base = { u: U, product: "salt", delivery: 10, msgs: [], history: [], payments: [], paid: 0, mode: "deliver", place: "Lirau", qty: 1, total: 50, status: "acknowledged", at: "2026-10-10T02:00:00.000Z" };
   const orders = [{ ...base, id: "ord-sp", pin: IDP }, { ...base, id: "ord-su", pin: IDU }, { ...base, id: "ord-sx", pin: IDX, test: true }, { ...base, id: "ord-sl", pin: IDL },
-    { ...base, id: "ord-sm", pin: IDM }, { ...base, id: "ord-sa", pin: IDA }];
+    { ...base, id: "ord-sm", pin: IDM }, { ...base, id: "ord-sa", pin: IDA }, { ...base, id: "ord-sw", pin: IDW }];
   let geoFail = false;
   const p = await richOwnerPage({ pageWork, slip: true, review: (j) => ({ ...j, orders: (j.orders || []).concat(orders) }),
     extra: (route) => { if (route === "/all/maker/geo/open") return geoFail ? { ok: false, error: "The link did not lead to a point." } : { ok: true, location: "https://www.google.com/maps/place/Gate/@3.0738,101.7255,17z" };
@@ -107,5 +111,36 @@ export async function run({ ok, pageWork }) {
     ok(!!SA && /Name\s*Home/.test(t(SA)) && /Address\s*12 Jalan Lirau, Block B/.test(t(SA)) && !!saMaps
       && saMaps.getAttribute("href") === "https://www.google.com/maps/search/?api=1&query=12%20Jalan%20Lirau%2C%20Block%20B" && !/could not be opened/.test(t(SA)),
       "8 an address they typed is drawn as its Name and Address, with Maps searching it: " + t(SA) + " " + (saMaps && saMaps.getAttribute("href")));
+    /* 9 (17 Nov 2026, his yes to the one place field plan, D3): an address with no point is placed here once, and the point measures the order */
+    let gA = gateOf("ord-sa");
+    const pin = gA && byAct(gA, "spot.place", "ord-sa"), use = gA && byAct(gA, "spot.place.use", "ord-sa");
+    const before9 = [!!pin, !!use, !gA || !byAct(gA, "spot.file", "ord-sa"), /No point yet: place it to measure the distance\./.test(t(gA))];
+    if (pin) { pin.value = "3.0738, 101.7255"; pin.dispatchEvent(new p.w.Event("input", { bubbles: true })); }
+    await click(use);
+    gA = gateOf("ord-sa");
+    const placedMaps = gA && gA.querySelector("[data-maker-pin] a[data-spot-maps]");
+    ok(before9.every(Boolean) && !!placedMaps && /3\.0738,101\.7255/.test(placedMaps.getAttribute("href")) && /Address\s*12 Jalan Lirau, Block B/.test(t(gA))
+      && !byAct(gA, "spot.place", "ord-sa") && !!byAct(gA, "spot.file", "ord-sa"),
+      "9 an address with no point is placed here, and the card draws Maps at that point and File as their place: " + JSON.stringify(before9) + " " + t(gA));
+    /* 10 (D4): File as their place sends the placement as Place on the map does: the locality worked out from the point in the clear, the point and their words sealed */
+    await click(byAct(gA, "spot.file", "ord-sa"));
+    const filedPost = p.posts.filter((x) => x.route === "/all/maker/inputs/place").at(-1);
+    const plain = filedPost && filedPost.body && filedPost.body.places && filedPost.body.places["CX1-ZED"];
+    let sealedPlace = null;
+    try {
+      const env = filedPost.body.addrVault, base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(p.slipPass), "PBKDF2", false, ["deriveKey"]);
+      const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt: Buffer.from(env.salt, "base64"), iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      sealedPlace = JSON.parse(new TextDecoder().decode(await webcrypto.subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(env.iv, "base64") }, key, Buffer.from(env.ct, "base64"))))["CX1-ZED"];
+    } catch (e) { sealedPlace = null; }
+    ok(Array.isArray(plain) && plain.length === 3 && typeof plain[2] === "string" && plain[2].length > 1 && Math.abs(plain[0] - 3.07) < 0.2 && Math.abs(plain[1] - 101.73) < 0.2
+      && !JSON.stringify(filedPost.body).includes("Lirau") && !JSON.stringify(filedPost.body).includes("3.0738")
+      && sealedPlace && sealedPlace.lat === 3.0738 && sealedPlace.lng === 101.7255 && sealedPlace.addr === "12 Jalan Lirau, Block B"
+      && /Sent\. It is their place once you approve it\./.test(t(gateOf("ord-sa"))) && !byAct(gateOf("ord-sa"), "spot.file", "ord-sa"),
+      "10 File as their place sends their locality in the clear and the point and words sealed, and says it waits for Approve: " + JSON.stringify([plain, sealedPlace]));
+    /* 11 (D1): a link of a maker the reader does not know reaches him whole, as a link he opens */
+    C = await open("ord-sw");
+    const SW = C && C.querySelector("[data-pin-gate] [data-maker-pin]"), swMaps = SW && SW.querySelector("a[data-spot-maps]");
+    ok(!!swMaps && swMaps.getAttribute("href") === "https://share.invented.test/p/QwErTy" && /Open their link/.test(t(swMaps)) && !!byAct(gateOf("ord-sw"), "spot.place", "ord-sw"),
+      "11 a link the reader does not know opens as their own link, with Place it beside it: " + t(SW));
   } finally { p.w.close(); }
 }

@@ -1,0 +1,1 @@
+[{"name":"a link no reader takes is refused again","file":"stmt/owner.js","find":"    if(!reading&&words.length>=5&&/[A-Za-z]/.test(words))\n      return {addr:words.slice(0,1000),lat:null,lng:null,src:'addr',at:new Date().toISOString()};\n","replace":""}]

@@ -23,7 +23,7 @@
  {"name":"the map's centre before the place","file":"stmt/place-link.js","find":"p=p||view;","replace":"p=view||p;"},
  {"name":"Apple reads the view before the pin (4 Nov 2026)","file":"stmt/place-link.js","find":"['ll','coordinate','q','sll','daddr'].forEach(","replace":"['sll','q','coordinate','ll','daddr'].forEach("},
  {"name":"an Apple short link is refused (4 Nov 2026)","file":"stmt/place-link.js","find":"h==='maps.apple'&&","replace":"h==='maps.apple.none'&&"},
- {"name":"two figures alone read nothing (4 Nov 2026)","file":"stmt/place-link.js","find":"return p?{lat:p.lat,lng:p.lng,addr:null,src:'pin'}:null;}","replace":"return null;}"},
+ {"name":"two figures alone read nothing (4 Nov 2026)","file":"stmt/place-link.js","find":"if(p)return {lat:p.lat,lng:p.lng,addr:null,src:'pin'};","replace":"if(p)return null;"},
  {"name":"maps.google.com needs /maps (4 Nov 2026)","file":"stmt/place-link.js","find":"(h.indexOf('maps.')===0||","replace":"(false||"},
  {"name":"a link after words is refused (4 Nov 2026)","file":"stmt/place-link.js","find":"const s=String(text==null?'':text).trim(),m=","replace":"const s=String(text==null?'':text).trim(),m=/^ *[a-z]/i.test(text)&&!/^ *https?:/i.test(text)?null:"},
  {"name":"an Apple Maps link reads nothing (4 Nov 2026)","file":"stmt/place-link.js","find":":h==='maps.apple.com'?'apple':null;","replace":":null;"},

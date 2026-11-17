@@ -17,7 +17,9 @@
  *   8  at three kept, Add a spot gives way to the line; Remove drops one with no confirm
  *   9  two usernames keep two lists; Log out keeps this account's
  *   10 a store that throws still gives Add a spot, and the spot serves this order alone
- *   11 a spot kept before 11 Nov 2026 (an area and a floor or unit) is read back with them as its address */
+ *   11 a spot kept before 11 Nov 2026 (an area and a floor or unit) is read back with them as its address
+ *   12 (17 Nov 2026, the one place field plan, D2) a new spot's name comes filled as Home
+ *   13 (D1) a link no reader takes is kept whole as the address, over 200 characters, and they are told we will open it */
 import { open, ord, ago, txt, startAt } from "./counter-b-kit.mjs";
 
 const KEY = "salt-spots:abcd-efgh";
@@ -148,6 +150,23 @@ export async function run({ ok, pageWork }) {
       ok(list(D).length === 1 && list(D)[0].on && txt(row) === "Level 2, Veloria",
         "a spot kept before 11 Nov 2026 is read back with its floor and area as its address: " + txt(row));
       await close(D);
+    }
+    /* ---- 12, 13 (17 Nov 2026, his yes to the one place field plan, D1 and D2) ---- */
+    {
+      const E = await page({ orders: [ord("s3", "done", ago(300))] });
+      await sheet(E);
+      E.d.getElementById("spAdd").click(); await E.settle();
+      const named = E.d.getElementById("spName").value;
+      const link = "Gate https://share.invented.test/p/" + "q".repeat(300);
+      typeIn(E, "spAddr", link); E.d.getElementById("spAddr").dispatchEvent(new E.w.Event("change", { bubbles: true })); await E.settle();
+      const hint = txt(E.d.getElementById("spHint")), go = !E.d.getElementById("spUse").disabled;
+      E.d.getElementById("spUse").click(); await E.settle();
+      const kept = stored(E, "salt-spots:abcd-efgh")[0], shown = txt(E.d.querySelector("#osheet .ospot .amb-option__sub"));
+      ok(named === "Home" && go && !!kept && kept.label === "Home",
+        "12 a new spot's name comes filled as Home, so an address alone lets Use go: " + JSON.stringify([named, go, kept && kept.label]));
+      ok(/We will open that link ourselves/.test(hint) && kept && kept.addr === link && !kept.pt && shown.length === 60 && shown.indexOf("Gate https://share.invented.test/p/") === 0,
+        "13 a link no reader takes is kept whole as the address, over 200 characters, said on the list in its first 60, and they are told we will open it: " + JSON.stringify([hint, kept && kept.addr.length, shown]));
+      await close(E);
     }
   } finally { for (const p of pages) try { p.close(); } catch (e) { /* closed */ } }
 }

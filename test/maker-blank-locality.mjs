@@ -100,7 +100,7 @@ export async function run({ ok, pageWork }) {
       if (!await unlockPage(dom.window, work, pass)) throw new Error("The unlock did not settle.");
       const fields = section.querySelectorAll("input:not([type=radio])");
       tile(section, "Role", kind);
-      fields[0].value = name; fields[1].value = locality; fields[2].value = link;
+      fields[0].value = name; fields[1].value = link; fields[2].value = locality;   /* 17 Nov 2026: Where stands before Locality */
       section.querySelector('[data-act="record.add-id.send"]').click();   /* 4 Nov 2026: by its act; Use my location now stands before it */
       if (!await work.quiet()) throw new Error("Add ID did not settle.");
       return { body: calls[0], status: [...section.querySelectorAll('[role="status"]')].map((n) => n.textContent).join(" "),
@@ -166,12 +166,16 @@ export async function run({ ok, pageWork }) {
     const before = pair().revision;
     const unknown = await device({ name: "Test Unknown", locality: "Unknown invented locality" });
     const ambiguous = await device({ name: "Test Ambiguous", locality: "Bandar Baru" });
-    const badLink = await device({ name: "Test Link", link: "https://evil.test/maps?ll=3,101" });
+    const refused = pair().revision;
+    /* 17 Nov 2026 (his yes to the one place field plan): a link no reader takes is filed sealed as the address alone, for him to place later, never refused */
+    const badLink = await device({ name: "Test Link Words", link: "https://evil.test/maps?ll=3,101" });
+    const words = (await crypt(JSON.parse(pair().places), true))["CT15-TBC"];
     ok(!unknown.body && /not on the list/.test(unknown.status)
-      && !ambiguous.body && /matches more than one/.test(ambiguous.status)
-      && !badLink.body && /paste a map link/.test(badLink.status)   /* 4 Nov 2026: the refusal names the one place field */ && pair().revision === before,
-      "blank-locality device/pair: supplied unknown/ambiguous locality and invalid exact link still refuse before writing: "
-        + JSON.stringify([unknown.status, ambiguous.status, badLink.status]));
+      && !ambiguous.body && /matches more than one/.test(ambiguous.status) && refused === before
+      && badLink.body?.code === "CT15-TBC" && !Object.hasOwn(badLink.body, "geo") && !!badLink.body.addrVault && !JSON.stringify(badLink.body).includes("evil.test")
+      && words?.addr === "https://evil.test/maps?ll=3,101" && words.lat === null && words.src === "addr",
+      "blank-locality device/pair: supplied unknown/ambiguous locality still refuse before writing, and a link no reader takes is filed sealed as the address alone: "
+        + JSON.stringify([unknown.status, ambiguous.status, badLink.status, words]));
     const linked = await device({ name: "Test Pin", link: "Invented road https://waze.com/ul?ll=3.123456,101.654321" });
     const pin = (await crypt(JSON.parse(pair().places), true))["CT8-TBC"];
     ok(linked.body?.code === "CT8-TBC" && !Object.hasOwn(linked.body, "geo")

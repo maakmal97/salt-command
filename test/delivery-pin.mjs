@@ -210,8 +210,9 @@ export async function run({ ok }) {
     ok(!!d.getElementById("oPinHere") && !!d.getElementById("spAddr") && !d.getElementById("oPinUrl"), "the Add a spot step offers Use my location and the address field");
     ok(d.getElementById("spUse").disabled, "with neither the name nor an address or point, Use this spot waits");
     d.getElementById("oPinHere").click();
-    ok(await wait(() => !!d.getElementById("oPinOff")) && asked.length === 1 && asked[0].maximumAge === 0 && d.getElementById("spUse").disabled,
-      "Use my location reads the phone once, fresh; the point stands in for the address, the name is still asked for before Use: " + JSON.stringify(asked));
+    /* 17 Nov 2026 (his yes to the one place field plan, D2): the name comes filled as Home, so the point alone lets Use go */
+    ok(await wait(() => !!d.getElementById("oPinOff")) && asked.length === 1 && asked[0].maximumAge === 0 && !d.getElementById("spUse").disabled && d.getElementById("spName").value === "Home",
+      "Use my location reads the phone once, fresh; the point stands in for the address, and the name comes filled as Home: " + JSON.stringify(asked));
     type(A.w, d, "spName", "Veloria");
     d.getElementById("spUse").click();
     await wait(() => !d.getElementById("spUse") && !(d.getElementById("oGo").getAttribute("aria-disabled") === "true"));

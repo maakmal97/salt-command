@@ -68,7 +68,7 @@ export async function run({ ok }) {
   /* ---- 2b ---- */
   const four = rd("{p:window.__pts[3],st:ORD_PIN['" + O4.id + "'],line:ordPinLine(" + J(O4) + ")}");
   ok(four.p === null && four.st && four.st.st === "addr" && four.line.indexOf("Home · 12 Jalan Qelvor, Block B") >= 0
-    && /An address, no exact spot: the fee is measured to their filed place./.test(four.line) && !/data-pinfile/.test(four.line) && !/holds no point/.test(four.line),
+    && /An address, no exact spot: place it on Salt Admin, or the fee is measured to their filed place\./.test(four.line) && !/data-pinfile/.test(four.line) && !/holds no point/.test(four.line),
     "2b an address they typed is read with its name, measures no fee and is not offered for filing: " + J(four.line));
   /* ---- 3 ---- */
   w.eval("vaultPlaces={};window.__calls=0;window.__filed=null;wbVaultFile=function(edit,editPlaces){window.__calls++;var m={};editPlaces(m);window.__filed=m;return Promise.resolve(null);};");

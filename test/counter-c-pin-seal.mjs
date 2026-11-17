@@ -3,11 +3,11 @@
  *
  * What a delivery seals to his slip key is the exact point (Use my location or a pasted link) with the spot's name beside it, or, with no point, the address
  * as typed (src 'addr') with the name. The name and the address never travel in the clear (the name alone is the order's place), each is cut on the phone
- * (24 and 200), the seal stays the slip's shape under PIN_MAX, and an amendment still names no spot of its own.
+ * (24 and 1,000 since 17 Nov 2026), the seal stays the slip's shape under PIN_MAX, and an amendment still names no spot of its own.
  * Every username, point and key is invented. Each check was proved red by its own mutation (test/counter-c-pin-seal.mutations.json).
  *   1  a point and a name seal together, opened only by his key, with nothing of either in the clear but the name as the place
  *   2  an address with no point seals as src 'addr' with the name, and the check says Address
- *   4  an address over 200 is cut before sealing
+ *   4  an address over 1,000 is cut before sealing (200 until 17 Nov 2026)
  *   3, 5  retired 11 Nov 2026: a spot with neither unit nor point (every spot has an address or a point now), and the key arriving after the step opened
  *   6  at the longest name and address the seal is under PIN_MAX and both shapes are taken by the Worker
  *   7  an amendment carrying a spot is refused; one without keeps the order's
@@ -102,16 +102,16 @@ export async function run({ ok }) {
       "a point and a name seal together, opened by his key, nothing of either in the clear but the name as the place: " + J(r1.got));
     /* ---- 2, 4 ---- */
     const B = await drive(); closeAll.push(B);
-    const long = "Unit 12A, Block Q, Level 3, Wisma Zarvo Tower East, ".repeat(6);
+    const long = "Unit 12A, Block Q, Level 3, Wisma Zarvo Tower East, ".repeat(25);   /* 17 Nov 2026: the address is kept to 1,000 (the one place field plan, D1) */
     const r2 = await place(B, { addr: "12 Jalan Zarvo, Taman Veloria" });
     ok(r2.got && r2.got.src === "addr" && r2.got.label === "Shop" && r2.got.addr === "12 Jalan Zarvo, Taman Veloria" && !("lat" in r2.got) && !/Zarvo/.test(J(Object.assign({}, r2.sent, { pin: undefined }))) && r2.check.includes(W.EN["sp.addrRow"]),
       "an address with no point seals as src addr with the name, never in the clear, and the check says Address: " + J(r2.got));
     const r4 = await place(B, { addr: long });
-    ok(r4.got && r4.got.addr === long.trim().slice(0, 200).trim() && r4.got.addr.length <= 200, "an address over 200 is cut before sealing: " + J(r4.got && r4.got.addr && r4.got.addr.length));
+    ok(r4.got && r4.got.addr === long.trim().slice(0, 1000).trim() && r4.got.addr.length <= 1000, "an address over 1,000 is cut before sealing: " + J(r4.got && r4.got.addr && r4.got.addr.length));
     /* ---- 6 ---- */
     const most = await seal(pub, { v: 1, at: "2026-10-20T05:00:00.000Z", lat: -33.123456789, lng: -151.123456789, acc: 99999, src: "gps", link: "https://maps.app.goo.gl/" + "A".repeat(40),
-      label: "N".repeat(24), addr: "A".repeat(200) }, "salt-pin v1");
-    const unitOnly = await seal(pub, { v: 1, at: "2026-10-20T05:00:00.000Z", label: "N".repeat(24), addr: "A".repeat(200), src: "addr" }, "salt-pin v1");
+      label: "N".repeat(24), addr: "A".repeat(1000) }, "salt-pin v1");
+    const unitOnly = await seal(pub, { v: 1, at: "2026-10-20T05:00:00.000Z", label: "N".repeat(24), addr: "A".repeat(1000), src: "addr" }, "salt-pin v1");
     const t1 = await P.takePin({ product: "salt", pin: most }), t2 = await P.takePin({ product: "salt", pin: unitOnly });
     ok(most.ct.length <= P.PIN_MAX && P.pinShape(most) && P.pinShape(unitOnly) && t1.pin && t2.pin && !t1.code && !t2.code,
       "at the longest name and address the seal is under PIN_MAX, and the Worker takes both shapes: " + most.ct.length);
@@ -136,7 +136,7 @@ export async function run({ ok }) {
     ok(rows.some((t) => t.includes(W.EN["od.sealed"]) && t.includes(W.EN["od.sealedV"])), "an order whose spot is sealed says Spot or unit, Sealed under Details: " + J(rows));
     /* ---- 9 ---- */
     const F = await drive(); closeAll.push(F);
-    F.w.localStorage.setItem("salt-spots:" + U, J([{ id: "t1", label: "N".repeat(40), place: "Veloria", unit: "U".repeat(300) }]));
+    F.w.localStorage.setItem("salt-spots:" + U, J([{ id: "t1", label: "N".repeat(40), place: "Veloria", unit: "U".repeat(1200) }]));
     await startAt(F.d); F.d.querySelector('#osheet [data-k="mode:1"]').click();
     await wait(() => !!F.d.querySelector('#osheet [data-k="spot:0"]'));
     F.d.querySelector('#osheet [data-k="spot:0"]').click();
@@ -145,6 +145,6 @@ export async function run({ ok }) {
     F.d.getElementById("oGo").click(); F.d.getElementById("oPlace").click();
     await wait(() => F.posted.length > 0);
     const g9 = F.posted[0] && F.posted[0].pin ? await open(pair.privateKey, F.posted[0].pin, "salt-pin v1") : null;
-    ok(g9 && g9.src === "addr" && g9.addr === "U".repeat(200) && g9.label === "N".repeat(24), "an older saved spot ({place, unit}) picked from the list is read as an address, sealed and cut to what the step allows: " + J(g9 && [g9.label.length, (g9.addr || "").length]));
+    ok(g9 && g9.src === "addr" && g9.addr === "U".repeat(1000) && g9.label === "N".repeat(24), "an older saved spot ({place, unit}) picked from the list is read as an address, sealed and cut to what the step allows: " + J(g9 && [g9.label.length, (g9.addr || "").length]));
   } finally { await new Promise((r) => setTimeout(r, 80)); for (const x of closeAll) try { x.w.close(); } catch (e) { /* closed */ } }
 }

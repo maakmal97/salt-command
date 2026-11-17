@@ -1,0 +1,13 @@
+[
+ {"replace":"","find":"if('EW'.includes(a.h)&&'NS'.includes(b.h))[a,b]=[b,a];","name":"R1 degrees in the other order are not swapped","file":"stmt/place-link.js"},
+ {"replace":".some(v=>false)","find":".some(v=>v!=null&&+v>=60)","name":"R1 a minute of 60 or more reads","file":"stmt/place-link.js"},
+ {"replace":"if(p&&/,/.test(s))return {lat:p.lat,lng:p.lng,addr:null,src:'pin'};","find":"if(p)return {lat:p.lat,lng:p.lng,addr:null,src:'pin'};","name":"R2 two figures need a comma again","file":"stmt/place-link.js"},
+ {"replace":"if(false)lat-=res;","find":"if(REF[0]+res/2<lat&&lat-res>=-90)lat-=res;","name":"R3 a short code is not moved across the degree line","file":"stmt/place-link.js"},
+ {"replace":"return [la-90,ln-180];","find":"return [la-90+sa/2,ln-180+sn/2];","name":"R3 a code reads to its cell's corner","file":"stmt/place-link.js"},
+ {"replace":"const d=dmsPoint(s);if(d)return {lat:d.lat,lng:d.lng,addr:null,src:'dms'};","find":"const d=dmsPoint(s);if(d)return {lat:d.lat,lng:d.lng,addr:null,src:'pin'};","name":"R4 the Desk's reader differs from the copies","file":"master/salt_command.html"},
+ {"replace":"const k=km(p);if(k>far||far===Infinity){far=k;best=label;}","find":"const k=km(p);if(k<far){far=k;best=label;}","name":"L1 the farthest locality is chosen","file":"master/salt_command.html"},
+ {"replace":"const r=areaOf(lat,lng),d=r.district;if(!d)return 'Nowhere';","find":"const r=areaOf(lat,lng),d=r.district;if(!d)return null;","name":"L1 a point outside every district gets a locality","file":"master/salt_command.html"},
+ {"replace":"locality:function(){return null;},","find":"locality:localityFor,","name":"L1 Salt Admin's copy works out no locality","file":"stmt/maker-geo.js"},
+ {"replace":"","find":"if(locality.value.trim()&&locality.value!==auto) return;","name":"A1 a locality he typed is written over","file":"stmt/owner.js"},
+ {"replace":"","find":"where.addEventListener('change',function(){ clearTimeout(timer); fill(); });","name":"A1 a point put in Where is not told","file":"stmt/owner.js"}
+]

@@ -48775,6 +48775,11 @@ await (async () => {
   await (await import("./counter-c-spots.mjs")).run({ ok, pageWork });
 })();
 
+section("17 Nov 2026: one place field, degrees and plus codes read, the locality worked out from the point");
+await (async () => {
+  await (await import("./place-field.mjs")).run({ ok, pageWork });
+})();
+
 section("11 Nov 2026: Shop and Orders, and every new order asks collect or deliver");
 await (async () => {
   await (await import("./order-way-ask.mjs")).run({ ok, pageWork });
@@ -50420,8 +50425,8 @@ await (async () => {
       && admin.window.document.getElementById("vaultPass").value === "",
       "the one unlock opens Add ID, Amend ID and Place on the map together, and its password field is empty once it is read");
     const addFields = addId.querySelectorAll("input:not([type=radio])");
-    addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur";
-    addFields[2].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
+    addFields[0].value = "Amy"; addFields[2].value = "Kuala Lumpur";
+    addFields[1].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";   /* 17 Nov 2026: Where stands before Locality */
     /* 4 Nov 2026: the forms' sends are pressed by their acts; the one place field's Use my location now stands before them */
     addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the device-side Add ID encryption and Desk write finish");
@@ -50451,7 +50456,7 @@ await (async () => {
     ok(addId.querySelector("datalist")?.options.length > 100,
       "Counter Add ID provides the incumbent official locality choices rather than a free-text-only place field");
     tile(addId, "Role", "downstream");
-    addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "";
+    addFields[0].value = "Ari"; addFields[2].value = "Kuala Lumpur"; addFields[1].value = "";
     addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the downstream ID write finishes");
     tile(addId, "Role", "bucket");
@@ -50467,7 +50472,7 @@ await (async () => {
       "Counter Add ID offers no starting level and sends no tiers unless a starting % is chosen, and none for a downstream or a resale account");
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Change a name or place");
     const amendFields = amendId.querySelectorAll("input");
-    amendFields[0].value = "Ben"; amendFields[1].value = "Pudu";
+    amendFields[0].value = "Ben"; amendFields[2].value = "Pudu";
     amendId.querySelector('[data-act="record.amend-id.send"]').click();
     ok(await adminWork.quiet(), "the device-side Amend ID encryption and Desk write finish");
     const sentAmendId = adminCalls.find((call) => call.route === "/all/maker/inputs/amend-id");
@@ -50489,8 +50494,8 @@ await (async () => {
       && !JSON.stringify(sentPlacement.body).includes("Private Road"),
       "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
     const placeTexts = placement.querySelectorAll('input[type="text"]');
-    placeTexts[0].value = "Pudu";
-    placeTexts[1].value = "https://www.google.com/maps/place/Invented+Road/data=!3d3.234567!4d101.765432";
+    placeTexts[1].value = "Pudu";   /* 17 Nov 2026: Where stands before Locality */
+    placeTexts[0].value = "https://www.google.com/maps/place/Invented+Road/data=!3d3.234567!4d101.765432";
     placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the new device-side map filing settles");
     const newPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
@@ -50502,7 +50507,7 @@ await (async () => {
       && !JSON.stringify(newPlacement.body).includes("Invented Road")
       && !JSON.stringify(newPlacement.body).includes("3.234567"),
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
-    placeTexts[0].value = "Jalan Foo, Pudu";
+    placeTexts[1].value = "Jalan Foo, Pudu";
     placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the street-and-locality placement settles");
     const streetPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
@@ -50510,7 +50515,7 @@ await (async () => {
       && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo")),
       "a typed street, Locality files the matched locality and the phone keeps no street word");
     const placesBefore = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").length;
-    placeTexts[0].value = "Jalan Foo Cheras";
+    placeTexts[1].value = "Jalan Foo Cheras";
     placement.querySelector('[data-act="record.place.send"]').click();
     ok(await adminWork.quiet(), "the street-only placement settles");
     const cherasCalls = adminCalls.filter((call) => call.route === "/all/maker/inputs/place");
@@ -50521,7 +50526,7 @@ await (async () => {
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");
-    addFields[0].value = "Zora"; addFields[1].value = "Pudu"; addFields[2].value = "";
+    addFields[0].value = "Zora"; addFields[2].value = "Pudu"; addFields[1].value = "";
     addId.querySelector('[data-act="record.add-id.send"]').click();
     ok(await adminWork.quiet(), "the device CAS conflict returns without losing the form");
     const firstPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
@@ -50532,7 +50537,7 @@ await (async () => {
       html:landingPage("", "maker-reload-nonce", {master:"fixture-master",accounts:[]}),
       record:reloadRecord,transport:admin.window.fetch,pageWork});
     ok(firstPairInput?.body.pair.expectedRevision === 10 && addFields[0].value === "Zora"
-      && addFields[1].value === "Pudu" && devicePairRevision === 11,
+      && addFields[2].value === "Pudu" && devicePairRevision === 11,
       "Counter device sends one consistent names/places revision and retains its form after a stale CAS");
     const pairWritesBeforeReview = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length;
     addId.querySelector('[data-act="record.add-id.send"]').click();
