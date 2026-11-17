@@ -1,0 +1,4 @@
+[
+ {"name": "the cash way's label is the arrival word on a collected order", "file": "stmt/page.js", "find": "return {v:'cod', label:d?'pay.cashArrives':'pay.cashCollect',", "replace": "return {v:'cod', label:d?'pay.cashCollect':'pay.cashArrives',"},
+ {"name": "cash is offered on an account's own pay sheet", "file": "stmt/page.js", "find": "concat(c.kind==='order'&&!readyDue(oFind(c.id))?[cashWay()]:[])", "replace": "concat(!readyDue(oFind(c.id))?[cashWay()]:[])"}
+]
