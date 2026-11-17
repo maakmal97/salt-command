@@ -285,8 +285,8 @@ export async function run({ ok, pageWork }) {
       d.querySelector('#pOrder [data-row="' + order.id + '"]').click();
       await until(() => d.querySelector('#pOrder .oscreen[data-order="' + order.id + '"]'));
       const scr = d.querySelector('#pOrder .oscreen[data-order="' + order.id + '"]');
-      const h = scr ? [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/\s+/g, " ").trim()) : [];
-      ok(h.length >= 4 && /We moved your collection point to Point Z9$/.test(h[0])   /* 16 Nov 2026, the move to Ambient: the history is the system's Journal, the newest first */ && !h.some((x) => /point moved to/.test(x)),
+      const h = scr ? [...scr.querySelectorAll('[data-hist]')].map((li) => li.textContent.replace(/\s+/g, " ").trim()) : [];
+      ok(h.length >= 4 && /We moved your collection point to Point Z9$/.test(h[0])   /* 16 Nov 2026, the move to Ambient: the history is a fold of lines, the newest first; 17 Nov 2026 (the third red fix): each line is p[data-hist] */ && !h.some((x) => /point moved to/.test(x)),
         "their page words his Change point as a line of its own, in their words, never the desk's note: " + JSON.stringify(h));
     } finally { w.close(); }
   }
