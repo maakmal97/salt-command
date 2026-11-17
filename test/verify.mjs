@@ -43059,7 +43059,8 @@ await (async () => {
     const read = () => {
       const pp = D.getElementById("pPrices"), sn = D.getElementById("stageNote"), kn = D.querySelector("#pOrder .ohold .amb-tile__delta");
       return { note: sn ? sn.textContent : null, hold: /Please pay the overdue amount/.test((D.getElementById("payHead") || {}).textContent || ""),
-        prices: pp ? pp.textContent.replace(/\s+/g, " ").trim() : "", hpart: D.querySelectorAll("#hComing .hpart").length, payNow: !!D.getElementById("payNow"),
+        prices: pp ? pp.textContent.replace(/\s+/g, " ").trim() : "", hpart: D.querySelectorAll("#hComing [data-part]").length,   /* 17 Nov 2026, the move to Ambient (the third red fix): a coming part is a row marked data-part */
+         payNow: !!D.getElementById("payNow"),
         odNote: kn ? kn.textContent : "", holdP: /prices stay open/.test(D.getElementById("pOrder").textContent),
         /* V5 (his answer of 29 Sep 2026): greyed out and out of reach, never taken away */
         grey: ["hNeeds", "hComing", "hAgain"].map((id) => { const n = D.getElementById(id); return !!n && n.classList.contains("lockd") && n.hasAttribute("inert"); }).join(),

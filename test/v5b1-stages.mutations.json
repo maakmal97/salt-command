@@ -1,0 +1,6 @@
+[
+ {"name": "a locked account's Home is not greyed", "file": "stmt/page.js", "find": "n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });\n    liveShow();", "replace": "n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });\n    liveShow();"},
+ {"name": "a locked account's Rewards is not greyed", "file": "stmt/page.js", "find": "if(assoc&&rewardsEl) grey(rewardsEl,locked); }", "replace": "}"},
+ {"name": "the prices are never hidden", "file": "stmt/page.js", "find": "hidePrices=st>=2; locked=st>=3;", "replace": "hidePrices=false; locked=st>=3;"},
+ {"name": "the account is never locked", "file": "stmt/page.js", "find": "hidePrices=st>=2; locked=st>=3;", "replace": "hidePrices=st>=2; locked=false;"}
+]
