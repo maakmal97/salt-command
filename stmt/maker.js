@@ -26,6 +26,7 @@ import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } fro
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours, openMinutes, plainWeek, openParts } from "./hours.js";
 import { slotSpan, WINDOWS } from "./window.js";
 import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
+import { MAINT_KEY, maintSet, maintOf } from "./maintenance.js";
 import { readPin, takePin, keepPin } from "./pin.js";
 import { slipPub } from "./slip.js";
 import { wakeCustomer } from "./push.js";
@@ -196,15 +197,18 @@ async function rawConfirm(env) {
   try { return (await env.STMT.get(CONFIRM_KEY, "json")) || null; } catch (e) { return null; }
 }
 async function readHours(env) {
-  const value = await env.STMT.get(HOURS_KEY, "json"), confirm = await rawConfirm(env);
-  if (!value) return { config: null, status: hoursStatus(null), confirm };
+  const value = await env.STMT.get(HOURS_KEY, "json"), confirm = await rawConfirm(env), maint = await readMaint(env);
+  if (!value) return { config: null, status: hoursStatus(null), confirm, maint };
   if (value.schedule != null) {
     const schedule = validateWeeklyHours(value.schedule);
     if (schedule.error) throw new TypeError("Stored operating hours are invalid: " + schedule.error);
     /* 20 Oct 2026: a dated day that has passed is pruned from what is read, and from the store at the next write */
-    return { config: Object.assign({}, value, { schedule: plainWeek(schedule, Date.now()) }), status: hoursStatus(value), confirm };
+    return { config: Object.assign({}, value, { schedule: plainWeek(schedule, Date.now()) }), status: hoursStatus(value), confirm, maint };
   }
-  return { config: value, status: hoursStatus(value), confirm };
+  return { config: value, status: hoursStatus(value), confirm, maint };
+}
+async function readMaint(env) {
+  try { return maintOf(await env.STMT.get(MAINT_KEY, "json")); } catch (e) { return null; }
 }
 
 /* 20 Oct 2026 (his answer, Fable's design): WHAT CUSTOMERS WOULD SEE on a week not yet saved, from the one rule and nothing else: the
@@ -235,7 +239,7 @@ async function makerHours(request, env, method) {
       return json({ ok: true, preview: hoursPreview(plainWeek(week, now), held && held.manual, now) });
     }
     const result = await readHours(env);
-    return json({ ok: true, config: result.config, status: result.status, confirm: result.confirm });
+    return json({ ok: true, config: result.config, status: result.status, confirm: result.confirm, maint: result.maint });
   }
   if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const parsed = await bodyOf(request);
@@ -246,21 +250,21 @@ async function makerHours(request, env, method) {
     const next = Object.assign({}, current.config || {});
     delete next.manual;
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
-    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
+    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm, maint: current.maint });
   }
   if (Object.keys(body).length === 1 && body.manual && typeof body.manual === "object") {
     const manual = validateManualHours(body.manual);
     if (manual.error) return json({ ok: false, error: manual.error }, 400);
     const next = Object.assign({}, current.config || {}, { manual });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
-    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
+    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm, maint: current.maint });
   }
   if (Object.keys(body).length === 1 && body.schedule) {
     const now = Date.now(), schedule = validateWeeklyHours(body.schedule, now);
     if (schedule.error) return json({ ok: false, error: schedule.error }, 400);
     const next = Object.assign({}, current.config || {}, { schedule: plainWeek(schedule, now) });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
-    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
+    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm, maint: current.maint });
   }
   return json({ ok: false, error: "Set a weekly schedule, a temporary open/closed override, or clear the override." }, 400);
 }
@@ -279,6 +283,25 @@ async function makerPoints(request, env, method) {
   if (next.error) return json({ ok: false, error: next.error }, 400);
   await env.STMT.put(POINTS_KEY, JSON.stringify(next));
   return json({ ok: true, points: next, examples: EXAMPLE_POINTS });
+}
+
+/* 17 Nov 2026, his word: HIS MAINTENANCE SWITCH, under Shop hours. POST {until} puts the Counter under maintenance at once until that time
+   (stmt/maintenance.js maintSet: later than now, within 90 days), POST {off: true} lifts it at once; GET reads it. Written here directly, as the
+   hours are; the key lapses a day after its time, and the guard ignores it once that time has passed. Salt Admin (/all) is never held. */
+async function makerMaint(request, env, method) {
+  if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
+  if (method === "GET") return json({ ok: true, maint: await readMaint(env) });
+  if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const parsed = await bodyOf(request);
+  if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+  if (parsed.body.off === true && Object.keys(parsed.body).length === 1) {
+    await env.STMT.delete(MAINT_KEY);
+    return json({ ok: true, maint: null });
+  }
+  const next = maintSet(parsed.body);
+  if (next.error) return json({ ok: false, error: next.error }, 400);
+  await env.STMT.put(MAINT_KEY, JSON.stringify(next), { expiration: Math.ceil(Date.parse(next.until) / 1000) + 86400 });
+  return json({ ok: true, maint: next });
 }
 
 /* 13 Nov 2026, the price band's version 3: HIS CALENDAR OF MARKS (stmt/calendar.js). GET reads the list; POST {add: {name, from, to}} or {remove: id} stands at once, no Approve (it prices nothing). */
@@ -405,6 +428,7 @@ function internalOperation(path) {
   if (withdrawal) return { kind: "queue-withdraw", id: withdrawal[1] };
   if (path === "/all/maker/hours") return { kind: "hours" };
   if (path === "/all/maker/points") return { kind: "points" };
+  if (path === "/all/maker/maintenance") return { kind: "maintenance" };
   if (path === "/all/maker/calendar") return { kind: "calendar" };
   if (path === "/all/maker/inputs") return { kind: "inputs" };
   if (path === "/all/maker/vault") return { kind: "vault" };
@@ -624,6 +648,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
     }
     if (op.kind === "hours") return await makerHours(request, env, method);
     if (op.kind === "points") return await makerPoints(request, env, method);
+    if (op.kind === "maintenance") return await makerMaint(request, env, method);
     if (op.kind === "calendar") return await makerCalendar(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
        Close. Close is the order book's first (each joiner told once), then each joined order is previewed and accepted through

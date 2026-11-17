@@ -39,12 +39,38 @@ export function backWords(until, now) {
   return fill(EN["maint.on"], { d: u.day + " " + EN["mon3"].split(" ")[+u.month - 1] + " " + u.year, t });
 }
 
-export function maintenance(request, env, machine = MACHINE, now = Date.now()) {
-  const until = Date.parse(String((env && env.MAINTENANCE_UNTIL) || "").trim());
-  if (!Number.isFinite(until) || now >= until) return null;
+/* 17 Nov 2026, his word: HIS SWITCH ON SALT ADMIN (Shop, Hours). Counter KV `maint` holds {until}, an ISO UTC time with no milliseconds, written
+   and cleared by /all/maker/maintenance (stmt/maker.js) and read by the Worker for any request the guard would hold, so it stands at once with no
+   deploy and lifts by itself at that time, as MAINTENANCE_UNTIL does. Where both are set, the later holds. */
+export const MAINT_KEY = "maint";
+export const MAINT_DAYS = 90;
+const isoMin = (t) => new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z");
+/* what he sends: {until} later than now and within MAINT_DAYS; the answer is the record to file, or {error} */
+export function maintSet(body, now = Date.now()) {
+  const keys = body && typeof body === "object" ? Object.keys(body) : [];
+  if (keys.length !== 1 || keys[0] !== "until" || typeof body.until !== "string") return { error: "Send only when it is back." };
+  const t = Date.parse(body.until.trim());
+  if (!Number.isFinite(t) || !/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d(\.\d{1,3})?)?(Z|[+-]\d\d:\d\d)$/.test(body.until.trim())) return { error: "Choose when it is back." };
+  if (t <= now + 60000) return { error: "Choose a time later than now." };
+  if (t > now + MAINT_DAYS * 86400000) return { error: "Choose a time within " + MAINT_DAYS + " days." };
+  return { until: isoMin(Math.ceil(t / 60000) * 60000) };
+}
+/* the record as it stands: {until} while it is ahead, else null */
+export function maintOf(value, now = Date.now()) {
+  const t = Date.parse(String((value && value.until) || ""));
+  return Number.isFinite(t) && t > now ? { until: isoMin(t) } : null;
+}
+/* a request the guard never holds: the machine routes, whose real check is downstream */
+export function exempt(request, machine = MACHINE) {
   const p = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
-  if (machine.paths.includes(p) || machine.prefixes.some((x) => p.startsWith(x))
-    || machine.headers.some((h) => request.headers.get(h))) return null;
+  return machine.paths.includes(p) || machine.prefixes.some((x) => p.startsWith(x)) || machine.headers.some((h) => request.headers.get(h));
+}
+
+export function maintenance(request, env, machine = MACHINE, now = Date.now(), switched = "") {
+  const at = (x) => { const t = Date.parse(String(x || "").trim()); return Number.isFinite(t) ? t : -Infinity; };
+  const until = Math.max(at(env && env.MAINTENANCE_UNTIL), at(switched));
+  if (!(until > now)) return null;
+  if (exempt(request, machine)) return null;
   const head = { "retry-after": String(Math.max(1, Math.ceil((until - now) / 1000))), "cache-control": "no-store" };
   if (/text\/html/i.test(request.headers.get("accept") || ""))
     return new Response(page(String((env && env.MAINTENANCE_TEXT) || "").trim() || backWords(until, now)), { status: 503, headers: { ...head,

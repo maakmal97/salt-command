@@ -45,7 +45,7 @@ import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
 import { ADMIN_SW_JS } from "./admin-sw.js";
 import { identity } from "./access.js";
-import { maintenance } from "./maintenance.js";
+import { maintenance, exempt, MAINT_KEY } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
@@ -1822,7 +1822,13 @@ async function testCustomer(request, env, ctx, url, q, m) {
 
 const worker = {
   async fetch(request, env, ctx) {
-    const held = maintenance(request, env);
+    /* 17 Nov 2026: his switch (stmt/maintenance.js) is read only for a request the guard would hold, and never for the test surface's own roads,
+       which his page drives while customers are held */
+    let switched = "";
+    if (env && env.STMT && !TEST_REQ.has(request) && !exempt(request)) {
+      try { const v = await env.STMT.get(MAINT_KEY, "json"); switched = (v && v.until) || ""; } catch (e) { switched = ""; }
+    }
+    const held = TEST_REQ.has(request) ? null : maintenance(request, env, undefined, Date.now(), switched);
     if (held) return held;
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");

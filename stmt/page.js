@@ -3051,6 +3051,8 @@ const CLIENT_JS = `
        caller says whatever the answer's error is, which is a pointer to them */
     if(r.status===401&&session){ lapsed(); return {status:401, body:keptMine()?{ok:false, said:'x.notSent', lost:true}:{ok:false, said:'lapse.notSent'}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
+    /* 17 Nov 2026: put under maintenance while this page is open, it opens again on the maintenance page, which says when it is back */
+    if(r.status===503&&j&&j.error==='maintenance'){ location.reload(); return {status:503, body:{ok:false, said:'x.later'}}; }
     return {status:r.status, body:busyOr(r.status,j)||{}};
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
