@@ -16,7 +16,8 @@ export async function run({ ok }) {
   const { JSDOM } = await import("jsdom");
   const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
   const until = async (f, n = 300) => { for (let i = 0; i < n && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return !!f(); };
-  const iso = (m) => new Date(Date.now() - m * 60e3).toISOString();
+  const NOW = Date.UTC(2026, 10, 17, 4, 0, 0);
+  const iso = (m) => new Date(NOW - m * 60e3).toISOString();
   const answer = (status, j) => ({ ok: status < 300, status, json: async () => j });
   const ord = (id, x) => Object.assign({ id, product: "salt", qty: 1, unit: 100, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed",
     at: iso(300), history: [{ at: iso(300), status: "placed", by: "customer" }], msgs: [] }, x);
@@ -32,6 +33,11 @@ export async function run({ ok }) {
   const open = async ({ orders, width }) => {
     const dom = new JSDOM(P.landingPage(u, "n17", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      const NativeDate = win.Date;
+      win.Date = class extends NativeDate {
+        constructor(...args) { super(...(args.length ? args : [NOW])); }
+        static now() { return NOW; }
+      };
       Object.defineProperty(win, "innerWidth", { value: width, configurable: true, writable: true });
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
       win.fetch = async (path, init) => {

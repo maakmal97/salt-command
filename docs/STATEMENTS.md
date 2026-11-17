@@ -2870,6 +2870,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.restore-card` | Links, a withdrawn link's card (key: the link id) | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
+| `maint.switch` | Shop, Hours, Maintenance under Now | Turns maintenance on or off; when turning it on, opens the return-time field. |
 | `more.test-accounts` | Shop, Practice, Practice accounts | The Switch: on makes the missing test accounts; off deletes all three once its Sheet is answered Remove. |
 | `more.test-password` | Shop, Practice, while any is made | Copies the test accounts' one password. |
 | `vault.switch` | Shop, This device, Show names | On asks for the password in the one Sheet; off locks names, places and slips again. |

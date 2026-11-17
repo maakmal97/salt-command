@@ -80,8 +80,8 @@
  {
   "name": "the machine route /all is held",
   "file": "stmt/maintenance.js",
-  "find": "if (machine.paths.includes(p) || machine.prefixes",
-  "replace": "if (machine.prefixes"
+  "find": "return machine.paths.includes(p) || machine.prefixes.some((x) => p.startsWith(x))",
+  "replace": "return machine.prefixes.some((x) => p.startsWith(x))"
  },
  {
   "name": "the heading names the app",

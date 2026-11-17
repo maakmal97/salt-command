@@ -19260,13 +19260,16 @@ await (async () => {
   const senv = { STMT: kv, STMT_MASTER: "mp-p5-53" };
   const open = (body) => watch(kv, async () => (await W.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
     headers: { "content-type": "application/json", "CF-Connecting-IP": IP }, body: JSON.stringify(body) }), senv)).status);
-  const firstRound = (log) => log.filter((e) => e.after === 0).map((e) => e.k).sort();
   const four = ["fail:" + IP + ":" + un, "ipfail:" + IP, "mfail:" + IP, "u:" + un].sort();
   const bad = await open({ u: un, password: "zzzz-zzzz-zzzz-zzzz" });
-  ok(bad.out === 401 && JSON.stringify(firstRound(bad.log)) === JSON.stringify(four) && bad.peak >= 4
+  const maintenanceRead = bad.log.filter((e) => e.k === "maint"), brakes = bad.log.filter((e) => four.includes(e.k));
+  ok(bad.out === 401 && maintenanceRead.length === 1 && maintenanceRead[0].after === 0
+    && brakes.length === four.length && JSON.stringify(brakes.map((e) => e.k).sort()) === JSON.stringify(four)
+    && new Set(brakes.map((e) => e.after)).size === 1 && brakes[0].after === 1 && bad.peak >= 4
     && kv.m.get("fail:" + IP + ":" + un) === "1" && kv.m.get("ipfail:" + IP) === "1" && !kv.m.has("mfail:" + IP),
-    "a wrong password reads the address's count, the record, the override's count and the account's count at once, then is refused and counted as before: "
-    + JSON.stringify({ status: bad.out, first: firstRound(bad.log), peak: bad.peak, fail: kv.m.get("fail:" + IP + ":" + un), ip: kv.m.get("ipfail:" + IP) }));
+    "maintenance is checked first; a wrong password still reads the four brakes at once, then is refused and counted as before: "
+    + JSON.stringify({ status: bad.out, maintenance: maintenanceRead.map((e) => e.after), brakes: brakes.map((e) => [e.k, e.after]), peak: bad.peak,
+      fail: kv.m.get("fail:" + IP + ":" + un), ip: kv.m.get("ipfail:" + IP) }));
   const good = await open({ u: un, password: pw });
   ok(good.out === 200 && !kv.m.has("fail:" + IP + ":" + un),
     "and the right password still opens, clearing the account's count: " + JSON.stringify({ status: good.out }));

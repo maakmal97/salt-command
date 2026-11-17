@@ -60,6 +60,9 @@ export async function run({ ok, pageWork }) {
     && (body.includes('<p class="amb-hero__sub">Back at ' + at + "</p>") || body.includes(" at " + at + "</p>"))
     && js.status === 503 && (await js.text()) === '{"ok":false,"error":"maintenance"}',
     "on the switch alone the Worker holds a customer's page, saying when it is back, and a customer's request: " + JSON.stringify(body.replace(/<style>[\s\S]*?<\/style>/, "").slice(-120)));
+  const opening = await go("/open", { accept: "application/json" });
+  ok(opening.status === 503 && (await opening.text()) === '{"ok":false,"error":"maintenance"}',
+    "the switch also holds the customer's sign-in and statement road");
   log.length = 0;
   const adminHeld = await held("/all", {}) || await held("/all/maker/hours", {}) || await held("/x", { "x-stmt-desk": "k" });
   ok(!adminHeld && !log.includes("maint"), "Salt Admin and the Desk's roads are never held, and the switch is not read for them: " + JSON.stringify(log));
