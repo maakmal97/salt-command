@@ -24069,10 +24069,12 @@ await (async () => {
     ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with its Rewards place");
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    const pane = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape); return h ? h.closest(".pane") : null; };
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a book's pane is div.hprod, headed by its reward row (data-reward-book) or, with none, by h3.hbook named by the shape */
+    const OF = { Cube: "salt", Droplet: "oil", Capsule: "rice" };
+    const pane = (shape) => [...pCard.querySelectorAll(".hprod")].find((x) => x.querySelector('[data-reward-book="' + OF[shape] + '"]') || x.querySelector('h3.hbook[aria-label="' + shape + '"]')) || null;
     ok(await until(() => pane("Cube") && pane("Droplet") && pane("Capsule")), "a pane for every book on the card, the tiered and the rest");
-    const look = (p) => ({ progress: p.querySelectorAll("ul.conf li").length, lines: p.querySelectorAll("tbody tr").length,
-      meter: p.querySelectorAll(".rmeter").length, reward: [...p.querySelectorAll("p.sub2")].filter((x) => /^Reward: /.test(x.textContent)).length });
+    const look = (p) => ({ progress: p.querySelectorAll(".amb-settings__list li").length, lines: p.querySelectorAll("tbody tr").length,
+      meter: p.querySelectorAll("progress.amb-meter").length, reward: p.querySelectorAll("[data-reward-book]").length });
     const salt = look(pane("Cube")), oil = look(pane("Droplet")), rice = look(pane("Capsule"));
     ok(salt.progress === 5 && salt.reward === 1 && salt.meter === 1,
       "salt's pane carries its progress, its reward line and its Meter: " + JSON.stringify(salt));

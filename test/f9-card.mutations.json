@@ -1,0 +1,6 @@
+[
+ {"name": "the card draws no meter on the reward row", "file": "stmt/page.js", "find": "if(pc!=null) rr.appendChild(hMeter(pc));", "replace": ""},
+ {"name": "a book with no reward is not headed by its mark", "file": "stmt/page.js", "find": "if(!led){ var h3=el('h3','hbook');", "replace": "if(false){ var h3=el('h3','hbook');"},
+ {"name": "a book with no reward is given a reward row", "file": "stmt/page.js", "find": "var rw=p.reward, led=false;", "replace": "var rw=p.reward||{earned:0,taken:0,left:0,next:0.1,held:false}, led=false;"},
+ {"name": "the progress list drops its people row", "file": "stmt/page.js", "find": "       [tw('rew.people'),String(sm.referred||0)]].forEach", "replace": "       ].forEach"}
+]
