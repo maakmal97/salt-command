@@ -819,8 +819,9 @@ on sends `{until}` to `/all/maker/maintenance`, which files `{until}` (rounded u
 Desk hop: the Worker reads `maint` for every request the guard would hold (never for `/all`, the machine routes or the test surface's own roads) and
 holds it exactly as `MAINTENANCE_UNTIL` does, the page saying when it is back; where both stand, the later holds, and either lifts by itself at its time.
 The hours read carries it as `maint`, so the bar's chip says Maintenance and Needs you carries its FYI card (`w:maint`) while it stands. A customer's
-page already open, answered `maintenance`, reloads onto the maintenance page (`api` in `stmt/page.js`). KV is read at the edge, so a phone elsewhere
-may take up to a minute to see a change. `test/admin-maintenance.mjs`, its mutations in `test/admin-maintenance.mutations.json`.
+page already open, answered `maintenance`, reloads onto the maintenance page (`api` in `stmt/page.js`), once a minute at most (sessionStorage `salt-maint-reload`), so a page the edge still
+serves open never reloads in a loop. A switch that cannot be read (KV failing) holds that request for a minute on the same page, never a raw error
+and never open (18 Nov 2026). KV is read at the edge, so a phone elsewhere may take up to a minute to see a change. `test/admin-maintenance.mjs`, its mutations in `test/admin-maintenance.mutations.json`.
 
 **The shut page and the site's 404 stand on one Ambient shell in Slate** (`onePage` in `stmt/page.js`: a hero holding one `h1` and one line, from
 `shut.*` and `nf.*` in the table; the ring over them went on 16 Nov 2026 with the door's, see Place E below). Both follow the device and run no script, under the guest board's policy (`guestHtml`: `default-src 'none'`, styles by nonce,

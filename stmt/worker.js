@@ -1826,8 +1826,11 @@ const worker = {
        which his page drives while customers are held */
     let switched = "";
     if (env && env.STMT && !TEST_REQ.has(request) && !exempt(request)) {
-      const v = await env.STMT.get(MAINT_KEY, "json");
-      switched = (v && v.until) || "";
+      /* 18 Nov 2026: a switch that cannot be read holds this request for a minute on the maintenance page, never a raw error and never open */
+      try {
+        const v = await env.STMT.get(MAINT_KEY, "json");
+        switched = (v && v.until) || "";
+      } catch (e) { switched = new Date(Date.now() + 60000).toISOString(); }
     }
     const held = TEST_REQ.has(request) ? null : maintenance(request, env, undefined, Date.now(), switched);
     if (held) return held;

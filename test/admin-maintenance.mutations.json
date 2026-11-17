@@ -5,7 +5,8 @@
  {"name":"the hours read does not carry the switch","file":"stmt/maker.js","find":"confirm: result.confirm, maint: result.maint });","replace":"confirm: result.confirm });"},
  {"name":"the test surface reaches the switch","file":"stmt/maker.js","find":"calendar: [\"GET\", \"POST\"] };","replace":"calendar: [\"GET\", \"POST\"], maintenance: [\"POST\"] };"},
  {"name":"the Worker does not read the switch","file":"stmt/worker.js","find":"switched = (v && v.until) || \"\";","replace":"switched = \"\";"},
- {"name":"a failed KV read lets the Counter open","file":"stmt/worker.js","find":"const v = await env.STMT.get(MAINT_KEY, \"json\");","replace":"const v = await env.STMT.get(MAINT_KEY, \"json\").catch(() => null);"},
+ {"name":"a failed KV read lets the Counter open","file":"stmt/worker.js","find":"catch (e) { switched = new Date(Date.now() + 60000).toISOString(); }","replace":"catch (e) { switched = \"\"; }"},
+ {"name":"a failed KV read is a raw error","file":"stmt/worker.js","find":"catch (e) { switched = new Date(Date.now() + 60000).toISOString(); }","replace":"catch (e) { throw e; }"},
  {"name":"the Worker reads the switch for Salt Admin","file":"stmt/worker.js","find":"!TEST_REQ.has(request) && !exempt(request)) {","replace":"!TEST_REQ.has(request)) {"},
  {"name":"the switch wins over a later MAINTENANCE_UNTIL","file":"stmt/maintenance.js","find":"Math.max(at(env && env.MAINTENANCE_UNTIL), at(switched))","replace":"(at(switched) > -Infinity ? at(switched) : at(env && env.MAINTENANCE_UNTIL))"},
  {"name":"a passed time still holds","file":"stmt/maintenance.js","find":"if (!(until > now)) return null;","replace":"if (until === -Infinity) return null;"},
@@ -17,5 +18,6 @@
  {"name":"off sends nothing","file":"stmt/owner.js","find":"refs('/all/maker/maintenance',{off:true})","replace":"Promise.resolve({maint:null})"},
  {"name":"the bar's chip does not say Maintenance","file":"stmt/owner.js","find":"txt='Maintenance'+(mw?' to '+mw:'');","replace":"txt='Open'+(mw?' to '+mw:'');"},
  {"name":"Needs you carries no card","file":"stmt/owner.js","find":"    if(maintUntil()) L.push(maintNeed(maintUntil()));\n","replace":""},
- {"name":"an open page does not open again","file":"stmt/page.js","find":"location.reload(); return {status:503","replace":"return {status:503"}
+ {"name":"an open page does not open again","file":"stmt/page.js","find":"if(kept) location.reload(); }","replace":"}"},
+ {"name":"an open page opens again on every answer","file":"stmt/page.js","find":"if(Date.now()-mr>60000){ try{ sessionStorage.setItem('salt-maint-reload'","replace":"if(true){ try{ sessionStorage.setItem('salt-maint-reload'"}
 ]

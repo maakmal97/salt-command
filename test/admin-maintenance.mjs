@@ -66,9 +66,13 @@ export async function run({ ok, pageWork }) {
   log.length = 0;
   const adminHeld = await held("/all", {}) || await held("/all/maker/hours", {}) || await held("/x", { "x-stmt-desk": "k" });
   ok(!adminHeld && !log.includes("maint"), "Salt Admin and the Desk's roads are never held, and the switch is not read for them: " + JSON.stringify(log));
-  const readFailure = await Worker.fetch(req("/", { accept: "text/html" }), { STMT: { get: async () => { throw new Error("KV unavailable"); } } }, {})
-    .then(() => false, (error) => error.message === "KV unavailable");
-  ok(readFailure, "a failed read of the switch is surfaced, never treated as maintenance being off");
+  const broken = { STMT: { get: async () => { throw new Error("KV unavailable"); } } };
+  const failPage = await Worker.fetch(req("/", { accept: "text/html" }), broken, {}).catch((error) => ({ status: 0, thrown: error.message }));
+  const failBody = failPage.status === 503 ? await failPage.text() : "";
+  const failRetry = failPage.status === 503 ? +failPage.headers.get("retry-after") : -1;
+  ok(failPage.status === 503 && failRetry >= 1 && failRetry <= 60 && failBody.includes('<h1 class="amb-hero__title">Under maintenance</h1>'),
+    "a switch that cannot be read holds the request for a minute on the maintenance page, never a raw error and never open: "
+    + JSON.stringify({ status: failPage.status, thrown: failPage.thrown, retry: failRetry }));
   const envLater = { STMT, MAINTENANCE_UNTIL: new Date(Date.now() + 5 * 3600e3).toISOString().replace(/\.\d{3}Z$/, "Z") };
   const envSooner = { STMT, MAINTENANCE_UNTIL: new Date(Date.now() + 600e3).toISOString().replace(/\.\d{3}Z$/, "Z") };
   const later = await go("/orders", { accept: "application/json" }, envLater), sooner = await go("/orders", { accept: "application/json" }, envSooner);
@@ -170,5 +174,8 @@ export async function run({ ok, pageWork }) {
     st.maint = true;
     const reloaded = await until(() => st.navs > before);
     ok(in1 && before === 0 && reloaded, "a customer's page already open, answered maintenance, opens again on the maintenance page: " + JSON.stringify({ in1, before, navs: st.navs }));
+    /* the page here never really reloads, so it keeps asking and keeps being answered maintenance */
+    await new Promise((r) => setTimeout(r, 600));
+    ok(reloaded && st.navs === before + 1, "and it opens again once, not on every answer after: " + JSON.stringify({ navs: st.navs }));
   } finally { dom.window.close(); }
 }
