@@ -111,6 +111,11 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .apoints-found { margin: 0; }
 /* the form's status and the mood of a read-only row */
 .amb-setting__name.anow-title[data-now="open"] { color: var(--amb-pos); }
+/* 18 Nov 2026: a setting under Now that holds a field (Closed until, Back at): its name keeps one line, and the field takes the rest of the row
+   or, where the two do not fit side by side, the line under it */
+#makerNowCard label.amb-setting:has(> .amb-input) { flex-wrap: wrap; }
+#makerNowCard label.amb-setting:has(> .amb-input) > .amb-setting__name { flex: 0 0 auto; white-space: nowrap; }
+#makerNowCard label.amb-setting > .amb-input { flex: 1 1 208px; width: auto; min-width: 208px; }
 .codeline__code { font-family: var(--amb-font-mono); white-space: nowrap; }
 /* the menu's lists stand in the stack's rhythm */
 #makerMenu, #makerMenu > [data-in] { display: grid; gap: var(--amb-pane-gap); min-width: 0; }
