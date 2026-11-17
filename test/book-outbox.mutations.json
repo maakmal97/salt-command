@@ -234,9 +234,27 @@
   "replace": "if (draining) { drainAgain = true; return draining; }"
  },
  {
-  "name": "a forced pass follows rows",
+  "name": "the forced pass follows no row again",
   "file": "src/orders.js",
-  "find": "const { followed, failed } = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid }, at);",
-  "replace": "const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid }, at);"
+  "find": "  const fr = await followRows(env, r.orders, { byKey, rows, byRid }, at, { solo: !!opts.force });",
+  "replace": "  const fr = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid }, at, { solo: !!opts.force });"
+ },
+ {
+  "name": "a key the site refuses fails the forced pass",
+  "file": "src/orders.js",
+  "find": "  const followed = fr.followed, failed = opts.force ? [] : fr.failed;",
+  "replace": "  const followed = fr.followed, failed = fr.failed;"
+ },
+ {
+  "name": "the forced pass weighs groups too",
+  "file": "src/orders.js",
+  "find": "    if (solo) { for (const o of os) sharing.add(o.id); continue; }",
+  "replace": "    if (false) { for (const o of os) sharing.add(o.id); continue; }"
+ },
+ {
+  "name": "the forced pass moves a group's members as singles",
+  "file": "src/orders.js",
+  "find": "    if (solo) { for (const o of os) sharing.add(o.id); continue; }",
+  "replace": "    if (solo) { continue; }"
  }
 ]

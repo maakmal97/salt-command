@@ -2102,7 +2102,11 @@ function sharedOk(os, k, orders, idx) {
   const nk = PE.ovKey(hits[0]);
   return orders.some((o) => ledgerKeyOf(o) === nk) ? null : nk;
 }
-async function followRows(env, orders, idx, at) {
+/* 17 Nov 2026 (his word, "Can it be instant?"): `solo` is the drain after his tap (tellSite's force). Since the flip of 10 Nov 2026 his Approve books the row in the
+   Book at once, so an order follows the row its approved amendment names (by rid) in that same pass, within seconds; a close or re-date already named its key when it was
+   queued, and a row found without a rid (strayRow) or behind a close not yet compacted still waits for `landed`, as in the regular pass. A group of orders sharing one row
+   is left to the minute pass alone, its members held out of the singles too (Fable, 28 Oct and 17 Nov 2026: two passes at once could split a group). Two passes following one single order write the same key, so the minute pass stays the net. */
+async function followRows(env, orders, idx, at, { solo = false } = {}) {
   const plan = [], failed = [], amended = new Map(), miss = new Set();
   for (const o of orders) if (o.code && ledgerKeyOf(o) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);
   try {
@@ -2122,6 +2126,7 @@ async function followRows(env, orders, idx, at) {
   }
   for (const [k, os] of groups) {
     if (os.length < 2 || !sharedOk(os, k, orders, idx)) continue;
+    if (solo) { for (const o of os) sharing.add(o.id); continue; }   /* the forced pass moves no member of a group, alone or together: the regular pass weighs it whole (Fable, 17 Nov 2026) */
     const nk = sharedOk(os, k, orders, idx), row = idx.byKey.get(nk);
     let landed = true;
     for (const o of os) { const a = await orderInFlight(env, o, at) ? null : await fate(env, o.queued && o.queued.ack, at); if (!a || !(a.landed || a.status === "rejected")) { landed = false; break; } }   /* landed, or rejected: no row of its own is to come (s218's pair) */
@@ -2211,9 +2216,12 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   const byKey = new Map(), rows = new Map(), byRid = new Map();
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); rows.set(k, (rows.get(k) || 0) + 1); if (s.rid) byRid.set(s.rid, s); }
   const at = boundOf(book);   /* the flight checks take the bound of THIS book */
-  /* S6 (Fable, 28 Oct 2026): a forced pass leaves `followRows` to the regular pass. A shared group moved onto its row by two passes at once, one of which fails on a member, would split for good; and an order only
-     follows a row whose entry has landed in git (`landed`), which a tapped row has not, so the forced pass could follow nothing anyway. */
-  const { followed, failed } = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid }, at);
+  /* S6 (Fable, 28 Oct 2026): a forced pass left `followRows` to the regular pass, since a shared group moved onto its row by two passes at once, one of which fails on a member,
+     would split for good, and a tapped row had not landed in git. 17 Nov 2026 (his word): with the Book the source a tapped row is on the book read here, and an amendment names
+     its row by rid (AMENDS), so the forced pass follows single orders now (`solo`) and leaves the groups to the regular pass. What it could not follow is the regular pass's to
+     try again and report (TOLD_FAILED), never a fault of the outbox's rows, which would then wait on it */
+  const fr = await followRows(env, r.orders, { byKey, rows, byRid }, at, { solo: !!opts.force });
+  const followed = fr.followed, failed = opts.force ? [] : fr.failed;
   /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
   const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows));
   const fixedDone = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {};

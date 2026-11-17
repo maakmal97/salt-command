@@ -2,7 +2,8 @@
  * (test/book-outbox.mutations.json):
  *   1  the Book's outbox: a tap that books a sale or an amendment leaves one row in the same transaction; a count, a purchase, a tap seen again and a refused tap leave none; rows are
  *      marked sent or tried by the verbs, which check their body; nothing moves the revision; the export carries the rows; the recovery test's object answers none of it
- *   2  tellSite's forced pass: it runs on a version the Counter was already told, and leaves TOLD_MARK and TOLD_FAILED to the regular pass, which still moves them exactly as before
+ *   2  tellSite's forced pass: it runs on a version the Counter was already told, and leaves TOLD_MARK and TOLD_FAILED to the regular pass, which still moves them exactly as before;
+ *      and (17 Nov 2026, his "Can it be instant?") it follows a single order to its amended row at once, a key the site will not take staying the regular pass's fault
  *   3  the drain: off as shipped (and with no flag table) it does nothing; on, one forced pass covers every live row, a clean pass marks them sent, a pass with a refusal or a throw marks none
  *      and counts the try, a rejected draft's row is dropped with no pass, a draft still pending is left alone, a Book that does not answer is said
  *   4  the roads: an approval through the Worker (one tap, decide-many) drains the row at once and the minute cron drains one that waited, only with the flag on */
@@ -100,6 +101,25 @@ export async function run({ ok }) {
   const R2 = siteEnv({ "orders:told": "v1200", "orders:toldFailed": "old" });
   const r2 = await tellSite(R2.env, undefined, mirror);
   ok(R2.q.m.get("orders:told") === "v1300" && !R2.q.m.has("orders:toldFailed") && !r2.forced, "the regular pass still moves the mark on a clean pass and clears its fault, exactly as before");
+  /* 17 Nov 2026: an order amended from RM 285 to RM 100 names the old key; its approved Correction names the row (s001) by rid, so the forced pass after his tap moves the
+     order's key to the row's now, and a site that refuses the key fails the forced pass nothing (the regular pass tries again and reports it) */
+  const keyEnv = (refuseKey) => {
+    const q = kv(); q.m.set("orders:told", "v1300"); q.m.set("stmt-users", JSON.stringify({ u1: "ZZ1-AAA" }));
+    const order = { id: "o1", u: "u1", status: "ready", product: "salt", qty: 1, total: 100, ledgerKey: "ZZ1-AAA|" + T(1) + "|285" }, marks = [];
+    const db = { prepare: (sql) => ({ bind() { return this; }, first: async () => (/FROM snapshot/.test(sql) ? { v: "v1300", stamped: "s" } : null),
+      all: async () => ({ results: /SELECT amends/.test(sql) ? [{ amends: "s001", oid: "o1" }] : [] }), run: async () => ({ meta: { changes: 0 } }) }) };
+    const STMT_SITE = { fetch: async (url, init) => {
+      if (init && init.method === "POST") { const m = JSON.parse(init.body).mark; marks.push(m);
+        if (m.ledgerKey && !refuseKey) order.ledgerKey = m.ledgerKey;
+        return Response.json({ ok: true, order }); }
+      return Response.json({ ok: true, orders: [order] }); } };
+    return { env: { SALT_LEDGER: db, SALT_QUEUE: q, STMT_SITE, STMT_DESK_KEY: "k" }, order, marks };
+  };
+  const FL = keyEnv(false), fl = await tellSite(FL.env, undefined, mirror, { force: true });
+  const FR = keyEnv(true), fr = await tellSite(FR.env, undefined, mirror, { force: true });
+  ok(fl.followed === 1 && FL.order.ledgerKey === "ZZ1-AAA|" + T(1) + "|100" && FL.marks.some((m) => m.ledgerKey === FL.order.ledgerKey)
+    && FR.marks.some((m) => m.ledgerKey) && !fr.followed && !fr.failed,
+    "a forced pass moves a single order's key to its amended row at once, and a key the site refuses is left to the regular pass: " + JSON.stringify({ fl, key: FL.order.ledgerKey, fr }));
 
   /* 3: the drain */
   const world = async (flag, over = {}) => {
@@ -224,7 +244,8 @@ export async function run({ ok }) {
   const FX2 = fixEnv({ "orders:told": "v1200" });
   await tellSite(FX2.env, undo, mirror);
   ok(FX2.posts.some((b) => b.fix && b.fix.id === "un-test-0") && (FX2.q.m.get("orders:fixed") || "").includes("un-test-0"), "and the regular pass still sends it, once, and marks it");
-  /* the forced pass leaves followRows to the regular pass: an order whose key names no row makes followRows read the drafts */
+  /* the forced pass leaves followRows to the regular pass: an order whose key names no row makes followRows read the drafts. 17 Nov 2026 (his "Can it be instant?"):
+     re-aimed, it no longer does: with the Book the source the forced pass after his tap follows single orders too, so both read the drafts; groups stay the regular pass's (below) */
   const followEnv = (marks) => {
     const q = kv(); for (const [k, v] of Object.entries(marks)) q.m.set(k, v);
     const reads = [];
@@ -236,7 +257,47 @@ export async function run({ ok }) {
   await tellSite(FL1.env, undefined, mirror, { force: true });
   const FL2 = followEnv({ "orders:told": "v1200" });
   await tellSite(FL2.env, undefined, mirror);
-  ok(FL1.reads.length === 0 && FL2.reads.length >= 1, "a forced pass does not run followRows (it reads no drafts to follow an order), and the regular pass still does: " + FL1.reads.length + " and " + FL2.reads.length);
+  ok(FL1.reads.length >= 1 && FL2.reads.length >= 1, "a forced pass runs followRows for a single order now, as the regular pass does: " + FL1.reads.length + " and " + FL2.reads.length);
+  /* and a group of completed orders sharing one dead key (s218's pair) is weighed for its one row by the regular pass alone: the forced pass never reads whether they are in flight */
+  const groupEnv = (marks) => {
+    const q = kv(); for (const [k, v] of Object.entries(marks)) q.m.set(k, v);
+    const reads = [];
+    const db = { prepare: (sql) => { const o = { first: async () => (/FROM snapshot/.test(sql) ? { v: "v1300", stamped: "s" } : null), all: async () => ({ results: [] }), run: async () => ({ meta: { changes: 0 } }) }; o.bind = (...a) => { if (a.some((x) => typeof x === "string" && /"orderId":"g[ab]"/.test(x))) reads.push(a); return o; }; return o; } };
+    const g = (id) => ({ id, u: "u1", code: "ZZ1-AAA", ledgerKey: "ZZ1-AAA|" + T(1) + "|50", status: "done", product: "salt", qty: 0.5, total: 50 });
+    const STMT_SITE = { fetch: async (url) => (url.includes("/desk/orders?") ? Response.json({ ok: true, orders: [g("ga"), g("gb")] }) : Response.json({ ok: true })) };
+    return { env: { SALT_LEDGER: db, SALT_QUEUE: q, STMT_SITE, STMT_DESK_KEY: "k" }, reads };
+  };
+  const GF = groupEnv({ "orders:told": "v1300" }), GR = groupEnv({ "orders:told": "v1200" });
+  await tellSite(GF.env, undefined, mirror, { force: true }); await tellSite(GR.env, undefined, mirror);
+  ok(GF.reads.length === 0 && GR.reads.length >= 1, "a group sharing one row is weighed by the regular pass alone, never the forced one: " + GF.reads.length + " and " + GR.reads.length);
+  /* 17 Nov 2026 (Fable's review): and a forced pass moves no member of a group ALONE. Two done orders of 1 unit for RM 8 name one key no row holds now; the one row of their account is their sum
+     (its mod says `total 8 to 16`), one order's ack landed and the other's was rejected (s218's pair). On the singles' road only the landed one would take the row, and the regular pass, finding a
+     group of one on the dead key and the row wanted twice, would never join them: so the forced pass holds both, and the regular pass moves both together */
+  const pairKey = "ZZ1-AAA|" + T(1) + "|8", sumKey = "ZZ1-AAA|" + T(1) + "|16";
+  const sumBook = async () => ({ sales: [{ rid: "s001", customer: "ZZ1-AAA", date: T(1), qty: 2, total: 16, mod: "total 8 to 16; qty 1 to 2" }], version: "v1300" });
+  const pairEnv = (told) => {
+    const q = kv(); q.m.set("orders:told", told); q.m.set("stmt-users", JSON.stringify({ u1: "ZZ1-AAA" }));
+    const g = (id, ack) => ({ id, u: "u1", ledgerKey: pairKey, status: "done", product: "salt", qty: 1, total: 8, paid: 8, moved: 1, queued: { ack } });
+    const orders = [g("pa", "ACK-A"), g("pb", "ACK-B")];
+    /* the snapshot read is matched by its head: the ack's fate (FATE) and the flight checks name the snapshot too, in the mirror's form */
+    const db = { prepare: (sql) => { let args = []; const o = { bind(...a) { args = a; return o; },
+      first: async () => (/^SELECT v,stamped/.test(sql) ? { v: "v1300", stamped: "s" }
+        : /AS landed FROM draft WHERE id=/.test(sql) ? (args[0] === "ACK-A" ? { status: "approved", landed: 1 } : { status: "rejected", landed: 0 }) : null),
+      all: async () => ({ results: [] }), run: async () => ({ meta: { changes: 0 } }) }; return o; } };
+    const STMT_SITE = { fetch: async (url, init) => {
+      if (init && init.method === "POST") {
+        const o = orders.find((x) => x.id === decodeURIComponent(String(url).split("?")[0].split("/").pop())), b = JSON.parse(init.body);
+        if (o && b.mark) Object.assign(o, b.mark);
+        return Response.json({ ok: true, order: o });
+      }
+      return Response.json({ ok: true, orders }); } };
+    return { env: { SALT_LEDGER: db, SALT_QUEUE: q, STMT_SITE, STMT_DESK_KEY: "k" }, orders };
+  };
+  const PF = pairEnv("v1300"), pf = await tellSite(PF.env, undefined, sumBook, { force: true });
+  const PR = pairEnv("v1200"), pr = await tellSite(PR.env, undefined, sumBook);
+  ok(!pf.followed && PF.orders.every((o) => o.ledgerKey === pairKey) && pr.followed === 2 && PR.orders.every((o) => o.ledgerKey === sumKey),
+    "a forced pass moves no member of a group alone (one ack landed, one rejected, their key empty), and the regular pass moves both onto their one row: "
+      + JSON.stringify({ pf, forced: PF.orders.map((o) => o.ledgerKey), pr, regular: PR.orders.map((o) => o.ledgerKey) }));
   /* one drain at a time */
   const { outboxAfter } = await import("../src/worker.js");
   const WC = await world("on", { slow: true });
