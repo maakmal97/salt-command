@@ -25983,10 +25983,10 @@ await (async () => {
       /* 25 OCT 2026: a row's kind says No account, and the next-update words live on the opened card alone */
       /* 2 Nov 2026 (Customers on the canvas): the row is a settings row, its code the .acode and its kind the second line (.salt-settings__sub) */
       const rowFor = (code) => [...D.querySelectorAll("#rlist .arow[data-u]")].find((b) => (b.querySelector(".acode") || {}).textContent === code);
-      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".salt-settings__sub").textContent : "");
+      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".amb-row__sub").textContent : "");   /* 17 Nov 2026, the move to Ambient (the third red fix): a roster row's second line is .amb-row__sub */
       const ltrRow = kindOf("CZ9-LTR"), wlkRow = kindOf("CZ9-WLK");
       const cardText = (code) => { const r = rowFor(code); if (!r) return "";
-        r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
+        (r.querySelector(".arow__open") || r).dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.getElementById("aopen") || {}).textContent || ""; };   /* 17 Nov 2026, the move to Ambient (the third red fix): the row's own button opens the card, which is #aopen's */
       const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
       ok(/^No account/.test(ltrRow) && !!wlkRow && !/No account/.test(wlkRow)
         && ltrCard.includes("Their account comes with the next update.") && !ltrCard.includes("meanwhile") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
