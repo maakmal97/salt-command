@@ -50645,6 +50645,11 @@ await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });
 })();
 
+section("17 Nov 2026: one Change sheet on every agreed order");
+await (async () => {
+  await (await import("./admin-change-sheet.mjs")).run({ ok, pageWork });
+})();
+
 section("17 Nov 2026: the customer's Bill says what we changed, and when it was a discount");
 await (async () => {
   await (await import("./order-told-page.mjs")).run({ ok, pageWork });

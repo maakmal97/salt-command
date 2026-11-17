@@ -1,6 +1,26 @@
 [
- {"name": "the Sheet draws no Way", "file": "stmt/owner.js", "find": "extra:[aw,aq.wrap,at.wrap,ad.wrap],", "replace": "extra:[aq.wrap,at.wrap,ad.wrap],"},
- {"name": "the Way opens on Collect whatever the order", "file": "stmt/owner.js", "find": "way.value=kept&&kept[3]?kept[3]:(order.mode==='deliver'?'deliver':'collect');", "replace": "way.value='collect';"},
- {"name": "Collect keeps the charge", "file": "stmt/owner.js", "find": "way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; });", "replace": ""},
- {"name": "the way is never sent", "file": "stmt/owner.js", "find": "if(way.value!==(order.mode==='deliver'?'deliver':'collect')) body.mode=way.value;", "replace": ""}
+ {
+  "name": "the Sheet draws no Way",
+  "file": "stmt/owner.js",
+  "find": "[sub('Order'),aw,aq.wrap,at.wrap,ad.wrap]",
+  "replace": "[sub('Order'),aq.wrap,at.wrap,ad.wrap]"
+ },
+ {
+  "name": "the Way opens on Collect whatever the order",
+  "file": "stmt/owner.js",
+  "find": "way.value=kept&&kept[3]?kept[3]:(order.mode==='deliver'?'deliver':'collect');",
+  "replace": "way.value='collect';"
+ },
+ {
+  "name": "Collect keeps the charge",
+  "file": "stmt/owner.js",
+  "find": "way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; });",
+  "replace": ""
+ },
+ {
+  "name": "the way is never sent",
+  "file": "stmt/owner.js",
+  "find": "if(way.value!==(order.mode==='deliver'?'deliver':'collect')) b.mode=way.value;",
+  "replace": ""
+ }
 ]

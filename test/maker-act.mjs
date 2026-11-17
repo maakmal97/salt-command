@@ -54,6 +54,29 @@ export function byAct(root, act, key) {
   return all.find((c) => { for (let e = c; e && e !== root; e = e.parentElement) if (holds(e)) return true; return false; }) || null;
 }
 
+/* 17 Nov 2026 (the order-changes plan, version 2): THE CHANGE SHEET. Opens an open card's Change row and fills the fields named in o (qty, total, delivery, way,
+   point, handed, rest, paid, by), then, unless o.go is false, taps Send the change. Returns the Sheet. Older checks drove the retired controls (the Handed over
+   field, Change point, Record payment); each now goes through here and sends what those sent. */
+export async function changeSheet(p, card, o = {}) {
+  const { d, w, work } = p;
+  byAct(card, "order.amend").click(); await work.quiet();
+  const sh = d.getElementById("ynSheet");
+  const set = (act, v) => { const e = byAct(sh, act); e.value = String(v); e.dispatchEvent(new w.Event("input", { bubbles: true })); e.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  if (o.way !== undefined) set("order.amend-way", o.way);
+  if (o.qty !== undefined) set("order.amend-units", o.qty);
+  if (o.total !== undefined) set("order.amend-total", o.total);
+  if (o.delivery !== undefined) set("order.amend-delivery", o.delivery);
+  if (o.point !== undefined) set("order.change-point", o.point);
+  if (o.handed !== undefined) set("order.change-handed", o.handed);
+  if (o.rest) byAct(sh, "order.change-rest", o.rest).click();
+  if (o.paid !== undefined) set("order.change-paid", o.paid);
+  if (o.by) byAct(sh, "order.change-by", o.by).click();
+  if (o.go !== false) { d.getElementById("ynGo").click(); await work.quiet(); }
+  return sh;
+}
+/* his collection points, as the Sheet's Point reads them: two, so a collection waiting at Ready offers a choice */
+export const POINTS_ANSWER = (route) => route === "/all/maker/points" ? { ok: true, points: { v: 1, list: [{ code: "A2", lat: 3.1, lng: 101.2 }, { code: "B3", lat: 3.2, lng: 101.3 }] }, examples: [] } : undefined;
+
 /* THE OPTION TILES OF A FORM (Phase 4a, 12 Oct 2026): a group is a fieldset.maker-tiles whose legend is the field's label, and a tile a radio in it. tile() taps
    one as he does and says whether there was one to tap; tileValue() is the value chosen ('' when none is), tileValues() the values offered, and tileGroup() the
    fieldset, which answers .value as the select it replaced did. A form is told its choice by the radio's change, so a test drives the tile and not the group. */
@@ -373,9 +396,10 @@ export async function drawEverything(p) {
   await click(byAct(d, "claim.open", c2)); p.snap("a claim whose rows could not be read");
   p.fail.delete("/all/maker/claims/abcd-efgh/c-2/preview");
   await click(byAct(d, "claim.open", c2));
-  type(byAct(card("ord-r2"), "order.pay-amount"), "50"); await click(byAct(card("ord-r2"), "order.pay-by", "cash")); await click(byAct(card("ord-r2"), "order.pay"));
+  /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the cash is its Received now by Cash, held ten seconds as before */
+  await changeSheet(p, card("ord-r2"), { paid: 50, by: "cash" });
   p.snap("a cash hold, with its Undo");
-  type(byAct(card("ord-r3"), "order.pay-amount"), "50"); await click(byAct(card("ord-r3"), "order.pay-by", "cash")); await click(byAct(card("ord-r3"), "order.pay"));
+  await changeSheet(p, card("ord-r3"), { paid: 50, by: "cash" });
   p.failCash(true);
   p.timers.filter((t) => t.ms === 10000 && !t.off).at(-1).f(); await work.quiet();
   p.failCash(false);
@@ -553,6 +577,12 @@ export async function auditStates({ pageWork }) {
     await pt.click(byAct(pt.d, "nav.orders"));
     await pt.click(byAct(pt.card("ord-a1"), "order.ready-collect")); await pt.work.quiet();
     states.push(["Ready to collect asking which point", actAudit(pt.d)]);
+    /* 17 Nov 2026 (plan v2): the Change sheet of a Ready collection, with his two points and a part handed over, so Point, Handed over and The rest are drawn */
+    await pt.click(byAct(pt.d, "order.ask-keep"));
+    byAct(pt.card("ord-r1"), "order.amend").click(); await pt.work.quiet(); await pt.work.quiet();
+    { const h = byAct(pt.d.getElementById("ynSheet"), "order.change-handed"); h.value = "0.5"; h.dispatchEvent(new pt.w.Event("input", { bubbles: true })); }
+    states.push(["a Ready collection's Change sheet, with a point and a part handed over", actAudit(pt.d)]);
+    await pt.click(byAct(pt.d, "order.ask-keep"));
   } finally { pt.w.close(); }
   /* 25 Oct 2026 (Salt Admin Shop): the three practice accounts open, so Practice draws Open the test page */
   const tp = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(["0000-0001", "0000-0002"].map((u) => ({ username: u, code: "", account: true, test: true, state: "open", seen: { opens: 0 } }))) }) });

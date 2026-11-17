@@ -51,7 +51,8 @@ export async function run({ ok, pageWork }) {
       && card.lastElementChild.classList.contains("ofoot") && card.lastElementChild.contains(card.querySelector(".ordlead")) && card.lastElementChild.previousElementSibling.classList.contains("maker-foot") && /\.adm \.ordcols\{display:grid;gap:24px;/.test(css) && !/ordcols--3/.test(css),
       "at 1440 the card is two columns, the decision and the record, gap 24px, the foot under them: " + J(map3));
     /* 4 */
-    const field = card.querySelector('[data-sect="money"]') && card.querySelector('.omoney [data-act="order.pay-amount"]');
+    /* 17 Nov 2026: re-aimed (plan v2): the amount field left the card for the Change sheet, so what he typed is the card's own reply line */
+    const field = card.querySelector('[data-act="order.reply-text"]');
     if (field) field.value = "37";
     st.w = 1180; st.fire();
     const box2 = card.querySelector(":scope > .ordcols"), map2 = { band: colOf(".ohead"), steps: colOf(".ordsteps"), msg: colOf(".omsgs") };

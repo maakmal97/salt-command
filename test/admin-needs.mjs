@@ -295,9 +295,10 @@ export async function run({ ok, pageWork }) {
       "the opened card of money owed has the why (handed over, due) and both ways, Message and Record payment, while the resting card keeps Message alone: " + JSON.stringify(goes()));
     p.posts.length = 0;
     byAct(d, "need.owed-pay", "CX1-ZED").click(); await p.work.quiet();
-    const moneyHead = d.querySelector('#makerReview [data-sect="money"]');
-    ok(p.where() === "orders/open" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && moneyHead && moneyHead.textContent === "Money received" && d.activeElement === moneyHead && p.posts.length === 0,
-      "Record payment opens the order the row is, on Money received, and books nothing: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the amount is the Sheet's, so Record opens the order on its Change row (focused), and books nothing */
+    const changeRow = d.querySelector('#makerReview [data-amend]');
+    ok(p.where() === "orders/open" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && changeRow && changeRow.textContent === "Change" && d.activeElement === changeRow && p.posts.length === 0,
+      "Record payment opens the order the row is, on its Change row, and books nothing: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
     byAct(d, "nav.needs").click(); await p.work.quiet();
     await p.tap("need.open", "x:0");
     ok(/Refused for the fixture/.test((pane() || { textContent: "" }).textContent) && p.card("x:0").querySelector(".need-who").textContent === "Not taken: Refused for the fixture",

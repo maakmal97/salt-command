@@ -260,7 +260,7 @@ export async function run({ ok, pageWork }) {
     ok(/waits under Approve/.test(text(p.card(GONE.id))), "a cancelled order whose cancellation waits under Approve says the book keeps the row until then: " + text(p.card(GONE.id)).slice(0, 200));
     await p.tap("part.orders.done");
     await p.tap("order.open", DONE.id);
-    ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change the order");
+    ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change");
     await p.tap("part.orders.ledger");
     const tieText = () => text(p.d.getElementById("led-tie"));
     const t1 = tieText();

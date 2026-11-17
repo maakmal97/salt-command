@@ -234,14 +234,14 @@ export async function run({ ok }) {
       return wrap && wrap.querySelector("input");
     };
     const sheetGo = () => doc.getElementById("ynGo").click();
-    const ACK = "20261006090001-ack", opened = (id) => { button(id, "Change the order").click(); return sheet(); };
+    const ACK = "20261006090001-ack", opened = (id) => { button(id, "Change").click(); return sheet(); };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => button(ACK, "Change the order"));
+    await until(() => button(ACK, "Change"));
     const first = opened(ACK);
     ok(!!first && first.querySelector(".salt-sheet__title").textContent === "Change the order" && !!field("Units") && !!field("Price (goods)") && !!field("Delivery")
       && field("Units").value === "3" && field("Price (goods)").value === "285" && field("Delivery").value === "5" && doc.getElementById("ynGo").textContent === "Send the change"
-      && !button("20261006090002-pla", "Change the order") && !button(ACK, "Send the change"),
+      && !button("20261006090002-pla", "Change") && !button(ACK, "Send the change"),
       "An agreed order offers Change the order, a Sheet of the size, the goods' price and the delivery as they stand and Send the change; an order not yet agreed does not, and nothing stands down the card.");
     ok([...sheet().querySelectorAll("[data-amend-field]")].length === 3 && posts.length === 0, "The three amend fields are drawn in the Sheet and the card holds none.");
     const notNow = doc.getElementById("ynKeep");
@@ -250,10 +250,10 @@ export async function run({ ok }) {
     ok(!sheet() && card(ACK).querySelectorAll("[data-amend-field]").length === 0 && posts.length === 0, "Not now closes the Sheet and sends nothing.");
     opened(ACK); sheetGo();
     await new Promise((resolve) => setTimeout(resolve, 40));
-    ok(posts.length === 0, "Amend with no figure changed sends nothing.");
+    ok(posts.length === 0 && (card(ACK).querySelector("[data-maker-say]") || { textContent: "" }).textContent === "Change a figure first.", "Amend with no figure changed sends nothing and says so (17 Nov 2026: the Sheet's Save, plan v2).");
     failNext = 1;
     opened(ACK); field("Delivery").value = "12"; sheetGo(); await settle(1);
-    await until(() => button(ACK, "Change the order"));
+    await until(() => button(ACK, "Change"));
     opened(ACK);
     ok(field("Delivery").value === "12" && field("Units").value === "3", "A change whose answer was lost is opened again as he left it, not as the order stands: " + (field("Delivery") && field("Delivery").value));
     sheetGo(); await settle(2);
@@ -261,7 +261,7 @@ export async function run({ ok }) {
       && posts[0].body.delivery === 12 && /^[0-9a-f]{32}$/.test(posts[0].body.rid) && posts[1].body.rid === posts[0].body.rid,
       "Amend sends only the figure changed, and its retry after a failure carries the same request id: " + JSON.stringify(posts));
     await new Promise((resolve) => setTimeout(resolve, 80));
-    await until(() => button(ACK, "Change the order"));
+    await until(() => button(ACK, "Change"));
     opened(ACK);
     ok(field("Delivery").value === "5", "A change that landed is forgotten: the Sheet opens on the order's own figures again: " + (field("Delivery") && field("Delivery").value));
     field("Units").value = "4";
@@ -270,7 +270,7 @@ export async function run({ ok }) {
     ok(posts[2].body.qty === 4 && posts[2].body.total === 380 && posts[2].body.delivery === undefined && posts[2].body.rid !== posts[0].body.rid,
       "A new size is sent with its goods' price, under a request id of its own: " + JSON.stringify(posts[2]));
     await new Promise((resolve) => setTimeout(resolve, 80));
-    await until(() => button(ACK, "Change the order"));
+    await until(() => button(ACK, "Change"));
     opened(ACK);
     ok(field("Units").value === "3", "and that landed too, so the Sheet shows the order's own size: " + field("Units").value);
     field("Units").value = "5";
@@ -278,7 +278,7 @@ export async function run({ ok }) {
     ok(posts[3].body.qty === 5 && posts[3].body.total === 285, "A size changed alone is sent with the goods' price in the box, which the Desk then holds to the floor: " + JSON.stringify(posts[3]));
     /* 17 Nov 2026 (TA95-7J2): the way is on the Sheet, opened on the order's own way; Collect empties the charge, and both are sent */
     await new Promise((resolve) => setTimeout(resolve, 80));
-    await until(() => button(ACK, "Change the order"));
+    await until(() => button(ACK, "Change"));
     opened(ACK);
     const way = sheet() && sheet().querySelector("select[data-amend-way]");
     ok(!!way && way.value === "deliver" && [...way.options].map((o) => o.textContent).join() === "Collect,Deliver",

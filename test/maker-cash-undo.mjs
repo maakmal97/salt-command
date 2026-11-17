@@ -53,15 +53,20 @@ export async function run({ ok }) {
     const card = () => cardOf(d, "cash-fixture-1");
     /* 11 Oct 2026: Record cash, Undo and the cash field are found by what they do (test/maker-act.mjs), so a change of their words leaves
        this test where it was; Retry cash and Refresh cash are one control whose words are the behaviour under test, and keep theirs */
-    const ACTS = { "Record cash": "order.pay", Undo: "order.cash-undo" };   /* plan 5 (16 Oct 2026): one Record payment over the Bank and Cash tiles */
-    const button = (text) => ACTS[text] ? (card(), byAct(d, ACTS[text], "cash-fixture-1")) : [...(card()?.querySelectorAll("button") || [])].find((n) => n.textContent === text);
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): "Record cash" is now the card's Change row, which the held cash shuts like every other control of the card, so
+       button("Record cash") is the Change row while it is live and nothing while the card is shut; the cash itself is the Sheet's Received now by Cash */
+    const ACTS = { Undo: "order.cash-undo" };
+    const button = (text) => text === "Record cash" ? (() => { const r = (card(), byAct(d, "order.amend", "cash-fixture-1")); return r && !r.disabled ? r : null; })()
+      : ACTS[text] ? (card(), byAct(d, ACTS[text], "cash-fixture-1")) : [...(card()?.querySelectorAll("button") || [])].find((n) => n.textContent === text);
     const note = () => card()?.querySelector("[data-maker-cash-status]")?.textContent || "";
-    const cash = () => (card(), byAct(d, "order.pay-amount", "cash-fixture-1"));
+    const cash = () => (d.getElementById("ynSheet") && byAct(d.getElementById("ynSheet"), "order.change-paid")) || null;
+    const said = () => card()?.querySelector("[data-maker-say]")?.textContent || "";
     const tap = async (amount) => {
-      const input = cash(), record = button("Record cash");
-      if (!input || !record) return;
-      const road = byAct(d, "order.pay-by", "cash"); if (!road) return;
-      input.value = String(amount); road.click(); record.click(); await quiet();
+      const open = button("Record cash"); if (!open) return;
+      open.click(); await quiet(); await quiet();
+      const sheet = d.getElementById("ynSheet"), input = sheet && byAct(sheet, "order.change-paid"), road = sheet && byAct(sheet, "order.change-by", "cash");
+      if (!input || !road) return;
+      input.value = String(amount); input.dispatchEvent(new w.Event("input", { bubbles: true })); road.click(); d.getElementById("ynGo").click(); await quiet();
     };
     const advance = async (ms) => {
       now += ms;
@@ -70,7 +75,7 @@ export async function run({ ok }) {
       await quiet();
     };
     const stored = () => Object.keys(w.localStorage).map((key) => [key, w.localStorage.getItem(key)]);
-    return { w, d, posts, timers, pending, backend, stored, card, cash, button, note, tap, advance, quiet,
+    return { w, d, posts, timers, pending, backend, stored, card, cash, said, button, note, tap, advance, quiet,
       failure: (v) => { fail = v; }, defer: (v) => { defer = v; } };
   };
   const f = await fixture();
@@ -94,7 +99,7 @@ export async function run({ ok }) {
     await f.tap(40);
     ok(f.posts.length === 0 && f.button("Undo") && f.note().includes("RM 40"),
       "C5: a custom cash figure is held too");
-    const field = f.cash(); if (field) field.value = "70";
+    ok(!f.cash(), "C5b: while it is held the card has no amount control to change (the Sheet is closed and the card shut)");
     await f.advance(10000);
     ok(f.posts.length === 1 && f.posts[0].path === "/all/maker/orders/cash-fixture-1/cash"
       && f.posts[0].body.amount === 40 && f.posts[0].keepalive === true,
@@ -102,14 +107,14 @@ export async function run({ ok }) {
     ok(f.note().startsWith("Recorded: RM 40.00 in cash."),
       "C7: the card says what cash was recorded after expiry");
     const timerCount = f.timers.length;
-    await f.tap(0);
+    await f.tap(0.001);
     ok(f.timers.length === timerCount && f.posts.length === 1 && f.note().startsWith("That is not a figure above RM 0"),
       "C8: an invalid amount is refused immediately, never held or posted");
     let refused = true;
-    for (const invalid of ["0.001", "-1", ""]) {
+    for (const invalid of ["0", "-1", ""]) {
       await f.tap(invalid);
       refused &&= f.timers.length === timerCount && f.posts.length === 1 && !!f.button("Record cash")
-        && f.note().startsWith("That is not a figure above RM 0");
+        && f.said() === "Change a figure first.";
     }
     ok(refused, "C16: zero, sub-sen and negative cash never enter a hold");
     /* 27 Oct 2026, his word: cash past what they owe is held like any other, and the hold says the refund it opens */

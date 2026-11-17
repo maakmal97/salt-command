@@ -13,7 +13,7 @@
  *      tick rules (still the For a friend tick's) keep the input over the box drawn beside it at the token both ways (settled in Chromium by a hit test,
  *      the four corners of the input each toggling it; jsdom has no layout, so this reads the page's own CSS rules)
  * Drawn by the maker harness (test/maker-act.mjs), whose hold(route) keeps an answer back until it is let go. */
-import { richOwnerPage, byAct, PART_OF } from "./maker-act.mjs";
+import { richOwnerPage, byAct, PART_OF, changeSheet } from "./maker-act.mjs";
 
 const previews = (p, id) => p.posts.filter((x) => /[/]preview$/.test(x.route) && (!id || x.route.includes("/" + id + "/")));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -211,18 +211,16 @@ export async function run({ ok, pageWork }) {
     await part("ready");
     await p.tapRow("ord-r1");
     /* 2 Nov 2026: the Handover part holds the units (a settings row, Handed over) and the tiles that make it a close, then the one pill; Cancel the order is the last row */
-    const hp = byAct(d, "order.handed-units", "ord-r1").closest(".odecide__part");
     /* 5 Nov 2026 (the pane): Handed over, the one pill, is the card's pinned foot; its units and the tiles stay in the Handover part */
-    ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && [byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && hp.contains(e)) && !!byAct(d, "order.handed") && leadOf("ord-r1").contains(byAct(d, "order.handed")) && !!byAct(d, "order.handed").closest(".ofoot")
-      && byAct(d, "order.handed-units", "ord-r1").closest("label.salt-settings__row") && !!(byAct(d, "order.handed-units").compareDocumentPosition(byAct(d, "order.handed")) & 4),
-      "a ready order's Cancel the order is its last row, and Handed over with its units and the tiles that make it a close stand at the top, the units first: " + JSON.stringify(moves()));
-    byAct(d, "order.pay", "ord-r1").click(); await p.work.quiet();
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the units and the tiles are the Sheet's; the card keeps the one pill */
+    ok(same(moves(), []) && same(tail("ord-r1"), ["order.cancel"]) && !byAct(d, "order.handed-units") && !byAct(d, "order.handed-rest") && !!byAct(d, "order.handed") && leadOf("ord-r1").contains(byAct(d, "order.handed")) && !!byAct(d, "order.handed").closest(".ofoot"),
+      "a ready order's Cancel the order is its last row, and Handed over, for every unit, is the one pill in the pinned foot, the units and the close being the Change sheet's: " + JSON.stringify(moves()));
+    await changeSheet(p, p.cardOf("ord-r1"), { paid: 10 });
     ok(!!foot().querySelector("[data-maker-say]") && /Choose Bank or Cash first/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
       "the card's answer lands in its foot, under its moves: " + (foot().querySelector("[data-maker-say]") || {}).textContent);
     /* cash held for the order shuts every control of the card, the foot's too, and Undo opens them again */
     await p.tapRow("ord-r2");
-    const cash = byAct(d, "order.pay-amount", "ord-r2"); cash.value = "50"; cash.dispatchEvent(new p.w.Event("input", { bubbles: true }));
-    byAct(p.cardOf("ord-r2"), "order.pay-by", "cash").click(); byAct(d, "order.pay", "ord-r2").click(); await p.work.quiet();
+    await changeSheet(p, p.cardOf("ord-r2"), { paid: 50, by: "cash" });
     ok(!!byAct(d, "order.cash-undo") && !byAct(d, "order.cash-undo").disabled && [...p.cardOf("ord-r2").querySelectorAll(".ordend button")].every((b) => b.disabled) && p.cardOf("ord-r2").querySelectorAll(".ordend button").length >= 1,
       "while cash is held, every move in the foot is shut and only Undo is live");
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
@@ -337,14 +335,13 @@ export async function run({ ok, pageWork }) {
 
     /* Close at these units (plan 5, 16 Oct 2026: That is all under the units, the one button): the full size offers no close, fewer asks on the sheet */
     await tapRow("ord-r1");
-    const units = byAct(d, "order.handed-units", "ord-r1");
-    units.value = "3"; units.dispatchEvent(new p.w.Event("input", { bubbles: true }));
-    ok(!sheetOf() && d.querySelector("#makerReview fieldset[data-close]").hidden && byAct(d, "order.handed", "ord-r1").textContent === "Handed over, 3 units", "at the full size the close is not offered: its tiles are hidden and the one button is the handover");
-    units.value = "2"; units.dispatchEvent(new p.w.Event("input", { bubbles: true }));
-    byAct(d, "order.handed-rest", "all").click(); byAct(d, "order.handed", "ord-r1").click(); await p.work.quiet();
-    ok(/Finish this order at 2 of 3 units/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("salt-ghost--danger") && sends("/handed").length === 0,
-      "a close asks on the sheet, naming the units, and sends nothing as it opens");
-    inSheet("order.ask-go").click(); await p.work.quiet();
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the close is the Sheet's That is all, sent by the one Save, with no second ask */
+    await changeSheet(p, d.querySelector('#makerReview [data-maker-card="ord-r1"]'), { handed: 3, go: false });
+    ok(!!sheetOf() && sheetOf().querySelector('fieldset[data-change-field="rest"]').hidden && byAct(d, "order.handed", "ord-r1").textContent === "Handed over, 3 units", "at the full size the close is not offered: its tiles are hidden and the one button is the handover");
+    d.getElementById("ynKeep").click(); await p.work.quiet();
+    await changeSheet(p, d.querySelector('#makerReview [data-maker-card="ord-r1"]'), { handed: 2, rest: "all", go: false });
+    ok(!sheetOf().querySelector('fieldset[data-change-field="rest"]').hidden && sends("/handed").length === 0, "the Sheet offers That is all for fewer units, and sends nothing as it opens");
+    d.getElementById("ynGo").click(); await p.work.quiet();
     const closed = sends("/handed");
     ok(closed.length === 1 && closed[0].route === "/all/maker/orders/ord-r1/handed" && closed[0].body.qty === 2 && closed[0].body.close === true && /^[0-9a-f]{32}$/.test(closed[0].body.rid),
       "and sends the close it sent, the same route and body: " + JSON.stringify(closed));
@@ -414,28 +411,32 @@ export async function run({ ok, pageWork }) {
     await part("open"); await tapRow("ord-r2");
     ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
     /* plan 5 (16 Oct 2026): Bank and Cash are two tiles over one amount; the one button says the figure and the road (test/admin-card5.mjs proves the rest) */
-    const r2 = cardOf("ord-r2"), cashIn = byAct(r2, "order.pay-amount");
-    ok(!!money(r2) && before(money(r2), cashIn) && before(cashIn, byAct(r2, "order.pay-by", "bank")) && before(byAct(r2, "order.pay-by", "bank"), byAct(r2, "order.pay-by", "cash")) && before(byAct(r2, "order.pay"), byAct(r2, "order.reply-text")),
-      "a ready order's Money received holds the amount, then Bank and Cash, and the reply stands below them");
-    ok(byAct(r2, "order.pay").textContent === "Record payment", "the button says Record payment with no figure typed");
-    typed(cashIn, "50"); byAct(r2, "order.pay-by", "cash").click();
-    ok(byAct(r2, "order.pay").textContent === "Record RM 50.00, cash", "and the figure and the road once both are there: " + byAct(r2, "order.pay").textContent);
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the amount and its tiles are the Sheet's; the card's Money received is drawn for their claims and held cash alone, and the told line says what Save sends */
+    const r2 = cardOf("ord-r2");
+    const sh2 = await changeSheet(p, r2, { go: false }), cashIn = byAct(sh2, "order.change-paid"), told = () => sh2.querySelector("[data-change-told]").textContent;
+    ok(!money(r2) && !byAct(r2, "order.pay-amount") && before(cashIn, byAct(sh2, "order.change-by", "bank")) && before(byAct(sh2, "order.change-by", "bank"), byAct(sh2, "order.change-by", "cash")) && before(byAct(r2, "order.amend"), byAct(r2, "order.reply-text")),
+      "a ready order's Change sheet holds the amount, then Bank and Cash, the card draws no Money received with nothing to answer, and the reply stands below the Change row");
+    ok(/Nothing is sent/.test(told()), "the Sheet says nothing is sent with no figure typed: " + told());
+    typed(cashIn, "50"); byAct(sh2, "order.change-by", "cash").click();
+    ok(/payment arrived/.test(told()), "and says they are told the payment once the figure is there: " + told());
     typed(cashIn, "");
-    ok(byAct(r2, "order.pay").textContent === "Record payment", "a figure cleared takes the figure off the button");
+    ok(/Nothing is sent/.test(told()), "a figure cleared takes it off again");
+    d.getElementById("ynKeep").click(); await p.work.quiet();
     /* 2 Nov 2026: their last line is a bubble of the Messages thread (theirs on the left), no longer a facts line above the Answer fold */
     ok(!r2.querySelector(".omsgs .salt-bubble--theirs"), "an order with no message of theirs draws no line of theirs");
     const said = r1.querySelector(".omsgs .salt-bubble--theirs");
-    ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.pay-amount"), said) && before(said, byAct(r1, "order.reply-text")),
-      "their last line stands above the reply, below the money: " + (said && said.textContent));
-    typed(cashIn, "50");
-    byAct(r2, "order.pay").click(); await p.work.quiet();
+    ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.amend"), said) && before(said, byAct(r1, "order.reply-text")),
+      "their last line stands above the reply, below the Change row: " + (said && said.textContent));
+    await changeSheet(p, cardOf("ord-r2"), { paid: 50, by: "cash" });
     const held = cardOf("ord-r2"), live = [...held.querySelectorAll("button,input,select")].filter((n) => !n.disabled).map((n) => n.getAttribute("data-act") || n.tagName);
     ok(!!byAct(held, "order.cash-undo") && same(live, ["order.cash-undo"]),
       "cash held shuts the reply and every other control of the card, and only Undo is live: " + JSON.stringify(live));
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
     await part("todo"); await tapRow("ord-a1");
     const a1 = cardOf("ord-a1");
-    ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && !!byAct(a1, "order.claim-received").closest(".oclaims") && before(byAct(a1, "order.claim-received"), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
-      "an agreed order's Money received answers their claim in rows under its head, then holds Bank and no cash, with the reply below (2 Nov 2026: the claim rows are of the part, no longer above it)");
+    const sha = await changeSheet(p, a1, { go: false });
+    ok(!!byAct(sha, "order.change-by", "bank") && !byAct(sha, "order.change-by", "cash") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && !!byAct(a1, "order.claim-received").closest(".oclaims") && before(byAct(a1, "order.claim-received"), byAct(a1, "order.reply-text")),
+      "an agreed order's Money received answers their claim in rows under its head, its Sheet holds Bank and no cash, with the reply below (2 Nov 2026: the claim rows are of the part, no longer above it)");
+    d.getElementById("ynKeep").click(); await p.work.quiet();
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

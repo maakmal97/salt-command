@@ -353,35 +353,32 @@ export async function run({ ok }) {
 
     /* plan 5 (16 Oct 2026): the units field has one button; fewer units than ordered show More to come and That is all, and That is all is the close */
     const handed = () => card("20261003090002-rdy") && card("20261003090002-rdy").querySelector('button[data-act="order.handed"]');
-    const finishAt = (n) => {
-      const u = field("20261003090002-rdy", "Handed over"); u.value = String(n); u.dispatchEvent(new window.Event("input", { bubbles: true }));
-      const all = card("20261003090002-rdy").querySelector('input[data-act="order.handed-rest"][data-key="all"]'); if (all) all.click();
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the units and That is all are the Sheet's, sent by one Save; the card's pill hands over every unit */
+    const finishAt = async (n) => {
+      button("20261003090002-rdy", "Change").click(); await until(() => doc.getElementById("ynSheet"));
+      const sh = doc.getElementById("ynSheet"), u = sh.querySelector('[data-act="order.change-handed"]');
+      u.value = String(n); u.dispatchEvent(new window.Event("input", { bubbles: true })); u.dispatchEvent(new window.Event("change", { bubbles: true }));
+      const all = sh.querySelector('input[data-act="order.change-rest"][data-key="all"]'); if (all) all.click();
+      sheetGo();
     };
     await until(() => handed());
-    const units = field("20261003090002-rdy", "Handed over");
-    units.value = "3"; units.dispatchEvent(new window.Event("input", { bubbles: true }));
-    const restSet = card("20261003090002-rdy").querySelector("fieldset[data-close]");
-    ok(!!restSet && restSet.hidden && handed().textContent === "Handed over, 3 units" && !button("20261003090002-rdy", "Finish at fewer units") && posts.length === 1,
-      "At the full size the card offers no finish: the tiles are hidden and the one button is Handed over, and nothing is sent.");
+    ok(handed().textContent === "Handed over, 3 units" && handed().hasAttribute("data-handed-all") && !card("20261003090002-rdy").querySelector("fieldset[data-close]") && !button("20261003090002-rdy", "Finish at fewer units") && posts.length === 1,
+      "At the full size the card offers no finish: its one button is Handed over for every unit, and nothing is sent.");
     failNext = 1;
-    finishAt(2);
-    ok(handed().textContent === "Finish at 2 of 3 units", "Two of three units with That is all chosen turns the one button into the finish: " + handed().textContent);
-    handed().click(); sheetGo(); await settle(2);
+    await finishAt(2); await settle(2);
     await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
     ok(say("20261003090002-rdy")?.firstChild?.textContent === "The Counter could not do that. Try again." && say("20261003090002-rdy")?.querySelector(".rraw")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
       && !say("20261003090001-ack")?.textContent.includes("did not answer"),
       "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
     await until(() => handed());
-    finishAt(2);
-    handed().click(); sheetGo(); await settle(3);
+    await finishAt(2); await settle(3);
     ok(posts[1].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[1].body.qty === 2 && posts[1].body.close === true
       && /^[0-9a-f]{32}$/.test(posts[1].body.rid) && posts[2].body.rid === posts[1].body.rid,
       "The finish sends a close at the units in the box, and its retry after a failure carries the same request id: "
       + JSON.stringify(posts.slice(1, 3)));
     await until(() => handed());
-    const back = field("20261003090002-rdy", "Handed over"); back.value = "3"; back.dispatchEvent(new window.Event("input", { bubbles: true }));
     handed().click(); await settle(4);
-    ok(posts[3].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[3].body.close === undefined
+    ok(posts[3].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[3].body.close === undefined && posts[3].body.qty === 3
       && /^[0-9a-f]{32}$/.test(posts[3].body.rid) && posts[3].body.rid !== posts[1].body.rid,
       "Handed over carries its own request id: " + JSON.stringify(posts[3]));
 
@@ -434,7 +431,7 @@ export async function run({ ok }) {
     ok(JSON.stringify(many[0]) === JSON.stringify({ approve: [draftId], reject: [] }),
       "A Desk row's yes is one decide-many request carrying the row's id: " + JSON.stringify(many));
     await until(() => field("20261003090001-ack", "Your line"));
-    button("20261003090001-ack", "Change the order").click(); sheetGo();   /* the Change the order Sheet, its figures untouched */
+    button("20261003090001-ack", "Change").click(); sheetGo();   /* the Change the order Sheet, its figures untouched */
     ok(say("20261003090001-ack")?.textContent === "Change a figure first." && !/Change a figure/.test(list()),
       "Amend with no figure changed says so on its own card");
     await until(() => !button("20261003090001-ack", "Save this line").disabled);   /* the card's controls come back once the tap has run */

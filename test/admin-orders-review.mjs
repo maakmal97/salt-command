@@ -9,7 +9,7 @@
  *   6  a part handed over asks for what is left
  *   7  Not now leaves focus on the row's own move, never on the page
  * Drawn by the maker harness (test/maker-act.mjs). */
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, changeSheet } from "./maker-act.mjs";
 
 const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const base = { product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: "2026-10-10T00:00:00.000Z" };
@@ -66,8 +66,8 @@ export async function run({ ok, pageWork }) {
     /* 2 and 3: cash on a ready order with credit */
     await part("open");
     const c4 = await openCard("ord-c4");
-    const cashIn = byAct(c4, "order.pay-amount"); cashIn.value = "100"; cashIn.dispatchEvent(new p.w.Event("input", { bubbles: true }));
-    byAct(c4, "order.pay-by", "cash").click(); byAct(d, "order.pay", "ord-c4").click(); await p.work.quiet();
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2) */
+    await changeSheet(p, c4, { paid: 100, by: "cash" });
     const note = d.querySelector('[data-maker-cash-status="ord-c4"]');
     ok(/RM 25\.00 over what they owe, a refund to them/.test(t(note)), "cash past what credit leaves owed says the excess is a refund: " + t(note));
     await part("open");
