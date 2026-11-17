@@ -716,6 +716,13 @@ credit, written off, pending orders, undated rows, queue and drafts and staged, 
 `node tools/standing.mjs` from the engine in an `openMaster` window, never by hand (`--offline`
 skips Cloudflare and the fetch).
 
+Work here may have moved on in the GitHub Copilot app. Before a task, check
+`~\.copilot\session-state\*\workspace.yaml` for a session whose `cwd` is this repo or one of its
+worktrees and whose `updated_at` is newer than the latest Claude transcript here; if there is one,
+read its `events.jsonl` from the end (the last `user.message` and `assistant.message`) and its
+`plan.md` if present, say in one line what Copilot did, and carry on from there. Copilot's
+worktrees sit in `.worktrees\`, Claude's in `.claude\worktrees\`.
+
 ## How a fold is sized
 
 - **One version, many commits** (his word of 09 Oct 2026). A piece of work ships as one version, one
