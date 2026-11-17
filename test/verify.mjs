@@ -47894,9 +47894,10 @@ await (async () => {
     try {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#homeFoot .salt-kpi, #payHead .salt-kpi"));
-      const h = d.getElementById("homeFoot");   /* Phase 7a (11 Oct 2026): the figure and its Pay stand in the foot */
-      return [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(h.querySelector(q))).concat([t(d.getElementById("payNow"))]).join("|");
+      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#payHead .amb-stat") && d.getElementById("payNow"));
+      /* 17 Nov 2026, the move to Ambient (the third red fix): the figure is To pay now's stat in the head and the one Pay stands in the foot */
+      const h = d.getElementById("payHead");
+      return [".amb-stat__label", ".amb-stat__value"].map((q) => t(h.querySelector(q))).concat([t(d.getElementById("payNow"))]).join("|");
     } finally { try { dom.window.close(); } catch (x) { /* best effort */ } }
   };
   const before = views.before && await home(views.before), after = views.after && await home(views.after);
