@@ -3758,29 +3758,13 @@ export const OWNER_JS = `
       card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
       note.textContent=makerCashStorageError;
     }else{
-      makerPayControl(card,order,true);
-      note.textContent=makerCashSaid[order.id]||'';
+      note.textContent=makerCashSaid[order.id]||'';   /* 17 Nov 2026: the amount itself is the Change sheet's (version 2) */
     }
     card.appendChild(note);
   }
-  /* 16 Oct 2026 (plan 5, part 1): BANK AND CASH ARE TWO TILES OVER ONE AMOUNT, in place of a field and a button each. Cash is offered at Ready alone, as
-     before, and neither tile is chosen until he chooses, so money is never booked by a road he did not pick; an agreed order not yet Ready has Bank alone,
-     chosen. The button says the figure and the road once both are there. What a tap sends is what the old button of that road sent, to the sen and the
-     byte: Bank the order's received with the amount, under one request id until it lands (makerTap), so the Desk's rowRoom and the fold's payFault read it
-     as they did; Cash held ten seconds with its Undo (makerCashHold), then the order's cash. No road is new. */
-  function makerPayControl(card,order,cash){
-    var amount=makerField(card,['Amount, RM','order.pay-amount'],'number','');
-    var by=makerTilesIn(card,['Paid by','order.pay-by'],[{value:'bank',label:'Bank'}].concat(cash?[{value:'cash',label:'Cash'}]:[]),cash);
-    /* 2 Nov 2026 (his Orders canvas, page 2): Record payment is an action row; the stage's move keeps the one filled pill */
-    var recList=aGroup(null,'orecord'); card.appendChild(recList);
-    var record=aActBtn(recList,['Record payment','order.pay'],function(){
-      if(by.value==='cash') makerCashHold(order,Number(amount.value));
-      else if(by.value==='bank') makerTap(order,'received',{amount:Number(amount.value)},'Sent to the Desk.');
-      else makerSay(order.id,'Choose Bank or Cash first. Nothing was sent.');
-    });
-    var draw=function(){ record.textContent=Number(amount.value)>0&&by.value?'Record '+rm(amount.value)+', '+by.value:'Record payment'; };
-    amount.addEventListener('input',draw); by.addEventListener('change',draw); draw();
-  }
+  /* 16 Oct 2026 (plan 5, part 1) to 17 Nov 2026: Bank and Cash over one amount were a control of their own on the card (makerPayControl); since the
+     order-changes plan's version 2 they are the Change sheet's Received now and Paid by (amendOpen), sending what it sent: Bank the order's received
+     under one request id until it lands, Cash held ten seconds with its Undo (makerCashHold). No road is new. */
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
   function makerAgain(card,order,acts){
@@ -5448,7 +5432,7 @@ export const OWNER_JS = `
          the same Sheet and sends the same restate (stage amend), so nothing about what it books moved */
       var change=null;
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
-        change=aActBtn(stageRows,['Change the order','order.amend'],function(){ amendOpen(order,change); });
+        change=aActBtn(stageRows,['Change','order.amend'],function(){ amendOpen(order,change); });
         change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
       }
       if(order.status==='placed'&&makerAccHeld(order)){
@@ -5709,37 +5693,19 @@ export const OWNER_JS = `
       }else if(order.status==='ready'&&Number(order.moved||0)<Number(order.qty)-0.0004){
         /* Counter Batch A: where it waits, and Change point while goods are still to hand over */
         stageOf('Handover');
-        if(order.mode==='collect'){
-          if(!order.point) stage.appendChild(el('p','msg maker-point-at','No collection point named.'));
-          var moveTo=aActBtn(stageRows,['Change point','order.point-change'],function(){ pointPick(order,moveTo,'change'); });
-          stageRows.list.insertBefore(moveTo.parentNode,stageRows.list.firstChild);
-          makerAskTag(order,moveTo,'point');
-        }
-        /* 17 Oct 2026 (his word on CR3-DAM's order): asked only while units are left to hand over; all handed over, the card's figures say so */
-        /* 16 Oct 2026 (plan 5, part 3): THE UNITS FIELD HAS ONE BUTTON. Handed over and Finish at fewer units were two buttons on one field; now the field
-           has one, and fewer units than ordered show two tiles under it: More to come (the default, a part handover, as Handed over sent it) or That is all
-           (a close at these units, asked on the Sheet, as Finish at fewer units sent it). The button says which. Each body is the one its old button sent. */
-        var qty=makerField(stage,['Handed over','order.handed-units'],'number',order.qty), rest=null;
-        { rest=makerTilesIn(stage,['The rest','order.handed-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]); rest.setAttribute('data-close',''); }
-        var handedPart=function(){ var n=Number(qty.value); return !!rest&&n>0&&n<Number(order.qty); };
-        var handedEnds=function(){ return handedPart()&&rest.value==='all'; };
+        if(order.mode==='collect'&&!order.point) stage.appendChild(el('p','msg maker-point-at','No collection point named.'));
+        /* 17 Nov 2026 (the order-changes plan, version 2, his answer 8): the stage keeps its one pill, every unit handed over; part of them, a finish at
+           fewer, and another point are the Change sheet's, which sends each by the same road */
         var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed'],function(){
-          if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }
-          /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
-          var n=Number(qty.value);
-          makerAsk(order,handed,'close',{title:'Finish this order at '+n+' of '+order.qty+' units?', plain:true, go:'Finish the order', keep:'Not yet',
-            say:['The order ends at '+n+' units, and the Desk restates its total.'],
-            yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});
+          makerTap(order,'handed',{qty:Number(order.qty)},'Handover sent to the Desk.');
         },true);
-        makerAskTag(order,handed,'close');
-        var handedDraw=function(){
-          if(rest) rest.hidden=!handedPart();
-          handed.textContent=handedEnds()?'Finish at '+Number(qty.value)+' of '+units(order.qty):Number(qty.value)>0?'Handed over, '+units(qty.value):'Handed over';
-        };
-        qty.addEventListener('input',handedDraw); if(rest) rest.addEventListener('change',handedDraw); handedDraw();
+        handed.setAttribute('data-handed-all','');
       }
       stageEnd();
-      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
+      /* 17 Nov 2026 (the order-changes plan, version 2): a payment he records is the Change sheet's; Money received is drawn for what waits on him alone,
+         their claims and cash held with its Undo */
+      var claimsWaiting=(order.payments||[]).some(function(p){ return p&&p.claim==='waiting'; }), cashHeld=!!(makerCashHeld[order.id]||makerCashStorageError||makerCashSaid[order.id]);
+      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.status==='ready'&&cashHeld))){
         /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
            Since 16 Oct 2026 the bank and the cash are one amount and two tiles (makerPayControl). 2 Nov 2026: a part of his decision, its claims rows */
         var money=part(null,'omoney'), moneyHead=el('h2','amb-section','Money received'), claims=aGroup(null,'oclaims');
@@ -5765,7 +5731,7 @@ export const OWNER_JS = `
           });
           makerAskTag(order,lost,'lost-'+payment.at);
         });
-        if(order.status==='ready'){ makerCashControls(money,order); cashed=true; } else makerPayControl(money,order,false);
+        if(order.status==='ready'&&cashHeld){ makerCashControls(money,order); cashed=true; }
       }
       /* the stage he rejected, offered again, and Not needed: rows of his decision */
       makerAgain(card,order,acts);
@@ -6004,7 +5970,12 @@ export const OWNER_JS = `
      new size) and the same request id until it lands, so a lost reply is retried as itself. The card keeps what was typed while a change has not landed (amendMemo), so a
      failed send is opened again as he left it; a change that landed is forgotten, as the redrawn card forgot it. */
   var amendMemo={};
-  function amendOpen(order,opener){
+  function amendOpen(order,opener,tried){
+    /* a collection waiting at Ready offers its point here: his points are read once, before the Sheet opens; a failed read opens it without a Point */
+    if(order.status==='ready'&&order.mode==='collect'&&!makerPoints&&!tried){
+      refs('/all/maker/points').then(function(p){ makerPoints=p; },function(){}).then(function(){ amendOpen(order,opener,true); });
+      return;
+    }
     var base=[order.qty,order.total,order.delivery||0,order.mode].join(), memo=amendMemo[order.id], kept=memo&&memo.base===base?memo.vals:null;
     function one(label,act,value){
       var wrap=el('label','amb-field'), input=actOn(el('input','amb-input'),act,order.id);
@@ -6014,27 +5985,104 @@ export const OWNER_JS = `
     var aq=one('Units','order.amend-units',kept?kept[0]:order.qty), at=one('Price (goods)','order.amend-total',kept?kept[1]:order.total), ad=one('Delivery','order.amend-delivery',kept?kept[2]:order.delivery||0);
     /* 17 Nov 2026 (TA95-7J2): the way is changed here too, collect to deliver or back, on the same change as its charge; Collect empties the
        charge, which a collection never carries */
-    var aw=el('label','salt-field'), way=actOn(el('select','salt-field__input'),'order.amend-way',order.id);
+    var way=actOn(el('select',''),'order.amend-way',order.id);   /* 17 Nov 2026, the move to Ambient (merging v1525 and v1527): the Change sheet's fields are Ambient's (sField, sSelect) */
     [['collect','Collect'],['deliver','Deliver']].forEach(function(p){ var o=el('option','',p[1]); o.value=p[0]; way.appendChild(o); });
     way.value=kept&&kept[3]?kept[3]:(order.mode==='deliver'?'deliver':'collect'); way.setAttribute('data-amend-way','');
-    aw.appendChild(el('span','salt-field__label','Way')); aw.appendChild(way);
+    var aw=sField('Way',sSelect(way));
     way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; });
-    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['You approve the change next, under Approve.'], extra:[aw,aq.wrap,at.wrap,ad.wrap],
-      yes:function(){
-        var body={}, q=Number(aq.input.value), t=Number(at.input.value), d=Number(ad.input.value);
-        if(q!==Number(order.qty)) body.qty=q;
-        if(t!==Number(order.total)) body.total=t;
-        if(d!==Number(order.delivery||0)) body.delivery=d;
-        if(way.value!==(order.mode==='deliver'?'deliver':'collect')) body.mode=way.value;
-        if(body.qty!==undefined&&body.total===undefined) body.total=t;
-        if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
-        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value,way.value]};
-        makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(done){
+    /* 17 Nov 2026 (the order-changes plan, version 2, his answer 8): ONE SHEET FOR EVERY CHANGE OF AN AGREED ORDER. Beside the order's terms it holds the
+       point a collection waits at, what is handed over and a payment received, each sent by the road its old control used: the point by the move, the
+       units by the handover (a close when That is all), the money by Received (Bank) or the ten-second cash hold (Cash, at Ready). One Save sends them in
+       that order, after the terms, each against the order as it then stands, and stops at the first that does not land. */
+    var cur=function(){ return ((makerData&&makerData.orders)||[]).filter(function(o){ return o.id===order.id; })[0]||order; };
+    var ready=order.status==='ready', out=Number(order.moved||0), left=Number(order.qty)-out>0.0004;
+    var sofar=[], pt=null, hq=null, rest=null, pay=null, by=null;
+    function sub(text){ var h=el('h2','amb-settings__head',text); h.setAttribute('data-change-group',text); return h; }
+    if(ready&&order.mode==='collect'&&left&&!makerPoints) sofar.push(el('p','maker-facts','The points could not be read, so Point is not offered. Close this and open Change again.'));
+    if(ready&&order.mode==='collect'&&left&&makerPoints){
+      var plist=(order.test?makerPoints.examples:makerPoints.points&&makerPoints.points.list)||[];
+      if(plist.length){
+        pt=actOn(el('select',''),'order.change-point',order.id); pt.setAttribute('data-change-field','point');
+        plist.forEach(function(p){ var o=el('option','','Point '+p.code); o.value=p.code; pt.appendChild(o); });
+        if(!order.point){ var none=el('option','','Choose a point'); none.value=''; pt.insertBefore(none,pt.firstChild); }
+        pt.value=order.point||''; sofar.push(sField('Point',sSelect(pt)));
+      }
+    }
+    if(ready&&left){
+      hq=actOn(el('input','amb-input'),'order.change-handed',order.id); hq.setAttribute('data-change-field','handed');
+      hq.type='number'; hq.step='0.25'; hq.min=String(out); hq.max=String(order.qty); hq.inputMode='decimal'; hq.value=String(out);
+      sofar.push(sField('Handed over, of '+units(order.qty),hq));
+      var rbox=el('div'); rest=makerTilesIn(rbox,['The rest','order.change-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]);
+      rest.setAttribute('data-change-field','rest'); sofar.push(rbox);
+    }
+    if(order.status==='acknowledged'||ready){
+      pay=actOn(el('input','amb-input'),'order.change-paid',order.id); pay.setAttribute('data-change-field','paid');
+      pay.type='number'; pay.step='0.01'; pay.min='0'; pay.inputMode='decimal'; pay.value=''; pay.placeholder='0';
+      sofar.push(sField('Received now, RM',pay));
+      var bbox=el('div'); by=makerTilesIn(bbox,['Paid by','order.change-by'],[{value:'bank',label:'Bank'}].concat(ready?[{value:'cash',label:'Cash'}]:[]),ready);
+      by.setAttribute('data-change-field','by'); sofar.push(bbox);
+    }
+    /* what Save will tell them, said before he taps: the order book's rule (stmt/orders.js tellOf), read here as it reads it */
+    var told=el('p','amb-field__hint'); told.setAttribute('data-change-told','');
+    function terms(){
+      var b={}, q=Number(aq.input.value), t=Number(at.input.value), d=Number(ad.input.value);
+      if(q!==Number(order.qty)) b.qty=q;
+      if(t!==Number(order.total)) b.total=t;
+      if(d!==Number(order.delivery||0)) b.delivery=d;
+      if(way.value!==(order.mode==='deliver'?'deliver':'collect')) b.mode=way.value;
+      if(b.qty!==undefined&&b.total===undefined) b.total=t;
+      return b;
+    }
+    function tellDraw(){
+      var b=terms(), bits=[];
+      if(Object.keys(b).length){
+        var q=Number(aq.input.value), before=Number(order.total)+Number(order.delivery||0), after=Number(at.input.value)+Number(ad.input.value);
+        var lost=order.mode==='deliver'&&way.value==='collect';
+        bits.push(after<before-0.004&&q>=Number(order.qty)-0.0004&&!lost?'They are told it is a discount.':'They are told their order has changed.');
+      }
+      if(pt&&pt.value&&pt.value!==(order.point||'')) bits.push('They are told the new point.');
+      if(hq&&Number(hq.value)>out+0.0004) bits.push('They are told it was handed over.');
+      if(pay&&Number(pay.value)>0) bits.push('They are told the payment arrived.');
+      told.textContent=bits.length?bits.join(' '):'Nothing is sent until you change something.';
+      if(rest) rest.hidden=!(hq&&Number(hq.value)>out+0.0004&&Number(hq.value)<Number(order.qty)-0.0004);
+    }
+    [aq.input,at.input,ad.input,way,pt,hq,pay,by,rest].forEach(function(n){ if(n){ n.addEventListener('input',tellDraw); n.addEventListener('change',tellDraw); } });
+    var extra=[sub('Order'),aw,aq.wrap,at.wrap,ad.wrap].concat(sofar.length?[sub('So far')].concat(sofar):[],[told]);
+    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['A change of its terms waits for you under Approve; the rest goes at once.'], extra:extra,
+      yes:async function(){
+        var body=terms(), np=pt&&pt.value&&pt.value!==(order.point||'')?pt.value:null, nh=hq&&Number(hq.value)>out+0.0004?Number(hq.value):null,
+            np2=pay&&Number(pay.value)>0?Math.round(Number(pay.value)*100)/100:null, road=by?by.value:'';
+        if(!Object.keys(body).length&&!np&&nh===null&&np2===null){ makerSay(order.id,'Change a figure first.'); return; }
+        if(np2!==null&&!road){ makerSay(order.id,'Choose Bank or Cash first. Nothing was sent.'); return; }
+        /* what he typed of the terms is kept before any refusal, so Change opens again as he left it */
+        if(Object.keys(body).length) amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value,way.value]};
+        /* Fable's review: a move already on its way answers nothing, so the Sheet waits for it rather than send part of itself */
+        if(makerBusy||makerCashHeld[order.id]){ makerSay(order.id,'Another move on this page is on its way. Try again in a moment. Nothing was sent.'); return; }
+        /* Fable's review: money above what is owed now waits for the change it rides on, which the row takes only once approved */
+        var dueNow=ordDue(order), others=np||nh!==null||np2!==null;
+        if(Object.keys(body).length&&np2!==null&&np2>dueNow+0.004){
+          makerSay(order.id,'The change waits for your Approve, so record more than the '+rm(dueNow)+' owed now once it is approved. Nothing was sent.'); return;
+        }
+        if(Object.keys(body).length){
+          var done=await makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.');
           if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id];
           var asked=makerOutside[order.id]; delete makerOutside[order.id];
-          if(done===false&&asked) amendWhy(order,opener,body,asked);
-        });
+          if(done!==true){
+            if(asked){ amendWhy(order,opener,body,asked); if(others) makerSay(order.id,'Give the reason first. The point, handover and payment were not sent: send them with Change once it has gone.'); }
+            return;
+          }
+        }
+        if(np&&await makerMove(cur(),{point:np},'Collection point changed to Point '+np+'.')!==true) return;
+        if(nh!==null){
+          var ends=rest&&rest.value==='all'&&nh<Number(order.qty)-0.0004;
+          if(await makerTap(cur(),'handed',ends?{qty:nh,close:true}:{qty:nh},ends?'Finish sent to the Desk.':'Handover sent to the Desk.')!==true) return;
+        }
+        if(np2!==null){
+          if(road==='cash') makerCashHold(cur(),np2);
+          else await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.');
+        }
       }});
+    tellDraw();
   }
   /* 10 Nov 2026 (his ask D): the change sits outside the price band, so the Desk asked for his reason: the same Sheet says its sentence and takes one Reason line,
      and Let it stand sends the same figures again with it, under a request id of its own */
@@ -6142,7 +6190,7 @@ export const OWNER_JS = `
       /* 2 Nov 2026 (his Orders canvas, page 2): Change the order a row of its own list, and This customer and the Order log the rows that go on */
       if(order.status==='done'&&!order.test&&!makerAgainAck(order)){
         var redoList=aGroup(null,'ostagerows'); card.appendChild(redoList);
-        var redo=aActBtn(redoList,['Change the order','order.amend'],function(){ amendOpen(order,redo); });
+        var redo=aActBtn(redoList,['Change','order.amend'],function(){ amendOpen(order,redo); });
         redo.setAttribute('data-amend',''); makerAskTag(order,redo,'amend');
       }
       if(order.status==='done') ordNext(card,order,true);   /* plan 4 */
@@ -7726,15 +7774,15 @@ export const OWNER_JS = `
     var acc=OWNER.accounts.filter(function(x){ return x.code===m.party&&x.username; })[0], late=ageOf(m.due);
     return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, head:'Collect '+rm(m.rm)+' from ', what:'Past term', rm:+m.rm||0, age:late?late+' late':'', late:!!late,
       why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
-      open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
+      open:function(){ owedGo(first,'[data-amend]'); }}, function(c){
       if(acc){ var ms=pill(['Message','need.owed-message',m.party]); ms.addEventListener('click', function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(acc.username); }); c._add(ms); }
-      var b=ghost(['Record','need.owed-pay',m.party]); b.setAttribute('aria-label','Record payment'); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
+      var b=ghost(['Record','need.owed-pay',m.party]); b.setAttribute('aria-label','Record payment'); b.addEventListener('click', function(){ owedGo(first,'[data-amend]'); }); c._add(b);
     });
   }
   function goodsNeed(r){
     return item('now','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, head:'Hand over to ', mark:r.product, what:units(r.units)+' paid, not handed over',
-      why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-act="order.handed-units"]'); }}, function(c){
-      var b=pill(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
+      why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-amend]'); }}, function(c){
+      var b=pill(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-amend]'); }); c._add(b);
     });
   }
   /* the Watch cards: an override in force, a notice set. 15 Oct 2026 (plan 1, part 5): THE DESK'S OWN COUNT IS NO CARD. "The Desk shows 4 for you" named

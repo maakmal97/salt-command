@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1527",
+  "d": "17 Nov 2026",
+  "t": "ONE CHANGE SHEET ON EVERY AGREED ORDER",
+  "n": [
+   "<b>ONE ROW, CHANGE.</b> On Salt Admin every agreed, ready or completed order has one row, Change. Its sheet holds the order (way, units, price, delivery) and what has happened so far: the collection point, what is handed over, and a payment received by Bank or Cash.",
+   "<b>ONE SAVE.</b> Send the change sends the change of terms first, for Approve, then the point, the handover and the money, each as before, and stops at the first that does not go through. A line under the fields says what the customer will be told.",
+   "<b>FEWER PLACES ON THE CARD.</b> Change point, the units field and the payment amount moved into the sheet. The card keeps its one stage button (every unit handed over), their payment claims and the cash Undo. Needs you's Record and Handover open the order at Change.",
+   "<b>IT SAYS WHY IT WAITS.</b> It sends nothing while another move is on its way, and holds a payment above what is owed now until a raise it rides on is approved."
+  ]
+ },
+ {
   "v": "v1526",
   "d": "17 Nov 2026",
   "t": "EVERY CHANGE OF AN ORDER IS TOLD TO THE CUSTOMER",

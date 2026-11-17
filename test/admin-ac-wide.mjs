@@ -49,7 +49,8 @@ export async function run({ ok, pageWork }) {
       && card.lastElementChild.matches(".amb-foot.ofoot") && /#makerReview, #makerReview > \.maker-card \{ display: contents; \}/.test(css),
       "the card is the record's own stack, its band first and its foot last, the wrappers standing aside");
     /* 4 */
-    const field = card.querySelector('.omoney [data-act="order.pay-amount"]');
+    /* 17 Nov 2026: re-aimed (plan v2): the amount field left the card for the Change sheet, so what he typed is the card's own reply line */
+    const field = card.querySelector('[data-act="order.reply-text"]');
     if (field) field.value = "37";
     for (const w of [1180, 1100, 900, 390]) { st.w = w; st.fire(); }
     ok(d.querySelector("#makerReview .maker-card") === card && split.classList.contains("open") && (!field || field.value === "37"),

@@ -790,5 +790,11 @@
   "file": "stmt/owner.js",
   "find": "      if(o.sev==='watch') return;   /* Ambient 0.7.5:",
   "replace": "      if(false) return;   /* Ambient 0.7.5:"
+ },
+ {
+  "name": "Record opens the money block that is no longer there",
+  "file": "stmt/owner.js",
+  "find": "b.addEventListener('click', function(){ owedGo(first,'[data-amend]'); }); c._add(b);",
+  "replace": "b.addEventListener('click', function(){ owedGo(first,'[data-sect=\"money\"]'); }); c._add(b);"
  }
 ]

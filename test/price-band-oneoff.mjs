@@ -343,8 +343,8 @@ export async function run({ ok, skip }) {
       + JSON.stringify({ short, ready, pv: lastPv && lastPv.body, flag: saidFlag, accept: acP && acP.body }));
     /* 19. Change the order: an amendment the Desk asks about opens the Sheet again with its sentence and a Reason line, and Let it stand sends the
        same figures with the reason under a request id of its own */
-    await until(() => card(AG) && [...card(AG).querySelectorAll("button")].find((x) => x.textContent === "Change the order"));
-    [...card(AG).querySelectorAll("button")].find((x) => x.textContent === "Change the order").click();
+    await until(() => card(AG) && [...card(AG).querySelectorAll("button")].find((x) => x.textContent === "Change"));
+    [...card(AG).querySelectorAll("button")].find((x) => x.textContent === "Change").click();
     const sheet = () => doc.getElementById("ynSheet");
     /* 17 Nov 2026, the move to Ambient (the third red fix): the Sheet is an amb-sheet, its labels amb-field__label */
     const fieldOf = (text) => { const w = sheet() && [...sheet().querySelectorAll("label")].find((l) => l.querySelector(".salt-field__label, .amb-field__label") && l.querySelector(".salt-field__label, .amb-field__label").textContent === text); return w && w.querySelector("input"); };

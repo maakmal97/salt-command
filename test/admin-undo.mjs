@@ -28,7 +28,7 @@ import { NEWS } from "../stmt/sw.js";
 import { approveFigures } from "../src/approve-figures.js";
 import { plan } from "../tools/fold.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, changeSheet } from "./maker-act.mjs";
 
 const J = JSON.stringify, E = POSITION_ENGINE;
 const D = "2026-10-15", D0 = "2026-10-02";
@@ -448,7 +448,10 @@ export async function run({ ok, pageWork }) {
       await ph.work.quiet();
       byAct(ph.d, "nav.orders").click(); await ph.work.quiet(); byAct(ph.d, "part.orders.open").click(); await ph.work.quiet();
       const c = ph.card("ord-r1");
-      return c ? [!!byAct(c, "order.handed-units"), !!byAct(c, "order.handed")] : null;
+      /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the units field is the Sheet's Handed over */
+      if (!c) return null;
+      const sh = await changeSheet(ph, c, { go: false });
+      return [!!byAct(sh, "order.change-handed"), !!byAct(c, "order.handed")];
     } finally { ph.w.close(); }
   };
   const allOut = await handAsk(1), partOut = await handAsk(0.5);

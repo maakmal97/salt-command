@@ -320,8 +320,8 @@
  {
   "name": "an amendment's ask opens no Reason Sheet",
   "file": "stmt/owner.js",
-  "find": "          if(done===false&&asked) amendWhy(order,opener,body,asked);",
-  "replace": ""
+  "find": "if(asked){ amendWhy(order,opener,body,asked);",
+  "replace": "if(false){ amendWhy(order,opener,body,asked);"
  },
  {
   "name": "the amendment is sent again without the reason",

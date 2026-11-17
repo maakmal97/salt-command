@@ -281,14 +281,15 @@ export async function run({ ok, pageWork }) {
     await byAct(d, "part.orders.todo").click(); await p.work.quiet();
     await p.tapRow("ord-a1");
     const a1 = p.acts("ord-a1");
-    ok(a1.filter((x) => x === "order.claim-received").length === 2 && a1.includes("order.claim-not-found") && a1.includes("order.pay") && a1.includes("order.amend")
+    ok(a1.filter((x) => x === "order.claim-received").length === 2 && a1.includes("order.claim-not-found") && !a1.includes("order.pay") && a1.includes("order.amend")
       && a1.includes("order.cancel") && !a1.includes("order.preview") && !a1.includes("order.handed"),
     "an agreed order's card keeps its claims, Received, Amend and Cancel: " + JSON.stringify(a1));
     await byAct(d, "part.orders.open").click(); await p.work.quiet();
     await p.tapRow("ord-r1");
     const r1 = p.acts("ord-r1");
-    ok(r1.includes("order.handed") && r1.includes("order.handed-rest") && r1.includes("order.pay") && r1.includes("order.cancel") && !r1.includes("order.preview"),
-      "a ready order's card keeps the handover, the close and the cash: " + JSON.stringify(r1));
+    /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the close and the cash are the Change sheet's, so the card keeps the handover, Change and Cancel alone */
+    ok(r1.includes("order.handed") && r1.includes("order.amend") && !r1.includes("order.handed-rest") && !r1.includes("order.pay") && r1.includes("order.cancel") && !r1.includes("order.preview"),
+      "a ready order's card keeps the handover, Change and Cancel: " + JSON.stringify(r1));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3. BACK, AND WHAT CLOSES A CARD */

@@ -138,22 +138,10 @@
   "replace": "        if(!window.confirm('Cancel this order?')) return; makerAsk(order,can,'cancel',{"
  },
  {
-  "name": "Close asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "          makerAsk(order,handed,'close',{",
-  "replace": "          if(!window.confirm('Close this order?')) return; makerAsk(order,handed,'close',{"
- },
- {
   "name": "Offer again asks a native confirm",
   "file": "stmt/owner.js",
   "find": "        makerAsk(order,offer,'again-'+stage,{",
   "replace": "        if(!window.confirm('Offer it again?')) return; makerAsk(order,offer,'again-'+stage,{"
- },
- {
-  "name": "Record handover asks a native confirm",
-  "file": "stmt/owner.js",
-  "find": "          if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }",
-  "replace": "          if(!handedEnds()){ if(!window.confirm('Record the handover?')) return; makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }"
  },
  {
   "name": "Decline sends as the sheet opens",
@@ -166,12 +154,6 @@
   "file": "stmt/owner.js",
   "find": "          yes:function(){ makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.'); }});",
   "replace": "          yes:function(){}}); makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.');"
- },
- {
-  "name": "Close sends as the sheet opens",
-  "file": "stmt/owner.js",
-  "find": "            yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});",
-  "replace": "            yes:function(){}}); makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.');"
  },
  {
   "name": "Offer again sends as the sheet opens",
@@ -294,12 +276,6 @@
   "replace": "    sec.appendChild(rows);\n    card.insertBefore(sec,card.querySelector(':scope > .odecide'));\n"
  },
  {
-  "name": "the one button does not say its road",
-  "file": "stmt/owner.js",
-  "find": "'Record '+rm(amount.value)+', '+by.value",
-  "replace": "'Record '+rm(amount.value)"
- },
- {
   "name": "their last line is not drawn",
   "file": "stmt/owner.js",
   "find": "var lines=((order&&order.msgs)||[]).filter(function(m){ return m&&m.text; })",
@@ -310,12 +286,6 @@
   "file": "stmt/owner.js",
   "find": "if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true;",
   "replace": "void 0;"
- },
- {
-  "name": "an agreed order offers cash",
-  "file": "stmt/owner.js",
-  "find": "if(order.status==='ready'){ makerCashControls(money,order); cashed=true; } else makerPayControl(money,order,false);",
-  "replace": "{ makerCashControls(money,order); cashed=true; }"
  },
  {
   "name": "Agree stands in the acts, not the lead",
@@ -448,5 +418,35 @@
   "file": "stmt/owner.js",
   "find": "th.appendChild(quick); th.appendChild(f);",
   "replace": "var ans=el('details'); ans.setAttribute('data-fold','answer'); ans.appendChild(f); th.appendChild(quick); th.appendChild(ans);"
+ },
+ {
+  "name": "Save sends no close at That is all",
+  "file": "stmt/owner.js",
+  "find": "ends?{qty:nh,close:true}:{qty:nh}",
+  "replace": "{qty:nh}"
+ },
+ {
+  "name": "the Sheet offers That is all at the full size",
+  "file": "stmt/owner.js",
+  "find": "if(rest) rest.hidden=!(hq&&Number(hq.value)>out+0.0004&&Number(hq.value)<Number(order.qty)-0.0004);",
+  "replace": "if(rest) rest.hidden=false;"
+ },
+ {
+  "name": "the Sheet's told line leaves the payment out",
+  "file": "stmt/owner.js",
+  "find": "if(pay&&Number(pay.value)>0) bits.push('They are told the payment arrived.');",
+  "replace": "if(false) bits.push('They are told the payment arrived.');"
+ },
+ {
+  "name": "the Sheet says nothing when nothing changed",
+  "file": "stmt/owner.js",
+  "find": "'Nothing is sent until you change something.'",
+  "replace": "''"
+ },
+ {
+  "name": "an acknowledged order's Sheet offers cash",
+  "file": "stmt/owner.js",
+  "find": "[{value:'bank',label:'Bank'}].concat(ready?[{value:'cash',label:'Cash'}]:[]),ready);",
+  "replace": "[{value:'bank',label:'Bank'},{value:'cash',label:'Cash'}],ready);"
  }
 ]
