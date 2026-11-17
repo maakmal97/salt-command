@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1526","d":"17 Nov 2026","t":"EVERY CHANGE OF AN ORDER IS TOLD TO THE CUSTOMER","n":["<b>A DISCOUNT IS SAID AS ONE.</b> When you change an agreed order so they owe less for the same or more units, their phone says \"You have received a discount on your order\". Fewer units, or a delivery turned into a collection, is not a discount.","<b>EVERY OTHER CHANGE IS SAID TOO.</b> A higher price, a delivery charge, a change of way or of size reads \"Your order has changed\", with a line to open it. A change made on the book reaches them the same way. An undo keeps its own words.","<b>THEIR BILL SAYS WHAT IT WAS.</b> The order's Bill on Salt Counter shows the day it was changed, or the day of the discount, and what the order was before: its size, its goods and its way. Putting a change back, or an undo, takes the line away.","<b>NO AMOUNT IN A BANNER.</b> As always, a banner names no figure, product or person; the figures are on the order."]}];
+const evolution=[{"v":"v1527","d":"17 Nov 2026","t":"ONE CHANGE SHEET ON EVERY AGREED ORDER","n":["<b>ONE ROW, CHANGE.</b> On Salt Admin every agreed, ready or completed order has one row, Change. Its sheet holds the order (way, units, price, delivery) and what has happened so far: the collection point, what is handed over, and a payment received by Bank or Cash.","<b>ONE SAVE.</b> Send the change sends the change of terms first, for Approve, then the point, the handover and the money, each as before, and stops at the first that does not go through. A line under the fields says what the customer will be told.","<b>FEWER PLACES ON THE CARD.</b> Change point, the units field and the payment amount moved into the sheet. The card keeps its one stage button (every unit handed over), their payment claims and the cash Undo. Needs you's Record and Handover open the order at Change.","<b>IT SAYS WHY IT WAITS.</b> It sends nothing while another move is on its way, and holds a payment above what is owed now until a raise it rides on is approved."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Nov 2026, 11:28 KL';
+const LAST_UPDATED='17 Nov 2026, 12:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
