@@ -1,0 +1,4 @@
+[
+ {"name": "the dock carries no toast, so a refused copy is not shown", "file": "stmt/page.js", "find": "</nav></div><div class=\"amb-toast\" data-amb-toast popover=\"manual\" aria-hidden=\"true\"><span class=\"amb-toast__dot\"></span><span class=\"amb-toast__text\"></span></div>';", "replace": "</nav></div>';"},
+ {"name": "a link's plate row copies nothing", "file": "stmt/page.js", "find": "b.type='button'; b.setAttribute('data-amb-copy',url);", "replace": "b.type='button';"}
+]

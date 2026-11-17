@@ -17794,15 +17794,16 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => !D.getElementById("tCard").hidden);
     D.getElementById("tCard").click();
-    const copies = () => [...D.querySelectorAll("#pCard button")].filter((b) => b.textContent === "Copy link");
-    ok(await until(() => copies().length === 2), "their two open links each carry Copy link");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a link's Copy is the plate row's data-amb-copy, Ambient's copy says its result in its toast */
+    const copies = () => [...D.querySelectorAll("#pCard [data-amb-copy]")], toastOf = () => (D.querySelector("[data-amb-toast] .amb-toast__text") || { textContent: "" }).textContent;
+    ok(await until(() => copies().length === 2) && copies().every((c) => /Copy link$/.test(c.textContent.trim())), "their two open links each carry Copy link");
     const [c1, c2] = copies();
     c1.click();
-    ok(await until(() => c1.textContent !== "Copy link") && c1.textContent === "Copy failed",
-      "on a clipboard that refuses it says Copy failed, not Copied: " + c1.textContent);
+    ok(await until(() => toastOf() !== "") && toastOf() === "Could not copy",
+      "on a clipboard that refuses it says it could not copy, not copied: " + toastOf());
     clip.ok = true; c2.click();
-    ok(await until(() => c2.textContent !== "Copy link") && c2.textContent === "Copied" && clip.got.some((t) => /[/]g[/]/.test(t)),
-      "and on one that takes it, Copied, with the link on the clipboard: " + c2.textContent);
+    ok(await until(() => /copied$/.test(toastOf())) && clip.got.some((t) => /[/]g[/]/.test(t)),
+      "and on one that takes it, copied, with the link on the clipboard: " + toastOf());
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
