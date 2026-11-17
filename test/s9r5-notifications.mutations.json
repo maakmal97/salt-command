@@ -1,0 +1,5 @@
+[
+ {"name": "once on, This device still says off", "file": "stmt/page.js", "find": "devRow(tw('push.h'),said||tw('push.devOn'),devSwitch(true,tw('push.h'),devPushOff))", "replace": "devRow(tw('push.h'),said||tw('push.devOff'),devSwitch(true,tw('push.h'),devPushOff))"},
+ {"name": "once on, the switch still reads off", "file": "stmt/page.js", "find": "devSwitch(true,tw('push.h'),devPushOff)", "replace": "devSwitch(false,tw('push.h'),devPushOff)"},
+ {"name": "the off switch offers nothing to turn on", "file": "stmt/page.js", "find": "devSwitch(false,tw('push.h'),devPushOn)", "replace": "devSwitch(true,tw('push.h'),devPushOn)"}
+]

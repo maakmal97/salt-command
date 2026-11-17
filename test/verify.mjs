@@ -20461,9 +20461,10 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const card = D.getElementById("thisDevice");
     /* 26 Oct 2026, his word: Turn on and Turn off are This device's Notifications Switch, off or on */
-    const btn = (t) => { const sw = card.querySelector('.salt-settings__row .salt-switch[aria-label="Notifications"]');
-      if (t === "Turn on") return sw && sw.getAttribute("aria-checked") === "false" ? sw : undefined;
-      if (t === "Turn off") return sw && sw.getAttribute("aria-checked") === "true" ? sw : undefined;
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the Notifications switch is input.amb-switch, on or off by its checked state */
+    const btn = (t) => { const sw = card.querySelector('input.amb-switch[aria-label="Notifications"]');
+      if (t === "Turn on") return sw && !sw.checked ? sw : undefined;
+      if (t === "Turn off") return sw && sw.checked ? sw : undefined;
       return [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t); };
     ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
     st.answer = "denied";
@@ -20587,8 +20588,9 @@ await (async () => {
     const { D, win } = a, dev = D.getElementById("thisDevice"), keep = D.getElementById("keepCard"), body = D.getElementById("devSlot");
     ok(await until(() => !dev.hidden && /Saved as an app/.test(dev.textContent)), "signed in in the saved app, This device shows, with its Saved as an app row: " + JSON.stringify(dev.textContent.slice(0, 160)));
     /* 26 Oct 2026, his word: This device is a list of settings; the row says Yes and tells a reader the rest */
-    const row = [...dev.querySelectorAll(".salt-settings__row")].find((r) => /Saved as an app/.test(r.textContent));
-    ok(!!row && /You are in it now[.]/.test(row.querySelector(".sr").textContent) && row.querySelector(".salt-settings__label").textContent === "Saved as an app" && row.querySelector(".salt-settings__value").textContent === "Yes"
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a row is .amb-setting, its name, the status a reader hears (.amb-vh) and the value Yes */
+    const row = [...dev.querySelectorAll(".amb-setting")].find((r) => /Saved as an app/.test(r.textContent));
+    ok(!!row && /You are in it now[.]/.test(row.querySelector(".amb-vh").textContent) && row.querySelector(".amb-setting__name").textContent === "Saved as an app" && row.querySelector(".amb-setting__value").textContent === "Yes"
       && !!(row.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && keep.hidden && dev.contains(keep),
       "and saving as an app is a row of the card, above the other devices, with the optional install guide under This device: " + JSON.stringify(dev.textContent.slice(0, 160)));
     ok(D.getElementById("pStmt").firstElementChild !== keep && dev.contains(keep), "the install guide sits under This device, not at the head of the statement");
