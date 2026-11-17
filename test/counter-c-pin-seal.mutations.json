@@ -5,7 +5,7 @@
  {"name":"the address not cut","file":"stmt/page.js","find":"addr:pt?'':spotCut(E.addr,200)","replace":"addr:pt?'':String(E.addr||'').trim()"},
  {"name":"the check calls an address an exact spot","file":"stmt/page.js","find":"tw(c.pin&&c.pin.src==='addr'?'sp.addrRow':c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow')","replace":"tw('sh.pinRow')"},
  {"name":"the spot in the clear","file":"stmt/page.js","find":"      if(c.pinSealed) body.pin=c.pinSealed;\n","replace":"      if(c.pinSealed){ body.pin=c.pinSealed; body.spot=c.pin; }\n"},
- {"name":"no Details row","file":"stmt/page.js","find":"    if(o.pinned&&o.mode==='deliver') row(tw('od.sealed'),tw('od.sealedV'));\n","replace":""},
+ {"name":"no Details row","file":"stmt/page.js","find":"    if(o.pinned&&o.mode==='deliver') detailRow(tw('od.sealed'),tw('od.sealedV'));\n","replace":""},
  {"name":"the seal held too small","file":"stmt/pin.js","find":"export const PIN_MAX = 4096;","replace":"export const PIN_MAX = 300;"},
  {"name":"an amendment may name a spot","file":"stmt/maker.js","find":"const fields = [\"product\", \"qty\", \"mode\", \"place\", \"forFriend\", \"rid\", \"week\", \"digest\", \"wantBy\", \"slot\"];","replace":"const fields = [\"product\", \"qty\", \"mode\", \"place\", \"forFriend\", \"rid\", \"week\", \"digest\", \"wantBy\", \"slot\", \"pin\"];"},
  {"name":"a stored spot's address not cut","file":"stmt/page.js","find":".join(', '),200); }","replace":".join(', ')); }"},

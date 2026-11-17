@@ -62,13 +62,13 @@
  {
   "name": "no spot name",
   "file": "stmt/owner.js",
-  "find": "if(label) row(aLine('Name',label));",
+  "find": "if(label) bodyRow(aLine('Name',label));",
   "replace": "void label;"
  },
  {
   "name": "no floor or unit",
   "file": "stmt/owner.js",
-  "find": "if(unit) row(aLine('Floor or unit',unit));",
+  "find": "if(unit) bodyRow(aLine('Floor or unit',unit));",
   "replace": "void unit;"
  },
  {
@@ -110,7 +110,7 @@
  {
   "name": "a typed address not drawn",
   "file": "stmt/owner.js",
-  "find": "if(addr) row(aLine('Address',addr));",
+  "find": "if(addr) bodyRow(aLine('Address',addr));",
   "replace": ""
  },
  {

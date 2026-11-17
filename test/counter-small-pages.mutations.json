@@ -14,7 +14,7 @@
  {"name":"the join page carries a stray script","file":"stmt/page.js","find":"'<script type=\"application/json\" id=\"jw\">'","replace":"'<script>var x=1</script><script type=\"application/json\" id=\"jw\">'"},
  {"name":"the link page's Continue is a quiet pill","file":"stmt/page.js","find":"class=\"amb-pill amb-pill--block\" id=\"linkGo\"","replace":"class=\"amb-pill amb-pill--quiet amb-pill--block\" id=\"linkGo\""},
  {"name":"the link page's rows lose their glyph","file":"stmt/page.js","find":"AMB.glyph(g) + wt(\"span\", \"\", k)","replace":"wt(\"span\", \"\", k)"},
- {"name":"the link page's inside head is an old eyebrow","file":"stmt/page.js","find":"<h2 class=\"amb-settings__head\">' + wd(\"link.inside\")","replace":"<h2 class=\"amb-settings__head salt-eyebrow\">' + wd(\"link.inside\")"},
+ {"name":"the link page's inside head is an old eyebrow","file":"stmt/page.js","find":"wt(\"h2\", 'class=\"amb-settings__head\"', \"link.inside\")","replace":"wt(\"h2\", 'class=\"amb-settings__head salt-eyebrow\"', \"link.inside\")"},
  {"name":"an app's own browser is told in a plain notice","file":"stmt/page.js","find":"'<div class=\"amb-notice amb-notice--warn\" id=\"linkInapp\" hidden>'","replace":"'<div class=\"amb-notice\" id=\"linkInapp\" hidden>'"},
  {"name":"the link page is not a shell","file":"stmt/page.js","find":"'<div id=\"link\" class=\"amb-shell\" data-mood=\"lagoon\" hidden>","replace":"'<div id=\"link\" class=\"gate\" data-mood=\"lagoon\" hidden>"},
  {"name":"the code field is not the one-time code field","file":"stmt/page.js","find":"class=\"amb-input amb-input--code\" id=\"codeIn\"","replace":"class=\"amb-input\" id=\"codeIn\""},

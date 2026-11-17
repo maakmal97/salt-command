@@ -38,8 +38,8 @@
   {
     "name": "the check says no credit",
     "file": "stmt/page.js",
-    "find": "    if(cco.any){ row(tw('sh.credit')",
-    "replace": "    if(false){ row(tw('sh.credit')"
+    "find": "    if(cco.any){ checkRow(tw('sh.credit')",
+    "replace": "    if(false){ checkRow(tw('sh.credit')"
   },
   {
     "name": "an unsealed order's credit is not taken off",

@@ -694,7 +694,7 @@ const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.sli
 function placesDock() {
   return '<div class="amb-dock"><div id="hLive" hidden></div><nav class="amb-tabbar"' + wl("place.bar") + ">" + PLACES.map(([t]) => '<button type="button" class="amb-tab"' + placeAttrs(t, true)
     + wl("place." + t) + ' data-word="' + esc(EN["place." + t]) + '">'
-    + AMB.glyph(PLACE_GLYPH[t]) + wt("span", "", "place." + t) + '<span class="amb-tab__count" data-n="' + t + '" aria-hidden="true" hidden></span></button>').join("") + '</nav></div><div class="amb-toast" data-amb-toast popover="manual" aria-hidden="true"><span class="amb-toast__dot"></span><span class="amb-toast__text"></span></div>';
+    + AMB.glyph(PLACE_GLYPH[t]) + wt("span", "", "place." + t) + '<span class="amb-tab__count" data-n="' + t + '" aria-hidden="true" hidden></span></button>').join("") + '</nav></div>';
 }
 /* THE TEST SURFACE (his answers of 18 Oct 2026). `test` is null on every real page, which is then the page it always was; under /all/test
    it is {base, u}: the page's every request goes under the base, its storage under salt-test:, and it registers no service worker, manifest,
@@ -983,6 +983,8 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
     + '<div id="pCard" class="amb-stack" hidden></div>'
     + "</main>" + placesDock() + "</div>"
+    /* 17 Nov 2026, the move to Ambient: the copy answer is Ambient's one toast, after the shell as its guide places it (a popover in the top layer, never inside a shell that hides) */
+    + '<div class="amb-toast" data-amb-toast popover="manual" aria-hidden="true"><span class="amb-toast__dot"></span><span class="amb-toast__text"></span></div>'
     + ambScript(nonce)
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(test ? TEST_POLL_MS : POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))

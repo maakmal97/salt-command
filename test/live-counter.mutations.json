@@ -368,8 +368,8 @@
  {
   "name": "the page shown again does not reconnect",
   "file": "stmt/page.js",
-  "find": "function shown(){ if(!document.hidden) wake(); }",
-  "replace": "function shown(){}"
+  "find": "function onShown(){ if(!document.hidden) wake(); }",
+  "replace": "function onShown(){}"
  },
  {
   "name": "Log out leaves the socket open",

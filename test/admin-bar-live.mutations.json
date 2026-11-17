@@ -1,7 +1,7 @@
 [
  {"name":"the bar of chips comes back","file":"stmt/page.js","find":"        + '<main class=\"amb-screen amb-screen--docked\">'\n        /* 12 OCT 2026 (PHASE 4c)","replace":"        + '<header class=\"abar\"><div id=\"aBarChips\"></div></header><main class=\"amb-screen amb-screen--docked\">'\n        /* 12 OCT 2026 (PHASE 4c)"},
  {"name":"the counts never reach the tabs","file":"stmt/owner.js","find":"[].slice.call(document.querySelectorAll('[data-count=\"'+m+'\"]')).forEach(function(c){ tabCount(c,n); });","replace":"void 0;"},
- {"name":"a tab's name does not say what waits","file":"stmt/page.js","find":"l=n?w+', '+n+' waiting':w;","replace":"l=w;"},
+ {"name":"a tab's name does not say what waits","file":"stmt/page.js","find":"l=n?tw('place.count',{w:w,n:n}):w;","replace":"l=w;"},
  {"name":"Shop gets a count","file":"stmt/owner.js","find":"    setCount('orders', ordOpenCount());","replace":"    setCount('orders', ordOpenCount()); setCount('shop', 1);"},
  {"name":"Approve counts rows, not groups","file":"stmt/owner.js","find":"barLive(draftGroups(pendingRows()).length)","replace":"barLive(pendingRows().length)"},
  {"name":"Approve is not named with its rows","file":"stmt/owner.js","find":"apSay=rows?'Approve, '+rows+' to approve':'Approve';","replace":"apSay='Approve';"},
