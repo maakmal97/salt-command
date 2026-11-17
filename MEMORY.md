@@ -11,6 +11,7 @@
 - Since 04 Oct 2026 a hostname Access policy, set outside the repo's config, fronts the Desk Worker: an unauthenticated `/rev` answers 302.
 - `ORDER_STORE` is `"object"` since 04 Oct 2026 (#40); the old `q:orders` blob was retired on 04 Oct 2026.
 - The maintenance guard exists in both Workers and QR Command (`MAINTENANCE_UNTIL`, an ISO UTC time; empty = off, the current value).
+- His switch on Salt Admin (Shop > Hours, Maintenance, 17 Nov 2026) holds the Counter alone at once without a deploy: Counter KV `maint` `{until}`, written by `/all/maker/maintenance`; the later of it and `MAINTENANCE_UNTIL` holds (docs/STATEMENTS.md "His maintenance switch").
 
 ## Migrations
 - Newest rebuild of `draft`: `migrations/0024`; of `preapproval`: `migrations/0017`. Newest file: `0024`.

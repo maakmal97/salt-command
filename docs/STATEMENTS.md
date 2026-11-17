@@ -812,6 +812,16 @@ rounded up, so the page never promises a time before the guard lifts. `MAINTENAN
 default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-store`, JSON for a request that is not HTML, the machine routes in `MACHINE` passing.
 `test/counter-maintenance.mjs`, its mutations in `test/counter-maintenance.mutations.json`; the guard's own section is "Maintenance guard on both Workers".
 
+**His maintenance switch** (17 Nov 2026, his word: one control on Salt Admin to put the Counter on and off maintenance at once, asking when it is back).
+Shop > Hours carries a Maintenance group under Now: one Switch, Under maintenance. Turned on it asks Back at (a day and a time, Kuala Lumpur) and Put it
+on sends `{until}` to `/all/maker/maintenance`, which files `{until}` (rounded up to the minute, no milliseconds, later than now and within 90 days,
+`maintSet` in `stmt/maintenance.js`) on Counter KV `maint`, lapsing a day after; turned off it sends `{off: true}` and the key goes. No deploy and no
+Desk hop: the Worker reads `maint` for every request the guard would hold (never for `/all`, the machine routes or the test surface's own roads) and
+holds it exactly as `MAINTENANCE_UNTIL` does, the page saying when it is back; where both stand, the later holds, and either lifts by itself at its time.
+The hours read carries it as `maint`, so the bar's chip says Maintenance and Needs you carries its FYI card (`w:maint`) while it stands. A customer's
+page already open, answered `maintenance`, reloads onto the maintenance page (`api` in `stmt/page.js`). KV is read at the edge, so a phone elsewhere
+may take up to a minute to see a change. `test/admin-maintenance.mjs`, its mutations in `test/admin-maintenance.mutations.json`.
+
 **The shut page and the site's 404 stand on one Ambient shell in Slate** (`onePage` in `stmt/page.js`: a hero holding one `h1` and one line, from
 `shut.*` and `nf.*` in the table; the ring over them went on 16 Nov 2026 with the door's, see Place E below). Both follow the device and run no script, under the guest board's policy (`guestHtml`: `default-src 'none'`, styles by nonce,
 `script-src 'none'`). **Every shut id still answers ONE page**, byte for byte the same but its nonce, status 404. The 404 is the plain `Not found` only for a request
