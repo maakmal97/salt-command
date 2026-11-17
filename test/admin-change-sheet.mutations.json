@@ -1,6 +1,6 @@
 [
-{"name": "the agreed order's row is labelled Change the order", "file": "stmt/owner.js", "find": "change=asRow(makerButton(stageRows,['Change','order.amend']", "replace": "change=asRow(makerButton(stageRows,['Change the order','order.amend']"},
-{"name": "a done order's row is labelled Change the order", "file": "stmt/owner.js", "find": "var redo=asRow(makerButton(redoList,['Change','order.amend']", "replace": "var redo=asRow(makerButton(redoList,['Change the order','order.amend']"},
+{"name": "the agreed order's row is labelled Change the order", "file": "stmt/owner.js", "find": "change=aActBtn(stageRows,['Change','order.amend']", "replace": "change=aActBtn(stageRows,['Change the order','order.amend']"},
+{"name": "a done order's row is labelled Change the order", "file": "stmt/owner.js", "find": "var redo=aActBtn(redoList,['Change','order.amend']", "replace": "var redo=aActBtn(redoList,['Change the order','order.amend']"},
 {"name": "the second group has another name", "file": "stmt/owner.js", "find": "[sub('So far')]", "replace": "[sub('Later')]"},
 {"name": "Cash is offered on an acknowledged order", "file": "stmt/owner.js", "find": "[{value:'bank',label:'Bank'}].concat(ready?[{value:'cash',label:'Cash'}]:[]),ready);", "replace": "[{value:'bank',label:'Bank'},{value:'cash',label:'Cash'}],ready);"},
 {"name": "a done order has a So far", "file": "stmt/owner.js", "find": "    if(order.status==='acknowledged'||ready){", "replace": "    if(true){"},
