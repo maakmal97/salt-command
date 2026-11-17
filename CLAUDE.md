@@ -256,7 +256,8 @@ the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are ha
 **Coverage**, the map: districts shaded by a metric over a period, drilled to federal
 constituencies, parties as dots. **Area names show; a party's name never does**, even unlocked.
 Each party's place shows in words (`whereOf`). A place is its locality, then where that is
-(`placeLocality`, `geoWhere`); it is chosen from `placePicks` at Add ID and Amend ID, and an
+(`placeLocality`, `geoWhere`); it is chosen from `placePicks` at Add ID and Amend ID, or worked out from the point
+in their Where field (`localityFor`: its district, then the nearest listed locality within 3 km; his D5 of 17 Nov 2026), and an
 unlisted place is looked up in `geo/gazetteer.json`, built from GeoNames alone, never from the
 directory. The leak checks exempt a directory place only when it IS an official area name
 (`areaNameSet`) or a filed locality (`publishedLocalities`). Detail: `docs/DESK.md`.
@@ -598,10 +599,14 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   sealed on their phone to the slip key under `salt-pin v1` (`stmt/pin.js`), ciphertext alone on the Counter for 30 days,
   opened on the Desk with the one unlock, the fee's point ahead of `vault-addr`, **and on Salt Admin too** (his answer of 20 Oct 2026,
   reversing the Desk's alone of 10 Oct): `GET /all/maker/pins/<u>/<id>` off the Counter's store, read with `keep` false so looking never
-  keeps it past its 30 days, opened in his browser behind the one unlock, nothing stored; filing it as their place stays on the Desk. **Saved spots stay on the phone** (Counter Batch C, his
+  keeps it past its 30 days, opened in his browser behind the one unlock, nothing stored; filing it as their place is the Desk's and, from 17 Nov 2026, Salt
+  Admin's (`makerFileSpot`, for his Approve; the one place field plan, D4). **Saved spots stay on the phone** (Counter Batch C, his
   answers of 20 Oct 2026): three an account in localStorage, none picked when the sheet opens, kept through Log out. **A spot is a name and EITHER its address
   (typed, or a map link pasted) OR Use my location** (his word of 11 Nov 2026): the name alone travels in the clear, as the order's place; the seal carries
-  the name beside the point, or the typed address alone (`src: 'addr'`; an older seal's `src: 'unit'`), which the Desk and Salt Admin show and never file or measure. **Every
+  the name beside the point, or the typed address alone (`src: 'addr'`; an older seal's `src: 'unit'`), which the Desk and Salt Admin show. **Nothing they
+  type is refused for its form** (the one place field plan, `docs/plan-place-field.html`, his yes of 17 Nov 2026): the name comes filled as Home (D2), a
+  link no reader takes is kept whole as the address, up to 1,000 characters (D1), and Salt Admin's card places an address with no point once (Place it,
+  D3), which measures that order's distance and may be filed as their place. **Every
   new order asks collect or deliver**, never preset from an earlier order (his answer of 11 Nov 2026); Home's tiles and Order again are the answer. The point is filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
 - **The confirm time is measured, never promised** (Counter Batch C, his answer of 20 Oct 2026): the median of his last 30 Accepts made in

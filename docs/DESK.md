@@ -578,6 +578,17 @@
   first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
   opens the live names vault, and, short of `--force`, while the live places hold a code the file
   lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.
+- **One place field** (his yes of 17 Nov 2026 to `docs/plan-place-field.html`, all five recommended answers). `mapsLink` also reads two figures
+  apart by a space, a point in degrees, minutes and seconds in either order (`dmsPoint`) and a plus code (`plusPoint`: a full one, or a short
+  one read from Kuala Lumpur, so within about 50 km of the city), each as `src: 'pin'`; `tools/maker-geosync.mjs` carries both to the Counter
+  and Salt Admin. **The locality is worked out from the point** (`localityFor`, beside `placePicks`): the district the point stands in, the
+  nearest listed locality of that district within 3 km, else the listed area holding the point, else the district's nearest; null outside every
+  district. On Add ID, Amend ID and Place on the map, Where stands first and fills Locality (`makerLocalityFrom`), a locality he typed standing;
+  words no reader takes are filed as the address alone (`src: 'addr'`). On the Counter nothing is refused for its form: the spot's name comes
+  as Home and a link no reader takes is kept whole as the address (`ADDR_MAX`, 1,000). Salt Admin's order card places such an address once
+  (Place it, Use this point: the point held in page memory for that order's distance) and files any point as their place (`makerFileSpot`,
+  the same `/all/maker/inputs/place` as Place on the map, for his Approve). Not built: opening Google `cid=` links and Waze venue links on the
+  Worker, which waits on a real link of each kind.
 - **An agreed order is amended after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the
   delivery charge of an acknowledged or ready order, one Correction for approval (`restateOrder` in `src/orders.js`,
   `POST /orders/<id>/restate`, the Counter's `/all/maker/orders/<id>/restate` under a request id). Refused: a
