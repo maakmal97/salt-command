@@ -1891,7 +1891,22 @@ export const OWNER_JS = `
      Desk's alone). Sealed while shut, with Unlock; open, the Address (the spot's name), its floor or unit and Maps from the point, each from the
      seal and nothing stored but in page memory (11 Nov 2026: the Name, then the Address as they typed it, with Maps searching it): the opened part carries data-maker-pin, and makerVaultLock (the lock, a hidden page, a lapse)
      takes it off and lets the held copy go. A unit alone has no Maps. Filing it as their place
-     stays on the Desk. */
+     was the Desk's alone until 17 Nov 2026 (his yes to the one place field plan, D4): makerFileSpot files it from here too. */
+  async function makerFileSpot(code,p){
+    var label=makerGeo.locality(+p.lat,+p.lng);
+    if(!label) throw new Error('No listed locality near that point. File it from Place on the map, choosing one.');
+    var coords=await makerLocalityPoint(label);
+    var filed={addr:typeof p.addr==='string'&&p.addr?p.addr.slice(0,1000):null,lat:Math.round(+p.lat*1e6)/1e6,lng:Math.round(+p.lng*1e6)/1e6,src:'pin',at:new Date().toISOString()};
+    var draft=await makerPairPrepare(makerVaultBase(),function(maps){ maps.places[code]=filed; },null);
+    delete draft.placeMap;
+    var body={at:new Date().toISOString(),places:{}}; body.places[code]=coords;
+    if(draft.places) body.addrVault=draft.places;
+    makerPairBody(body,draft);
+    var result=await refs('/all/maker/inputs/place',body);
+    if(!result||result.ok!==true) throw new Error('The Desk did not confirm. Nothing is lost; tap again.');
+    makerVaultRefresh();
+    return result;
+  }
   function spotHref(lat,lng){
     var ua=(navigator&&navigator.userAgent)||'', ll=lat+','+lng;
     if(/iPhone|iPad|iPod|Macintosh/.test(ua)) return 'https://maps.apple.com/?ll='+ll+'&q=Their%20spot';
@@ -1921,22 +1936,53 @@ export const OWNER_JS = `
     function said(text){ head(false); note.textContent=text; box.appendChild(note); }
     function adSpotPaint(p){
       head(false);
-      var label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'', addr=typeof p.addr==='string'?p.addr.slice(0,200):'', mark=null;
+      var label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'', addr=typeof p.addr==='string'?p.addr.slice(0,1000):'', mark=null;
+      var hasPt=p.src!=='unit'&&p.lat!=null&&p.lng!=null&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180;
+      var code=codeOfUser(order.u), fileable=!!code&&!/-R$/.test(code), held=makerSpotOpened[order.u+'/'+order.pin];
       body.setAttribute('data-maker-pin','');
       /* 11 Nov 2026: a spot is a name and its typed address, or a point; one filed before carried a floor or unit */
       if(label) bodyRow(aLine('Name',label));
       if(addr) bodyRow(aLine('Address',addr));
       if(unit) bodyRow(aLine('Floor or unit',unit));
-      if(p.src==='addr'&&addr){
-        var q=el('a','amb-action adspot__maps'); q.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr); q.target='_blank'; q.rel='noopener'; q.setAttribute('data-spot-maps','');
-        q.appendChild(document.createTextNode('Maps')); bodyRow(q);
-      }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
+      if(hasPt){
         var a=el('a','amb-action adspot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
         if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
         a.appendChild(document.createTextNode('Maps')); bodyRow(a);
-      }else if(p.src!=='unit'&&p.src!=='addr') mark='Their link could not be opened to a point just now.';
+      }else if(p.src==='addr'&&addr){
+        /* 17 Nov 2026 (his yes to the one place field plan, D1): what the app could not read reaches him whole; a link of theirs opens as it is */
+        var their=/https:[/][/][^ ]+/.exec(addr), q=el('a','amb-action adspot__maps');
+        q.href=their?their[0].split(String.fromCharCode(10))[0]:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr); q.target='_blank'; q.rel='noopener'; q.setAttribute('data-spot-maps','');
+        q.appendChild(document.createTextNode(their?'Open their link':'Maps')); bodyRow(q);
+      }else if(p.src!=='unit') mark='Their link could not be opened to a point just now.';
       var lk=aAct(aBtn('Lock','amb-action','vault.lock','spot:'+key)); lk.addEventListener('click',function(){ makerVaultLock(); }); bodyRow(lk);
-      note.textContent=(mark?mark+' ':'')+'File it as their place on the Desk.'; box.appendChild(note);
+      /* NEEDS PLACING (D3): an address with no point is placed here once, from Maps' own link, figures, a place found or his location; the point
+         measures this order's distance on this page and may then be filed as their place */
+      if(!hasPt&&p.src==='addr'&&addr){
+        var pin=actOn(el('input','amb-input'),'spot.place',key); pin.type='text';
+        box.appendChild(sField('Place it',pin));
+        placeAssist(pin,{id:'adspotPlace'+String(key).replace(/[^A-Za-z0-9]/g,''),act:'spot.place',keep:true});
+        var use=aPill('Use this point','spot.place.use',key,true,true); box.appendChild(use);
+        use.addEventListener('click',async function(){
+          var at=null; use.disabled=true;
+          try{ at=await pointPlace(pin.value); }catch(e){ at=null; }
+          use.disabled=false;
+          if(!at){ note.textContent='Paste the link Maps gives, two figures, or pick a place from the list.'; return; }
+          var placed=Object.assign({},p,{lat:at.lat,lng:at.lng,placed:true});
+          makerSpotOpened[order.u+'/'+order.pin]=placed; kmRepaint(); adSpotPaint(placed);
+        });
+      }
+      /* FILED FROM HERE TOO (D4): the point, theirs or placed, files as their place for his Approve, as Place on the map files one */
+      var had=fileable&&makerVault&&makerVault.places&&makerVault.places[code], same=!!had&&had.lat!=null&&had.lng!=null&&haversineKm({lat:+had.lat,lng:+had.lng},{lat:+p.lat,lng:+p.lng})<0.05;
+      if(hasPt&&fileable&&!same&&!(held&&held.filed)){
+        var file=aAct(aBtn('File as their place','amb-action','spot.file',key)); bodyRow(file);
+        file.addEventListener('click',async function(){
+          file.disabled=true; note.textContent='Filing their place.';
+          try{ await makerFileSpot(code,p); var h=makerSpotOpened[order.u+'/'+order.pin]; if(h) h.filed=true; adSpotPaint(h||Object.assign({},p,{filed:true})); note.textContent='Sent. It is their place once you approve it.'; }
+          catch(error){ file.disabled=false; refusal(note,error); }
+        });
+      }
+      note.textContent=(mark?mark+' ':'')+(same?'This is the place filed for them.':p.filed?'Sent. It is their place once you approve it.':!hasPt&&p.src==='addr'&&addr?'No point yet: place it to measure the distance.':'');
+      box.appendChild(note);
     }
     async function adSpotOpen(){
       var generation=makerSpotGen, held=makerSpotOpened[order.u+'/'+order.pin];
@@ -2983,7 +3029,7 @@ export const OWNER_JS = `
   }
   var makerPlaceListId=0;
   function makerLocalityField(parent, act){
-    var input=makerField(parent,['Place',act],'text','');
+    var input=makerField(parent,['Locality',act],'text','');
     var list=el('datalist'), key='makerPlaces'+(++makerPlaceListId);
     list.id=key;input.setAttribute('list',key);
     makerGeo.picks().forEach(function(point,label){
@@ -2991,12 +3037,34 @@ export const OWNER_JS = `
     });
     input.parentNode.appendChild(list);return input;
   }
+  /* 17 Nov 2026 (his yes to the one place field plan, D5): THE LOCALITY IS WORKED OUT FROM WHERE. A point in Where (a link read or opened, figures,
+     a place picked from the search, his location) fills Locality with the listed locality nearest it in its district (makerGeo.locality, the
+     Desk's localityFor), said under it; what he typed or picked there himself stands, and Change is the list itself */
+  function makerLocalityFrom(where,locality){
+    var hint=el('p','amb-field__hint mlocal'); hint.setAttribute('role','status'); locality.closest('label').after(hint);
+    var seq=0, auto='', timer=null;
+    var fill=async function(){
+      var mine=++seq, v=where.value.trim(), p=null;
+      if(!v){ if(auto&&locality.value===auto){ locality.value=''; auto=''; locality.dispatchEvent(new Event('input',{bubbles:true})); } hint.textContent=''; return; }
+      try{ p=await pointPlace(v); }catch(e){ p=null; }
+      if(mine!==seq||!p) return;
+      var l=makerGeo.locality(p.lat,p.lng);
+      if(locality.value.trim()&&locality.value!==auto) return;
+      if(!l){ hint.textContent='No listed locality near that point. Choose one, or leave it blank.'; return; }
+      locality.value=l; auto=l; locality.dispatchEvent(new Event('input',{bubbles:true}));
+      hint.textContent='Worked out from Where. Choose another if it is wrong.';
+    };
+    where.addEventListener('input',function(){ clearTimeout(timer); timer=setTimeout(fill,450); });
+    where.addEventListener('change',function(){ clearTimeout(timer); fill(); });
+    locality.addEventListener('input',function(e){ if(e.isTrusted&&locality.value!==auto) hint.textContent=''; });
+    return function(){ seq++; auto=''; hint.textContent=''; };
+  }
   async function makerLocalityPoint(value){
     var picked=makerGeo.picks().get(value);
     var result=picked?{point:picked}:await makerGeo.find(value);
     if(!result.point)throw new Error(result.how==='ambiguous'
       ?'That place matches more than one. Choose its district from the list.'
-      :'That place is not on the list. Add its area after a comma, or leave it blank.');
+      :'That locality is not on the list. Put the place in Where and it is worked out, choose one from the list, or leave it blank.');
     /* the point travels with its locality, the Desk's own geoWhere: a point is never filed without the words before the place's first comma */
     var parts=value.split(',').map(function(w){return w.trim();}).filter(Boolean), official=new Set();
     makerGeo.picks().forEach(function(point,label){official.add(label.split(',')[0].trim());});
@@ -3023,6 +3091,11 @@ export const OWNER_JS = `
       if(!full||full.short)throw new Error('The short link did not lead to a map. Paste the full link.');
       reading=Object.assign({},full,{addr:reading.addr||full.addr});
     }
+    /* 17 Nov 2026 (his yes to the one place field plan): words no reader takes, an address typed and not picked or a link of another
+       maker, are filed as the address alone, as he wrote them, for him to place later; nothing he types is refused for its form */
+    var words=value.replace(/[ ]+/g,' ').trim();
+    if(!reading&&words.length>=5&&/[A-Za-z]/.test(words))
+      return {addr:words.slice(0,1000),lat:null,lng:null,src:'addr',at:new Date().toISOString()};
     if(!reading||reading.lat==null&&!reading.addr)
       throw new Error('Search for the place, paste a map link, or leave it empty.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
@@ -3335,10 +3408,13 @@ export const OWNER_JS = `
       {value:'downstream',label:'Customer of an associate'},{value:'bucket',label:'Associate’s resale account'}]);
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,['Their associate','record.add-id.parent'],idParentItems);
-    var idName=makerField(id,['Name','record.add-id.name'],'text',''), idPlace=makerLocalityField(id,'record.add-id.place');
+    /* 17 Nov 2026 (his yes to the one place field plan): Where first, any address, link, figures or his location; Locality worked out from it */
+    var idName=makerField(id,['Name','record.add-id.name'],'text','');
+    var idLink=makerField(id,['Where','record.add-id.link'],'text','');placeAssist(idLink,{id:'makerIdLink',act:'record.add-id.link'});
+    var idPlace=makerLocalityField(id,'record.add-id.place');
     idPlace.placeholder='TBC if blank';   /* 27 Oct 2026: the row holds its field alone; the hint is the field's */
+    var idLocal=makerLocalityFrom(idLink,idPlace);
     var idGate=makerVaultGate(id);
-    var idLink=makerField(id,['Map link','record.add-id.link'],'text','');placeAssist(idLink,{id:'makerIdLink',act:'record.add-id.link'});
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
@@ -3429,7 +3505,7 @@ export const OWNER_JS = `
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
         var joinNote=await joinTold(name,locality,kind,code);
-        idName.value='';idPlace.value='';idLink.value='';
+        idName.value='';idPlace.value='';idLink.value='';idLocal();
         if(kind!=='bucket')makerVaultRefresh();
         try{
           await refreshTradeCatalog();
@@ -3467,10 +3543,10 @@ export const OWNER_JS = `
     var amend=makerForm('customers');amend.appendChild(el('h3','amb-section','Change a name or place'));
     amend.appendChild(el('p','msg','The name and place are locked on this phone first. Only the short code and the rounded place travel.'));
     parent.appendChild(amend);
-    var amendParty=addSelect(amend,['Who','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name','record.amend-id.name'],'text',''),
-      amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendGate=makerVaultGate(amend),
+    var amendParty=addSelect(amend,['Who','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name','record.amend-id.name'],'text','');
+    var amendLink=makerField(amend,['Where','record.amend-id.link'],'text','');placeAssist(amendLink,{id:'makerAmendLink',act:'record.amend-id.link'});
+    var amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendLocal=makerLocalityFrom(amendLink,amendPlace), amendGate=makerVaultGate(amend),
       amendStatus=makerStatus(amend), amendBusy=false;
-    var amendLink=makerField(amend,['Map link','record.amend-id.link'],'text','');placeAssist(amendLink,{id:'makerAmendLink',act:'record.amend-id.link'});
     /* the code after the change, as Save the change works it out (25 Oct 2026, his Ask J): unchanged where the name and place keep it */
     var amendCode=codeLine(amend,'Code after');
     var drawAmendCode=function(){ var from=amendParty.value, to=amendName.value.trim()&&amendPlace.value.trim()?makerDerivedCode(amendName.value.trim(),amendPlace.value.trim(),from.charAt(0)==='S'?'supplier':'customer',catalog.parties||[],from):null;
@@ -3496,7 +3572,7 @@ export const OWNER_JS = `
         var result=await send('/all/maker/inputs/amend-id',makerPairBody({at:new Date().toISOString(),from:from,to:to,geo:geo,
           vault:amendDraft.names,addrVault:amendDraft.places||undefined},amendDraft),amendDraft);
         amendDraft=null;
-        amendName.value='';amendPlace.value='';amendLink.value='';
+        amendName.value='';amendPlace.value='';amendLink.value='';amendLocal();
         makerVaultRefresh();
         amendStatus.textContent=result.vaultOnly?'Saved. The code stays '+from+'.'
           :'Sent. The code changes from '+from+' to '+to+' once you approve it.';
@@ -3505,7 +3581,7 @@ export const OWNER_JS = `
       amendBusy=false;
     },true);
     var placement=makerForm('customers');placement.appendChild(el('h3','amb-section','Place on the map'));
-    placement.appendChild(el('p','msg','Keep the filed point, or choose a place and paste a new map link.'));
+    placement.appendChild(el('p','msg','Keep the filed point, or put a new place in Where.'));
     parent.appendChild(placement);
     var placeParty=addSelect(placement,['Who','record.place.party'],partyItems),
       placeGate=makerVaultGate(placement,function(gate){
@@ -3513,7 +3589,8 @@ export const OWNER_JS = `
         if(!makerVault||!placeParty.value) return;
         gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them'+makerPlaceSaid(makerVault.places[placeParty.value])+' Filing a new link replaces it.':'No place is filed for them yet.'));
       }), placeStatus=makerStatus(placement), placeBusy=false;
-    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New map link','record.place.link'],'text','');placeAssist(placeLink,{id:'makerPlaceLink',act:'record.place.link'});
+    var placeLink=makerField(placement,['Where','record.place.link'],'text','');placeAssist(placeLink,{id:'makerPlaceLink',act:'record.place.link'});
+    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLocal=makerLocalityFrom(placeLink,placeLocality);
     var placeDraft=null;
     pairDrafts.push({draft:function(){return placeDraft;},clear:function(){placeDraft=null;}});
     placement.addEventListener('input',function(){placeDraft=null;});
@@ -3545,7 +3622,7 @@ export const OWNER_JS = `
         makerPairBody(body,placeDraft);
         await send('/all/maker/inputs/place',body,placeDraft);
         placeDraft=null;
-        placeLocality.value='';placeLink.value='';
+        placeLocality.value='';placeLink.value='';placeLocal();
         makerVaultRefresh();
         placeStatus.textContent='Sent. The exact address stays locked.';
         loadMaker();
@@ -7023,7 +7100,11 @@ export const OWNER_JS = `
     if(!o.keep) here.after(picked);
     var seq=0, timer=null, hits=[], at=-1;
     var shut=function(){ found.textContent=''; hits=[]; at=-1; where.setAttribute('aria-expanded','false'); where.removeAttribute('aria-activedescendant'); };
-    var choose=function(i){ var h=hits[i]; if(!h) return; where.value=h.lat.toFixed(5)+', '+h.lng.toFixed(5); picked.textContent=h.name+(h.where?', '+h.where:''); shut(); where.focus(); };
+    /* 17 Nov 2026: a point put in the field by a pick or his location is told as a change, so Locality is worked out from it (makerLocalityFrom) */
+    var told=function(){ where.dispatchEvent(new Event('change',{bubbles:true})); };
+    var choose=function(i){ var h=hits[i]; if(!h) return; where.value=h.lat.toFixed(5)+', '+h.lng.toFixed(5); picked.textContent=h.name+(h.where?', '+h.where:''); shut(); where.focus(); told(); };
+    /* a link, figures, degrees or a plus code are read, never searched for */
+    var readable=function(w){ var r=null; try{ r=makerGeo.link(w); }catch(e){ r=null; } return !!r&&(r.lat!=null||!!r.short); };
     var mark=function(i){ at=i; [].forEach.call(found.querySelectorAll('button'),function(r,j){ r.setAttribute('aria-selected',String(j===i)); }); if(i>=0&&found.querySelectorAll('button')[i]) where.setAttribute('aria-activedescendant',found.querySelectorAll('button')[i].id); };
     var draw=function(list,note){
       found.textContent=''; hits=list||[]; at=-1;
@@ -7038,7 +7119,7 @@ export const OWNER_JS = `
     where.addEventListener('input',function(){
       picked.textContent=''; clearTimeout(timer);
       var w=where.value.replace(/ {2,}/g,' ').trim(), mine=++seq;
-      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)){ shut(); return; }
+      if(w.length<3||/^https?:/i.test(w)||/^-?[0-9.]+ *, *-?[0-9.]+$/.test(w)||readable(w)){ shut(); return; }
       timer=setTimeout(function(){
         refs('/all/maker/geo/search',{q:w}).then(function(v){ if(mine!==seq) return; var l=v&&v.places||[]; draw(l,l.length?'':'No place found. Paste a link instead.'); })
           .catch(function(){ if(mine!==seq) return; draw([],'The place search is not answering. Paste a link instead.'); });
@@ -7059,7 +7140,7 @@ export const OWNER_JS = `
       g.getCurrentPosition(function(pos){
         here.disabled=false; var c=pos&&pos.coords, la=c?+c.latitude:NaN, ln=c?+c.longitude:NaN;
         if(!isFinite(la)||!isFinite(ln)||Math.abs(la)>90||Math.abs(ln)>180){ picked.textContent='Your location could not be read.'; return; }
-        shut(); where.value=la.toFixed(5)+', '+ln.toFixed(5); picked.textContent='Your location, where you stand.';
+        shut(); where.value=la.toFixed(5)+', '+ln.toFixed(5); picked.textContent='Your location, where you stand.'; told();
       },function(){ here.disabled=false; picked.textContent='Your location was not shared.'; },{enableHighAccuracy:true, maximumAge:0, timeout:15000});
     });
     return picked;
