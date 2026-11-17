@@ -1,0 +1,75 @@
+<div class="amb-shell" data-mood="lagoon">
+<main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh">
+<span class="amb-chip amb-chip--glass">Plan, 17 Nov 2026</span>
+<h1 class="amb-hero__title">Every move reaches the other side at once, with the minute as the net</h1>
+<p class="amb-hero__sub">Your word of 17 Nov 2026: "For as much as possible, I want them to be instant. All, where possible." Your own taps already move the Desk at once. This plan makes your customers' moves do the same, makes their statement follow sooner, and keeps every timer as a safety net.</p>
+<p class="amb-hero__time">salt-command v1534. Step 1 is built in v1534; steps 2 and 3 wait on your answers below.</p>
+</header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#now">What waits today</a></li>
+<li><a class="amb-contents__link" href="#steps">The three steps</a></li>
+<li><a class="amb-contents__link" href="#stays">What stays on a timer</a></li>
+<li><a class="amb-contents__link" href="#safe">How it stays safe</a></li>
+<li><a class="amb-contents__link" href="#asks">Your answers</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="now"><h2 class="amb-section">What waits today <span class="amb-section__note">read from the code, 17 Nov 2026</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Move</th><th scope="col">Reaches the other side</th><th scope="col">Why</th></tr></thead><tbody>
+<tr><td data-label="Move">Your Approve of a change</td><td data-label="Reaches the other side">At once, from v1534</td><td data-label="Why">The order now follows its row in the step after your tap (step 1).</td></tr>
+<tr><td data-label="Move">Your Accept, Ready, Handed over, Received</td><td data-label="Reaches the other side">At once</td><td data-label="Why">Your tap runs the Desk's order pass itself.</td></tr>
+<tr><td data-label="Move">A customer places an order</td><td data-label="Reaches the other side">Salt Admin's list at once; your phone's banner within a minute</td><td data-label="Why">The banner is rung by the Desk's every-minute pass.</td></tr>
+<tr><td data-label="Move">"I have sent it", a claim on the account, a slip</td><td data-label="Reaches the other side">Under Approve within a minute</td><td data-label="Why">The Desk drafts it on its every-minute pass.</td></tr>
+<tr><td data-label="Move">They withdraw, say Yes or No thanks to your offer, or ask a price</td><td data-label="Reaches the other side">Their order at once; the book within a minute</td><td data-label="Why">The same every-minute pass queues the row.</td></tr>
+<tr><td data-label="Move">A message on an order, a line on the account, a rating</td><td data-label="Reaches the other side">Salt Admin at once; your phone's banner within a minute</td><td data-label="Why">The page's live socket is instant; the banner is the minute pass's.</td></tr>
+<tr><td data-label="Move">Their statement and price list after a change</td><td data-label="Reaches the other side">2 to 3 minutes after an approval; up to 5 more after a restock date</td><td data-label="Why">They are sealed by the publish in GitHub Actions, which holds the keys; a change outside git asks for one at most every 5 minutes.</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> in the code: the Desk's cron runs every minute, the Counter's every hour; Salt Admin and the customer's page already listen on a live socket and fall back to a poll every minute.</p>
+<p class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> The Actions chain takes 2 to 2.5 minutes, from measured runs.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="steps"><h2 class="amb-section">The three steps <span class="amb-section__note">one version each</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step is-done"><span class="amb-step__title">1. Your Approve moves the order with its row</span><span class="amb-step__text">Since the Book became the ledger on 10 Nov, your Approve books the change at once. The step after it now also moves the order's reference to its row, so it never shows twice and the customer is told the new figures in the same seconds. Orders that share one row are still settled by the minute pass. Built in v1534.</span><span class="amb-chip amb-chip--pos">Built</span></li>
+<li class="amb-step is-now"><span class="amb-step__title">2. A customer's move tells the Desk at once</span><span class="amb-step__text">When the Counter records a customer's move (an order, a basket, "I have sent it", a claim on the account, a slip, a withdrawal, their Yes or No thanks, an ask for a price, joining a group order, a message, a line on the account, a rating), it calls the Desk straight away over the link the two already share. The Desk then runs the same pass it runs each minute: your banner rings, the row is drafted under Approve, and a yes you gave in advance is spent. Many moves at once run one pass, then one more. The call carries no figure, name or word: only that something moved.</span><span class="amb-chip amb-chip--warn">Next</span></li>
+<li class="amb-step"><span class="amb-step__title">3. Their statement follows sooner</span><span class="amb-step__text">A change outside git (a restock date, a bulletin) asks for the publish at once instead of at most every 5 minutes, one run at a time. Their statement and price list then follow in about 2 to 3 minutes. Seconds would need the sealing keys moved from GitHub into Cloudflare, which is your ask (B below).</span><span class="amb-chip">Then</span></li>
+</ol></div>
+</section>
+
+<section class="amb-sec" id="stays"><h2 class="amb-section">What stays on a timer <span class="amb-section__note">by design, or a net</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Timer</th><th scope="col">Why it stays</th></tr></thead><tbody>
+<tr><td data-label="Timer">The Desk's every-minute pass</td><td data-label="Why it stays">The net: anything a call misses (a dropped connection, a deploy mid-move) is caught within a minute, as today.</td></tr>
+<tr><td data-label="Timer">The chase of unpaid goods</td><td data-label="Why it stays">Its hours are the rule itself (every hour from 08:00 to 22:00 for three days, then three a day).</td></tr>
+<tr><td data-label="Timer">The confirm time, filed hourly</td><td data-label="Why it stays">A median of your last 30 Accepts; an hour moves it by little.</td></tr>
+<tr><td data-label="Timer">The quarter-hour drafter, the daily export, the 11:00 check</td><td data-label="Why it stays">Nets and records, not moves anyone waits on.</td></tr>
+<tr><td data-label="Timer">New accounts for the pool</td><td data-label="Why it stays">Minted on the laptop only, by rule 2.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="safe"><h2 class="amb-section">How it stays safe</h2>
+<div class="amb-prose">
+<p>The instant call runs the same pass as the minute, and that pass already marks each stage it queues, so a move reaching the Desk twice (by the call and by the minute) is queued once. Your yes in advance is spent only when the row equals what you were shown, as now. The call is behind the key the two Workers already share, and carries only "something moved".</p>
+<p>Each step is checked as every money change is: Fable reviews it through the API, each new check is proved by breaking it, the full suite runs, then one version is pushed and proved live.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">Your answers <span class="amb-section__note">three asks</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">Other way</th></tr></thead><tbody>
+<tr><td data-label="Ask">A. Build step 2, a customer's move telling the Desk at once</td><td data-label="Recommended">Yes, every move listed, the minute pass kept as the net</td><td data-label="Other way">Only orders and "I have sent it"</td></tr>
+<tr><td data-label="Ask">B. Their statement: 2 to 3 minutes, or seconds</td><td data-label="Recommended">2 to 3 minutes: build step 3 only; the keys stay in GitHub</td><td data-label="Other way">Seconds: move the sealing into the Counter, its keys into Cloudflare (a larger change, its own plan)</td></tr>
+<tr><td data-label="Ask">C. Your phone's banner for a customer's move</td><td data-label="Recommended">At once, with step 2</td><td data-label="Other way">Keep the minute, so a burst of moves rings once</td></tr>
+</tbody></table>
+</div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
