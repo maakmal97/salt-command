@@ -43559,15 +43559,16 @@ await (async () => {
   const at = new Date("2026-09-22T00:00:00Z");
   const doc = M.liveStatement("CX8-TG", at);
   const body = String(doc && doc.body);
-  const i = body.indexOf('<div class="owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</div>", i));
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the live block is a group of settings, a row a book (the system's thumb, the shape named aloud, the size) */
+  const i = body.indexOf('<div class="amb-settings owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</ul>", i));
   /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): a line a book is a card a book, the
      mark a button and its size under it (no shape word drawn), the unit in the words a reader hears */
-  const lines = block.split('<span class="mtile">').slice(1);
+  const lines = block.split('<li>').slice(1);
   const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const said = (h) => ((h.match(/<span class="sr">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="mq" aria-hidden="true">([\s\S]*?)<\/span><\/span>/) || [])[1] || "").replace(/<[^>]+>/g, "");
+  const said = (h) => ((h.match(/<span class="amb-vh">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="amb-setting__name">([^<]*)<\/span>/) || [])[1] || "");
   ok(i >= 0 && lines.length === 2, "the block has one card a book: " + lines.length + " cards");
-  ok(lines.length === 2 && /<svg class="psym"/.test(lines[0]) && said(lines[0]) === "Cube 2 units|2 units"
-    && /<svg class="psym"/.test(lines[1]) && said(lines[1]) === "Droplet 1.5 units|1.5 units",
+  ok(lines.length === 2 && /amb-thumb--mark/.test(lines[0]) && said(lines[0]) === "Cube|2 units"
+    && /amb-thumb--mark/.test(lines[1]) && said(lines[1]) === "Droplet|1.5 units",
     "each card carries its book's mark and its own figure, salt first: " + lines.map(said).join(" | "));
   ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
   /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
