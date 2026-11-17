@@ -370,5 +370,11 @@
   "file": "stmt/owner.js",
   "find": "ask?ONE_OFF_WORDS.give:bad?'Read the figures again':'Reading the figures'",
   "replace": "ask?ONE_OFF_WORDS.give:bad?'Figures not read':'Reading the figures'"
+ },
+ {
+  "name": "17 Nov 2026: the amendment Sheet draws no Reason line",
+  "file": "stmt/owner.js",
+  "find": "wrap.appendChild(el('span','amb-field__label',ONE_OFF_WORDS.reason));",
+  "replace": "void 0;"
  }
 ]

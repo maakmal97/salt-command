@@ -1,0 +1,14 @@
+[
+ {
+  "name": "17 Nov 2026: the Practice accounts switch makes nothing",
+  "file": "stmt/owner.js",
+  "find": "else for(var i=0;i<need.length;i++) await refs('/all/test',await testKeys(need[i]));",
+  "replace": "else void 0;"
+ },
+ {
+  "name": "17 Nov 2026: the grey line under the switch no longer says what turning it on makes",
+  "file": "stmt/owner.js",
+  "find": "have.length+' of '+TEST_ALL.length+' made; turn on to make '+need.join(' and ')+'.'",
+  "replace": "'Practice accounts.'"
+ }
+]

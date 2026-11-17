@@ -2760,8 +2760,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | Act | Where | What it does |
 |---|---|---|
 | `acct.back` | Accounts, an open card (an Orb named All accounts, on a phone and from 1080px) | Takes the card back to the list, as a tap on the Accounts tab does. |
-| `assoc.open` | Associates, the code (key: the code) | Opens that associate's account under Accounts. |
-| `assoc.open-row` | Associates table from 860px, the code (key: the code) | Opens that associate's account under Accounts. |
+| `assoc.open-row` | Associates table, the code (key: the code) | Opens that associate's account under Accounts. |
 | `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
 | `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
 | `acct.filter-all` | Accounts, the filter bar | Shows every account. |
@@ -2881,8 +2880,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.fix` | Needs you card for an entry that did not get through | Opens Orders > Approve, where it is mended. Sends nothing. |
 | `need.check` | Needs you card for queue keys the Desk could not read | Opens Orders > Approve. Sends nothing. |
 | `need.unsent` | Needs you card for an entry kept on this phone and not confirmed | Opens it on Record, to send again, update or discard. |
-| `need.hours` | Needs you's FYI card for an override of the hours | Opens Shop > Hours. |
-| `need.notice` | Needs you's FYI card for the notice set | Opens Shop > Notice. |
+| `need.hours` | Needs you's open card for an override of the hours (a Watch card has no control on the list) | Opens Shop > Hours. |
+| `need.notice` | Needs you's open card for the notice set (a Watch card has no control on the list) | Opens Shop > Notice. |
 | `need.owed-message` | Needs you's Pending card for money owed past term, the party having an account | Opens their thread under Customers > Messages. Sends nothing. |
 | `need.claim-open` | The open card beside Needs you, for a payment against the account | Opens that claim on Orders > Payments, where Not found is asked. |
 | `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
@@ -3111,10 +3110,16 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.extra-cover` | Record, sale or purchase, an extra book (key: extra<n>) | Takes the reward cover offered on it. |
 | `record.trade.extra-cover-retry` | Record, sale or purchase, an extra book (key: extra<n>) | Reads its cover again. |
 | `record.trade.extra-moved` | Record, sale or purchase, an extra book (key: extra<n>) | Its units moved. |
+| `record.trade.extra-moved.down` | Record, sale or purchase, an extra book (key: extra<n>) | Steps its units moved one size down. |
+| `record.trade.extra-moved.up` | Record, sale or purchase, an extra book (key: extra<n>) | Steps its units moved one size up. |
 | `record.trade.extra-total` | Record, sale or purchase, an extra book (key: extra<n>) | Its goods total, in RM. |
 | `record.trade.extra-units` | Record, sale or purchase, an extra book (key: extra<n>) | Its units. |
+| `record.trade.extra-units.down` | Record, sale or purchase, an extra book (key: extra<n>) | Steps its units one size down. |
+| `record.trade.extra-units.up` | Record, sale or purchase, an extra book (key: extra<n>) | Steps its units one size up. |
 | `record.trade.handover` | Record, sale or purchase | Collected or delivered. |
 | `record.trade.moved` | Record, sale or purchase | The units moved. |
+| `record.trade.moved.down` | Record, sale or purchase | Steps the units moved one size down. |
+| `record.trade.moved.up` | Record, sale or purchase | Steps the units moved one size up. |
 | `record.trade.party` | Record, sale or purchase | The party. |
 | `record.trade.remove-book` | Record, sale or purchase, an extra book (key: extra<n>) | Removes the extra book. |
 | `record.trade.send` | Record, sale or purchase | Records the trade for review (Record the sale); with a row open, Record the change sends what differs as a Correction and what moved since as a Fulfilment, or Reopen this sale. |
@@ -3125,6 +3130,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.stream` | Record, sale or purchase | No associate, R2 resell or R3 refer. |
 | `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
 | `record.trade.units` | Record, sale or purchase | The units. |
+| `record.trade.units.down` | Record, sale or purchase | Steps the units one size down. |
+| `record.trade.units.up` | Record, sale or purchase | Steps the units one size up. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the row's reference (a Desk row's) and its figures as a list of names and values, never JSON. |
 | `row.details` | A row of the book as an order under Orders (key: row:<rid>) | Opens the row and its day, and the order of several books it rides on. |

@@ -346,7 +346,8 @@ export async function run({ ok, skip }) {
     await until(() => card(AG) && [...card(AG).querySelectorAll("button")].find((x) => x.textContent === "Change the order"));
     [...card(AG).querySelectorAll("button")].find((x) => x.textContent === "Change the order").click();
     const sheet = () => doc.getElementById("ynSheet");
-    const fieldOf = (text) => { const w = sheet() && [...sheet().querySelectorAll("label")].find((l) => l.querySelector(".salt-field__label") && l.querySelector(".salt-field__label").textContent === text); return w && w.querySelector("input"); };
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the Sheet is an amb-sheet, its labels amb-field__label */
+    const fieldOf = (text) => { const w = sheet() && [...sheet().querySelectorAll("label")].find((l) => l.querySelector(".salt-field__label, .amb-field__label") && l.querySelector(".salt-field__label, .amb-field__label").textContent === text); return w && w.querySelector("input"); };
     fieldOf("Price (goods)").value = "195";
     doc.getElementById("ynGo").click();
     await until(() => !!fieldOf("Reason"));

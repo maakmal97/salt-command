@@ -35,7 +35,7 @@ export async function slipFixture() {
 }
 
 /* what a card, or an item of a list, is told apart by */
-export const ACT_KEYS = ["data-key", "data-maker-card", "data-u", "data-need", "data-link", "data-acct", "data-thread", "data-reward-holder"];
+export const ACT_KEYS = ["data-key", "data-maker-card", "data-u", "data-need", "data-link", "data-glink", "data-join", "data-acct", "data-thread", "data-reward-holder"];
 
 /* the control inside root that has this act, and, with a key, inside the card (or as the list item) that carries it */
 /* a place and, with a part, that part of it, entered as he enters them: a tap on the place's item, then on the part's tab */
@@ -133,8 +133,9 @@ export function cardOf(doc, id) {
 export const CONTROLS = 'button, input:not([type="hidden"]), select, textarea, summary, a[href], [role="button"], [role="tab"]';
 /* his page: the roster shell, the ended screen, the one control of his in a customer's view, the sheet that shows a code, the look Sheet, the
    yes or no Sheet an order card asks on, and the Sheet of the one unlock */
-export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho, #lookSheet, #ynSheet, #vaultSheet";
-const CARDS = ".maker-card, .maker-input, .maker-extra-trade, .maker-reward, .maker-offer, .oacct, [data-need], .glink, .salt-sheet, nav, #afil";
+export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho, .amb-sheet.ho, #lookSheet, #ynSheet, #vaultSheet";
+/* 17 Nov 2026, the move to Ambient (the third red fix): Approve's cards are article.amb-task, a link or join row li.amb-row.glrow, a Sheet dialog.amb-sheet; the salt-era names stay beside */
+const CARDS = ".maker-card, .maker-input, .maker-extra-trade, .maker-reward, .maker-offer, .oacct, [data-need], .glink, .salt-sheet, .amb-sheet, article.amb-task, li.amb-row.glrow, li.glpanel, nav, #afil";
 const PANELS = "#mHome, #oOrders, #oCustomers, #oRecord, #oShop, #oAccts, #oLinks, #oCards, #aEnded, #lock";
 const where = (c) => {
   const at = c.closest(CARDS) || c.closest(PANELS);
@@ -464,14 +465,16 @@ export async function auditStates({ pageWork }) {
      Desk could not read and an override of the hours are cards of their own */
   const until = new Date(Date.now() + 6 * 3600e3).toISOString();
   const v = await richOwnerPage({ pageWork,
-    before: (win) => { win.matchMedia = (mq) => ({ matches: /min-width:\s*860px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); },
+    before: (win) => { /* 17 Nov 2026, the move to Ambient (the third red fix): the split is two columns from 960px (his 860 became 960) */
+    win.matchMedia = (mq) => ({ matches: /min-width:\s*(860|960)px/.test(mq) && !/max-width/.test(mq), media: mq, addEventListener() {}, removeEventListener() {}, addListener() {} }); },
     review: (j) => ({ ...j, unreadable: ["q:not-a-device"] }),
     hours: (j) => ({ ...j, status: { open: false, source: "manual", nextChange: until, nextOpen: until }, config: { ...j.config, manual: { open: false, until } } }),
     inputsAnswer: (j) => { Object.assign(j.catalog, { owedMoney: [{ party: "CX7-ZED", rm: 40, since: "2026-09-20", due: "2026-09-21", rows: [{ rid: "row-7", key: "CX7-ZED|2026-09-01|40", product: "salt", rm: 40, since: "2026-09-20", due: "2026-09-21" }] }], owedGoods: [] }); return j; } });
   try {
     await v.work.quiet();
     await v.click(byAct(v.d, "nav.needs"));
-    for (const key of ["l:w1", "k:tvwx-yz23", "c:abcd-efgh:c-1", "$:CX7-ZED"]) {
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a Watch card has no control on the list (Ambient 0.7.5), so its Change is audited in the open card */
+    for (const key of ["l:w1", "k:tvwx-yz23", "c:abcd-efgh:c-1", "$:CX7-ZED", "w:hours", "w:notice"]) {
       const c = v.d.querySelector('#nlist [data-need="' + key + '"] .need-tap');
       if (c) { await v.click(c); states.push(["the open card beside Needs you, " + key, actAudit(v.d)]); }
     }

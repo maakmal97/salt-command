@@ -21321,12 +21321,13 @@ await (async () => {
     wins27.push(dom27.window);
     const D27 = dom27.window.document;
     /* 26 Oct 2026 (Practice as a list of settings): the one tap is the Practice accounts switch, turned on */
-    const makeBtn27 = () => [...D27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].find((b) => b.getAttribute("aria-checked") === "false");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the Switch is input.amb-switch, read by its checked state, not aria-checked */
+    const makeBtn27 = () => [...D27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].find((b) => b.checked === false);
     await until27(() => makeBtn27());
     const pageBefore27 = rounds27.length;
     const mb27 = makeBtn27();
     if (mb27) mb27.dispatchEvent(new dom27.window.Event("click", { bubbles: true }));
-    await until27(() => [...D27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].some((b) => b.getAttribute("aria-checked") === "true"));
+    await until27(() => [...D27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].some((b) => b.checked === true));
     const rec27 = await kv27.get("u:" + TU27, "json"), sent27 = posted27[0] || {};
     const recL27 = await kv27.get("u:0000-0001", "json"), sentL27 = posted27[1] || {};
     ok(posted27.length === 3 && sent27.u === TU27 && sentL27.u === "0000-0001" && (posted27[2] || {}).u === "0000-0002" && posted27[2].key !== sent27.key && !!rec27 && rec27.test === true && !!recL27 && recL27.test === true
@@ -21355,10 +21356,10 @@ await (async () => {
         };
       } });
     wins27.push(domB27.window);
-    const DB27 = domB27.window.document, btnB27 = (on) => [...DB27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].find((b) => b.getAttribute("aria-checked") === String(on));
+    const DB27 = domB27.window.document, btnB27 = (on) => [...DB27.querySelectorAll('#mTest [data-act="more.test-accounts"]')].find((b) => b.checked === on);
     /* 26 Oct 2026 (Practice as a list of settings): the switch is off, its grey line says what turning it on makes */
-    await until27(() => btnB27(false) && /2 of 3/.test((DB27.querySelector("#mTest .salt-settings__foot") || {}).textContent || ""));
-    const leadB27 = (DB27.querySelector("#mTest .salt-settings__foot") || {}).textContent || "";
+    await until27(() => btnB27(false) && /2 of 3/.test((DB27.querySelector("#mTest .amb-settings__foot") || {}).textContent || ""));
+    const leadB27 = (DB27.querySelector("#mTest .amb-settings__foot") || {}).textContent || "";
     if (btnB27(false)) btnB27(false).dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
     await until27(() => btnB27(true));
     const recB27 = await kv27.get("u:" + TU27, "json");

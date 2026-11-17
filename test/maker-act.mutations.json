@@ -46,5 +46,23 @@
   "file": "docs/STATEMENTS.md",
   "find": "| `acct.sent` | Account card | Mark as sent: marks the account sent, while it is not. |\n",
   "replace": ""
+ },
+ {
+  "name": "W1 17 Nov 2026: the units wheel's plus loses its act (the third red fix)",
+  "file": "stmt/owner.js",
+  "find": "+amb.glyph('plus')+'</button>'),L[1]+'.up',L[2]));",
+  "replace": "+amb.glyph('plus')+'</button>')));"
+ },
+ {
+  "name": "W2 17 Nov 2026: the audit's CARDS forgets the link panel, so every link card's Copy shares one group",
+  "file": "test/maker-act.mjs",
+  "find": "li.amb-row.glrow, li.glpanel, nav",
+  "replace": "li.amb-row.glrow, nav"
+ },
+ {
+  "name": "W3 17 Nov 2026: Needs you's open card for the hours loses Change",
+  "file": "stmt/owner.js",
+  "find": "mainButton(c,'Change','need.hours','w:hours', goPlace('shop','hours'));",
+  "replace": "void 0;"
  }
 ]

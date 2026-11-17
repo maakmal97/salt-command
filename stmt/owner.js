@@ -2864,9 +2864,9 @@ export const OWNER_JS = `
   function makerWheel(parent,label,value,from){
     var L=labOf(label), vals=makerUnitSteps(from), s=actOn(el('input','amb-input'),L[1],L[2]), id='mwheel'+(++tileSeq), wrap=el('div','amb-field mrow'), lab=el('label','amb-field__label',L[0]), st=el('div','amb-stepper');
     lab.setAttribute('for',id); s.id=id; s.type='number'; s.setAttribute('inputmode','decimal'); s.step='any'; s.min=String(vals[0]); s.max=String(vals[vals.length-1]); s.setAttribute('data-amb-values',vals.join(' '));
-    st.appendChild(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="-1" aria-label="'+esch(L[0])+', one size smaller">'+amb.glyph('minus')+'</button>'));
+    st.appendChild(actOn(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="-1" aria-label="'+esch(L[0])+', one size smaller">'+amb.glyph('minus')+'</button>'),L[1]+'.down',L[2]));
     st.appendChild(s);
-    st.appendChild(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="1" aria-label="'+esch(L[0])+', one size larger">'+amb.glyph('plus')+'</button>'));
+    st.appendChild(actOn(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="1" aria-label="'+esch(L[0])+', one size larger">'+amb.glyph('plus')+'</button>'),L[1]+'.up',L[2]));
     wrap.appendChild(lab); wrap.appendChild(st); makerWheelSet(s,value); parent.appendChild(wrap);
     return s;
   }
