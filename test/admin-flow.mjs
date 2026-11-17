@@ -4,6 +4,8 @@
  *   A  the Desk's stage rule (flowStage) and its read of every row with no trip card: agreed, delivered or paid, completed, ended, as the row
  *      will stand once the moves waiting fold
  *   B  Salt Admin's review read drops a row a live site order holds (by its key), and keeps one whose site order ended
+ *   B2 an order amended to a new figure holds its row at that figure's key until the Desk moves its ledgerKey (17 Nov 2026), and an order whose
+ *      key is still on the book hides nothing else
  *   C  the page: a row under its stage with its figure; a site order paid or handed in full under Out or paid; the row card's handover,
  *      payment, change and cancel, each Record's own ledger-amend; Done paged fifty at a time
  *   D  his answer: a cancel once goods are out cancels the rest, closing the order at what was handed over (a row's at the Desk's closeAt, a
@@ -51,7 +53,8 @@ async function fixture() {
     sale("ft1", "CQ8-ZED", 1, 110, { delivery: 10, trip: T }), sale("ft2", "CQ8-ZED", 2, 30, { product: "oil", trip: T }),
     sale("fs1", "CQ7-ZED", 1, 110), sale("fs2", "CQ6-ZED", 1, 110),
     sale("fx1", "CQ5-ZED", 2, 200, { deliveredQty: 1, cash: 150 }),
-    sale("fy1", "CQ4-ZED", 1, 110, { delivery: 10 }), sale("fy2", "CQ4-ZED", 2, 30, { product: "oil" }));
+    sale("fy1", "CQ4-ZED", 1, 110, { delivery: 10 }), sale("fy2", "CQ4-ZED", 2, 30, { product: "oil" }),
+    sale("fm1", "CQ3-ZED", 3, 100), sale("fn1", "CQ2-ZED", 1, 100), sale("fn2", "CQ2-ZED", 1, 120));
   const db = new DatabaseSync(":memory:"), migrations = new URL("../migrations/", import.meta.url);
   for (const file of readdirSync(migrations).filter((f) => /^\d+_.*\.sql$/.test(f)).sort())
     db.exec(readFileSync(new URL(file, migrations), "utf8"));
@@ -108,6 +111,14 @@ export async function run({ ok, pageWork }) {
   const rv = await f.call("/all/maker/review"), got = (rv.j.rows || []).map((r) => r.rid);
   ok(rv.status === 200 && !got.includes("fs1") && got.includes("fs2") && got.includes("fa1") && (rv.j.refunds || {})["CQ9-ZED|2026-10-14|110"] === 30,
     "the review read drops the row a live site order holds and keeps one whose site order ended: " + J({ status: rv.status, error: rv.j.error, fs: got.filter((x) => /^f/.test(x)) }));
+  /* B2 (17 Nov 2026, his screenshot of one order twice for a minute): fm1 was amended from RM 285 to RM 100 and is on the book at its new key; the
+     order still names the old one until the minute pass moves it. fn1 is still at the key its order names (a change to RM 120 not yet folded), so
+     fn2, another row at RM 120, is its own */
+  await f.env.STMT.put("order:u-flow-6:20261014010003-flowad", J({ id: "20261014010003-flowad", u: "u-flow-6", status: "ready", ledgerKey: "CQ3-ZED|2026-10-14|285", qty: 3, total: 100, delivery: 0, product: "salt", at: D + "T01:00:00.000Z" }));
+  await f.env.STMT.put("order:u-flow-7:20261014010004-flowae", J({ id: "20261014010004-flowae", u: "u-flow-7", status: "acknowledged", ledgerKey: "CQ2-ZED|2026-10-14|100", qty: 1, total: 120, delivery: 0, product: "salt", at: D + "T01:00:00.000Z" }));
+  const rv2 = await f.call("/all/maker/review"), got2 = (rv2.j.rows || []).map((r) => r.rid);
+  ok(rv2.status === 200 && !got2.includes("fm1") && !got2.includes("fn1") && got2.includes("fn2") && got2.includes("fa1"),
+    "B2: an amended order holds its row at its new figure's key before its own key follows, and an order still on its key hides no other row: " + J(got2.filter((x) => /^f[mn]/.test(x))));
 
   /* 31 Oct 2026: a trip whose every line live site orders hold is those orders, never a card of its own beside them (CI5-PER's three orders stood in
      Out or paid twice, the trip at RM 0); a trip with one line unheld stays. The orders are put back after, so the checks below read as before. */

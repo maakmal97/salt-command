@@ -875,7 +875,20 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       const unreadable = Array.isArray(queue.unreadable) ? queue.unreadable.filter((k) => typeof k === "string" && /^q:[A-Za-z0-9._-]{1,80}$/.test(k)).slice(0, 20) : [];
       /* plan 3: the orders of several books the Desk read with the drafts, or that it could not read them */
       /* 17 Oct 2026: every live row of the book is an order here; a row a live site order holds is drawn as that order, by its key */
-      const held = new Set(orders.filter((o) => !o.test && !["declined", "cancelled"].includes(o.status) && typeof o.ledgerKey === "string").map((o) => o.ledgerKey));
+      const live = orders.filter((o) => !o.test && !["declined", "cancelled"].includes(o.status) && typeof o.ledgerKey === "string");
+      const held = new Set(live.map((o) => o.ledgerKey));
+      /* 17 Nov 2026 (his screenshot: an order amended to RM 100 stood twice for a minute, once as the order and once as its row): a change of the
+         goods or the delivery moves the row's key (party|day|goods and delivery), and the Desk's minute pass moves the order's ledgerKey after it
+         (followRows). In between, an order whose key is on no row of the book is holding the row at the key its own figures now give */
+      const deskKeys = new Set([...(Array.isArray(drafts.rows) ? drafts.rows : []), ...[drafts.trips, drafts.sameDay].flatMap((cs) => Array.isArray(cs) ? cs : []).flatMap((c) => Array.isArray(c.lines) ? c.lines : [])]
+        .map((r) => r && r.key).filter((k) => typeof k === "string"));
+      for (const o of live) {
+        const part = o.ledgerKey.split("|");
+        if (deskKeys.has(o.ledgerKey) || part.length < 3) continue;
+        part[2] = String((+o.total || 0) + (+o.delivery || 0));
+        if (part.length === 3 && o.product && o.product !== "salt") part.push(o.product);   /* a key from before books other than salt carried their tail */
+        held.add(part.join("|"));
+      }
       /* 31 Oct 2026: a trip or a buyer's day whose every line a live site order holds is those orders, not a card of its own (CI5-PER's three
          orders stood in Out or paid twice, once each and once as the trip, the trip at RM 0) */
       const heldAll = (c) => Array.isArray(c.lines) && c.lines.length > 0 && c.lines.every((l) => l && held.has(l.key));

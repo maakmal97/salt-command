@@ -280,5 +280,17 @@
   "file": "stmt/maker.js",
   "find": "(Array.isArray(drafts.trips) ? drafts.trips : []).filter((c) => !heldAll(c))",
   "replace": "(Array.isArray(drafts.trips) ? drafts.trips : [])"
+ },
+ {
+  "name": "B2 an amended order does not hold its row at its new key",
+  "file": "stmt/maker.js",
+  "find": "        held.add(part.join(\"|\"));",
+  "replace": "        void part;"
+ },
+ {
+  "name": "B2 an order still on its key hides a row at its figures too",
+  "file": "stmt/maker.js",
+  "find": "        if (deskKeys.has(o.ledgerKey) || part.length < 3) continue;",
+  "replace": "        if (part.length < 3) continue;"
  }
 ]
