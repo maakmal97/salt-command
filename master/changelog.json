@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1529",
+  "d": "17 Nov 2026",
+  "t": "SEND THE CHANGE IS A BUTTON",
+  "n": [
+   "<b>A BUTTON YOU CAN SEE.</b> On Salt Admin, Change the order ends with Send the change as a filled button; Not now sits under it as the plain one. Scroll to the foot of the sheet on a phone to reach them.",
+   "<b>A PRICE UNDER THE FLOOR IS SAID PLAINLY.</b> A change that would put an order under its Floor now reads, for example, \"RM 100 is below the Floor of RM 285 for 3 units. Enter RM 285 or more.\" in place of \"The Counter could not do that\". The Floor itself is unchanged.",
+   "<b>NOTHING ELSE MOVES.</b> No price, route or request changed."
+  ]
+ },
+ {
   "v": "v1528",
   "d": "17 Nov 2026",
   "t": "SALT ADMIN AND SALT COUNTER ON AMBIENT",
