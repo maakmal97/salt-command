@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1531","d":"17 Nov 2026","t":"LET IT STAND IS A BUTTON","n":["<b>A BUTTON YOU CAN SEE.</b> On Salt Admin, Let this price stand? ends with Let it stand as the filled button and Not now as the plain one, as Send the change does. On a placed order priced under the Floor, Let it stand is the filled button too.","<b>NOTHING ELSE MOVES.</b> No price, route or request changed."]}];
+const evolution=[{"v":"v1532","d":"17 Nov 2026","t":"AN AMENDED ORDER SHOWS ONCE","n":["<b>NO SECOND COPY.</b> On Salt Admin's Orders, an order whose price or delivery you change no longer shows twice for up to a minute once the change is booked. Its row on the book is now recognised by the order's new figures straight away, before the Desk moves the order's own reference to it.","<b>NOTHING ELSE MOVES.</b> No price, route or request changed; this is how the list is read."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Nov 2026, 17:11 KL';
+const LAST_UPDATED='17 Nov 2026, 17:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
