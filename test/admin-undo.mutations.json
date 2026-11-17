@@ -260,8 +260,8 @@
  {
   "name": "the site is not told a restate is an undo",
   "file": "engine/stages.mjs",
-  "find": "restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : {})",
-  "replace": "restate: Object.assign({}, figs, wayMoves ? { mode } : {})"
+  "find": "restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : { tell: true })",
+  "replace": "restate: Object.assign({}, figs, wayMoves ? { mode } : {}, { tell: true })"
  },
  {
   "name": "the undo fix takes back more units than the book did",
@@ -332,8 +332,8 @@
  {
   "name": "the banner has no words for an undo",
   "file": "stmt/sw.js",
-  "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\", \"placed\", \"remind\"];",
-  "replace": "\"offer\", \"confirm\", \"point-moved\", \"placed\", \"remind\"];"
+  "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\", \"placed\", \"remind\", \"changed\", \"discount\"];",
+  "replace": "\"offer\", \"confirm\", \"point-moved\", \"placed\", \"remind\", \"changed\", \"discount\"];"
  },
  {
   "name": "Undo is offered on an older move",

@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1525","d":"17 Nov 2026","t":"AN ORDER'S WAY CAN BE CHANGED","n":["<b>COLLECT OR DELIVER, AFTER THE FACT.</b> Salt Admin's Change the order has a Way: Collect or Deliver. A collected order can become a delivery with its charge in one change, and back. Once goods are out, the row's handover follows. Choosing Collect empties the delivery charge. It waits under Approve like any change of an order.","<b>A REJECTED CHANGE OF WAY PUTS ITSELF BACK.</b> If you reject it under Approve, the order takes the row's way again on the next pass, so the order and the book never disagree about it. A group order stays collect.","<b>THE REFUSALS SAY WHY.</b> A delivery charge on a collection, and every other reason Change the order can be refused, now reads in words on Salt Admin instead of \"The Counter could not do that\"."]}];
+const evolution=[{"v":"v1526","d":"17 Nov 2026","t":"EVERY CHANGE OF AN ORDER IS TOLD TO THE CUSTOMER","n":["<b>A DISCOUNT IS SAID AS ONE.</b> When you change an agreed order so they owe less for the same or more units, their phone says \"You have received a discount on your order\". Fewer units, or a delivery turned into a collection, is not a discount.","<b>EVERY OTHER CHANGE IS SAID TOO.</b> A higher price, a delivery charge, a change of way or of size reads \"Your order has changed\", with a line to open it. A change made on the book reaches them the same way. An undo keeps its own words.","<b>THEIR BILL SAYS WHAT IT WAS.</b> The order's Bill on Salt Counter shows the day it was changed, or the day of the discount, and what the order was before: its size, its goods and its way. Putting a change back, or an undo, takes the line away.","<b>NO AMOUNT IN A BANNER.</b> As always, a banner names no figure, product or person; the figures are on the order."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Nov 2026, 06:56 KL';
+const LAST_UPDATED='17 Nov 2026, 11:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

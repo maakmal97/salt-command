@@ -207,7 +207,8 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
      days, so the page says the slip is no longer kept (F13) */
   /* and priced at the acknowledgement under what they placed it at, which the page shows beside it (Step 2) */
   O.push(order(oid(35, "04"), list, T(35), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
-    [T(35, 20), "desk", { status: "acknowledged", total: 260 }]].concat(W ? [
+    [T(35, 20), "desk", { status: "acknowledged", total: 260 }],
+    [T(35, 30), "desk", { restate: { qty: 2.5, total: 250, delivery: 0, tell: true } }]].concat(W ? [   /* 17 Nov 2026: then given a discount, which its Bill says */
     [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [], [
     [T(1, 10), "desk", READY_AT()]])));
   /* COLLECTED and paid in cash: complete */
@@ -486,6 +487,7 @@ export const FEATURES = [
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
   ["their credit sealed with the list, said once on Prices and off the basket and the sheet (27 Oct 2026)", (f) => typeof f.prices.credit === "number" && f.prices.credit > 0.004],
   ["an order paid in part by their credit at our confirmation (27 Oct 2026)", (f) => has(f, (o) => +o.credit > 0.004 && ROWED.includes(o.status) && (f.prices.creditRows || []).some((r) => r.d === String(o.ledgerKey || "").split("|")[1] && Math.abs(r.rm - o.credit) < 0.005))],
+  ["an order we gave a discount after confirming it, its Bill saying what it was (17 Nov 2026)", (f) => has(f, (o) => o.changed && o.changed.kind === "discount" && o.changed.was && o.changed.was.total > o.total)],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],
   ["cash he took", (f) => has(f, (o) => (o.payments || []).some((p) => p.method === "cod" && p.by === "desk"))],

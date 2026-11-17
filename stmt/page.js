@@ -4743,6 +4743,12 @@ const CLIENT_JS = `
     R.push({k:tw('om.goods'), v:rm(o.total), sub:o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty})
       :typeof o.asked==='number'&&Math.abs(o.asked-(+o.total||0))>0.004?tw('om.placedAt',{rm:rm(o.asked)}):''});
     if(d) R.push(o.status==='placed'?{k:tw('sh.delivery'), v:'', sub:o.place?tw('om.setToP',{p:o.place}):tw('om.set')}:{k:tw('sh.delivery'), v:rm(o.delivery||0), sub:where});
+    /* 17 Nov 2026: our newest change of what they buy, and what the order was before it */
+    var cg=o.changed;
+    if(cg&&cg.was&&cg.at){
+      var cw=cg.was, wway=cw.mode==='deliver'?tw('om.wasDeliver',{rm:rm(+cw.delivery||0)}):tw('om.wasCollect');
+      R.push({k:tw(cg.kind==='discount'?'om.discounted':'om.changed',{d:Dd(oDay,cg.at)}), v:'', sub:tw('om.was',{u:Uq(cw.qty,oUnit(o)), rm:rm(cw.total), w:wway})});
+    }
     /* 20 Oct 2026: the reward unit that comes with this order: its mark, one unit, no charge, and no amount */
     if(o.rwd==='given') R.push({k:tw('om.rwd'), v:tw('om.rwdFree'), lead:markLead(o.product,16), cls:'orwd'});
     /* 27 Oct 2026: their credit, taken off at our confirmation, paid already and never a payment of theirs */

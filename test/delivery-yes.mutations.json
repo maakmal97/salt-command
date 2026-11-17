@@ -74,8 +74,8 @@
  {
   "name": "the push has no words for it",
   "file": "stmt/sw.js",
-  "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\", \"placed\", \"remind\"];",
-  "replace": "\"offer\", \"corrected\", \"point-moved\", \"placed\", \"remind\"];"
+  "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\", \"placed\", \"remind\", \"changed\", \"discount\"];",
+  "replace": "\"offer\", \"corrected\", \"point-moved\", \"placed\", \"remind\", \"changed\", \"discount\"];"
  },
  {
   "name": "Accept agrees a raise alone",

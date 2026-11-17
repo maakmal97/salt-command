@@ -18,6 +18,20 @@
  {"name":"the return leg never heals a collection on a delivery","file":"engine/stages.mjs","find":"if (!(delivery > 0.004) && row.handover === \"collected\" && o.mode === \"deliver\") return \"collect\";","replace":""},
  {"name":"the agreed return leg sends no way","file":"engine/stages.mjs","find":"return Object.assign({ qty, total, delivery }, way ? { mode: way } : {});","replace":"return { qty, total, delivery };"},
  {"name":"the settled return leg sends no way","file":"engine/stages.mjs","find":"return Object.assign({ qty, total, delivery, paid, moved }, way ? { mode: way } : {});","replace":"return { qty, total, delivery, paid, moved };"},
- {"name":"the order book drops the book's way","file":"stmt/orders.js","find":"moved: +r.moved.toFixed(3) }, bm !== order.mode ? { mode: bm } : {}) };","replace":"moved: +r.moved.toFixed(3) }, {}) };"},
- {"name":"a group order changes its way","file":"stmt/orders.js","find":"    if (order.pool && m !== order.mode) return { error: \"a group order is collect only\", status: 409 };\n","replace":""}
+ {"name":"the order book drops the book's way","file":"stmt/orders.js","find":"moved: +r.moved.toFixed(3) }, bm !== order.mode ? { mode: bm } : {},\n      terms","replace":"moved: +r.moved.toFixed(3) }, {},\n      terms"},
+ {"name":"a group order changes its way","file":"stmt/orders.js","find":"    if (order.pool && m !== order.mode) return { error: \"a group order is collect only\", status: 409 };\n","replace":""},
+ {"name":"a cheaper change is never a discount","file":"stmt/orders.js","find":"return after < before - 0.004 && !fewer && !lostDelivery ? \"discount\" : \"changed\";","replace":"return \"changed\";"},
+ {"name":"fewer units can be a discount","file":"stmt/orders.js","find":"return after < before - 0.004 && !fewer && !lostDelivery ? \"discount\" : \"changed\";","replace":"return after < before - 0.004 && !lostDelivery ? \"discount\" : \"changed\";"},
+ {"name":"a delivery turned collection can be a discount","file":"stmt/orders.js","find":"return after < before - 0.004 && !fewer && !lostDelivery ? \"discount\" : \"changed\";","replace":"return after < before - 0.004 && !fewer ? \"discount\" : \"changed\";"},
+ {"name":"the book's change is not told","file":"stmt/orders.js","find":"const tell = r.undo === true ? null : tellOf(order, q, t, d, m);","replace":"const tell = r.undo === true ? null : r.tell === true ? tellOf(order, q, t, d, m) : null;"},
+ {"name":"a restate's wake is never sent","file":"stmt/orders.js","find":"  if (ev.kind === \"restate\" && [\"changed\", \"discount\"].includes(ev.tell)) return { k: ev.tell, o, v: payCase(order) };\n","replace":""},
+ {"name":"the order keeps no record of the change","file":"stmt/orders.js","find":"    else if (ev.tell && ev.was) order.changed = { at, kind: ev.tell, was: ev.was };","replace":""},
+ {"name":"their view drops the change","file":"stmt/orders.js","find":"\"rwd\", \"credit\", \"changed\"];","replace":"\"rwd\", \"credit\"];"},
+ {"name":"the book's money alone is told","file":"stmt/orders.js","find":"terms ? { tell: tellOf(order, r.qty, r.total, r.delivery, bm), was: wasOf(order) } : {}) };","replace":"{ tell: tellOf(order, r.qty, r.total, r.delivery, bm), was: wasOf(order) }) };"},
+ {"name":"any tell is taken","file":"stmt/orders.js","find":"    if (r.tell !== undefined && r.tell !== true) return { error: \"a restate is told or not\", status: 400 };\n","replace":""},
+ {"name":"the phone does not know the discount","file":"stmt/sw.js","find":"\"remind\", \"changed\", \"discount\"];","replace":"\"remind\", \"changed\"];"},
+ {"name":"the practice accounts carry no discount","file":"tools/testfix.mjs","find":"    [T(35, 30), \"desk\", { restate: { qty: 2.5, total: 250, delivery: 0, tell: true } }]].concat(W ? [","replace":"    ].concat(W ? ["},
+ {"name":"a change put back can be a discount","file":"stmt/orders.js","find":"  if (backTo(order, qty, total, delivery, mode)) return \"changed\";","replace":""},
+ {"name":"a change put back keeps its stale line","file":"stmt/orders.js","find":"if (ev.undo || backTo(order, ev.qty, ev.total, ev.delivery, order.mode)) delete order.changed;","replace":"if (ev.undo) delete order.changed;"},
+ {"name":"an undo keeps its stale line","file":"stmt/orders.js","find":"if (ev.undo || backTo(order, ev.qty, ev.total, ev.delivery, order.mode)) delete order.changed;","replace":"if (backTo(order, ev.qty, ev.total, ev.delivery, order.mode)) delete order.changed;"}
 ]

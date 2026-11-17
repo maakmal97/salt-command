@@ -1,0 +1,6 @@
+[
+ {"name":"the Bill draws no change","file":"stmt/page.js","find":"    if(cg&&cg.was&&cg.at){","replace":"    if(false){"},
+ {"name":"a discount reads as a change","file":"stmt/page.js","find":"tw(cg.kind==='discount'?'om.discounted':'om.changed',","replace":"tw('om.changed',"},
+ {"name":"the way is always to collect","file":"stmt/page.js","find":"wway=cw.mode==='deliver'?tw('om.wasDeliver',{rm:rm(+cw.delivery||0)}):tw('om.wasCollect');","replace":"wway=tw('om.wasCollect');"},
+ {"name":"the line names the goods now, not before","file":"stmt/page.js","find":"rm:rm(cw.total), w:wway","replace":"rm:rm(o.total), w:wway"}
+]
