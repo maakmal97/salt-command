@@ -1,0 +1,6 @@
+[
+ {"name": "the sign-in page's Inside heading is a bare word", "file": "stmt/page.js", "find": "wt(\"h2\", 'class=\"amb-settings__head\"', \"link.inside\")", "replace": "'<h2 class=\"amb-settings__head\">Inside</h2>'"},
+ {"name": "a tab's count is said in a sentence written in the script", "file": "stmt/page.js", "find": "l=n?tw('place.count',{w:w,n:n}):w;", "replace": "l=n?w+', '+n+' waiting':w;"},
+ {"name": "the pause button's word is not a key's", "file": "stmt/page.js", "find": "+ wt(\"button\", 'type=\"button\" class=\"amb-pill amb-pill--quiet amb-pill--sm hpause\" aria-pressed=\"false\" hidden' + wl(\"bull.pause\"), \"bull.pause\")", "replace": "+ '<button type=\"button\" class=\"amb-pill amb-pill--quiet amb-pill--sm hpause\" aria-pressed=\"false\" hidden' + wl(\"bull.pause\") + '>Pause notices</button>'"},
+ {"name": "a place tab's name is not a key's", "file": "stmt/page.js", "find": "+ wl(\"place.\" + t) + ' data-word=\"'", "replace": "+ ' aria-label=\"' + esc(EN[\"place.\" + t]) + '\" data-word=\"'"}
+]

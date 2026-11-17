@@ -24139,7 +24139,9 @@ await (async () => {
     return out;
   };
   const html = P.landingPage("abcd-efgh", "n133", null);
-  const js = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the carried Ambient script (AMB_JS, its own words and selectors) is the system's, not this page's own script, and is left out */
+  const { AMB_JS: AMBJS133 } = await import("../stmt/statement-css.js");
+  const js = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).filter((x) => x.trim() !== AMBJS133.trim()).join("\n");
   const own = lits(js.replace(/^\s*var (WORDS|PAY|GL|GLS|BULL)=.*$/gm, ""));
   const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
   const classes = new Set([...css.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1]).concat([...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(" "))));
@@ -24147,6 +24149,7 @@ await (async () => {
      matches on an answer carrying no code */
   const NAMES = new Set(["DuitNow Transfer", "DuitNow QR", "Touch 'n Go Business", "RM ", "prices moved"]);
   const left = [...new Set(own)].filter((s) => / /.test(s) && /[A-Za-z]{2,}/.test(s) && !/^[.(<]|[=<>{}[\]]/.test(s) && !NAMES.has(s)
+    && !/^[MLHVCAZ][\dMLHVCAZ. -]*$/.test(s) && !/^translate\(0 $|^\) scale\(1 -1\)$/.test(s)   /* a drawn shape's path data and a chart's transform are not words (17 Nov 2026) */
     && !(s.trim().split(/ +/).every((t) => /^[a-z][\w-]*$/.test(t)) && s.trim().split(/ +/).some((t) => /[-_]/.test(t) || classes.has(t))));
   ok(own.length > 1500 && js.includes("var WORDS=") && !left.length,
     "no sentence is written in the page's script: every word it draws is a key's, the rails' names apart: " + JSON.stringify(left));

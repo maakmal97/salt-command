@@ -427,7 +427,7 @@ function linkScreen() {
     + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title"', "link.h")
     + wt("p", 'class="amb-hero__sub" id="linkLead"', "link.lead") + "</header>"
     + '<div class="amb-stack gcol">'
-    + '<div class="amb-settings"><h2 class="amb-settings__head">' + wd("link.inside") + '</h2><ul class="amb-settings__list">'
+    + '<div class="amb-settings">' + wt("h2", 'class="amb-settings__head"', "link.inside") + '<ul class="amb-settings__list">'
     + row("home", "link.r1") + row("tag", "link.r2") + row("doc", "link.r3") + "</ul></div>"
     /* an app's own browser keeps nothing once it closes: the phone's own menu mark, and where to go */
     + '<div class="amb-notice amb-notice--warn" id="linkInapp" hidden>' + AMB.glyph("info") + "<span>"
@@ -628,7 +628,7 @@ function noticeCard(b) {
     + '<span><span id="todayOpen" class="amb-notice__title" hidden></span><span id="todayLine" class="hblock" hidden></span>'
     + '<span id="bull" class="hnote hblock"' + (lines.length ? "" : " hidden") + ">" + wt("span", 'class="amb-notice__title"', "bull.h")
     + '<span class="hlines">' + lines.map((l, i) => '<span class="hline"' + (i ? " hidden" : "") + ">" + esc(l) + "</span>").join("") + "</span>"
-    + '<button type="button" class="amb-pill amb-pill--quiet amb-pill--sm hpause" aria-pressed="false" hidden' + wl("bull.pause") + ">" + wd("bull.pause") + "</button></span></span></div>";
+    + wt("button", 'type="button" class="amb-pill amb-pill--quiet amb-pill--sm hpause" aria-pressed="false" hidden' + wl("bull.pause"), "bull.pause") + "</span></span></div>";
 }
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
@@ -693,7 +693,7 @@ const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.sli
    saying it (placeCounts writes "Orders, 3 waiting"). */
 function placesDock() {
   return '<div class="amb-dock"><div id="hLive" hidden></div><nav class="amb-tabbar"' + wl("place.bar") + ">" + PLACES.map(([t]) => '<button type="button" class="amb-tab"' + placeAttrs(t, true)
-    + ' aria-label="' + esc(EN["place." + t]) + '" data-word="' + esc(EN["place." + t]) + '">'
+    + wl("place." + t) + ' data-word="' + esc(EN["place." + t]) + '">'
     + AMB.glyph(PLACE_GLYPH[t]) + wt("span", "", "place." + t) + '<span class="amb-tab__count" data-n="' + t + '" aria-hidden="true" hidden></span></button>').join("") + '</nav></div><div class="amb-toast" data-amb-toast popover="manual" aria-hidden="true"><span class="amb-toast__dot"></span><span class="amb-toast__text"></span></div>';
 }
 /* THE TEST SURFACE (his answers of 18 Oct 2026). `test` is null on every real page, which is then the page it always was; under /all/test
@@ -1145,7 +1145,7 @@ const CLIENT_JS = `
     var bx=document.getElementById('bull'), pz=bx&&bx.querySelector('.hpause'); if(!pz) return;
     pz.addEventListener('click',function(){
       bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');
-      pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause')); pz.setAttribute('data-wl',bullHeld?'bull.play':'bull.pause');
+      pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause')); pz.setAttribute('data-wl',bullHeld?'bull.play':'bull.pause'); pz.setAttribute('data-w',bullHeld?'bull.play':'bull.pause');
       pz.textContent=tw(bullHeld?'bull.play':'bull.pause');
     });
   })();
@@ -3788,7 +3788,7 @@ const CLIENT_JS = `
       else if(draft.pick[P.product]!=null&&!(P.sizes||[]).some(function(x){ return String(x.q)===String(draft.pick[P.product]); })) delete draft.pick[P.product];
       ah.textContent=anyHint(P,v); formFoot(); });
     ai.addEventListener('change',function(){ sheetDraw(); });
-    var af=ambField(tw('sh.any'),'oAny'+i,ai,ah); af.className+=' oany'; return af;
+    var af=ambField(tw('sh.any'),'oAny'+i,ai,ah); af.classList.add('oany'); return af;
   }
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
@@ -6347,7 +6347,7 @@ const CLIENT_JS = `
   function tabCount(c,n){
     var t=n>99?'99+':n?String(n):'', tab=c.closest('.amb-tab');
     if(c.textContent!==t) c.textContent=t; if(c.hidden!==!n) c.hidden=!n;
-    if(tab){ var w=tab.getAttribute('data-word')||'', l=n?w+', '+n+' waiting':w; if(tab.getAttribute('aria-label')!==l) tab.setAttribute('aria-label',l); }
+    if(tab){ var w=tab.getAttribute('data-word')||'', l=n?tw('place.count',{w:w,n:n}):w; if(tab.getAttribute('aria-label')!==l) tab.setAttribute('aria-label',l); }
   }
   function placeCounts(){
     var n=orders.filter(oNeeds).length;
