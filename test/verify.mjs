@@ -21236,7 +21236,8 @@ await (async () => {
     const pasted = d.getElementById("un").value;
     d.getElementById("pw").value = TP;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-    const bl = () => [...d.querySelectorAll("#bull .salt-notice__line")].map((x) => x.textContent).join("|");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the bulletin's lines are span.hline inside the notice */
+    const bl = () => [...d.querySelectorAll("#bull .hline")].map((x) => x.textContent).join("|");
     const sn = () => (d.getElementById("stageNote") || {}).textContent || "";
     for (let i = 0; i < 150 && (bl() !== storedL.bulletin.lines.join("|") || !sn()); i++) await new Promise((r) => setTimeout(r, 100));
     ok(pasted === TL && bl() === storedL.bulletin.lines.join("|") && asked.some((x) => x.length > 0)
