@@ -773,7 +773,7 @@ export function restateTap(o, at, body, ctx) {
   /* 10 Nov 2026 (his ask D): ON A BOOK WITH A PRICE BAND a goods total under the Floor or over the Ceiling at the size is asked once (409, `outside`)
      and, sent again with his reason, stands as a one-off: the Correction carries the mark beside its fields, and one that brings a marked row back
      inside the band carries null, which takes the mark off. An undo is never asked (it puts back figures already agreed) and puts back the mark the
-     step it undoes replaced. A book with no band refuses under its Floor in the words it always had, and knows no Ceiling. */
+     step it undoes replaced. 17 Nov 2026 (his word): a book with no band is asked the same way under its Floor, and knows no Ceiling. */
   let out = null, mark;   /* mark undefined: the row's one-off mark is left as it is */
   const undoing = !!body && body.undo !== undefined;
   if (figs.qty !== was.qty || figs.total !== was.total) {
@@ -782,8 +782,7 @@ export function restateTap(o, at, body, ctx) {
     const band = bandFor(book, o.product || "salt", figs.qty);
     out = outsideBand(figs.total, fl, band);
     if (out && !ro.why && !undoing) { const r = bandRefusal(out, fl, figs.qty); return Object.assign({ status: r.status, error: r.error, outside: r.outside }, r.underFloor ? { underFloor: true } : {}); }
-    if (!out && figs.total < fl.floor - 0.005) return { status: 409, error: rm(figs.total) + " is under the floor of " + rm(fl.floor) + " at " + figs.qty + " unit, so it cannot be set" };
-    if (band) {
+    {
       const marked = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
       /* a row not on the book yet (its pending row still on its way) may carry a mark this read cannot see, so it is cleared all the same */
       mark = out ? (ro.why ? markOf(out, ro.why) : undefined) : (!marked || marked.oneOff ? null : undefined);

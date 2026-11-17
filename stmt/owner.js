@@ -3624,7 +3624,7 @@ export const OWNER_JS = `
      reason (oneOff), and the row then stands as a marked one-off. makerOutside keeps the refusal a tap was given, by the card's key, for the Sheet that asks;
      makerOneOff the reason he gave on a placed order, by its id, until its goods total changes. The reason is his alone: it goes to the Desk, never to a customer. */
   var makerOutside={}, makerOneOff={}, makerOneDraft={};
-  var ONE_OFF_WORDS={reason:'Reason', give:'Give a reason', go:'Let it stand', title:'Outside the price band', keep:'Not now', sent:'Change sent. You approve it next, under Approve.'};
+  var ONE_OFF_WORDS={reason:'Reason', give:'Give a reason', go:'Let it stand', title:'Let this price stand?', keep:'Not now', sent:'Change sent. You approve it next, under Approve.'};
   function oneOffOk(text){ var t=String(text==null?'':text).trim(); return t.length>=3&&t.length<=120; }
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());

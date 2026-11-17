@@ -162,10 +162,16 @@
   "replace": "(null);"
  },
  {
-  "name": "a book with no band takes an amendment under its Floor",
+  "name": "a book with no band is refused under its Floor again",
+  "file": "engine/oneoff.mjs",
+  "find": "  if (!fl || !fl.exact || typeof total !== \"number\" || !Number.isFinite(total)) return null;",
+  "replace": "  if (!band || !fl || !fl.exact || typeof total !== \"number\" || !Number.isFinite(total)) return null;"
+ },
+ {
+  "name": "a book with no band carries no mark on an amendment",
   "file": "engine/stages.mjs",
-  "find": "if (!out && figs.total < fl.floor - 0.005) return",
-  "replace": "if (false) return"
+  "find": "      mark = out ? (ro.why ? markOf(out, ro.why) : undefined) : (!marked || marked.oneOff ? null : undefined);",
+  "replace": "      mark = band && out ? (ro.why ? markOf(out, ro.why) : undefined) : (!marked || marked.oneOff ? null : undefined);"
  },
  {
   "name": "the amendment's card has no One-off flag",

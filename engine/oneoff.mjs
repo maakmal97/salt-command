@@ -2,7 +2,8 @@
  * docs/plan-salt-price-band.html). On a book whose pricing rule carries a band, a goods total he types at Accept, in an offer or in an amendment
  * of an agreed order that is under the Floor or over the Ceiling at its size is refused once, saying by how much and what it means in ringgit;
  * sent again with his reason it goes through as any Accept or amendment does, and the sale's ROW carries `oneOff: {why, side, by}`, the mark the
- * evidence readers leave out (their usual, the suggested %). A book with no band never reaches this file's refusal: its roads refuse as they did.
+ * evidence readers leave out (their usual, the suggested %). 17 Nov 2026 (his word, "I want to be able to put a price lower than floor"): EVERY BOOK
+ * takes the under side the same way, asked once and then marked with his reason; only a book with a band has a Ceiling to ask about.
  *
  * The reason is HIS text about HIS order. It lives on the entry, the draft, the ledger row and his own roads; nothing here is sent to the site,
  * and no customer's view of an order or statement names it.
@@ -22,11 +23,11 @@ export function reasonOf(b) {
   return lineOk(t) ? { why: t } : { error: ONE_OFF_BAD };
 }
 
-/** Where a goods total sits against the band at its size: null inside it, on a book with no band (`band` null), or with no Floor known AT the
- *  size (`fl` is floorFor's answer); else { side, by, floor, ceiling }, ringgit to 2 dp. */
+/** Where a goods total sits against the band at its size: null inside it, or with no Floor known AT the size (`fl` is floorFor's answer); else
+ *  { side, by, floor, ceiling }, ringgit to 2 dp. A book with no band (`band` null) has a Floor and no Ceiling, so only its under side is asked. */
 export function outsideBand(total, fl, band) {
-  if (!band || !fl || !fl.exact || typeof total !== "number" || !Number.isFinite(total)) return null;
-  const floor = +(+fl.floor).toFixed(2), ceiling = Number.isFinite(+band.ceiling) && +band.ceiling > 0 ? +(+band.ceiling).toFixed(2) : null;
+  if (!fl || !fl.exact || typeof total !== "number" || !Number.isFinite(total)) return null;
+  const floor = +(+fl.floor).toFixed(2), ceiling = band && Number.isFinite(+band.ceiling) && +band.ceiling > 0 ? +(+band.ceiling).toFixed(2) : null;
   if (total < floor - 0.005) return { side: "under", by: +(floor - total).toFixed(2), floor, ceiling };
   if (ceiling != null && total > ceiling + 0.005) return { side: "over", by: +(total - ceiling).toFixed(2), floor, ceiling };
   return null;
@@ -46,4 +47,4 @@ export const markOk = (m) => !!m && typeof m === "object" && !Array.isArray(m) &
   && lineOk(m.why) && (m.side === "under" || m.side === "over") && typeof m.by === "number" && Number.isFinite(m.by) && m.by > 0 && m.by <= 1000000;
 /** The line the Approve card and his yes's digest carry beside the row. */
 export const oneOffFlag = (m) => "One-off: " + rm(m.by) + (m.side === "under" ? " under the Floor" : " over the Ceiling") + ", his reason: " + m.why.replace(/[.]+$/, "") + ".";
-export const ONE_OFF_CLEARED = "Back inside the price band, so the one-off mark comes off this row.";
+export const ONE_OFF_CLEARED = "No longer outside its price, so the one-off mark comes off this row.";

@@ -2,7 +2,7 @@
    ONCE, THEN STANDS AS A MARKED ONE-OFF. On a book with a price band (salt) a goods total he types at Accept, in an offer or in an amendment of an
    agreed order that is under the Floor or over the Ceiling at its size is refused once (409, `outside`), saying by how much; sent again with his
    reason (`oneOff`, one line of 3 to 120 characters) it goes through as any Accept or amendment does, the sale's row carrying
-   `oneOff: {why, side, by}` and its card the flag. A book with no band refuses as it always did. The reason is his alone: nothing the site keeps
+   `oneOff: {why, side, by}` and its card the flag. 17 Nov 2026 (his word): a book with no band is asked the same way under its Floor, and has no Ceiling. The reason is his alone: nothing the site keeps
    or a customer reads names it. The evidence readers (their usual, their rates) leave a marked row out.
    Driven through both Workers over the real migrated schema (node:sqlite), as test/negotiate.mjs is, then Salt Admin's page in jsdom; every code,
    username, order id and reason is invented. Mutations: test/price-band-oneoff.mutations.json. */
@@ -142,14 +142,16 @@ export async function run({ ok, skip }) {
   ok(pvIn.status === 200 && pvIn.j.row.total === 100 && pvIn.j.row.oneOff === undefined && !(pvIn.j.flags || []).some((f) => /One-off/.test(f)),
     "a price inside the band is drafted unmarked even when a reason is sent with it: " + JSON.stringify({ st: pvIn.status, row: pvIn.j.row, e: pvIn.j.error }));
 
-  /* 8. A BOOK WITH NO BAND REFUSES AS IT ALWAYS DID: under its Floor in the old words with no `outside`, a reason changing nothing; and it knows no Ceiling */
+  /* 8. A BOOK WITH NO BAND IS ASKED UNDER ITS FLOOR TOO (17 Nov 2026, his word "I want to be able to put a price lower than floor"; until then it was
+     refused in the old words, reason or none): asked once with `outside` and no Ceiling, with his reason drafted and marked; and it knows no Ceiling */
   const c = await place("C", "oil", 10, 130);
   const oilU = await call("/orders/" + c.id + "/preview", { total: 50 }), oilW = await call("/orders/" + c.id + "/preview", { total: 50, oneOff: WHY });
   const oilO = await call("/orders/" + c.id + "/preview", { total: 900, oneOff: WHY });
-  const OLD = "RM 50 is under the floor of RM 70 at 10 unit, so it cannot be set";
-  ok(oilU.status === 409 && oilU.j.error === OLD && oilU.j.underFloor === true && oilU.j.outside === undefined && same(oilU.j, oilW.j)
+  const SAY_OIL = "RM 20 under the Floor of RM 70 at 10 unit: a loss of RM 20 on this order. Give a reason and it stands as a one-off.", MARK_OIL = { why: WHY, side: "under", by: 20 };
+  ok(oilU.status === 409 && oilU.j.error === SAY_OIL && oilU.j.underFloor === true && same(oilU.j.outside, { side: "under", by: 20, floor: 70, ceiling: null })
+    && oilW.status === 200 && oilW.j.row.total === 50 && same(oilW.j.row.oneOff, MARK_OIL)
     && oilO.status === 200 && oilO.j.row.total === 900 && oilO.j.row.oneOff === undefined,
-    "oil, with no band, refuses under its Floor in the words it always had, reason or none, and takes any price over it unmarked: " + JSON.stringify([oilU.j, oilW.status, oilO.status, oilO.j.row && oilO.j.row.oneOff]));
+    "oil, with no band, is asked once under its Floor, stands marked with his reason, and takes any price over it unmarked: " + JSON.stringify([oilU.j, oilW.status, oilW.j.row && oilW.j.row.oneOff, oilO.status, oilO.j.row && oilO.j.row.oneOff]));
 
   /* 9. OVER THE CEILING IS A RAISE, SO IT GOES TO THEM FOR THEIR YES: the offer is asked the same way, carries his reason on his own yes, and the
      row their yes drafts is marked; their page reads the offer's figure and nothing of the reason */
@@ -232,11 +234,16 @@ export async function run({ ok, skip }) {
     "an amendment that brings a one-off row back inside the band clears the mark and says so, and one on an unmarked row carries none: "
     + JSON.stringify({ in: [rsIn.status, rsIn.j.error, dF && dF.entry.payload.oneOff, dF && dF.flags], plain: [rsPlain.status, dG && Object.keys(dG.entry.payload)] }));
 
-  /* 13. AN AMENDMENT ON A BOOK WITH NO BAND keeps the old refusal, reason or none */
+  /* 13. AN AMENDMENT ON A BOOK WITH NO BAND is asked under its Floor and, with his reason, filed marked (17 Nov 2026, his word; it was refused) */
   const h = await agreed("H", { rid: "s904", customer: WHO.H[0], product: "oil", date: "2026-11-07", qty: 10, total: 130, cash: 0 }, "oil");
-  const rsOil = await call("/orders/" + h.id + "/restate", { total: 50 }), rsOilW = await call("/orders/" + h.id + "/restate", { total: 50, oneOff: WHY });
-  ok(rsOil.status === 409 && rsOil.j.error === OLD && rsOil.j.outside === undefined && rsOil.j.underFloor === undefined && same(rsOil.j, rsOilW.j) && !preOf(h.id, "amend"),
-    "an oil order amended under its Floor is refused in the old words with nothing to ask, a reason changing nothing: " + JSON.stringify([rsOil.j, rsOilW.j]));
+  const rsOil = await call("/orders/" + h.id + "/restate", { total: 50 });
+  const askedOil = !preOf(h.id, "amend");
+  const rsOilW = await call("/orders/" + h.id + "/restate", { total: 50, oneOff: WHY });
+  await deskPass(denv, new Date());
+  const dH = draftOf(h.id);
+  ok(rsOil.status === 409 && rsOil.j.error === SAY_OIL && same(rsOil.j.outside, { side: "under", by: 20, floor: 70, ceiling: null }) && askedOil
+    && rsOilW.status === 200 && dH && same(dH.entry.payload.oneOff, MARK_OIL) && dH.entry.payload.fields.total === 50 && dH.flags.includes("One-off: RM 20 under the Floor, his reason: " + WHY + "."),
+    "an oil order amended under its Floor is asked once, nothing filed, and with his reason its Correction carries the mark and its card the flag: " + JSON.stringify([rsOil.j, rsOilW.status, rsOilW.j.error, dH && dH.entry.payload, dH && dH.flags]));
 
   /* 14. THE REASON IS HIS ALONE: nothing the Desk sent the site, nothing the site keeps of any order and no customer's view holds either reason,
      the mark's name or the flag */

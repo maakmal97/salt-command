@@ -420,8 +420,8 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror, why) 
   /* 10 Nov 2026 (his ask D): ON A BOOK WITH A PRICE BAND a price he types under the Floor or over the Ceiling at this size is asked once (409,
      `outside`: by how much, and what it means in ringgit), and with his reason it stands as a one-off: the entry carries the mark, the drafter puts
      it on the row and says it in the flags, so the digest his yes answers holds it. A row offered again keeps the reason its rejected draft
-     carried, read against the band as it stands. An offer they took is never asked (`unasked`: he was asked when he made it). A book with no band
-     refuses under its Floor as it always did; an order agreed at what they placed (no price typed) is not read here at all. */
+     carried, read against the band as it stands. An offer they took is never asked (`unasked`: he was asked when he made it). 17 Nov 2026 (his
+     word): a book with no band is asked the same way under its Floor; an order agreed at what they placed (no price typed) is not read here at all. */
   const typed = price != null ? price : (ctx && ctx.again && why ? goods : null);
   let out = typed != null ? outsideBand(typed, fl, bandFor(book, product, qty)) : null;
   if (out && !why) { if (!(ctx && ctx.unasked)) return bandRefusal(out, fl, qty); out = null; }

@@ -35320,13 +35320,15 @@ await (async () => {
   const viewA = O.customerView(sA);
   ok(viewA.total === 90 && viewA.asked === 100, "their page is sent the price set and what they placed it at: " + JSON.stringify({ total: viewA.total, asked: viewA.asked }));
 
-  /* 2. NEVER UNDER THE FLOOR: RM 70 on a size whose floor is RM 80 is refused, and nothing moves */
+  /* 2. NEVER UNDER THE FLOOR UNASKED: RM 70 on a size whose floor is RM 80 is refused, and nothing moves. 17 Nov 2026 (his word, "I want to be able
+     to put a price lower than floor"): the refusal is now the one-off's ask on every book (`outside`, "under the Floor", capital F), which his
+     reason answers (test/price-band-oneoff.mjs); with no reason it still stops here */
   const b = await place(1, 100);
   const pvB = await call("/orders/" + b.id + "/preview", { total: 70 });
   const pvOk = await call("/orders/" + b.id + "/preview", { total: 95 });
   const acB = await call("/orders/" + b.id + "/accept", { total: 70, hash: pvOk.j.hash });
-  ok(pvB.status === 409 && pvB.j.underFloor === true && /under the floor of RM 80/.test(pvB.j.error)
-    && acB.status === 409 && acB.j.underFloor === true && /under the floor of RM 80/.test(acB.j.error) && (await orderOf(b.id)).status === "placed",
+  ok(pvB.status === 409 && pvB.j.underFloor === true && /under the floor of RM 80/i.test(pvB.j.error) && pvB.j.outside && pvB.j.outside.side === "under"
+    && acB.status === 409 && acB.j.underFloor === true && /under the floor of RM 80/i.test(acB.j.error) && (await orderOf(b.id)).status === "placed",
     "a price under the floor at that size is refused at the preview and at Accept, and the order stays placed: " + JSON.stringify({ pv: pvB.status, e: pvB.j.error, ac: acB.status }));
   const bad = await call("/orders/" + b.id + "/preview", { total: 0 });
   ok(bad.status === 400, "and a price of nothing is refused: " + bad.status);
