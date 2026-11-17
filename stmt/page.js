@@ -6962,7 +6962,7 @@ const CLIENT_JS = `
     connect();
     return { wake:wake, close:function(){
       shut=true; if(retryT){ clearTimeout(retryT); retryT=null; } stopBeat();
-      document.removeEventListener('visibilitychange',shown); window.removeEventListener('pageshow',wake);
+      document.removeEventListener('visibilitychange',onShown); window.removeEventListener('pageshow',wake);
       var s=ws, was=hello; ws=null; hello=false;
       if(s){ try{ s.close(); }catch(e){} }
       if(was) cfg.down();
