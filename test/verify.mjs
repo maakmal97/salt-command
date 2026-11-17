@@ -43599,6 +43599,9 @@ await (async () => {
     for (const m of d.body.matchAll(/<table( class="([^"]*)")?/g)) {
       tables++;
       kinds.add((m[2] || "orders").split(" ")[0]);
+      /* 17 Nov 2026, the move to Ambient (the third red fix): a live statement's orders and refunds are Ambient's amb-table--stack, which stacks every row on a phone and
+         needs no box, never a scroll one (Ambient forbids overflow-x: auto); only a table with no stack still opens in its box */
+      if (/\bamb-table--stack\b/.test(m[2] || "")) continue;
       if (!d.body.slice(Math.max(0, m.index - 19), m.index).endsWith('<div class="tblw">')) bare.push(p + " " + (m[2] || "orders"));
     }
   }
