@@ -15,7 +15,8 @@ export async function run({ ok, pageWork }) {
   const money = async (p, id) => {
     const row = p.d.querySelector('[data-row="' + id + '"]');
     if (row) { row.click(); await p.settle(); }
-    return [...p.d.querySelectorAll('[data-part="money"] .salt-settings__row')].map((r) => [".salt-settings__label", ".salt-settings__value", ".salt-settings__sub"].map((q) => txt(r.querySelector(q))).join(" ").trim());
+    /* 17 Nov 2026, the move to Ambient (merging v1526): the Bill's rows are Ambient's settings rows, its line the name, value and second line */
+    return [...p.d.querySelectorAll('[data-part="money"] .amb-setting')].map((r) => [".obill__k", ".amb-setting__value", ".obill__sub"].map((q) => txt(r.querySelector(q))).join(" ").trim());
   };
   try {
     const at = ago(1);
