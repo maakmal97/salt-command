@@ -1,0 +1,14 @@
+[
+ {
+  "name": "17 Nov 2026: Sign out everywhere no longer says what it signed out",
+  "file": "stmt/owner.js",
+  "find": "return parts.length?'Signed out: '+andList(parts)+'.':'Nothing was signed in.';",
+  "replace": "return parts.length?'Done.':'Nothing was signed in.';"
+ },
+ {
+  "name": "17 Nov 2026: an account with no kept list no longer says earlier sign-ins were not kept",
+  "file": "stmt/owner.js",
+  "find": "aEvent('Last opened', 'Earlier sign-ins were not kept.',",
+  "replace": "aEvent('Last opened', 'Unknown.',"
+ }
+]

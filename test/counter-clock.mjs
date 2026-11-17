@@ -17,9 +17,10 @@ export async function run({ ok }) {
     const D = dom.window.document, c = D.querySelector("header.amb-hero > .amb-hero__time > [data-clock]");
     const want = kl(), got = c ? c.textContent : null;
     ok(!!c && (got === want.t || got === kl().t), "a hero of Salt Admin shows the time in Kuala Lumpur, digits only: " + JSON.stringify({ got, want: want.t }));
-    c.textContent = "";
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a hero with no clock fails the check above cleanly, it does not throw here */
+    if (c) c.textContent = "";
     D.dispatchEvent(new dom.window.Event("visibilitychange"));
-    ok(c.textContent === kl().t || c.textContent === want.t, "and paints it again when the page comes back into view: " + JSON.stringify(c.textContent));
+    ok(!!c && (c.textContent === kl().t || c.textContent === want.t), "and paints it again when the page comes back into view: " + JSON.stringify(c && c.textContent));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const counter = new JSDOM(landingPage("abcd-efgh", "nclk3", null)).window.document;
   ok(counter.querySelectorAll("#tabs header.amb-hero").length === 1 && counter.querySelectorAll("#tabs .amb-hero__time, #tabs [data-clock]").length === 0, "the Counter's hero carries no bare clock");

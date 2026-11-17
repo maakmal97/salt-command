@@ -6,10 +6,10 @@
   "replace": "m.note=''"
  },
  {
-  "name": "17 Nov 2026: the account row no longer opens its account by its own button",
+  "name": "17 Nov 2026: a clipboard that takes the link no longer says Copied",
   "file": "stmt/owner.js",
-  "find": "el('button','amb-row__main arow__open'),'acct.open'",
-  "replace": "el('button','amb-row__main arow__x'),'acct.open'"
+  "find": "retire(a, 'Copied. Paste it into a message to them, then tick Sent.')",
+  "replace": "retire(a, 'Done.')"
  },
  {
   "name": "17 Nov 2026: the sign-in answer leaves the Sign-in group",
