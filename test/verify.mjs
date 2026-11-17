@@ -30335,7 +30335,8 @@ await (async () => {
       const pay = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       /* S6 6.8: the ways are the pay sheet's tiles; cash withheld is shown, dashed and off, with the reason as its line */
       for (let i = 0; i < 150 && !d.querySelector('#payBody input[name="payHow"]'); i++) await new Promise((r) => setTimeout(r, 20));
-      return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.nextSibling.querySelector(".salt-option__detail").textContent : ""));
+      /* 17 Nov 2026, the move to Ambient (the third red fix): a way is label.amb-option, its reason the option's sub line */
+      return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.closest(".amb-option").querySelector(".amb-option__sub").textContent : ""));
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
   };
   const railsAhead = await rails(ord({ moved: 2, paid: 0 })), railsInStep = await rails(ord({ moved: 2, paid: 200 }));
@@ -42545,7 +42546,7 @@ await (async () => {
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
     const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
-    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .salt-option__label")].pop());
+    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .amb-option__title")].pop());
     const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
       go: t(d.getElementById("payGo")) + ":" + d.getElementById("payGo").tagName, cap: t(d.querySelector("#payFoot .paycap")) };

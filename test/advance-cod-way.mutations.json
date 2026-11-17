@@ -1,0 +1,4 @@
+[
+ {"name": "goods ahead of the money still offer cash on handover", "file": "stmt/page.js", "find": "g:'cash', off:no,", "replace": "g:'cash', off:false,"},
+ {"name": "the cash way gives no reason while goods are unpaid", "file": "stmt/page.js", "find": "detail:pre?'pay.cashPrepay':no?'pay.cashOff':'pay.cashOn'};", "replace": "detail:'pay.cashOn'};"}
+]
