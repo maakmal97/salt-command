@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1535","d":"18 Nov 2026","t":"MAINTENANCE AT ONCE","n":["<b>ONE SWITCH.</b> Salt Admin's Shop > Hours puts the Counter into maintenance immediately, or turns it off early.","<b>BACK AT THE TIME GIVEN.</b> Before switching on, set the return time or date. The Counter opens again automatically then.","<b>SALT ADMIN STAYS OPEN.</b> Maintenance holds customer routes, not Salt Admin.","<b>NO TRADING ROWS CHANGE.</b> Maintenance changes access, not the Book or its prices."]}];
+const evolution=[{"v":"v1535","d":"18 Nov 2026","t":"MAINTENANCE AT ONCE","n":["<b>ONE SWITCH.</b> Salt Admin's Shop > Hours puts the Counter into maintenance immediately, or turns it off early.","<b>BACK AT THE TIME GIVEN.</b> Before switching on, set the return time or date. The Counter opens again automatically then.","<b>SALT ADMIN STAYS OPEN.</b> Maintenance holds customer routes, not Salt Admin.","<b>NO BANNERS WHILE IT IS ON.</b> Payment reminders and the other automatic banners wait until the Counter is back.","<b>NO TRADING ROWS CHANGE.</b> Maintenance changes access, not the Book or its prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this

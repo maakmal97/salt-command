@@ -6998,7 +6998,7 @@ export const OWNER_JS = `
       if(!on){ mtOpen=true; drawMakerNow(); drawConfirm(); var f=document.querySelector('[data-act="maint.until"]'); if(f&&f.focus) f.focus(); return; }
       if(!filed){ mtOpen=false; drawMakerNow(); drawConfirm(); var g2=document.querySelector('[data-act="maint.switch"]'); if(g2&&g2.focus) g2.focus(); return; }
       sw.disabled=true;
-      refs('/all/maker/maintenance',{off:true}).then(function(value){ if(makerHours) makerHours.maint=value.maint; mtOpen=false; drawMakerHours(); hoursSaid('now','Maintenance off. Customers are back on.'); })
+      refs('/all/maker/maintenance',{off:true}).then(function(value){ if(makerHours) makerHours.maint=value.maint; mtOpen=false; drawMakerHours(); hoursSaid('now','Maintenance off. Customers are back within a minute.'); })
         .catch(function(error){ sw.disabled=false; sw.checked=on; hoursSaid('now',null,error); });
     });
     var until=null;
@@ -7008,7 +7008,7 @@ export const OWNER_JS = `
       ur.appendChild(el('span','amb-setting__name','Back at')); ur.appendChild(until); list.appendChild(sLi(ur));
     }
     g.appendChild(sFoot(filed?'Customers see Under maintenance, back '+w+'. It lifts by itself then; Salt Admin stays open.'
-      :on?'Kuala Lumpur time. Customers are held at once; Salt Admin stays open.':'Customers can use the Counter.'));
+      :on?'Kuala Lumpur time. Customers are held within a minute; Salt Admin stays open.':'Customers can use the Counter.'));
     box.appendChild(g);
     if(on){
       var go=el('div','anow-set'); go.setAttribute('data-amb','');
