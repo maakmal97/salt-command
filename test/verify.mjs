@@ -48612,7 +48612,8 @@ await (async () => {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
-      return [...D.querySelectorAll("#hComing .salt-inbox-row")].map((r) => r.getAttribute("data-row") || (r.querySelector(".salt-inbox-row__age") || {}).textContent.slice(0, 2));
+      /* 17 Nov 2026, the move to Ambient (the third red fix): Coming up's rows are Ambient rows, an order by data-row and a part by data-part, the day in the row's trail */
+      return [...D.querySelectorAll("#hComing [data-row], #hComing [data-part]")].map((r) => r.getAttribute("data-row") || (r.querySelector(".amb-row__age") || {}).textContent.slice(0, 2));
     } finally { W.close(); }
   };
   const before = await run("2026-09-09T01:00:00Z"), after = await run("2026-09-11T01:00:00Z");
