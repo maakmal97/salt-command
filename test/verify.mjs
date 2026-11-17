@@ -40372,18 +40372,19 @@ await (async () => {
   const at = (html, W) => html.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, W) ? "@media all{" : m));
   const read = (html, W) => {
     const dom = new JD(at(html, W)), d = dom.window.document, cs = (e, p) => (e ? dom.window.getComputedStyle(e).getPropertyValue(p) : "none");
-    /* Home's two columns, a list of rows in the first section, and Orders' list, as the page draws them */
+    /* Home's two stacks, a list of rows in the first section, and Orders' list, as the page draws them (17 Nov 2026, the move to Ambient (the third red fix): Ambient's
+       stack, list and row, whose gap is its token, which jsdom leaves unresolved, so the one token is what is read) */
     const x = d.createElement("div");
-    x.innerHTML = '<div class="home"><div class="hcol"><div><button class="salt-inbox-row">a</button><button class="salt-inbox-row">b</button></div><div>c</div></div>'
-      + '<div class="hcol"><div>d</div></div></div><div class="olist"><button class="salt-inbox-row">e</button><button class="salt-inbox-row">f</button></div>';
+    x.innerHTML = '<div class="amb-split"><div class="amb-stack"><div><ul class="amb-list amb-list--ruled"><li class="amb-row">a</li><li class="amb-row">b</li></ul></div><div>c</div></div>'
+      + '<div class="amb-stack"><div>d</div></div></div><div class="olist"><ul class="amb-list amb-list--ruled"><li class="amb-row">e</li><li class="amb-row">f</li></ul></div>';
     d.body.appendChild(x);
-    const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".hcol");
+    const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".amb-stack");
     const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q("#tabs"), "padding-bottom"),
       door: cs(q("#gate"), "padding-left") + "|" + cs(q("#gate"), "padding-right"),
       roster: q("#roster") ? cs(q("#roster"), "margin-top") + "|" + cs(q("#roster"), "padding-bottom") : "",
-      hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].firstElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
-      rows: [...x.querySelectorAll(".home .salt-inbox-row")].map((r) => cs(r, "margin-bottom")).join("|"),
-      orows: [...x.querySelectorAll(".olist .salt-inbox-row")].map((r) => cs(r, "margin-bottom")).join("|") };
+      hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].lastElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
+      rows: [...x.querySelectorAll(".amb-split .amb-row")].slice(0, 2).map((r) => cs(r, "margin-bottom")).join("|"),
+      orows: [...x.querySelectorAll(".olist .amb-row")].map((r) => cs(r, "margin-bottom")).join("|") };
     dom.window.close();
     return out;
   };
@@ -40394,17 +40395,17 @@ await (async () => {
      Ambient's screen keeps the safe areas, its stacks the 16px gutter, and its dock clears itself (amb-screen--docked) */
   void sides;
   const nil = (v) => /^0(px)?$/.test(v);
-  ok(phone.body.every(nil) && nil(phone.shell) && phone.door === "0px|0px",
+  ok(phone.body.every(nil) && nil(phone.shell) && phone.door.split("|").every(nil),   /* jsdom reads a zero padding as 0, not 0px */
     "on a phone the body keeps no gutter of the page's own, the Counter's shell no room of its own for a bar, and the door adds nothing beside: " + JSON.stringify(phone));
   ok(phoneOwn.roster.split("|").every(nil) && phoneOwn.body.join() === phone.body.join(),
     "and Salt Admin's shell starts at the body's edge with no room of its own for a bar either: " + JSON.stringify(phoneOwn));
-  ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
-    "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
+  ok(phone.hcol === "grid|var(--amb-space-4)|0|0" && /^(0px\|)+0px$/.test(phone.rows) && /^(0px\|)+0px$/.test(phone.orows),
+    "Home's sections stand one gap apart, Ambient's token, each stack's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
   /* 5 Nov 2026 (the frame): from 1080px Salt Admin's shell is the frame, the screen tall, no padding under it (its 24px margin is the frame's height) */
-  ok(desk.body.every(nil) && nil(desk.shell) && desk.door === "4px|4px" && deskOwn.roster.split("|").every(nil)
-    && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
-    "from 1080px nothing moves: the body keeps no gutter, the shells none of their own, the door its 4px, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+  ok(desk.body.every(nil) && nil(desk.shell) && desk.door.split("|").every(nil) && deskOwn.roster.split("|").every(nil)
+    && desk.hcol === phone.hcol && desk.rows === phone.rows && desk.orows === phone.orows,
+    "from 1080px nothing moves: the body keeps no gutter, the shells none of their own, the door adds nothing, Salt Admin with no margin above, and the stacks and rows stand as on a phone: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
 
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");

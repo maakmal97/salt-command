@@ -1,0 +1,6 @@
+[
+ {"name": "Home's stacks stand another gap apart", "file": "stmt/statement-css.js", "find": ".amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }", "replace": ".amb-stack { display: grid; gap: 8px; padding-inline: var(--amb-space-4); }"},
+ {"name": "the body keeps a gutter of its own", "file": "stmt/statement-css.js", "find": ".amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }", "replace": "body { padding: 16px; } .amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }"},
+ {"name": "the door adds room beside itself", "file": "stmt/statement-css.js", "find": ".amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }", "replace": "#gate { padding-left: 4px; padding-right: 4px; } .amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }"},
+ {"name": "a list's rows keep a margin of their own", "file": "stmt/statement-css.js", "find": ".amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }", "replace": ".amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); } .amb-split .amb-row, .olist .amb-row { margin-bottom: 8px !important; }"}
+]
