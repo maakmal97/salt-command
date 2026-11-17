@@ -1338,6 +1338,9 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 .amb-screen--docked .amb-foot { --amb-foot-at: calc(var(--amb-tabbar-h) + var(--amb-dock-inset) + var(--amb-safe-bottom) + var(--amb-foot-mini, 0px) - var(--amb-bleed)); --amb-foot-under: var(--amb-dock-inset); }
 /* the room is kept only while the mini bar shows: a mini carrying hidden keeps none */
 .amb-shell:has(> .amb-dock > .amb-mini:not([hidden])) { --amb-foot-mini: calc(var(--amb-mini-h) + var(--amb-peek)); }
+/* and so is the screen's bleed: in a shell it counts the mini's height and peek through the same key, so with no
+   mini shown the last row and a foot stand as near the tab bar as they stand to a shown mini */
+.amb-shell { --amb-foot-mini: 0px; --amb-bleed: calc(var(--amb-foot-mini, 0px) + var(--amb-tabbar-h) + 2 * var(--amb-dock-inset) + var(--amb-safe-bottom) + 12px); }
 /* Over a dock the ground runs on from the foot down to the screen's foot and the dock floats over it, so
    nothing that scrolls shows between the pill and the dock or under the dock. It is drawn where the foot's
    record ends the screen, so it never covers what follows, and it takes the taps meant for what it hides. */
@@ -1436,7 +1439,7 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
    beside the rail, on the content's edge, and the screen keeps that room clear, panes and all. Its status
    line is one line, cut short rather than grown into the room kept for it */
 /* the room is kept only while the save bar shows: a bar carrying hidden keeps none */
-.amb-shell:has(> .amb-dock > .amb-savebar:not([hidden]) + .amb-tabbar) > .amb-screen--docked { padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); scroll-padding-bottom: calc(var(--amb-bleed) + var(--amb-tabbar-h) - var(--amb-mini-h)); }
+.amb-shell:has(> .amb-dock > .amb-savebar:not([hidden]) + .amb-tabbar) > .amb-screen--docked { padding-bottom: calc(var(--amb-bleed) - var(--amb-foot-mini, 0px) + var(--amb-peek) + var(--amb-tabbar-h)); scroll-padding-bottom: calc(var(--amb-bleed) - var(--amb-foot-mini, 0px) + var(--amb-peek) + var(--amb-tabbar-h)); }
 @container amb (min-width: 960px) {
   .amb-shell--rail > .amb-dock > .amb-savebar { position: absolute; bottom: 0; left: calc(100% + var(--amb-rail-gap) + var(--amb-space-4)); width: min(520px, calc(100cqi - 100% - 2 * var(--amb-dock-inset) - var(--amb-rail-gap) - 2 * var(--amb-space-4) - var(--amb-safe-left) - var(--amb-safe-right))); }
   .amb-shell.amb-shell--rail:has(> .amb-dock > .amb-savebar:not([hidden]) + .amb-tabbar) > .amb-screen.amb-screen--docked { padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); scroll-padding-bottom: calc(var(--amb-tabbar-h) + var(--amb-rail-foot) + var(--amb-dock-inset) + var(--amb-safe-bottom)); }
