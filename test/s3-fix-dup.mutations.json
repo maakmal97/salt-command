@@ -1,0 +1,6 @@
+[
+ {"name": "say is declared again beside the carried Ambient script's", "file": "stmt/page.js", "find": "var say=function pageSay(t,cls){", "replace": "function say(t,cls){"},
+ {"name": "the order check's row is declared as row again", "file": "stmt/page.js", "find": "function checkRow(k,v,flag){", "replace": "function row(k,v,flag){"},
+ {"name": "the order's details row is declared as row again", "file": "stmt/page.js", "find": "function detailRow(k,v){", "replace": "function row(k,v){"},
+ {"name": "the live socket's visibility handler is called shown again", "file": "stmt/page.js", "find": "function onShown(){ if(!document.hidden) wake(); }", "replace": "function shown(){ if(!document.hidden) wake(); }"}
+]

@@ -1306,10 +1306,11 @@ const CLIENT_JS = `
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
      route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
      written into a hidden element. Both are written; only one is on screen. */
-  function say(t,cls){
+  /* 17 Nov 2026 (the third red fix): a named expression, not a second declaration of say beside the carried Ambient script's own (S3 fix's census) */
+  var say=function pageSay(t,cls){
     var m=(OWNER&&rmsg)?rmsg:msg;
     m.textContent=t||''; m.className='msg'+(cls?' '+cls:'');
-  }
+  };
   var b64d=function(s){ var raw=atob(s), a=new Uint8Array(raw.length);
     for(var i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i); return a; };
   /* the same normalisation the Worker applies: case and punctuation are forgiven */
@@ -3952,26 +3953,26 @@ const CLIENT_JS = `
       return r; }));
     B.appendChild(LR);
     var SL=el('ul','amb-settings__list');
-    function row(k,v,flag){ var li=el('li'), r=el('div','amb-setting'), val=el('span','amb-setting__value');
+    function checkRow(k,v,flag){ var li=el('li'), r=el('div','amb-setting'), val=el('span','amb-setting__value');
       r.appendChild(el('span','amb-setting__name',k));
       if(typeof v==='string') val.textContent=v; else val.appendChild(v);
       if(flag) val.appendChild(el('span','ofl',flag));
       r.appendChild(val); li.appendChild(r); SL.appendChild(li); }
-    if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
-    if(c.buyer) row(tw('sh.buyer'),c.buyer);   /* plan version 4: his alone */
-    if(c.on) row(tw('sh.actOn'),ymdDay(c.on));
-    if(one) row(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
-    else row(tw('sh.total'),rm(sheetSum(c)));
+    if(assoc) checkRow(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
+    if(c.buyer) checkRow(tw('sh.buyer'),c.buyer);   /* plan version 4: his alone */
+    if(c.on) checkRow(tw('sh.actOn'),ymdDay(c.on));
+    if(one) checkRow(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
+    else checkRow(tw('sh.total'),rm(sheetSum(c)));
     /* 27 Oct 2026: the goods, then their credit, then what they pay, never under RM 0; a delivery set at confirmation comes off it too */
     var cco=c.pool?{any:false}:creditOff(sheetSum(c));
-    if(cco.any){ row(tw('sh.credit'),'- '+rm(cco.c)); row(tw('sh.youPay'),rm(cco.pay),c.mode==='deliver'?tw('sh.youPayDeliv'):''); }
-    row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
-    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw(c.pin&&c.pin.src==='addr'?'sp.addrRow':c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),tw('sh.pinShared'));
-    if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
-    if(!c.pool&&c.mode==='deliver') row(tw('sh.winRow'),c.slot&&c.span?tw('sh.winCheck',{d:ymdDay(winDay(c.slot)), a:winPart(c.span,0), b:winPart(c.span,1)}):tw('sh.soon'));
-    else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
-    if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
-    if(c.say) row(tw('sh.note'),c.say);
+    if(cco.any){ checkRow(tw('sh.credit'),'- '+rm(cco.c)); checkRow(tw('sh.youPay'),rm(cco.pay),c.mode==='deliver'?tw('sh.youPayDeliv'):''); }
+    checkRow(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
+    if(c.mode==='deliver'&&(c.pin||c.pinKept)) checkRow(tw(c.pin&&c.pin.src==='addr'?'sp.addrRow':c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),tw('sh.pinShared'));
+    if(c.mode==='deliver') checkRow(tw('sh.delivery'),tw('sh.setOnConfirm'));
+    if(!c.pool&&c.mode==='deliver') checkRow(tw('sh.winRow'),c.slot&&c.span?tw('sh.winCheck',{d:ymdDay(winDay(c.slot)), a:winPart(c.span,0), b:winPart(c.span,1)}):tw('sh.soon'));
+    else if(!c.pool) checkRow(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
+    if(one&&lk) checkRow(tw('sh.pay'),tw('sh.inAdvance'));
+    if(c.say) checkRow(tw('sh.note'),c.say);
     var SG=el('div','amb-settings'); SG.appendChild(SL); B.appendChild(SG);
     /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure;
        V4b: a line at a time, its mark leading when there are several */
@@ -4795,13 +4796,13 @@ const CLIENT_JS = `
   /* DETAILS, folded: when it was ordered, the way, the window or the point, and the reference; no note. Kept open across a poll */
   function oDetails(o){
     var box=el('div','odet');
-    function row(k,v){ var p=el('p','amb-disclose__text'); p.appendChild(el('span','odet__k',k)); p.appendChild(document.createTextNode(': ')); p.appendChild(el('span','odet__v',v)); box.appendChild(p); }
-    row(tw('od.at'),stamp(o.at));
-    row(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect'));
-    if(o.slot&&o.slotSpan) row(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)}));
-    if(o.pinned&&o.mode==='deliver') row(tw('od.sealed'),tw('od.sealedV'));
-    if(o.point) row(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point}));
-    row(tw('od.ref'),orderRef(o.id));
+    function detailRow(k,v){ var p=el('p','amb-disclose__text'); p.appendChild(el('span','odet__k',k)); p.appendChild(document.createTextNode(': ')); p.appendChild(el('span','odet__v',v)); box.appendChild(p); }
+    detailRow(tw('od.at'),stamp(o.at));
+    detailRow(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect'));
+    if(o.slot&&o.slotSpan) detailRow(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)}));
+    if(o.pinned&&o.mode==='deliver') detailRow(tw('od.sealed'),tw('od.sealedV'));
+    if(o.point) detailRow(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point}));
+    detailRow(tw('od.ref'),orderRef(o.id));
     return oFolded(o,'oDet',tw('od.h'),null,box);
   }
   /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
@@ -6955,8 +6956,8 @@ const CLIENT_JS = `
       if(retryT){ clearTimeout(retryT); retryT=null; }
       connect();
     }
-    function shown(){ if(!document.hidden) wake(); }
-    document.addEventListener('visibilitychange',shown);
+    function onShown(){ if(!document.hidden) wake(); }
+    document.addEventListener('visibilitychange',onShown);
     window.addEventListener('pageshow',wake);
     connect();
     return { wake:wake, close:function(){
