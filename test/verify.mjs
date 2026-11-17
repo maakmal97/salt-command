@@ -43244,7 +43244,7 @@ await (async () => {
       d.querySelector('button[data-t="order"]').click();
       await until(() => t(d.getElementById("pOrder")).length > 0);
       const po = d.getElementById("pOrder");
-      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.amb-pill")].map(t).join(), form: !!po.querySelector(".olistcol, form") };
+      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.amb-pill")].map(t).filter((x) => /^Pay RM/.test(x)).join()   /* 17 Nov 2026, the move to Ambient (the third red fix): the held page also carries See your statement; the figure asked is the Pay pill's */, form: !!po.querySelector(".olistcol, form") };
     } finally { dom.window.close(); }
   };
   const acct = (amount, state, answered) => ({ id: "a-" + amount, u: U, kind: "account", at: iso(-3), amount, method: "transfer", account: "maybank", state, answered });

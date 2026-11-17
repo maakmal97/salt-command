@@ -1,0 +1,4 @@
+[
+ {"name": "what he received comes off nothing overdue", "file": "stmt/page.js", "find": "return Math.max(0,+(od-got).toFixed(2)); }", "replace": "return Math.max(0,+(od).toFixed(2)); }"},
+ {"name": "the hold ends at any money received", "file": "stmt/page.js", "find": "return Math.max(0,+(od-got).toFixed(2)); }", "replace": "return got>0.004?0:Math.max(0,+(od-got).toFixed(2)); }"}
+]
