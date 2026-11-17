@@ -35,8 +35,9 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    run out (his decision of 10 Oct 2026). It carries the real trading ledger; no real name, key or
    password is ever committed, in any form, hashed included.
 4. **No third-party loads at runtime.** Inline CSS and JS, no CDN; the build fails on an external
-   `src`, `url(` or `@import`. CSP is self-only, so Newsreader and Geist Mono are self-hosted
-   files from `Code\salt-ds\fonts`, carried by each surface's own sync.
+   `src`, `url(` or `@import`. CSP is self-only. Salt Admin and Salt Counter carry no font (Ambient
+   draws in each device's own face, since v1528, 17 Nov 2026); the Desk keeps Newsreader and Geist
+   Mono, self-hosted from `Code\salt-ds\fonts`, until its own move.
 5. **Copy and price.** Detail in `docs/DESK.md`.
    - **RM and unit only.** The goods are **inventory** in copy; **Stock** is the rail's
      destination, `Stock cover` and the `Stock count:` line. New identifiers say `Units`, never
@@ -163,8 +164,10 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      the share of one alone (`card.products[].loyal.next`, `customerCard`); Salt Admin's This customer card pairs it with the suggested %, which
      stays his tap (Use it sends tier-set for Approve). An associate, a partner, a supplier and a bucket do not walk. Nothing prices from it.
 6. **The look is the Salt design system applied as a layer.** **THE MOVE TO AMBIENT** (`docs/plan-ambient-move.html`, his answers of 14 Nov
-   2026): the surfaces move one at a time onto `Code\ambient-ds`, Salt Admin first, then the Counter, then the Desk; a surface keeps salt-ds
-   until its own version. Ambient is carried in `design/ambient/` by `tools/ambientsync.mjs` (`--pull` from a clean, pushed ambient-ds main;
+   2026): the surfaces move one at a time onto `Code\ambient-ds`, Salt Admin first, then the Counter, then the Desk. Salt Admin and Salt
+   Counter moved together as v1528 (17 Nov 2026) and draw only Ambient's parts and the site layer `design/site.css` (tokens only), light and
+   dark following each device; the Desk keeps salt-ds, and the rest of this rule (Night and Tide, the recipes, `design/desk.css`) is the
+   Desk's alone until its own version. Ambient is carried in `design/ambient/` by `tools/ambientsync.mjs` (`--pull` from a clean, pushed ambient-ds main;
    `--check` against `tools/ambient.lock.json`, in the gate and CI, and failing on this laptop once ambient-ds main moves on: pull, then
    `node tools/stmt-style.mjs --sync`); a part Ambient lacks is added there, never drawn here. **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
    Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
@@ -187,8 +190,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    `test/tide-off.mjs`, and turning it back is those guards and the lines marked 19 Oct 2026. The four times of day, `salt-time.js` and the clock's picker
    stay retired, and the suite fails if any returns. A colour in the desk's own CSS is a token, never
    a literal, with its Tide value in `design/desk.css`, and every text colour holds 4.5:1 on each
-   theme's ground and slate, which the suite measures (`docs/DESIGN.md`). The Counter takes the tokens and five
-   recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
+   theme's ground and slate, which the suite measures (`docs/DESIGN.md`). QR Command takes salt-ds through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and
    silently blocks every later commit. **A native Windows Code session may run git.** After

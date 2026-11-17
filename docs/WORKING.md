@@ -287,6 +287,12 @@ Each of these stayed green, or read clean, through a real fault.
 
 ## 5. Desk traps
 
+- **The maintenance guard's time is `YYYY-MM-DDTHH:MM:SSZ`, no milliseconds** (17 Nov 2026). The guard parses any ISO time, but the
+  section "Maintenance guard on both Workers" reads `wrangler.stmt.jsonc` against that exact form, so `2026-11-17T06:01:00.000Z`
+  turned one suite part and CI red on v1528's run while the guard itself held. To put the statements Worker under the guard before a
+  version: deploy the LIVE code (a clean checkout of origin's tip) with `npx wrangler deploy -c wrangler.stmt.jsonc --var
+  MAINTENANCE_UNTIL:<time>`, write the same time into the version's `wrangler.stmt.jsonc` so the chain's deploy keeps it, and once the
+  build is proved live set it back to `""`, deploy by hand and commit.
 - **Charts fail silently four ways**: an empty inner `catch` inside the `ensureChart` callback; a
   draw scoped too wide (a bare `purchases` in a per-product block plots every book's lots; compare
   the product blocks against each other, since identical non-empty data is not something two books

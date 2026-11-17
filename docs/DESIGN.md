@@ -304,6 +304,36 @@ first, a fresh Opus reviewer may gate the first version while Fable is rate-limi
   document (`STOCK.books[p].heat`) carries it to Salt Admin, which polls it already. It prices nothing.
 - Checks: section "14 Nov 2026: the move to Ambient, part 1" (`test/ambient-carry.mjs`, 7 checks, 8 mutations, each red).
 
+## 17 Nov 2026: the move to Ambient, part 2, Salt Admin and Salt Counter (v1528)
+
+His answers of 14, 15 and 16 Nov 2026 (`docs/plan-ambient-move.html`), and of 17 Nov 2026: Salt Admin and the Counter together, the Desk
+later; light and dark follow each device; Salt Admin's mood is the market's heat (Flare with a "Supply tight" chip while salt is tight,
+Lagoon otherwise, Slate on Shop, at rest and signed out), the Counter Lagoon and never Flare, a statement page never Flare; panes 14px apart,
+from 1080px the bar beside a full-height rail and what scrolls sliding under it to the screen's foot (20px of room, the rail 24px above the
+foot, 20px from its column), the cap above the bar once the page moves; no drop shadow behind a card, pane, rail or bar (v1523), floats
+keep theirs; one list with filters; History newest first; nothing opens by itself; the message box stays in view.
+
+- **Everything is Ambient's part.** Every place of Salt Admin and the Counter draws only `amb-*` classes and the site layer's own
+  (`design/site.css`, tokens only). `PAGE_CSS` is empty. A record's one main action is `amb-foot` at its pane's foot; splits are
+  `amb-split--panes`; places nest as `amb-place` (display: contents) so the pane split is the screen's last child; a hidden mini bar keeps
+  no room (Ambient 0.7.15, R27b; the site's 36px stand-in left with it). The parts the move asked for were added to Ambient first (0.7.2 to
+  0.7.15: the stepper over values, the week of spans, the mark thumb, the rating, tab counts, the disclosure row, the toast, the savebar,
+  panes that scroll on their own), never drawn here.
+- **The coin.** A mark standing alone is Ambient's mark thumb (`markThumb`, `markThumbHtml`), ringed in the book's hue (`amb-kind-N`, N the
+  book's index in `PSYM` less `_`). His answer of 17 Nov 2026: a 44px coin (`amb-thumb--md`) is the shape alone and draws no word; his
+  letter is on every coin of 56px and over and on every plain mark of 20px and over. The year card reads an older line's book by its shape
+  when no letter is drawn (`yearMark`).
+- **The toast.** Ambient's one toast (`[data-amb-toast]`, a popover) stands after the Counter's shell, as Ambient's guide places it, never
+  inside a shell that hides; Copy link answers in it.
+- **The live statement.** Drawn in Ambient (`tools/make_statements.mjs`); a sealed issue is never written again, and a same-date re-run over a
+  sealed set is refused unless it says `--retry`.
+- **The maintenance page.** One Ambient shell at rest (Slate), its hero the heading and "Back at" sentence, no script, the policy closed.
+- **v1527's Change sheet** came in on the old markup and is drawn in Ambient's fields (`sField`, `sSelect`); every act and road as v1527 sent it.
+- **How the move was proved.** Seven regressions of the redraw were restored (an account's Phones and computers heading, Record's steppers'
+  acts, a name declared twice on each page, Copy link's answer, three Counter words, a link's state said twice) and about 75 sections and
+  64 mutation needles re-aimed, each dated and proved red. Every section was run on its own (a throw ends its own process only) before the
+  full split suite, which hides what follows a throw.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier
