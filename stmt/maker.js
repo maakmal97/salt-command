@@ -208,7 +208,7 @@ async function readHours(env) {
   return { config: value, status: hoursStatus(value), confirm, maint };
 }
 async function readMaint(env) {
-  try { return maintOf(await env.STMT.get(MAINT_KEY, "json")); } catch (e) { return null; }
+  return maintOf(await env.STMT.get(MAINT_KEY, "json"));
 }
 
 /* 20 Oct 2026 (his answer, Fable's design): WHAT CUSTOMERS WOULD SEE on a week not yet saved, from the one rule and nothing else: the

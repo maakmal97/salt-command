@@ -814,7 +814,7 @@ default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-st
 
 **His maintenance switch** (17 Nov 2026, his word: one control on Salt Admin to put the Counter on and off maintenance at once, asking when it is back).
 Shop > Hours carries a Maintenance group under Now: one Switch, Under maintenance. Turned on it asks Back at (a day and a time, Kuala Lumpur) and Put it
-on sends `{until}` to `/all/maker/maintenance`, which files `{until}` (rounded up to the minute, no milliseconds, later than now and within 90 days,
+on sends `{until}` to `/all/maker/maintenance`, which files `{until}` (rounded up to the minute, no milliseconds, later than now,
 `maintSet` in `stmt/maintenance.js`) on Counter KV `maint`, lapsing a day after; turned off it sends `{off: true}` and the key goes. No deploy and no
 Desk hop: the Worker reads `maint` for every request the guard would hold (never for `/all`, the machine routes or the test surface's own roads) and
 holds it exactly as `MAINTENANCE_UNTIL` does, the page saying when it is back; where both stand, the later holds, and either lifts by itself at its time.

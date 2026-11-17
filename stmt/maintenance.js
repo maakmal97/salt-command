@@ -43,16 +43,14 @@ export function backWords(until, now) {
    and cleared by /all/maker/maintenance (stmt/maker.js) and read by the Worker for any request the guard would hold, so it stands at once with no
    deploy and lifts by itself at that time, as MAINTENANCE_UNTIL does. Where both are set, the later holds. */
 export const MAINT_KEY = "maint";
-export const MAINT_DAYS = 90;
 const isoMin = (t) => new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z");
-/* what he sends: {until} later than now and within MAINT_DAYS; the answer is the record to file, or {error} */
+/* what he sends: {until} later than now; the answer is the record to file, or {error} */
 export function maintSet(body, now = Date.now()) {
   const keys = body && typeof body === "object" ? Object.keys(body) : [];
   if (keys.length !== 1 || keys[0] !== "until" || typeof body.until !== "string") return { error: "Send only when it is back." };
   const t = Date.parse(body.until.trim());
   if (!Number.isFinite(t) || !/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d(\.\d{1,3})?)?(Z|[+-]\d\d:\d\d)$/.test(body.until.trim())) return { error: "Choose when it is back." };
-  if (t <= now + 60000) return { error: "Choose a time later than now." };
-  if (t > now + MAINT_DAYS * 86400000) return { error: "Choose a time within " + MAINT_DAYS + " days." };
+  if (t <= now) return { error: "Choose a time later than now." };
   return { until: isoMin(Math.ceil(t / 60000) * 60000) };
 }
 /* the record as it stands: {until} while it is ahead, else null */

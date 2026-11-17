@@ -7004,7 +7004,7 @@ export const OWNER_JS = `
     var until=null;
     if(on){
       var ur=el('label','amb-setting'); until=actOn(el('input','amb-input'),'maint.until');
-      until.type='datetime-local'; until.min=klInputValue(new Date().toISOString()); until.value=klInputValue(filed||new Date(Date.now()+3600000).toISOString());
+      until.type='datetime-local'; until.min=klInputValue(new Date(Math.ceil(Date.now()/60000)*60000).toISOString()); until.value=klInputValue(filed||new Date(Date.now()+3600000).toISOString());
       ur.appendChild(el('span','amb-setting__name','Back at')); ur.appendChild(until); list.appendChild(sLi(ur));
     }
     g.appendChild(sFoot(filed?'Customers see Under maintenance, back '+w+'. It lifts by itself then; Salt Admin stays open.'

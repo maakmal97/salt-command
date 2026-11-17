@@ -1,10 +1,11 @@
 [
- {"name":"the switch takes a time past 90 days","file":"stmt/maintenance.js","find":"if (t > now + MAINT_DAYS * 86400000) return","replace":"if (false) return"},
+ {"name":"the switch accepts a time equal to now","file":"stmt/maintenance.js","find":"if (t <= now) return { error: \"Choose a time later than now.\" };","replace":"if (t < now) return { error: \"Choose a time later than now.\" };"},
  {"name":"the switch is not rounded up to the minute","file":"stmt/maintenance.js","find":"return { until: isoMin(Math.ceil(t / 60000) * 60000) };","replace":"return { until: isoMin(t) };"},
  {"name":"the switch keeps no lapse on KV","file":"stmt/maker.js","find":"{ expiration: Math.ceil(Date.parse(next.until) / 1000) + 86400 }","replace":"{}"},
  {"name":"the hours read does not carry the switch","file":"stmt/maker.js","find":"confirm: result.confirm, maint: result.maint });","replace":"confirm: result.confirm });"},
  {"name":"the test surface reaches the switch","file":"stmt/maker.js","find":"calendar: [\"GET\", \"POST\"] };","replace":"calendar: [\"GET\", \"POST\"], maintenance: [\"POST\"] };"},
  {"name":"the Worker does not read the switch","file":"stmt/worker.js","find":"switched = (v && v.until) || \"\";","replace":"switched = \"\";"},
+ {"name":"a failed KV read lets the Counter open","file":"stmt/worker.js","find":"const v = await env.STMT.get(MAINT_KEY, \"json\");","replace":"const v = await env.STMT.get(MAINT_KEY, \"json\").catch(() => null);"},
  {"name":"the Worker reads the switch for Salt Admin","file":"stmt/worker.js","find":"!TEST_REQ.has(request) && !exempt(request)) {","replace":"!TEST_REQ.has(request)) {"},
  {"name":"the switch wins over a later MAINTENANCE_UNTIL","file":"stmt/maintenance.js","find":"Math.max(at(env && env.MAINTENANCE_UNTIL), at(switched))","replace":"(at(switched) > -Infinity ? at(switched) : at(env && env.MAINTENANCE_UNTIL))"},
  {"name":"a passed time still holds","file":"stmt/maintenance.js","find":"if (!(until > now)) return null;","replace":"if (until === -Infinity) return null;"},

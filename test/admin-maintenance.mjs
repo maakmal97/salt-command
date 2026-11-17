@@ -1,7 +1,7 @@
 /* test/admin-maintenance.mjs: HIS MAINTENANCE SWITCH ON SALT ADMIN (17 Nov 2026, his word: "a single control to Admin, maybe in Shop, to put it on
  * and off maintenance immediately. It asks for when it will be back up again"). Each check red under its own mutation
  * (test/admin-maintenance.mutations.json, run with tools/section.mjs). Every code, date and key here is invented.
- *   1  maintSet takes only a time later than now and within 90 days, rounded up to the minute, written without milliseconds
+ *   1  maintSet takes only a time later than now, rounded up to the minute, written without milliseconds
  *   2  /all/maker/maintenance files it on Counter KV `maint` with a lapse a day after, reads it back, lifts it on {off: true}; the hours read carries it;
  *      the test surface cannot reach it
  *   3  the Counter Worker holds a customer's page and a customer's request on the switch alone, says its time, never holds /all or reads the switch for it,
@@ -25,10 +25,10 @@ export async function run({ ok, pageWork }) {
   const now = Date.parse("2026-11-17T03:00:00Z");
   const set = (until, extra) => M.maintSet(extra ? { until, ...extra } : { until }, now);
   ok(set("2026-11-17T06:30:00.000Z").until === "2026-11-17T06:30:00Z" && set("2026-11-17T14:30:20+08:00").until === "2026-11-17T06:31:00Z"
-    && !!set("2026-11-17T03:00:30Z").error && !!set("2026-11-17T02:00:00Z").error && !!set("2027-02-16T03:00:00Z").error && !set("2027-02-14T03:00:00Z").error
+    && set("2026-11-17T03:00:30Z").until === "2026-11-17T03:01:00Z" && !!set("2026-11-17T03:00:00Z").error && !!set("2026-11-17T02:00:00Z").error && !set("2027-11-17T03:00:00Z").error
     && !!set("soon").error && !!set("2026-11-17").error && !!set("2026-11-17T06:30:00Z", { x: 1 }).error && !!M.maintSet({ until: 5 }, now).error,
-    "the switch takes only a time later than now and within 90 days, rounded up to the minute, with no milliseconds: "
-    + JSON.stringify([set("2026-11-17T06:30:00.000Z"), set("2026-11-17T14:30:20+08:00"), set("2026-11-17T03:00:30Z"), set("2027-02-16T03:00:00Z")]));
+    "the switch takes only a time later than now, rounded up to the minute, with no milliseconds: "
+    + JSON.stringify([set("2026-11-17T06:30:00.000Z"), set("2026-11-17T14:30:20+08:00"), set("2026-11-17T03:00:30Z"), set("2027-11-17T03:00:00Z")]));
 
   /* ---- 2 ---- */
   const kv = new Map(), opts = new Map(), log = [];
@@ -63,6 +63,9 @@ export async function run({ ok, pageWork }) {
   log.length = 0;
   const adminHeld = await held("/all", {}) || await held("/all/maker/hours", {}) || await held("/x", { "x-stmt-desk": "k" });
   ok(!adminHeld && !log.includes("maint"), "Salt Admin and the Desk's roads are never held, and the switch is not read for them: " + JSON.stringify(log));
+  const readFailure = await Worker.fetch(req("/", { accept: "text/html" }), { STMT: { get: async () => { throw new Error("KV unavailable"); } } }, {})
+    .then(() => false, (error) => error.message === "KV unavailable");
+  ok(readFailure, "a failed read of the switch is surfaced, never treated as maintenance being off");
   const envLater = { STMT, MAINTENANCE_UNTIL: new Date(Date.now() + 5 * 3600e3).toISOString().replace(/\.\d{3}Z$/, "Z") };
   const envSooner = { STMT, MAINTENANCE_UNTIL: new Date(Date.now() + 600e3).toISOString().replace(/\.\d{3}Z$/, "Z") };
   const later = await go("/orders", { accept: "application/json" }, envLater), sooner = await go("/orders", { accept: "application/json" }, envSooner);
@@ -142,6 +145,7 @@ export async function run({ ok, pageWork }) {
   const dom = new JSDOM(landingPage(u, "ncmt", null).replace(/var POLL_MS=[0-9]+/, "var POLL_MS=60"), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      Object.defineProperty(win.document, "hidden", { configurable: true, value: false });
       win.scrollTo = () => {}; win.open = () => null; win.HTMLElement.prototype.scrollIntoView = () => {};
       try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* none kept */ }
       win.fetch = async (path, init) => {

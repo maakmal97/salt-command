@@ -1826,7 +1826,8 @@ const worker = {
        which his page drives while customers are held */
     let switched = "";
     if (env && env.STMT && !TEST_REQ.has(request) && !exempt(request)) {
-      try { const v = await env.STMT.get(MAINT_KEY, "json"); switched = (v && v.until) || ""; } catch (e) { switched = ""; }
+      const v = await env.STMT.get(MAINT_KEY, "json");
+      switched = (v && v.until) || "";
     }
     const held = TEST_REQ.has(request) ? null : maintenance(request, env, undefined, Date.now(), switched);
     if (held) return held;
