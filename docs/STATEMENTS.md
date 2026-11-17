@@ -1781,6 +1781,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `makerPayControl`). Bank sends the order's `received` and Cash is still held ten seconds with its Undo, each body the one the two buttons sent before it.
   The reply stands below the block with their last line above it (They wrote, the moment, their words):
   the card drew none before. Cash held shuts the whole card, the reply included, and leaves Undo or Retry live.
+- **17 Nov 2026 (order-changes plan, version 2): the amount, the units and the point are the Change sheet's** (`order.change-paid`, `order.change-by`, `order.change-handed`, `order.change-rest`, `order.change-point`, test/admin-change-sheet.mjs); the paragraphs below name the retired controls (`order.pay*`, `order.handed-units`, `order.handed-rest`, `order.point-change`) as they were.
 - **Plan 5 of the order card** (16 Oct 2026, `test/admin-card5.mjs`). Change the order (`order.amend`) stands under the head, opening the same Sheet and the
   same `restate`. The units field has one button: at the units ordered it is Handed over; fewer units show More to come and That is all
   (`order.handed-rest`, More to come chosen), and That is all turns it into Finish at n of the size, asked on the Sheet and sent as the close it was.
@@ -2931,11 +2932,16 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.again-drop-amend` | Order card (key: the order id), a amendment he rejected on an order with a row | Asks on a sheet, then files that amendment as covered; nothing is offered or drafted. |
 | `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected handover again. |
 | `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected payment again. |
-| `order.amend` | Order card, acknowledged or ready | Opens the Change the order Sheet: Way, Units, Price (goods) and Delivery. |
+| `order.amend` | Order card, acknowledged, ready or done | The row "Change" (17 Nov 2026, was "Change the order"): opens the one Sheet for every change of an agreed order, Order (Way, Units, Price (goods), Delivery) and So far (Point, Handed over, The rest, Received now, Paid by). |
 | `order.amend-delivery` | The Change the order Sheet (key: the order id) | The amended delivery charge, in RM. |
 | `order.amend-total` | Same sheet | The amended goods price, in RM. |
 | `order.amend-way` | Same sheet | Collect or Deliver (17 Nov 2026); on goods already out the Correction also restates the row's handover. Collect empties Delivery. |
 | `order.amend-units` | Same sheet | The amended units. |
+| `order.change-point` | The Change sheet, Ready to collect with units left (key: the order id) | The collection point, moved by the order's move when it differs. |
+| `order.change-handed` | Same sheet, Ready with units left | The units handed over so far; more than are out sends the handover. |
+| `order.change-rest` | Same sheet, a part handover typed (key: more or all) | More to come, or That is all (the handover then sends `close`). |
+| `order.change-paid` | Same sheet, acknowledged or ready | The amount received now, in RM. |
+| `order.change-by` | Same sheet (key: bank or cash) | Bank sends the order's received; Cash (Ready alone) is held ten seconds with its Undo. |
 | `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
 | `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, a claim's Received or Not found, or the change to the order for approval. |
 | `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
@@ -2949,22 +2955,16 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.fee` | Order card (key: the order id), placed for delivery | The delivery charge, one select beside Goods (22 Oct 2026): Choose (nothing chosen, nothing sent), 0, 10, 15 or Other. A choice reads the figures again. |
 | `order.fee-other-amount` | Order card (key: the order id), placed for delivery | His own delivery charge, in RM, shown once Other is chosen. |
 | `order.window` | Order card (key: the order id), placed for delivery with no time asked | When, one select across both columns (22 Oct 2026): theirs first (ASAP, needing no day, or the window they chose), then every window ahead, each with its own day; a choice other than theirs goes to them for their yes. |
-| `order.handed` | Order card (key: the order id), ready | Records the handover. |
-| `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
-| `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
+| `order.handed` | Order card (key: the order id), ready | Records the handover of every unit left (the full quantity). Part of them, or a finish at fewer, is the Change sheet's. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
 | `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | The stage's move. Withdraw, Ready (to deliver), Handed (the order's units) and Received (one payment) ask once under the row; Agree, a collection's Ready, two payments and Message (its Answer open) open the order. |
 | `order.move-yes` | Under a row that asks (key: the order id) | Sends what the order card sends for that move: withdraw, move to ready by delivery, handed, received, each under its own request id. |
 | `order.move-no` | Under a row that asks (key: the order id) | Not now: takes the ask away and sends nothing. |
-| `order.pay` | Order card (key: the order id), acknowledged or ready | Records the amount by the road chosen: Bank as the order's received, Cash held ten seconds with its Undo, then recorded; it says the figure and the road once both are there. |
-| `order.pay-amount` | Same card | The amount received, in RM, one field for the bank and the cash. |
-| `order.pay-by` | Same card (key: bank or cash) | Bank or Cash; Cash is offered on a ready order alone, and none is chosen there until he chooses. |
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
 | `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
 | `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
 | `order.point` | The sheet Ready to collect and Change point ask on, one for each of his points (key: the point code) | Chooses that point: the order is marked ready to collect there, or moved to it. |
-| `order.point-change` | Order card (key: the order id), ready to collect with goods still to hand over | Opens the sheet that moves the order to another collection point. |
 | `order.ready-deliver` | Order card (key: the order id), acknowledged | Marks the order ready to deliver. |
 | `order.reason` | The sheet a Decline or a Cancel asks on (key: the order id) | The reason sent to the customer, in his words. |
 | `order.reason-place` | Same sheet, an order to be delivered | Picks the place line as the reason. |
