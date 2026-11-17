@@ -1,0 +1,4 @@
+[
+ {"name": "the waiting account's card says nothing of the next update", "file": "stmt/owner.js", "find": "function waitLine(){ return 'Their account comes with the next update.'; }", "replace": "function waitLine(){ return ''; }"},
+ {"name": "the card pane draws no card", "file": "stmt/owner.js", "find": "function acctPane(box, a){ box.appendChild(acctCard(a)); }", "replace": "function acctPane(box, a){ }"}
+]

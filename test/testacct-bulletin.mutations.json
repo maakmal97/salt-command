@@ -1,0 +1,4 @@
+[
+ {"name": "the bulletin draws no line", "file": "stmt/page.js", "find": "lines.forEach(function(l){ var p=document.createElement('span'); p.className='hline'; p.textContent=l; ls.appendChild(p); });", "replace": ""},
+ {"name": "the bulletin draws the first line only", "file": "stmt/page.js", "find": "lines.forEach(function(l){ var p=document.createElement('span'); p.className='hline';", "replace": "lines.slice(0,1).forEach(function(l){ var p=document.createElement('span'); p.className='hline';"}
+]

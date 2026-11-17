@@ -1,0 +1,4 @@
+[
+ {"name": "To pay now's figure is doubled", "file": "stmt/page.js", "find": "var st=hStat(tw('pay.now'),rm(tot));", "replace": "var st=hStat(tw('pay.now'),rm(tot*2));"},
+ {"name": "To pay now draws no figure", "file": "stmt/page.js", "find": "var st=hStat(tw('pay.now'),rm(tot)); st.setAttribute('data-now',tot>0.004?'owing':'clear'); box.appendChild(st);", "replace": ""}
+]

@@ -1,0 +1,3 @@
+[
+ {"name": "a live statement's table neither stacks nor sits in a box", "file": "tools/make_statements.mjs", "find": "const lineList=(label,heads,rowsHtml,mark)=>'<table class=\"amb-table amb-table--stack\"'", "replace": "const lineList=(label,heads,rowsHtml,mark)=>'<table class=\"amb-table\"'"}
+]

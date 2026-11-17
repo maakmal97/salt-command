@@ -1,0 +1,4 @@
+[
+ {"name": "a redated order is not paired with its part", "file": "stmt/page.js", "find": "function redatedFrom(x,p){ return !!x.wantBy&&", "replace": "function redatedFrom(x,p){ return false&&!!x.wantBy&&"},
+ {"name": "every part is hidden once an order exists", "file": "stmt/page.js", "find": "if(o){ used[o.id]=1; return false; }\n      return true;", "replace": "if(o){ used[o.id]=1; return false; }\n      return false;"}
+]

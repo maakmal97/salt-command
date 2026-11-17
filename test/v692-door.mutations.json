@@ -1,0 +1,4 @@
+[
+ {"name": "Sign out says another word", "file": "stmt/page.js", "find": "+ wt(\"span\", 'id=\"lockT\"', \"dev.out\") + \"</button></li></ul></div>\"", "replace": "+ wt(\"span\", 'id=\"lockT\"', \"door.go\") + \"</button></li></ul></div>\""},
+ {"name": "the door's button says another word", "file": "stmt/page.js", "find": "wt(\"button\", 'class=\"amb-pill amb-pill--block\" id=\"go\" type=\"submit\"', \"door.go\")", "replace": "wt(\"button\", 'class=\"amb-pill amb-pill--block\" id=\"go\" type=\"submit\"', \"dev.out\")"}
+]

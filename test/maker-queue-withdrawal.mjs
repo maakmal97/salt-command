@@ -476,11 +476,12 @@ export async function run({ ok, worker, handleMaker }) {
         && doc.querySelector("#makerQueueReview").textContent.includes("From another device.") && !/server-held/i.test(doc.querySelector("#oOrders").textContent),
       "the desktop Counter review draws an uploaded device entry in plain words, from another device, with no note on the server's boundary");
       const styles = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
-      const target = styles.match(/\.maker-queue-action\{([^}]+)\}/)?.[1] || "";
+      /* 17 Nov 2026, the move to Ambient (the third red fix): the site layer is written with spaces (.adm .maker-queue-action { min-width: var(--amb-tap); ... }) */
+      const target = styles.match(/\.maker-queue-action\s*\{([^}]+)\}/)?.[1] || "";
       const tapToken = /--amb-tap:\s*44px/.test(styles);
-      if (width === 1280) ok(/min-width:var\(--amb-tap\)/.test(target) && /min-height:var\(--amb-tap\)/.test(target) && tapToken,
+      if (width === 1280) ok(/min-width:\s*var\(--amb-tap\)/.test(target) && /min-height:\s*var\(--amb-tap\)/.test(target) && tapToken,
         "the desktop withdrawal control has an independently declared 44-by-44-pixel target");
-      else ok(/min-width:var\(--amb-tap\)/.test(target) && /min-height:var\(--amb-tap\)/.test(target) && tapToken,
+      else ok(/min-width:\s*var\(--amb-tap\)/.test(target) && /min-height:\s*var\(--amb-tap\)/.test(target) && tapToken,
         "the phone withdrawal control retains its independent 44-by-44-pixel target");
       /* the withdrawal asks on the page's Sheet (Phase 2c, his decision 4 of 11 Oct): nothing is sent as it opens, and its one action sends the request the confirm let through */
       if (action) {

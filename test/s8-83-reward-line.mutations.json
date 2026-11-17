@@ -1,0 +1,5 @@
+[
+ {"name": "a reward to take never says how to take it", "file": "stmt/page.js", "find": "rw.held?'held':rw.left>0?'ask':'none'", "replace": "rw.held?'held':'none'"},
+ {"name": "a held reward invites an ask", "file": "stmt/page.js", "find": "rw.held?'held':rw.left>0?'ask':'none'", "replace": "rw.left>0?'ask':'none'"},
+ {"name": "a reward with nothing left invites an ask", "file": "stmt/page.js", "find": "rw.held?'held':rw.left>0?'ask':'none'", "replace": "rw.held?'held':'ask'"}
+]

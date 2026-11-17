@@ -1,0 +1,5 @@
+[
+ {"name": "a Not found stays after they sent it again", "file": "stmt/page.js", "find": "\n      &&!claims.some(function(y){ return y&&String(y.at)>String(c.answered||c.at); }); })", "replace": "\n      ; })"},
+ {"name": "a Not found stays once nothing is owed", "file": "stmt/page.js", "find": "<14*864e5&&acctToPay()>0.004\n", "replace": "<14*864e5\n"},
+ {"name": "a Not found never shows", "file": "stmt/page.js", "find": ".forEach(function(c){ out.push(tw('cl.notFound',{rm:rm(c.amount), d:Dd(oDay,c.at)})); });", "replace": ".forEach(function(c){ });"}
+]

@@ -1,0 +1,5 @@
+[
+ {"name": "the saved-app row says No", "file": "stmt/page.js", "find": "devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('dev.yes')))", "replace": "devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('push.notHere')))"},
+ {"name": "the saved-app row has no status for a reader", "file": "stmt/page.js", "find": "devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('dev.yes')))", "replace": "devRow(tw('dev.saved'),'',devValue(tw('dev.yes')))"},
+ {"name": "the saved-app row is not drawn", "file": "stmt/page.js", "find": "if(STANDALONE) own.push(devRow(tw('dev.saved')", "replace": "if(false) own.push(devRow(tw('dev.saved')"}
+]

@@ -1,0 +1,5 @@
+[
+ {"name": "a waiting link no longer says it is shut", "file": "stmt/page.js", "find": "if(r.state==='waiting') return tw('lnk.lineWaiting');", "replace": "if(r.state==='waiting') return '';"},
+ {"name": "a waiting link shows its address", "file": "stmt/page.js", "find": "      if(r.state==='open'){\n        row.appendChild(hLinkPlate(r.url));", "replace": "      if(r.state!=='withdrawn'){\n        row.appendChild(hLinkPlate(r.url));"},
+ {"name": "a link line is written with an em dash", "file": "stmt/page.js", "find": "if(r.state==='declined') return tw('lnk.lineDeclined');", "replace": "if(r.state==='declined') return tw('lnk.lineDeclined')+' \\u2014';"}
+]

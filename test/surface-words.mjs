@@ -18,7 +18,8 @@ export async function run({ ok }) {
   const o = doc(true);
   ok(!!o.body && !o.getElementById("toCode"), "W2: his own page carries no code button");
   const one = (s) => !!s && !/[.!?] [A-Z]/.test(s) && /[.]$/.test(s);
-  const help = [...d.querySelectorAll(".salt-insight")].map((x) => x.textContent.trim()).find((x) => /sign-in link/.test(x)) || "";
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the door's help line is the form's hint, p.amb-field__hint */
+  const help = [...d.querySelectorAll(".amb-field__hint")].map((x) => x.textContent.trim()).find((x) => /sign-in link/.test(x)) || "";
   ok(one(help) && help.split(/ +/).length <= 20, "W3: the door's help line is one sentence: " + JSON.stringify(help));
   ok(one(EN["hours.closed"]) && one(EN["hours.unavailable"]), "W4: the hours lines are one sentence each: " + JSON.stringify([EN["hours.closed"], EN["hours.unavailable"]]));
 }

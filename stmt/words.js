@@ -136,6 +136,7 @@ export const EN = {
   "place.order": "Orders",
   "place.stmt": "Account",
   "place.card": "Rewards",
+  "place.count": "{w}, {n} waiting",
   "who.as": "Signed in as {u}",
   "who.rail": "Signed in as",
   "today.aria": "Today",

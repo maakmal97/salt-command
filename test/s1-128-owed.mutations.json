@@ -1,0 +1,5 @@
+[
+ {"name": "each book's line carries the sum of the books", "file": "tools/make_statements.mjs", "find": "p=>T.toGetBy[p])+'</ul></div>'", "replace": "p=>T.toGet)+'</ul></div>'"},
+ {"name": "a book's line carries no mark", "file": "tools/make_statements.mjs", "find": "'<li><div class=\"amb-setting\">'+markThumbHtml(p,'md')+", "replace": "'<li><div class=\"amb-setting\">'+"},
+ {"name": "a book's line names no shape for a reader", "file": "tools/make_statements.mjs", "find": "'<span class=\"amb-vh\">'+shapeOf(p)+'</span><span class=\"amb-setting__name\">'", "replace": "'<span class=\"amb-vh\"></span><span class=\"amb-setting__name\">'"}
+]

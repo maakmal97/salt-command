@@ -17795,15 +17795,16 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => !D.getElementById("tCard").hidden);
     D.getElementById("tCard").click();
-    const copies = () => [...D.querySelectorAll("#pCard button")].filter((b) => b.textContent === "Copy link");
-    ok(await until(() => copies().length === 2), "their two open links each carry Copy link");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a link's Copy is the plate row's data-amb-copy, Ambient's copy says its result in its toast */
+    const copies = () => [...D.querySelectorAll("#pCard [data-amb-copy]")], toastOf = () => (D.querySelector("[data-amb-toast] .amb-toast__text") || { textContent: "" }).textContent;
+    ok(await until(() => copies().length === 2) && copies().every((c) => /Copy link$/.test(c.textContent.trim())), "their two open links each carry Copy link");
     const [c1, c2] = copies();
     c1.click();
-    ok(await until(() => c1.textContent !== "Copy link") && c1.textContent === "Copy failed",
-      "on a clipboard that refuses it says Copy failed, not Copied: " + c1.textContent);
+    ok(await until(() => toastOf() !== "") && toastOf() === "Could not copy",
+      "on a clipboard that refuses it says it could not copy, not copied: " + toastOf());
     clip.ok = true; c2.click();
-    ok(await until(() => c2.textContent !== "Copy link") && c2.textContent === "Copied" && clip.got.some((t) => /[/]g[/]/.test(t)),
-      "and on one that takes it, Copied, with the link on the clipboard: " + c2.textContent);
+    ok(await until(() => /copied$/.test(toastOf())) && clip.got.some((t) => /[/]g[/]/.test(t)),
+      "and on one that takes it, copied, with the link on the clipboard: " + toastOf());
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
@@ -20461,9 +20462,10 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const card = D.getElementById("thisDevice");
     /* 26 Oct 2026, his word: Turn on and Turn off are This device's Notifications Switch, off or on */
-    const btn = (t) => { const sw = card.querySelector('.salt-settings__row .salt-switch[aria-label="Notifications"]');
-      if (t === "Turn on") return sw && sw.getAttribute("aria-checked") === "false" ? sw : undefined;
-      if (t === "Turn off") return sw && sw.getAttribute("aria-checked") === "true" ? sw : undefined;
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the Notifications switch is input.amb-switch, on or off by its checked state */
+    const btn = (t) => { const sw = card.querySelector('input.amb-switch[aria-label="Notifications"]');
+      if (t === "Turn on") return sw && !sw.checked ? sw : undefined;
+      if (t === "Turn off") return sw && sw.checked ? sw : undefined;
       return [...card.querySelectorAll("button")].find((b) => b.textContent === t || b.getAttribute("aria-label") === t); };
     ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
     st.answer = "denied";
@@ -20587,8 +20589,9 @@ await (async () => {
     const { D, win } = a, dev = D.getElementById("thisDevice"), keep = D.getElementById("keepCard"), body = D.getElementById("devSlot");
     ok(await until(() => !dev.hidden && /Saved as an app/.test(dev.textContent)), "signed in in the saved app, This device shows, with its Saved as an app row: " + JSON.stringify(dev.textContent.slice(0, 160)));
     /* 26 Oct 2026, his word: This device is a list of settings; the row says Yes and tells a reader the rest */
-    const row = [...dev.querySelectorAll(".salt-settings__row")].find((r) => /Saved as an app/.test(r.textContent));
-    ok(!!row && /You are in it now[.]/.test(row.querySelector(".sr").textContent) && row.querySelector(".salt-settings__label").textContent === "Saved as an app" && row.querySelector(".salt-settings__value").textContent === "Yes"
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a row is .amb-setting, its name, the status a reader hears (.amb-vh) and the value Yes */
+    const row = [...dev.querySelectorAll(".amb-setting")].find((r) => /Saved as an app/.test(r.textContent));
+    ok(!!row && /You are in it now[.]/.test(row.querySelector(".amb-vh").textContent) && row.querySelector(".amb-setting__name").textContent === "Saved as an app" && row.querySelector(".amb-setting__value").textContent === "Yes"
       && !!(row.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && keep.hidden && dev.contains(keep),
       "and saving as an app is a row of the card, above the other devices, with the optional install guide under This device: " + JSON.stringify(dev.textContent.slice(0, 160)));
     ok(D.getElementById("pStmt").firstElementChild !== keep && dev.contains(keep), "the install guide sits under This device, not at the head of the statement");
@@ -21236,7 +21239,8 @@ await (async () => {
     const pasted = d.getElementById("un").value;
     d.getElementById("pw").value = TP;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-    const bl = () => [...d.querySelectorAll("#bull .salt-notice__line")].map((x) => x.textContent).join("|");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the bulletin's lines are span.hline inside the notice */
+    const bl = () => [...d.querySelectorAll("#bull .hline")].map((x) => x.textContent).join("|");
     const sn = () => (d.getElementById("stageNote") || {}).textContent || "";
     for (let i = 0; i < 150 && (bl() !== storedL.bulletin.lines.join("|") || !sn()); i++) await new Promise((r) => setTimeout(r, 100));
     ok(pasted === TL && bl() === storedL.bulletin.lines.join("|") && asked.some((x) => x.length > 0)
@@ -22534,7 +22538,7 @@ await (async () => {
     const rows = [...D.querySelectorAll("#pCard .glink")];
     const txt = D.getElementById("pCard").textContent;
     /* S8 8.1: a link shows its address only once it is open; a waiting one says in words that it is shut */
-    ok(rows.length === 2 && !txt.includes(DASH) && !rows[0].querySelector("code.gu") && /Shut until we approve it/.test(rows[0].textContent) && !rows[1].querySelector("code.gu"),
+    ok(rows.length === 2 && !txt.includes(DASH) && !rows[0].querySelector(".gu") && /[Ss]hut until we approve it/.test(rows[0].textContent) && !rows[1].querySelector(".gu"),   /* 17 Nov 2026, the move to Ambient (the third red fix): the address is the plate's .gu value, and the row's sentence runs on from the state word, so shut is lower case */
       "the drawn links carry no em-dash: a waiting one says it is shut, and neither it nor a withdrawn one carries an address line: "
       + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
@@ -23055,7 +23059,7 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite"><span class="salt-settings__label" id="lockT" data-w="dev.out">Sign out this ')
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite"><span id="lockT" data-w="dev.out">Sign out this ')   /* 17 Nov 2026, the move to Ambient (the third red fix): Sign out is an action row whose label is a bare span */
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
     "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
@@ -23652,7 +23656,8 @@ await (async () => {
     d95.getElementById("f").dispatchEvent(new dom95.window.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 150 && !d95.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
     const marks95 = [...d95.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label"));
-    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark").length === 3 && !d95.querySelector("#pPrices h3"),
+    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark").length === 3 && !d95.querySelector("#pPrices h3.pmark, #pPrices h3 .amb-thumb--mark"),
+      /* 17 Nov 2026, the move to Ambient (the third red fix): Prices by size's fold carries its own h3 title (below the h2s); no book's mark is headed by an h3 */
       "the price list heads each block with its mark, an h2 under the place's h1 (C21), the one still waiting for a price included: " + JSON.stringify(marks95));
     d95.querySelector('button[data-t="order"]').click();
     /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
@@ -23828,23 +23833,25 @@ await (async () => {
     } });
   const D8 = dom8.window.document;
   const until8 = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return !!f(); };
-  /* a mark on the page: its size, its letter, and whether it is the Ring; the page's glyphs are not marks */
+  /* a mark on the page: its size, its letter, and whether it is the Ring; the page's glyphs are not marks.
+     17 Nov 2026, the move to Ambient (the third red fix): a mark standing alone is the system's mark thumb (span.amb-thumb--mark: the shape
+     path and his letter as .amb-thumb__word, sm 36px, md 44px, the default 56px, lg 72px), which replaced the salt coin and svg.psym. */
   const RING8 = /A8\.6 8\.6/;
-  /* plan version 10 (03 Nov 2026): a mark that stands alone is a coin (span.salt-coin, 44, 56 or 72px by its size class), a mark under 28px keeps svg.psym; both carry his letter and both are marks */
-  const MARK8 = "svg.psym:not(.glyph), .salt-coin", IN8 = (scope) => scope + " svg.psym:not(.glyph), " + scope + " .salt-coin", COINPX8 = { sm: 44, md: 56, lg: 72 };
-  const census8 = (root) => [...root.querySelectorAll(MARK8)].map((s) => s.classList.contains("salt-coin")
-    ? ({ px: COINPX8[[...s.classList].map((c) => /^salt-coin--(\w+)$/.exec(c)).filter(Boolean).map((m) => m[1])[0]] || 0, ring: RING8.test(s.querySelector("path.salt-coin__shape").getAttribute("d")), lets: [...s.querySelectorAll("text.salt-coin__let")].map((t) => t.textContent).join("") })
-    : ({ px: +s.getAttribute("width"), ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
-  /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
-  /* C19 (29 Sep 2026): Home's start and again tiles say the unit under the mark, the size and its word alone */
-  const shapes8 = /^[A-Z]?[\d,]+(\.\d+)?units?$/;
-  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && shapes8.test(seen8(t).replace(/\s+/g, "")); };
+  const MARK8 = ".amb-thumb--mark", IN8 = (scope) => scope + " " + MARK8, THUMBPX8 = { sm: 36, md: 44, lg: 72 };
+  const census8 = (root) => [...root.querySelectorAll(MARK8)].map((s) => ({
+    px: THUMBPX8[[...s.classList].map((c) => /^amb-thumb--(sm|md|lg)$/.exec(c)).filter(Boolean).map((m) => m[1])[0]] || 56,
+    ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll(".amb-thumb__word")].map((t) => t.textContent).join("") }));
+  /* a card's mark: its holder shows, beside the thumb, one figure in words and no shape word (the shape word is .amb-vh, read aloud only) */
+  const shapes8 = /^[\d,]+(\.\d+)?units?$/;
+  const holder8 = (s) => s.closest(".mtile, button, li, td, .amb-row, .amb-setting, .stm-q") || s.parentNode;
+  const said8 = (s) => { const t = holder8(s).querySelector(".amb-row__title, .amb-setting__name, .stm-size, .mq"); return t ? t.textContent.replace(/\s+/g, "") : ""; };
+  const inCard8 = (s) => shapes8.test(said8(s));
   const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
     D8.getElementById("f").dispatchEvent(new dom8.window.Event("submit", { bubbles: true, cancelable: true }));
-    const up8 = await until8(() => D8.querySelectorAll("#pPrices h2.pmark").length === 5 && D8.querySelector(IN8("#pCard .pane"))
-      && D8.querySelector(IN8("#pOrder [data-row]")) && D8.querySelector(IN8("#pHome .htile")));
+    const up8 = await until8(() => D8.querySelectorAll("#pPrices h2.pmark").length === 5 && D8.querySelector(IN8("#pCard .hprod"))
+      && D8.querySelector(IN8("#pOrder [data-row]")) && D8.querySelector(IN8("#pHome [data-hagain]")));
     /* 16 Nov 2026, the move to Ambient: a book's head on Prices is the mark thumb (the one drawing of a mark standing alone), its letter the thumb's word */
     const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector(".amb-thumb--mark");
       return [h.getAttribute("aria-label"), (s.querySelector(".amb-thumb__word") || { textContent: "" }).textContent, [...s.classList].filter((c) => /^amb-thumb--(sm|md|lg)$/.test(c)).map((c) => c.slice(11))[0] || ""].join(":"); });
@@ -23854,7 +23861,7 @@ await (async () => {
     const kinds8 = [...D8.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark")].map((s) => ([...s.classList].find((c) => /^amb-kind-\d$/.test(c)) || ""));
     ok(JSON.stringify(kinds8) === JSON.stringify(["amb-kind-1", "amb-kind-2", "amb-kind-3", "amb-kind-4", ""]), "and each head's thumb carries its book's hue by its index, the Ring none: " + JSON.stringify(kinds8));
     /* Home first, as it opens: Order again and the order under Coming up */
-    const home8 = { again: [...D8.querySelectorAll(IN8("#pHome .htile"))], rows: [...D8.querySelectorAll(IN8("#pHome .salt-inbox-row"))] };
+    const home8 = { again: [...D8.querySelectorAll(IN8("#pHome [data-hagain]"))], rows: [...D8.querySelectorAll(IN8("#pHome #hComing"))] };
     all8.push(...census8(D8.getElementById("pHome")));
     /* Orders: the row, then its own screen */
     D8.querySelector('button[data-t="order"]').click();
@@ -23878,8 +23885,8 @@ await (async () => {
     /* an associate says who it is for first (S4 4.7), or Review waits */
     const me8 = D8.querySelector('#osheet button[data-k="for:0"]'); if (me8) me8.click();
     if (D8.getElementById("oGo")) D8.getElementById("oGo").click();
-    await until8(() => D8.querySelector(IN8("#osheet .mhero")));
-    const check8 = [...D8.querySelectorAll(IN8("#osheet .mhero"))], checkRows8 = [...D8.querySelectorAll(IN8("#osheet .salt-ledger"))];
+    await until8(() => D8.querySelector(IN8("#osheet .amb-sheet__body li.amb-row")));
+    const check8 = [...D8.querySelectorAll(IN8("#osheet .amb-sheet__body li.amb-row"))], checkRows8 = [...D8.querySelectorAll(IN8("#osheet .salt-ledger"))];
     all8.push(...census8(D8.getElementById("osheet")));
     all8.push(...census8(D8.getElementById("pPrices")), ...census8(D8.getElementById("pCard")));
     const bad8 = all8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
@@ -23904,9 +23911,11 @@ await (async () => {
   ok(gr8.status === 200 && gm8.length === 6 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEVPOP" && gm8.filter((m) => m.ring).every((m) => !m.lets)
     && gm8.every((m) => m.px >= 20),
     "the guest board draws its five books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
-  ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'Geist Mono'/.test(gcss8)
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the board is Ambient's and draws the letter as the thumb's word in the device's own face (15 Nov 2026), so its
+     styles carry the thumb's word rule and its policy admits no face beyond its own */
+  ok(/\.amb-thumb__word\s*\{[^}]*font-weight:\s*800/.test(gcss8) && /\.amb-thumb--mark\s*\{/.test(gcss8) && !/font-family: 'Geist Mono'/.test(gcss8)
     && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
-    "and the board's own styles carry the letter's mono face, whose file its policy lets load");
+    "and the board's own styles carry the letter's thumb word rule, whose face is the device's, and its policy lets its own files load");
 
   /* ---- the live statement: its marks are cards, lettered, none under 20px; an archive draws none ---- */
   const MS8 = await import("../tools/make_statements.mjs");
@@ -23919,7 +23928,7 @@ await (async () => {
     docs8++;
     const sd = new JD8("<body>" + d.body + "</body>").window.document;
     sm8s.push(...census8(sd));
-    loose8s.push(...[...sd.querySelectorAll("svg.psym")].filter((s) => !inCard8(s)).map(() => p));
+    loose8s.push(...[...sd.querySelectorAll(MARK8)].filter((s) => !inCard8(s)).map(() => p));
   }
   const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
   ok(docs8 > 3 && sm8s.length > docs8 && !sbad8.length && !loose8s.length,
@@ -23928,7 +23937,9 @@ await (async () => {
   const oI8 = { from: null, to: "2026-09-28", completed: true, open: true, pending: true, dates: true, issued: "28 Sep 2026" };
   const im8 = [];
   for (const p of [...new Set(bk8.sales.map((x) => POS8.ownerCode(x.customer)))].filter((p) => !POS8.isBucket(p)).slice(0, 6))
-    im8.push(...census8(new JD8(MS8.stmtDoc(p, MS8.stmtRows(p, oI8), oI8)).window.document));
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a new ISSUE's table is the sealed format and still draws the app's own svg.psym, not the thumb */
+    im8.push(...[...new JD8(MS8.stmtDoc(p, MS8.stmtRows(p, oI8), oI8)).window.document.querySelectorAll("svg.psym:not(.glyph)")].map((s) =>
+      ({ px: +s.getAttribute("width"), ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") })));
   const ibad8 = im8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
   ok(im8.length > 3 && !ibad8.length, "and a new issue's table draws every mark lettered and none under 20px: " + JSON.stringify({ marks: im8.length, bad: ibad8.slice(0, 3) }));
 })();
@@ -23953,8 +23964,9 @@ await (async () => {
   /* ---- the board ENDS with the next step, after the last price ---- */
   const r0 = await g(open.id), board = await r0.text();
   const next = "To order, reply to the person who sent you this link.";
-  const at = board.indexOf(next), lastTable = board.lastIndexOf("</table>");
-  ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</p></div></body></html>",
+  /* 17 Nov 2026, the move to Ambient (the third red fix): each book is a list of settings rows (not a table) and the next step is the last notice of the shell */
+  const at = board.indexOf(next), lastTable = board.lastIndexOf("</ul>");
+  ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</span></div></div></main></div></body></html>",
     "the guest board ends with what to do next, after the last price: " + JSON.stringify(board.slice(-90)));
   const words0 = board.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
   ok(!/salt command|\bsalt\b|\bcounter\b/i.test(words0), "and the words carry no brand and no product");   /* 19 Oct 2026: encounter is not the counter */
@@ -24018,8 +24030,10 @@ await (async () => {
     ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with a Card tab");
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    const lineOf = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape);
-      const p = h && [...h.closest(".pane").querySelectorAll("p.sub2")].find((x) => /^Reward: /.test(x.textContent)); return p ? p.textContent : ""; };
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a book's reward line is its reward row's own words (data-reward-book), in the row's title or its sub line */
+    const OF83 = { Cube: "salt", Droplet: "oil", Lozenge: "candy" };
+    const lineOf = (shape) => { const r = pCard.querySelector('[data-reward-book="' + OF83[shape] + '"]');
+      const p = r && [...r.querySelectorAll(".amb-row__title, .amb-row__sub")].find((x) => /^Reward: /.test(x.textContent)); return p ? p.textContent : ""; };
     ok(await until(() => lineOf("Cube") && lineOf("Droplet") && lineOf("Lozenge")), "each book's pane carries its reward line");
     const take = /Ask on any order to take it[.]$/;
     ok(take.test(lineOf("Cube")) && /^Reward: 0[.]6 unit to take /.test(lineOf("Cube")),
@@ -24063,10 +24077,12 @@ await (async () => {
     ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with its Rewards place");
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    const pane = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape); return h ? h.closest(".pane") : null; };
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a book's pane is div.hprod, headed by its reward row (data-reward-book) or, with none, by h3.hbook named by the shape */
+    const OF = { Cube: "salt", Droplet: "oil", Capsule: "rice" };
+    const pane = (shape) => [...pCard.querySelectorAll(".hprod")].find((x) => x.querySelector('[data-reward-book="' + OF[shape] + '"]') || x.querySelector('h3.hbook[aria-label="' + shape + '"]')) || null;
     ok(await until(() => pane("Cube") && pane("Droplet") && pane("Capsule")), "a pane for every book on the card, the tiered and the rest");
-    const look = (p) => ({ progress: p.querySelectorAll("ul.conf li").length, lines: p.querySelectorAll("tbody tr").length,
-      meter: p.querySelectorAll(".rmeter").length, reward: [...p.querySelectorAll("p.sub2")].filter((x) => /^Reward: /.test(x.textContent)).length });
+    const look = (p) => ({ progress: p.querySelectorAll(".amb-settings__list li").length, lines: p.querySelectorAll("tbody tr").length,
+      meter: p.querySelectorAll("progress.amb-meter").length, reward: p.querySelectorAll("[data-reward-book]").length });
     const salt = look(pane("Cube")), oil = look(pane("Droplet")), rice = look(pane("Capsule"));
     ok(salt.progress === 5 && salt.reward === 1 && salt.meter === 1,
       "salt's pane carries its progress, its reward line and its Meter: " + JSON.stringify(salt));
@@ -24127,7 +24143,9 @@ await (async () => {
     return out;
   };
   const html = P.landingPage("abcd-efgh", "n133", null);
-  const js = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the carried Ambient script (AMB_JS, its own words and selectors) is the system's, not this page's own script, and is left out */
+  const { AMB_JS: AMBJS133 } = await import("../stmt/statement-css.js");
+  const js = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).filter((x) => x.trim() !== AMBJS133.trim()).join("\n");
   const own = lits(js.replace(/^\s*var (WORDS|PAY|GL|GLS|BULL)=.*$/gm, ""));
   const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
   const classes = new Set([...css.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1]).concat([...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(" "))));
@@ -24135,6 +24153,7 @@ await (async () => {
      matches on an answer carrying no code */
   const NAMES = new Set(["DuitNow Transfer", "DuitNow QR", "Touch 'n Go Business", "RM ", "prices moved"]);
   const left = [...new Set(own)].filter((s) => / /.test(s) && /[A-Za-z]{2,}/.test(s) && !/^[.(<]|[=<>{}[\]]/.test(s) && !NAMES.has(s)
+    && !/^[MLHVCAZ][\dMLHVCAZ. -]*$/.test(s) && !/^translate\(0 $|^\) scale\(1 -1\)$/.test(s)   /* a drawn shape's path data and a chart's transform are not words (17 Nov 2026) */
     && !(s.trim().split(/ +/).every((t) => /^[a-z][\w-]*$/.test(t)) && s.trim().split(/ +/).some((t) => /[-_]/.test(t) || classes.has(t))));
   ok(own.length > 1500 && js.includes("var WORDS=") && !left.length,
     "no sentence is written in the page's script: every word it draws is a key's, the rails' names apart: " + JSON.stringify(left));
@@ -25977,10 +25996,10 @@ await (async () => {
       /* 25 OCT 2026: a row's kind says No account, and the next-update words live on the opened card alone */
       /* 2 Nov 2026 (Customers on the canvas): the row is a settings row, its code the .acode and its kind the second line (.salt-settings__sub) */
       const rowFor = (code) => [...D.querySelectorAll("#rlist .arow[data-u]")].find((b) => (b.querySelector(".acode") || {}).textContent === code);
-      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".salt-settings__sub").textContent : "");
+      const kindOf = (code) => ((rowFor(code) || {}).querySelector ? rowFor(code).querySelector(".amb-row__sub").textContent : "");   /* 17 Nov 2026, the move to Ambient (the third red fix): a roster row's second line is .amb-row__sub */
       const ltrRow = kindOf("CZ9-LTR"), wlkRow = kindOf("CZ9-WLK");
       const cardText = (code) => { const r = rowFor(code); if (!r) return "";
-        r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
+        (r.querySelector(".arow__open") || r).dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.getElementById("aopen") || {}).textContent || ""; };   /* 17 Nov 2026, the move to Ambient (the third red fix): the row's own button opens the card, which is #aopen's */
       const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
       ok(/^No account/.test(ltrRow) && !!wlkRow && !/No account/.test(wlkRow)
         && ltrCard.includes("Their account comes with the next update.") && !ltrCard.includes("meanwhile") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
@@ -30329,7 +30348,8 @@ await (async () => {
       const pay = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       /* S6 6.8: the ways are the pay sheet's tiles; cash withheld is shown, dashed and off, with the reason as its line */
       for (let i = 0; i < 150 && !d.querySelector('#payBody input[name="payHow"]'); i++) await new Promise((r) => setTimeout(r, 20));
-      return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.nextSibling.querySelector(".salt-option__detail").textContent : ""));
+      /* 17 Nov 2026, the move to Ambient (the third red fix): a way is label.amb-option, its reason the option's sub line */
+      return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.closest(".amb-option").querySelector(".amb-option__sub").textContent : ""));
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
   };
   const railsAhead = await rails(ord({ moved: 2, paid: 0 })), railsInStep = await rails(ord({ moved: 2, paid: 200 }));
@@ -40354,18 +40374,19 @@ await (async () => {
   const at = (html, W) => html.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, W) ? "@media all{" : m));
   const read = (html, W) => {
     const dom = new JD(at(html, W)), d = dom.window.document, cs = (e, p) => (e ? dom.window.getComputedStyle(e).getPropertyValue(p) : "none");
-    /* Home's two columns, a list of rows in the first section, and Orders' list, as the page draws them */
+    /* Home's two stacks, a list of rows in the first section, and Orders' list, as the page draws them (17 Nov 2026, the move to Ambient (the third red fix): Ambient's
+       stack, list and row, whose gap is its token, which jsdom leaves unresolved, so the one token is what is read) */
     const x = d.createElement("div");
-    x.innerHTML = '<div class="home"><div class="hcol"><div><button class="salt-inbox-row">a</button><button class="salt-inbox-row">b</button></div><div>c</div></div>'
-      + '<div class="hcol"><div>d</div></div></div><div class="olist"><button class="salt-inbox-row">e</button><button class="salt-inbox-row">f</button></div>';
+    x.innerHTML = '<div class="amb-split"><div class="amb-stack"><div><ul class="amb-list amb-list--ruled"><li class="amb-row">a</li><li class="amb-row">b</li></ul></div><div>c</div></div>'
+      + '<div class="amb-stack"><div>d</div></div></div><div class="olist"><ul class="amb-list amb-list--ruled"><li class="amb-row">e</li><li class="amb-row">f</li></ul></div>';
     d.body.appendChild(x);
-    const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".hcol");
+    const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".amb-stack");
     const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q("#tabs"), "padding-bottom"),
       door: cs(q("#gate"), "padding-left") + "|" + cs(q("#gate"), "padding-right"),
       roster: q("#roster") ? cs(q("#roster"), "margin-top") + "|" + cs(q("#roster"), "padding-bottom") : "",
-      hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].firstElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
-      rows: [...x.querySelectorAll(".home .salt-inbox-row")].map((r) => cs(r, "margin-bottom")).join("|"),
-      orows: [...x.querySelectorAll(".olist .salt-inbox-row")].map((r) => cs(r, "margin-bottom")).join("|") };
+      hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].lastElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
+      rows: [...x.querySelectorAll(".amb-split .amb-row")].slice(0, 2).map((r) => cs(r, "margin-bottom")).join("|"),
+      orows: [...x.querySelectorAll(".olist .amb-row")].map((r) => cs(r, "margin-bottom")).join("|") };
     dom.window.close();
     return out;
   };
@@ -40376,17 +40397,17 @@ await (async () => {
      Ambient's screen keeps the safe areas, its stacks the 16px gutter, and its dock clears itself (amb-screen--docked) */
   void sides;
   const nil = (v) => /^0(px)?$/.test(v);
-  ok(phone.body.every(nil) && nil(phone.shell) && phone.door === "0px|0px",
+  ok(phone.body.every(nil) && nil(phone.shell) && phone.door.split("|").every(nil),   /* jsdom reads a zero padding as 0, not 0px */
     "on a phone the body keeps no gutter of the page's own, the Counter's shell no room of its own for a bar, and the door adds nothing beside: " + JSON.stringify(phone));
   ok(phoneOwn.roster.split("|").every(nil) && phoneOwn.body.join() === phone.body.join(),
     "and Salt Admin's shell starts at the body's edge with no room of its own for a bar either: " + JSON.stringify(phoneOwn));
-  ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
-    "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
+  ok(phone.hcol === "grid|var(--amb-space-4)|0|0" && /^(0px\|)+0px$/.test(phone.rows) && /^(0px\|)+0px$/.test(phone.orows),
+    "Home's sections stand one gap apart, Ambient's token, each stack's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
   /* 5 Nov 2026 (the frame): from 1080px Salt Admin's shell is the frame, the screen tall, no padding under it (its 24px margin is the frame's height) */
-  ok(desk.body.every(nil) && nil(desk.shell) && desk.door === "4px|4px" && deskOwn.roster.split("|").every(nil)
-    && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
-    "from 1080px nothing moves: the body keeps no gutter, the shells none of their own, the door its 4px, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+  ok(desk.body.every(nil) && nil(desk.shell) && desk.door.split("|").every(nil) && deskOwn.roster.split("|").every(nil)
+    && desk.hcol === phone.hcol && desk.rows === phone.rows && desk.orows === phone.orows,
+    "from 1080px nothing moves: the body keeps no gutter, the shells none of their own, the door adds nothing, Salt Admin with no margin above, and the stacks and rows stand as on a phone: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
 
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
@@ -42539,7 +42560,7 @@ await (async () => {
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
     const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
-    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .salt-option__label")].pop());
+    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .amb-option__title")].pop());
     const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
       go: t(d.getElementById("payGo")) + ":" + d.getElementById("payGo").tagName, cap: t(d.querySelector("#payFoot .paycap")) };
@@ -42729,7 +42750,8 @@ await (async () => {
       "the order says when: before we hand it over, and due now once it is ready: " + JSON.stringify([money, ready]));
     const payO = [...d.querySelectorAll("#pOrder [data-part=act] button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
     const cod = d.querySelector('#payBody input[name="payHow"][value="cod"]');
-    const why = cod ? t(cod.closest(".salt-option").querySelector(".salt-option__detail")) : "";
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a way is label.amb-option, its reason the option's sub line */
+    const why = cod ? t(cod.closest(".amb-option").querySelector(".amb-option__sub")) : "";
     ok(!!payO && !!cod && cod.disabled && why === "Not offered: this order is paid in advance.",
       "its pay sheet offers no cash, the tile dashed with the reason: " + JSON.stringify([!!payO, cod && cod.disabled, why]));
     d.getElementById("payX").click();
@@ -43045,7 +43067,8 @@ await (async () => {
     const read = () => {
       const pp = D.getElementById("pPrices"), sn = D.getElementById("stageNote"), kn = D.querySelector("#pOrder .ohold .amb-tile__delta");
       return { note: sn ? sn.textContent : null, hold: /Please pay the overdue amount/.test((D.getElementById("payHead") || {}).textContent || ""),
-        prices: pp ? pp.textContent.replace(/\s+/g, " ").trim() : "", hpart: D.querySelectorAll("#hComing .hpart").length, payNow: !!D.getElementById("payNow"),
+        prices: pp ? pp.textContent.replace(/\s+/g, " ").trim() : "", hpart: D.querySelectorAll("#hComing [data-part]").length,   /* 17 Nov 2026, the move to Ambient (the third red fix): a coming part is a row marked data-part */
+         payNow: !!D.getElementById("payNow"),
         odNote: kn ? kn.textContent : "", holdP: /prices stay open/.test(D.getElementById("pOrder").textContent),
         /* V5 (his answer of 29 Sep 2026): greyed out and out of reach, never taken away */
         grey: ["hNeeds", "hComing", "hAgain"].map((id) => { const n = D.getElementById(id); return !!n && n.classList.contains("lockd") && n.hasAttribute("inert"); }).join(),
@@ -43230,7 +43253,7 @@ await (async () => {
       d.querySelector('button[data-t="order"]').click();
       await until(() => t(d.getElementById("pOrder")).length > 0);
       const po = d.getElementById("pOrder");
-      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.amb-pill")].map(t).join(), form: !!po.querySelector(".olistcol, form") };
+      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.amb-pill")].map(t).filter((x) => /^Pay RM/.test(x)).join()   /* 17 Nov 2026, the move to Ambient (the third red fix): the held page also carries See your statement; the figure asked is the Pay pill's */, form: !!po.querySelector(".olistcol, form") };
     } finally { dom.window.close(); }
   };
   const acct = (amount, state, answered) => ({ id: "a-" + amount, u: U, kind: "account", at: iso(-3), amount, method: "transfer", account: "maybank", state, answered });
@@ -43287,7 +43310,8 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       await until(() => !d.getElementById("tabs").hidden);
       await new Promise((r) => setTimeout(r, 60));
-      const out = { head: [...d.querySelectorAll("#payHead .msg")].map(t) };
+      /* 17 Nov 2026, the move to Ambient (the third red fix): To pay now's lines are paragraphs of the head, no longer .msg */
+      const out = { head: [...d.querySelectorAll("#payHead p")].map(t) };
       if (list.length) {
         d.querySelector('button[data-t="order"]').click();
         await until(() => d.querySelector('#pOrder [data-row="oN"]'));
@@ -43545,15 +43569,16 @@ await (async () => {
   const at = new Date("2026-09-22T00:00:00Z");
   const doc = M.liveStatement("CX8-TG", at);
   const body = String(doc && doc.body);
-  const i = body.indexOf('<div class="owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</div>", i));
+  /* 17 Nov 2026, the move to Ambient (the third red fix): the live block is a group of settings, a row a book (the system's thumb, the shape named aloud, the size) */
+  const i = body.indexOf('<div class="amb-settings owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</ul>", i));
   /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): a line a book is a card a book, the
      mark a button and its size under it (no shape word drawn), the unit in the words a reader hears */
-  const lines = block.split('<span class="mtile">').slice(1);
+  const lines = block.split('<li>').slice(1);
   const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const said = (h) => ((h.match(/<span class="sr">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="mq" aria-hidden="true">([\s\S]*?)<\/span><\/span>/) || [])[1] || "").replace(/<[^>]+>/g, "");
+  const said = (h) => ((h.match(/<span class="amb-vh">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="amb-setting__name">([^<]*)<\/span>/) || [])[1] || "");
   ok(i >= 0 && lines.length === 2, "the block has one card a book: " + lines.length + " cards");
-  ok(lines.length === 2 && /<svg class="psym"/.test(lines[0]) && said(lines[0]) === "Cube 2 units|2 units"
-    && /<svg class="psym"/.test(lines[1]) && said(lines[1]) === "Droplet 1.5 units|1.5 units",
+  ok(lines.length === 2 && /amb-thumb--mark/.test(lines[0]) && said(lines[0]) === "Cube|2 units"
+    && /amb-thumb--mark/.test(lines[1]) && said(lines[1]) === "Droplet|1.5 units",
     "each card carries its book's mark and its own figure, salt first: " + lines.map(said).join(" | "));
   ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
   /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
@@ -43584,6 +43609,9 @@ await (async () => {
     for (const m of d.body.matchAll(/<table( class="([^"]*)")?/g)) {
       tables++;
       kinds.add((m[2] || "orders").split(" ")[0]);
+      /* 17 Nov 2026, the move to Ambient (the third red fix): a live statement's orders and refunds are Ambient's amb-table--stack, which stacks every row on a phone and
+         needs no box, never a scroll one (Ambient forbids overflow-x: auto); only a table with no stack still opens in its box */
+      if (/\bamb-table--stack\b/.test(m[2] || "")) continue;
       if (!d.body.slice(Math.max(0, m.index - 19), m.index).endsWith('<div class="tblw">')) bare.push(p + " " + (m[2] || "orders"));
     }
   }
@@ -45534,14 +45562,16 @@ await (async () => {
     try {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-      for (let i = 0; i < 200 && !(D.querySelector("#payHead:not([hidden]) .salt-ledger") && D.querySelector(".hpart")); i++) await wait(25);
+      for (let i = 0; i < 200 && !(D.querySelector("#payHead:not([hidden]) [data-w=\"part.cover\"]") && D.querySelector("[data-part]")); i++) await wait(25);
       await wait(50);
       const lang = (x) => { const l = x.closest("[lang]"); return l ? l.getAttribute("lang") : "none"; };
       const whole = D.documentElement.outerHTML;
-      return { lang: D.documentElement.lang, drawn: !!D.querySelector("#payHead .salt-ledger") && !!D.querySelector(".hpart"),
+      return { lang: D.documentElement.lang, drawn: !!D.querySelector("#payHead .amb-row") && !!D.querySelector("[data-part]"),
         leak: /coverRM/.test(whole) || whole.includes("13.37"),
-        lines: [...D.querySelectorAll(".pcover")].map((x) => ({ t: x.textContent, k: x.getAttribute("data-w"),
-          where: x.closest("#payHead .salt-ledger") ? "overdue" : x.closest(".hpart") ? "coming" : x.closest("#pOrder") ? "held" : "elsewhere", lang: lang(x) })) };
+        /* 17 Nov 2026, the move to Ambient (the third red fix): the lines are the rows of Home's To pay now (#payHead), the coming-up rows (data-part) and the held page's list,
+           each naming its cover by the key's own word, whatever its class */
+        lines: [...D.querySelectorAll('[data-w="part.cover"]')].map((x) => ({ t: x.textContent, k: x.getAttribute("data-w"),
+          where: x.closest("#pOrder") ? "held" : x.closest("[data-part]") ? "coming" : x.closest("#payHead") ? "overdue" : "elsewhere", lang: lang(x) })) };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const en = await draw(["en-GB", "en"]);
@@ -47872,9 +47902,10 @@ await (async () => {
     try {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#homeFoot .salt-kpi, #payHead .salt-kpi"));
-      const h = d.getElementById("homeFoot");   /* Phase 7a (11 Oct 2026): the figure and its Pay stand in the foot */
-      return [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(h.querySelector(q))).concat([t(d.getElementById("payNow"))]).join("|");
+      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#payHead .amb-stat") && d.getElementById("payNow"));
+      /* 17 Nov 2026, the move to Ambient (the third red fix): the figure is To pay now's stat in the head and the one Pay stands in the foot */
+      const h = d.getElementById("payHead");
+      return [".amb-stat__label", ".amb-stat__value"].map((q) => t(h.querySelector(q))).concat([t(d.getElementById("payNow"))]).join("|");
     } finally { try { dom.window.close(); } catch (x) { /* best effort */ } }
   };
   const before = views.before && await home(views.before), after = views.after && await home(views.after);
@@ -48590,7 +48621,8 @@ await (async () => {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
-      return [...D.querySelectorAll("#hComing .salt-inbox-row")].map((r) => r.getAttribute("data-row") || (r.querySelector(".salt-inbox-row__age") || {}).textContent.slice(0, 2));
+      /* 17 Nov 2026, the move to Ambient (the third red fix): Coming up's rows are Ambient rows, an order by data-row and a part by data-part, the day in the row's trail */
+      return [...D.querySelectorAll("#hComing [data-row], #hComing [data-part]")].map((r) => r.getAttribute("data-row") || (r.querySelector(".amb-row__age") || {}).textContent.slice(0, 2));
     } finally { W.close(); }
   };
   const before = await run("2026-09-09T01:00:00Z"), after = await run("2026-09-11T01:00:00Z");
@@ -51553,8 +51585,9 @@ await (async () => {
     const page = await get("/", { accept: "text/html,application/xhtml+xml" }), body = page.body;
     ok(page.status === 503 && page.headers.get("retry-after") > 0 && page.headers.get("cache-control") === "no-store"
       && /^text\/html/.test(page.headers.get("content-type")), name + ": a page request before the window ends answers 503 with Retry-After and no-store");
+    /* 17 Nov 2026, the move to Ambient (the third red fix): the Counter's sentence is the hero's sub line, a p with amb-hero__sub */
     /* the desk's page keeps its sentence; the Counter's says when it is back, read from the time in Kuala Lumpur (test/counter-maintenance.mjs) */
-    ok((name === "desk" ? body.includes("<p>" + TEXT + "</p>") : /<p>Back (at \d\d:\d\d|on \d\d [A-Z][a-z]{2} \d{4} at \d\d:\d\d)<\/p>/.test(body)) && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
+    ok((name === "desk" ? body.includes("<p>" + TEXT + "</p>") : /<p class="amb-hero__sub">Back (at \d\d:\d\d|on \d\d [A-Z][a-z]{2} \d{4} at \d\d:\d\d)<\/p>/.test(body)) && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
       && !/<script|https?:\/\//.test(body), name + ": the page carries its words, a title and language, no script and no external load");
     ok(page.headers.get("content-security-policy") === "default-src 'none'; style-src 'unsafe-inline'", name + ": the page's CSP is the closed one");
     const js = await get("/queue", { accept: "application/json" });
@@ -51577,7 +51610,7 @@ await (async () => {
   {
     const words = { MAINTENANCE_UNTIL: future, MAINTENANCE_TEXT: "  Back by 6:00 a.m. <b>&</b> 'soon'  " };
     const r = await stmtM.fetch(req("/", { accept: "text/html" }), words, {}), b = await r.text();
-    ok(r.status === 503 && b.includes("<p>Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>") && !b.includes(TEXT),
+    ok(r.status === 503 && b.includes('<p class="amb-hero__sub">Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>') && !b.includes(TEXT),
       "counter: MAINTENANCE_TEXT replaces the words, trimmed and escaped");
   }
   ok(/^\s*"MAINTENANCE_UNTIL": "",/m.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")), "wrangler.jsonc carries MAINTENANCE_UNTIL empty (guard off)");
