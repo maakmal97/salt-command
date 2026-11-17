@@ -1,0 +1,20 @@
+[
+ {"name":"the switch takes a time past 90 days","file":"stmt/maintenance.js","find":"if (t > now + MAINT_DAYS * 86400000) return","replace":"if (false) return"},
+ {"name":"the switch is not rounded up to the minute","file":"stmt/maintenance.js","find":"return { until: isoMin(Math.ceil(t / 60000) * 60000) };","replace":"return { until: isoMin(t) };"},
+ {"name":"the switch keeps no lapse on KV","file":"stmt/maker.js","find":"{ expiration: Math.ceil(Date.parse(next.until) / 1000) + 86400 }","replace":"{}"},
+ {"name":"the hours read does not carry the switch","file":"stmt/maker.js","find":"confirm: result.confirm, maint: result.maint });","replace":"confirm: result.confirm });"},
+ {"name":"the test surface reaches the switch","file":"stmt/maker.js","find":"calendar: [\"GET\", \"POST\"] };","replace":"calendar: [\"GET\", \"POST\"], maintenance: [\"POST\"] };"},
+ {"name":"the Worker does not read the switch","file":"stmt/worker.js","find":"switched = (v && v.until) || \"\";","replace":"switched = \"\";"},
+ {"name":"the Worker reads the switch for Salt Admin","file":"stmt/worker.js","find":"!TEST_REQ.has(request) && !exempt(request)) {","replace":"!TEST_REQ.has(request)) {"},
+ {"name":"the switch wins over a later MAINTENANCE_UNTIL","file":"stmt/maintenance.js","find":"Math.max(at(env && env.MAINTENANCE_UNTIL), at(switched))","replace":"(at(switched) > -Infinity ? at(switched) : at(env && env.MAINTENANCE_UNTIL))"},
+ {"name":"a passed time still holds","file":"stmt/maintenance.js","find":"if (!(until > now)) return null;","replace":"if (until === -Infinity) return null;"},
+ {"name":"off lifts nothing","file":"stmt/maker.js","find":"    await env.STMT.delete(MAINT_KEY);\n","replace":""},
+ {"name":"the switch is not drawn","file":"stmt/owner.js","find":"    drawMaint(box);\n","replace":""},
+ {"name":"it does not ask when it is back","file":"stmt/owner.js","find":"ur.appendChild(el('span','amb-setting__name','Back at'));","replace":"ur.appendChild(el('span','amb-setting__name','Until'));"},
+ {"name":"it reads the time in UTC, not Kuala Lumpur","file":"stmt/owner.js","find":"var when=Date.parse(until.value+'+08:00');\n        if(!Number.isFinite(when)){ hoursSaid('now','Choose when it is back.')","replace":"var when=Date.parse(until.value+'Z');\n        if(!Number.isFinite(when)){ hoursSaid('now','Choose when it is back.')"},
+ {"name":"filed, the grey line does not say when","file":"stmt/owner.js","find":"'Customers see Under maintenance, back '+w+'.","replace":"'Back '+w+'."},
+ {"name":"off sends nothing","file":"stmt/owner.js","find":"refs('/all/maker/maintenance',{off:true})","replace":"Promise.resolve({maint:null})"},
+ {"name":"the bar's chip does not say Maintenance","file":"stmt/owner.js","find":"txt='Maintenance'+(mw?' to '+mw:'');","replace":"txt='Open'+(mw?' to '+mw:'');"},
+ {"name":"Needs you carries no card","file":"stmt/owner.js","find":"    if(maintUntil()) L.push(maintNeed(maintUntil()));\n","replace":""},
+ {"name":"an open page does not open again","file":"stmt/page.js","find":"location.reload(); return {status:503","replace":"return {status:503"}
+]

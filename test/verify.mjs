@@ -51585,6 +51585,11 @@ await (async () => {
   await (await import("./counter-maintenance.mjs")).run({ ok });
 })();
 
+section("17 Nov 2026, his word: Salt Admin's maintenance switch puts the Counter under maintenance at once until the time he gives, lifts at once when turned off, and never holds Salt Admin");
+await (async () => {
+  await (await import("./admin-maintenance.mjs")).run({ ok, pageWork });
+})();
+
 section("Failures on brand: the shut page and the site's 404 stand on the Counter's frame in Ambient's shell, the 404 echoes nothing of what was asked and is the page only where a page was asked for (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-shut-404.mjs")).run({ ok });
