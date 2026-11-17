@@ -45553,14 +45553,16 @@ await (async () => {
     try {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-      for (let i = 0; i < 200 && !(D.querySelector("#payHead:not([hidden]) .salt-ledger") && D.querySelector(".hpart")); i++) await wait(25);
+      for (let i = 0; i < 200 && !(D.querySelector("#payHead:not([hidden]) [data-w=\"part.cover\"]") && D.querySelector("[data-part]")); i++) await wait(25);
       await wait(50);
       const lang = (x) => { const l = x.closest("[lang]"); return l ? l.getAttribute("lang") : "none"; };
       const whole = D.documentElement.outerHTML;
-      return { lang: D.documentElement.lang, drawn: !!D.querySelector("#payHead .salt-ledger") && !!D.querySelector(".hpart"),
+      return { lang: D.documentElement.lang, drawn: !!D.querySelector("#payHead .amb-row") && !!D.querySelector("[data-part]"),
         leak: /coverRM/.test(whole) || whole.includes("13.37"),
-        lines: [...D.querySelectorAll(".pcover")].map((x) => ({ t: x.textContent, k: x.getAttribute("data-w"),
-          where: x.closest("#payHead .salt-ledger") ? "overdue" : x.closest(".hpart") ? "coming" : x.closest("#pOrder") ? "held" : "elsewhere", lang: lang(x) })) };
+        /* 17 Nov 2026, the move to Ambient (the third red fix): the lines are the rows of Home's To pay now (#payHead), the coming-up rows (data-part) and the held page's list,
+           each naming its cover by the key's own word, whatever its class */
+        lines: [...D.querySelectorAll('[data-w="part.cover"]')].map((x) => ({ t: x.textContent, k: x.getAttribute("data-w"),
+          where: x.closest("#pOrder") ? "held" : x.closest("[data-part]") ? "coming" : x.closest("#payHead") ? "overdue" : "elsewhere", lang: lang(x) })) };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const en = await draw(["en-GB", "en"]);

@@ -1,0 +1,5 @@
+[
+ {"name": "an invoice line names no reward cover", "file": "stmt/page.js", "find": "if(x.p&&x.p.cover){ if(when) sub.appendChild(document.createTextNode('. ')); sub.appendChild(setW(el('span'),'part.cover')); }", "replace": ""},
+ {"name": "a coming part names no reward cover", "file": "stmt/page.js", "find": "function coverTo(x,p){ if(x&&p&&p.cover) x.appendChild(setW(el('span','sub2 pcover'),'part.cover')); return x; }", "replace": "function coverTo(x,p){ return x; }"},
+ {"name": "a part without cover is said to have one", "file": "stmt/page.js", "find": "function coverTo(x,p){ if(x&&p&&p.cover)", "replace": "function coverTo(x,p){ if(x&&p)"}
+]
