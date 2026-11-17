@@ -192,9 +192,15 @@
   "replace": "return tw('today.aria')+', '+w; }"
  },
  {
-  "name": "the screen reserves the mini bar's room while it is hidden",
+  "name": "the screen reserves the mini bar's room while it is hidden (17 Nov 2026: Ambient 0.7.15's own rule)",
   "file": "stmt/statement-css.js",
-  "find": ".amb-shell:has(> .amb-dock > .amb-mini[hidden]) { --amb-foot-mini: 0px; --amb-bleed: calc(var(--amb-tabbar-h) + var(--amb-safe-bottom) + 36px); }",
-  "replace": ""
+  "find": ".amb-shell:has(> .amb-dock > .amb-mini:not([hidden])) { --amb-foot-mini:",
+  "replace": ".amb-shell:has(> .amb-dock > .amb-mini) { --amb-foot-mini:"
+ },
+ {
+  "name": "the site layer overrides the bleed again",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-mini[data-live] { cursor: pointer; }",
+  "replace": ".amb-mini[data-live] { cursor: pointer; } .amb-shell { --amb-bleed: 0px; }"
  }
 ]

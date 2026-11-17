@@ -114,8 +114,11 @@ export async function run({ ok }) {
     ok(/^Today, [0-9]{2}:[0-9]{2}$/.test(sNew) && /^[0-9]{2} [A-Z][a-z]{2} 2026$/.test(sOld),
       "the mini bar reads Today, 00:01 for a move today and the date for another day, never a bare time: " + JSON.stringify([sNew, sOld]));
 
-    /* ---- 23 (C): the mini bar's room is reserved over the foot only while it shows (Ambient reserves it whenever one is in the dock, hidden or not) */
-    ok(/\.amb-shell:has\(> \.amb-dock > \.amb-mini\[hidden\]\) \{ --amb-foot-mini: 0px; --amb-bleed: calc\(var\(--amb-tabbar-h\) \+ var\(--amb-safe-bottom\) \+ 36px\); \}/.test(SITE_CSS),
+    /* ---- 23 (C): the mini bar's room is reserved over the foot only while it shows. 17 Nov 2026, the move to Ambient (Ambient 0.7.15, R27b): Ambient does it, so the
+       check pins Ambient's carried rule and that the site layer holds no override of the bleed or the mini bar's room (its 36px stand-in left with the pull) */
+    const { AMB_CSS } = await import("../stmt/statement-css.js");
+    ok(AMB_CSS.includes(".amb-shell:has(> .amb-dock > .amb-mini:not([hidden])) { --amb-foot-mini: calc(var(--amb-mini-h) + var(--amb-peek)); }")
+      && AMB_CSS.includes(".amb-shell { --amb-foot-mini: 0px;") && !/--amb-bleed\s*:|--amb-foot-mini\s*:/.test(SITE_CSS),
       "an open order's screen and foot reserve no bleed room for a mini bar that is not shown");
 
     /* ---- 18: no hero of the Counter carries a bare clock */

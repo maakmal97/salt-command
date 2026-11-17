@@ -139,10 +139,8 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .hbook { margin: 0; }
 /* the live order is the dock's mini bar, a tap anywhere on it opening the order */
 .amb-mini[data-live] { cursor: pointer; }
-/* 17 Nov 2026 (Fable's review, C): Ambient's bleed under a docked screen, and its foot's ground, hold the mini bar's room (its height and the peek) whether or not a mini bar shows, and the Counter
-   keeps the mini bar in the dock, hidden, off Home: an open order's foot then rested about 95px above the dock on bare ground. While the mini bar is hidden the room is left out of both. The bleed is
-   Ambient's own sum without the mini bar: the tab bar, the safe area, and 36px (the dock's inset twice and the 12px, which this layer may not name: the one-look check); it moves with Ambient's. */
-.amb-shell:has(> .amb-dock > .amb-mini[hidden]) { --amb-foot-mini: 0px; --amb-bleed: calc(var(--amb-tabbar-h) + var(--amb-safe-bottom) + 36px); }
+/* 17 Nov 2026 (Fable's review, C): a hidden mini bar keeps no room over a record's foot. The site's stand-in for it (36px) left with Ambient 0.7.15, whose R27b
+   reserves the mini bar's room only while one shows; the page holds no override of the bleed. */
 
 /* ---- Counter: Shop, the order sheet and spots ---- */
 /* the way, the notices and the book panes stand in Shop's stack; the way's box and the basket's bar take no place of their own */
