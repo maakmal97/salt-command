@@ -54,5 +54,6 @@
  {"name":"the limit list leaves the delivery out of the figure","file":"stmt/page.js","find":"amount:rm(o.total+(+o.delivery||0))});\n      if(!(+o.moved>0)){","replace":"amount:rm(o.total)});\n      if(!(+o.moved>0)){"},
  {"name":"the fixture's paid order is not paid","file":"tools/testfix.mjs","find":"[T(1, 55), \"desk\", { verdict: { kind: \"received\", claim: T(1, 50), amount: 12 } }]]));","replace":"[T(1, 55), \"customer\", { action: \"say\", text: \"Thank you.\" }]]));"},
  {"name":"the paid line is met by any order","file":"tools/testfix.mjs","find":"&& +o.paid > 0.004 && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === \"waiting\"))],","replace":"&& true && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === \"waiting\"))],"},
- {"name":"the limit line is met with nothing open","file":"tools/testfix.mjs","find":"return openCount(open) >= MAX_OPEN && open.some((o) => !(+o.moved > 0)); }],","replace":"return true; }],"}
+ {"name":"the limit line is met with nothing open","file":"tools/testfix.mjs","find":"return openCount(open) >= MAX_OPEN && open.some((o) => !(+o.moved > 0)); }],","replace":"return true; }],"},
+ {"name":"a 44px coin draws his letter again (17 Nov 2026, shape alone at 44px)","file":"stmt/page.js","find":"if(L&&L.l&&size!=='md') t.appendChild","replace":"if(L&&L.l) t.appendChild"}
 ]

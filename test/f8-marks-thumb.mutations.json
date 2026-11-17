@@ -1,8 +1,12 @@
 [
- {"name": "the page's mark thumb drops his letter", "file": "stmt/page.js", "find": "if(L&&L.l) t.appendChild(el('span','amb-thumb__word',L.l));", "replace": ""},
- {"name": "the statement's thumb drops his letter", "file": "stmt/page.js", "find": "(L && L.l ? '<span class=\"amb-thumb__word\">' + esc(L.l) + \"</span>\" : \"\")", "replace": "\"\""},
+ {"name": "the page's mark thumb drops his letter", "file": "stmt/page.js", "find": "if(L&&L.l&&size!=='md') t.appendChild(el('span','amb-thumb__word',L.l));", "replace": ""},
+ {"name": "the statement's thumb drops his letter", "file": "stmt/page.js", "find": "(L && L.l && size !== \"md\" ? '<span class=\"amb-thumb__word\">' + esc(L.l) + \"</span>\" : \"\")", "replace": "\"\""},
  {"name": "Order again's row says a word, not the size", "file": "stmt/page.js", "find": "thumb:markThumb(a.product), title:unitsOf(a.q,P.unit)", "replace": "thumb:markThumb(a.product), title:pshape(a.product)"},
  {"name": "the order's band draws the shape word under the mark", "file": "stmt/page.js", "find": "var f=el('span','mq',words);", "replace": "var f=el('span','mq',pshape(product));"},
  {"name": "the live statement's line draws the shape word beside the mark", "file": "tools/make_statements.mjs", "find": "<span class=\"stm-size\">'+units(r.qty)", "replace": "<span class=\"stm-size\">'+shapeOf(r.product)+units(r.qty)"},
- {"name": "the check's line carries no mark", "file": "stmt/page.js", "find": "var r=hRow({tag:'li', thumb:markThumb(l.product,'md'), title:unitsOf(l.q,l.unit)", "replace": "var r=hRow({tag:'li', title:unitsOf(l.q,l.unit)"}
+ {"name": "the check's line carries no mark", "file": "stmt/page.js", "find": "var r=hRow({tag:'li', thumb:markThumb(l.product,'md'), title:unitsOf(l.q,l.unit)", "replace": "var r=hRow({tag:'li', title:unitsOf(l.q,l.unit)"},
+ {"name":"44px: the carried rule no longer hides the word (17 Nov 2026, shape alone at 44px)","file":"stmt/statement-css.js","find":".amb-thumb--md > .amb-thumb__word { display: none; }","replace":".amb-thumb--md > .amb-thumb__word { }"},
+ {"name":"44px: the page layer shows the word again","file":"stmt/statement-css.js","find":".amb-mini[data-live] { cursor: pointer; }","replace":".amb-mini[data-live] { cursor: pointer; } .amb-thumb--md > .amb-thumb__word { display: inline; }"},
+ {"name":"56px and over: a coin loses his letter","file":"stmt/page.js","find":"if(L&&L.l&&size!=='md') t.appendChild(el('span','amb-thumb__word',L.l));","replace":"if(L&&L.l&&size==='md') t.appendChild(el('span','amb-thumb__word',L.l));"},
+ {"name":"a 44px coin draws his letter again (17 Nov 2026, shape alone at 44px)","file":"stmt/page.js","find":"if(L&&L.l&&size!=='md') t.appendChild","replace":"if(L&&L.l) t.appendChild"}
 ]

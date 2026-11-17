@@ -21,9 +21,15 @@ export async function run({ ok, pageWork }) {
     const cs = hs && hs.querySelector(".amb-thumb"), co = ho && ho.querySelector(".amb-thumb");
     ok(!!cs && cs.classList.contains("amb-thumb--mark") && cs.classList.contains("amb-thumb--ring") && cs.classList.contains("amb-thumb--md") && cs.classList.contains("amb-kind-1") && !!co && co.classList.contains("amb-kind-2"),
       "10b a book's head on Order is a medium mark thumb, its hue by the book's index: " + (cs ? cs.outerHTML.slice(0, 120) : "none"));
-    ok(!!cs && !!cs.querySelector("svg.amb-thumb__shape path") && (cs.querySelector(".amb-thumb__word") || {}).textContent === P.PLET.salt && !!co.querySelector("svg.amb-thumb__shape path")
+    /* 17 Nov 2026, his answer "Shape alone at 44px": the head's thumb is the 44px coin, so it holds the book's own shape and no letter */
+    ok(!!cs && !!cs.querySelector("svg.amb-thumb__shape path") && !cs.querySelector(".amb-thumb__word") && !!co.querySelector("svg.amb-thumb__shape path")
       && cs.querySelector("svg.amb-thumb__shape path").getAttribute("d") !== co.querySelector("svg.amb-thumb__shape path").getAttribute("d"),
-      "10b the thumb holds the book's own shape and his letter");
+      "10b the thumb holds the book's own shape, alone at 44px (his answer of 17 Nov 2026)");
+    /* and his letter stands on every coin of 56px and over the page draws (the default 56px and lg 72px), the Ring bare */
+    const big = [...p.d.querySelectorAll(".amb-thumb--mark:not(.amb-thumb--md):not(.amb-thumb--sm)")];
+    const ringOf = (c) => /A8\.6 8\.6/.test(c.querySelector("path").getAttribute("d")), wordOf = (c) => (c.querySelector(".amb-thumb__word") || { textContent: "" }).textContent;
+    ok(big.some((c) => !ringOf(c)) && big.every((c) => (ringOf(c) ? wordOf(c) === "" : Object.values(P.PLET).includes(wordOf(c)))),
+      "10b every coin of 56px and over carries his letter, the Ring bare (his answer of 17 Nov 2026): " + big.length);
     ok(cs.getAttribute("aria-hidden") === "true" && /^Cube/.test(hs.getAttribute("aria-label")) && !hs.querySelector("svg.psym"),
       "10b the thumb is hidden from a reader and the head names the shape; the old mark is gone from the head");
     ok(attrsOf(p.d.getElementById("pPrices")).every((v) => !WORDS.some((w) => new RegExp("(^|[^a-z])" + w + "([^a-z]|$)").test(v))) && [...p.d.querySelectorAll("#pPrices .amb-thumb")].every((c) => [...c.classList].every((k) => /^amb-(thumb|thumb--(ring|mark|sm|md|lg)|kind-[1-6])$/.test(k))),

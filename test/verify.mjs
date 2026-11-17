@@ -23855,8 +23855,9 @@ await (async () => {
     /* 16 Nov 2026, the move to Ambient: a book's head on Prices is the mark thumb (the one drawing of a mark standing alone), its letter the thumb's word */
     const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector(".amb-thumb--mark");
       return [h.getAttribute("aria-label"), (s.querySelector(".amb-thumb__word") || { textContent: "" }).textContent, [...s.classList].filter((c) => /^amb-thumb--(sm|md|lg)$/.test(c)).map((c) => c.slice(11))[0] || ""].join(":"); });
-    ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube:I:md", "Droplet:G:md", "Lozenge:E:md", "Capsule:V:md", "Ring::md"]),
-      "Prices draws each book's letter in its mark thumb, priced and not yet priced alike, named by its shape, the Ring bare: " + JSON.stringify(heads8));
+    /* 17 Nov 2026, his answer "Shape alone at 44px": a book's head on Prices is a 44px coin, so it draws the shape alone, no letter */
+    ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube::md", "Droplet::md", "Lozenge::md", "Capsule::md", "Ring::md"]),
+      "Prices draws each book's head as its 44px mark thumb, the shape alone (his answer of 17 Nov 2026), priced and not yet priced alike, named by its shape: " + JSON.stringify(heads8));
     /* the thumbs carry the hue of each book by its index (the Ring, a book with no mark, none) */
     const kinds8 = [...D8.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark")].map((s) => ([...s.classList].find((c) => /^amb-kind-\d$/.test(c)) || ""));
     ok(JSON.stringify(kinds8) === JSON.stringify(["amb-kind-1", "amb-kind-2", "amb-kind-3", "amb-kind-4", ""]), "and each head's thumb carries its book's hue by its index, the Ring none: " + JSON.stringify(kinds8));
@@ -23889,9 +23890,14 @@ await (async () => {
     const check8 = [...D8.querySelectorAll(IN8("#osheet .amb-sheet__body li.amb-row"))], checkRows8 = [...D8.querySelectorAll(IN8("#osheet .salt-ledger"))];
     all8.push(...census8(D8.getElementById("osheet")));
     all8.push(...census8(D8.getElementById("pPrices")), ...census8(D8.getElementById("pCard")));
-    const bad8 = all8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
-    ok(all8.length >= 12 && !bad8.length && all8.some((m) => m.ring),
-      "every mark the page draws carries its letter, the Ring none, and none is under 20px: " + JSON.stringify({ marks: all8.length, bad: bad8.slice(0, 4) }));
+    /* 17 Nov 2026, his answer "Shape alone at 44px": a 44px coin (amb-thumb--md) is the shape alone, Ambient's own rule hiding its word; his letter is on every
+       coin of 56px and over. So a 44px coin is not asked for a letter here, the carried rule that hides it is pinned, and a lettered coin of 56px or over must stand. */
+    const bad8 = all8.filter((m) => m.px < 20 || (m.ring || m.px === 44 ? m.lets !== "" : m.lets.length !== 1));
+    const { AMB_CSS: AC8, SITE_CSS: SC8 } = await import("../stmt/statement-css.js");
+    ok(all8.length >= 12 && !bad8.length && all8.some((m) => m.ring) && all8.some((m) => !m.ring && m.px >= 56 && m.lets.length === 1),
+      "every mark the page draws of 56px and over carries its letter, the Ring none, and none is under 20px: " + JSON.stringify({ marks: all8.length, bad: bad8.slice(0, 4) }));
+    ok(AC8.includes(".amb-thumb--md > .amb-thumb__word { display: none; }") && !/amb-thumb__word[^{]*\{[^}]*display/.test(SC8),
+      "a 44px coin is the shape alone (his answer of 17 Nov 2026): the carried Ambient rule hides its word, and the page's own layer never shows it again");
     const cards8 = { again: home8.again, homeRows: home8.rows, row: row8, screen: screen8, check: check8 };
     const loose8 = Object.entries(cards8).filter(([, l]) => !l.length || !l.every(inCard8)).map(([k]) => k);
     ok(!loose8.length && !checkRows8.length && choice8.length >= 3,
@@ -23930,7 +23936,7 @@ await (async () => {
     sm8s.push(...census8(sd));
     loose8s.push(...[...sd.querySelectorAll(MARK8)].filter((s) => !inCard8(s)).map(() => p));
   }
-  const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
+  const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring || m.px === 44 ? m.lets !== "" : m.lets.length !== 1));   /* 17 Nov 2026: a 44px coin is the shape alone (his answer) */
   ok(docs8 > 3 && sm8s.length > docs8 && !sbad8.length && !loose8s.length,
     "the live statement's every mark is a card, lettered and none under 20px, its size under it and no shape word drawn: " + JSON.stringify({ docs8, marks: sm8s.length, bad: sbad8.slice(0, 3), loose: loose8s.length }));
   /* a new issue's table keeps its mark beside the size, lettered, and raised from the 13px it had to 20 */

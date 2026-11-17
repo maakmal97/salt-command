@@ -156,7 +156,7 @@ export function markThumbHtml(product, size) {
   const k = String(product || "").toLowerCase(), b = Object.keys(PSYM).filter((x) => x !== "_").indexOf(k), L = pletOf(k);
   return '<span class="amb-thumb amb-thumb--ring amb-thumb--mark' + (size ? " amb-thumb--" + size : "") + (b >= 0 && b < 6 ? " amb-kind-" + (b + 1) : "")
     + '" aria-hidden="true"><svg class="amb-thumb__shape" viewBox="0 0 24 24" focusable="false"><path d="' + (L ? L.d : PSYM[k] || RING) + '"/></svg>'
-    + (L && L.l ? '<span class="amb-thumb__word">' + esc(L.l) + "</span>" : "") + "</span>";
+    + (L && L.l && size !== "md" ? '<span class="amb-thumb__word">' + esc(L.l) + "</span>" : "") + "</span>";   /* 17 Nov 2026, his answer: a 44px coin is the shape alone */
 }
 
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
@@ -6047,7 +6047,7 @@ const CLIENT_JS = `
     var t=el('span','amb-thumb amb-thumb--ring amb-thumb--mark'+(size?' amb-thumb--'+size:'')+(b>=0&&b<6?' amb-kind-'+(b+1):'')); t.setAttribute('aria-hidden','true'); t.setAttribute('data-shape',pshape(product));
     var svg=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
     svg.setAttribute('class','amb-thumb__shape'); svg.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._)); svg.appendChild(d); t.appendChild(svg);
-    if(L&&L.l) t.appendChild(el('span','amb-thumb__word',L.l));
+    if(L&&L.l&&size!=='md') t.appendChild(el('span','amb-thumb__word',L.l));   /* 17 Nov 2026, his answer: a 44px coin is the shape alone, his letter on 56px and over */
     return t;
   }
   /* a row's second line or title: words, or a node */
@@ -6292,7 +6292,8 @@ const CLIENT_JS = `
   function yearMark(svg){
     var d=svg&&svg.querySelector('path'), t=svg&&(svg.querySelector('text')||(svg.parentNode&&svg.parentNode.querySelector&&svg.parentNode.querySelector('.amb-thumb__word'))), key=(d?d.getAttribute('d'):'')+'|'+(t?t.textContent:''), hit='_';
     Object.keys(PSYM).forEach(function(k){ if(k==='_'||hit!=='_') return; var s=psym(k,24), sd=s.querySelector('path'), st=s.querySelector('text');
-      if((sd?sd.getAttribute('d'):'')+'|'+(st?st.textContent:'')===key) hit=k; });
+      /* 17 Nov 2026 (his answer: a 44px coin is the shape alone): a drawing with no letter is read by its shape, a lettered one by both */
+      if(t?(sd?sd.getAttribute('d'):'')+'|'+(st?st.textContent:'')===key:(sd?sd.getAttribute('d'):'')===(d?d.getAttribute('d'):'')) hit=k; });
     return hit;
   }
   function yearRows(){
