@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a452895129b2ef97";
+var SALT_BUILD_ID="1f46dff4efacef41";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12526,7 +12526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1534","d":"17 Nov 2026","t":"YOUR APPROVE MOVES THE ORDER AT ONCE","n":["<b>NO MINUTE'S WAIT.</b> When you approve a change to a Counter order, the order now follows its row on the book in the same few seconds, instead of on the Desk's next minute. It no longer shows twice, and the customer is told the new figures straight away.","<b>ORDERS THAT SHARE ONE ROW</b> are still settled by the minute pass, so they are never split.","<b>THE PLAN FOR THE REST.</b> docs/plan-instant.html: your customers' moves reaching the Desk at once, and their statement following sooner. It waits on your three answers.","<b>NOTHING ELSE MOVES.</b> No price changed."]}];
+const evolution=[{"v":"v1535","d":"18 Nov 2026","t":"MAINTENANCE AT ONCE","n":["<b>ONE SWITCH.</b> Salt Admin's Shop > Hours puts the Counter into maintenance immediately, or turns it off early.","<b>BACK AT THE TIME GIVEN.</b> Before switching on, set the return time or date. The Counter opens again automatically then.","<b>SALT ADMIN STAYS OPEN.</b> Maintenance holds customer routes, not Salt Admin.","<b>NO TRADING ROWS CHANGE.</b> Maintenance changes access, not the Book or its prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12688,7 +12688,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Nov 2026, 18:53 KL';
+const LAST_UPDATED='18 Nov 2026, 00:36 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

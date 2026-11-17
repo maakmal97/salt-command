@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1535",
+  "d": "18 Nov 2026",
+  "t": "MAINTENANCE AT ONCE",
+  "n": [
+   "<b>ONE SWITCH.</b> Salt Admin's Shop > Hours puts the Counter into maintenance immediately, or turns it off early.",
+   "<b>BACK AT THE TIME GIVEN.</b> Before switching on, set the return time or date. The Counter opens again automatically then.",
+   "<b>SALT ADMIN STAYS OPEN.</b> Maintenance holds customer routes, not Salt Admin.",
+   "<b>NO TRADING ROWS CHANGE.</b> Maintenance changes access, not the Book or its prices."
+  ]
+ },
+ {
   "v": "v1534",
   "d": "17 Nov 2026",
   "t": "YOUR APPROVE MOVES THE ORDER AT ONCE",
