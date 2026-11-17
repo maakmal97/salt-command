@@ -1,0 +1,4 @@
+[
+ {"name": "the withdrawal control loses its 44px width", "file": "stmt/statement-css.js", "find": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); }", "replace": ".adm .maker-queue-action { min-height: var(--amb-tap); }"},
+ {"name": "the withdrawal control loses its 44px height", "file": "stmt/statement-css.js", "find": ".adm .maker-queue-action { min-width: var(--amb-tap); min-height: var(--amb-tap); }", "replace": ".adm .maker-queue-action { min-width: var(--amb-tap); }"}
+]
