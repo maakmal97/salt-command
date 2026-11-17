@@ -23054,7 +23054,7 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite"><span class="salt-settings__label" id="lockT" data-w="dev.out">Sign out this ')
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite"><span id="lockT" data-w="dev.out">Sign out this ')   /* 17 Nov 2026, the move to Ambient (the third red fix): Sign out is an action row whose label is a bare span */
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
     "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
