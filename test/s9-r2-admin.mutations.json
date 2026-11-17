@@ -1,0 +1,8 @@
+[
+ {
+  "name": "17 Nov 2026: an ID with no account no longer says its account comes with the next update",
+  "file": "stmt/owner.js",
+  "find": "function waitLine(){ return 'Their account comes with the next update.'; }",
+  "replace": "function waitLine(){ return 'Waiting.'; }"
+ }
+]

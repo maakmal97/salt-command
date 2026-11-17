@@ -1,0 +1,14 @@
+[
+ {
+  "name": "17 Nov 2026: Sign in again leads nowhere once the session has ended",
+  "file": "stmt/page.js",
+  "find": "<a class=\"amb-pill\" href=\"/all\" data-act=\"ended.sign-in\">Sign in again</a>",
+  "replace": "<a class=\"amb-pill\" href=\"/\" data-act=\"ended.sign-in\">Sign in again</a>"
+ },
+ {
+  "name": "17 Nov 2026: the ended page no longer says the sign-in has ended",
+  "file": "stmt/page.js",
+  "find": "<h1 class=\"amb-hero__title\">Your sign-in has ended</h1>",
+  "replace": "<h1 class=\"amb-hero__title\">Signed out</h1>"
+ }
+]

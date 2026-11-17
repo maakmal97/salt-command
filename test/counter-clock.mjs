@@ -17,15 +17,16 @@ export async function run({ ok }) {
     const D = dom.window.document, c = D.querySelector("header.amb-hero > .amb-hero__time > [data-clock]");
     const want = kl(), got = c ? c.textContent : null;
     ok(!!c && (got === want.t || got === kl().t), "a hero of Salt Admin shows the time in Kuala Lumpur, digits only: " + JSON.stringify({ got, want: want.t }));
-    c.textContent = "";
+    /* 17 Nov 2026, the move to Ambient (the third red fix): a hero with no clock fails the check above cleanly, it does not throw here */
+    if (c) c.textContent = "";
     D.dispatchEvent(new dom.window.Event("visibilitychange"));
-    ok(c.textContent === kl().t || c.textContent === want.t, "and paints it again when the page comes back into view: " + JSON.stringify(c.textContent));
+    ok(!!c && (c.textContent === kl().t || c.textContent === want.t), "and paints it again when the page comes back into view: " + JSON.stringify(c && c.textContent));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const counter = new JSDOM(landingPage("abcd-efgh", "nclk3", null)).window.document;
   ok(counter.querySelectorAll("#tabs header.amb-hero").length === 1 && counter.querySelectorAll("#tabs .amb-hero__time, #tabs [data-clock]").length === 0, "the Counter's hero carries no bare clock");
   const owner = landingPage("", "nclk2", { master: "", accounts: [] });
   const heroes = owner.match(/<header class="amb-hero amb-hero--compact amb-mesh">(?:(?!<\/header>)[\s\S])*<\/header>/g) || [];
   const timed = heroes.filter((h) => /<p class="amb-hero__time"><span class="abarlive" data-barlive( id="aBarLive")?><\/span><span class="clk" data-clock><\/span><\/p>/.test(h));
-  ok(heroes.length >= 5 && timed.length === heroes.filter((h) => !/id="placeT"/.test(h)).length && (owner.match(/id="aBarLive"/g) || []).length === 1,
+  ok(heroes.length >= 5 && timed.length === heroes.filter((h) => !/id="placeT"|data-w="door[.]h"/.test(h)).length && (owner.match(/id="aBarLive"/g) || []).length === 1,   /* 17 Nov 2026, the move to Ambient (the third red fix): the door's hero, like Home's, is the Counter's and carries no clock */
     "every place of Salt Admin carries the clock in its hero's time line, beside the live line, the first holding its id: " + [heroes.length, timed.length].join(" of "));
 }

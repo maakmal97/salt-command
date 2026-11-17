@@ -1896,10 +1896,10 @@ export const OWNER_JS = `
       box.appendChild(h);
       body=el('ul','amb-settings__list'); box.appendChild(body);
     }
-    function row(n){ var li=el('li'); li.appendChild(n); body.appendChild(li); return n; }
+    function bodyRow(n){ var li=el('li'); li.appendChild(n); body.appendChild(li); return n; }
     function sealedDraw(){
       head(true);
-      var b=aAct(aBtn('Unlock','amb-action','vault.unlock','spot:'+key)); b.addEventListener('click',function(){ vaultAsk(b); }); row(b);
+      var b=aAct(aBtn('Unlock','amb-action','vault.unlock','spot:'+key)); b.addEventListener('click',function(){ vaultAsk(b); }); bodyRow(b);
     }
     function said(text){ head(false); note.textContent=text; box.appendChild(note); }
     function adSpotPaint(p){
@@ -1907,18 +1907,18 @@ export const OWNER_JS = `
       var label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'', addr=typeof p.addr==='string'?p.addr.slice(0,200):'', mark=null;
       body.setAttribute('data-maker-pin','');
       /* 11 Nov 2026: a spot is a name and its typed address, or a point; one filed before carried a floor or unit */
-      if(label) row(aLine('Name',label));
-      if(addr) row(aLine('Address',addr));
-      if(unit) row(aLine('Floor or unit',unit));
+      if(label) bodyRow(aLine('Name',label));
+      if(addr) bodyRow(aLine('Address',addr));
+      if(unit) bodyRow(aLine('Floor or unit',unit));
       if(p.src==='addr'&&addr){
         var q=el('a','amb-action adspot__maps'); q.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr); q.target='_blank'; q.rel='noopener'; q.setAttribute('data-spot-maps','');
-        q.appendChild(document.createTextNode('Maps')); row(q);
+        q.appendChild(document.createTextNode('Maps')); bodyRow(q);
       }else if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
         var a=el('a','amb-action adspot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
         if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
-        a.appendChild(document.createTextNode('Maps')); row(a);
+        a.appendChild(document.createTextNode('Maps')); bodyRow(a);
       }else if(p.src!=='unit'&&p.src!=='addr') mark='Their link could not be opened to a point just now.';
-      var lk=aAct(aBtn('Lock','amb-action','vault.lock','spot:'+key)); lk.addEventListener('click',function(){ makerVaultLock(); }); row(lk);
+      var lk=aAct(aBtn('Lock','amb-action','vault.lock','spot:'+key)); lk.addEventListener('click',function(){ makerVaultLock(); }); bodyRow(lk);
       note.textContent=(mark?mark+' ':'')+'File it as their place on the Desk.'; box.appendChild(note);
     }
     async function adSpotOpen(){
@@ -2864,9 +2864,9 @@ export const OWNER_JS = `
   function makerWheel(parent,label,value,from){
     var L=labOf(label), vals=makerUnitSteps(from), s=actOn(el('input','amb-input'),L[1],L[2]), id='mwheel'+(++tileSeq), wrap=el('div','amb-field mrow'), lab=el('label','amb-field__label',L[0]), st=el('div','amb-stepper');
     lab.setAttribute('for',id); s.id=id; s.type='number'; s.setAttribute('inputmode','decimal'); s.step='any'; s.min=String(vals[0]); s.max=String(vals[vals.length-1]); s.setAttribute('data-amb-values',vals.join(' '));
-    st.appendChild(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="-1" aria-label="'+esch(L[0])+', one size smaller">'+amb.glyph('minus')+'</button>'));
+    st.appendChild(actOn(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="-1" aria-label="'+esch(L[0])+', one size smaller">'+amb.glyph('minus')+'</button>'),L[1]+'.down',L[2]));
     st.appendChild(s);
-    st.appendChild(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="1" aria-label="'+esch(L[0])+', one size larger">'+amb.glyph('plus')+'</button>'));
+    st.appendChild(actOn(amb.node('<button type="button" class="amb-circle amb-circle--lg" data-amb-step="1" aria-label="'+esch(L[0])+', one size larger">'+amb.glyph('plus')+'</button>'),L[1]+'.up',L[2]));
     wrap.appendChild(lab); wrap.appendChild(st); makerWheelSet(s,value); parent.appendChild(wrap);
     return s;
   }
@@ -6047,7 +6047,7 @@ export const OWNER_JS = `
     var t=moveBits(m,handover), u=m.undone?', undone':'';
     return (u?t.slice(0,t.length-u.length):t)+(m.date?', '+fmtWhen(m.date):'')+u;
   }
-  function moveKind(m){ return m.cash?'Payment':m.kg?'Handover':({Correction:'Correction',Modification:'Size and price',Cancellation:'Cancellation'})[m.kind]||'Step'; }
+  function moveStepKind(m){ return m.cash?'Payment':m.kg?'Handover':({Correction:'Correction',Modification:'Size and price',Cancellation:'Cancellation'})[m.kind]||'Step'; }
   function undoGo(h){
     var u=h.undo, a=u.after;
     if(u.kind==='terms') return 'Undo: '+h.rid+' at '+rm(a.total);
@@ -6075,7 +6075,7 @@ export const OWNER_JS = `
           var line=el('li','amb-journal__entry'), meta=el('p','amb-journal__meta'), when=el('time',null,m.date?fmtWhen(m.date):'Undated');
           line.setAttribute('data-move',String(m.i));
           if(m.date) when.setAttribute('datetime',String(m.date).slice(0,10));
-          meta.appendChild(when); if(h.rid) meta.appendChild(el('span','amb-journal__ref',h.rid)); meta.appendChild(el('span','amb-journal__kind',moveKind(m)));
+          meta.appendChild(when); if(h.rid) meta.appendChild(el('span','amb-journal__ref',h.rid)); meta.appendChild(el('span','amb-journal__kind',moveStepKind(m)));
           line.appendChild(meta); line.appendChild(el('p','amb-journal__text',moveBits(m,h.handover)));
           if(h.undo&&h.undo.i===m.i&&!h.undo.blocked) undoButton(line,h,m,key,order,sayKey||key);
           ol.appendChild(line);
@@ -7543,7 +7543,7 @@ export const OWNER_JS = `
     var sh=pill(['Show',at+'.show-link']); sh.setAttribute('aria-label','Show the guest price list');
     c._add(sh);
     var note=noteOf(c);
-    function openSilver(){
+    function openSilverOn(){
       var r=strangerLink();
       if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
       silverOpen[a.username]=true;
@@ -7556,8 +7556,8 @@ export const OWNER_JS = `
       box.appendChild(cp);
       if(c._grow) c._grow(); c._body.insertBefore(box, note); sh.disabled=true;
     }
-    sh.addEventListener('click', openSilver);
-    if(silverOpen[a.username]) openSilver();
+    sh.addEventListener('click', openSilverOn);
+    if(silverOpen[a.username]) openSilverOn();
   }
   function sendAt(rows){ return rows.map(function(a){ return a.issued||''; }).filter(Boolean).sort()[0]||''; }
   function sendNeed(rows){

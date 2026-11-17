@@ -19,5 +19,7 @@
  {"name":"the shell names a product","file":"stmt/words.js","find":"  \"ts.open\": \"0000-0000, every case\",","replace":"  \"ts.open\": \"0000-0000, every case of salt\","},
  {"name":"choosing an account does not move the view","file":"stmt/testsurface.js","find":"b.addEventListener('amb:change', function(){ pick(b.value); });","replace":"b.addEventListener('amb:change', function(){});"},
  {"name":"the tabs stay on the desk","file":"stmt/statement-css.js","find":".amb-segment.ts-tabs { display: none; }","replace":".amb-segment.ts-tabs { }"},
- {"name":"a move is not the system's pill","file":"stmt/testsurface.js","find":"'<button type=\"button\" class=\"amb-pill amb-pill--quiet\" id=\"tsAll\">'","replace":"'<button type=\"button\" class=\"ts-pill\" id=\"tsAll\">'"}
+ {"name":"a move is not the system's pill","file":"stmt/testsurface.js","find":"'<button type=\"button\" class=\"amb-pill amb-pill--quiet\" id=\"tsAll\">'","replace":"'<button type=\"button\" class=\"ts-pill\" id=\"tsAll\">'"},
+ {"name":"17 Nov 2026: the hidden view does not stand from 1080px","file":"stmt/statement-css.js","find":".ts-views iframe[hidden] { display: block !important; }","replace":".ts-views iframe[hidden] { display: none; }"},
+ {"name":"17 Nov 2026: the shell's own rule paints a literal colour","file":"stmt/statement-css.js","find":".ts-acts { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); }","replace":".ts-acts { display: flex; flex-wrap: wrap; gap: var(--amb-space-2); color: #123456; }"}
 ]
