@@ -29,7 +29,7 @@
   {"name": "the retired road is named again", "file": "stmt/worker.js", "find": "WHAT THE PAY SHEET SHOWS (his rule", "replace": "WHAT THE PAY SHEET SHOWS paynum (his rule"},
   {"name": "a fixture's payload is not held to its checksum", "file": "stmt/testfix.js", "find": "return { accounts: cleanList(p.accounts), down };", "replace": "return { accounts: p.accounts, down };"},
   {"name": "a fixture's down takes any value", "file": "stmt/testfix.js", "find": "typeof p.down[k] === \"boolean\"", "replace": "true"},
-  {"name": "the fixture version stays", "file": "stmt/testfix.js", "find": "export const FIX_VERSION = 19;", "replace": "export const FIX_VERSION = 18;"},
+  {"name": "the fixture version stays", "file": "stmt/testfix.js", "find": "export const FIX_VERSION = 20;", "replace": "export const FIX_VERSION = 18;"},
   {"name": "the invented payload has a wrong checksum", "file": "tools/testfix.mjs", "find": "return body + crc16(body);", "replace": "return body + \"0000\";"},
   {"name": "the invented JomPAY biller is gone", "file": "tools/testfix.mjs", "find": "biller: [\"99\", \"901\"].join(\"\"),", "replace": "biller: \"\","},
   {"name": "an invented account is shut", "file": "tools/testfix.mjs", "find": "down: { maybank: false, instapay: false } };", "replace": "down: { maybank: true, instapay: false } };"},

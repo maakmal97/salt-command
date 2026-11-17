@@ -10,7 +10,7 @@
 {"name":"the Counter drops the credit","file":"stmt/orders.js","find":"    if (isNum(ev.credit)) order.credit = ev.credit;\n","replace":"\n"},
 {"name":"the Counter takes credit uncapped","file":"stmt/orders.js","find":"ev.credit = +Math.min(body.credit, (+(isNum(ev.total) ? ev.total : order.total) || 0) + (+ev.delivery || 0)).toFixed(2);","replace":"ev.credit = +body.credit.toFixed(2);"},
 {"name":"the order owes its credit too","file":"stmt/orders.js","find":"export const dueOf = (o) => +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2);","replace":"export const dueOf = (o) => +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);"},
-{"name":"their page is not handed the credit","file":"stmt/orders.js","find":"\"rwd\", \"credit\"];","replace":"\"rwd\"];"},
+{"name":"their page is not handed the credit","file":"stmt/orders.js","find":"\"rwd\", \"credit\", \"changed\"];","replace":"\"rwd\", \"changed\"];"},
 {"name":"goods ahead ignores the credit","file":"stmt/orders.js","find":"paidF = owed > 0 ? ((+o.paid || 0) + (+o.credit || 0)) / owed : 0;","replace":"paidF = owed > 0 ? (+o.paid || 0) / owed : 0;"},
 {"name":"the row's paid is told whole","file":"engine/stages.mjs","find":"POSITION_ENGINE.txPaid(row) - (+(o && o.credit) || 0)).toFixed(2);","replace":"POSITION_ENGINE.txPaid(row)).toFixed(2);"},
 {"name":"his preview spends no credit","file":"src/orders.js","find":"    withCredit(entry, credit);\n    credit = +(+entry.payload.credit || 0);","replace":"    credit = 0;"},

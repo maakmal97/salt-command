@@ -829,5 +829,5 @@ export function restateTap(o, at, body, ctx) {
   if (wayMoves) { shown.mode = mode; shown.was.mode = o.mode || null; }
   if (over > 0.004) shown.refund = over;
   if (undone != null) shown.undo = undone;
-  return Object.assign({ entry, queueIt: true, site: { restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : {}) }, shown }, over > 0.004 ? { refund: over } : {});
+  return Object.assign({ entry, queueIt: true, site: { restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : { tell: true }) }, shown }, over > 0.004 ? { refund: over } : {});
 }

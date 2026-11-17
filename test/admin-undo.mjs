@@ -285,9 +285,10 @@ export async function run({ ok, pageWork }) {
   ok(bk5.status === "ready" && bk6.moved === 0 && !bk6.movedOn && !bk6.movedAt && bk6.status === "ready",
     "a settled order with goods out opens again at Ready, and one the book says moved nothing keeps no handover day: " + J([bk5.status, bk6.moved, bk6.movedOn || null, bk6.status]));
   ok(bk1.ev && bo.status === "ready" && bo.total === 120 && bo.paid === 110 && bo.queued.paid === 110 && bk2.status === 409 && bk3.status === 409
-    && bk4.status === "done" && bk4.paid === 90 && bk4.queued.paid === 90 && wakes(bk1.ev, bo, false) === null,
+    /* 17 Nov 2026 (his rule, the order-changes plan): the goods moving on the book are told as any change he makes is; it woke nobody before */
+    && bk4.status === "done" && bk4.paid === 90 && bk4.queued.paid === 90 && J(wakes(bk1.ev, bo, false)) === J({ k: "changed", o: bo.id, v: "owed" }),
   "the order book takes the book's figures whole on an agreed or settled order alone (17 Oct 2026: an agreed one too), never over a move it has not told, opens one left owing at its state before, "
-    + "and a cut with its money stays settled: " + J([bo.status, bo.total, bo.paid, bk2.error, bk3.error, bk4.status, bk4.paid]));
+    + "and a cut with its money stays settled; goods moved by the book are told as changed: " + J([bo.status, bo.total, bo.paid, bk2.error, bk3.error, bk4.status, bk4.paid, wakes(bk1.ev, bo, false)]));
   const fTDown = await fixture({ siteDown: true });
   const cutDown = await fTDown.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:04.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } });
   ok(cutDown.status === 400 && /could not be read/.test(cutDown.j.error || "") && !fTDown.drafts().some((d) => d.amends === "zu3"),

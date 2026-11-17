@@ -978,7 +978,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
         if (texts.length) await fixtureCheck(env, found, { texts });
         let move = rest;
         if (rest.status) move = { ...rest, maker: true };   /* the same rules as a real order's, held by the order book */
-        if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0), ...(rest.mode !== undefined ? { mode: rest.mode } : {}) } };
+        if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0), ...(rest.mode !== undefined ? { mode: rest.mode } : {}), ...(rest.undo === undefined ? { tell: true } : {}) } };
         if (op.action === "notfound") {
           const waiting = (found.payments || []).find((p) => p && p.claim === "waiting" && p.at === rest.claim);
           if (!waiting) return json({ ok: false, error: "That claim is not waiting any more." }, 409);

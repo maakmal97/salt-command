@@ -24276,8 +24276,9 @@ await (async () => {
      corrected, a step taken back, the twenty-first, its three cases the thirty-first; 18 Oct 2026 (Counter Batch A):
      point-moved, a collection point changed, the twenty-second, its one body the thirty-second; 02 Nov 2026 (Order as them): placed,
      an order he placed for them, the twenty-third, its one body the thirty-third; 13 Nov 2026 (price band version 3): remind, the reminder
-     to a late regular, the twenty-fourth, its one body the thirty-fourth */
-  ok(!own.length && kinds.length === 24 && seen.length === 34 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+     to a late regular, the twenty-fourth, its one body the thirty-fourth; 17 Nov 2026 (the order-changes plan): changed and discount, a change
+     of his to the order, the twenty-fifth and twenty-sixth, one body each, the thirty-fifth and thirty-sixth */
+  ok(!own.length && kinds.length === 26 && seen.length === 36 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -50642,6 +50643,11 @@ await (async () => {
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });
+})();
+
+section("17 Nov 2026: the customer's Bill says what we changed, and when it was a discount");
+await (async () => {
+  await (await import("./order-told-page.mjs")).run({ ok, pageWork });
 })();
 
 section("15 Nov 2026: one page width on every Salt surface, the Desk, Salt Admin and the Counter");

@@ -305,7 +305,7 @@ export async function storeCompare(env) {
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
   "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
-  "slot", "slotSpan", "point", "rwd", "credit"];   /* credit (27 Oct 2026): their refunds spent on this order at his Accept, paid already */   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
+  "slot", "slotSpan", "point", "rwd", "credit", "changed"];   /* changed (17 Nov 2026): the newest change of his and what the order was before it */   /* credit (27 Oct 2026): their refunds spent on this order at his Accept, paid already */   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
 /* COUNTER BATCH A (18 Oct 2026, his decisions): WHERE AN ORDER WAITS. The point's code travels (Details reads "Collected at Point A2"
    after); its place, the snapshot taken at Ready (pointAt), only while the order waits at it: Ready, to collect, with goods still to
    hand over. A fix undo or an amendment can set Ready on an order owing only money, and a customer who owes money is not waiting there. */
@@ -1058,7 +1058,11 @@ export function decideDesk(order, body, at) {
     if ((+order.paid || 0) > (+told.paid || 0) + 0.004 || (+order.moved || 0) > (+told.moved || 0) + 0.0004) return { error: "the order holds a move the book has not heard yet", status: 409 };
     if (Math.abs(r.qty - order.qty) < 0.0004 && Math.abs(r.total - order.total) < 0.004 && Math.abs(r.delivery - (+order.delivery || 0)) < 0.004
       && Math.abs(r.paid - (+order.paid || 0)) < 0.004 && Math.abs(r.moved - (+order.moved || 0)) < 0.0004 && bm === order.mode) return { none: true };
-    return { ev: Object.assign({ kind: "restate", at, book: true, qty: +r.qty.toFixed(3), total: +r.total.toFixed(2), delivery: +r.delivery.toFixed(2), paid: +r.paid.toFixed(2), moved: +r.moved.toFixed(3) }, bm !== order.mode ? { mode: bm } : {}) };
+    /* 17 Nov 2026: the book's figures are told (changed or a discount, tellOf) only where what they buy moves (size, goods, delivery, way); money and goods
+       handed over coming down on the book stay the desk's bookkeeping, as they were */
+    const terms = Math.abs(r.qty - order.qty) >= 0.0004 || Math.abs(r.total - order.total) >= 0.004 || Math.abs(r.delivery - (+order.delivery || 0)) >= 0.004 || bm !== order.mode;
+    return { ev: Object.assign({ kind: "restate", at, book: true, qty: +r.qty.toFixed(3), total: +r.total.toFixed(2), delivery: +r.delivery.toFixed(2), paid: +r.paid.toFixed(2), moved: +r.moved.toFixed(3) }, bm !== order.mode ? { mode: bm } : {},
+      terms ? { tell: tellOf(order, r.qty, r.total, r.delivery, bm), was: wasOf(order) } : {}) };
   }
   if (body && body.restate) {
     if (!PAYABLE.includes(order.status) && order.status !== "done") return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
@@ -1072,7 +1076,12 @@ export function decideDesk(order, body, at) {
     if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && m !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
     if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
     if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004 && m === order.mode) return { none: true };
-    return { ev: Object.assign({ kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) }, m !== order.mode ? { mode: m } : {}, r.undo === true ? { undo: true } : {}) };
+    if (r.tell !== undefined && r.tell !== true) return { error: "a restate is told or not", status: 400 };
+    /* his tap and the book's change alike take the one rule (Fable's review: "corrected" says a step was taken back by mistake, untrue of a
+       price cut on Record); an undo keeps its own corrected, in wakes */
+    const tell = r.undo === true ? null : tellOf(order, q, t, d, m);
+    return { ev: Object.assign({ kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) }, m !== order.mode ? { mode: m } : {}, r.undo === true ? { undo: true } : {},
+      tell ? { tell, was: wasOf(order) } : {}) };
   }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
@@ -1392,6 +1401,10 @@ export function applyEvent(order, ev) {
     /* never `closed`: that record says the order was closed short, which the customer's page reads as such */
     order.qty = ev.qty; order.total = ev.total; order.delivery = ev.delivery;
     if (ev.mode) order.mode = ev.mode;   /* 17 Nov 2026: the way, amended with the charge */
+    /* 17 Nov 2026: the newest told change, for their Bill; an undo, or a change that puts the order back as it was before the last one (a change
+       he rejected), takes the line away rather than leave it saying what is no longer so (Fable's review) */
+    if (ev.undo || backTo(order, ev.qty, ev.total, ev.delivery, order.mode)) delete order.changed;
+    else if (ev.tell && ev.was) order.changed = { at, kind: ev.tell, was: ev.was };
     order.history.push({ at, status: order.status, by: "desk", note: "amended to " + ev.qty + " unit, " + ev.total.toFixed(2) + " goods, " + ev.delivery.toFixed(2) + " delivery" + (ev.mode ? ", to " + ev.mode : "") });
     if (ev.book) {
       /* the book's money and goods, and what the ledger has been told of them with it, so the reconcile queues nothing for them */
@@ -1456,6 +1469,23 @@ const handedNews = (o) => (+o.moved > 0 ? (owedUnits(o) > 0.004 ? "part-" : "") 
    theirs covers; else a claim of theirs waiting on his Received; else paid. Read off the order the move folded into,
    so a Ready or a handover says what the customer's page says at that moment. */
 export const payCase = (o) => (dueOf(o) - claimedOf(o) > 0.004 ? "owed" : claimWaits(o) ? "waiting" : "paid");
+/* 17 Nov 2026 (his rule, the order-changes plan, his answers 1, 3 and 4 as recommended): A CHANGE OF HIS TO AN ORDER IS TOLD. A discount
+   when they owe less for the same or more units and it does not turn a delivery into a collection; every other change of what they buy is
+   "changed". Fewer units, or a free delivery added, says changed: discount is about money alone. */
+export function tellOf(order, qty, total, delivery, mode) {
+  if (backTo(order, qty, total, delivery, mode)) return "changed";   /* a change put back (one he rejected) is never a discount */
+  const before = (+order.total || 0) + (+order.delivery || 0), after = total + delivery;
+  const fewer = qty < (+order.qty || 0) - 0.0004, lostDelivery = order.mode === "deliver" && mode === "collect";
+  return after < before - 0.004 && !fewer && !lostDelivery ? "discount" : "changed";
+}
+/* figures that put an order back as it was before its newest told change */
+export function backTo(order, qty, total, delivery, mode) {
+  const w = order && order.changed && order.changed.was;
+  return !!w && Math.abs(qty - w.qty) < 0.0004 && Math.abs(total - w.total) < 0.004 && Math.abs(delivery - w.delivery) < 0.004
+    && (mode === "deliver" ? "deliver" : "collect") === w.mode;
+}
+/* what an order was before a change of its terms, kept on it for their Bill: the size, the goods, the delivery and the way */
+export const wasOf = (o) => ({ qty: +o.qty, total: +(+o.total || 0).toFixed(2), delivery: +(+o.delivery || 0).toFixed(2), mode: o.mode === "deliver" ? "deliver" : "collect" });
 /* the acknowledgement splits by case: paid in advance (`prepay`, the desk's verdict at Accept, V5b2a) pays now; else on
    credit, due at Ready (V2) */
 const ackNews = (o) => (o && o.prepay ? "confirmed" : "confirmed-credit");
@@ -1476,6 +1506,8 @@ export function wakes(ev, order, done) {
   if (ev.kind === "handover") return handedWake(order, o);
   /* plan 4 (16 Oct 2026, his answer): a move of his taken back on the book, or a change of terms undone, is told by its own banner, its body the case */
   if ((ev.kind === "fix" && ev.fix && ev.fix.undo) || (ev.kind === "restate" && ev.undo)) return { k: "corrected", o, v: payCase(order) };
+  /* 17 Nov 2026: a change of what they buy, his or the book's, told as changed or a discount */
+  if (ev.kind === "restate" && ["changed", "discount"].includes(ev.tell)) return { k: ev.tell, o, v: payCase(order) };
   /* a group order closed tells each joiner; poolClose puts each one's own order in o. A retry that only records what was left wakes nobody */
   if (ev.kind === "pclose") return ev.again ? null : { k: "pool-closed", o: "" };
   /* Step 1b: his reason at Decline or Cancel is the banner's body; his line on the order is, in quotation marks, under

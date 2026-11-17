@@ -13,7 +13,9 @@
  * Every assertion is red under its own mutation (test/amend-way.mutations.json). */
 import { readFileSync } from "node:fs";
 import { restateTap, termsFromRow, settledFromRow } from "../engine/stages.mjs";
-import { decideDesk, applyEvent } from "../stmt/orders.js";
+import { decideDesk, applyEvent, wakes, customerView } from "../stmt/orders.js";
+import { NEWS } from "../stmt/sw.js";
+import { buildAll, FEATURES } from "../tools/testfix.mjs";
 import { makerOrderFault } from "../src/maker.js";
 
 const at = new Date("2026-11-17T05:00:00.000Z");
@@ -60,6 +62,29 @@ export async function run({ ok }) {
   /* M8 */
   const pl = decideDesk(order({ pool: "p1", moved: 0 }), { restate: { qty: 1, total: 105, delivery: 0, mode: "deliver" } }, at.toISOString());
   ok(pl.error === "a group order is collect only", "M8: a group order's way is not changed: " + JSON.stringify(pl));
+  /* T1 to T5: version 1 of the order-changes plan, his answers as recommended: every change of his is told; a discount when cheaper for the same or more goods */
+  const told = (r, over) => { const o2 = order(over), d2 = decideDesk(o2, { restate: r }, at.toISOString()); if (d2.error) return { error: d2.error }; const a2 = applyEvent(order(over), d2.ev); return { ev: d2.ev, w: wakes(d2.ev, a2.order, a2.done), v: customerView(a2.order) }; };
+  const way = told({ qty: 1, total: 105, delivery: 15, mode: "deliver", tell: true }), cheaper = told({ qty: 1, total: 95, delivery: 0, tell: true });
+  const fewer = told({ qty: 0.5, total: 60, delivery: 0, tell: true }, { moved: 0 }), toCollect = told({ qty: 1, total: 105, delivery: 0, mode: "collect", tell: true }, { mode: "deliver", delivery: 15 });
+  ok(way.w && way.w.k === "changed" && cheaper.w && cheaper.w.k === "discount" && fewer.w && fewer.w.k === "changed" && toCollect.w && toCollect.w.k === "changed",
+    "T1: his change is told: a way and a charge as changed, a lower price as a discount, fewer units and a delivery turned collection as changed: " + JSON.stringify([way.w, cheaper.w, fewer.w, toCollect.w]));
+  const cutOnBook = told({ qty: 1, total: 95, delivery: 0 }), raisedOnBook = told({ qty: 1, total: 115, delivery: 0 }), undone = told({ qty: 1, total: 105, delivery: 0, undo: true }, { total: 95 });
+  ok(cutOnBook.w && cutOnBook.w.k === "discount" && raisedOnBook.w && raisedOnBook.w.k === "changed" && undone.w && undone.w.k === "corrected" && !("tell" in undone.ev),
+    "T2: a change the book makes takes the same rule (a cut a discount, a raise changed), and an undo keeps its own corrected: " + JSON.stringify([cutOnBook.w, raisedOnBook.w, undone.w]));
+  /* T7 (Fable's review): a raise he then rejected, put back by the book, says changed (never a discount) and takes the Bill's line away; so does an undo */
+  const raised = { total: 115, changed: { at: "2026-11-17T04:00:00.000Z", kind: "changed", was: { qty: 1, total: 105, delivery: 0, mode: "collect" } } };
+  const putBack = told({ qty: 1, total: 105, delivery: 0 }, raised), undoneBack = told({ qty: 1, total: 110, delivery: 0, undo: true }, raised);
+  ok(putBack.w && putBack.w.k === "changed" && putBack.v.changed === undefined && undoneBack.v.changed === undefined,
+    "T7: a change put back says changed, never a discount, and the Bill's line goes, as with an undo: " + JSON.stringify([putBack.w, putBack.v.changed, undoneBack.v.changed]));
+  ok(cheaper.v.changed && cheaper.v.changed.kind === "discount" && JSON.stringify(cheaper.v.changed.was) === JSON.stringify({ qty: 1, total: 105, delivery: 0, mode: "collect" }),
+    "T3: the order keeps what it was before his newest change, and their view carries it: " + JSON.stringify(cheaper.v.changed));
+  const bk4 = decideDesk(order({ status: "done", queued: { paid: 0, moved: 1 } }), { restate: { qty: 1, total: 105, delivery: 0, paid: 20, moved: 1, book: true } }, at.toISOString());
+  ok(bk4.ev && !bk4.ev.tell && decideDesk(order(), { restate: { qty: 1, total: 105, delivery: 15, mode: "deliver", tell: "yes" } }, at.toISOString()).error,
+    "T4: the book's money alone coming back is not told, and a restate's tell is true or absent: " + JSON.stringify(bk4.ev));
+  ok(NEWS.changed === "Your order has changed" && NEWS.discount === "You have received a discount on your order",
+    "T5: the customer's phone knows both banners, in his words: " + JSON.stringify([NEWS.changed, NEWS.discount]));
+  const fx = buildAll ? buildAll() : null, line = FEATURES.find(([n]) => /a discount after confirming/.test(n));
+  ok(!!line && Object.values(fx || {}).some((f) => line[1](f)), "T6: the practice accounts carry an order given a discount, its Bill saying what it was");
   /* M6 */
   const owner = readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8");
   const { REFUSALS } = (() => { const m = /var REFUSALS=(\{[\s\S]*?\n  \});/.exec(owner); return { REFUSALS: m ? new Function("return " + m[1])() : {} }; })();
