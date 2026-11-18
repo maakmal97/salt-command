@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1535","d":"18 Nov 2026","t":"MAINTENANCE AT ONCE","n":["<b>ONE SWITCH.</b> Salt Admin's Shop > Hours puts the Counter into maintenance immediately, or turns it off early.","<b>BACK AT THE TIME GIVEN.</b> Before switching on, set the return time or date. The Counter opens again automatically then.","<b>SALT ADMIN STAYS OPEN.</b> Maintenance holds customer routes, not Salt Admin.","<b>NO BANNERS WHILE IT IS ON.</b> Payment reminders and the other automatic banners wait until the Counter is back.","<b>NO TRADING ROWS CHANGE.</b> Maintenance changes access, not the Book or its prices."]}];
+const evolution=[{"v":"v1536","d":"18 Nov 2026","t":"ROOM TO WORK ON A LAPTOP","n":["<b>A SLIM HEADING.</b> From 960px wide, Salt Admin and Salt Counter put each place's name, its line and its one action on one row at the top. On a laptop the list and the open order gain about 170px of height.","<b>THE RAIL RUNS TO THE FOOT.</b> On Salt Admin its foot says Live, the time, and Open, Closed or Paused, in every place. A tap on the state opens Shop hours.","<b>A WIDER LIST.</b> The list beside an open order, card or account is up to 440px wide, so a row is no longer cut short.","<b>PHONES ARE UNCHANGED.</b> No price, route or request changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Nov 2026, 00:36 KL';
+const LAST_UPDATED='18 Nov 2026, 11:29 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

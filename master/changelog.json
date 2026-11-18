@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1536",
+  "d": "18 Nov 2026",
+  "t": "ROOM TO WORK ON A LAPTOP",
+  "n": [
+   "<b>A SLIM HEADING.</b> From 960px wide, Salt Admin and Salt Counter put each place's name, its line and its one action on one row at the top. On a laptop the list and the open order gain about 170px of height.",
+   "<b>THE RAIL RUNS TO THE FOOT.</b> On Salt Admin its foot says Live, the time, and Open, Closed or Paused, in every place. A tap on the state opens Shop hours.",
+   "<b>A WIDER LIST.</b> The list beside an open order, card or account is up to 440px wide, so a row is no longer cut short.",
+   "<b>PHONES ARE UNCHANGED.</b> No price, route or request changed."
+  ]
+ },
+ {
   "v": "v1535",
   "d": "18 Nov 2026",
   "t": "MAINTENANCE AT ONCE",
