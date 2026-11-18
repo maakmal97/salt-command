@@ -588,7 +588,11 @@ export const priceView = (p) => {
   if (!p || typeof p !== "object") return null;
   const v = { state: ["asked", "offered", "taken", "passed", "withdrawn"].includes(p.state) ? p.state : "asked" };
   /* 3 Nov 2026: and its id, which their Yes or No thanks names back, so an answer reaches only the offer they were shown */
-  if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { id: p.offer.id, total: p.offer.total, delivery: null, until: p.offer.until });
+  if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { id: p.offer.id, total: p.offer.total,
+    delivery: p.offer.termsChanged === true && typeof p.offer.delivery === "number" ? p.offer.delivery : null, until: p.offer.until },
+    p.offer.termsChanged === true && typeof p.offer.qty === "number" ? { qty: p.offer.qty } : {},
+    p.offer.termsChanged === true && typeof p.offer.mode === "string" ? { mode: p.offer.mode } : {},
+    p.offer.termsChanged === true && p.offer.slot ? { slot: p.offer.slot, slotSpan: p.offer.slotSpan || null } : {});
   /* version 2: his Accept for their yes, the whole order as he would agree it: goods, delivery and the window with its span */
   if (p.from === "accept") Object.assign(v, { from: "accept" }, p.offer && ["offered", "taken", "passed"].includes(p.state)
     ? { delivery: p.offer.delivery, slot: p.offer.slot || null, slotSpan: p.offer.slotSpan || null } : {});
@@ -822,7 +826,9 @@ export function decideCustomer(order, action, body, mine, at) {
        they are told it changed and read the new one. A page from before this version names none and answers the open offer */
     if (body && body.offer != null && String(body.offer) !== String(p.offer.id)) return Object.assign(refusal("offerChanged"), { status: 409 });
     if (action === "take" && String(at) > String(p.offer.until)) return Object.assign(refusal("offerLapsed"), { status: 409 });
-    if (action === "take" && (p.offer.product !== order.product || Math.abs(+p.offer.qty - +order.qty) > 0.0004)) return Object.assign(refusal("offerVoid"), { status: 409 });
+    if (action === "take" && (p.offer.product !== order.product
+      || Math.abs(+(p.offer.wasQty === undefined ? p.offer.qty : p.offer.wasQty) - +order.qty) > 0.0004
+      || p.offer.wasMode !== undefined && p.offer.wasMode !== order.mode)) return Object.assign(refusal("offerVoid"), { status: 409 });
     /* version 2: No thanks to his Accept withdraws the order, at no cost: nothing is paid before it is agreed */
     /* 06 Oct 2026: No thanks closes the ask. The order stands at its listed price; past the grid it has none, and is cancelled */
     return { ev: Object.assign({ kind: "price", at, state: action === "take" ? "taken" : "passed", by: "customer", offer: p.offer.id },
@@ -1121,7 +1127,23 @@ export function decideDesk(order, body, at) {
     if (!f || typeof f !== "object" || typeof f.id !== "string" || !/^[A-Za-z0-9_|:.-]{1,80}$/.test(f.id) || !isNum(f.total) || !(f.total > 0) || f.total > 1000000
       || typeof f.until !== "string" || !(Date.parse(f.until) > Date.parse(at)))
       return { error: "an offer is a figure for the goods, its own name and when it lapses", status: 400 };
-    return { ev: { kind: "offer", at, offer: { id: f.id, total: +f.total.toFixed(2), until: new Date(Date.parse(f.until)).toISOString(), product: order.product, qty: order.qty } } };
+    if (f.delivery !== undefined && (!isNum(f.delivery) || f.delivery > 1000000)
+      || f.qty !== undefined && (!isNum(f.qty) || !(f.qty > 0) || f.qty > 1000)
+      || f.mode !== undefined && !MODES.includes(f.mode)
+      || f.slot !== undefined && f.slot !== null && (typeof f.slot !== "string" || !SLOT_RE.test(f.slot))
+      || f.slotSpan !== undefined && f.slotSpan !== null && (typeof f.slotSpan !== "string" || !SPAN_RE.test(f.slotSpan))
+      || f.termsChanged !== undefined && typeof f.termsChanged !== "boolean"
+      || f.mode !== undefined && (f.delivery === undefined || f.mode === "collect" && f.delivery !== 0 || f.mode === "deliver" && f.delivery < 0)
+      || f.mode !== undefined && f.wasMode !== order.mode
+      || f.qty !== undefined && f.wasQty !== order.qty
+      || f.slot != null && f.mode !== "deliver")
+      return { error: "the offer's terms are not valid", status: 400 };
+    return { ev: { kind: "offer", at, offer: Object.assign({ id: f.id, total: +f.total.toFixed(2), until: new Date(Date.parse(f.until)).toISOString(),
+      product: order.product, qty: order.qty }, f.delivery !== undefined ? { delivery: +f.delivery.toFixed(2) } : {},
+      f.qty !== undefined ? { qty: f.qty } : {}, f.mode !== undefined ? { mode: f.mode } : {},
+      f.termsChanged === true ? { termsChanged: true } : {},
+      f.wasQty !== undefined ? { wasQty: f.wasQty } : {}, f.wasMode !== undefined ? { wasMode: f.wasMode } : {},
+      f.slot !== undefined ? { slot: f.slot } : {}, f.slotSpan !== undefined ? { slotSpan: f.slotSpan } : {}) } };
   }
   if (body && body.withdraw === true) {
     /* 2 Nov 2026 (his word): THEIR YES REACHED THE BOOK FIRST, AND THE EARLIER MOVE WINS, said in words on the Desk's road and on the practice one */
@@ -1183,7 +1205,12 @@ export function decideDesk(order, body, at) {
   if (body && body.total !== undefined && status !== "acknowledged") return { error: "a price is set only when the order is acknowledged", status: 400 };
   if (body && body.total !== undefined && (!isNum(body.total) || !(body.total > 0) || body.total > 1000000)) return { error: "the price set has to be a figure above nothing", status: 400 };
   const ev = { kind: "status", at, status, by: "desk" };
+  if (status === "acknowledged" && body && body.mode !== undefined && !MODES.includes(body.mode))
+    return { error: "the way is collect or deliver", status: 400 };
+  if (status === "acknowledged" && body && body.qty !== undefined && (!isNum(body.qty) || !(body.qty > 0) || body.qty > 1000))
+    return { error: "the size has to be a number above zero", status: 400 };
   if ((status === "ready" || status === "acknowledged") && body && MODES.includes(body.mode)) ev.mode = body.mode;
+  if (status === "acknowledged" && body && isNum(body.qty)) ev.qty = body.qty;
   /* COUNTER BATCH A (his answer of 18 Oct 2026): A COLLECTION IS READY AT A POINT. Ready to collect names one of his points and keeps
      its place as it stands now (a snapshot: editing the point later moves no order); Ready again for the rest keeps the one it has
      unless he names another. A point never rides on a delivery, a Decline or a Cancel. */
@@ -1211,9 +1238,11 @@ export function decideDesk(order, body, at) {
        Anything else is left out, never refused: the row is approved already, and the acknowledgement must not stall */
     if (body && typeof body.slot === "string" && SLOT_RE.test(body.slot) && typeof body.slotSpan === "string" && SPAN_RE.test(body.slotSpan)
       && ev.delivery !== undefined && (ev.mode || order.mode) === "deliver"
-      && ((!order.slot && !order.wantBy) || (order.price && order.price.from === "accept" && order.price.state === "taken" && order.price.offer && order.price.offer.slot === body.slot))) {
+      && ((!order.slot && !order.wantBy) || (order.price && order.price.state === "taken" && order.price.offer && order.price.offer.slot === body.slot))) {
       ev.slot = body.slot; ev.slotSpan = body.slotSpan;   /* version 2: or the window of the offer they said yes to */
     }
+    /* V3: a day or window clears only when this very change makes the way collect; a collect order keeps what it has */
+    if (ev.mode === "collect" && order.mode !== "collect") { ev.clearSlot = true; ev.clearWantBy = true; }
   }
   /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
      Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
@@ -1233,6 +1262,9 @@ export function applyEvent(order, ev) {
   if (ev.kind === "status") {
     if (ev.replacement) order.replacement = ev.replacement;
     if (ev.mode) order.mode = ev.mode;
+    if (ev.qty !== undefined) order.qty = ev.qty;
+    if (ev.clearSlot) { delete order.slot; delete order.slotSpan; }
+    if (ev.clearWantBy) delete order.wantBy;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
     if (ev.rwd === "cross" && order.rwd !== "given") order.rwd = "cross";
@@ -1681,14 +1713,18 @@ function acceptOfferEv(order, f, at) {
   const p = order.price;
   if (p && (p.from === "accept" ? p.state === "taken" || offerOpen(order, at) : !["passed", "withdrawn"].includes(p.state)))
     return { error: "an offer or an ask is open on this order", status: 409 };
-  const deliver = order.mode === "deliver";
+  const qty = f.qty === undefined ? order.qty : f.qty, mode = f.mode === undefined ? order.mode : f.mode;
+  const deliver = mode === "deliver";
   if (typeof f.id !== "string" || !/^[A-Za-z0-9_|:.-]{1,80}$/.test(f.id) || !isNum(f.total) || !(f.total > 0) || f.total > 1000000
-    || !isNum(f.delivery) || f.delivery < 0 || (!deliver && f.delivery !== 0) || typeof f.until !== "string" || !(Date.parse(f.until) > Date.parse(at)))
+    || !isNum(f.delivery) || f.delivery < 0 || (!deliver && f.delivery !== 0) || !isNum(qty) || !(qty > 0) || qty > 1000 || !MODES.includes(mode)
+    || f.wasQty !== undefined && f.wasQty !== order.qty || f.wasMode !== undefined && f.wasMode !== order.mode
+    || typeof f.until !== "string" || !(Date.parse(f.until) > Date.parse(at)))
     return { error: "an offer for their yes is a figure for the goods, a delivery charge, its own name and when it lapses", status: 400 };
   if (f.slot != null && (!deliver || typeof f.slot !== "string" || !SLOT_RE.test(f.slot) || typeof f.slotSpan !== "string" || !SPAN_RE.test(f.slotSpan)))
     return { error: "a window is a day and one of the six four-hour windows, on a delivery", status: 400 };
   return { ev: { kind: "offer", at, offer: { id: f.id, kind: "accept", total: +f.total.toFixed(2), delivery: +f.delivery.toFixed(2),
-    slot: f.slot || null, slotSpan: f.slot ? f.slotSpan : null, until: new Date(Date.parse(f.until)).toISOString(), product: order.product, qty: order.qty } } };
+    slot: f.slot || null, slotSpan: f.slot ? f.slotSpan : null, until: new Date(Date.parse(f.until)).toISOString(), product: order.product, qty, mode,
+    termsChanged: true, wasQty: f.wasQty === undefined ? order.qty : f.wasQty, wasMode: f.wasMode === undefined ? order.mode : f.wasMode } } };
 }
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
@@ -1698,7 +1734,7 @@ const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done
  *  { error, status }. */
 export async function deskBody(env, body) {
   if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
-  if (body && body.offer && body.offer.kind === "accept" && body.offer.slot) {
+  if (body && body.offer && body.offer.slot) {
     const s = await ackSlot(env, { slot: body.offer.slot });
     if (!s.slot) return { error: "that window has passed: choose another", status: 400 };
     body = Object.assign({}, body, { offer: Object.assign({}, body.offer, { slot: s.slot, slotSpan: s.slotSpan }) });
