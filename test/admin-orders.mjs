@@ -264,13 +264,13 @@ export async function run({ ok, pageWork }) {
     /* 2 Nov 2026 (his Orders canvas, page 2): his decision (Goods, Agree), then the Messages thread open (quick replies, the box, Send, Save this line, No reply needed; no Answer fold),
        then This customer, and Decline the order last */
     /* 5 Nov 2026 (the pane, his answer B): Agree, the one pill, is the card's pinned foot, so it is the card's last control, after Decline the order */
-    const want = ["order.total", "order.quick-reply", "order.quick-reply", "order.reply-text", "order.reply",
+    const want = ["order.total", "order.qty", "order.mode", "order.fee", "order.fee-other-amount", "order.window", "order.quick-reply", "order.quick-reply", "order.reply-text", "order.reply",
       "order.quick-keep", "order.no-reply", "order.customer", "order.decline", "order.accept"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */
     const pv = p.posts.filter((x) => /preview$/.test(x.route));
-    ok(pv.length === 1 && pv[0].route === "/all/maker/orders/ord-p1/preview" && same(pv[0].body, { total: 200, delivery: 0 }) && !!d.querySelector("#makerReview [data-accept]")
+    ok(pv.length === 1 && pv[0].route === "/all/maker/orders/ord-p1/preview" && same(pv[0].body, { total: 200, delivery: 0, qty: 2, mode: "collect" }) && !!d.querySelector("#makerReview [data-accept]")
       && !p.acts("ord-p1").includes("order.preview"),
       "and opening it sends the request the Preview button sent, the same route and body, once, and then offers Accept, with no Preview button: " + JSON.stringify(pv));
     await p.tick();

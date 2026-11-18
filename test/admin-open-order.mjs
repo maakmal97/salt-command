@@ -42,11 +42,11 @@ export async function run({ ok, pageWork }) {
         && bill.querySelector(":scope > .amb-settings__head") && t(bill.querySelector(".amb-settings__head")) === "Bill" && bill.querySelector(":scope > ul.amb-settings__list.ordmoney")
         && bill.querySelector("[data-total]").classList.contains("obill__total") && !card.querySelector(".salt-ledger"),
         "V2: his card is the shared band and the Bill as a settings list, no glass card around it and no ledger: " + t(bill));
-      const agree = card.querySelector(".oagreesec"), rows = agree ? [...agree.querySelectorAll(".amb-field > .amb-field__label")].map(t) : [];
+      const agree = card.querySelector(".oagreesec"), rows = agree ? [...agree.querySelectorAll(".amb-field:not([hidden]) > .amb-field__label")].map(t) : [];
       /* 16 Nov 2026, the move to Ambient (place G): Agree's terms are Ambient's fields under a section head, and the one main pill, Agree, stands in the record's foot */
       const pills = [...card.querySelectorAll(".amb-pill:not(.amb-pill--quiet):not(.amb-pill--sm)")].filter((b) => !b.hidden);
-      ok(!!agree && t(agree.querySelector(":scope > h2.amb-section")) === "Agree" && J(rows) === J(["Goods, RM"]) && agree.querySelector('.amb-field [data-act="order.total"]')
-        && pills.length === 1 && pills[0].getAttribute("data-act") === "order.accept" && !!pills[0].closest(".amb-foot"), "V3: Agree's terms are fields under its head and the one main pill is Agree, in the foot: " + J([rows, pills.map(t)]));
+      ok(!!agree && t(agree.querySelector(":scope > h2.amb-section")) === "Change" && J(rows) === J(["Goods, RM", "Units", "Way"]) && agree.querySelector('.amb-field [data-act="order.total"]')
+        && pills.length === 1 && pills[0].getAttribute("data-act") === "order.accept" && !!pills[0].closest(".amb-foot"), "V3: Change's terms (Goods, Units, Way) are fields under its head and the one main pill is Agree, in the foot: " + J([rows, pills.map(t)]));
       /* 5 Nov 2026 (the pane): the pinned foot (Agree) is the card's last child but not its end, so the end is read without it, as without the maker foot */
       const ctl = [...card.querySelectorAll("button,input,select,summary,a[href]")].filter((b) => !b.hidden && !b.closest("[hidden]") && !b.closest(".maker-foot") && !b.closest(".ofoot")).pop();
       const asked = []; answerSheets(p.w, asked, () => false);

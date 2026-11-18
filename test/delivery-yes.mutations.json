@@ -32,8 +32,8 @@
  {
   "name": "their page reads no span",
   "file": "stmt/orders.js",
-  "find": ", slotSpan: p.offer.slotSpan || null }",
-  "replace": " }"
+  "find": "slot: p.offer.slot || null, slotSpan: p.offer.slotSpan || null }",
+  "replace": "slot: p.offer.slot || null }"
  },
  {
   "name": "a lapsed offer still holds the order against another",
@@ -56,7 +56,7 @@
  {
   "name": "the acknowledgement drops the window they said yes to",
   "file": "stmt/orders.js",
-  "find": " || (order.price && order.price.from === \"accept\" && order.price.state === \"taken\" && order.price.offer && order.price.offer.slot === body.slot))",
+  "find": " || (order.price && order.price.state === \"taken\" && order.price.offer && order.price.offer.slot === body.slot))",
   "replace": ")"
  },
  {
@@ -80,14 +80,14 @@
  {
   "name": "Accept agrees a raise alone",
   "file": "src/orders.js",
-  "find": "  if (!again && needsYes(o, { total: pr.price, slot: win.slot }))",
+  "find": "  if (!again && needsYes(o, { total: terms.goods, slot: terms.order.slot !== o.slot ? terms.order.slot : null, qty: terms.order.qty, mode: terms.order.mode }))",
   "replace": "  if (false)"
  },
  {
   "name": "the take drafts at their placed price",
   "file": "src/orders.js",
-  "find": "off.delivery || 0, at, { orders: f.orders, unasked: true }, off.total, mirror, shownWhy(shown))",
-  "replace": "off.delivery || 0, at, { orders: f.orders, unasked: true }, null, mirror, shownWhy(shown))"
+  "find": "total: off.total, delivery: off.delivery || 0, slot: off.slot || null, slotSpan: off.slotSpan || null });\n    const pv = await previewAck(env, terms, o.code, off.delivery || 0, at, { orders: f.orders, unasked: true }, off.total, mirror",
+  "replace": "total: o.total, delivery: off.delivery || 0, slot: off.slot || null, slotSpan: off.slotSpan || null });\n    const pv = await previewAck(env, terms, o.code, off.delivery || 0, at, { orders: f.orders, unasked: true }, null, mirror"
  },
  {
   "name": "the offer's window is not cut to the hours",
@@ -104,8 +104,8 @@
  {
   "name": "an offer is sent with nothing to agree",
   "file": "src/orders.js",
-  "find": "  if (!needsYes(o, { total: pr.price, slot: win.slot })) return { ok: false, status: 409, error: \"nothing here needs their yes: Accept it\" };\n",
-  "replace": ""
+  "find": "  if (!needsYes(o, { total: terms.goods, slot: terms.order.slot !== o.slot ? terms.order.slot : null, qty: terms.qty, mode: terms.mode }))",
+  "replace": "  if (false)"
  },
  {
   "name": "a sheet's line is sent for their yes",
@@ -146,8 +146,8 @@
  {
   "name": "their page drops the window",
   "file": "stmt/page.js",
-  "find": "if(p.slot&&p.slotSpan){ var wl=el('p','onote'); setW(wl,'np.cWin'",
-  "replace": "if(false){ var wl=el('p','onote'); setW(wl,'np.cWin'"
+  "find": "tw('np.cDeliv',{rm:rm(+p.delivery||0)})));\n        if(p.slot&&p.slotSpan){ var wl=el('p','onote'); setW(wl,'np.cWin'",
+  "replace": "tw('np.cDeliv',{rm:rm(+p.delivery||0)})));\n        if(false){ var wl=el('p','onote'); setW(wl,'np.cWin'"
  },
  {
   "name": "Yes says no",
@@ -206,7 +206,7 @@
  {
   "name": "Salt Admin's offer drops the window",
   "file": "stmt/owner.js",
-  "find": "if(order.mode==='deliver'&&wv&&!askOpen) ob.slot=wv;",
+  "find": "if(s.mode==='deliver'&&wv&&!askOpen) ob.slot=wv;",
   "replace": ""
  },
  {
@@ -226,5 +226,263 @@
   "file": "stmt/page.js",
   "find": "^price (asked|offered|confirm|taken|",
   "replace": "^price (asked|offered|taken|"
+ },
+ {
+  "name": "V3: a changed unit count needs their yes",
+  "file": "src/orders.js",
+  "find": "|| (x && typeof x.qty === \"number\" && Math.abs(x.qty - (+o.qty || 0)) > 0.0004)",
+  "replace": "|| false"
+ },
+ {
+  "name": "V3: a changed way needs their yes",
+  "file": "src/orders.js",
+  "find": "|| (x && typeof x.mode === \"string\" && x.mode !== o.mode);",
+  "replace": "|| false;"
+ },
+ {
+  "name": "V3: their page reads the offered units",
+  "file": "stmt/orders.js",
+  "find": "p.offer.termsChanged === true && typeof p.offer.qty === \"number\" ? { qty: p.offer.qty } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "V3: their page reads the offered way",
+  "file": "stmt/orders.js",
+  "find": "p.offer.termsChanged === true && typeof p.offer.mode === \"string\" ? { mode: p.offer.mode } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "V3: the acknowledgement applies the units",
+  "file": "stmt/orders.js",
+  "find": "if (ev.qty !== undefined) order.qty = ev.qty;",
+  "replace": ""
+ },
+ {
+  "name": "V3: the acknowledgement carries the units",
+  "file": "stmt/orders.js",
+  "find": "if (status === \"acknowledged\" && body && isNum(body.qty)) ev.qty = body.qty;",
+  "replace": ""
+ },
+ {
+  "name": "V3: a collection clears the old window and date",
+  "file": "stmt/orders.js",
+  "find": "if (ev.mode === \"collect\" && order.mode !== \"collect\") { ev.clearSlot = true; ev.clearWantBy = true; }",
+  "replace": ""
+ },
+ {
+  "name": "V3: the Desk's take is judged on the units they were shown",
+  "file": "src/orders.js",
+  "find": "Math.abs(+o.qty - +(off.wasQty === undefined ? off.qty : off.wasQty))",
+  "replace": "Math.abs(+o.qty - +off.qty)"
+ },
+ {
+  "name": "V3: the approved yes sends the units to the order",
+  "file": "src/orders.js",
+  "find": "terms && typeof terms.qty === \"number\" ? { qty: terms.qty } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "V3: the approved yes sends the way to the order",
+  "file": "src/orders.js",
+  "find": "terms && typeof terms.mode === \"string\" ? { mode: terms.mode } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "V3: Accept refuses changed terms for their yes",
+  "file": "src/orders.js",
+  "find": "status: 409, needsYes: true, error: \"these terms need their yes",
+  "replace": "status: 200, needsYes: true, error: \"these terms need their yes"
+ },
+ {
+  "name": "V3: the preview says the terms need their yes",
+  "file": "src/orders.js",
+  "find": "needsYes: needsYes(o, { total: terms.goods,",
+  "replace": "needsYes: false && needsYes(o, { total: terms.goods,"
+ },
+ {
+  "name": "V3: a trip keeps one way",
+  "file": "src/orders.js",
+  "find": "if (mode !== o.mode && o.sheet &&",
+  "replace": "if (false && mode !== o.mode && o.sheet &&"
+ },
+ {
+  "name": "V3: a group order keeps its size and way",
+  "file": "src/orders.js",
+  "find": "if (o.pool && (qty !== +o.qty || mode !== o.mode))",
+  "replace": "if (false && o.pool && (qty !== +o.qty || mode !== o.mode))"
+ },
+ {
+  "name": "V3: a collection has no delivery charge in the preview",
+  "file": "stmt/owner.js",
+  "find": "if(termsMode!=='deliver') return 0;",
+  "replace": "if(false) return 0;"
+ },
+ {
+  "name": "V3: the sheet reads the units",
+  "file": "stmt/owner.js",
+  "find": "payload.qty=Number(quantity.value); ",
+  "replace": ""
+ },
+ {
+  "name": "V3: the offer sent carries the units and way",
+  "file": "stmt/owner.js",
+  "find": "var ob={total:s.total,delivery:s.delivery,qty:s.qty,mode:s.mode,hash:s.offerHash};",
+  "replace": "var ob={total:s.total,delivery:s.delivery,hash:s.offerHash};"
+ },
+ {
+  "name": "V3: a group order's units and way are locked in the sheet",
+  "file": "stmt/owner.js",
+  "find": "wayAllowed=(!order.sheet||sheetOrders.length<2)&&!order.pool",
+  "replace": "wayAllowed=(!order.sheet||sheetOrders.length<2)"
+ },
+ {
+  "name": "V3: Negotiate's offer drops the way",
+  "file": "stmt/orders.js",
+  "find": "f.mode !== undefined ? { mode: f.mode } : {},",
+  "replace": "{},"
+ },
+ {
+  "name": "V3: Negotiate's offer drops what it was changed from",
+  "file": "stmt/orders.js",
+  "find": "f.wasQty !== undefined ? { wasQty: f.wasQty } : {}, f.wasMode !== undefined ? { wasMode: f.wasMode } : {},",
+  "replace": "{}, {},"
+ },
+ {
+  "name": "V3: Negotiate's offer takes a charge on a collection",
+  "file": "stmt/orders.js",
+  "find": "f.mode === \"collect\" && f.delivery !== 0 ||",
+  "replace": ""
+ },
+ {
+  "name": "V3: Negotiate's offer takes a way with no charge",
+  "file": "stmt/orders.js",
+  "find": "f.mode !== undefined && (f.delivery === undefined ||",
+  "replace": "f.mode !== undefined && (false ||"
+ },
+ {
+  "name": "V3: Negotiate's offer takes terms changed from another way",
+  "file": "stmt/orders.js",
+  "find": "|| f.mode !== undefined && f.wasMode !== order.mode",
+  "replace": ""
+ },
+ {
+  "name": "V3: Negotiate's offer takes terms changed from another size",
+  "file": "stmt/orders.js",
+  "find": "|| f.qty !== undefined && f.wasQty !== order.qty",
+  "replace": ""
+ },
+ {
+  "name": "V3: Negotiate's offer takes a flag that is no flag",
+  "file": "stmt/orders.js",
+  "find": "|| f.termsChanged !== undefined && typeof f.termsChanged !== \"boolean\"",
+  "replace": ""
+ },
+ {
+  "name": "V3: Negotiate's offer takes a size of nothing",
+  "file": "stmt/orders.js",
+  "find": "|| f.qty !== undefined && (!isNum(f.qty) || !(f.qty > 0) || f.qty > 1000)",
+  "replace": ""
+ },
+ {
+  "name": "V3: Negotiate's offer takes a window on a collection",
+  "file": "stmt/orders.js",
+  "find": "|| f.slot != null && f.mode !== \"deliver\")",
+  "replace": ")"
+ },
+ {
+  "name": "V3: Negotiate's offer takes a negative charge",
+  "file": "stmt/orders.js",
+  "find": "f.mode === \"deliver\" && f.delivery < 0",
+  "replace": "false"
+ },
+ {
+  "name": "V3: their take is judged on the units they were shown",
+  "file": "stmt/orders.js",
+  "find": "Math.abs(+(p.offer.wasQty === undefined ? p.offer.qty : p.offer.wasQty) - +order.qty)",
+  "replace": "Math.abs(+p.offer.qty - +order.qty)"
+ },
+ {
+  "name": "V3: their take is judged on the way they were shown",
+  "file": "stmt/orders.js",
+  "find": "|| p.offer.wasMode !== undefined && p.offer.wasMode !== order.mode)) return",
+  "replace": "|| false)) return"
+ },
+ {
+  "name": "V3: the Desk's take is judged on the way they were shown",
+  "file": "src/orders.js",
+  "find": "|| (off.wasMode !== undefined && o.mode !== off.wasMode) ? \"the order no longer has the terms",
+  "replace": "? \"the order no longer has the terms"
+ },
+ {
+  "name": "V3: their page drops the offered units",
+  "file": "stmt/page.js",
+  "find": "w.appendChild(ambTile(tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(proposedQty||1)).toFixed(2))})));\n      if(Math.abs(proposedQty-(+o.qty||0))>0.0004) ",
+  "replace": "w.appendChild(ambTile(tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(proposedQty||1)).toFixed(2))})));\n      if(false) "
+ },
+ {
+  "name": "V3: their page drops the offered way",
+  "file": "stmt/page.js",
+  "find": "\n      if(proposedMode!==o.mode) w.appendChild",
+  "replace": "\n      if(false) w.appendChild"
+ },
+ {
+  "name": "V3: their page drops the offered delivery charge",
+  "file": "stmt/page.js",
+  "find": "if(proposedMode==='deliver'&&typeof p.delivery==='number')",
+  "replace": "if(false)"
+ },
+ {
+  "name": "V3: their page says collect or deliver from the order, not the offer",
+  "file": "stmt/page.js",
+  "find": "tw(proposedMode==='deliver'?'np.deliv':'np.collect')",
+  "replace": "tw(o.mode==='deliver'?'np.deliv':'np.collect')"
+ },
+ {
+  "name": "V3: their page drops the window of an offer on a placed order",
+  "file": "stmt/page.js",
+  "find": "tw('np.cDeliv',{rm:rm(+p.delivery||0)})));\n      if(p.slot&&p.slotSpan){ var wl=el('p','onote'); setW(wl,'np.cWin'",
+  "replace": "tw('np.cDeliv',{rm:rm(+p.delivery||0)})));\n      if(false){ var wl=el('p','onote'); setW(wl,'np.cWin'"
+ },
+ {
+  "name": "V3: a changed size is not refilled with their price",
+  "file": "src/orders.js",
+  "find": "    pr.price = +(+card).toFixed(2);\n",
+  "replace": ""
+ },
+ {
+  "name": "V3: a typed total is overridden by their price at a changed size",
+  "file": "src/orders.js",
+  "find": "if (pr.price == null && Math.abs(qty - (+o.qty || 0)) > 0.0004) {",
+  "replace": "if (Math.abs(qty - (+o.qty || 0)) > 0.0004) {"
+ },
+ {
+  "name": "V3: an unchanged size is refilled when it is named",
+  "file": "src/orders.js",
+  "find": "if (pr.price == null && Math.abs(qty - (+o.qty || 0)) > 0.0004) {",
+  "replace": "if (pr.price == null && body && body.qty !== undefined) {"
+ },
+ {
+  "name": "V3: a size with no price for them is not refused",
+  "file": "src/orders.js",
+  "find": "if (!(Number.isFinite(+card) && +card > 0)) return { error: \"type your price for the goods first\" };",
+  "replace": "if (false) return { error: \"type your price for the goods first\" };"
+ },
+ {
+  "name": "V3: the sheet sends the stale total with a changed size",
+  "file": "stmt/owner.js",
+  "find": "payload=refill?{}:{total:Number(total.value)}",
+  "replace": "payload={total:Number(total.value)}"
+ },
+ {
+  "name": "V3: the sheet keeps the stale goods figure when the units change",
+  "file": "stmt/owner.js",
+  "find": "{ refillGoods=true; total.value=''; }",
+  "replace": "{ refillGoods=true; }"
+ },
+ {
+  "name": "V3: the sheet is not filled from the preview",
+  "file": "stmt/owner.js",
+  "find": "payload.total=given; total.value=String(given);",
+  "replace": "payload.total=given;"
  }
 ]

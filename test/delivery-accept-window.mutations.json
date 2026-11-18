@@ -26,20 +26,20 @@
   {
     "name": "Accept reads no window",
     "file": "src/orders.js",
-    "find": "  const win = again ? { slot: null } : slotOf(body, o, at);",
-    "replace": "  const win = { slot: null };"
+    "find": "const win = slotOf(body, next, at);",
+    "replace": "const win = { slot: null };"
   },
   {
     "name": "his yes forgets the window",
     "file": "src/orders.js",
-    "find": "pricing: pv.pricing }, win.slot ? { slot: win.slot } : {}) });",
-    "replace": "pricing: pv.pricing }, {}) });"
+    "find": "delivery: terms.delivery, slot: terms.order.slot, slotSpan: terms.order.slotSpan || null } } });",
+    "replace": "delivery: terms.delivery, slot: null, slotSpan: null } } });"
   },
   {
     "name": "the approved row moves no window",
     "file": "src/orders.js",
-    "find": "      slotShown(shown) ? { slot: slotShown(shown) } : {}));",
-    "replace": "      {}));"
+    "find": "terms && Object.hasOwn(terms, \"slot\") ? { slot: terms.slot, slotSpan: terms.slotSpan || null }",
+    "replace": "terms && Object.hasOwn(terms, \"slot\") ? {}"
   },
   {
     "name": "the Counter overrides their window",
@@ -160,5 +160,11 @@
     "file": "stmt/orders.js",
     "find": "      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;",
     "replace": "      ? body.reserveReview : body.reserveReview;"
-  }
+  },
+ {
+  "name": "V3: the yes filed with an as-soon-as order names a window",
+  "file": "src/orders.js",
+  "find": "(win.slot || o.slot || null)",
+  "replace": "(win.slot || o.slot || \"2026-10-11T08\")"
+ }
 ]

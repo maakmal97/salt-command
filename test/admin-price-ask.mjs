@@ -22,8 +22,8 @@ const ORDERS = [
 /* the refusal table as data, between its markers, and every error literal of a function in src/orders.js */
 const table = (src) => { const m = /\/\*REFUSALS\*\/\s*var REFUSALS=(\{[\s\S]*?\});\s*\/\*END REFUSALS\*\//.exec(src); return m ? Function("return " + m[1])() : {}; };
 const errorsOf = (src, name) => {
-  const at = src.indexOf("export async function " + name + "("); if (at < 0) return null;
-  const end = src.indexOf("\nexport ", at + 10), body = src.slice(at, end < 0 ? undefined : end), out = [];
+  const at = src.indexOf((name === "placedTerms" ? "\nasync function " : "export async function ") + name + "("); if (at < 0) return null;
+  const end = name === "placedTerms" ? src.indexOf("\n}\n", at) : src.indexOf("\nexport ", at + 10), body = src.slice(at, end < 0 ? undefined : end), out = [];
   for (const m of body.matchAll(/error: "((?:[^"\\]|\\.)*)"/g)) out.push(m[1]);
   for (const m of body.matchAll(/\? "((?:[^"\\]|\\.)*)"\s*(?::|\n)/g)) out.push(m[1]);
   /* and the last branch of a chosen sentence: cond ? "a" : "b" } */
@@ -68,6 +68,6 @@ export async function run({ ok, pageWork }) {
   /* 4 */
   const owner = readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8"), orders = readFileSync(new URL("../src/orders.js", import.meta.url), "utf8");
   const R = table(owner), missing = [];
-  for (const fn of ["acceptOrder", "offerOrder", "withdrawOffer"]) { const e = errorsOf(orders, fn); if (!e) missing.push(fn + " not found"); else for (const s of e) if (s.endsWith(" ") ? !owner.includes("s.indexOf('" + s + "')===0") : !Object.hasOwn(R, s)) missing.push(s); }
+  for (const fn of ["acceptOrder", "offerOrder", "withdrawOffer", "placedTerms"]) { const e = errorsOf(orders, fn); if (!e) missing.push(fn + " not found"); else for (const s of e) if (s.endsWith(" ") ? !owner.includes("s.indexOf('" + s + "')===0") : !Object.hasOwn(R, s)) missing.push(s); }
   ok(Object.keys(R).length > 50 && missing.length === 0, "every sentence Accept, offer and Withdraw refuse with is in Salt Admin's refusal table: missing " + JSON.stringify(missing));
 }

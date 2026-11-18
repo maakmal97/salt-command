@@ -61,7 +61,7 @@ export async function run({ ok, pageWork }) {
     /* a read that works ticks it and offers Accept; the choice is now the one the server stood on */
     down = false;
     await p.pick("10");
-    ok(same(p.fees(), ["10"]) && !!p.accept() && same(previews(p, "ord-p2").slice(-1)[0].body, { total: 100, delivery: 10 }),
+    ok(same(p.fees(), ["10"]) && !!p.accept() && same(previews(p, "ord-p2").slice(-1)[0].body, { total: 100, delivery: 10, qty: 1, mode: "deliver" }),
       "a charge whose read works stays chosen and Accept follows: " + JSON.stringify([p.fees(), previews(p, "ord-p2").map((x) => x.body)]));
     /* another charge whose read fails goes back to the one that stood, not to none, and the card offers the read again for it */
     down = true;
@@ -71,16 +71,16 @@ export async function run({ ok, pageWork }) {
     down = false;
     p.reread().click(); await p.work.quiet();
     const last = previews(p, "ord-p2").slice(-1)[0];
-    ok(same(p.fees(), ["10"]) && !!p.accept() && same(last.body, { total: 100, delivery: 10 }) && !p.reread() && /Figures read/.test(p.line()),
+    ok(same(p.fees(), ["10"]) && !!p.accept() && same(last.body, { total: 100, delivery: 10, qty: 1, mode: "deliver" }) && !p.reread() && /Figures read/.test(p.line()),
       "and that read is for the charge put back (RM 10), not the one that failed, and brings Accept back: " + JSON.stringify([p.fees(), last && last.body]));
     /* the read itself is unchanged: one POST of the total and the charge, the Accept's hash is the one the read answered */
-    ok(previews(p, "ord-p2").every((x) => same(Object.keys(x.body).sort(), ["delivery", "total"])), "the read still sends the total and the charge and nothing else");
+    ok(previews(p, "ord-p2").every((x) => same(Object.keys(x.body).sort(), ["delivery", "mode", "qty", "total"])), "the read still sends the total, the charge, the units and the way, and nothing else");
 
     /* Other: the figure typed goes back with its choice */
     await p.pick("other");
     const amount = byAct(p.d, "order.fee-other-amount", "ord-p2");
     p.type(amount, "12"); await p.work.quiet();
-    ok(same(p.fees(), ["other"]) && !!p.accept() && same(previews(p, "ord-p2").slice(-1)[0].body, { total: 100, delivery: 12 }), "Other with a figure typed is read and stands: " + JSON.stringify(p.fees()));
+    ok(same(p.fees(), ["other"]) && !!p.accept() && same(previews(p, "ord-p2").slice(-1)[0].body, { total: 100, delivery: 12, qty: 1, mode: "deliver" }), "Other with a figure typed is read and stands: " + JSON.stringify(p.fees()));
     down = true;
     p.type(amount, "20"); await p.work.quiet();
     ok(same(p.fees(), ["other"]) && amount.value === "12" && /RM 12 is still chosen/.test(p.line()) && !amount.closest("label").hidden,

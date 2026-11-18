@@ -44,8 +44,8 @@
  {
   "name": "the select outside Agree's list",
   "file": "stmt/owner.js",
-  "find": "makerRow(form,'Delivery, RM',dsel).classList.add('oagree__fee'); feeSel=dsel;",
-  "replace": "makerRow(card,'Delivery, RM',dsel).classList.add('oagree__fee'); feeSel=dsel;"
+  "find": "feeWrap=makerRow(form,'Delivery, RM',dsel); feeWrap.classList.add('oagree__fee'); feeSel=dsel;",
+  "replace": "feeWrap=makerRow(card,'Delivery, RM',dsel); feeWrap.classList.add('oagree__fee'); feeSel=dsel;"
  },
  {
   "name": "the select drawn bare",

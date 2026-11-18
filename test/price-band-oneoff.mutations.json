@@ -68,20 +68,20 @@
  {
   "name": "Accept is not asked",
   "file": "src/orders.js",
-  "find": "{ orders: f.orders, again }, pr.price, mirror, ro.why);",
-  "replace": "{ orders: f.orders, again }, pr.price, mirror, ro.why || \"none given\");"
+  "find": "{ orders: f.orders, again }, terms.price, mirror, ro.why);",
+  "replace": "{ orders: f.orders, again }, terms.price, mirror, ro.why || \"none given\");"
  },
  {
   "name": "Accept drops his reason",
   "file": "src/orders.js",
-  "find": "{ orders: f.orders, again }, pr.price, mirror, ro.why);",
-  "replace": "{ orders: f.orders, again }, pr.price, mirror, null);"
+  "find": "{ orders: f.orders, again }, terms.price, mirror, ro.why);",
+  "replace": "{ orders: f.orders, again }, terms.price, mirror, null);"
  },
  {
   "name": "the preview drops his reason",
   "file": "src/orders.js",
-  "find": "{ orders: f.orders, again }, pr.price, undefined, ro.why);",
-  "replace": "{ orders: f.orders, again }, pr.price, undefined, null);"
+  "find": "{ orders: f.orders, again }, terms.price, undefined, ro.why);",
+  "replace": "{ orders: f.orders, again }, terms.price, undefined, null);"
  },
  {
   "name": "the drafted row carries no mark",
@@ -104,14 +104,14 @@
  {
   "name": "an offer for their yes drops his reason",
   "file": "src/orders.js",
-  "find": "already on its way to its row\" };\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, ro.why);",
-  "replace": "already on its way to its row\" };\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, null);"
+  "find": "already on its way to its row\" };\n  const pv = await previewAck(env, terms.order, o.code, terms.delivery, at, { orders: f.orders }, terms.price, undefined, ro.why);",
+  "replace": "already on its way to its row\" };\n  const pv = await previewAck(env, terms.order, o.code, terms.delivery, at, { orders: f.orders }, terms.price, undefined, null);"
  },
  {
   "name": "Negotiate's offer drops his reason",
   "file": "src/orders.js",
-  "find": "before anything is told */\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, ro.why);",
-  "replace": "before anything is told */\n  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price, undefined, null);"
+  "find": "before anything is told */\n  const pv = await previewAck(env, terms.order, o.code, terms.delivery, at, { orders: f.orders }, terms.price, undefined, ro.why);",
+  "replace": "before anything is told */\n  const pv = await previewAck(env, terms.order, o.code, terms.delivery, at, { orders: f.orders }, terms.price, undefined, null);"
  },
  {
   "name": "their yes drafts the row without the reason he gave",
@@ -122,8 +122,8 @@
  {
   "name": "the offer sent to the site carries his reason",
   "file": "src/orders.js",
-  "find": "{ offer: { id: offer.id, kind: \"accept\", total, delivery, slot: win.slot, until: offer.until }, rid }",
-  "replace": "{ offer: { id: offer.id, kind: \"accept\", total, delivery, slot: win.slot, until: offer.until, note: ro.why }, rid }"
+  "find": "as for Negotiate */\n  const r = await moveOrder(env, o.u, id, { offer, rid });",
+  "replace": "as for Negotiate */\n  const r = await moveOrder(env, o.u, id, { offer: Object.assign({}, offer, { note: ro.why }), rid });"
  },
  {
   "name": "an amendment outside the band is not asked",
@@ -248,8 +248,8 @@
  {
   "name": "the Desk's gate refuses a reason on the preview",
   "file": "src/maker.js",
-  "find": "    preview: [\"delivery\", \"total\", \"oneOff\"],",
-  "replace": "    preview: [\"delivery\", \"total\"],"
+  "find": "preview: [\"delivery\", \"total\", \"qty\", \"mode\", \"slot\", \"oneOff\"],",
+  "replace": "preview: [\"delivery\", \"total\", \"qty\", \"mode\", \"slot\"],"
  },
  {
   "name": "the Desk's gate refuses a reason on an amendment",
@@ -314,8 +314,8 @@
  {
   "name": "a new goods total keeps the old reason",
   "file": "stmt/owner.js",
-  "find": "        total.addEventListener('input',function(){ delete makerOneOff[order.id]; delete makerOneDraft[order.id]; });",
-  "replace": ""
+  "find": "        total.addEventListener('input',function(){ refillGoods=false; delete makerOneOff[order.id]; delete makerOneDraft[order.id]; });",
+  "replace": "        total.addEventListener('input',function(){ refillGoods=false; });"
  },
  {
   "name": "an amendment's ask is not kept for the Sheet",

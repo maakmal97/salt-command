@@ -51,7 +51,7 @@ export async function run({ ok, pageWork }) {
       "entering Orders and listing its rows asks the Desk for no preview: a row of the list reads nothing");
     await p.tapRow("ord-p1");
     const one = previews(p, "ord-p1");
-    ok(one.length === 1 && one[0].route === "/all/maker/orders/ord-p1/preview" && same(one[0].body, { total: 200, delivery: 0 }) && !!p.accept(),
+    ok(one.length === 1 && one[0].route === "/all/maker/orders/ord-p1/preview" && same(one[0].body, { total: 200, delivery: 0, qty: 2, mode: "collect" }) && !!p.accept(),
       "opening a placed order reads its preview once, at its own total, and Accept follows: " + JSON.stringify(one));
     const acts = [...d.querySelectorAll("#makerReview [data-act]")].map((e) => e.getAttribute("data-act"));
     ok(!acts.includes("order.preview") && ![...d.querySelectorAll("#makerReview button")].some((b) => /^Preview/.test(b.textContent)),
@@ -76,7 +76,7 @@ export async function run({ ok, pageWork }) {
       "a total edited and put back before it is finished takes Accept away and offers Read the figures again, reading nothing by itself: " + p.say());
     reread().click(); await p.work.quiet();
     const again = previews(p, "ord-p1");
-    ok(again.length === 3 && same(again[2].body, { total: 200, delivery: 0 }) && !!p.accept() && !reread() && /Figures read/.test(p.say()),
+    ok(again.length === 3 && same(again[2].body, { total: 200, delivery: 0, qty: 2, mode: "collect" }) && !!p.accept() && !reread() && /Figures read/.test(p.say()),
       "and that control reads the figures as they stand, Accept comes back, and the control goes: " + JSON.stringify(again[2]));
     typed("250");
     ok(!!reread(), "a total edited again offers it again");

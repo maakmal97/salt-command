@@ -14,8 +14,8 @@
   {
     "name": "an open ask is agreed, not offered",
     "file": "stmt/owner.js",
-    "find": "askOpen=makerAsked(order), yes=askOpen||makerNeedsYes(order,q.total,wv)",
-    "replace": "askOpen=false, yes=makerNeedsYes(order,q.total,wv)"
+    "find": "askOpen=makerAsked(order), yes=askOpen||q.result.needsYes===true||",
+    "replace": "askOpen=false, yes=q.result.needsYes===true||"
   },
   {
     "name": "a Negotiate offer does not hold the card",
@@ -26,8 +26,8 @@
   {
     "name": "an asked delivery draws When",
     "file": "stmt/owner.js",
-    "find": "if(deliver&&!order.wantBy&&!makerAsked(order)){",
-    "replace": "if(deliver&&!order.wantBy){"
+    "find": "if((deliver||wayAllowed)&&!order.wantBy&&!makerAsked(order)){",
+    "replace": "if((deliver||wayAllowed)&&!order.wantBy){"
   },
   {
     "name": "no list price reads RM 0",
@@ -58,5 +58,29 @@
     "file": "stmt/owner.js",
     "find": "    'a sheet of several lines is agreed by one Accept: lower it to what they placed, keep their window, or Decline':'A sheet of several orders is agreed in one go: keep their price and window, or decline it.',\n",
     "replace": ""
-  }
+  },
+ {
+  "name": "V3: the refusal table lacks the terms-need-their-yes sentence",
+  "file": "stmt/owner.js",
+  "find": "    'these terms need their yes: send them an offer':'These terms need their yes. Send them an offer.',",
+  "replace": ""
+ },
+ {
+  "name": "V3: the refusal table lacks the group order sentence",
+  "file": "stmt/owner.js",
+  "find": "    'a group order keeps its size and way':'A group order keeps its size and way.',",
+  "replace": ""
+ },
+ {
+  "name": "V3: the refusal table lacks the trip sentence",
+  "file": "stmt/owner.js",
+  "find": "    'a trip keeps one way across its orders':'A trip keeps one way across its orders.',",
+  "replace": ""
+ },
+ {
+  "name": "V3: the refusal table lacks the size sentence",
+  "file": "stmt/owner.js",
+  "find": "    'the size has to be a number above zero':'Units must be above zero.',",
+  "replace": ""
+ }
 ]

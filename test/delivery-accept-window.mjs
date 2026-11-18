@@ -100,7 +100,7 @@ export async function run({ ok, KV, assets }) {
       return call("/orders/" + o.id + "/accept", Object.assign({ delivery: d, hash: pv.j.hash }, extra || {})); };
     const now = Date.now(), s8 = Wn.slotNext(8, null, now).slot, s20 = Wn.slotNext(20, null, now).slot, s12 = Wn.slotNext(12, null, now).slot;
     const o1 = await place("deliver"), r1 = await accept(o1, { slot: s8 }), g1 = await orderOf(o1.id);
-    ok(r1.status === 200 && r1.j.approved === true && g1.status === "acknowledged" && g1.slot === s8 && g1.slotSpan === "09:00-12:00" && shownOf(o1.id).slot === s8,
+    ok(r1.status === 200 && r1.j.approved === true && g1.status === "acknowledged" && g1.slot === s8 && g1.slotSpan === "09:00-12:00" && shownOf(o1.id).terms.slot === s8,
       "Accept with a window: his yes carries it, the row is approved, and the order is acknowledged with the window cut to the hours: "
       + JSON.stringify({ st: r1.status, ap: r1.j.approved, err: r1.j.error, order: g1 && [g1.status, g1.slot, g1.slotSpan], shown: shownOf(o1.id) }));
     const o2 = await place("deliver"), r2 = await accept(o2, { slot: s20 }), g2 = await orderOf(o2.id);
@@ -111,7 +111,7 @@ export async function run({ ok, KV, assets }) {
       "a collection is refused a window at Accept, and so is an order that chose its own, which stands: " + JSON.stringify([r3.status, r3.j.error, r4.status, r4.j.error]));
     const r4b = await accept(o4, {}), g4 = await orderOf(o4.id);
     const o5 = await place("deliver"), r5 = await accept(o5, {}), g5 = await orderOf(o5.id);
-    ok(r4b.j.approved === true && g4.status === "acknowledged" && g4.slot === s12 && g4.slotSpan === "12:00-16:00" && r5.j.approved === true && g5.status === "acknowledged" && !g5.slot && !("slot" in shownOf(o5.id)),
+    ok(r4b.j.approved === true && g4.status === "acknowledged" && g4.slot === s12 && g4.slotSpan === "12:00-16:00" && r5.j.approved === true && g5.status === "acknowledged" && !g5.slot && !shownOf(o5.id).terms.slot,
       "their own window rides through Accept unchanged, and an Accept with none moves the order as it always did: " + JSON.stringify([g4.slot, g4.slotSpan, g5.slot]));
     ok(reserves.length >= 4 && reserves.filter((r) => "slot" in r).length === 1 && reserves.some((r) => r.slot === s12),
       "the desk names the window in its review only on the order that has one, so a Counter yet to carry windows still reserves the rest: " + JSON.stringify(reserves.map((r) => r.slot)));

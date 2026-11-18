@@ -20,8 +20,8 @@
   {
     "name": "choosing a charge reads nothing",
     "file": "stmt/owner.js",
-    "find": "            makerPlacedInvalidate(); makerPlacedRead();\n          });\n          makerRow(form,'Delivery, RM',dsel)",
-    "replace": "            makerPlacedInvalidate();\n          });\n          makerRow(form,'Delivery, RM',dsel)"
+    "find": "makerPlacedInvalidate(); makerPlacedRead();\n          });\n          feeWrap=makerRow(form,'Delivery, RM',dsel)",
+    "replace": "makerPlacedInvalidate();\n          });\n          feeWrap=makerRow(form,'Delivery, RM',dsel)"
   },
   {
     "name": "an edited total keeps Accept",
@@ -68,8 +68,8 @@
   {
     "name": "a retried Accept sends another body",
     "file": "stmt/owner.js",
-    "find": "            var body={total:s.total,delivery:s.delivery,hash:s.hash};",
-    "replace": "            var body={total:s.total,delivery:s.delivery,hash:s.hash,again:Math.random()};"
+    "find": "var body={total:s.total,delivery:s.delivery,qty:s.qty,mode:s.mode,hash:s.hash};",
+    "replace": "var body={total:s.total,delivery:s.delivery,qty:s.qty,mode:s.mode,hash:s.hash,again:Math.random()};"
   },
   {
     "name": "a later line asks a charge once the first is agreed",

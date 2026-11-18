@@ -98,8 +98,8 @@
  {
   "name": "Preview sends the total alone",
   "file": "stmt/owner.js",
-  "find": "var payload={total:Number(total.value),delivery:delivery}",
-  "replace": "var payload={total:Number(total.value)}"
+  "find": "payload.delivery=delivery; ",
+  "replace": ""
  },
  {
   "name": "the way back is gone",
@@ -676,5 +676,23 @@
   "file": "stmt/page.js",
   "find": "        + '<div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\">'\n        + (test ? \"\" : '<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\">' + AMB.glyph(\"plus\") + \"</button>\")\n        + \"</div></div>\"",
   "replace": "        + '<div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\">'\n        + \"</div></div>\"\n        + (test ? \"\" : '<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\">' + AMB.glyph(\"plus\") + \"</button>\")"
+ },
+ {
+  "name": "V3: the card has no units field",
+  "file": "stmt/owner.js",
+  "find": "['Units','order.qty']",
+  "replace": "['Units','order.units']"
+ },
+ {
+  "name": "V3: the card has no way field",
+  "file": "stmt/owner.js",
+  "find": "actOn(way,'order.mode')",
+  "replace": "actOn(way,'order.way')"
+ },
+ {
+  "name": "V3: the opening preview omits the units and way",
+  "file": "stmt/owner.js",
+  "find": "payload.qty=Number(quantity.value); payload.mode=termsMode;",
+  "replace": ""
  }
 ]

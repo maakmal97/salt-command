@@ -50,9 +50,9 @@ export async function run({ ok, pageWork }) {
     /* 2 Nov 2026 (his Orders canvas, page 2): Goods, Delivery and When are rows of one settings list (label at the left, input at the right), then the foot line */
     const grid = oc && oc.querySelector(".oagree"), fields = grid ? [...grid.querySelectorAll("label.amb-field:not([hidden])"), ...grid.querySelectorAll(":scope > p.amb-field__hint")].map((x) => x.matches("label") ? t(x.querySelector(".amb-field__label")) : "line") : [];
     const fee = oc && byAct(oc, "order.fee");
-    ok(!!oc && !oc.querySelector("details.ordfold--rowed") && !byAct(oc, "order.terms") && J(fields) === J(["Goods, RM", "Delivery, RM", "When", "line"])
+    ok(!!oc && !oc.querySelector("details.ordfold--rowed") && !byAct(oc, "order.terms") && J(fields) === J(["Goods, RM", "Units", "Way", "Delivery, RM", "When", "line"])
       && !!fee && fee.value === "" && t(fee.options[fee.selectedIndex]) === "Choose" && !!head && !head.querySelector(".npane__go") && !!byAct(oc, "order.decline"),
-      "the order's own card stands under it, its terms in view, Goods and Delivery then When, Delivery at Choose, and its ways are the order card's: " + J(fields));
+      "the order's own card stands under it, its terms in view, Goods, Units and Way then Delivery and When, Delivery at Choose, and its ways are the order card's: " + J(fields));
     /* 4 */
     /* 16 Nov 2026, the move to Ambient (place F): the first filled way is the record's one main action, the foot of its column; every other way a quiet pill in the card; read main first */
     const ways = () => [...d.querySelectorAll("#nrecord > .npane__go button, #nopen .npane__acts button")];

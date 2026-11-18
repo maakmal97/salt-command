@@ -309,7 +309,7 @@ export async function run({ ok }) {
     ok(said("redate then a payment", /"waits":true/), "S1b: a stage after a redate waits against the redated row");
     const fl1 = D.floorFor({ pricing: ledger.PRICING }, "salt", 1).floor;
     ok(said("accept set salt 1", new RegExp('"total":' + (fl1 + 5) + ',"status":"Pending"')) && !said("accept placed salt 1", new RegExp('"total":' + (fl1 + 5) + ',"status":"Pending"'))
-      && saidRes("accept under salt 1", /"underFloor":true/) && saidRes("preview set bad", /the price has to be a figure above nothing/) && saidRes("accept raise", /their price or changes their window/),
+      && saidRes("accept under salt 1", /"underFloor":true/) && saidRes("preview set bad", /the price has to be a figure above nothing/) && saidRes("accept raise", /these terms need their yes/),
       "S1b: Accept drafts the pending row at the total he sets (and the placed one at the placed total), and refuses one under the floor, not a figure, or a raise");
     ok(JSON.parse(all.find((s) => s.tag === "preview set salt 1").res).quote === fl1 + 5 && JSON.parse(all.find((s) => s.tag === "preview placed salt 1").res).quote === +(fl1 * 1.6).toFixed(2),
       "S1b: the preview at a total he sets quotes that total, the placed one the placed total");

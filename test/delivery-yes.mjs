@@ -1,6 +1,7 @@
-/* test/delivery-yes.mjs: VERSION 2 OF HIS ACCEPT, THEIR YES (his decisions of 10 Oct 2026). Goods above what they placed it at,
- * or a window other than theirs, is never agreed by his Accept alone: it goes to them as an offer of the whole order as he would
- * agree it (goods, his delivery charge, the window), open until the window's start or 48 hours. Their yes is a take, drafted and
+/* test/delivery-yes.mjs: VERSIONS 2 AND 3 OF HIS ACCEPT, THEIR YES (his decisions of 10 Oct 2026). Goods above what they placed it at,
+ * a change of units or way, or a window other than theirs, is never agreed by his Accept alone: it goes to them as an offer of the
+ * whole order as he would agree it (goods, units, way, his delivery charge, the window), open until the window's start or 48 hours.
+ * Their yes is a take, drafted and
  * approved only on an exact match (D6); their No thanks withdraws the order; his withdrawal or its lapse leaves the order his to
  * Accept again. His first delivery charge and a window on an order that asked for none need no yes (Q1, Q3), and a sheet is never
  * sent for their yes (Q7). Every code, name and place is invented. Every assertion was proved red by its own mutation. */
@@ -23,6 +24,11 @@ export async function run({ ok }) {
   ok(!D.needsYes(o100, { total: 100 }) && !D.needsYes(o100, { total: 90 }) && !D.needsYes(o100, { total: 100.004 }) && D.needsYes(o100, { total: 100.01 })
     && !D.needsYes(o100, { slot: "2026-10-11T12" }) && D.needsYes(own, { slot: "2026-10-11T12" }) && !D.needsYes(own, { slot: "2026-10-11T08" }) && !D.needsYes(own, {}),
     "their yes is needed for goods above what they placed it at, to the sen, or a window other than theirs; never a lower price, a window on an as-soon-as order, or none");
+  const placed = { total: 100, qty: 1, mode: "deliver" };
+  ok(!D.needsYes(placed, { total: 100, qty: 1, mode: "deliver" })
+    && D.needsYes(placed, { total: 100, qty: 2, mode: "deliver" })
+    && D.needsYes(placed, { total: 100, qty: 1, mode: "collect" }),
+    "their yes is needed before changing the units or the way");
   const at = new Date("2026-10-10T02:00:00.000Z");   /* 10:00 in Kuala Lumpur */
   const until = (a, s) => D.acceptUntil(new Date(a), s);
   ok(until(at, null) === "2026-10-12T02:00:00.000Z" && until(at, "2026-10-10T16") === "2026-10-10T08:00:00.000Z"
@@ -49,11 +55,21 @@ export async function run({ ok }) {
     && bad.every((x) => x.error && [400, 409].includes(x.status)),
     "the Counter takes his offer for their yes on a placed order, and refuses a charge on a collection, a window with no span, a past lapse, an ask of theirs or an agreed order: "
     + JSON.stringify(bad.map((x) => x.status)));
+  /* V3: Negotiate's offer on an asked order carries the units and the way, and refuses terms that do not hold together */
+  const negBody = (x) => ({ offer: Object.assign({ id: "neg1", total: 120, delivery: 0, qty: 2, mode: "collect", termsChanged: true, wasQty: 1, wasMode: "deliver", until: "2026-10-12T02:00:00.000Z" }, x) });
+  const asked = { price: { state: "asked" } }, neg = dd(asked, negBody({}));
+  const negBad = [dd(asked, negBody({ mode: "air" })), dd(asked, negBody({ delivery: 10 })), dd(asked, negBody({ delivery: undefined })), dd(asked, negBody({ mode: "deliver", wasMode: "deliver", delivery: undefined })), dd(asked, negBody({ wasMode: "collect" })),
+    dd(asked, negBody({ wasQty: 3 })), dd(asked, negBody({ qty: 0 })), dd(asked, negBody({ termsChanged: "yes" })), dd(asked, negBody({ slot: "2026-10-11T08", slotSpan: "09:00-12:00" })),
+    dd(asked, negBody({ mode: "deliver", delivery: -1 }))];
+  const negO = neg.ev && neg.ev.offer;
+  ok(negO && negO.qty === 2 && negO.mode === "collect" && negO.delivery === 0 && negO.termsChanged === true && negO.wasQty === 1 && negO.wasMode === "deliver"
+    && negBad.every((x) => x.error && x.status === 400),
+    "Negotiate's offer keeps the units, the way and what they were changed from, and refuses a way that is not one, a charge on a collection, a way with no charge (a delivery too), terms changed from what the order is, a size of nothing, a flag that is no flag, a window on a collection and a negative charge: " + JSON.stringify([negO, negBad.map((x) => x.status)]));
   const held = O.applyEvent(Object.assign({}, base, { history: [] }), e1.ev).order;
   const view = O.customerView(held).price;
   ok(held.price.from === "accept" && held.price.state === "offered" && !O.askOpen(held, at.toISOString())
     /* 3 Nov 2026: and the offer's id, a random request id their Yes names back so it reaches only this offer (Fable reviewed it safe) */
-    && JSON.stringify(Object.keys(view).sort()) === JSON.stringify(["delivery", "from", "id", "slot", "slotSpan", "state", "total", "until"])
+    && JSON.stringify(Object.keys(view).sort()) === JSON.stringify(["delivery", "from", "id", "mode", "qty", "slot", "slotSpan", "state", "total", "until"])
     && view.total === 120 && view.delivery === 10 && view.id === held.price.offer.id,
     "their page reads the whole offer and nothing of the desk's, and it never counts as an ask of theirs: " + JSON.stringify(view));
   const again = dd({ price: held.price }, offerBody({ id: "acc2" })), ackOpen = dd({ price: held.price }, { status: "acknowledged", delivery: 10 }),
@@ -71,6 +87,24 @@ export async function run({ ok }) {
     ackX = O.decideDesk(taken, { status: "acknowledged", delivery: 10, total: 120, slot: "2026-10-11T20", slotSpan: "20:00-24:00" }, at.toISOString());
   ok(ackT.ev && ackT.ev.slot === "2026-10-11T16" && ackX.ev && !("slot" in ackX.ev),
     "the acknowledgement takes the window of the offer they said yes to, over their own, and no other: " + JSON.stringify([ackT.ev && ackT.ev.slot, ackX.ev && ackX.ev.slot]));
+  const dated = Object.assign({}, base, { wantBy: "2026-10-11", slot: "2026-10-11T08", slotSpan: "09:00-12:00" });
+  const change = O.decideDesk(dated, offerBody({ id: "acc-change", delivery: 0, qty: 2, mode: "collect", slot: null,
+    slotSpan: null, wasQty: 1, wasMode: "deliver" }), at.toISOString());
+  const changeHeld = O.applyEvent(JSON.parse(JSON.stringify(dated)), change.ev).order, changeView = O.customerView(changeHeld).price;
+  const changeTake = O.decideCustomer(changeHeld, "take", {}, [changeHeld], at.toISOString());
+  const changeTaken = changeTake.ev ? O.applyEvent(JSON.parse(JSON.stringify(changeHeld)), changeTake.ev).order : changeHeld;
+  /* their yes is judged on the terms they were shown (wasQty, wasMode), so a changed size or way voids it, and the right order takes it */
+  const voidQty = O.decideCustomer(Object.assign({}, changeHeld, { qty: 5 }), "take", {}, [changeHeld], at.toISOString()),
+    voidWay = O.decideCustomer(Object.assign({}, changeHeld, { mode: "collect" }), "take", {}, [changeHeld], at.toISOString());
+  ok(!!changeTake.ev && !changeTake.error && !!voidQty.error && voidQty.status === 409 && !!voidWay.error && voidWay.status === 409,
+    "their yes is taken by the order they were shown and refused once its size or its way has changed: " + JSON.stringify([changeTake.error, voidQty.status, voidWay.status]));
+  const changeAck = O.decideDesk(changeTaken, { status: "acknowledged", total: 120, qty: 2, mode: "collect", delivery: 0 }, at.toISOString());
+  const changeFinal = O.applyEvent(JSON.parse(JSON.stringify(changeTaken)), changeAck.ev).order;
+  ok(change.ev && change.ev.offer.qty === 2 && change.ev.offer.mode === "collect" && changeView.qty === 2 && changeView.mode === "collect"
+    && changeAck.ev && changeAck.ev.qty === 2 && changeAck.ev.mode === "collect" && changeFinal.qty === 2 && changeFinal.mode === "collect"
+    && changeFinal.delivery === 0 && !("slot" in changeFinal) && !("wantBy" in changeFinal),
+    "their yes sees the new units and way, and acknowledgement applies them while clearing the old delivery window and date: "
+    + JSON.stringify({ view: changeView, order: changeFinal }));
   const SW = await import("../stmt/sw.js");
   ok(O.wakes(e1.ev, held, false).k === "confirm" && O.wakes({ kind: "offer", offer: { id: "n1", total: 1 } }, held, false).k === "offer"
     && SW.NEWS.confirm === "Your order needs your yes" && !/RM|[0-9]/.test(SW.NEWS.confirm),
@@ -89,7 +123,7 @@ export async function run({ ok }) {
       const self = mk([]); self.bind = (...a) => mk(a); return self; } };
     const C1 = "CZ5-YS", U1 = "ysab-cdef";
     const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
-      byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
+      byProduct: { salt: { stockCost: 56, cards: { "CZ5-YS": [[2, 207], [3, 290]] }, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
     let seq = 0;
     for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
@@ -130,15 +164,70 @@ export async function run({ ok }) {
     ok(tkA.approved === true && gA.status === "acknowledged" && gA.total === 130 && gA.delivery === 10,
       "their yes drafts the row at the offer and moves the order to it: " + JSON.stringify([tkA.approved, tkA.error, gA.status, gA.total, gA.delivery]));
 
-    /* another window: sent for their yes, and taken, the order carries it cut to the hours */
-    /* 3 Nov 2026 (one order stream v3, his answer): 2 units, since an order agreed today at the figure e is agreed at below would be its twin, refused at Accept */
+    /* V3: changing units and way is an offer; the customer's yes is the order that reaches the row */
     const b = await place({ slot: s12, qty: 2, total: 200 });
-    const pB = await pv(b), ofB = await call("/orders/" + b.id + "/offer", { delivery: 10, hash: pB.offerHash, slot: s8, rid: rid() });
+    const pB = await call("/orders/" + b.id + "/preview", { total: 215, qty: 3, mode: "collect", delivery: 0 });
+    const acB = await call("/orders/" + b.id + "/accept", { total: 215, qty: 3, mode: "collect", delivery: 0, hash: pB.j.hash });
+    const ofB = await call("/orders/" + b.id + "/offer", { total: 215, qty: 3, mode: "collect", delivery: 0, hash: pB.j.offerHash, rid: rid() });
     const sB = await orderOf(b.id), vB = O.customerView(sB).price;
     await O.customerMove(senv, U1, b.id, "take", { rid: rid() });
     const tkB = await D.takeOffer(denv, b.id), gB = await orderOf(b.id);
-    ok(ofB.status === 200 && vB.slot === s8 && vB.slotSpan === "09:00-12:00" && tkB.approved === true && gB.status === "acknowledged" && gB.slot === s8 && gB.slotSpan === "09:00-12:00",
-      "another window goes for their yes with its span cut to the hours, and once taken the order carries it: " + JSON.stringify([ofB.status, ofB.j.error, vB, gB.slot, gB.slotSpan]));
+    ok(pB.status === 200 && pB.j.needsYes && pB.j.terms.qty === 3 && pB.j.terms.mode === "collect"
+      && acB.status === 409 && acB.j.needsYes === true && ofB.status === 200
+      && vB.qty === 3 && vB.mode === "collect" && tkB.approved === true
+      && gB.status === "acknowledged" && gB.qty === 3 && gB.mode === "collect" && gB.delivery === 0 && !gB.slot,
+      "V3: a changed order waits for their yes, whose take acknowledges the offered units and way and clears its window: "
+      + JSON.stringify({ preview: pB.status, accept: acB.status, offer: ofB.status, view: vB, order: gB }));
+
+    /* another window: sent for their yes, and taken, the order carries it cut to the hours (restored beside V3's change of units and way) */
+    const bw = await place({ slot: s12, qty: 2, total: 200 });
+    const pBw = await pv(bw), ofBw = await call("/orders/" + bw.id + "/offer", { delivery: 10, hash: pBw.offerHash, slot: s8, rid: rid() });
+    const sBw = await orderOf(bw.id), vBw = O.customerView(sBw).price;
+    await O.customerMove(senv, U1, bw.id, "take", { rid: rid() });
+    const tkBw = await D.takeOffer(denv, bw.id), gBw = await orderOf(bw.id);
+    ok(ofBw.status === 200 && vBw.slot === s8 && vBw.slotSpan === "09:00-12:00" && tkBw.approved === true && gBw.status === "acknowledged" && gBw.slot === s8 && gBw.slotSpan === "09:00-12:00"
+      && JSON.parse(preOf(bw.id).shown).terms.slot === s8,
+      "another window goes for their yes with its span cut to the hours, and once taken the order carries it: " + JSON.stringify([ofBw.status, ofBw.j.error, vBw, gBw.slot, gBw.slotSpan, tkBw.error]));
+    await O.customerMove(senv, U1, bw.id, "cancel", { rid: rid() });   /* the account stays under its five open orders */
+    /* a yes filed before V3 (its record holds the offer's window and neither terms nor a way) still carries that window to the order */
+    const bl = await place({ slot: s12, qty: 2, total: 210 });
+    const pBl = await pv(bl), ofBl = await call("/orders/" + bl.id + "/offer", { delivery: 10, hash: pBl.offerHash, slot: s8, rid: rid() });
+    const rowBl = db.prepare("SELECT id, shown FROM preapproval WHERE order_id=? ORDER BY at DESC").get(bl.id), shBl = JSON.parse(rowBl.shown);
+    delete shBl.terms; delete shBl.offer.mode; db.prepare("UPDATE preapproval SET shown=? WHERE id=?").run(JSON.stringify(shBl), rowBl.id);
+    await O.customerMove(senv, U1, bl.id, "take", { rid: rid() });
+    const tkBl = await D.takeOffer(denv, bl.id), gBl = await orderOf(bl.id);
+    ok(ofBl.status === 200 && tkBl.approved === true && gBl.status === "acknowledged" && gBl.slot === s8 && gBl.slotSpan === "09:00-12:00",
+      "a yes filed with no terms record still carries the offer's window to the order: " + JSON.stringify([ofBl.status, tkBl.approved, tkBl.error, gBl.status, gBl.slot]));
+    await O.customerMove(senv, U1, bl.id, "cancel", { rid: rid() });
+
+    /* 18 Nov 2026: a changed size with no figure typed is priced at THEIR price for it, read off the pricing snapshot by the engine's cardAt (the one reader a new order's preview
+       uses), a typed figure stands, an unchanged size is as it was, and a size with no price for them is refused */
+    const rf = await place({ total: 103 });
+    const theirs2 = D.cardAt(PRICING, C1, "salt", 2).card, theirs4 = D.cardAt(PRICING, C1, "salt", 4).card;
+    const rfA = await call("/orders/" + rf.id + "/preview", { delivery: 10, qty: 2 }), rfB = await call("/orders/" + rf.id + "/preview", { delivery: 10, qty: 2, total: 251 }),
+      rfC = await call("/orders/" + rf.id + "/preview", { delivery: 10 }), rfC2 = await call("/orders/" + rf.id + "/preview", { delivery: 10, qty: 1 }), rfD = await call("/orders/" + rf.id + "/preview", { delivery: 10, qty: 4 });
+    ok(theirs2 === 207 && rfA.status === 200 && rfA.j.terms.total === theirs2 && rfA.j.quote === theirs2,
+      "(a) a changed size with no total is priced at their price for it, the one the engine reader gives: " + JSON.stringify([theirs2, rfA.status, rfA.j.error, rfA.j.terms, rfA.j.quote]));
+    ok(rfB.status === 200 && rfB.j.terms.total === 251 && rfB.j.quote === 251, "(b) a changed size with a typed total keeps the typed total: " + JSON.stringify([rfB.status, rfB.j.error, rfB.j.terms]));
+    ok(rfC.status === 200 && rfC.j.terms.total === 103 && rfC.j.quote === 103 && rfC.j.terms.qty === 1 && rfC2.status === 200 && rfC2.j.terms.total === 103, "(c) an unchanged size (named or not) is priced as before, at what they placed it at: " + JSON.stringify([rfC.status, rfC.j.error, rfC.j.terms]));
+    ok(theirs4 == null && rfD.status === 400 && /type your price for the goods first/.test(rfD.j.error || ""), "(d) a size with no price for them is refused: " + JSON.stringify([theirs4, rfD.status, rfD.j.error]));
+    await O.customerMove(senv, U1, rf.id, "cancel", { rid: rid() });
+
+    /* V3: the Desk reads the take against the terms the offer was made for: an order whose way or size is no longer that one is not drafted at the offer; its row waits under Approve */
+    const voided = async (tamper, tot) => {
+      const x = await place({ qty: 1, total: tot }), px = (await call("/orders/" + x.id + "/preview", { total: tot, qty: 1, mode: "collect", delivery: 0 })).j;
+      const ox = await call("/orders/" + x.id + "/offer", { total: tot, qty: 1, mode: "collect", delivery: 0, hash: px.offerHash, rid: rid() });
+      const row = db.prepare("SELECT id, shown FROM preapproval WHERE order_id=? ORDER BY at DESC").get(x.id); if (!row) throw new Error(JSON.stringify([px, ox])); const sh = JSON.parse(row.shown);
+      tamper(sh.offer); db.prepare("UPDATE preapproval SET shown=? WHERE id=?").run(JSON.stringify(sh), row.id);
+      await O.customerMove(senv, U1, x.id, "take", { rid: rid() });
+      const tk = await D.takeOffer(denv, x.id), gx = await orderOf(x.id);
+      await O.customerMove(senv, U1, x.id, "cancel", { rid: rid() });
+      return { ofs: ox.status, tk, why: gx.sync && gx.sync.why || "" };
+    };
+    const vMode = await voided((o) => { o.wasMode = "collect"; }, 110), vQty = await voided((o) => { o.wasQty = 4; }, 120), vOk = await voided(() => {}, 125);
+    ok(vMode.ofs === 200 && /no longer has the terms the offer was made for/.test(vMode.why) && vQty.ofs === 200 && /no longer has the terms the offer was made for/.test(vQty.why)
+      && !/no longer has the terms/.test(vOk.why),
+      "their yes on an order whose way or size is not the one the offer was made for is not drafted at the offer, and one that is, is: " + JSON.stringify([vMode.ofs, vMode.why, vQty.why, vOk.why]));
 
     /* nothing to agree to: the offer is refused, and a lower price is his Accept's */
     const c = await place();
@@ -153,9 +242,13 @@ export async function run({ ok }) {
     const ofS = await call("/orders/" + L0.id + "/offer", { delivery: 10, total: 120, hash: (await pv(L0, 120)).offerHash, rid: rid() });
     ok(lines.length === 2 && ofS.status === 409 && /a sheet of several lines/.test(ofS.j.error || ""),
       "a line of a sheet is never sent for their yes: lower it, keep their window, or Decline: " + JSON.stringify([lines.length, ofS.status, ofS.j.error]));
+    const tripWay = await call("/orders/" + L0.id + "/preview", { delivery: 0, total: 100, mode: "collect" });
+    ok(tripWay.status === 409 && /trip keeps one way/.test(tripWay.j.error || ""),
+      "a line of a trip cannot change its way and split the shared delivery charge: " + JSON.stringify(tripWay));
 
     /* they withdraw what is still placed, so the account stays under its five open orders */
-    for (const x of [c, L0, L1]) await O.customerMove(senv, U1, x.id, "cancel", { rid: rid() });
+    for (const x of [L0, L1]) await O.customerMove(senv, U1, x.id, "cancel", { rid: rid() });
+
     /* No thanks withdraws the order, and his yes goes */
     const d = await place();
     const pD = await pv(d, 125);
@@ -189,6 +282,13 @@ export async function run({ ok }) {
     } finally { globalThis.Date = RealDate; }
     ok(acF.j.approved === true && gF.status === "acknowledged" && gF.total === 100 && pre && pre.status === "void",
       "a lapsed offer holds nothing: his Accept at their terms agrees the order and its yes is let go: " + JSON.stringify([acF.status, acF.j.error, gF.status, pre && pre.status]));
+    for (const x of [a, b, e, f]) await O.customerMove(senv, U1, x.id, "cancel", { rid: rid() });
+    await skv.put("u:" + U1, JSON.stringify({ prices: { digest: "pool-digest" } }));
+    const group = await O.poolOpen(senv, { product: "salt", q: 1, target: 3 });
+    const joined = await O.poolJoin(senv, U1, group.pool.id, { q: 1, total: 80, unit: 80, digest: "pool-digest", rid: rid() });
+    const groupChange = await call("/orders/" + joined.order.id + "/preview", { delivery: 0, total: 80, qty: 2, mode: "collect" });
+    ok(joined.order && groupChange.status === 409 && /group order keeps its size and way/.test(groupChange.j.error || ""),
+      "a group order cannot change its joined size or collection way: " + JSON.stringify(groupChange));
   } else ok(true, "node:sqlite is unavailable here, so their yes was not driven against the real schema");
 
   /* 4. THEIR PAGE: what changed, Yes or No thanks */
@@ -198,10 +298,13 @@ export async function run({ ok }) {
   const soon = new Date(Date.now() + 20 * H).toISOString(), gone = new Date(Date.now() - H).toISOString();
   const order = (id, price) => ({ id, at: "2026-10-09T01:00:00Z", product: "salt", qty: 1, unit: 100, total: 100, delivery: 0, mode: "deliver", paid: 0, moved: 0, status: "placed",
     history: [{ at: "2026-10-09T01:00:00Z", status: "placed", by: "customer" }], msgs: [], price });
-  const P1 = "20261009010000-ofye", P2 = "20261009010000-ofgo";
+  const P1 = "20261009010000-ofye", P2 = "20261009010000-ofgo", P3 = "20261009010000-ofun", P4 = "20261009010000-ofwy";
   const ORDERS = [Object.assign(order(P1, { state: "offered", from: "accept", total: 120, delivery: 10, slot: "2026-10-11T08", slotSpan: "09:00-12:00", until: soon }),
       { history: [{ at: "2026-10-09T01:00:00Z", status: "placed", by: "customer" }, held.history[held.history.length - 1]] }),
-    order(P2, { state: "offered", from: "accept", total: 120, delivery: 10, slot: null, slotSpan: null, until: gone })];
+    order(P2, { state: "offered", from: "accept", total: 120, delivery: 10, slot: null, slotSpan: null, until: gone }),
+    /* V3: a Negotiate offer on a placed order that changes the units and the way, and one that adds a delivery and its window */
+    order(P3, { state: "offered", total: 150, qty: 3, mode: "collect", delivery: 0, until: soon }),
+    Object.assign(order(P4, { state: "offered", total: 150, qty: 1, mode: "deliver", delivery: 10, slot: "2026-10-11T08", slotSpan: "09:00-12:00", until: soon }), { mode: "collect" })];
   const body = { ok: true, wrap: await C.wrapKey(PASS, ck), session: "sess-yes",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
   const posted = [];
@@ -231,15 +334,25 @@ export async function run({ ok }) {
     const back = d.querySelector("#pOrder .oback"); if (back) back.click();
     const s2 = await openRow(P2), t2 = s2 ? s2.textContent : "(their order screen did not draw)";
     ok(t2.includes(W.EN["np.cLapsed"]) && !t2.includes(W.EN["np.cYes"]), "a lapsed offer says so, and is no longer theirs to take: " + t2.slice(0, 300));
+    const back2 = d.querySelector("#pOrder .oback"); if (back2) back2.click();
+    const s3 = await openRow(P3), t3 = s3 ? s3.textContent : "(their order screen did not draw)";
+    ok(t3.includes(W.EN["np.cWayCollect"]) && /Units: 3/.test(t3) && t3.includes(W.EN["np.collect"]) && !/Delivery RM/.test(t3),
+      "an offer that changes the units and the way says both, and a collection carries no delivery charge: " + t3.slice(0, 500));
+    const back3 = d.querySelector("#pOrder .oback"); if (back3) back3.click();
+    const s4 = await openRow(P4), t4 = s4 ? s4.textContent : "(their order screen did not draw)";
+    ok(t4.includes(W.EN["np.cWayDeliver"]) && /Delivery RM ?10/.test(t4) && /Delivery between 09:00 and 12:00 on /.test(t4) && !/Units:/.test(t4),
+      "an offer that makes it a delivery says the way, the charge and the window, and no units when they are as placed: " + t4.slice(0, 500));
   } finally { await new Promise((r) => setTimeout(r, 60)); dom.window.close(); }
 
   /* 5. SALT ADMIN: the road, Send for their yes and Withdraw (#104 parity) */
   const s12 = Wn.slotNext(12, null, Date.now()).slot;
   const posts = [];
   const orderOf2 = (id, patch = {}) => ({ id, u: "mbab-cdef", product: "salt", qty: 1, total: 100, status: "placed", mode: "deliver", history: [], ...patch });
-  const A = "20261010070001-ayes", T = "20261010070002-ayes", K = "20261010070003-ayes";
+  const A = "20261010070001-ayes", T = "20261010070002-ayes", K = "20261010070003-ayes",
+    G = "20261010070004-ayes", M = "20261010070005-ayes", RF = "20261010070006-ayes";
   const reviewBody = { ok: true, drafts: [], orders: [orderOf2(A), orderOf2(T, { slot: s12, slotSpan: "12:00-16:00" }),
-    orderOf2(K, { price: { state: "offered", from: "accept", offer: { id: "k1", kind: "accept", total: 120, delivery: 10, until: new Date(Date.now() + 20 * H).toISOString() } } })] };
+    orderOf2(K, { price: { state: "offered", from: "accept", offer: { id: "k1", kind: "accept", total: 120, delivery: 10, until: new Date(Date.now() + 20 * H).toISOString() } } }),
+    orderOf2(G, { pool: "p20261010070000-aaaa", mode: "collect" }), orderOf2(M), orderOf2(RF)] };
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
@@ -249,7 +362,8 @@ export async function run({ ok }) {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
           const b = JSON.parse(init.body);
           if (String(path).endsWith("/preview")) { posts.push({ kind: "preview", path: String(path), body: b });
-            return Response.json({ ok: true, quote: b.total, delivery: b.delivery, hash: "a".repeat(64), offerHash: "b".repeat(64), row: { qty: 1, total: b.total }, flags: [],
+            const given = b.total === undefined ? 240 : b.total;   /* the Desk answers their price for a changed size, whose body carries no total */
+            return Response.json({ ok: true, quote: given, terms: { total: given }, delivery: b.delivery, needsYes: b.qty !== 1 || b.mode !== "deliver", hash: "a".repeat(64), offerHash: "b".repeat(64), row: { qty: 1, total: given }, flags: [],
               cost: { unit: 80, total: 80, source: "purchase" }, card: 100, cardNote: null, floor: { rm: 80, at: 1, exact: true }, margin: { rm: 20, pct: 20 },
               usual: { who: "CZ7-MB", rate: 100, orders: 4, uniform: true, off: false, dir: 0, far: false }, prepay: false, owedWith: 100, ceiling: 250, late: null }); }
           posts.push({ kind: String(path).split("/").pop(), path: String(path), body: b }); return Response.json({ ok: true });
@@ -296,6 +410,57 @@ export async function run({ ok }) {
     await wait(() => posts.some((p) => p.kind === "offer" && p.path.includes(T)));
     const oT = posts.find((p) => p.kind === "offer" && p.path.includes(T));
     ok(oT && oT.body.slot === other.value && oT.body.total === 100, "another window is sent for their yes with the window: " + JSON.stringify(oT && oT.body));
+
+    const pooled = cardOf(doc, G), pooledQty = pooled && pooled.querySelector('input[data-act="order.qty"]'),
+      pooledWay = pooled && pooled.querySelector('select[data-act="order.mode"]');
+    ok(!!pooledQty && pooledQty.disabled && !!pooledWay && pooledWay.disabled,
+      "a group order's size and way cannot be changed in the Agree sheet");
+
+    cardOf(doc, M);
+    const liveChanged = () => [...doc.querySelectorAll("[data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === M) || null;
+    const changedPreview = (total, delivery, qty, mode) => posts.some((p) => p.kind === "preview" && p.path.includes(M)
+      && p.body.total === total && p.body.delivery === delivery && p.body.qty === qty && p.body.mode === mode);
+    const changedSend = () => liveChanged() && liveChanged().querySelector("button[data-accept]");
+    const changedStatus = () => liveChanged() && [...liveChanged().querySelectorAll('[role="status"]')].some((n) => n.textContent.startsWith("Figures read:"));
+    const readChanged = async (total, delivery, qty, mode) => wait(() => changedPreview(total, delivery, qty, mode) && changedStatus() && changedSend());
+    choose(liveChanged().querySelector('select[data-act="order.fee"]'), "10");
+    await readChanged(100, 10, 1, "deliver");
+    const changedQty = liveChanged().querySelector('input[data-act="order.qty"]');
+    changedQty.value = "2"; changedQty.dispatchEvent(new Ev("input", { bubbles: true })); changedQty.dispatchEvent(new Ev("change", { bubbles: true }));
+    await readChanged(undefined, 10, 2, "deliver");
+    ok(liveChanged().querySelector('input[data-act="order.total"]').value === "240" && !posts.some((p) => p.kind === "preview" && p.path.includes(M) && p.body.qty === 2 && p.body.total === 100),
+      "changing the units clears the old goods figure, asks for no total and fills Goods with their price from the preview: " + JSON.stringify(posts.filter((p) => p.kind === "preview" && p.path.includes(M)).map((p) => p.body)));
+    const changedTotal = liveChanged().querySelector('input[data-act="order.total"]');
+    changedTotal.value = "150"; changedTotal.dispatchEvent(new Ev("input", { bubbles: true })); changedTotal.dispatchEvent(new Ev("change", { bubbles: true }));
+    await readChanged(150, 10, 2, "deliver");
+    const changedWay = liveChanged().querySelector('select[data-act="order.mode"]');
+    choose(changedWay, "collect");
+    await readChanged(150, 0, 2, "collect");
+    ok(!!changedSend() && changedPreview(150, 0, 2, "collect") && changedStatus(),
+      "the Agree sheet previews changed units and a collection with no delivery charge: " +
+      JSON.stringify({ live: liveChanged() && liveChanged().isConnected,
+        previews: posts.filter((p) => p.kind === "preview" && p.path.includes(M)).map((p) => p.body), buttons: liveChanged() && [...liveChanged().querySelectorAll("button")].map((b) => b.textContent) }));
+    if (changedSend()) changedSend().click();
+    await wait(() => posts.some((p) => p.kind === "offer" && p.path.includes(M)));
+    const oM = posts.find((p) => p.kind === "offer" && p.path.includes(M));
+    ok(oM && oM.body.qty === 2 && oM.body.mode === "collect" && oM.body.delivery === 0,
+      "the offer sent for their yes carries the changed units and way: " + JSON.stringify(oM && oM.body));
+
+    /* (e) the refill is what Save carries: the units change, Goods fills from the preview, and the offer holds that figure, never the order's old one */
+    cardOf(doc, RF);
+    const liveRF = () => [...doc.querySelectorAll("[data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === RF) || null;
+    const rfRead = (qty) => posts.some((p) => p.kind === "preview" && p.path.includes(RF) && p.body.qty === qty && p.body.total === undefined);
+    choose(liveRF().querySelector('select[data-act="order.fee"]'), "10");
+    await wait(() => posts.some((p) => p.kind === "preview" && p.path.includes(RF)) && liveRF().querySelector("button[data-accept]"));
+    const rfQty = liveRF().querySelector('input[data-act="order.qty"]');
+    rfQty.value = "3"; rfQty.dispatchEvent(new Ev("input", { bubbles: true })); rfQty.dispatchEvent(new Ev("change", { bubbles: true }));
+    const midGoods = liveRF().querySelector('input[data-act="order.total"]').value, midSend = !!liveRF().querySelector("button[data-accept]");
+    await wait(() => rfRead(3) && liveRF().querySelector("button[data-accept]") && liveRF().querySelector('input[data-act="order.total"]').value === "240");
+    liveRF().querySelector("button[data-accept]").click();
+    await wait(() => posts.some((p) => p.kind === "offer" && p.path.includes(RF)));
+    const oRF = posts.find((p) => p.kind === "offer" && p.path.includes(RF));
+    ok(midGoods === "" && midSend === false && oRF && oRF.body.qty === 3 && oRF.body.total === 240,
+      "until their price for the new size has come back the goods are empty and nothing can be sent; then Save carries that figure, not the old one: " + JSON.stringify([midGoods, midSend, oRF && oRF.body]));
   } finally { browser.window.close(); }
 
   /* 6. WHAT STILL WAITS ON HIM, on the Desk's To do (18 Oct 2026: the Desk draws no order card, but it counts the acts): an Accept sent for

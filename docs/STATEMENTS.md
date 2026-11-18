@@ -2978,6 +2978,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.move` | The pill on a row of the list in Orders (key: the order id), 25 Oct 2026 | The stage's move. Withdraw, Ready (to deliver), Handed (the order's units) and Received (one payment) ask once under the row; Agree, a collection's Ready, two payments and Message (its Answer open) open the order. |
 | `order.move-yes` | Under a row that asks (key: the order id) | Sends what the order card sends for that move: withdraw, move to ready by delivery, handed, received, each under its own request id. |
 | `order.move-no` | Under a row that asks (key: the order id) | Not now: takes the ask away and sends nothing. |
+| `order.qty` | Order card (key: the order id), placed | The units, as the order is to be agreed (18 Nov 2026, Order change version 3); a changed size with no price typed refills the goods at their price for it. |
+| `order.mode` | Order card (key: the order id), placed | The way, collect or deliver, as the order is to be agreed (18 Nov 2026, Order change version 3); either change goes to them for their yes. |
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
 | `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
 | `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
