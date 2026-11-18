@@ -106,7 +106,7 @@ export async function run({ ok, pageWork }) {
     ok(!own.some(([sel]) => /\.abar\b|\.salt-deskbar|\.cbar\b|\.chead\b|\.crtitle|\.crbrand|\.salt-rail|\.salt-appbar/.test(sel)), "and none of the old bar, rail or header is styled");
     const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document;
     const heroes = [...od.querySelectorAll("#roster > main > [data-in] > header.amb-hero")].map((h) => h.querySelector(".amb-hero__title").textContent);
-    ok(JSON.stringify(heroes) === JSON.stringify(["Needs you", "Orders", "Customers", "Record", "Shop"]) && !od.querySelector("#roster .salt-deskbar, #roster .salt-rail")
+    ok(JSON.stringify(heroes) === JSON.stringify(["Needs you", "Orders", "Customers", "Record", "Settings"]) && !od.querySelector("#roster .salt-deskbar, #roster .salt-rail")
       && ![...od.querySelectorAll("#roster .amb-hero")].some((e) => /Salt Admin/.test(e.textContent)) && od.querySelectorAll("#roster h1.sr").length === 0,
       "each of his places opens with its hero, the place's name its title, and no bar, rail or brand repeated over each: " + JSON.stringify(heroes));
     const cd = new JSDOM(landingPage("abcd-efgh", "nct", null)).window.document, hero = cd.querySelector("#tabs > main > header.amb-hero");

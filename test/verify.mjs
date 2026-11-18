@@ -51180,6 +51180,11 @@ await (async () => {
   await (await import("./review-fixes.mjs")).run({ ok, pageWork });
 })();
 
+section("18 Nov 2026: one grid on Salt Counter, and Salt Admin's fifth place is Settings");
+await (async () => {
+  await (await import("./one-grid.mjs")).run({ ok });
+})();
+
 section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-trips.mjs")).run({ ok, pageWork });

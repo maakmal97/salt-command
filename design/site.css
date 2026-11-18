@@ -303,7 +303,9 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .keepsteps { margin: 0; padding-left: var(--amb-space-5); display: grid; gap: var(--amb-space-2); font-size: var(--amb-text-subhead); }
 .keepsteps .glyph, .keeppage .glyph, .amb-basis .glyph { display: inline-block; vertical-align: middle; margin: 0 2px; }
 @container amb (min-width: 960px) {
-  #acct { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; column-gap: var(--amb-space-6); }
+  /* 18 Nov 2026, his answer (one shared grid): Account's side column is the panes' own track, mirrored, and the page runs to the same right edge as Home and Orders */
+  #acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%)); align-items: start; column-gap: var(--amb-space-6); }
+  #pPrices .amb-notice, #pPrices p { max-width: var(--amb-measure); }
   #acct > #aGlance, #acct > .acct__main { grid-column: 1; }
   #acct > #thisDevice, #acct > #aHelp { grid-column: 2; }
   #acct { grid-template-rows: auto 1fr auto; }

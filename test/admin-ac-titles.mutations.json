@@ -6,10 +6,10 @@
   "replace": "        + '<h1 class=\"sr\">Orders</h1>'"
  },
  {
-  "name": "Shop's title is hidden again",
+  "name": "Settings' title is hidden again",
   "file": "stmt/page.js",
-  "find": "        + aHero(\"Shop\", \"\")",
-  "replace": "        + '<h1 class=\"sr\">Shop</h1>'"
+  "find": "        + aHero(\"Settings\", \"\")",
+  "replace": "        + '<h1 class=\"sr\">Settings</h1>'"
  },
  {
   "name": "the hidden class shows",

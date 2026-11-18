@@ -3970,7 +3970,7 @@ export const OWNER_JS = `
       grid.appendChild(b);
     });
     makerAsk(order,opener,'point',{title:kind==='ready'?'Ready to collect at which point?':'Move it to which point?', plain:true, go:'Choose a point', keep:'Not yet',
-      say:[list.length?'They are told where, with a pin that opens their maps app.':(kind==='ready'?'No point is on the list yet.':'No other point is on the list.')+' Add one under Shop, Shop hours.'], extra:[grid]});
+      say:[list.length?'They are told where, with a pin that opens their maps app.':(kind==='ready'?'No point is on the list yet.':'No other point is on the list.')+' Add one under Settings, Shop hours.'], extra:[grid]});
     var go=document.getElementById('ynGo'); if(go) go.hidden=true;
   }
   function makerAsk(order,opener,kind,q){

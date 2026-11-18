@@ -615,7 +615,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   with 10 or more measured; closed, when it opens.
 - **A collection point** (Counter Batch A, his decisions of 18 Oct 2026): his points are Counter KV `maker:points`
   (`{v:1, list:[{code, lat, lng}]}`, a code one capital and one or two digits, so never a roster code's shape), kept on Salt
-  Admin under Shop > Hours. **A collect Ready names one and is refused without**; the order keeps the point as a snapshot
+  Admin under Settings > Hours (the place read Shop until 18 Nov 2026, his answer; its id, hash and acts stay `shop`, and older docs say Shop). **A collect Ready names one and is refused without**; the order keeps the point as a snapshot
   (`pointAt`), so editing the list moves no order, and Change point moves one on purpose (a `point` event, its wake
   `point-moved`). The customer reads `pointAt` only while the order waits ready to collect with goods still owed
   (`customerView`); `deskOrderView` strips it on every Desk road. Their pin opens Apple Maps, the phone's `geo:` or Google Maps.

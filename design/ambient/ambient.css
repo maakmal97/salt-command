@@ -1838,4 +1838,6 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   @media (min-height: 640px) {
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }
   }
+  /* 0.7.17: one grid for every place of a working shell. A plain split takes the panes' own columns, so a place of two columns and a place of panes share their edges. */
+  .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }
 }

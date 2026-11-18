@@ -17,7 +17,7 @@ import { SITE_CSS } from "../stmt/statement-css.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
-const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
+const LABELS = ["Needs you", "Orders", "Customers", "Record", "Settings"];
 const PARTS = {
   /* 2 Nov 2026 (Orders on the canvas): the Segment draws the first four; Approve is reached by the bar, and Payments, Group and Ledger are rows under More */
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
@@ -91,7 +91,7 @@ export async function run({ ok, pageWork }) {
     const bar = (sel) => [...d.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m") + ":" + b.textContent.replace(/\d+$/, "").trim());
     const want = PLACES.map((m, i) => m + ":" + LABELS[i]);
     ok(same(bar(".amb-tabbar"), want) && same(bar(".amb-tabbar"), want),
-      "Salt Admin has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".amb-tabbar"), bar(".amb-tabbar")]));
+      "Salt Admin has five places, Needs you, Orders, Customers, Record and Settings, in the App bar and the Desk rail: " + JSON.stringify([bar(".amb-tabbar"), bar(".amb-tabbar")]));
     ok(!/Maker/.test([...d.querySelectorAll(".place, #roster h1, #roster h2, #roster .eyebrow")].map((e) => e.textContent).join(" ")),
       "and none of its items, headings or eyebrows says Maker, a name that is retired on screen");
 

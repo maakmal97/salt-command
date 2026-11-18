@@ -639,7 +639,7 @@ function noticeCard(b) {
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
 /* 11 OCT 2026, HIS DECISION: FIVE PLACES, Needs you, Orders, Customers, Record and Shop. "Maker" is retired on screen. A place but Needs you has
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
-const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
+const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Settings"]];   /* 18 Nov 2026, his answer: his fifth place is Settings (Shop is the Counter's buying page); its id, hash and acts stay shop */
 /* THE TEST SURFACE (his answers of 18 Oct 2026): Salt Admin on the practice accounts draws four places, Needs you, Orders, Payments and
    Chat; the last two open a part (the third field), and Record, Shop, the account list, the links, Approve, Group and Ledger are not drawn */
 const TEST_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["orders", "Payments", "payments"], ["customers", "Chat", "messages"]];
@@ -863,7 +863,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace amb-place" data-in="shop" hidden>'
-        + aHero("Shop", "")
+        + aHero("Settings", "")
         + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody amb-place">'

@@ -10,7 +10,7 @@ import { landingPage } from "../stmt/page.js";
 export async function run({ ok }) {
   const d = new JSDOM(landingPage("", "ntitle", { master: "fixture-master", accounts: [] })).window.document;
   const hs = [...d.querySelectorAll("#roster h1")];
-  ok(JSON.stringify(hs.map((h) => h.textContent)) === JSON.stringify(["Needs you", "Orders", "Customers", "Record", "Shop"])
+  ok(JSON.stringify(hs.map((h) => h.textContent)) === JSON.stringify(["Needs you", "Orders", "Customers", "Record", "Settings"])
     && hs.every((h) => h.classList.contains("amb-hero__title") && !h.classList.contains("sr") && h.parentElement.matches("#roster > main > [data-in] > header.amb-hero.amb-mesh")),
     "each of his five places opens with its hero, the place's name its drawn title: " + JSON.stringify(hs.map((h) => [h.textContent, h.className])));
   const css = [...d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
