@@ -1,0 +1,188 @@
+[
+ {
+  "name": "1 two owners let through",
+  "file": "stmt/admins.js",
+  "find": "if (owners.length > 1) throw",
+  "replace": "if (owners.length > 9) throw"
+ },
+ {
+  "name": "2 the publish marks no tier",
+  "file": "tools/stmt-publish.mjs",
+  "find": "    else if (admins[byUser0[rec.u]]) forCustomer.admin = admins[byUser0[rec.u]];\n",
+  "replace": ""
+ },
+ {
+  "name": "2 a missing tier publishes as a customer",
+  "file": "tools/stmt-publish.mjs",
+  "find": "    if (ADMIN_CODE_RE.test(code) && !admins[code]) throw",
+  "replace": "    if (false) throw"
+ },
+ {
+  "name": "2 a tier without an account is accepted",
+  "file": "tools/stmt-publish.mjs",
+  "find": "    if (!users[code]) throw",
+  "replace": "    if (false) throw"
+ },
+ {
+  "name": "2 a missing account record is accepted",
+  "file": "tools/stmt-publish.mjs",
+  "find": "    if (!r.records.some((rec) => rec.u === users[code])) throw",
+  "replace": "    if (false) throw"
+ },
+ {
+  "name": "3 staff given a key",
+  "file": "stmt/worker.js",
+  "find": "  if (tier !== 1) return json(Object.assign({ ok: false }, refusal(\"adminStaff\")), 403);\n",
+  "replace": ""
+ },
+ {
+  "name": "3 non-password sessions given a key",
+  "file": "stmt/worker.js",
+  "find": "sessionRecord.u !== u || sessionRecord.how !== \"password\"",
+  "replace": "sessionRecord.u !== u"
+ },
+ {
+  "name": "3 revocation pointer failure ignored",
+  "file": "stmt/worker.js",
+  "find": "  await pointAt(env, u, k, { how: \"admin\", at, label: d.label, kind: d.kind }, ADMIN_TTL);",
+  "replace": "  try { await pointAt(env, u, k, { how: \"admin\", at, label: d.label, kind: d.kind }, ADMIN_TTL); } catch (e) {}"
+ },
+ {
+  "name": "3 password method not recorded on the session",
+  "file": "stmt/worker.js",
+  "find": "  const session = await mintSession(env, u, how);",
+  "replace": "  const session = await mintSession(env, u);"
+ },
+ {
+  "name": "3 the cookie readable by script",
+  "file": "stmt/admins.js",
+  "find": "\"; Path=/all; Max-Age=\" + ADMIN_TTL + \"; HttpOnly; Secure; SameSite=Lax\";",
+  "replace": "\"; Path=/all; Max-Age=\" + ADMIN_TTL + \"; Secure; SameSite=Lax\";"
+ },
+ {
+  "name": "3 the key filed raw",
+  "file": "stmt/worker.js",
+  "find": "const admKey = async (key) => \"adm:\" + (await idOf(key));",
+  "replace": "const admKey = async (key) => \"adm:\" + key;"
+ },
+ {
+  "name": "4 the switch off still asks for the key",
+  "file": "stmt/worker.js",
+  "find": "const passed = isAdminIdentity(who) && (!doorOn(env) || !!door);",
+  "replace": "const passed = isAdminIdentity(who) && !!door;"
+ },
+ {
+  "name": "5 the switch on asks for Access alone",
+  "file": "stmt/worker.js",
+  "find": "const passed = isAdminIdentity(who) && (!doorOn(env) || !!door);",
+  "replace": "const passed = isAdminIdentity(who);"
+ },
+ {
+  "name": "5 a demoted account keeps the door",
+  "file": "stmt/worker.js",
+  "find": "  return adminTier(await accountRecord(env, rec.u)) === 1 ? rec : null;\n",
+  "replace": "  return rec;\n"
+ },
+ {
+  "name": "6 a quote let through",
+  "file": "stmt/worker.js",
+  "find": "p.startsWith(\"/pools/\") || p === \"/quote\")\n    && adminTier(",
+  "replace": "p.startsWith(\"/pools/\"))\n    && adminTier("
+ },
+ {
+  "name": "7 Leave keeps the key",
+  "file": "stmt/worker.js",
+  "find": "          await env.STMT.delete(k);\n          if (rec && rec.u) await unpoint(env, rec.u, k);",
+  "replace": "          if (rec && rec.u) await unpoint(env, rec.u, k);"
+ },
+ {
+  "name": "9 the door needs the password session again",
+  "file": "stmt/worker.js",
+  "find": "  if (!rec || rec.tier !== 1 || typeof rec.u !== \"string\") return null;",
+  "replace": "  if (!rec || rec.tier !== 1 || typeof rec.u !== \"string\" || !(await env.STMT.get(rec.session, \"json\"))) return null;"
+ },
+ {
+  "name": "9 Counter Log out leaves the admin key",
+  "file": "stmt/worker.js",
+  "find": "  if (u) await endAdminKeys(env, u);\n",
+  "replace": ""
+ },
+ {
+  "name": "9 an admin key outlives its record",
+  "file": "stmt/worker.js",
+  "find": "  if (!rec || rec.tier !== 1 || typeof rec.u !== \"string\") return null;",
+  "replace": "  if (rec && (rec.tier !== 1 || typeof rec.u !== \"string\")) return null;\n  if (!rec) return { u: \"awna-aaaa\", tier: 1 };"
+ },
+ {
+  "name": "9 a tier 2 key opens the door",
+  "file": "stmt/worker.js",
+  "find": "rec.tier !== 1 || typeof rec.u !== \"string\") return null;\n  /* the account must still be the owner's: a code taken off statements/_admins.json loses the door at the next publish */\n  return adminTier(await accountRecord(env, rec.u)) === 1 ? rec : null;",
+  "replace": "typeof rec.u !== \"string\") return null;\n  return adminTier(await accountRecord(env, rec.u)) ? rec : null;"
+ },
+ {
+  "name": "7 sign out everywhere leaves admin grants",
+  "file": "stmt/worker.js",
+  "find": "  for (const p of ptrs) {\n    /* S9 fix: a device",
+  "replace": "  for (const p of ptrs) {\n    if (/^adm:/.test(p.key)) continue;\n    /* S9 fix: a device"
+ },
+ {
+  "name": "8 no Salt Admin row",
+  "file": "stmt/page.js",
+  "find": "    if(admin){\n      var adminControls=el('span');",
+  "replace": "    if(false){\n      var adminControls=el('span');"
+ },
+ {
+  "name": "8 /admin goes on to nothing",
+  "file": "stmt/page.js",
+  "find": "    if(ADMIN&&admin&&!adminTried&&!view){ adminTried=true; adminGo(); }\n",
+  "replace": ""
+ },
+ {
+  "name": "8 admin door opens a remembered account",
+  "file": "stmt/page.js",
+  "find": "      if(ADMIN){ if(adminTried) adminNote=tw('admin.retry'); gate.hidden=false; return; }\n",
+  "replace": ""
+ },
+ {
+  "name": "8 failed return loops back",
+  "file": "stmt/worker.js",
+  "find": "url.searchParams.has(\"from\") ? \"/admin?retry=1\" : \"/admin\"",
+  "replace": "\"/admin\""
+ },
+ {
+  "name": "8 retry opens automatically",
+  "file": "stmt/page.js",
+  "find": "adminTried=ADMIN&&new URLSearchParams(location.search).has('retry')",
+  "replace": "adminTried=false"
+ },
+ {
+  "name": "8 a refusal not said in the row",
+  "file": "stmt/page.js",
+  "find": "    adminNote=wErr(j,'e.busy');",
+  "replace": "    adminNote='';"
+ },
+ {
+  "name": "2b a keyed admin record is sealed a price list",
+  "file": "tools/make_statements.mjs",
+  "find": "if (pricing && !isAdmin) {",
+  "replace": "if (pricing) {"
+ },
+ {
+  "name": "2b a keyed admin record is sealed a card",
+  "file": "tools/make_statements.mjs",
+  "find": "if (cards && cards[code] && !isAdmin) {",
+  "replace": "if (cards && cards[code]) {"
+ },
+ {
+  "name": "2b the publish hands liveRecords no admins",
+  "file": "tools/stmt-publish.mjs",
+  "find": "(opts && opts.supply) || null, admins);",
+  "replace": "(opts && opts.supply) || null);"
+ },
+ {
+  "name": "2b every account is taken for an admin",
+  "file": "tools/make_statements.mjs",
+  "find": "const isAdmin = !!(admins && admins[code]);",
+  "replace": "const isAdmin = true;"
+ }
+]
