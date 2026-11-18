@@ -583,7 +583,7 @@ function aHero(title, sub, o) {
        stmt/owner.js: a tick while they agree, the count of differences while they do not) and opens the part its row in Orders' More list opened; Approve stands on Orders always, as
        it did, and on the other places while rows wait (barLive). A phone keeps both on Orders alone (data-wide). Its act is the bar's of 21 Oct 2026. */
     + (o.acts ? '<div class="amb-cluster"' + (o.approve ? "" : " data-wide") + '>'
-      + '<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar.ledger" aria-label="Ledger check">' + '<span class="aled__ok" data-ledger-ok hidden>' + AMB.glyph("check", "sm") + "</span>"
+      + '<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar.ledger" aria-pressed="false" aria-label="Ledger check">' + '<span class="aled__ok" data-ledger-ok hidden>' + AMB.glyph("check", "sm") + "</span>"
       + '<span>Ledger</span><span class="amb-chip amb-chip--neg" data-ledger-n hidden></span></button>'
       + '<button type="button" class="amb-pill amb-pill--quiet"' + (o.approve ? ' id="aApprove"' : " hidden") + ' data-approve data-act="bar.approve">Approve</button></div>' : "")
     + "</header>";

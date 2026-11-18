@@ -161,6 +161,8 @@ export const OWNER_JS = `
     if(fresh&&PLACE_READ[placeNow]) PLACE_READ[placeNow]();
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(!ledgerAt||Date.now()-ledgerAt>600000) ledgerRead();
+    /* Fable's review (18 Nov 2026): the indicator is pressed while its own view is open, so the bar says where he is */
+    [].forEach.call(document.querySelectorAll('[data-ledger]'), function(b){ var on=placeNow==='orders'&&partNow==='ledger'?'true':'false'; if(b.getAttribute('aria-pressed')!==on) b.setAttribute('aria-pressed',on); });
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
     if(fresh) pageTop();
     needsWatch();

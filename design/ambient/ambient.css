@@ -1843,6 +1843,12 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   .amb-shell--work .amb-hero--compact > .amb-cluster { gap: var(--amb-space-2); margin-left: auto; }
   .amb-shell--work .amb-hero--compact > .amb-hero__time ~ .amb-cluster { margin-left: 0; }
   .amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill { min-height: var(--amb-tap); }
+  /* 0.7.23: the bar's status chip is a dot and its word, no ground, so it is no fourth button; a pill that carries aria-pressed is an indicator,
+     a step under the bar's one move, pressed while its view is open, and edged in the negative ink while it carries a negative count */
+  .amb-shell--work .amb-hero--compact > .amb-chip--glass { border-color: transparent; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed] { border-color: var(--amb-line); font-weight: 500; color: var(--amb-ink-2); }
+  .amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed="true"] { background: var(--amb-well); color: var(--amb-ink); }
+  .amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { border-color: var(--amb-neg); color: var(--amb-ink); }
   .amb-shell--work.amb-shell--rail > .amb-dock > .amb-tabbar { flex: 1 1 auto; }
   .amb-shell--work .amb-segment--tabs { flex-wrap: nowrap; gap: var(--amb-space-6); max-width: none; padding: 0; border: 0; border-bottom: 1px solid var(--amb-line); border-radius: 0; background: none; }
   .amb-shell--work .amb-segment--tabs > .amb-segment__opt { position: relative; flex: 0 0 auto; min-width: var(--amb-tap); padding: 0 2px; border: 0; border-radius: 0; background: none; font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }

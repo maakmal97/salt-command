@@ -67,6 +67,13 @@ export async function run({ ok, pageWork }) {
   ok(!!d0.querySelector('#oOrders section[data-in="orders.payments"] #makerClaims') && !!d0.querySelector('#oOrders #oLedger[data-in="orders.ledger"]'),
     "Payments they sent and the Ledger check keep their parts under Orders, each at its address");
   dom0.window.close();
+  /* T8 (Fable's review, 18 Nov 2026): the indicator keeps one width, is a step under Approve and is pressed while its view is open; a place's tabs stand on one line */
+  ok(css.includes(".adm .aled { min-width: calc(var(--amb-tap) * 2.5); }") && css.includes('.amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed="true"] { background: var(--amb-well); color: var(--amb-ink); }')
+    && css.includes(".amb-shell--work .amb-hero--compact > .amb-chip--glass { border-color: transparent; background: none;") && /<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar\.ledger" aria-pressed="false"/.test(owner),
+    "from 960px Ledger check keeps one width whatever it says, it is an indicator (aria-pressed) by Ambient's rule, and the shop's state is a dot and its word with no ground");
+  ok(css.includes(".adm #unsentBar:not([hidden]) { margin-top: 0; }") && css.includes(".adm .amb-stack:has(> .aparts) { margin-top: 0; }")
+    && css.includes('.adm .aparts, .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin-bottom: var(--amb-space-4); }'),
+    "from 960px one margin of each pair above the tabs is nought and the tabs' foot is one gap, so they stand on one line over panes and over a page");
   /* T5 to T7, the page running */
   const swallow = () => {};
   process.on("unhandledRejection", swallow);
@@ -90,6 +97,8 @@ export async function run({ ok, pageWork }) {
     const cur = () => (D.querySelector('button[data-m][aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
     ok(cur() === "orders" && !D.getElementById("oLedger").hidden && D.getElementById("oSplit").hidden && p.w.location.hash === "#orders/ledger" && /Order and book/.test(D.getElementById("led-tie").textContent),
       "a tap on Customers' Ledger check opens the Ledger check under Orders, at its address: " + JSON.stringify([cur(), p.w.location.hash]));
+    const pressed = () => [...D.querySelectorAll("#roster [data-ledger]")].map((b) => b.getAttribute("aria-pressed"));
+    ok(pressed().length === 5 && pressed().every((v) => v === "true"), "while the Ledger check is open every bar's indicator is pressed, so the bar says where he is: " + JSON.stringify(pressed()));
     ok(all(false, "2", "Ledger check: 2 differences between the orders and the book"), "and once that read finds two differences each bar shows the count and no tick: " + JSON.stringify(state()[0]));
     tie = { ok: true, clean: false, faults: [{ order: "o-1", rid: "s901", what: ["total"] }], waiting: [], orders: 3, v: 1544, at: "2026-11-18T08:00:00Z" };
     await p.click(byAct(D, "ledger.tieout"));
@@ -103,6 +112,7 @@ export async function run({ ok, pageWork }) {
     await p.click(byAct(D, "nav.record"));
     await p.click(D.querySelector("#oRecord > header [data-approve]"));
     ok(cur() === "orders" && !D.getElementById("oApprove").hidden && p.w.location.hash === "#orders/approve", "and a tap on Record's opens Approve: " + JSON.stringify([cur(), p.w.location.hash]));
+    ok(pressed().length === 5 && pressed().every((v) => v === "false"), "and off the Ledger check no indicator is pressed: " + JSON.stringify(pressed()));
     /* T7 */
     await p.click(byAct(D, "nav.shop")); await p.click(byAct(D, "part.shop.group"));
     const sec = D.querySelector('#oShop [data-in="shop.group"]');

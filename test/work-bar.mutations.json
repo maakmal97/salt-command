@@ -202,5 +202,35 @@
   "file": "stmt/owner.js",
   "find": "if(PARTS.orders){ PARTS.orders.push('payments'); if(!TESTING)",
   "replace": "if(PARTS.orders){ if(!TESTING)"
+ },
+ {
+  "name": "the indicator has no kept width",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .aled { min-width: calc(var(--amb-tap) * 2.5); }",
+  "replace": ".adm .aled { }"
+ },
+ {
+  "name": "the indicator is a plain button, not pressed or unpressed",
+  "file": "stmt/page.js",
+  "find": "data-ledger data-act=\"bar.ledger\" aria-pressed=\"false\" aria-label",
+  "replace": "data-ledger data-act=\"bar.ledger\" aria-label"
+ },
+ {
+  "name": "the tabs' stack keeps its margin over panes",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .amb-stack:has(> .aparts) { margin-top: 0; }",
+  "replace": ".adm .amb-stack:has(> .aparts) { }"
+ },
+ {
+  "name": "the indicator is never pressed",
+  "file": "stmt/owner.js",
+  "find": "var on=placeNow==='orders'&&partNow==='ledger'?'true':'false';",
+  "replace": "var on='false';"
+ },
+ {
+  "name": "the indicator is pressed all over Orders",
+  "file": "stmt/owner.js",
+  "find": "var on=placeNow==='orders'&&partNow==='ledger'?'true':'false';",
+  "replace": "var on=placeNow==='orders'?'true':'false';"
  }
 ]
