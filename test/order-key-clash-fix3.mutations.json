@@ -1,0 +1,32 @@
+[
+{
+"name": "the tie-out never lets a held yes go",
+"file": "src/orders.js",
+"find": "      if (o && yesHeld(y, o, byKey, n)) {",
+"replace": "      if (false) {"
+},
+{
+"name": "the tie-out lets a held yes go without saying so",
+"file": "src/orders.js",
+"find": "shown=json_set(CASE WHEN json_valid(shown) THEN shown ELSE '{}' END,'$.retired',?2) WHERE id=?3 AND status='waiting' AND entry_at IS NULL\")\n          .bind(at, \"the book holds its \" + y.stage + \" already\", y.id)",
+"replace": "shown=shown WHERE id=?3 AND status='waiting' AND entry_at IS NULL AND ?2 IS NOT NULL\")\n          .bind(at, \"the book holds its \" + y.stage + \" already\", y.id)"
+},
+{
+"name": "the tie-out names a held yes all the same",
+"file": "src/orders.js",
+"find": "          .bind(at, \"the book holds its \" + y.stage + \" already\", y.id).run();\n        continue;",
+"replace": "          .bind(at, \"the book holds its \" + y.stage + \" already\", y.id).run();"
+},
+{
+"name": "the Desk's handover tap reads no book",
+"file": "src/orders.js",
+"find": "handoverTap(o, body, at, rej, book), mirror);",
+"replace": "handoverTap(o, body, at, rej), mirror);"
+},
+{
+"name": "the restate tap never tests the key",
+"file": "engine/stages.mjs",
+"find": "    if (twin) return clashError(twin, \"change it to another figure, or change that sale instead\");",
+"replace": ""
+}
+]

@@ -1068,7 +1068,9 @@ const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
 /** POST /orders/<id>/handed {qty, close}: Collected or Delivered, in the order's own mode, the running total handed over. */
 export async function handedOrder(env, id, body, by, now, mirror) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "move");
-  return stageTap(env, id, body, by, now, "move", (o, at) => handoverTap(o, body, at, rej), mirror);
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the tap's one read: the key a close or redate moves to is tested on it */
+  const book = mirror && (body && (body.close === true || body.qty > 0)) ? await mirror().catch(() => null) : null;
+  return stageTap(env, id, body, by, now, "move", (o, at) => handoverTap(o, body, at, rej, book), mirror);
 }
 
 /** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
@@ -2449,6 +2451,14 @@ const namedKeys = (orders) => {
   return n;
 };
 const TIEOUT_STALL_MS = 15 * 60000;
+/* a stale yes of a handover or a payment whose order and its one row agree on that stage's figure: nothing of it is owed (the tie-out lets it go) */
+export function yesHeld(y, o, byKey, n) {
+  if (!y || !o || !["move", "pay"].includes(y.stage) || !o.ledgerKey) return false;
+  const k = ledgerKeyOf(o), row = byKey.get(k);
+  if (!row || (n.get(k) || 0) !== 1) return false;
+  if (y.stage === "move") return Math.abs(rowOut(row) - (+(+o.moved || 0).toFixed(3))) < 0.0004;
+  return Math.abs(+POSITION_ENGINE.txPaid(row).toFixed(2) - +((+o.paid || 0) + (+o.credit || 0)).toFixed(2)) < 0.005;
+}
 export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
@@ -2463,10 +2473,6 @@ export async function tieOut(env, mirror, now = new Date()) {
     }
   } catch (e) { v = null; }
   const told = await env.SALT_QUEUE.get(TOLD_MARK);
-  try {
-    const old = (await env.SALT_LEDGER.prepare("SELECT order_id, stage, at FROM preapproval WHERE status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NULL AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
-    for (const y of old) faults.push({ order: y.order_id, what: ["your yes to its " + y.stage + " of " + String(y.at).slice(0, 10) + " never reached Approve, so it holds nothing: tap it again if the move is still owed"] });
-  } catch (e) { /* the yeses are read again next pass */ }
   if (v && told !== v && Number.isFinite(since) && now.getTime() - since > TIEOUT_STALL_MS) {
     let held = null;
     try { held = await env.SALT_QUEUE.get(TOLD_FAILED, "json"); } catch (e) { held = null; }
@@ -2481,6 +2487,21 @@ export async function tieOut(env, mirror, now = new Date()) {
   const byKey = new Map(), n = new Map();
   for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }
   const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders);
+  /* A YES OLDER THAN A DAY THAT NO ROW SPENT holds nothing. 19 Nov 2026 (ssdngq): one whose move the book holds all the same (its row drafted
+     without it, under Approve, or a later move of the same stage carrying it) is spent by the book: it is let go, said in the yes itself, and
+     never named again. One whose order and row still differ on that stage's figure is named, as before: the move may still be owed. */
+  try {
+    const old = (await env.SALT_LEDGER.prepare("SELECT id, order_id, stage, at FROM preapproval WHERE status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NULL AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
+    for (const y of old) {
+      const o = r.orders.find((x) => x && x.id === y.order_id);
+      if (o && yesHeld(y, o, byKey, n)) {
+        await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='void', decided_at=?1, shown=json_set(CASE WHEN json_valid(shown) THEN shown ELSE '{}' END,'$.retired',?2) WHERE id=?3 AND status='waiting' AND entry_at IS NULL")
+          .bind(at, "the book holds its " + y.stage + " already", y.id).run();
+        continue;
+      }
+      faults.push({ order: y.order_id, what: ["your yes to its " + y.stage + " of " + String(y.at).slice(0, 10) + " never reached Approve, so it holds nothing: tap it again if the move is still owed"] });
+    }
+  } catch (e) { /* the yeses are read again next pass */ }
   /* a row several live orders name is their sum (17 Oct 2026, s219): each is read against it with the others */
   const sums = new Map();
   for (const o of r.orders) {

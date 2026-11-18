@@ -49,8 +49,12 @@ export async function run({ ok }) {
      is the master's own (ledger.REWARD, the one the seed check above proves), so the fold is loaded with an extract carrying it: the same answer alone and in the suite. */
   const extract = join(mkdtempSync(join(tmpdir(), "reward-spend-")), "ledger.json");
   writeFileSync(extract, JSON.stringify({ ledger: { REWARD: ledger.REWARD } }));
+  /* 19 Nov 2026: and the argument is taken back once the fold has read it, as the other fold sections do: left behind, a later section in the same
+     process that pushes its own --ledger was read this one (the fold takes the first), so "Associate reward" went red by shard packing alone */
+  const argv0 = process.argv.slice();
   if (!process.argv.includes("--ledger")) process.argv.push("--ledger", extract);
   const { apply } = await import("../tools/fold.mjs");
+  process.argv.splice(0, process.argv.length, ...argv0);
   try {
     w.eval(`(function(){var rows=${JSON.stringify(SCENARIO)};rows.forEach(function(r){sales.push(JSON.parse(JSON.stringify(r)));
       BASE_SALES.push(JSON.parse(JSON.stringify(r)));});recompute();})()`);
