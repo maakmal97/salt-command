@@ -74,7 +74,36 @@
 - Not built, each a design call of his: the centred hero over left-aligned content, the Counter's page grids, Shop meaning buy on the Counter and settings on Salt Admin,
   Shop's card hierarchy, the weekly hours bars, Shop's grey hero.
 
+## The laptop bar: a bar on the page ground, tabs, the status in the bar (v1545)
+- Built as v1545 (18 Nov 2026) on his four answers of 18 Nov 2026 after he called Salt Admin at 1536 by 730 "so hectic"; settled, do not ask again:
+  **A** a place's parts are underlined tabs across the content's width, the current one underlined in the accent, counts beside each, filters under them still pills;
+  **B** Live, the time and the shop's state stand in the bar's right side before Ledger, Approve and +, and the rail's foot is empty;
+  **C** the heading is a bar on the page ground, starting and ending where the content columns do, a hairline under it, the aurora a 4px strip along the top edge;
+  **D** the More list is split up: Ledger check an indicator in every place's bar beside Approve (a tick when the books agree, a count when not), Group orders under
+  Settings (`#shop/group`; the old `#orders/group` lands there), Payments they sent off Orders' strip (its part and `#orders/payments` stand, reached from Needs you).
+  Standing from before: a phone keeps the centred hero, panes from 960px, the rail to the foot, a pressed filter chip the neutral pill.
+- Ambient 0.7.20 to 0.7.24 (`696ba9a`, `f1ae82a`, `d679e21`, `50916f8`, `cbfdede`), all in `amb-shell--work` from 960px: the compact hero a bar (`--amb-bar-l`, `--amb-bar-r`,
+  which follow the panes' edges while panes show), `amb-segment--tabs`, a stack before shown panes on the panes' edges, the bar's glass chip with no ground, and a pill
+  carrying `aria-pressed` in the bar's cluster an indicator (quiet ink, edged negative with a negative chip, ringed in the accent while pressed). `amb-tabbar__foot` is gone.
+  The Ambient artifact was not republished for these.
+- Salt Admin: `aHero(title, sub, {heat, live, hours, acts, approve})` draws the time line, the shop chip (`[data-barhours]`) and the cluster (`[data-ledger]`,
+  `[data-approve]`) in every place; `[data-wide]` hides a part under 960px, so a phone shows Ledger and Approve on Orders alone and the chip on Needs you alone.
+  `ledgerRead` reads the Desk's stored tie-out (`GET /all/maker/ledger`) with the page and at most every ten minutes, runs no check and posts nothing; `ledgerPaint`
+  draws it; the indicator is `aria-pressed` while `orders/ledger` is open. The Counter's Orders tabs carry `amb-segment--tabs` too and sit inside the list's pane.
+- Measured in Chromium at 390, 1180, 1440, 1536 and 1920 (admin-snap, counter-render): at 1536 the bar, the tab row and the content share 360 to 1456 over panes and
+  376 to 1440 on a page; the bar 61px (86px from 960 to 1200px, where the lead line takes its own row); the tab row at y 167 on every place and part; the status line
+  at one x whatever Ledger says; no sideways scroll, no target under 44px; a phone's hero heights as before (242.6, 242.8, 174.8, 149).
+- Checks: sections "18 Nov 2026: tabs for a place's parts, Ledger check and Approve in every bar ..." (`test/work-bar.mjs`, 30 checks, 39 mutations red) and
+  "18 Nov 2026: the working shell ..." (`test/work-shell.mjs`, 17 checks, 24 mutations red); 34 older mutations re-aimed and proved red, one dropped (admin-orders
+  "Payments is not counted": the count stood on More's row).
+- Fable's design review, applied and re-checked by the same reviewer. Left open, for him: the bar moves 16px sideways between a part with panes and one without
+  (it follows the content, his answer C); 28px of pane top under the tabs; a current tab told from the others by its underline and ink alone; headings inset 16px
+  from the cards under them and three measures on single-column parts (both older than this); Record has no +, so its cluster ends 56px further right; on the
+  Counter's Home the pinned Pay stands over the first row of Ask us anything (older); the bar is not sticky on a long page.
+- qr-command takes salt-ds on its main checkout (Ambient only in an unlanded worktree, none with `amb-shell--work`), so nothing was carried there; qr-vault had nothing to build.
+
 ## The working shell: room to work on a laptop (v1536)
+- Superseded in part by v1545 (the section above): the hero is now a bar, the rail's foot is empty and `amb-tabbar__foot`, `#aRailHours` and `.arailtime` are gone.
 - Live as v1536 (`27896c6c`, 18 Nov 2026; Cloud commit `44230951864`: chain green with "The phone is serving it" on build `a7960fbdaf6b416c`, the statements deployed and
   published, three suite parts green; CI `44230951850` green), his screenshots of Salt Admin and Salt Counter at a laptop's width (his page is about 1536 by 730 CSS px, a
   1920 screen at 125%) and his three answers, typed in the session that acted, do not ask again: the heading one slim row, the rail to the foot with Live and the shop's
