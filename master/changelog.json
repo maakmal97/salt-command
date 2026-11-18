@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1545",
+  "d": "18 Nov 2026",
+  "t": "THE LAPTOP BAR",
+  "n": [
+   "<b>ONE BAR ON THE PAGE.</b> On a laptop, Salt Admin and Salt Counter head each place with one bar on the page ground: the title, the status and the buttons in one line that starts and ends where the content does, a hairline under it, the colour only a thin strip along the top edge.",
+   "<b>THE STATUS IS IN THE BAR.</b> Live, the time and whether the shop is open stand at the bar's right in every place of Salt Admin. The rail's foot is empty.",
+   "<b>TABS.</b> A place's parts are plain text tabs across the page, the current one underlined, its count beside it. Filters under them are still pills.",
+   "<b>THE MORE LIST IS GONE.</b> Ledger check stands in every place's bar beside Approve: a tick when the orders and the book agree, a count when they do not, and a tap opens it. Group orders is under Settings. Payments they sent is reached from Needs you.",
+   "<b>PHONES ARE AS THEY WERE.</b> Ledger check and Approve show on Orders there. <b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"
+  ]
+ },
+ {
   "v": "v1544",
   "d": "18 Nov 2026",
   "t": "COLOURED PILLS",
