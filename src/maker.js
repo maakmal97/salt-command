@@ -83,10 +83,10 @@ export function makerOrderFault(action, body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return "Send a JSON object.";
   const fields = {
     /* 10 Nov 2026 (his ask D): oneOff, his reason for a price outside the band, on the four roads where he types one */
-    preview: ["delivery", "total", "oneOff"],
-    accept: ["delivery", "total", "hash", "slot", "oneOff"],
+    preview: ["delivery", "total", "qty", "mode", "slot", "oneOff"],
+    accept: ["delivery", "total", "qty", "mode", "hash", "slot", "oneOff"],
     /* version 2: his Accept sent for their yes, and taken back; each under its tap's immutable id */
-    offer: ["delivery", "total", "hash", "slot", "rid", "oneOff"],
+    offer: ["delivery", "total", "qty", "mode", "hash", "slot", "rid", "oneOff"],
     withdraw: ["rid"],
     handed: ["qty", "close", "rid"],
     cash: ["amount", "rid"],
@@ -116,6 +116,10 @@ export function makerOrderFault(action, body) {
     if (body[key] !== undefined && (typeof body[key] !== "number" || !Number.isFinite(body[key])
       || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
   }
+  if (["preview", "accept", "offer"].includes(action) && body.qty !== undefined && (body.qty <= 0 || body.qty > 1000))
+    return "The size has to be a number above zero.";
+  if (["preview", "accept", "offer"].includes(action) && body.mode !== undefined && !["collect", "deliver"].includes(body.mode))
+    return "The way is collect or deliver.";
   /* 10 Oct 2026: a delivery's time window, written as stmt/window.js writes it (SLOT_RE there) */
   if (body.slot !== undefined && body.slot !== "" && (typeof body.slot !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(body.slot)))
     return "A time window is a day and one of the six four-hour windows.";
