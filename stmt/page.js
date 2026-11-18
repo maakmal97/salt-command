@@ -575,7 +575,9 @@ function aHero(title, sub, o) {
     + (o.heat ? '<span class="amb-chip amb-chip--glass" data-heat hidden>Supply tight</span>' : "")
     + '<h1 class="amb-hero__title">' + esc(title) + "</h1>" + (sub || "")
     + '<p class="amb-hero__time"><span class="abarlive" data-barlive' + (o.live ? ' id="aBarLive"' : "") + '></span><span class="clk" data-clock></span></p>'
-    + (o.hours ? '<button type="button" class="amb-chip amb-chip--glass" id="aBarHours" data-act="bar.hours" hidden></button>' : "")
+    /* 18 Nov 2026 (Ambient 0.7.20, his answer B): the status is the bar's, in every place: the live word and the time, then the shop's state (data-barhours, barDraw fills each).
+       A phone keeps the chip on Needs you alone: the others carry data-wide, shown from 960px (design/site.css) */
+    + '<button type="button" class="amb-chip amb-chip--glass"' + (o.hours ? ' id="aBarHours"' : " data-wide") + ' data-barhours data-act="bar.hours" hidden></button>'
     /* Orders' one main action: Approve, the rows that wait (barLive names it with their count); its act is the bar's of 21 Oct 2026 */
     + (o.approve ? '<div class="amb-cluster"><button type="button" class="amb-pill amb-pill--quiet" id="aApprove" data-act="bar.approve">Approve</button></div>' : "")
     + "</header>";
@@ -895,10 +897,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         + '<div class="amb-dock"><div id="apBar" class="apbar" hidden></div><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
           AMB.glyph(ADMIN_GLYPH[p === "messages" ? "customers" : m]) + "<span>" + w + "</span>"
           + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("")
-          /* 18 Nov 2026 (Ambient 0.7.16, his answers on the laptop's layout): the rail runs to the screen's foot from 960px and its foot says what is true in
-             every place, the live word with the time and the shop's state (barDraw fills both); under 960px the foot is not drawn and each hero keeps its own */
-          + '<div class="amb-tabbar__foot"><p class="arailtime"><span class="abarlive" data-barlive></span><span data-clock class="clk"></span></p>'
-          + '<button type="button" class="amb-chip ashop" id="aRailHours" data-act="bar.hours" hidden></button></div>'
+          /* 18 Nov 2026 (Ambient 0.7.20, his answer B): the rail runs to the screen's foot and holds the places alone; the status it carried for a day is the bar's (aHero) */
           + "</nav></div>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */

@@ -72,11 +72,10 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 /* the find, notice and count head the accounts' first pane as part of its stack (item 3) */
 .afhead { display: contents; }
 /* the bar's hours chip is a control: a 44px hit area (item 11) */
-#aBarHours { min-height: var(--amb-tap); min-width: var(--amb-tap); }
-/* 18 Nov 2026 (Ambient 0.7.16): from 960px the rail's foot says the shop's state in every place, so the hero's chip stands down there; the foot's chip is the same control */
-#aRailHours { min-height: var(--amb-tap); min-width: var(--amb-tap); }
-.arailtime { margin: 0; }
-@container amb (min-width: 960px) { #aBarHours { display: none; } }
+[data-barhours] { min-height: var(--amb-tap); min-width: var(--amb-tap); }
+/* 18 Nov 2026 (Ambient 0.7.20, his answers B and D): from 960px every place's bar says the shop's state and carries Ledger check and Approve; a phone keeps what its hero
+   held (the chip on Needs you, Approve and Ledger check on Orders), so what a bar adds for the wide page carries data-wide and stands down under 960px */
+@container amb (max-width: 959.98px) { [data-wide] { display: none; } }
 /* from 960px, where the panes take the screen: what stands before the split (the unsent notice, the parts, the filters) takes the panes' own edge, so the notice, the
    filters and the queue's first card start on one line (item 16), and the second pane's group and the foot take the pane's width (item 15) */
 @container amb (min-width: 960px) {

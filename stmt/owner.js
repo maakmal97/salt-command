@@ -1520,27 +1520,19 @@ export const OWNER_JS = `
     var mu=maintUntil(); if(mu){ var mw=barWhen(mu); tone=' ashop--paused'; txt='Maintenance'+(mw?' to '+mw:''); }
     /* the glowing dot and the words, named with what a tap does */
     /* 15 Nov 2026: a glass chip in Needs you's hero, its dot for something live; Open, Closed or Paused said in its word, the mesh carrying no colour of state */
-    if(hrs.getAttribute('data-txt')!==txt+tone){
-      hrs.setAttribute('data-txt',txt+tone); hrs.className='amb-chip amb-chip--glass ashop'+tone;
-      hrs.innerHTML='<span class="amb-chip__dot"></span>';
-      hrs.appendChild(document.createTextNode(txt));
-      hrs.setAttribute('aria-label',txt+'. Tap to change');
-    }
-    if(hrs.hidden===!!txt) hrs.hidden=!txt;
-    /* 18 Nov 2026: the rail's foot says the same state in every place from 960px, a plain chip on the rail's own ground */
-    var rh=document.getElementById('aRailHours');
-    if(rh){
-      if(rh.getAttribute('data-txt')!==txt+tone){
-        rh.setAttribute('data-txt',txt+tone); rh.className='amb-chip ashop'+tone;
-        rh.innerHTML='<span class="amb-chip__dot"></span>';
-        rh.appendChild(document.createTextNode(txt));
-        rh.setAttribute('aria-label',txt+'. Tap to change');
+    /* 18 Nov 2026 (his answer B): every place's bar carries the chip (data-barhours), one status wherever he is; Needs you's is the one a phone shows */
+    [].forEach.call(document.querySelectorAll('[data-barhours]'), function(hb){
+      if(hb.getAttribute('data-txt')!==txt+tone){
+        hb.setAttribute('data-txt',txt+tone); hb.className='amb-chip amb-chip--glass ashop'+tone;
+        hb.innerHTML='<span class="amb-chip__dot"></span>';
+        hb.appendChild(document.createTextNode(txt));
+        hb.setAttribute('aria-label',txt+'. Tap to change');
       }
-      if(rh.hidden===!!txt) rh.hidden=!txt;
-    }
+      if(hb.hidden===!!txt) hb.hidden=!txt;
+    });
   }
   /* a tap takes him to Shop hours, to the shop held for now */
-  ['aBarHours','aRailHours'].forEach(function(id){ var hb=document.getElementById(id); if(hb) hb.addEventListener('click',function(){
+  [].forEach.call(document.querySelectorAll('[data-barhours]'), function(hb){ hb.addEventListener('click',function(){
     showPlace('shop','hours',{fresh:true,push:true});
     try{ var t=document.getElementById('makerNowCard'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'start'}); }catch(e){}
   }); });
