@@ -47879,6 +47879,23 @@ await (async () => {
     ok(flyQueued === true && !offerFault, tag + ", an old yes whose entry is queued still holds its order, and an old offer is never named a lost yes: " + J({ flyQueued, offerFault }));
     ok(flyOld === false && !!yesFault && flyNew === true,
       tag + ", a yes waiting over a day for its draft holds its order no longer and is named by the tie-out; a fresh one still holds it: " + J({ flyOld, flyNew, fault: yesFault }));
+    /* 19 Nov 2026 (ssdngq): a stale yes to a handover the book already holds (order and row agree on what is out) is let go, said in the yes, and never named */
+    db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,status,at) VALUES (?,?,?,?,?,?,?,?)")
+      .run(EG.o.id + "|move|old", EG.o.id, EG.u, "move", "h", J({ figures: { units: 0 } }), "waiting", old);
+    const tieMove = await tieOut(denv), moveFault = (tieMove.faults || []).find((f) => f.order === EG.o.id && f.what.some((w) => /never reached Approve/.test(w)));
+    const moveYes = db.prepare("SELECT status, shown FROM preapproval WHERE id=?").get(EG.o.id + "|move|old");
+    db.prepare("DELETE FROM preapproval WHERE order_id=?").run(EG.o.id);
+    ok(!moveFault && moveYes.status === "void" && /the book holds its move already/.test(moveYes.shown),
+      tag + ", a stale yes to a handover the book holds is let go and said so, never named a lost yes: " + J({ moveFault, moveYes }));
+    /* 19 Nov 2026 (s395): a close or an amendment whose new key is another row's of theirs is refused at the tap, through the Desk's own routes */
+    const KX = await agreed(29, { qty: 2, unit: 90, total: 180 }, false), kxRow = saleOf(KX.rid), kxHalf = PE.closeGoods(180, 2, 1);
+    addRow({ customer: kxRow.customer, date: kxRow.date, product: "salt", qty: 1, total: kxHalf, cash: 0, deliveredQty: 0, rid: "s9twin" }); reseed();
+    const kxClose = await call("/orders/" + KX.o.id + "/handed", { qty: 1, close: true });
+    const kxAmend = await call("/orders/" + KX.o.id + "/restate", { qty: 1, total: kxHalf });
+    const kxPlain = await call("/orders/" + KX.o.id + "/handed", { qty: 1 });
+    db.prepare("DELETE FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='s9twin'").run(); reseed();
+    ok(kxClose.status === 409 && /s9twin/.test(J(kxClose.j)) && kxAmend.status === 409 && /s9twin/.test(J(kxAmend.j)) && kxPlain.status === 200,
+      tag + ", a close or an amendment onto another row's key is refused at the Desk, and a plain handover is not: " + J({ kxClose, kxAmend, kxPlain }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */
@@ -50817,6 +50834,11 @@ await (async () => {
 section("17 Nov 2026: a new ID's account is asked for until it is there, on rungs at 11, 20 and 40 minutes");
 await (async () => {
   await (await import("./accounts-wanted.mjs")).run({ ok });
+})();
+
+section("19 Nov 2026: a row's new name is never another row's, and a stale yes the book holds is let go");
+await (async () => {
+  await (await import("./order-key-clash.mjs")).run({ ok });
 })();
 
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");

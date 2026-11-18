@@ -1,0 +1,68 @@
+[
+{
+"name": "a restate never tests the key it moves to",
+"file": "engine/stages.mjs",
+"find": "    const twin = keyClash(book, o, closedKey(Object.assign({}, o, { total: figs.total, delivery: figs.delivery })));\n    if (twin) return clashError(twin, \"change it to another figure, or change that sale instead\");",
+"replace": ""
+},
+{
+"name": "a restate tests the key on the goods alone",
+"file": "engine/stages.mjs",
+"find": "closedKey(Object.assign({}, o, { total: figs.total, delivery: figs.delivery }))",
+"replace": "closedKey(Object.assign({}, o, { total: figs.total }))"
+},
+{
+"name": "a close or redate never tests the key it moves to",
+"file": "engine/stages.mjs",
+"find": "  if (book && (closing || entry.redate)) {",
+"replace": "  if (false) {"
+},
+{
+"name": "only a close tests its key, never a redate",
+"file": "engine/stages.mjs",
+"find": "  if (book && (closing || entry.redate)) {",
+"replace": "  if (book && closing) {"
+},
+{
+"name": "keyClash finds the order's own row",
+"file": "engine/stages.mjs",
+"find": "  if (!key || !own || key === own) return null;",
+"replace": "  if (!key || !own) return null;"
+},
+{
+"name": "every stale yes is held",
+"file": "src/orders.js",
+"find": "  if (!y || !o || ![\"move\", \"pay\"].includes(y.stage) || !o.ledgerKey) return false;",
+"replace": "  return true;"
+},
+{
+"name": "a stale yes of any stage is held",
+"file": "src/orders.js",
+"find": "  if (!y || !o || ![\"move\", \"pay\"].includes(y.stage) || !o.ledgerKey) return false;",
+"replace": "  if (!y || !o || !o.ledgerKey) return false;"
+},
+{
+"name": "a twin key holds a yes",
+"file": "src/orders.js",
+"find": "  if (!row || (n.get(k) || 0) !== 1) return false;",
+"replace": "  if (!row) return false;"
+},
+{
+"name": "a handover yes is held whatever is out",
+"file": "src/orders.js",
+"find": "  if (y.stage === \"move\") return Math.abs(rowOut(row) - (+(+o.moved || 0).toFixed(3))) < 0.0004;",
+"replace": "  if (y.stage === \"move\") return true;"
+},
+{
+"name": "a payment yes is held with their credit left out",
+"file": "src/orders.js",
+"find": "+((+o.paid || 0) + (+o.credit || 0)).toFixed(2)) < 0.005;",
+"replace": "+((+o.paid || 0)).toFixed(2)) < 0.005;"
+},
+{
+"name": "a payment yes is held whatever is paid",
+"file": "src/orders.js",
+"find": "  return Math.abs(+POSITION_ENGINE.txPaid(row).toFixed(2) - +((+o.paid || 0) + (+o.credit || 0)).toFixed(2)) < 0.005;",
+"replace": "  return true;"
+}
+]
