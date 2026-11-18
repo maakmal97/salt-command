@@ -7,11 +7,12 @@
  *   K5  a stale yes to a handover is held by the book when the order and its one row agree on what is out; not when they differ,
  *       not when two rows share the key, and never for another stage
  *   K6  the same for a payment, their credit paid on the row
+ *   K7  a cancelled row gives its key to the one live site row that shares it (s393 and s395); any other pair stays twins
  * Every assertion is red under its own mutation (test/order-key-clash.mutations.json); the Desk routes and the tie-out, checked in verify.mjs
  * "28 Sep 2026, fix 3", under test/order-key-clash-fix3.mutations.json. */
 import POSITION_ENGINE from "../engine/position.mjs";
 import { restateTap, handoverTap, keyClash } from "../engine/stages.mjs";
-import { yesHeld } from "../src/orders.js";
+import { yesHeld, rowIndex } from "../src/orders.js";
 
 const at = new Date("2026-11-18T09:00:00.000Z");
 const key = (customer, date, total, delivery) => POSITION_ENGINE.ovKey({ customer, date, total, delivery, product: "salt" });
@@ -76,4 +77,13 @@ export async function run({ ok }) {
   ok(yesHeld({ stage: "pay" }, order({ paid: 205 }), pi.byKey, pi.n) === true && yesHeld({ stage: "pay" }, order({ paid: 105, credit: 100 }), pi.byKey, pi.n) === true,
     "K6: a stale yes to a payment the row holds is let go, their credit paid on the row");
   ok(yesHeld({ stage: "pay" }, order({ paid: 100 }), pi.byKey, pi.n) === false, "K6: a payment the row does not hold is still named");
+
+  /* K7 (19 Nov 2026, s393 and s395, his answer A): a cancelled row gives its key to the one live site row that shares it */
+  const gone = row({ rid: "s393", cancelled: true, road: "site" }), live = row({ rid: "s395", road: "site" });
+  const y1 = rowIndex([gone, live]), y2 = rowIndex([live, gone]), k0 = POSITION_ENGINE.ovKey(live);
+  ok(y1.byKey.get(k0) === live && y1.rows.get(k0) === 1 && y2.byKey.get(k0) === live && y2.rows.get(k0) === 1 && y1.ended.get(k0) === gone,
+    "K7: a live site row beside a cancelled one of its key is the key's row, counted once, whatever their order; the cancelled one is kept apart: " + J([y1.rows.get(k0), y2.rows.get(k0)]));
+  const hand = row({ rid: "s397" }), twoLive = rowIndex([live, row({ rid: "s398", road: "site" })]), handGone = rowIndex([gone, hand]), allGone = rowIndex([gone, row({ rid: "s399", cancelled: true })]);
+  ok(twoLive.rows.get(k0) === 2 && handGone.rows.get(k0) === 2 && allGone.rows.get(k0) === 2,
+    "K7: two live rows, a hand row beside a cancelled one, and cancelled rows alone are twins as before: " + J([twoLive.rows.get(k0), handGone.rows.get(k0), allGone.rows.get(k0)]));
 }

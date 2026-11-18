@@ -47896,6 +47896,15 @@ await (async () => {
     db.prepare("DELETE FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='s9twin'").run(); reseed();
     ok(kxClose.status === 409 && /s9twin/.test(J(kxClose.j)) && kxAmend.status === 409 && /s9twin/.test(J(kxAmend.j)) && kxPlain.status === 200,
       tag + ", a close or an amendment onto another row's key is refused at the Desk, and a plain handover is not: " + J({ kxClose, kxAmend, kxPlain }));
+    /* 19 Nov 2026 (s393 and s395, his answer A): a cancelled row that shares a live site row's key gives the key to the live row, in the tie-out and the return leg */
+    const kxNow = saleOf(KX.rid), kxSite = Object.assign({}, kxNow, { road: "site" });   /* the fixture's fold writes no road; the live book's site rows carry it */
+    putRow(kxSite); addRow(Object.assign({}, kxSite, { rid: "s9gone", cancelled: true, cancelledOn: kxNow.date, amend: [] })); reseed();
+    const tieGone = await tieOut(denv), goneFault = (tieGone.faults || []).concat(tieGone.waiting || []).find((f) => f.order === KX.o.id && f.what.some((w) => /two rows share its key/.test(w)));
+    putRow(kxNow); reseed();
+    const tieHand = await tieOut(denv), handFault = (tieHand.faults || []).concat(tieHand.waiting || []).find((f) => f.order === KX.o.id && f.what.some((w) => /two rows share its key/.test(w)));
+    db.prepare("DELETE FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='s9gone'").run(); reseed();
+    ok(!goneFault && !!handFault,
+      tag + ", a cancelled row beside a live site row of the same key is no twin to the tie-out, and beside a hand row it still is: " + J({ goneFault, handFault }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */
