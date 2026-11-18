@@ -816,12 +816,19 @@ default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-st
 Shop > Hours carries a Maintenance group under Now: one Switch, Under maintenance. Turned on it asks Back at (a day and a time, Kuala Lumpur) and Put it
 on sends `{until}` to `/all/maker/maintenance`, which files `{until}` (rounded up to the minute, no milliseconds, later than now,
 `maintSet` in `stmt/maintenance.js`) on Counter KV `maint`, lapsing a day after; turned off it sends `{off: true}` and the key goes. No deploy and no
-Desk hop: the Worker reads `maint` for every request the guard would hold (never for `/all`, the machine routes or the test surface's own roads) and
-holds it exactly as `MAINTENANCE_UNTIL` does, the page saying when it is back; where both stand, the later holds, and either lifts by itself at its time.
-The hours read carries it as `maint`, so the bar's chip says Maintenance and Needs you carries its FYI card (`w:maint`) while it stands. A customer's
-page already open, answered `maintenance`, reloads onto the maintenance page (`api` in `stmt/page.js`), once a minute at most (sessionStorage `salt-maint-reload`), so a page the edge still
-serves open never reloads in a loop. A switch that cannot be read (KV failing) holds that request for a minute on the same page, never a raw error
-and never open (18 Nov 2026). **No customer is woken while it stands** (his word of 18 Nov 2026): the hourly cron sends no chase, rating ask or
+Desk hop: the Worker reads `maint` (`switchOf`) for every request but `/all`, the machine routes and the test surface's own roads. **IT IS A NOTICE AND A
+SIGN-IN STOP, NOT A BLOCK** (his word of 18 Nov 2026: "they cannot sign in and notice is put outside, rather than complete block of the worker"); only
+`MAINTENANCE_UNTIL`, set by a deploy, is the complete block, and it ignores the switch. Under the switch: (1) the door pages (`/`, `/app`, `/admin`, `/s/<token>`) are served
+as ever and the door and the link page carry the notice, Under maintenance with the maintenance page's "Back at ..." (`landingPage`'s `maint`); (2) no customer
+signs in: `/open` (said only to a right password), `/remember/open`, `/passkey/open`, `/open-link` (the link is not spent, read by peek), `/handover/open` (the code
+or key is read, not spent, `burnHandover`'s `keep`) and `POST /handover` answer the refusal `maint` (503, `e.maint`, `vars.back`), which the page shows as the notice
+(`maintBack`, `maintNote`); an admin account (`adminTier` on its published record) signs in as normal, and `/admin`, `/admin/enter` and `/all` are untouched, his
+`/open` override too; (3) a customer already signed in is left in: reads answer as usual and `GET /account` and `/account/stamp` carry `maint: true`, every write on a session
+road (`handleCustomer`, `/my/refs`, `/my/joins`, `POST /handover`, a join request) is refused `maint` except Log out, and the page, told by the field, makes every control do nothing
+and says nothing (`maintSet`: capture-phase listeners that swallow a tap, key, change and submit, not `inert`, which would stop Ambient's inner scroll), giving
+them back when the field is gone; Log out is a control and does nothing too; (4) guest links, the service worker, manifest and icons are as ever. `MAINT_SW` in
+`stmt/worker.js` carries the switch's time on the request. The hours read carries it as `maint`, so the bar's chip says Maintenance and Needs you carries its FYI card (`w:maint`) while it stands.
+A switch that cannot be read (KV failing) is read as on for a minute (18 Nov 2026). **No customer is woken while it stands** (his word of 18 Nov 2026): the hourly cron sends no chase, rating ask or
 reminder under the switch or `MAINTENANCE_UNTIL`, and marks nothing, so the first slot after it lifts wakes as usual. KV is read at the edge, so a phone elsewhere may take up to a minute to see a change. `test/admin-maintenance.mjs`, its mutations in `test/admin-maintenance.mutations.json`.
 
 **The shut page and the site's 404 stand on one Ambient shell in Slate** (`onePage` in `stmt/page.js`: a hero holding one `h1` and one line, from

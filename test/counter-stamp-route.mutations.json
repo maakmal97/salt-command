@@ -20,8 +20,8 @@
  {
   "name": "the stamp carries the sealed statement",
   "file": "stmt/worker.js",
-  "find": "card: acct.card ? { at: acct.card.at || null } : null });",
-  "replace": "card: acct.card ? { at: acct.card.at || null } : null, env: acct.env });"
+  "find": "card: acct.card ? { at: acct.card.at || null } : null, ...maintField });",
+  "replace": "card: acct.card ? { at: acct.card.at || null } : null, env: acct.env, ...maintField });"
  },
  {
   "name": "the stamp carries the sealed price list",
@@ -50,8 +50,8 @@
  {
   "name": "the card's moment is left out",
   "file": "stmt/worker.js",
-  "find": "card: acct.card ? { at: acct.card.at || null } : null });",
-  "replace": "card: null });"
+  "find": "card: acct.card ? { at: acct.card.at || null } : null, ...maintField });",
+  "replace": "card: null, ...maintField });"
  },
  {
   "name": "the issue is left out",
