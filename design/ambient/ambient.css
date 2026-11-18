@@ -178,8 +178,9 @@
   padding: 0 28px;
   border: 1px solid transparent;
   border-radius: var(--amb-radius-pill);
-  background: var(--amb-pill);
-  color: var(--amb-on-pill);
+  /* 0.7.19 (the owner's answer of 18 Nov 2026, "uncoloured pills"): a filled pill is the accent, in every mood and mode. It was the neutral pill, white on a dark ground; --amb-pill stays for what is chosen (a segment, a step, a key) */
+  background: var(--amb-accent);
+  color: var(--amb-on-accent);
   font-size: var(--amb-text-callout);
   font-weight: 700;
   line-height: 1.1;

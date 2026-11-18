@@ -1,10 +1,56 @@
 [
- {"name": "G1 the plain split keeps its old columns", "file": "stmt/statement-css.js", "find": ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }", "replace": ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) { }"},
- {"name": "G2 Account capped at 1060px again", "file": "stmt/statement-css.js", "find": "#acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%));", "replace": "#acct { grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%));"},
- {"name": "G2 Account's side column its own width", "file": "stmt/statement-css.js", "find": "#acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%));", "replace": "#acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);"},
- {"name": "G2 Shop's prose runs the page", "file": "stmt/statement-css.js", "find": "#pPrices .amb-notice, #pPrices p { max-width: var(--amb-measure); }", "replace": ""},
- {"name": "G3 the tab says Shop", "file": "stmt/page.js", "find": "[\"record\", \"Record\"], [\"shop\", \"Settings\"]];", "replace": "[\"record\", \"Record\"], [\"shop\", \"Shop\"]];"},
- {"name": "G3 the hero says Shop", "file": "stmt/page.js", "find": "+ aHero(\"Settings\", \"\")", "replace": "+ aHero(\"Shop\", \"\")"},
- {"name": "G3 Shop hours renamed too", "file": "stmt/page.js", "find": "class=\"amb-vh\">Shop hours</h2>", "replace": "class=\"amb-vh\">Settings hours</h2>"},
- {"name": "G4 the Counter's Shop renamed", "file": "stmt/words.js", "find": "\"place.prices\": \"Shop\"", "replace": "\"place.prices\": \"Settings\""}
+ {
+  "name": "G1 the plain split keeps its old columns",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }",
+  "replace": ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) { }"
+ },
+ {
+  "name": "G2 Account capped at 1060px again",
+  "file": "stmt/statement-css.js",
+  "find": "#acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%));",
+  "replace": "#acct { grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%));"
+ },
+ {
+  "name": "G2 Account's side column its own width",
+  "file": "stmt/statement-css.js",
+  "find": "#acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(280px, min(440px, 40%));",
+  "replace": "#acct { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);"
+ },
+ {
+  "name": "G2 Shop's prose runs the page",
+  "file": "stmt/statement-css.js",
+  "find": "#pPrices .amb-notice, #pPrices p { max-width: var(--amb-measure); }",
+  "replace": ""
+ },
+ {
+  "name": "G3 the tab says Shop",
+  "file": "stmt/page.js",
+  "find": "[\"record\", \"Record\"], [\"shop\", \"Settings\"]];",
+  "replace": "[\"record\", \"Record\"], [\"shop\", \"Shop\"]];"
+ },
+ {
+  "name": "G3 the hero says Shop",
+  "file": "stmt/page.js",
+  "find": "+ aHero(\"Settings\", \"\")",
+  "replace": "+ aHero(\"Shop\", \"\")"
+ },
+ {
+  "name": "G3 Shop hours renamed too",
+  "file": "stmt/page.js",
+  "find": "class=\"amb-vh\">Shop hours</h2>",
+  "replace": "class=\"amb-vh\">Settings hours</h2>"
+ },
+ {
+  "name": "G4 the Counter's Shop renamed",
+  "file": "stmt/words.js",
+  "find": "\"place.prices\": \"Shop\"",
+  "replace": "\"place.prices\": \"Settings\""
+ },
+ {
+  "name": "P1 the filled pill is the neutral pill again",
+  "file": "stmt/statement-css.js",
+  "find": "  background: var(--amb-accent);\\n  color: var(--amb-on-accent);\\n  font-size: var(--amb-text-callout);",
+  "replace": "  background: var(--amb-pill);\\n  color: var(--amb-on-pill);\\n  font-size: var(--amb-text-callout);"
+ }
 ]

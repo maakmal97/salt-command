@@ -21,6 +21,11 @@ export async function run({ ok }) {
   ok(/#acct \{ max-width: none; grid-template-columns: minmax\(0, 1fr\) minmax\(280px, min\(440px, 40%\)\); align-items: start; column-gap: var\(--amb-space-6\); \}/.test(css),
     "Account's side column is the panes' track mirrored, and the page is not capped short of Home's right edge");
   ok(/#pPrices \.amb-notice, #pPrices p \{ max-width: var\(--amb-measure\); \}/.test(css), "Shop's notices and prose run no wider than Ambient's measure");
+  /* P1 (Ambient 0.7.19, his answer "In Ambient, everywhere" to his "uncoloured pills"): a filled pill is the accent, and a chosen segment keeps the neutral pill */
+  const base = (css.match(/(?:^|\} )\.amb-pill \{([^}]*)\}/) || [])[1] || "";
+  ok(/background: var\(--amb-accent\); color: var\(--amb-on-accent\);/.test(base) && !/--amb-pill\)|--amb-on-pill\)/.test(base)
+    && /\.amb-segment__opt\[aria-pressed="true"\] \{ background: var\(--amb-pill\); color: var\(--amb-on-pill\); \}/.test(css),
+    "a filled pill is the accent under the accent's own ink, and what is chosen keeps the neutral pill: " + base.slice(0, 60));
   /* G3, G4 */
   const od = new JSDOM(landingPage("", "ogrid", { master: "", accounts: [] })), o = od.window.document;
   const tab = o.querySelector('#roster nav.amb-tabbar button[data-m="shop"]'), hero = o.querySelector("#mShop .amb-hero__title, [data-place-of='shop'] .amb-hero__title");
