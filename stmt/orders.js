@@ -1716,7 +1716,7 @@ export async function orderMarks(env) {
   const r = await bookRead(env, "last", {}, fromKv);
   /* 19 Nov 2026: the book's ring rides beside its marks (stmt/orderbook.js, the ring); the KV road and a read that fell back carry none, so the Desk rings */
   return Object.assign({ last: r.last, touched: r.touched, said: r.said, theirs: r.theirs },
-    r.rung && typeof r.rung === "object" && !Array.isArray(r.rung) ? { rung: r.rung } : {}, r.pending === true ? { pending: true } : {});
+    r.rung && typeof r.rung === "object" && !Array.isArray(r.rung) && Object.keys(r.rung).length ? { rung: r.rung } : {}, r.pending === true ? { pending: true } : {});
 }
 /** Every order of one account gone from the book (his test account, unmade). The KV road's keys are the caller's.
  *  ON THE KV ROAD WITH THE BOOK BOUND (after a flip back) the book is told as well, best effort (S10 fix P3):

@@ -265,7 +265,7 @@ async function deskSide(ok, DO, W) {
   ok(most === 3, "I13: the Desk reads its three banner marks together: " + J({ most }));
 
   /* I14 */
-  const id = "20261119010000-ab12cd34".slice(0, 23), ids = Array.from({ length: 51 }, (_, i) => "2026111901" + String(i).padStart(4, "0") + "-ab");
+  const id = "20261119010000-ab12cd34".slice(0, 23), ids = Array.from({ length: 51 }, (_, i) => "202611190" + String(i).padStart(5, "0") + "-ab");
   const cases = { none: W.nudgeIds(""), notJson: W.nudgeIds("nudge"), noList: W.nudgeIds("{}"), empty: W.nudgeIds(J({ o: [] })), one: W.nudgeIds(J({ o: [id, id] })),
     bad: W.nudgeIds(J({ o: ["../x"] })), many: W.nudgeIds(J({ o: ids })), long: W.nudgeIds(J({ o: [id], pad: "x".repeat(5000) })) };
   ok(cases.none === null && cases.notJson === null && cases.noList === null && J(cases.empty) === "[]" && J(cases.one) === J([id]) && cases.bad === null && cases.many === null && cases.long === null,

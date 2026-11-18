@@ -122,7 +122,7 @@
  {
   "name": "I18 the marks carry no ring",
   "file": "stmt/orders.js",
-  "find": "r.rung && typeof r.rung === \"object\" && !Array.isArray(r.rung) ? { rung: r.rung } : {}",
+  "find": "r.rung && typeof r.rung === \"object\" && !Array.isArray(r.rung) && Object.keys(r.rung).length ? { rung: r.rung } : {}",
   "replace": "{}"
  },
  {
