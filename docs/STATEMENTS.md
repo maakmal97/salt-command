@@ -2342,8 +2342,9 @@ available.
 **The desk nudge** (18 Nov 2026, `docs/plan-nudge.html`, his answers A to C). After the order book commits a
 customer's move (`place`, `replace`, `customer`, `aclaim`, `tsay`, `pjoin`: an order or a basket placed, their
 change, I have sent it, a withdrawal, No thanks, a rating, a line, a claim on the account, a join), it sends ONE
-empty `POST https://desk/_internal/maker/nudge` over `DESK_MAKER` with `X-Counter-Maker-Key` and nothing else: no
-body, query, figure, name, order or word (`stmt/orderbook.js` `nudgesDesk`, `nudgeDesk`). The tap never waits for
+`POST https://desk/_internal/maker/nudge` over `DESK_MAKER` with `X-Counter-Maker-Key`, its body the ids of the
+orders moved and nothing else (`{o: [...]}`, from 19 Nov 2026, below): no query, figure, name or word
+(`stmt/orderbook.js` `nudgesDesk`, `nudgeDesk`). The tap never waits for
 it (`state.waitUntil`); while one is on its way another only marks and one more follows, so a burst is two calls;
 a 404 (a Desk not yet carrying the route), a refusal or a failure is let go, and the Desk's minute is the net. Never
 for the Desk's own writes (`desk`, `adesk`, `tdesk`, `popen`, `pclose`, a Place `by` desk), the site's marks
@@ -2357,6 +2358,30 @@ a pass that was cut off. Passes in two isolates can meet: each stage is queued o
 is spent only while it waits, a draft is inserted once, and a taken offer's row is queued only by the take that
 claims its yes's entry (`takeOffer`). Their banner may buzz twice when two passes read the same news at once (his
 answer C); the marks are read with KV's 30 s cache so one location's copy does not ring it again a minute later.
+
+**The ring at the move** (19 Nov 2026, `docs/plan-ring.html`, his answers "Both, one version" and "Counter rings, with
+guards"). Measured on v1547, the banner took 5.8 s and the row 10.1 s, nearly all of it network waits. Now:
+- **The order book rings Salt Admin itself** (`stmt/orderbook.js` the ring: `ringKinds`, `ringThen`, `rungAfter`). For any
+  write that moves a banner mark (`last-placed`, `last-said`, `last-theirs`; a practice account never), the kinds are read
+  off the marks before and after that write, by the Desk's rule (a placement `order`, the theirs word `pay`, `cancel`,
+  `rate`, `take`, `pass`, a line `said`; a Place with a note both), and `wakeOwner` sends each with the order id, every
+  send bounded at `RING_MS` (3 s, aborted past it). Only a kind a device took is written into meta `owner-rung`,
+  max-merged (a mark never moves back; `last-theirs` in one millisecond takes only the value standing). While a ring is
+  on its way, op `last` answers `pending` (stale after `RING_STALE_MS`). The nudge is sent after the ring.
+- **The Desk rings only what was not rung** (`src/orders.js` `nudgeOrders`, reading `rung` and `pending` through
+  `orderMarks`): a kind rung moves its mark and sends nothing, and keeps `admin:on`; a kind not rung while a ring is
+  pending is held (no send, no mark moved); the rest rings as before, its fallback banner unchanged. The KV road and a
+  read that fell back carry no `rung`, so the Desk rings. The banner step runs beside the reconcile in `ordersPass`.
+- **The nudge's pass reconciles the orders it names** and every order owing its pending row (`only`, read bounded by
+  `nudgeIds`: order ids, at most 50; a missing or malformed body is a whole pass, an empty list a pass of none); a call
+  during a pass adds its orders to the next (`passWant`), a whole call makes it whole. The minute stays whole. A nudge's
+  pass logs `orders pass (nudge)` with each step's time.
+- **Push sends go to every device at once** (`stmt/push.js`), and `queueSale`'s first look reads the blob, the entry's own
+  key and its draft together, deciding in the old order.
+- **A drafted row is told to an open Salt Admin** (`tellAdmin` over `/desk/owner-tell`, the order book's op `otell`):
+  `{k: "approve"}` to the owner's sockets alone.
+The Desk deploys before the Counter (rule 8), so an old Counter meets a new Desk, which rings as before; a new Counter
+never meets an old Desk.
 
 Operating hours are stored in the Counter KV under `maker:hours`, in Kuala Lumpur time. `/hours`
 publishes only the open/closed status and timing; it contains no account data. A closed Counter

@@ -243,8 +243,10 @@ Salt Counter, Salt Admin's is Salt Admin and QR Command's is QR.
 
 **Notifications: one event, one surface** (his answers of 19 Oct 2026, `docs/plan-notifications.html`). Salt Admin
 wakes him for what waits on his decision (a new order, a customer's line, a claim, a cancellation, their answer to an
-offer, rows to approve), through its own worker `/all/sw.js` and `opush:` subscriptions on the Counter, rung by the
-Desk's `wakeAdmin` over `/desk/owner-wake`. Salt Desk only informs (folded and live, a fold refused, the suite red,
+offer, rows to approve), through its own worker `/all/sw.js` and `opush:` subscriptions on the Counter: a customer's
+move rung by the Counter's order book at the move (his answer of 19 Nov 2026, `docs/plan-ring.html`, with guards so the
+Desk never rings it again), everything else and every ring the Counter could not make by the Desk's `wakeAdmin` over
+`/desk/owner-wake`. Salt Desk only informs (folded and live, a fold refused, the suite red,
 a refund held, the morning digest); it rings an order banner itself only while no Salt Admin device answers
 (KV `admin:on`). Salt Counter's customer wakes are unchanged. A new event goes to one of the three, never two.
 
@@ -295,7 +297,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Step | Where | When |
 |---|---|---|
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
-| A customer's move tells the Desk | the order book's empty POST to `/_internal/maker/nudge`; the Desk runs the minute's order pass (`ordersOnce`) | at once on their write; the minute's cron is the net (`docs/STATEMENTS.md` "The desk nudge") |
+| A customer's move tells the Desk | the order book rings Salt Admin, then POSTs the orders moved to `/_internal/maker/nudge`; the Desk runs the order pass on those (`ordersOnce`) | at once on their write; the minute's cron is the net (`docs/STATEMENTS.md` "The desk nudge", "The ring at the move") |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve`; Salt Admin's Confirm sends every card ticked in one `decide-many` (his word of 22 Oct 2026), refusals answered with a fix and one dispatch for the batch | on tap; a decided row returns 409 |
 | Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); at 00:23, 06:23, 12:23 and 18:23 MYT as the last net |

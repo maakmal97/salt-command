@@ -1,0 +1,68 @@
+<div class="amb-shell" data-mood="lagoon"><main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh"><span class="amb-chip amb-chip--glass">Plan, 19 Nov 2026</span>
+<h1 class="amb-hero__title">A customer's move reaches you in about a second, not ten</h1>
+<p class="amb-hero__sub">Step 2 of the instant plan, made faster. Your words of 19 Nov 2026: "Both, one version", then "Counter rings, with guards". The Counter rings your Salt Admin itself, the Desk's pass works on the order that moved, and an open Salt Admin hears a new row at once.</p>
+<p class="amb-hero__time">salt-command, one version after v1548. Built and checked; the live figures follow the first real moves.</p></header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#measured">Where the ten seconds went</a></li>
+<li><a class="amb-contents__link" href="#parts">What changes</a></li>
+<li><a class="amb-contents__link" href="#guards">The guards on your banner</a></li>
+<li><a class="amb-contents__link" href="#left">What it leaves alone</a></li>
+<li><a class="amb-contents__link" href="#expect">What to expect</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="measured"><h2 class="amb-section">Where the ten seconds went <span class="amb-section__note">the first claim after v1547, 18 Nov 2026</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Step</th><th scope="col">Time</th><th scope="col">Why</th></tr></thead><tbody>
+<tr><td data-label="Step">The Desk reads the Counter</td><td data-label="Time">0.03 s</td><td data-label="Why">One read, started 66 ms after the move.</td></tr>
+<tr><td data-label="Step">The Desk's banner marks</td><td data-label="Time">about 1.5 s</td><td data-label="Why">Three reads and two writes, one after another.</td></tr>
+<tr><td data-label="Step">Ringing your Salt Admin</td><td data-label="Time">3.7 s</td><td data-label="Why">Six devices, one after another, each waiting on the push service.</td></tr>
+<tr><td data-label="Step">Queueing the row</td><td data-label="Time">about 3.8 s</td><td data-label="Why">Every waiting order checked again, five that wait for their rows.</td></tr>
+<tr><td data-label="Step">Drafting it under Approve</td><td data-label="Time">1.1 s</td><td data-label="Why">The drafter, as before.</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> From Workers Logs: the pass used 97 ms of computing in 12.5 s. Nearly all of it was waiting on the network, so it can be shortened without changing a rule.</p>
+</div></section>
+
+<section class="amb-sec" id="parts"><h2 class="amb-section">What changes <span class="amb-section__note">one version, one commit a part</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step"><span class="amb-step__title">1. Every device at once</span><span class="amb-step__text">A banner is sent to all your devices together, and to a customer's phones the same way. A send still open after 3 s is let go and counted as failed.</span></li>
+<li class="amb-step"><span class="amb-step__title">2. The Counter rings your Salt Admin at the move</span><span class="amb-step__text">The moment the order book records a customer's move, it rings Salt Admin for it, by the Desk's own rule: a new order, their I have sent it, a withdrawal, a rating, their Yes or No thanks, a line. A tap on the banner opens that order.</span></li>
+<li class="amb-step"><span class="amb-step__title">3. The Desk rings only what was not rung</span><span class="amb-step__text">The Desk reads what the Counter rang and sends nothing for it. Anything the Counter could not ring, the Desk rings as before. Its own marks are read and written together, and its banner step runs beside the queueing, not before it.</span></li>
+<li class="amb-step"><span class="amb-step__title">4. The pass works on the order that moved</span><span class="amb-step__text">The call names the orders moved, ids alone. The Desk's pass queues those, and every order owing its pending row, and leaves the orders that wait for their rows to the minute.</span></li>
+<li class="amb-step"><span class="amb-step__title">5. The queue reads together</span><span class="amb-step__text">Queueing a row reads its three places at once, deciding in the same order as before.</span></li>
+<li class="amb-step"><span class="amb-step__title">6. An open Salt Admin hears a new row</span><span class="amb-step__text">A drafted row was told to Salt Desk's pages alone, so Salt Admin's To approve waited for its poll. It is now told at once, a kind and nothing else, never to a customer.</span></li>
+</ol></div></section>
+
+<section class="amb-sec" id="guards"><h2 class="amb-section">The guards on your banner <span class="amb-section__note">from Fable's review of 19 Nov 2026</span></h2>
+<div class="amb-prose">
+<p>Two places can now ring you, so each guard stops a second banner or a lost one.</p>
+<ul>
+<li>The Counter rings only what that move did, never older news, so the first move after the deploy rings only itself.</li>
+<li>It records a kind as rung only when one of your devices took it, and never moves that record back when a slow ring finishes late.</li>
+<li>While a ring is on its way, the Desk neither rings nor moves its own mark for it; the move's own call, or the minute, reads it again once the ring has ended.</li>
+<li>The Counter tells the Desk only after its ring, so the Desk's pass reads what was rung.</li>
+<li>A ring that fails records nothing, and the Desk rings as it did before.</li>
+</ul>
+</div></section>
+
+<section class="amb-sec" id="left"><h2 class="amb-section">What it leaves alone</h2>
+<div class="amb-prose">
+<p>The minute's pass still runs everything, as the net. No price, row or rule changes. The call between the two Workers still carries no figure, name or word, only order ids. With no device subscribed to Salt Admin, Salt Desk still rings its own banner.</p>
+<p>The Desk deploys before the Counter, as on every run, so an old Counter only ever meets a new Desk, which rings as before.</p>
+</div></section>
+
+<section class="amb-sec" id="expect"><h2 class="amb-section">What to expect <span class="amb-section__note">to measure on the first real moves</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">What</th><th scope="col">v1547</th><th scope="col">Now</th></tr></thead><tbody>
+<tr><td data-label="What">Your banner</td><td data-label="v1547">5.8 s</td><td data-label="Now">about 1 s, then the push service</td></tr>
+<tr><td data-label="What">The row under Approve</td><td data-label="v1547">10.1 s</td><td data-label="Now">about 2 to 3 s</td></tr>
+<tr><td data-label="What">The row on an open Salt Admin</td><td data-label="v1547">at its next poll</td><td data-label="Now">as soon as it is drafted</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> The new figures are estimates. A nudge's pass now logs each step's time, so the first real moves give the measured ones.</p>
+</div></section>
+
+</div>
+</div>
+</main></div>
