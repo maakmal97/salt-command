@@ -659,7 +659,8 @@ const ADMIN_PARTS = {
 const ADMIN_ORDER_STAGES = ["todo", "open", "done", "ended"];
 /* 16 Nov 2026, the move to Ambient (place G): the four stages are Ambient's Segment, each with its count, one with none dimmed (aria-disabled, the count 0: stmt/owner.js paintOrdCounts);
    More is a settings group, a row a part with its way in at the right, Payments carrying the count of what they say they sent */
-const ordSegment = () => '<div class="amb-stack"><div class="amb-segment aparts" role="group" aria-label="Orders" data-place="orders">'
+/* 18 Nov 2026 (Ambient 0.7.20, his answer A): a place's parts are underlined tabs across the content from 960px (amb-segment--tabs), so they never read as the filter pills under them; a phone keeps the segment */
+const ordSegment = () => '<div class="amb-stack"><div class="amb-segment amb-segment--tabs aparts" role="group" aria-label="Orders" data-place="orders">'
   + ADMIN_ORDER_STAGES.map((k) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.orders.' + k + '" aria-pressed="' + (k === "todo" ? "true" : "false") + '">'
     + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class="amb-segment__count" hidden></span></button>').join("") + "</div></div>";
 const ordMore = (test) => '<div class="amb-settings amore" data-in="orders.todo orders.open orders.done orders.ended"><h3 class="amb-settings__head">More</h3><ul class="amb-settings__list amore__list" data-place="orders">'
@@ -673,7 +674,7 @@ const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   /* 16 Nov 2026, the move to Ambient (place I): Record's three parts and Shop's six are Ambient's Segment (three or four, one row; six, wrapping), a part pressed not selected, the count of what
      waits unsent beside Record's; the acts, ids and addresses as every strip's */
   : p === "shop" || p === "record" || p === "customers"
-  ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
+  ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' amb-segment--tabs aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
     + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div></div>"
   : "";
@@ -4431,7 +4432,7 @@ const CLIENT_JS = `
   var OTABS=[['all','ord.tab.all'],['open','ord.tab.open'],['pay','ord.tab.pay'],['done','ord.tab.done']];
   function oOf(k){ return k==='open'?orders.filter(function(o){ return !oClosed(o); }):k==='pay'?orders.filter(oOwes):k==='done'?orders.filter(oClosed):orders.slice(); }
   function oTabs(){
-    var cur=draft.oTab||'all', row=el('div','amb-segment amb-segment--wrap otabs'); row.setAttribute('role','group'); row.setAttribute('aria-label',tw('ord.tabs'));
+    var cur=draft.oTab||'all', row=el('div','amb-segment amb-segment--wrap amb-segment--tabs otabs'); row.setAttribute('role','group'); row.setAttribute('aria-label',tw('ord.tabs'));
     OTABS.forEach(function(t){
       var b=el('button','amb-segment__opt',tw(t[1])+' '); b.type='button';
       b.setAttribute('data-otab',t[0]); b.setAttribute('aria-pressed',t[0]===cur?'true':'false');
