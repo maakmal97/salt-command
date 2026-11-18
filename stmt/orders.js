@@ -716,8 +716,13 @@ const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.s
  * id and folds it in, in one step no other writer can come between.
  * The kinds: place, status, method, pay (before S6), claim (S6 6.5), say, mark, ledger, handover, cash (S11 11.8), and copy
  * (an order moved in). */
-export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
-  + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
+/* 18 Nov 2026: A REAL ORDER'S ID NEVER STARTS ITS TAIL WITH "ex". That is the shape of an example order (stmt/testfix.js EXAMPLE_ID), which
+   Salt Admin's roads send to the practice fixtures, so a real order minted with it could not be acted on there; about one tail in 500 began so */
+export const mintOrderId = (at) => {
+  let tail;
+  do { tail = b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x"); } while (tail.startsWith("ex"));
+  return at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-" + tail;
+};
 
 /* S4 4.2: THE LIST MOVED. Place carries the stamp of the list the page quoted from, and `digest` is the stamp on the
    account's record now (tools/pricelist.mjs priceDigest): two strings compared, and nothing here reads a price. It is
