@@ -6122,7 +6122,7 @@ export const OWNER_JS = `
   var amendMemo={};
   function amendOpen(order,opener,tried){
     /* a collection waiting at Ready offers its point here: his points are read once, before the Sheet opens; a failed read opens it without a Point */
-    if(order.status==='ready'&&order.mode==='collect'&&!makerPoints&&!tried){
+    if(order.status==='ready'&&!makerPoints&&!tried){   /* 18 Nov 2026: on a delivery too, which may become a collection here */
       refs('/all/maker/points').then(function(p){ makerPoints=p; },function(){}).then(function(){ amendOpen(order,opener,true); });
       return;
     }
@@ -6139,7 +6139,7 @@ export const OWNER_JS = `
     [['collect','Collect'],['deliver','Deliver']].forEach(function(p){ var o=el('option','',p[1]); o.value=p[0]; way.appendChild(o); });
     way.value=kept&&kept[3]?kept[3]:(order.mode==='deliver'?'deliver':'collect'); way.setAttribute('data-amend-way','');
     var aw=sField('Way',sSelect(way));
-    way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; });
+    way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; if(ptWrap) ptWrap.hidden=way.value!=='collect'; });
     /* 17 Nov 2026 (the order-changes plan, version 2, his answer 8): ONE SHEET FOR EVERY CHANGE OF AN AGREED ORDER. Beside the order's terms it holds the
        point a collection waits at, what is handed over and a payment received, each sent by the road its old control used: the point by the move, the
        units by the handover (a close when That is all), the money by Received (Bank) or the ten-second cash hold (Cash, at Ready). One Save sends them in
@@ -6149,21 +6149,66 @@ export const OWNER_JS = `
     var sofar=[], pt=null, hq=null, rest=null, pay=null, by=null;
     function sub(text){ var h=el('h2','amb-settings__head',text); h.setAttribute('data-change-group',text); return h; }
     if(ready&&order.mode==='collect'&&left&&!makerPoints) sofar.push(el('p','maker-facts','The points could not be read, so Point is not offered. Close this and open Change again.'));
-    if(ready&&order.mode==='collect'&&left&&makerPoints){
+    /* 18 Nov 2026 (the plan's version 4): a delivery at Ready that becomes a collection here waits at a point too, so its Point is drawn, shown with Collect */
+    var ptWrap=null;
+    if(ready&&left&&makerPoints){
       var plist=(order.test?makerPoints.examples:makerPoints.points&&makerPoints.points.list)||[];
       if(plist.length){
         pt=actOn(el('select',''),'order.change-point',order.id); pt.setAttribute('data-change-field','point');
         plist.forEach(function(p){ var o=el('option','','Point '+p.code); o.value=p.code; pt.appendChild(o); });
         if(!order.point){ var none=el('option','','Choose a point'); none.value=''; pt.insertBefore(none,pt.firstChild); }
-        pt.value=order.point||''; sofar.push(sField('Point',sSelect(pt)));
+        pt.value=order.point||''; ptWrap=sField('Point',sSelect(pt)); ptWrap.hidden=order.mode!=='collect'; sofar.push(ptWrap);
       }
     }
-    if(ready&&left){
+    /* 18 Nov 2026 (the plan's version 4, his answer 6): Handed over is drawn wherever goods are out as well, and goes down too: under what is out it is
+       taken back, with his reason, a Correction for Approve; above it, at Ready with units left, it is the handover as before */
+    if((ready&&left)||out>0.0004){
       hq=actOn(el('input','amb-input'),'order.change-handed',order.id); hq.setAttribute('data-change-field','handed');
-      hq.type='number'; hq.step='0.25'; hq.min=String(out); hq.max=String(order.qty); hq.inputMode='decimal'; hq.value=String(out);
+      hq.type='number'; hq.step='0.25'; hq.min='0'; hq.max=String(ready&&left?order.qty:out); hq.inputMode='decimal'; hq.value=String(out);
       sofar.push(sField('Handed over, of '+units(order.qty),hq));
+    }
+    if(ready&&left){
       var rbox=el('div'); rest=makerTilesIn(rbox,['The rest','order.change-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]);
       rest.setAttribute('data-change-field','rest'); sofar.push(rbox);
+    }
+    /* and what is paid so far, which only comes down here; money in is Received now */
+    var paidNow=Number(order.paid||0), lp=null, lw=null, lwWrap=null;
+    if(paidNow>0.004){
+      lp=actOn(el('input','amb-input'),'order.change-paid-so-far',order.id); lp.setAttribute('data-change-field','paidsofar');
+      lp.type='number'; lp.step='0.01'; lp.min='0'; lp.max=String(paidNow); lp.inputMode='decimal'; lp.value=String(paidNow);
+      sofar.push(sField('Paid so far, RM',lp));
+    }
+    if(lp||out>0.0004){
+      lw=actOn(el('input','amb-input'),'order.change-why',order.id); lw.setAttribute('data-change-field','why');
+      lw.type='text'; lw.maxLength=120;
+      lwWrap=sField('Why it is taken back',lw); lwWrap.hidden=true; sofar.push(lwWrap);
+    }
+    function lowerPaid(){ return !!lp&&lp.value!==''&&Number(lp.value)<paidNow-0.004; }
+    function lowerMoved(){ return !!hq&&hq.value!==''&&Number(hq.value)<out-0.0004; }
+    /* 18 Nov 2026 (the plan's version 4, his answer 5): the window, on a delivery with goods to come: one earlier than theirs is told, a later one (or
+       any, where they asked for none) asks their yes, theirs standing until they give it (the order book's winEarlier) */
+    var ws=null, winAsk=order.winOffer&&order.winOffer.state==='offered'&&String(order.winOffer.until||'')>new Date().toISOString()?order.winOffer:null;
+    function winEarlier(v){ return order.slot?v<order.slot:order.wantBy?v.slice(0,10)<=order.wantBy:false; }
+    if(order.mode==='deliver'&&(order.status==='acknowledged'||ready)&&left){
+      var wnow=Date.now(), wdays=makerWinDays(wnow);
+      ws=actOn(el('select',''),'order.change-window',order.id); ws.setAttribute('data-change-field','window');
+      var wown=order.slot&&order.slotSpan?'As now, '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(order.slot).slice(0,10)):'As now, ASAP';
+      var wo=el('option','',wown); wo.value=''; ws.appendChild(wo);
+      wdays.forEach(function(dd){ makerWinOn(dd,wnow).filter(function(x){ return x[0]!==order.slot; }).forEach(function(x){ var op=el('option','',makerWinDay(dd,wnow)+', '+x[1]); op.value=x[0]; ws.appendChild(op); }); });
+      sofar.push(sField('When',sSelect(ws)));
+      if(winAsk){
+        sofar.push(el('p','amb-field__hint','Asked of them: '+String(winAsk.slotSpan||'').replace('-',' to ')+' on '+mwDayLabel(String(winAsk.slot).slice(0,10))+'. Theirs stands until they say yes.'));
+        var wbox=el('div');
+        makerButton(wbox,['Withdraw the ask','order.change-win-withdraw',order.id],async function(){ await makerMove(cur(),{winWithdraw:true},'The window ask is withdrawn. Theirs stands.'); },false);
+        sofar.push(wbox);
+      }
+    }
+    /* 18 Nov 2026 (his answer to Ask 1 of version 4's audit): a Ready order with nothing handed over may go back to Agreed, told as changed */
+    var stage=null;
+    if(ready&&out<=0.0004){
+      stage=actOn(el('select',''),'order.change-stage',order.id); stage.setAttribute('data-change-field','stage');
+      [['','Ready, as now'],['back','Back to Agreed']].forEach(function(p){ var op=el('option','',p[1]); op.value=p[0]; stage.appendChild(op); });
+      sofar.push(sField('Stage',sSelect(stage)));
     }
     if(order.status==='acknowledged'||ready){
       pay=actOn(el('input','amb-input'),'order.change-paid',order.id); pay.setAttribute('data-change-field','paid');
@@ -6191,18 +6236,31 @@ export const OWNER_JS = `
         bits.push(after<before-0.004&&q>=Number(order.qty)-0.0004&&!lost?'They are told it is a discount.':'They are told their order has changed.');
       }
       if(pt&&pt.value&&pt.value!==(order.point||'')) bits.push('They are told the new point.');
+      if(lowerPaid()||lowerMoved()) bits.push('Taken back: they are told their order has changed. You approve it next, under Approve.');
+      /* Fable's review of version 4: a reward this order brought is counted on what was paid, so the book flags it stale, never withdrawn */
+      if(lowerPaid()&&order.rwd) bits.push('This order brought a reward unit: the book flags it if it no longer holds.');
+      if(lwWrap) lwWrap.hidden=!(lowerPaid()||lowerMoved());
       if(hq&&Number(hq.value)>out+0.0004) bits.push('They are told it was handed over.');
+      if(stage&&stage.value==='back') bits.push('Back to Agreed: they are told their order has changed.');
+      if(ws&&ws.value) bits.push(winEarlier(ws.value)?'They are told the earlier window.':'The later window asks their yes; theirs stands until they give it.');
       if(pay&&Number(pay.value)>0) bits.push('They are told the payment arrived.');
       told.textContent=bits.length?bits.join(' '):'Nothing is sent until you change something.';
       if(rest) rest.hidden=!(hq&&Number(hq.value)>out+0.0004&&Number(hq.value)<Number(order.qty)-0.0004);
     }
-    [aq.input,at.input,ad.input,way,pt,hq,pay,by,rest].forEach(function(n){ if(n){ n.addEventListener('input',tellDraw); n.addEventListener('change',tellDraw); } });
+    [aq.input,at.input,ad.input,way,pt,hq,pay,by,rest,lp,lw,ws,stage].forEach(function(n){ if(n){ n.addEventListener('input',tellDraw); n.addEventListener('change',tellDraw); } });
     var extra=[sub('Order'),aw,aq.wrap,at.wrap,ad.wrap].concat(sofar.length?[sub('So far')].concat(sofar):[],[told]);
     makerAsk(order,opener,'amend',{title:'Change the order', plain:true, primary:true, go:'Send the change', keep:'Not now', say:['A change of its terms waits for you under Approve; the rest goes at once.'], extra:extra,
       yes:async function(){
         var body=terms(), np=pt&&pt.value&&pt.value!==(order.point||'')?pt.value:null, nh=hq&&Number(hq.value)>out+0.0004?Number(hq.value):null,
             np2=pay&&Number(pay.value)>0?Math.round(Number(pay.value)*100)/100:null, road=by?by.value:'';
-        if(!Object.keys(body).length&&!np&&nh===null&&np2===null){ makerSay(order.id,'Change a figure first.'); return; }
+        var lowering=lowerPaid()||lowerMoved(), nw=ws&&ws.value&&way.value==='deliver'?ws.value:null, goBack=!!stage&&stage.value==='back';
+        if(ready&&left&&!goBack&&order.mode!=='collect'&&way.value==='collect'&&!pt){ makerSay(order.id,'A collection waits at a point, and none could be offered here: add one under Settings, Hours, then change the way. Nothing was sent.'); return; }
+        if(ready&&left&&!goBack&&order.mode!=='collect'&&way.value==='collect'&&!pt.value){ makerSay(order.id,'Choose the point they collect at. Nothing was sent.'); return; }
+        if(goBack&&((np&&order.mode==='collect')||nh!==null||lowering||(np2!==null&&road==='cash'))){ makerSay(order.id,'Back to Agreed goes with a change of terms or a bank payment alone. Nothing was sent.'); return; }
+        if(!Object.keys(body).length&&!np&&nh===null&&np2===null&&!lowering&&!nw&&!goBack){ makerSay(order.id,'Change a figure first.'); return; }
+        /* 18 Nov 2026 (Fable's review of version 4): a take-back is an amendment of its own, so it goes alone or with a point or a window */
+        if(lowering&&(Object.keys(body).length||nh!==null||np2!==null)){ makerSay(order.id,'Take back on its own: send the other changes once it has gone. Nothing was sent.'); return; }
+        if(lowering&&!oneOffOk(lw.value)){ makerSay(order.id,'Say why it is taken back, in one line. Nothing was sent.'); return; }
         if(np2!==null&&!road){ makerSay(order.id,'Choose Bank or Cash first. Nothing was sent.'); return; }
         /* what he typed of the terms is kept before any refusal, so Change opens again as he left it */
         if(Object.keys(body).length) amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value,way.value]};
@@ -6222,15 +6280,24 @@ export const OWNER_JS = `
             return;
           }
         }
-        if(np&&await makerMove(cur(),{point:np},'Collection point changed to Point '+np+'.')!==true) return;
+        if(lowering){
+          var lb={why:lw.value.trim()};
+          if(lowerPaid()) lb.paid=Math.round(Number(lp.value)*100)/100;
+          if(lowerMoved()) lb.moved=Number(hq.value);
+          if(await makerTap(order,'lower',lb,'Take-back sent. You approve it next, under Approve.')!==true) return;
+        }
+        if(goBack&&await makerMove(cur(),{back:true},'Back to Agreed. They are told.')!==true) return;
+        if(np&&!goBack&&await makerMove(cur(),{point:np},'Collection point changed to Point '+np+'.')!==true) return;
         if(nh!==null){
           var ends=rest&&rest.value==='all'&&nh<Number(order.qty)-0.0004;
           if(await makerTap(cur(),'handed',ends?{qty:nh,close:true}:{qty:nh},ends?'Finish sent to the Desk.':'Handover sent to the Desk.')!==true) return;
         }
         if(np2!==null){
           if(road==='cash') makerCashHold(cur(),np2);
-          else await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.');
+          else if(await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.')!==true) return;
         }
+        /* the window last, so a change of way has landed before it (Fable's review) */
+        if(nw) await makerMove(cur(),{slot:nw},winEarlier(nw)?'Window moved earlier. They are told.':'The later window is sent for their yes.');
       }});
     tellDraw();
   }
