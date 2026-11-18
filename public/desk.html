@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a7960fbdaf6b416c";
+var SALT_BUILD_ID="d07afb2e42d9a668";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12526,7 +12526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1536","d":"18 Nov 2026","t":"ROOM TO WORK ON A LAPTOP","n":["<b>A SLIM HEADING.</b> From 960px wide, Salt Admin and Salt Counter put each place's name, its line and its one action on one row at the top. On a laptop the list and the open order gain about 170px of height.","<b>THE RAIL RUNS TO THE FOOT.</b> On Salt Admin its foot says Live, the time, and Open, Closed or Paused, in every place. A tap on the state opens Shop hours.","<b>A WIDER LIST.</b> The list beside an open order, card or account is up to 440px wide, so a row is no longer cut short.","<b>PHONES ARE UNCHANGED.</b> No price, route or request changed."]}];
+const evolution=[{"v":"v1537","d":"18 Nov 2026","t":"CHANGE A PLACED ORDER","n":["<b>UNITS AND WAY, BEFORE YOU AGREE.</b> On Salt Admin, Change on a placed order opens the Agree sheet with two more fields: Units, and Way (collect or deliver). Nothing is on the ledger yet, so no Correction is made.","<b>THE PRICE FOLLOWS THE SIZE.</b> Change the units and type no figure, and Goods refills at their own price for the new size. A figure you type stands. A size with no price asks you to type one.","<b>THEIR YES WHERE IT IS OWED.</b> A change of units or way, a raise, or another window goes to them as an offer of the whole order. Their page shows the new units, way, charge and window; Yes takes it, No thanks cancels. A lower price alone is still your Accept.","<b>WHAT IS REFUSED.</b> A group order keeps its size and way. A trip keeps one way across its orders. An offer made before the order changed again is void.","<b>AGREED ORDERS ARE UNCHANGED.</b> After Accept, units, price and delivery still change by a Correction for Approve."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this

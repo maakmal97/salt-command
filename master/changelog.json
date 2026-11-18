@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1537",
+  "d": "18 Nov 2026",
+  "t": "CHANGE A PLACED ORDER",
+  "n": [
+   "<b>UNITS AND WAY, BEFORE YOU AGREE.</b> On Salt Admin, Change on a placed order opens the Agree sheet with two more fields: Units, and Way (collect or deliver). Nothing is on the ledger yet, so no Correction is made.",
+   "<b>THE PRICE FOLLOWS THE SIZE.</b> Change the units and type no figure, and Goods refills at their own price for the new size. A figure you type stands. A size with no price asks you to type one.",
+   "<b>THEIR YES WHERE IT IS OWED.</b> A change of units or way, a raise, or another window goes to them as an offer of the whole order. Their page shows the new units, way, charge and window; Yes takes it, No thanks cancels. A lower price alone is still your Accept.",
+   "<b>WHAT IS REFUSED.</b> A group order keeps its size and way. A trip keeps one way across its orders. An offer made before the order changed again is void.",
+   "<b>AGREED ORDERS ARE UNCHANGED.</b> After Accept, units, price and delivery still change by a Correction for Approve."
+  ]
+ },
+ {
   "v": "v1536",
   "d": "18 Nov 2026",
   "t": "ROOM TO WORK ON A LAPTOP",
