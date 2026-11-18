@@ -110,7 +110,7 @@
  {
   "name": "a test order is offered no close",
   "file": "stmt/owner.js",
-  "find": "    if(ready&&left){\n      hq=actOn(el('input','amb-input'),'order.change-handed'",
-  "replace": "    if(ready&&left&&!order.test){\n      hq=actOn(el('input','amb-input'),'order.change-handed'"
+  "find": "    if(ready&&left){\n      var rbox=el('div'); rest=",
+  "replace": "    if(ready&&left&&!order.test){\n      var rbox=el('div'); rest="
  }
 ]

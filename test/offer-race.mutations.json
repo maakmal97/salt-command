@@ -110,7 +110,7 @@
  {
   "name": "R15: their page's Yes names no offer",
   "file": "stmt/page.js",
-  "find": ", offer:(o.price&&o.price.id)||undefined}",
+  "find": ", offer:(oWinOpen(o)?o.winOffer.id:(o.price&&o.price.id))||undefined}",
   "replace": "}"
  },
  {

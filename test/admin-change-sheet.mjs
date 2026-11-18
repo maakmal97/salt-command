@@ -4,7 +4,7 @@
  * Delivery) and So far (Point, Handed over and The rest, Received now and Paid by), and one Save sends them in a fixed order, stopping at the first that does
  * not land. What is proved here, each check red under its own mutation (test/admin-change-sheet.mutations.json), invented codes only (rule 2):
  *   C1  one Change row on each of the three stages, and none of the retired controls on the card
- *   C2  the groups and fields a stage offers: Ready (collect, units left, two points) the lot, acknowledged Received now and Bank alone, done no So far
+ *   C2  the groups and fields a stage offers: Ready (collect, units left, two points) the lot, acknowledged Received now and Bank alone, done only what is taken back
  *   C3  Save with one so-far field posts exactly one request, in the body the old control sent
  *   C4  terms and a payment: the restate goes first, then the received; a refused restate stops the rest
  *   C5  the told line: discount, changed, nothing
@@ -71,7 +71,10 @@ export async function run({ ok, pageWork }) {
     await closeSheet();
     await part("done"); await tapRow("ord-d1");
     sh = await changeSheet(p, cardOf("ord-d1"), { go: false });
-    ok(heads(sh) === "Order" && !sh.querySelector("[data-change-field]") && present(sh, "order.amend-units")[0], "C2c: a done order's Sheet has no So far: " + heads(sh));
+    /* 18 Nov 2026 (the plan's version 4): a done order's So far holds only what is taken back, Handed over and Paid so far with the reason, never money in */
+    const doneFields = [...sh.querySelectorAll("[data-change-field]")].map((e) => e.getAttribute("data-change-field")).join();
+    ok(heads(sh) === "Order,So far" && doneFields === "handed,paidsofar,why" && present(sh, "order.amend-units")[0],
+      "C2c: a done order's So far holds only what is taken back: Handed over, Paid so far and the reason: " + heads(sh) + " / " + doneFields);
     await closeSheet();
 
     /* C3 */

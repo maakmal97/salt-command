@@ -14,8 +14,8 @@
  {
   "name": "Collect keeps the charge",
   "file": "stmt/owner.js",
-  "find": "way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; });",
-  "replace": ""
+  "find": "way.addEventListener('change',function(){ if(way.value==='collect') ad.input.value='0'; if(ptWrap) ptWrap.hidden=way.value!=='collect'; });",
+  "replace": "way.addEventListener('change',function(){ if(ptWrap) ptWrap.hidden=way.value!=='collect'; });"
  },
  {
   "name": "the way is never sent",

@@ -86,8 +86,8 @@
  {
   "name": "the customer's view drops the window",
   "file": "stmt/orders.js",
-  "find": "  \"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\", \"changed\"];",
-  "replace": "  \"point\", \"rwd\", \"credit\", \"changed\"];"
+  "find": "  \"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\", \"changed\", \"winOffer\"];",
+  "replace": "  \"point\", \"rwd\", \"credit\", \"changed\", \"winOffer\"];"
  },
  {
   "name": "the review is not reserved on the window",

@@ -56,7 +56,7 @@
  {
   "name": "a change with no figure changed is sent",
   "file": "stmt/owner.js",
-  "find": "if(!Object.keys(body).length&&!np&&nh===null&&np2===null){ makerSay(order.id,'Change a figure first.'); return; }",
+  "find": "if(!Object.keys(body).length&&!np&&nh===null&&np2===null&&!lowering&&!nw){ makerSay(order.id,'Change a figure first.'); return; }",
   "replace": "if(false){ makerSay(order.id,'Change a figure first.'); return; }"
  },
  {

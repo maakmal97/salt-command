@@ -152,8 +152,8 @@
  {
   "name": "Desk: Amend on a completed order refused",
   "file": "engine/stages.mjs",
-  "find": "if (!AGREED_ON_SITE.includes(o.status) && o.status !== \"done\") return { status: 409",
-  "replace": "if (!AGREED_ON_SITE.includes(o.status)) return { status: 409"
+  "find": "if (!AGREED_ON_SITE.includes(o.status) && o.status !== \"done\") return { status: 409, error: \"this order is \" + o.status + \", so its figures are not amended\" };",
+  "replace": "if (!AGREED_ON_SITE.includes(o.status)) return { status: 409, error: \"this order is \" + o.status + \", so its figures are not amended\" };"
  },
  {
   "name": "ledger road: a completed order's row changes alone",

@@ -260,8 +260,8 @@
  {
   "name": "the Counter's bridge refuses a reason on an amendment",
   "file": "stmt/maker.js",
-  "find": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"oneOff\", \"mode\"] :",
-  "replace": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"mode\"] :"
+  "find": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"oneOff\", \"mode\"]\n    : action === \"lower\"",
+  "replace": "action === \"restate\" ? [\"rid\", \"qty\", \"total\", \"delivery\", \"undo\", \"mode\"]\n    : action === \"lower\""
  },
  {
   "name": "a placed order's ask draws no Reason line",

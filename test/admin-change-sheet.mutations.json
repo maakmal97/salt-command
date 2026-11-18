@@ -32,14 +32,14 @@
  {
   "name": "the points are not offered at Ready",
   "file": "stmt/owner.js",
-  "find": "if(ready&&order.mode==='collect'&&left&&makerPoints){",
+  "find": "if(ready&&left&&makerPoints){",
   "replace": "if(false){"
  },
  {
   "name": "the bank received carries a field it never sent",
   "file": "stmt/owner.js",
-  "find": "await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.');",
-  "replace": "await makerTap(cur(),'received',{amount:np2,road:'bank'},'Sent to the Desk.');"
+  "find": "else if(await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.')!==true) return;",
+  "replace": "else if(await makerTap(cur(),'received',{amount:np2,road:'bank'},'Sent to the Desk.')!==true) return;"
  },
  {
   "name": "That is all sends no close",

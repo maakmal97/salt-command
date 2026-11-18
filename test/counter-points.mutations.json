@@ -98,8 +98,8 @@
  {
   "name": "the same id with another code is taken as a retry",
   "file": "stmt/maker.js",
-  "find": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"point\"];",
-  "replace": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\"];"
+  "find": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"point\", \"slot\", \"winWithdraw\"];",
+  "replace": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"slot\", \"winWithdraw\"];"
  },
  {
   "name": "Ready's history line carries the place",
@@ -110,8 +110,8 @@
  {
   "name": "the code does not travel to the customer",
   "file": "stmt/orders.js",
-  "find": "\"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\", \"changed\"];",
-  "replace": "\"slot\", \"slotSpan\", \"rwd\", \"credit\", \"changed\"];"
+  "find": "\"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\", \"changed\", \"winOffer\"];",
+  "replace": "\"slot\", \"slotSpan\", \"rwd\", \"credit\", \"changed\", \"winOffer\"];"
  },
  {
   "name": "the place travels after everything is handed over",

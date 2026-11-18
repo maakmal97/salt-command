@@ -26,7 +26,7 @@
  {"name":"the book's change is not told","file":"stmt/orders.js","find":"const tell = r.undo === true ? null : tellOf(order, q, t, d, m);","replace":"const tell = r.undo === true ? null : r.tell === true ? tellOf(order, q, t, d, m) : null;"},
  {"name":"a restate's wake is never sent","file":"stmt/orders.js","find":"  if (ev.kind === \"restate\" && [\"changed\", \"discount\"].includes(ev.tell)) return { k: ev.tell, o, v: payCase(order) };\n","replace":""},
  {"name":"the order keeps no record of the change","file":"stmt/orders.js","find":"    else if (ev.tell && ev.was) order.changed = { at, kind: ev.tell, was: ev.was };","replace":""},
- {"name":"their view drops the change","file":"stmt/orders.js","find":"\"rwd\", \"credit\", \"changed\"];","replace":"\"rwd\", \"credit\"];"},
+ {"name":"their view drops the change","file":"stmt/orders.js","find":"\"rwd\", \"credit\", \"changed\", \"winOffer\"];","replace":"\"rwd\", \"credit\", \"winOffer\"];"},
  {"name":"the book's money alone is told","file":"stmt/orders.js","find":"terms ? { tell: tellOf(order, r.qty, r.total, r.delivery, bm), was: wasOf(order) } : {}) };","replace":"{ tell: tellOf(order, r.qty, r.total, r.delivery, bm), was: wasOf(order) }) };"},
  {"name":"any tell is taken","file":"stmt/orders.js","find":"    if (r.tell !== undefined && r.tell !== true) return { error: \"a restate is told or not\", status: 400 };\n","replace":""},
  {"name":"the phone does not know the discount","file":"stmt/sw.js","find":"\"remind\", \"changed\", \"discount\"];","replace":"\"remind\", \"changed\"];"},

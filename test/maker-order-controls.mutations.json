@@ -74,8 +74,8 @@
  {
   "name": "1 Nov 2026: the Desk's internal gate names neither offer nor withdraw again",
   "file": "src/worker.js",
-  "find": "(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))",
-  "replace": "(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))"
+  "find": "(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|lower|take)$/.test(p))",
+  "replace": "(preview|accept|handed|cash|received|again|amend|notfound|move|restate|lower|take)$/.test(p))"
  },
  {
   "name": "the bridge drops the Desk fresh mark on a refusal",

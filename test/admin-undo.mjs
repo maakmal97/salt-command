@@ -451,12 +451,13 @@ export async function run({ ok, pageWork }) {
       /* 17 Nov 2026: re-aimed to the Change sheet (plan v2): the units field is the Sheet's Handed over */
       if (!c) return null;
       const sh = await changeSheet(ph, c, { go: false });
-      return [!!byAct(sh, "order.change-handed"), !!byAct(c, "order.handed")];
+      /* 18 Nov 2026 (the plan's version 4): Handed over stays with every unit out, to take some back; no more can be handed over (no The rest, no button) */
+      return [!!byAct(sh, "order.change-handed"), !!byAct(sh, "order.change-rest"), !!byAct(c, "order.handed")];
     } finally { ph.w.close(); }
   };
   const allOut = await handAsk(1), partOut = await handAsk(0.5);
-  ok(J(allOut) === J([false, false]) && J(partOut) === J([true, true]),
-    "a Ready order with every unit handed over offers no handover field or button, and one with units left still does: " + J({ allOut, partOut }));
+  ok(J(allOut) === J([true, false, false]) && J(partOut) === J([true, true, true]),
+    "a Ready order with every unit handed over offers only the take-back, no more handover or button, and one with units left still does: " + J({ allOut, partOut }));
 
   /* the approve card: an undo is one card with its own verb, and the button says the result */
   const mb = { sales: [s267()], purchases: [], state: { TERMS: { ceiling: 250 } } };

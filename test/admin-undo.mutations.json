@@ -296,8 +296,8 @@
  {
   "name": "the undo fix keeps the day handed over at none",
   "file": "stmt/orders.js",
-  "find": "if (!(order.moved > 0.0004)) { delete order.movedOn; delete order.movedAt; }",
-  "replace": ""
+  "find": "q.moved = +Math.max(0, (+q.moved || 0) - f.unmove).toFixed(3);\n        if (!(order.moved > 0.0004)) { delete order.movedOn; delete order.movedAt; }",
+  "replace": "q.moved = +Math.max(0, (+q.moved || 0) - f.unmove).toFixed(3);\n"
  },
  {
   "name": "the undo fix takes more than the order holds",
