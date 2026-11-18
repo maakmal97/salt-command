@@ -1195,6 +1195,9 @@ const CLIENT_JS = `
   /* v702: whether this account may order on behalf of a friend. It draws one tick and nothing
      else; where a row books is the desk's decision, and it checks it against its own roster. */
   var assoc=false;
+  var ADMIN=location.pathname==='/admin', admin=0, adminBusy=false,
+    adminTried=ADMIN&&new URLSearchParams(location.search).has('retry'),
+    adminNote='', adminName='';
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
   /* 14 Oct 2026 (his review): every [data-clock] shows the time in Kuala Lumpur, digits only; painted on the
@@ -2019,7 +2022,7 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     liveStop();   /* Speed Wave 2 L2: Log out closes the socket */
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
-    bundle=null; session=''; view=false; act=false; actWant=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote=''; myJoins=null; myJoinNote='';
+    bundle=null; session=''; view=false; act=false; actWant=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; admin=0; adminTried=false; adminNote=''; adminName=''; card=null; cardMonth=null; myLinks=null; myMax=0; myNote=''; myJoins=null; myJoinNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; AMF.pick=null; mfnote.textContent='';
@@ -2450,7 +2453,25 @@ const CLIENT_JS = `
     if(note) note.textContent=why||said||'';
     /* Saving the app is optional; the install guide sits with this device's settings. */
     if(STANDALONE) own.push(devRow(tw('dev.saved'),tw('dev.inIt'),devValue(tw('dev.yes'))));
+    if(admin){
+      var adminControls=el('span');
+      if(adminNote) adminControls.appendChild(devValue(adminNote));
+      adminControls.appendChild(devBtn(adminBusy?tw('admin.going'):tw('admin.open'),ADMIN?adminGo:function(){ location.assign('/admin'); }));
+      own.unshift(devRow(adminName||tw('admin.go'),'',adminControls));
+    }
     devPut('own',own);
+  }
+  async function adminGo(){
+    if(adminBusy||!session) return;
+    var mine=ticket, j=null;
+    adminBusy=true; adminNote=''; drawDevice();
+    try{ var r=await fetch('/admin/enter',{method:'POST',headers:{'content-type':'application/json','X-Stmt-Session':session},body:'{}'}); j=await r.json(); }catch(e){ j=null; }
+    if(mine!==ticket) return;
+    adminBusy=false;
+    if(j&&j.ok&&j.go==='/all'){ location.assign('/all?from=admin'); return; }
+    adminNote=wErr(j,'e.busy');
+    drawDevice();
+    if(ADMIN) placeShow('stmt');
   }
   async function devPushOn(){
     var mine=ticket;
@@ -6871,7 +6892,7 @@ const CLIENT_JS = `
      beside the statement, enter draws the account, and follow starts its orders. */
   /* not "unseal": stmt/owner.js declares that name, and spliced in after this, its declaration would win here */
   async function openBeside(body, ck, b){
-    var x={assoc:body.assoc===true, card:null, prices:null};
+    var x={assoc:body.assoc===true, admin:(body.admin===1||body.admin===2)?body.admin:0, adminName:body.adminLabel||'', card:null, prices:null};
     stampWas=stampOf(body);   /* R1: what this open was made from, which the poll's stamp is compared with */
     /* C15 (29 Sep 2026): THE ACCOUNT IS THE LIVE DOCUMENT OR NOTHING. A live document that would not open was swallowed,
        and Account drew the sealed 01 Sep issue as the account, old balance and all, while the overdue lead and the hold
@@ -6904,7 +6925,7 @@ const CLIENT_JS = `
     /* S3 3.5: the same account let in again (a lapse reopened, a sign-in on the Sheet, a return re-read) keeps
        the draft, the tab, the month and the place on the page */
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=AMF.pick;
-    prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
+    prices=x.prices; assoc=x.assoc; admin=x.admin; adminName=x.adminName; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
     if(!same){ liveStop(); orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster); act=view&&actWant;
@@ -6920,6 +6941,7 @@ const CLIENT_JS = `
        unless that place has gone (Rewards, for an account no longer an associate) */
     if(!same){ var w=wantPlace; wantPlace=''; placeShow(w||'home'); }
     else if(placeBtns(t)[0].hidden) placeShow(t);
+    if(ADMIN&&admin&&!adminTried&&!view){ adminTried=true; adminGo(); }
     if(same){
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ AMF.pick=mf; applyMonths(); }
       window.scrollTo(0,sy);
@@ -7142,6 +7164,7 @@ const CLIENT_JS = `
        page of its own now, spent on Continue, so the page waits there. */
     var hk=(location.hash||'').slice(1);   /* read before anything waits: a page closed meanwhile has no address */
     (async function(){
+      if(ADMIN){ if(adminTried) adminNote=tw('admin.retry'); gate.hidden=false; return; }
       if(await showLink()) return;
       /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
          only the saved app spends it. S3 FIX, 24 SEP 2026: A BROWSER TAB SPENDS ONLY HIS COUNTER'S QR, /app#qr.<key>,

@@ -205,9 +205,9 @@ export async function dropSession(env, token) {
   return true;
 }
 
-export async function mintSession(env, u) {
+export async function mintSession(env, u, how) {
   const tok = b64url(crypto.getRandomValues(new Uint8Array(24)));
-  await env.STMT.put(await sessKey(tok), JSON.stringify({ u, at: new Date().toISOString() }), { expirationTtl: SESSION_TTL });
+  await env.STMT.put(await sessKey(tok), JSON.stringify({ u, how, at: new Date().toISOString() }), { expirationTtl: SESSION_TTL });
   return tok;
 }
 
