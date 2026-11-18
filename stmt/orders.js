@@ -305,7 +305,7 @@ export async function storeCompare(env) {
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
   "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
-  "slot", "slotSpan", "point", "rwd", "credit", "changed"];   /* changed (17 Nov 2026): the newest change of his and what the order was before it */   /* credit (27 Oct 2026): their refunds spent on this order at his Accept, paid already */   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
+  "slot", "slotSpan", "point", "rwd", "credit", "changed", "winOffer"];   /* winOffer (18 Nov 2026): a later window he asks their yes for */   /* changed (17 Nov 2026): the newest change of his and what the order was before it */   /* credit (27 Oct 2026): their refunds spent on this order at his Accept, paid already */   /* rwd (20 Oct 2026): "cross" or "given", one word, never a figure */
 /* COUNTER BATCH A (18 Oct 2026, his decisions): WHERE AN ORDER WAITS. The point's code travels (Details reads "Collected at Point A2"
    after); its place, the snapshot taken at Ready (pointAt), only while the order waits at it: Ready, to collect, with goods still to
    hand over. A fix undo or an amendment can set Ready on an order owing only money, and a customer who owes money is not waiting there. */
@@ -581,6 +581,12 @@ export const sizeAllowed = (q, g) => {
   return !Array.isArray(g.multiples) || !g.multiples.length || g.multiples.some((m) => isNum(m) && m > 0 && Math.abs(q / m - Math.round(q / m)) < 1e-6);
 };
 /** An offer of his still open at `at`: offered, and `at` not past its `until`. */
+/* 18 Nov 2026 (order changes, version 4): a later window waits on their answer (winOffer), and still stands: the order a delivery at the window it
+   was asked from, with goods to come. An earlier window is one before theirs, or on or before the day they wanted; where they asked for none (as
+   soon as possible) every window is later */
+export const winOpen = (o) => !!(o && o.winOffer && o.winOffer.state === "offered" && PAYABLE.includes(o.status));
+export const winStands = (o) => !!o && o.mode === "deliver" && owedUnits(o) > 0.004 && !!o.winOffer && (o.winOffer.was || null) === (o.slot || null);
+export const winEarlier = (o, slot) => (o.slot ? slot < o.slot : o.wantBy ? slot.slice(0, 10) <= o.wantBy : false);
 export const offerOpen = (o, at) => !!(o && o.price && o.price.state === "offered" && o.price.offer
   && String(at || new Date().toISOString()) <= String(o.price.offer.until));
 /** An ask still waiting on his answer or on theirs: asked, or offered and open. */
@@ -827,6 +833,16 @@ export function decideCustomer(order, action, body, mine, at) {
   /* 05 Oct 2026: THEIR ANSWER TO HIS OFFER. Accept takes it while it is open and the order is still the one it was made for;
      No thanks declines it. Either is one event under the tap's own id, so a retry lands once. Taken, the desk Worker drafts
      its row at the offer's figure and his yes, recorded when he offered, is spent only on an exact match (D6). */
+  /* 18 Nov 2026 (order changes, version 4, his answer 5): THEIR ANSWER TO A LATER WINDOW, asked after Accept (winOffer). Yes takes it while it is open and
+     the order still waits at the window it was asked from, a delivery with goods to come; No thanks keeps theirs. Read before the price's answer,
+     which an order agreed by an offer would otherwise give (Fable's review) */
+  if ((action === "take" || action === "pass") && winOpen(order)) {
+    const w = order.winOffer;
+    if (body && body.offer != null && String(body.offer) !== String(w.id)) return Object.assign(refusal("offerChanged"), { status: 409 });
+    if (action === "take" && String(at) > String(w.until)) return Object.assign(refusal("offerLapsed"), { status: 409 });
+    if (action === "take" && !winStands(order)) return Object.assign(refusal("offerVoid"), { status: 409 });
+    return { ev: { kind: "winanswer", at, state: action === "take" ? "taken" : "passed", by: "customer", offer: w.id } };
+  }
   if (action === "take" || action === "pass") {
     const p = order.price;
     if (!p || p.state !== "offered" || !p.offer || order.status !== "placed") return Object.assign(refusal("offerNone"), { status: 409 });
@@ -1177,6 +1193,60 @@ export function decideDesk(order, body, at) {
     }
     return { error: "the book ends an order by a cancellation or a write-off", status: 400 };
   }
+  /* 18 Nov 2026 (order changes, version 4, his answer 6): WHAT IS PAID OR HANDED OVER, TAKEN BACK, from Salt Admin's Change sheet: the desk drafted
+     the Correction of the row at his tap (engine/stages.mjs lowerTap) and the order comes down with it now, told as changed. The figures are the
+     NEW ones, never above what the order holds; a retry that already landed finds nothing to lower and is answered as none (Fable's review) */
+  if (body && body.lower !== undefined) {
+    const l = body.lower;
+    if (!ROWED.includes(order.status)) return { error: "nothing is taken back on an order that is " + order.status, status: 409 };
+    if (!l || typeof l !== "object" || Array.isArray(l) || (l.paid === undefined && l.moved === undefined) || (l.tell !== undefined && l.tell !== true)
+      || (l.paid !== undefined && (!isNum(l.paid) || l.paid < 0)) || (l.moved !== undefined && (!isNum(l.moved) || l.moved < 0))
+      || (l.wasPaid !== undefined && (l.paid === undefined || !isNum(l.wasPaid))) || (l.wasMoved !== undefined && (l.moved === undefined || !isNum(l.wasMoved))))
+      return { error: "a take-back names what is paid or handed over after it", status: 400 };
+    /* the desk's names what it was measured on (Fable's review): the order already at the figures is the retry, anything else moved is a refusal */
+    if (l.wasPaid !== undefined || l.wasMoved !== undefined) {
+      const at2 = (v, now, e) => v === undefined || Math.abs(v - (+now || 0)) < e;
+      if (at2(l.paid, order.paid, 0.005) && at2(l.moved, order.moved, 0.0005)) return { none: true };
+      if (!at2(l.wasPaid, order.paid, 0.005) || !at2(l.wasMoved, order.moved, 0.0005))
+        return { error: "the order moved since this take-back was measured: read it again", status: 409 };
+    }
+    if ((l.paid !== undefined && l.paid > (+order.paid || 0) + 0.004) || (l.moved !== undefined && l.moved > (+order.moved || 0) + 0.0004))
+      return { none: true };   /* a payment or handover since: this lower is no longer the order's, and the row heals it */
+    const dp = l.paid !== undefined && l.paid < (+order.paid || 0) - 0.004, dm = l.moved !== undefined && l.moved < (+order.moved || 0) - 0.0004;
+    if (!dp && !dm) return { none: true };
+    if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+    return { ev: Object.assign({ kind: "lower", at }, dp ? { paid: +l.paid.toFixed(2) } : {}, dm ? { moved: +l.moved.toFixed(3) } : {}, l.tell ? { tell: "changed" } : {}) };
+  }
+  /* 18 Nov 2026 (order changes, version 4, his answer 5): A NEW WINDOW AFTER ACCEPT, on a delivery with goods still to come. Earlier than the one they
+     have is told as changed; later (or any window where they asked for as soon as possible, or after the day they wanted) is asked as an offer they
+     answer, theirs standing until they say yes. A new one replaces an offer still open. The span is cut to his hours by deskBody. */
+  if (body && body.slot !== undefined && body.status === undefined) {
+    if (!PAYABLE.includes(order.status)) return { error: "a window is changed on an agreed order, not one that is " + order.status, status: 409 };
+    if (order.mode !== "deliver") return { error: "only a delivery has a window", status: 409 };
+    if (owedUnits(order) <= 0.004) return { error: "everything on this order is handed over, so it waits for no window", status: 409 };
+    if (typeof body.slot !== "string" || !SLOT_RE.test(body.slot) || typeof body.slotSpan !== "string" || !SPAN_RE.test(body.slotSpan))
+      return { error: "a window is a day and one of the six four-hour windows", status: 400 };
+    if (order.slot === body.slot && winOpen(order)) return { ev: { kind: "winanswer", at, state: "withdrawn", by: "desk", offer: order.winOffer.id } };
+    if (order.slot === body.slot) return { none: true };
+    if (winEarlier(order, body.slot)) return { ev: { kind: "window", at, slot: body.slot, slotSpan: body.slotSpan, tell: "changed" } };
+    const starts = Date.parse(body.slot.slice(0, 10) + "T00:00:00Z") - 8 * 3600000 + (+body.slot.slice(11, 13)) * 3600000;
+    const until = Math.min(Date.parse(at) + OFFER_HOURS * 3600000, starts);   /* never past the window's own start (Fable's review) */
+    if (!(until > Date.parse(at))) return { error: "that window has begun: choose another", status: 400 };
+    return { ev: { kind: "winoffer", at, offer: { id: "w" + Date.parse(at).toString(36), slot: body.slot, slotSpan: body.slotSpan,
+      until: new Date(until).toISOString(), was: order.slot || null, wasSpan: order.slotSpan || null } } };
+  }
+  /* 18 Nov 2026 (his answer to Ask 1 of version 4's audit, typed in the session that acted): A READY ORDER GOES BACK TO AGREED while nothing is handed over,
+     told as changed; a collection's point goes with it, Ready naming one again */
+  if (body && body.back === true && body.status === undefined) {
+    if (order.status !== "ready") return { error: "only a ready order goes back to agreed", status: 409 };
+    if ((+order.moved || 0) > 0.0004) return { error: "goods are handed over already, so it stays ready: take them back first", status: 409 };
+    return { ev: { kind: "back", at, tell: "changed" } };
+  }
+  if (body && body.winWithdraw === true) {
+    if (order.winOffer && order.winOffer.state === "taken") return { error: "they said yes to that window before your withdraw reached them", status: 409 };
+    if (!winOpen(order)) return { error: "no window of yours waits on their answer", status: 409 };
+    return { ev: { kind: "winanswer", at, state: "withdrawn", by: "desk", offer: order.winOffer.id } };
+  }
   /* COUNTER BATCH A: CHANGE POINT, his move on an order waiting at one, with goods still to hand over; its own request id, the same
      checks as Ready's. It makes no ledger stage, and is undone by changing it back. */
   if (body && body.point !== undefined && body.status === undefined) {
@@ -1288,6 +1358,51 @@ export function applyEvent(order, ev) {
     /* the book cancelled the row already: its cancellation is owed to no one, so the reconcile queues none */
     if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: "book" }); h.book = true; }
     order.history.push(h);
+  } else if (ev.kind === "lower") {
+    /* 18 Nov 2026 (order changes, version 4): the order holds less, and what the ledger was told with it, so the reconcile books nothing; the payment
+       lines stay (the Bill reads one Paid line when they no longer add up). Told as changed, the terms' own was kept for backTo (Fable's review) */
+    const q = Object.assign({}, order.queued || {}), was = { paid: +(+order.paid || 0).toFixed(2), moved: +(+order.moved || 0).toFixed(3) };
+    if (isNum(ev.paid)) {
+      const d = +((+order.paid || 0) - ev.paid).toFixed(2);
+      order.paid = ev.paid; q.paid = +Math.max(0, (+q.paid || 0) - d).toFixed(2);
+      order.history.push({ at, status: order.status, by: "desk", note: "payment of " + d.toFixed(2) + " taken back" });
+    }
+    if (isNum(ev.moved)) {
+      const d = +((+order.moved || 0) - ev.moved).toFixed(3);
+      order.moved = ev.moved; q.moved = +Math.max(0, (+q.moved || 0) - d).toFixed(3);
+      if (!(order.moved > 0.0004)) { delete order.movedOn; delete order.movedAt; }
+      order.history.push({ at, status: order.status, by: "desk", note: d + " unit taken back" });
+    }
+    order.queued = q;
+    if (ev.tell) order.changed = Object.assign({ at, kind: "changed", lower: true, was: (order.changed && order.changed.was) || wasOf(order) },
+      order.changed && !order.changed.lower ? { prev: order.changed } : order.changed && order.changed.prev ? { prev: order.changed.prev } : {},
+      isNum(ev.paid) ? { wasPaid: was.paid } : {}, isNum(ev.moved) ? { wasMoved: was.moved } : {});
+    if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
+      const back = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
+      order.status = order.moved > 0.0004 ? "ready" : back ? back.status : "ready";
+      order.history.push({ at, status: order.status, by: "desk", inner: true, note: "open again: what was taken back leaves it owing" });
+    }
+    if (order.winOffer && order.winOffer.state === "offered" && !winStands(order)) order.winOffer = Object.assign({}, order.winOffer, { state: "void", voidAt: at });
+    done = settle(order, at);
+  } else if (ev.kind === "window") {
+    /* 18 Nov 2026 (order changes, version 4): an earlier window, told; any window offer still open is answered by it */
+    const wasSlot = order.slot || null, wasSpan = order.slotSpan || null;
+    order.slot = ev.slot; order.slotSpan = ev.slotSpan; delete order.wantBy;
+    if (order.winOffer && order.winOffer.state === "offered") order.winOffer = Object.assign({}, order.winOffer, { state: "void", voidAt: at });
+    order.changed = Object.assign({ at, kind: "changed", was: (order.changed && order.changed.was) || wasOf(order), wasSlot }, wasSpan ? { wasSpan } : {});
+    order.history.push({ at, status: order.status, by: "desk", note: "window moved earlier, to " + ev.slot });
+  } else if (ev.kind === "back") {
+    order.status = "acknowledged"; delete order.point; delete order.pointAt;
+    order.changed = { at, kind: "changed", was: (order.changed && order.changed.was) || wasOf(order), wasReady: true };
+    order.history.push({ at, status: "acknowledged", by: "desk", note: "back to agreed" });
+  } else if (ev.kind === "winoffer") {
+    order.winOffer = Object.assign({}, ev.offer, { state: "offered", at });
+    order.history.push({ at, status: order.status, by: "desk", note: "a later window asked for " + ev.offer.slot });
+  } else if (ev.kind === "winanswer") {
+    const w = Object.assign({}, order.winOffer || {}, { state: ev.state, [ev.state + "At"]: at });
+    if (ev.state === "taken") { order.slot = w.slot; order.slotSpan = w.slotSpan; delete order.wantBy; }
+    order.winOffer = w;
+    order.history.push({ at, status: order.status, by: ev.by, note: "window " + ev.state });
   } else if (ev.kind === "point") {
     order.point = ev.point; order.pointAt = { lat: ev.pointAt.lat, lng: ev.pointAt.lng };
     order.history.push({ at, status: order.status, by: "desk", point: ev.point, note: "point moved to " + ev.point });
@@ -1436,11 +1551,16 @@ export function applyEvent(order, ev) {
       order.credit = ev.credit; if (!(order.credit > 0.004)) delete order.credit;
       order.history.push({ at, status: order.status, by: "desk", inner: true, note: "their credit on this order is now " + (+ev.credit).toFixed(2) });
     }
+    /* 18 Nov 2026 (Fable's review of version 4): a take-back he rejected under Approve heals by this raise; the Bill's line about it goes with it */
+    const c = order.changed;
+    if (told && c && c.lower && (c.wasPaid === undefined || Math.abs((+order.paid || 0) - c.wasPaid) < 0.005)
+      && (c.wasMoved === undefined || Math.abs((+order.moved || 0) - c.wasMoved) < 0.0005)) { if (c.prev) order.changed = c.prev; else delete order.changed; }
     if (told) { order.queued = q; done = settle(order, at); }
   } else if (ev.kind === "restate") {
     /* never `closed`: that record says the order was closed short, which the customer's page reads as such */
     order.qty = ev.qty; order.total = ev.total; order.delivery = ev.delivery;
     if (ev.mode) order.mode = ev.mode;   /* 17 Nov 2026: the way, amended with the charge */
+    if (order.winOffer && order.winOffer.state === "offered" && !winStands(order)) order.winOffer = Object.assign({}, order.winOffer, { state: "void", voidAt: at });
     /* 17 Nov 2026: the newest told change, for their Bill; an undo, or a change that puts the order back as it was before the last one (a change
        he rejected), takes the line away rather than leave it saying what is no longer so (Fable's review) */
     if (ev.undo || backTo(order, ev.qty, ev.total, ev.delivery, order.mode)) delete order.changed;
@@ -1469,6 +1589,7 @@ export function applyEvent(order, ev) {
       order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
     }
     if (ev.mode) order.mode = ev.mode;
+    if (order.winOffer && order.winOffer.state === "offered" && !winStands(order)) order.winOffer = Object.assign({}, order.winOffer, { state: "void", voidAt: at });
     if (moves) order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     if (ev.close) {   /* S11 11.9: the size and the goods' total restated at what went, the old ones kept */
       order.closed = { at, qty: order.qty, total: order.total };
@@ -1498,6 +1619,7 @@ export function marksOf(ev, order) {
   if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
   if (ev.kind === "rate") k.push([LAST_THEIRS, at + "|rate"]);   /* F10: his minute nudge says a customer rated an order */
   /* 05 Oct 2026: their answer to his offer, which his nudge names; taken, the desk's pass drafts its row */
+  if (ev.kind === "winanswer" && ev.by === "customer") k.push([LAST_THEIRS, at + "|" + (ev.state === "taken" ? "take" : "pass")]);
   if (ev.kind === "price" && ev.by === "customer") k.push([LAST_THEIRS, at + "|" + (ev.state === "taken" ? "take" : "pass")]);
   return k;
 }
@@ -1546,6 +1668,10 @@ export function wakes(ev, order, done) {
   if (ev.kind === "handover") return handedWake(order, o);
   /* plan 4 (16 Oct 2026, his answer): a move of his taken back on the book, or a change of terms undone, is told by its own banner, its body the case */
   if ((ev.kind === "fix" && ev.fix && ev.fix.undo) || (ev.kind === "restate" && ev.undo)) return { k: "corrected", o, v: payCase(order) };
+  /* 18 Nov 2026 (order changes, version 4): a take-back and an earlier window are told as changed; a later window asks their yes */
+  if ((ev.kind === "lower" || ev.kind === "window" || ev.kind === "back") && ev.tell === "changed") return { k: "changed", o, v: payCase(order) };
+  if (ev.kind === "winoffer") return { k: "confirm", o };
+  if (ev.kind === "winanswer") return null;
   /* 17 Nov 2026: a change of what they buy, his or the book's, told as changed or a discount */
   if (ev.kind === "restate" && ["changed", "discount"].includes(ev.tell)) return { k: ev.tell, o, v: payCase(order) };
   /* a group order closed tells each joiner; poolClose puts each one's own order in o. A retry that only records what was left wakes nobody */
@@ -1742,6 +1868,12 @@ const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done
  *  { error, status }. */
 export async function deskBody(env, body) {
   if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
+  /* 18 Nov 2026 (order changes, version 4): a new window after Accept, its span cut to the hours; one already past is refused */
+  if (body && body.status === undefined && body.slot !== undefined) {
+    const s = await ackSlot(env, body);
+    if (!s.slot) return { error: "that window has passed: choose another", status: 400 };
+    body = s;
+  }
   if (body && body.offer && body.offer.slot) {
     const s = await ackSlot(env, { slot: body.offer.slot });
     if (!s.slot) return { error: "that window has passed: choose another", status: 400 };

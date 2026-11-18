@@ -211,6 +211,13 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(35, 30), "desk", { restate: { qty: 2.5, total: 250, delivery: 0, tell: true } }]].concat(W ? [   /* 17 Nov 2026: then given a discount, which its Bill says */
     [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [], [
     [T(1, 10), "desk", READY_AT()]])));
+  /* 18 NOV 2026 (the order-changes plan, version 4): A HANDOVER TAKEN BACK from the Change sheet, told as changed, its Bill saying what it showed */
+  O.push(order(oid(3, "62"), list, T(3), { product: "salt", qty: 1, mode: "collect" }, [
+    [T(3, 20), "desk", { status: "acknowledged" }], [T(2, 50), "desk", READY_AT()], [T(2, 55), "desk", { handover: { units: 1 } }],
+    [T(2, 58), "desk", { lower: { moved: 0, tell: true } }]]));
+  /* 18 NOV 2026 (his answer to Ask 1): READY, THEN BACK TO AGREED with nothing handed over, told as changed */
+  O.push(order(oid(2, "63"), list, T(2, 10), { product: "salt", qty: 1, mode: "collect" }, [
+    [T(2, 30), "desk", { status: "acknowledged" }], [T(1, 50), "desk", READY_AT()], [T(1, 55), "desk", { back: true }]]));
   /* COLLECTED and paid in cash: complete */
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
     [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", READY_AT()],
@@ -291,6 +298,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [yesAt(T(0, 20), "fex44", { total: priceOf(list, "salt", 2) + 20 })]));
   O.push(order(oid(1, "45"), list, T(1, 5), { product: "oil", qty: 1, mode: "deliver", place: "Taman Rekaan", slot: next(8) },
     [yesAt(T(0, 21), "fex45", { total: priceOf(list, "oil", 1), slot: next(16), slotSpan: "16:00-20:00" })]));
+  /* 18 NOV 2026 (the order-changes plan, version 4): A LATER WINDOW ASKED AFTER WE CONFIRMED, theirs standing until they say yes */
+  const dayOn = (s) => new Date(Date.parse(s.slice(0, 10) + "T00:00:00Z") + 864e5).toISOString().slice(0, 10) + s.slice(10);
+  O.push(order(oid(1, "61"), list, T(1, 6), { product: "oil", qty: 1, mode: "deliver", place: "Taman Rekaan", slot: next(8) }, [
+    [T(1, 25), "desk", { status: "acknowledged", delivery: 4 }], [T(0, 22), "desk", { slot: dayOn(next(8)), slotSpan: "08:00-12:00" }]], HOURS));
   O.push(order(oid(4, "46"), list, T(4, 3), { product: "candy", qty: 1, mode: "deliver", place: "Taman Rekaan" }, [
     yesAt(T(4, 20), "fex46", { total: priceOf(list, "candy", 1) + 10 }), [T(1, 30), "desk", { status: "acknowledged", delivery: 4 }]]));
 
@@ -487,6 +498,11 @@ export const FEATURES = [
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
   ["their credit sealed with the list, said once on Prices and off the basket and the sheet (27 Oct 2026)", (f) => typeof f.prices.credit === "number" && f.prices.credit > 0.004],
   ["an order paid in part by their credit at our confirmation (27 Oct 2026)", (f) => has(f, (o) => +o.credit > 0.004 && ROWED.includes(o.status) && (f.prices.creditRows || []).some((r) => r.d === String(o.ledgerKey || "").split("|")[1] && Math.abs(r.rm - o.credit) < 0.005))],
+  ["a later window asked after we confirmed, theirs standing until they say yes (18 Nov 2026)", (f) => has(f, (o) => o.winOffer && o.winOffer.state === "offered"
+    && !!o.slot && o.winOffer.slot > o.slot && ["acknowledged", "ready"].includes(o.status))],
+  ["a handover taken back after we confirmed, told as changed, its Bill saying what it showed (18 Nov 2026)", (f) => has(f, (o) => o.changed && o.changed.lower
+    && typeof o.changed.wasMoved === "number" && o.changed.wasMoved > (+o.moved || 0))],
+  ["a ready order back to agreed, nothing handed over, its Bill saying it was ready (18 Nov 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.changed && o.changed.wasReady === true)],
   ["an order we gave a discount after confirming it, its Bill saying what it was (17 Nov 2026)", (f) => has(f, (o) => o.changed && o.changed.kind === "discount" && o.changed.was && o.changed.was.total > o.total)],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],

@@ -4611,7 +4611,10 @@ const CLIENT_JS = `
     w.appendChild(el('p','onote',tw(a.mode==='deliver'?'oa.againD':'oa.againC',{rm:rm(priceAt(P,o.qty))})));
     return w;
   }
-  function firstAt(o,st){ var h=(o.history||[]).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
+  /* 18 Nov 2026 (his answer to Ask 1 of version 4): Ready is counted from the newest Ready after the order went back to Agreed, so a payment falls due from it */
+  function firstAt(o,st){ var hs=o.history||[], from=0;
+    if(st==='ready') for(var i=hs.length-1;i>=0;i--){ if(hs[i]&&hs[i].note==='back to agreed'){ from=i+1; break; } }
+    var h=hs.slice(from).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
   function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?dmyOf({day:m[3],month:m[2],year:m[1]},L):''; }
   /* what the last tap on this order said, beside the control it came from; where the answer took the control away
      (paid in full, cancelled), under the order's state, which is where the change shows */
@@ -4831,7 +4834,15 @@ const CLIENT_JS = `
     var cg=o.changed;
     if(cg&&cg.was&&cg.at){
       var cw=cg.was, wway=cw.mode==='deliver'?tw('om.wasDeliver',{rm:rm(+cw.delivery||0)}):tw('om.wasCollect');
-      R.push({k:tw(cg.kind==='discount'?'om.discounted':'om.changed',{d:Dd(oDay,cg.at)}), v:'', sub:tw('om.was',{u:Uq(cw.qty,oUnit(o)), rm:rm(cw.total), w:wway})});
+      /* 18 Nov 2026 (the plan's version 4): a take-back or an earlier window says what it was; the terms' line only where the terms moved */
+      var more=typeof cg.wasPaid==='number'||typeof cg.wasMoved==='number'||cg.wasSlot!==undefined||cg.wasReady===true;
+      var subs=[];
+      if(!more) subs.push(tw('om.was',{u:Uq(cw.qty,oUnit(o)), rm:rm(cw.total), w:wway}));
+      if(typeof cg.wasPaid==='number') subs.push(tw('om.wasPaid',{rm:rm(cg.wasPaid)}));
+      if(typeof cg.wasMoved==='number') subs.push(tw('om.wasMoved',{u:Uq(cg.wasMoved,oUnit(o))}));
+      if(cg.wasReady===true) subs.push(tw('om.wasReady'));
+      if(cg.wasSlot!==undefined) subs.push(cg.wasSlot&&cg.wasSpan?tw('om.wasWin',{a:winPart(cg.wasSpan,0), b:winPart(cg.wasSpan,1), d:function(L){ return ymdDay(winDay(cg.wasSlot),L); }}):tw('om.wasWinNone'));
+      R.push({k:tw(cg.kind==='discount'?'om.discounted':'om.changed',{d:Dd(oDay,cg.at)}), v:'', sub:subs.join(' ')});
     }
     /* 20 Oct 2026: the reward unit that comes with this order: its mark, one unit, no charge, and no amount */
     if(o.rwd==='given') R.push({k:tw('om.rwd'), v:tw('om.rwdFree'), lead:markLead(o.product,16), cls:'orwd'});
@@ -5125,8 +5136,26 @@ const CLIENT_JS = `
     if(note){ var nt=el('span','amb-tile__delta amb-muted'); nt.appendChild(typeof note==='string'?document.createTextNode(note):note); t.appendChild(nt); }
     g.appendChild(t); return g;
   }
+  /* 18 Nov 2026 (the plan's version 4, his answer 5): A LATER WINDOW WE ASK OF THEM after we confirmed: theirs stands until they say yes */
+  function oWinOpen(o){ var x=o.winOffer; return !!x&&x.state==='offered'&&(o.status==='acknowledged'||o.status==='ready')&&!!x.until&&new Date().toISOString()<=String(x.until); }
   function oPrice(o){
-    var w=el('div','oprice'), p=o.price; if(!p||o.status!=='placed') return w;
+    var w=el('div','oprice'), p=o.price;
+    if(oWinOpen(o)){
+      var x=o.winOffer;
+      w.appendChild(el('p','onote',tw('np.wAsk')));
+      var wl=el('p','onote'); setW(wl,'np.cWin',{a:esch(winPart(x.slotSpan,0)), b:esch(winPart(x.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(x.slot),L)); }}); w.appendChild(wl);
+      w.appendChild(el('p','onote',x.was&&x.wasSpan?tw('np.wTheirs',{a:winPart(x.wasSpan,0), b:winPart(x.wasSpan,1), d:function(L){ return ymdDay(winDay(x.was),L); }}):tw('np.wTheirsAsap')));
+      w.appendChild(el('p','onote',tw('np.until',{t:Dd(stamp,x.until)})));
+      if(!view){
+        var wy=el('button','amb-pill amb-pill--sm',tw('np.wYes')); wy.type='button'; wy.disabled=draft.offerBusy===o.id;
+        wy.addEventListener('click',function(){ offerAnswer(o,'take'); });
+        var wn=el('button','amb-pill amb-pill--sm amb-pill--quiet',tw('np.wNo')); wn.type='button'; wn.disabled=draft.offerBusy===o.id;
+        wn.addEventListener('click',function(){ offerAnswer(o,'pass'); });
+        var wr=el('div','oact'); wr.appendChild(wy); wr.appendChild(wn); w.appendChild(wr);
+      }
+      return w;
+    }
+    if(!p||o.status!=='placed') return w;
     /* 3 Nov 2026 (Fable): a tap's words here answer an open offer, so they go once it is withdrawn, lapsed or answered */
     var lapsed=p.state==='offered'&&!oOfferOpen(o), tp=oTap(o);
     /* VERSION 2 (10 Oct 2026): HIS ACCEPT FOR THEIR YES, the whole order as he would agree it: the goods beside what they placed
@@ -5179,7 +5208,7 @@ const CLIENT_JS = `
     if(view||draft.offerBusy) return;
     var key=o.id+':'+how, mine=ticket; draft.offerBusy=o.id; oPart(o.id,'price');
     /* 3 Nov 2026: the answer names the offer drawn, so a newer one is never answered unseen */
-    var r=await api('/orders/'+encodeURIComponent(o.id)+'/'+how,{rid:ridFor(key,''), offer:(o.price&&o.price.id)||undefined});
+    var r=await api('/orders/'+encodeURIComponent(o.id)+'/'+how,{rid:ridFor(key,''), offer:(oWinOpen(o)?o.winOffer.id:(o.price&&o.price.id))||undefined});
     draft.offerBusy='';
     if(mine!==ticket) return;
     var b=r.body||{}; if(b.ok) ridDone(key);
