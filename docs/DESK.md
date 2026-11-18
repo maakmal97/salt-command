@@ -331,6 +331,8 @@
   dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
   email; its handler receives that verified identity, not a request-supplied address. The Counter
   uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only
+  `/_internal/maker/nudge` (18 Nov 2026: the order book's empty POST after a customer's move, answered 202, which runs the
+  minute's order pass at once through `ordersOnce`, one pass per isolate at a time; `docs/STATEMENTS.md` "The desk nudge"),
   `/_internal/maker/drafts`, `/_internal/maker/queue` and its timestamped withdraw action,
   draft decisions, named order-stage actions, and typed
   `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/house-sizes`, `inputs/hush`, `inputs/loan`,

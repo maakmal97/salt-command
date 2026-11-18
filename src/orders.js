@@ -1807,8 +1807,10 @@ export async function queueSale(env, entry, fixedId = false, mirror = null) {
 }
 
 /* ---- THE RECONCILE (v694): THE ONE ROAD FROM A STAGE TO THE QUEUE -----------------------------
- * It runs on the every-minute cron and nowhere else, so there is exactly one writer and a stage
- * cannot be queued twice by two roads racing. The site decides what is owed (orderWork there, on
+ * It runs in the order pass (src/worker.js ordersPass: the every-minute cron, and the Counter's nudge when a customer
+ * moves, one pass at a time in an isolate) and on his own tap (reconcileOnTap), so passes can meet across isolates.
+ * A stage is still queued once: its entry is named by the moment of its own stage (stageAt), so two passes make the
+ * same entry, the queue keeps one and the drafter inserts it once. The site decides what is owed (orderWork there, on
  * the record that holds the marks); this queues it and writes back what it queued, per order, the
  * moment it is queued, so a failure halfway leaves the rest owed rather than lost.
  *

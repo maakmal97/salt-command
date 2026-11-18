@@ -295,6 +295,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Step | Where | When |
 |---|---|---|
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
+| A customer's move tells the Desk | the order book's empty POST to `/_internal/maker/nudge`; the Desk runs the minute's order pass (`ordersOnce`) | at once on their write; the minute's cron is the net (`docs/STATEMENTS.md` "The desk nudge") |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve`; Salt Admin's Confirm sends every card ticked in one `decide-many` (his word of 22 Oct 2026), refusals answered with a fix and one dispatch for the batch | on tap; a decided row returns 409 |
 | Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); at 00:23, 06:23, 12:23 and 18:23 MYT as the last net |

@@ -1295,8 +1295,11 @@ Site orders card under Order book (cloud desk) is the taps.
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
 it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves
 the ORDER; Approve lands the ROW** (since D6 a tap on the card can be that approval, below). The desk's
-every-minute cron runs `reconcileOrders`, and it is the ONE road that queues a stage the site makes, so
-a stage cannot be queued twice by two roads racing (Accept's pending row is the desk's own, below):
+order pass runs `reconcileOrders`, and it is the ONE road that queues a stage the site makes (Accept's
+pending row is the desk's own, below). The pass runs every minute and, since 18 Nov 2026, as soon as the
+Counter records a customer's move (the desk nudge, below); his own tap runs the reconcile too. Passes can
+meet, so a stage is never queued twice by its naming: its entry is stamped with the moment of its own
+stage (`stageAt`), two passes make the same entry, and the queue and the drafter keep one:
 
 | Stage | What is queued | Why that kind |
 |---|---|---|
@@ -2334,6 +2337,23 @@ characters provisioned as a Wrangler secret on both Workers; it is neither `STMT
 stored in config. The Desk matches the key in constant time, allowlists each method and path, and
 handles the private prefix before asset fallthrough. No arbitrary proxy or direct D1 path is
 available.
+
+**The desk nudge** (18 Nov 2026, `docs/plan-nudge.html`, his answers A to C). After the order book commits a
+customer's move (`place`, `replace`, `customer`, `aclaim`, `tsay`, `pjoin`: an order or a basket placed, their
+change, I have sent it, a withdrawal, No thanks, a rating, a line, a claim on the account, a join), it sends ONE
+empty `POST https://desk/_internal/maker/nudge` over `DESK_MAKER` with `X-Counter-Maker-Key` and nothing else: no
+body, query, figure, name, order or word (`stmt/orderbook.js` `nudgesDesk`, `nudgeDesk`). The tap never waits for
+it (`state.waitUntil`); while one is on its way another only marks and one more follows, so a burst is two calls;
+a 404 (a Desk not yet carrying the route), a refusal or a failure is let go, and the Desk's minute is the net. Never
+for the Desk's own writes (`desk`, `adesk`, `tdesk`, `popen`, `pclose`, a Place `by` desk), the site's marks
+(`chase`, `rateask`), a practice account, a refusal, a retry, or their Yes to an offer (`take`, which keeps its own
+call, `takeNudge`). The Desk answers 202 at once and runs its order pass behind (`src/worker.js` `ordersOnce` over
+`ordersPass`: the site read, the banner, the reconcile, the desk pass, the drafter and the banner for Approve), one
+pass per isolate at a time, a call during a pass asking for exactly one more, a pass over 60 s old let go; the
+minute's cron takes the same road. Passes in two isolates can meet: each stage is queued once by its naming, a yes
+is spent only while it waits, a draft is inserted once, and a taken offer's row is queued only by the take that
+claims its yes's entry (`takeOffer`). Their banner may buzz twice when two passes read the same news at once (his
+answer C); the marks are read with KV's 30 s cache so one location's copy does not ring it again a minute later.
 
 Operating hours are stored in the Counter KV under `maker:hours`, in Kuala Lumpur time. `/hours`
 publishes only the open/closed status and timing; it contains no account data. A closed Counter
