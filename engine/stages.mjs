@@ -278,6 +278,17 @@ export const partyOnBook = (order, code) => (order && order.forFriend ? bucketFo
    ledgerKey, given the product's tail if it was written before V4a, so an order rekeyOrders has not reached yet never
    names a salt twin's row by the old shape */
 export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.ledgerKey, order && order.product) || null;
+/* 19 Nov 2026 (the tie-out's "two rows share its key", s395): A ROW'S NEW NAME IS NEVER ANOTHER ROW'S. An amendment, a close or an early
+   handover's redate moves the key its row is named by (party, day, goods and delivery, book), and the book names one row a key: where the
+   moved key is already another row's (live or ended, as Accept reads a twin), both rows stick, every later stage of both is refused and
+   the tie-out names neither. The row that already carries `key`; null when the key does not move, or no other row carries it. */
+export function keyClash(book, o, key) {
+  const own = ledgerKeyOf(o);
+  if (!key || !own || key === own) return null;
+  return ((book && book.sales) || []).find((s) => s && POSITION_ENGINE.ovKey(s) === key) || null;
+}
+const clashError = (row, what) => ({ status: 409, twin: true, error: "a sale of theirs on the book" + (row.rid ? ", " + row.rid + "," : "")
+  + " is on that day at that figure, and the book keeps one row of it a day: " + what });
 
 /** The pending row an acknowledged order becomes: agreed, nothing paid, nothing moved. */
 export function pendingEntry(order, code, now) {
@@ -575,7 +586,7 @@ export const keyGivenBack = (entry, o) => ((entry.status === "Close" || entry.re
    Each answers as stageTap's build does: { error, status } | { again: stage } | { entry, site, shown, ... }. None reads a store. */
 
 /** Collected or Delivered: the running total handed over, or a close at what was. `rej` is the newest rejected move, if any. */
-export function handoverTap(o, body, at, rej) {
+export function handoverTap(o, body, at, rej, book) {
   const qty = body && body.qty;
   if (typeof qty !== "number" || !Number.isFinite(qty) || qty < 0 || qty > +o.qty + 0.004) return { error: "the units handed over have to be a figure from zero to the " + o.qty + " ordered" };
   /* S11 11.9: CLOSE AT WHAT WAS HANDED OVER is a close only under the size, as the site decides it; its row is the
@@ -595,6 +606,11 @@ export function handoverTap(o, body, at, rej) {
     ? closeEntry(Object.assign(handed, { qty, total: POSITION_ENGINE.closeGoods(o.total, +o.qty, qty), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
     : handoverEntry(handed, o.code, qty, at);
   entry.orderId = o.id;
+  /* a close restates the goods and an early handover the day, so the row's name moves with either: never onto another row's (keyClash) */
+  if (book && (closing || entry.redate)) {
+    const twin = keyClash(book, o, keyAfter(handed, entry));
+    if (twin) return clashError(twin, closing ? "record the handover without closing, or amend the order to another figure first" : "amend the order to another figure first");
+  }
   const handover = { units: qty, mode: o.mode };
   if (closing) { handover.close = true; handover.total = entry.total; }   /* stated, the site pricing nothing */
   /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs: the fold raises a customerRefunds row for the
@@ -769,6 +785,11 @@ export function restateTap(o, at, body, ctx) {
   /* 06 Oct 2026: under what they paid is no longer refused; the fold raises a refund for the difference (refundOnOverpay) */
   const over = +((+o.paid || 0) + (+o.credit || 0) - owed).toFixed(2);   /* 27 Oct 2026: their credit is paid on the row too */
   if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
+  /* 19 Nov 2026: goods and delivery are in the row's name, so a change of them never names another row of theirs (keyClash) */
+  if (figs.total !== was.total || figs.delivery !== was.delivery) {
+    const twin = keyClash(book, o, closedKey(Object.assign({}, o, { total: figs.total, delivery: figs.delivery })));
+    if (twin) return clashError(twin, "change it to another figure, or change that sale instead");
+  }
   /* never under the floor at the size, and the board is never repriced: what changes is this one order's figure */
   /* 10 Nov 2026 (his ask D): ON A BOOK WITH A PRICE BAND a goods total under the Floor or over the Ceiling at the size is asked once (409, `outside`)
      and, sent again with his reason, stands as a one-off: the Correction carries the mark beside its fields, and one that brings a marked row back

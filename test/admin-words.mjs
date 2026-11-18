@@ -20,6 +20,7 @@ import { readFileSync } from "node:fs";
 import { richOwnerPage, byAct, cardOf, drawEverything } from "./maker-act.mjs";
 import { landingPage, PSYM } from "../stmt/page.js";
 import { OWNER_JS } from "../stmt/owner.js";
+import { restateTap } from "../engine/stages.mjs";
 
 /* the glossary's old words, as the page used to say them (a phrase each, none of them a word the glossary kept) */
 const OLD_WORDS = [
@@ -206,6 +207,10 @@ const NAMED = [
   ["Money is already on its way to this row. Decide it before cancelling.", "Money is already on its way to this row. Decide that first."],
   ["Money is already on its way to this row. Decide it before defaulting it.", "Money is already on its way to this row. Decide that first."],
   ["This row can still take RM 40.00; money already on its way is reserved.", "This row can only take RM 40.00 more."],
+  /* 19 Nov 2026: a change onto another row's key (engine/stages.mjs keyClash), built from the engine's own refusal, never retyped */
+  [restateTap({ id: "o", code: "CQ4-ZEN", status: "acknowledged", mode: "collect", product: "salt", qty: 1, total: 100, delivery: 0, moved: 0, paid: 0, history: [], payments: [],
+    ledgerKey: "CQ4-ZEN|2026-11-18|100" }, new Date("2026-11-18T09:00:00.000Z"), { total: 90 }, { book: { version: 1, sales: [{ customer: "CQ4-ZEN", date: "2026-11-18", qty: 1, total: 90, rid: "s385" }], state: {} }, room: null, earlier: [], live: null }).error,
+    "Another sale of theirs that day is already at that figure, and the book keeps one row a day at one figure. Choose another figure."],
   ["This row can still take RM 1,250.50; money already on its way is reserved.", "This row can only take RM 1,250.50 more."]
 ];
 

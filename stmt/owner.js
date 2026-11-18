@@ -1458,6 +1458,8 @@ export const OWNER_JS = `
     if(Object.prototype.hasOwnProperty.call(REFUSALS,s)) return REFUSALS[s];
     if(s.indexOf('this order is ')===0) return 'This order has moved on. Read the orders again.';
     if(s.indexOf('Money is already on its way to this row.')===0) return 'Money is already on its way to this row. Decide that first.';
+    /* 19 Nov 2026 (s395): a change that would give the row another row's name (engine/stages.mjs keyClash); the row it names stays in Details */
+    if(s.indexOf('a sale of theirs on the book')===0&&s.indexOf(' is on that day at that figure, and the book keeps one row of it a day: ')>0) return 'Another sale of theirs that day is already at that figure, and the book keeps one row a day at one figure. Choose another figure.';
     left=/^This row can still take RM ([0-9][0-9,]*[.][0-9]+)/.exec(s);
     if(left) return 'This row can only take RM '+left[1]+' more.';
     floor=/^RM ([0-9][0-9,]*[.]?[0-9]*) is under the floor of RM ([0-9][0-9,]*[.]?[0-9]*) at ([0-9][0-9.]*) unit, so it cannot be set$/.exec(s);
