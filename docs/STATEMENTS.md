@@ -2349,8 +2349,10 @@ for the Desk's own writes (`desk`, `adesk`, `tdesk`, `popen`, `pclose`, a Place 
 (`chase`, `rateask`), a practice account, a refusal, a retry, or their Yes to an offer (`take`, which keeps its own
 call, `takeNudge`). The Desk answers 202 at once and runs its order pass behind (`src/worker.js` `ordersOnce` over
 `ordersPass`: the site read, the banner, the reconcile, the desk pass, the drafter and the banner for Approve), one
-pass per isolate at a time, a call during a pass asking for exactly one more, a pass over 60 s old let go; the
-minute's cron takes the same road. Passes in two isolates can meet: each stage is queued once by its naming, a yes
+pass per isolate at a time, a call during a pass asking for exactly one more, a pass over 30 s old let go (a
+nudge's pass lives in its request's context, which ends 30 s after the 202); the minute's cron takes the same
+road, waiting at most 20 s on a pass it did not start before it runs its own, so its later steps never wait on
+a pass that was cut off. Passes in two isolates can meet: each stage is queued once by its naming, a yes
 is spent only while it waits, a draft is inserted once, and a taken offer's row is queued only by the take that
 claims its yes's entry (`takeOffer`). Their banner may buzz twice when two passes read the same news at once (his
 answer C); the marks are read with KV's 30 s cache so one location's copy does not ring it again a minute later.
