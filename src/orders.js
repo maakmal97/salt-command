@@ -856,6 +856,14 @@ export async function takeOffer(env, id, now, mirror) {
       return pv;
     }
     const entry = pv.entry;
+    /* 18 Nov 2026 (docs/plan-nudge.html): TWO TAKES AT ONCE QUEUE ONE ROW. The take's own call and an order pass (the minute's, or one a
+       customer's move asked for) can both get here, each with an entry at its own moment, and queueSale keeps both: two rows, both approved.
+       So the yes's entry is claimed first, in one statement that holds only while none is filed; the one that files it queues the row, the
+       other is told it is taken. Claimed and not queued (the request cut off between), deskPass queues it from the yes, as any recorded entry */
+    const claimed = JSON.stringify(entry);
+    const cl = await db.prepare("UPDATE preapproval SET entry=?1 WHERE id=?2 AND status='waiting' AND entry IS NULL AND entry_at IS NULL").bind(claimed, pre.id).run();
+    const mine = cl && cl.meta && typeof cl.meta.changes === "number" ? cl.meta.changes === 1 : ((await preById(db, pre.id)) || {}).entry === claimed;
+    if (!mine) return { ok: true, again: true };
     await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), pre.id).run();
   }
