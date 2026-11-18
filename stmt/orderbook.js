@@ -110,6 +110,21 @@ const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "ades
 const TABLE = (oid) => (isThreadId(oid) ? "thr" : isClaimId(oid) ? "acl" : isPoolId(oid) ? "pool" : "ord");
 const KVKEY = (u, oid) => (isThreadId(oid) ? "thr:" + u : (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid);
 
+/* 18 Nov 2026 (docs/plan-nudge.html): THE MOVES THAT TELL THE DESK, every customer's: an order or a basket placed, a change of theirs, a move of
+   theirs on an order (I have sent it, a withdrawal, No thanks, a rating), a claim on the account, a line on its thread, a join. Never the Desk's own
+   writes (desk, adesk, tdesk, popen, pclose, and a Place it made, `by` desk), the site's own marks (chase, rateask), a practice account's (their
+   moves land in their fixture alone, and one named here is passed over too), their Yes to an offer (`take`, told by its own call, takeNudge), a
+   refusal, a retry or a move that changed nothing. */
+export const NUDGE_OPS = ["place", "replace", "customer", "aclaim", "tsay", "pjoin"];
+export const NUDGE_STALE_MS = 60000;
+export function nudgesDesk(op, a, out) {
+  if (!out || !out.ok || out.again || out.none) return false;
+  if (!NUDGE_OPS.includes(op) || (a && a.by === "desk")) return false;
+  if (op === "customer" && a && a.action === "take") return false;
+  const u = (out.order && typeof out.order.u === "string" && out.order.u) || String((a && a.u) || "");
+  return !TEST_USERS.includes(u);
+}
+
 export class OrderBook {
   constructor(state, env) {
     this.state = state;
@@ -141,6 +156,7 @@ export class OrderBook {
     if (op === "compare") return Response.json(await this.compare());
     const out = this.run(op, a && typeof a === "object" ? a : {});
     this.tell(op, a && typeof a === "object" ? a : {}, out);
+    if (nudgesDesk(op, a && typeof a === "object" ? a : {}, out)) this.nudgeDesk();
     if (op !== "fixture-account" && op !== "fixture-reset" && out.ok && out.order && !out.again && !out.none && !isPoolId(out.order.id) && this.writesKv()) await this.arm();
     return Response.json(out);
   }
@@ -219,6 +235,29 @@ export class OrderBook {
         } catch (e) { /* a socket closing */ }
       }
     } catch (e) { console.log("orderbook: a tell failed: " + String((e && e.message) || e)); }
+  }
+  /* 18 Nov 2026 (docs/plan-nudge.html, his answer A): A CUSTOMER'S MOVE TELLS THE DESK AT ONCE, and the Desk runs the order pass its minute runs.
+     One empty POST over the bridge, its key and nothing else: no body, figure, name, order or word. Never awaited by the tap. While one is on its
+     way another only marks, and one more is sent when it ends, so a burst is two calls. A refusal, a 404 from a Desk that has not shipped the
+     route, or any failure is let go: the minute's pass is the net. A call older than NUDGE_STALE_MS blocks nothing. */
+  nudgeDesk() {
+    const env = this.env || {}, key = String(env.COUNTER_MAKER_KEY || "");
+    if (!env.DESK_MAKER || key.length < 32) return null;
+    if (this.nudging && Date.now() - this.nudgingAt > NUDGE_STALE_MS) this.nudging = null;
+    if (this.nudging) { this.nudgeAgain = true; return this.nudging; }
+    const job = (async () => {
+      try {
+        this.nudgeAgain = false;
+        const r = await env.DESK_MAKER.fetch(new Request("https://desk/_internal/maker/nudge", { method: "POST", headers: { "X-Counter-Maker-Key": key } }));
+        if (!r || r.status !== 202) console.log("orderbook: the Desk did not take the nudge" + (r ? " (http " + r.status + ")" : "") + "; the minute's pass follows");
+        try { if (r && r.body && typeof r.body.cancel === "function") await r.body.cancel(); } catch (e) { /* nothing to read */ }
+      } catch (e) { console.log("orderbook: the nudge failed: " + String((e && e.message) || e) + "; the minute's pass follows"); }
+      finally { if (this.nudging === job) this.nudging = null; }
+      if (this.nudgeAgain) { this.nudgeAgain = false; await this.nudgeDesk(); }
+    })();
+    this.nudging = job; this.nudgingAt = Date.now();
+    if (typeof this.state.waitUntil === "function") this.state.waitUntil(job);
+    return job;
   }
   /* A Log out or a Sign out everywhere: every socket of the account closes, and a live device reconnects with the session it holds now */
   unlive(a) {
