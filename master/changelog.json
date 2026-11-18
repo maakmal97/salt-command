@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1544",
+  "d": "18 Nov 2026",
+  "t": "COLOURED PILLS",
+  "n": [
+   "<b>A FILLED PILL IS BLUE.</b> On Salt Admin and Salt Counter every filled button (Pay, Place an order, Approve, Agree and the rest) is the accent blue, in light and in dark. It was white on a dark page and navy on a light one.",
+   "<b>WHAT IS CHOSEN STAYS AS IT WAS.</b> A selected filter and the current step keep their own look, so a choice never reads as a button.",
+   "<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"
+  ]
+ },
+ {
   "v": "v1543",
   "d": "18 Nov 2026",
   "t": "BOTH ANSWERS ARE PILLS",

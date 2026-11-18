@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1543","d":"18 Nov 2026","t":"BOTH ANSWERS ARE PILLS","n":["<b>A CONFIRM SHEET'S ACTION IS A COLOURED PILL.</b> On Salt Admin and Salt Counter, the answer that commits (Undo, Cancel order, Discard) was plain text over a white Keep it. It is now a pill: red for a move that cannot be taken back, blue for a plain one.","<b>KEEP IT IS THE QUIET PILL UNDER IT.</b> The outlined pill keeps things as they are, so the coloured one reads as the action.","<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"]}];
+const evolution=[{"v":"v1544","d":"18 Nov 2026","t":"COLOURED PILLS","n":["<b>A FILLED PILL IS BLUE.</b> On Salt Admin and Salt Counter every filled button (Pay, Place an order, Approve, Agree and the rest) is the accent blue, in light and in dark. It was white on a dark page and navy on a light one.","<b>WHAT IS CHOSEN STAYS AS IT WAS.</b> A selected filter and the current step keep their own look, so a choice never reads as a button.","<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Nov 2026, 16:07 KL';
+const LAST_UPDATED='18 Nov 2026, 16:31 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
