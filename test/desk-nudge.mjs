@@ -304,7 +304,9 @@ async function bothWorkers(ok, O, W, deskW, stmtW, DatabaseSync) {
   let first = null, arrived = 0;
   claimHook = () => { arrived++; if (arrived === 1) return new Promise((r) => { first = r; }); first(); return tick(); };
   let takes;
-  try { takes = await quiet(() => Promise.all([takeOffer(denv, g.id), takeOffer(denv, g.id)])); } finally { claimHook = null; }
+  /* 19 Nov 2026: the second take starts 2 ms after the first (held at its claim), so their entries never share a millisecond, where the queue
+     keeps one and a claim that held whatever was filed would pass unseen (the mutation went unnoticed once under load) */
+  try { takes = await quiet(() => Promise.all([takeOffer(denv, g.id), new Promise((r) => setTimeout(r, 2)).then(() => takeOffer(denv, g.id))])); } finally { claimHook = null; }
   await quiet(settle);
   const qg = queued(g.id), dg = drafts(g.id), yg = db.prepare("SELECT status FROM preapproval WHERE order_id=?").all(g.id).map((r) => r.status);
   ok(arrived === 2 && qg.length === 1 && dg.length === 1 && dg[0].status === "approved" && J(yg) === J(["applied"]) && takes.filter((t) => t && t.again).length === 1,

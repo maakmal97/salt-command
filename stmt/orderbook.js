@@ -292,7 +292,9 @@ export class OrderBook {
         const res = await Promise.all(kinds.map((r) => wakeOwner(this.env || {}, o ? { k: r.k, o } : { k: r.k }, { deadlineMs: RING_MS }).catch(() => null)));
         const rang = kinds.filter((r, i) => res[i] && res[i].ok && res[i].sent > 0);
         if (rang.length) this.setMeta(RUNG, JSON.stringify(rungAfter(this.rung(), rang, this.meta(LAST_THEIRS))));
-        console.log("orderbook: rang Salt Admin " + JSON.stringify({ kinds: kinds.map((r) => r.k), sent: res.map((x) => (x && x.sent) || 0), ms: Date.now() - t0 }));
+        /* said when a device was there to ring, so a Salt Admin with none logs nothing a move */
+        if (res.some((x) => x && (x.sent > 0 || x.failed > 0)) || res.some((x) => !x || !x.ok))
+          console.log("orderbook: rang Salt Admin " + JSON.stringify({ kinds: kinds.map((r) => r.k), sent: res.map((x) => (x && x.sent) || 0), ms: Date.now() - t0 }));
       } catch (e) { console.log("orderbook: the ring failed: " + String((e && e.message) || e) + "; the Desk rings"); }
       finally { this.ringing = Math.max(0, (this.ringing || 0) - 1); }
       if (nudge) await this.nudgeDesk(o);
