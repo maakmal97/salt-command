@@ -2885,7 +2885,7 @@ export default {
         try {
           const rc = await reconcileOrders(env, read, mirror);
           /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
-          if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped) console.log("orders reconcile: " + JSON.stringify(rc));
+          if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped || rc.retired) console.log("orders reconcile: " + JSON.stringify(rc));
           /* S11: and what the desk queued itself, beside it */
           const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()), mirror);
           if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));

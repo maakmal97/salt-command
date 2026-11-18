@@ -1829,7 +1829,7 @@ export async function reconcileOrders(env, read, mirror) {
   const book = mirror ? await mirror().catch(() => null) : null;
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
-  let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
+  let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [], retiredIds = [];
   const STAGE_WORD = { claim: "payment they say they sent", pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
   /* a row orders share is read off every order, not only those with work: once, and only for a row whose size is not its order's (Fable's review) */
   let allNamed = null;
@@ -1845,7 +1845,7 @@ export async function reconcileOrders(env, read, mirror) {
     /* WHAT THIS PASS MADE OF THE ORDER (20 Sep 2026), written onto the record as `sync` when it changes,
        so the Site orders card says queued, waiting or failed and why, where it promised "queued within
        the minute" whatever had happened. A wait was invisible on every surface for as long as it lasted. */
-    let state = null;
+    let state = null, retired = false;
     /* no code, no row: the test account and any account published since the last map land here,
        and they wait rather than being guessed at */
     if (!code) { unmapped.push(o.id); state = { state: "waiting", why: "no desk code is mapped to this account yet: publish the statements again" }; }
@@ -1865,6 +1865,13 @@ export async function reconcileOrders(env, read, mirror) {
       }
       for (const job of mark.cancel ? [] : (o.work || [])) {
         let e = null;
+        /* RETIRED 18 Nov 2026: THE RECONCILE BOOKS NO PAYMENT. Since S6 money reaches the ledger only by his Received (the claim's own
+           entry) or his Cash received, each checked by rowRoom at the tap; this job queued before it marked, with no rowRoom, and could
+           book a part-paid row twice. The Counter no longer lists a "pay" job (stmt/orders.js orderWork), and this branch queues and
+           marks nothing for one, so either deploy order is safe: Counter first, an old Desk is never handed the job; Desk first, a new
+           Desk ignores one an old Counter still lists. It is said, not silent: `retired` in the pass's result (the cron's console line)
+           and on the order's card, until the Counter is the new one. */
+        if (job === "pay") { retired = true; continue; }
         /* a row orders share takes no stage of one of them: each would restate it to that order's figures alone (Fable's review) */
         if (job !== "ack" && await shares(ledgerKeyOf(order), order)) {
           waiting.push(o.id);
@@ -1902,8 +1909,7 @@ export async function reconcileOrders(env, read, mirror) {
           continue;
         }
         /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */
-        const told = o.tell ? +o.tell.pay : +((+order.paid || 0) - (+q.paid || 0)).toFixed(2);
-        e = jobEntry(job, order, code, told, now);
+        e = jobEntry(job, order, code, null, now);
         if (!e) continue;
         e.orderId = o.id;   /* which order made it, so a rejection can be told to that order (rejectedOnOrder); never the username */
         while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
@@ -1912,7 +1918,6 @@ export async function reconcileOrders(env, read, mirror) {
         if (await queueSale(env, e, false, mirror)) queued++;
         used.add(e.at);
         if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
-        else if (job === "pay") mark.paid = +((+q.paid || 0) + told).toFixed(2);
         else if (job === "move") {
           mark.moved = +(+order.moved || 0).toFixed(3);
           if (e.redate) { const nk = keyAfter(order, e); mark.ledgerKey = nk; order.ledgerKey = nk; mark.redate = e.at; }
@@ -1925,6 +1930,8 @@ export async function reconcileOrders(env, read, mirror) {
         else if (job === "cancel") mark.cancel = e.at;
         if (!state) state = { state: "queued", why: "" };
       }
+      /* a retired pay job is said once on his card (the write below is on change only) and never overrides a state a live job set */
+      if (retired) { retiredIds.push(o.id); if (!state) state = { state: "waiting", why: "an older Counter listed a payment job, which the desk no longer books: his Received or Cash received books it" }; }
       if (Object.keys(mark).length) {
         const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
           method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
@@ -1943,7 +1950,7 @@ export async function reconcileOrders(env, read, mirror) {
     }
   }
   return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
-    waiting.length ? { waiting } : {}, failed.length ? { failed } : {}, dropped.length ? { dropped } : {});
+    waiting.length ? { waiting } : {}, failed.length ? { failed } : {}, dropped.length ? { dropped } : {}, retiredIds.length ? { retired: retiredIds } : {});
 }
 
 /* ---- A WITHDRAWAL BEFORE ITS ROW WAS APPROVED (S11 11.10) ---------------------------------------
