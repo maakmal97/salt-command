@@ -272,7 +272,7 @@
  {
   "name": "the minute's reconcile tells nobody",
   "file": "src/worker.js",
-  "find": "          if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, \"orders\");\n",
+  "find": "    if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, \"orders\");\n",
   "replace": ""
  },
  {

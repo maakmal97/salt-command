@@ -80,7 +80,11 @@ export async function run({ ok, skip }) {
   /* what the Desk hands to waitUntil (the drafter on the tap) is awaited, so a read after a tap sees what the tap made */
   const bg = [], ctx = { waitUntil(p) { bg.push(Promise.resolve(p).catch(() => {})); } };
   const settle = async () => { while (bg.length) await bg.shift(); };
-  senv.DESK_MAKER = { fetch: async (request) => { const r = await deskW.fetch(request, denv, ctx); await settle(); return r; } };
+  /* 18 Nov 2026: the order book's nudge after a customer's move is answered and runs no pass here (test/desk-nudge.mjs drives it): this
+     section's agreed orders are set up in two desk moves, and a pass between them would queue the pending row it stamps by hand */
+  senv.DESK_MAKER = { fetch: async (request) => {
+    if (new URL(request.url).pathname === "/_internal/maker/nudge") return new Response(JSON.stringify({ ok: true }), { status: 202 });
+    const r = await deskW.fetch(request, denv, ctx); await settle(); return r; } };
   const call = async (path, body) => {
     const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
       headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);

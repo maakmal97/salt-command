@@ -134,14 +134,32 @@
  {
   "name": "N6 the cron runs a pass of its own",
   "file": "src/worker.js",
-  "find": "        await ordersOnce(env, ctx, { now: new Date(event.scheduledTime || Date.now()), mirror });",
-  "replace": "        await ordersPass(env, ctx, new Date(event.scheduledTime || Date.now()), mirror);"
+  "find": "          const job = ordersOnce(env, ctx, { now, mirror });",
+  "replace": "          const job = ordersPass(env, ctx, now, mirror);"
  },
  {
   "name": "N10 the minute runs no order pass",
   "file": "src/worker.js",
-  "find": "        await ordersOnce(env, ctx, { now: new Date(event.scheduledTime || Date.now()), mirror });",
-  "replace": "        void 0;"
+  "find": "          const job = ordersOnce(env, ctx, { now, mirror });",
+  "replace": "          const job = Promise.resolve();"
+ },
+ {
+  "name": "N13 the minute waits on any pass, however long",
+  "file": "src/worker.js",
+  "find": "          const ended = !theirs ? (await job, true) : await Promise.race(",
+  "replace": "          const ended = true ? (await job, true) : await Promise.race("
+ },
+ {
+  "name": "N13 the minute runs no pass of its own after the wait",
+  "file": "src/worker.js",
+  "find": "so the minute runs its own\"); await ordersPass(env, ctx, now, mirror); }",
+  "replace": "so the minute runs its own\"); }"
+ },
+ {
+  "name": "N14 one entry that cannot be queued stops the desk pass",
+  "file": "src/orders.js",
+  "find": "    } catch (e) { console.log(\"desk pass: the entry of \" + p.id + \" could not be queued: \" + String((e && e.message) || e)); continue; }",
+  "replace": "    } finally { }"
  },
  {
   "name": "N9 a second take queues its own row",

@@ -14,9 +14,12 @@
  *   N7  a Desk without the route (404) or a call that fails is let go: the tap is answered and nothing is held
  *   N8  end to end, a customer's move brings the row under Approve with no cron, and no pass books a payment
  *   N9  two overlapping passes (two isolates) queue one row, spend one yes and make one draft
+ *   N9b two takes that both read the yes before either claims its entry queue one row: the claim decides
  *   N10 the minute's pass still catches a move whose call was dropped
  *   N11 the banner's marks are read with KV's shortest cache, so a pass elsewhere does not ring the same news a minute later
- *   N12 a take cut off between claiming the yes's entry and queueing its row is queued once by the next pass */
+ *   N12 a take cut off between claiming the yes's entry and queueing its row is queued once by the next pass
+ *   N13 the minute waits a bounded time on a pass it did not start, then runs its own (a pass cut off with its request never ends)
+ *   N14 an entry the desk pass cannot queue is left for the next pass, and the rest of the pass goes on */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { orderBook } from "./orderbook-harness.mjs";
@@ -194,7 +197,23 @@ async function deskSide(ok, W, deskW) {
   const stale = reads.length;
   unstick(); gate = null; await quiet(drain);
   ok(duringPass === 1 && burst === 2 && stale === 2,
-    "N6: two nudges and the minute's cron while a pass runs read nothing of their own, and make one pass more, two in all; a pass held past a minute blocks nothing: " + J({ duringPass, burst, stale }));
+    "N6: two nudges and the minute's cron while a pass runs read nothing of their own, and make one pass more, two in all; a pass held past its stale mark blocks nothing: " + J({ duringPass, burst, stale }));
+
+  /* N13: a pass the minute did not start that never ends (its request cut off): the minute waits PASS_WAIT_MS, then runs its own and its later steps */
+  reads.length = 0;
+  let never; gate = new Promise((r) => { never = r; });
+  W.ordersOnce(denv, ctx); await tick();
+  const realST = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...x) => realST(fn, ms === W.PASS_WAIT_MS ? 0 : ms, ...x);
+  const logs = [], realLog = console.log, cronWaits = [];
+  console.log = (...x) => logs.push(x.join(" "));
+  try {
+    await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-11-18T03:15:00Z") }, denv, { waitUntil: (p) => cronWaits.push(p) });
+    for (let i = 0; i < 40 && reads.length < 2; i++) await new Promise((r) => realST(r, 5));
+  } finally { globalThis.setTimeout = realST; console.log = realLog; }
+  const ownPass = reads.length, said = logs.some((l) => l.startsWith("orders pass: the running pass did not end"));
+  never(); gate = null; await quiet(async () => { await drain(); await Promise.all(cronWaits); });
+  ok(ownPass === 2 && said, "N13: the minute waits a bounded time on a pass it did not start, then runs its own and says so: " + J({ ownPass, said }));
 }
 
 /* ---- both Workers, the order book and the Desk's D1 ---- */
@@ -202,8 +221,12 @@ async function bothWorkers(ok, O, W, deskW, stmtW, DatabaseSync) {
   const REPO = join(import.meta.dirname, "..");
   const db = new DatabaseSync(":memory:");
   for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  /* claimHook, while set, runs before take's claim of a yes's entry (N9b): how two takes both get past their read of the yes before either claims */
+  let claimHook = null;
+  const CLAIM_RE = /^UPDATE preapproval SET entry=\?1 WHERE id=\?2 AND status='waiting'/;
   const D1 = { prepare(sql) { const st = db.prepare(sql);
-    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+    const mk = (a) => ({ run() { const go = () => { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; };
+        return claimHook && CLAIM_RE.test(sql) ? Promise.resolve(claimHook()).then(go) : go(); },
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; },
     batch(list) { db.exec("BEGIN IMMEDIATE"); try { const out = list.map((s) => s.run()); db.exec("COMMIT"); return out; } catch (e) { db.exec("ROLLBACK"); throw e; } } };
@@ -263,6 +286,22 @@ async function bothWorkers(ok, O, W, deskW, stmtW, DatabaseSync) {
   ok(of.status === 200 && J(yesBefore) === J(["waiting"]) && qb.length === 1 && dbs.length === 1 && qc.length === 1 && dc.length === 1 && J(yes) === J(["applied"]) && dc[0].status === "approved",
     "N9: two passes at once queue the pending row once and draft it once, and spend their taken offer's one yes once, on one approved draft: " + J({ offer: of.status, yesBefore, b: [qb.length, dbs.length], c: [qc.length, dc.length, dc.map((d) => d.status)], yes }));
 
+  /* N9b: two takes that both read the yes before either claims its entry (the take's own call and a pass, in two isolates): one claims and
+     queues, the other queues nothing, so one row, one draft, the yes spent once */
+  const g = await quiet(async () => { const o = (await O.placeOrder(senv, US[1], { product: "salt", qty: 1, mode: "collect", place: "", unit: 100, total: 100, week: "", rid: rid(), ask: true })).order; await settle(); return o; });
+  const pv3 = await quiet(() => call("/orders/" + g.id + "/preview", { total: 90 }));
+  await quiet(() => call("/orders/" + g.id + "/offer", { total: 90, delivery: 0, hash: pv3.j.offerHash, rid: rid() }));
+  await quiet(async () => { await settle(); await O.customerMove(senv, US[1], g.id, "take", { rid: rid() }); await settle(); });
+  const { takeOffer } = await import("../src/orders.js");
+  let first = null, arrived = 0;
+  claimHook = () => { arrived++; if (arrived === 1) return new Promise((r) => { first = r; }); first(); return tick(); };
+  let takes;
+  try { takes = await quiet(() => Promise.all([takeOffer(denv, g.id), takeOffer(denv, g.id)])); } finally { claimHook = null; }
+  await quiet(settle);
+  const qg = queued(g.id), dg = drafts(g.id), yg = db.prepare("SELECT status FROM preapproval WHERE order_id=?").all(g.id).map((r) => r.status);
+  ok(arrived === 2 && qg.length === 1 && dg.length === 1 && dg[0].status === "approved" && J(yg) === J(["applied"]) && takes.filter((t) => t && t.again).length === 1,
+    "N9b: two takes that both read the yes before either claims it: one claims and queues, the other is told it is taken, so one row, one approved draft, the yes spent once: " + J({ arrived, q: qg.length, d: dg.map((x) => x.status), yg, again: takes.map((t) => !!(t && t.again)) }));
+
   /* N10: a dropped call: nothing moves until the minute, whose pass queues and drafts it */
   const d = await quiet(async () => { const o = await place(US[3]); await settle(); return o; });
   await quiet(async () => { await deskAck(US[3], d.id); });
@@ -284,6 +323,18 @@ async function bothWorkers(ok, O, W, deskW, stmtW, DatabaseSync) {
   await quiet(async () => { try { await W.ordersPass(denv, dctx); } catch (x) { /* the pass logs its own */ } await settle(); });
   dkv.put = realPut;
   const cut = { q: queued(e.id).length, entry: !!(db.prepare("SELECT entry FROM preapproval WHERE order_id=? AND status='waiting'").get(e.id) || {}).entry };
+  /* N14: while that claimed entry still cannot be queued, the pass goes on: another order's pending row, queued by the reconcile, is drafted */
+  bridge = "off";   /* its Place calls nothing, so no pass heals the cut-off take before this check */
+  const f = await quiet(async () => { const o = await place(US[0], 1); await settle(); return o; });
+  bridge = "on";
+  await quiet(async () => { await deskAck(US[0], f.id); });
+  const stuckKey = "q:orders:" + JSON.parse(db.prepare("SELECT entry FROM preapproval WHERE order_id=? AND status='waiting'").get(e.id).entry).at;
+  dkv.put = async (k, v) => { if (k === stuckKey) throw new Error("refused"); return realPut(k, v); };
+  await quiet(async () => { await W.ordersPass(denv, dctx); await settle(); });
+  dkv.put = realPut;
+  const goesOn = { f: drafts(f.id).map((x) => x.status), e: queued(e.id).length };
+  ok(J(goesOn.f) === J(["pending"]) && goesOn.e === 0,
+    "N14: an entry the desk pass cannot queue is left for the next pass, and the pass goes on: another order's pending row is drafted: " + J(goesOn));
   await quiet(async () => { await W.ordersPass(denv, dctx); await settle(); });
   const de = drafts(e.id), ye = db.prepare("SELECT status FROM preapproval WHERE order_id=?").all(e.id).map((r) => r.status);
   ok(cut.q === 0 && cut.entry && queued(e.id).length === 1 && de.length === 1 && de[0].status === "approved" && J(ye) === J(["applied"]),
