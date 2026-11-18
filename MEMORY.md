@@ -83,6 +83,17 @@
   collect order keeps its wanted day; the day and window clear only when this change makes the way collect. Full split suite on the unbumped tree: 12,721 passed, 1 failed,
   green alone. Known gaps: `maker-placed-preview`'s mutation "a failed read offers no second read" and `engine-stages`' "Accept's floor refusal is removed" prove nothing
   (both older than V3); an acknowledge-time window is kept from ANY taken offer whose slot matches, not only an Accept's.
+- Maintenance as a notice at the door, live as v1540 (`a376ed7f`, 18 Nov 2026; Cloud commit `44248547455`: chain green, "live at 89b77108d981b61a", three suite parts
+  green; CI `44248547267` green), his words of 18 Nov, do not ask again: "they cannot sign in and notice is put outside, rather than complete block of the worker"; someone
+  already in is "left in but unable to tap anything with no information at all"; the SWITCH only, `MAINTENANCE_UNTIL` stays the complete block. `switchOf` (stmt/maintenance.js)
+  marks a request in `MAINT_SW`; `maintHeld` refuses with code `maint` on every road that opens an account (password, remembered phone, passkey, link, hand-over open and
+  mint) and every customer write but `/logout`; a link, code or remembered phone is read and NOT spent (`peekSignin`, `burnHandover(.., keep)`); an admin account
+  (`adminTier`) is held by none of it; `/all`, `/all/test` and guest links are untouched. The door and the link page carry the notice (`maintNotice`, `#doorMaint`,
+  `#linkMaint`); a page already in is told by `maint: true` on `/account` and `/account/stamp` and swallows every tap (`maintSet`, capture listeners, not `inert`: Ambient's
+  screen scrolls inside itself), with no word and no reload. Under the complete block an open page still reloads once a minute at most (v1535). Section: 29 checks, 43
+  mutations red; full split suite 12,769 passed, 0 failed. Said, not built or proved: passkey open under the switch has no test; the scrolling of an inert page was not
+  measured in a browser; my reading that their figures stay in view was a default, not his answer; a session lasts 15 minutes, so "left in" ends at the door by then.
+  **`ADMIN_DOOR` may now be turned on, on his yes, once he has signed in at the door once.**
 - The admin account, live as v1538 (`d1486680`, 18 Nov 2026; Cloud commit `44242736923`: chain green, "live at b33bbeb8435fa80d", three suite parts green; CI
   `44242736404` green), his answers of 18 Nov typed in the session that acted, do not ask again: AA10-KUL is admin only (no roster, no row, places and claims nothing,
   `adminTrade`); the entry order as drafted (`/admin` is the Counter's door, then `/admin/enter` on a PASSWORD session of a tier 1 account sets cookie `salt_adm` on `/all`,
