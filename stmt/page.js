@@ -3263,7 +3263,7 @@ const CLIENT_JS = `
       /* 16 Nov 2026, THE MOVE TO AMBIENT: the sheet is the system's native dialog (head, body, and the foot as a second body under it), opened modal; its own
          scrim, Escape and tap outside go through the page's dismissal, which waits while Place is on its way */
       var box=sheetNode('osheet','osheet','oshT');
-      var head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body'), foot=el('div','amb-sheet__body osheet__foot');
+      var head=el('div','amb-sheet__head'), body=el('div','amb-sheet__body'), foot=el('div','amb-sheet__foot osheet__foot');
       box.appendChild(head); box.appendChild(body); box.appendChild(foot);
       box.addEventListener('keydown',sheetKeys);
       sheetShow(box,sheetDismiss);
@@ -3465,12 +3465,15 @@ const CLIENT_JS = `
     x.appendChild(ambIcon('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
     q.body.forEach(function(n){ body.appendChild(n); });
     /* 18 Nov 2026 (his screenshot of the Undo sheet, whose action read as plain text): BOTH ANSWERS ARE PILLS. The one that commits is coloured, Ambient's danger pill
-       for one that cannot be taken back and its accent for a plain one (the asker says which); the one that keeps is the quiet pill under it */
+       for one that cannot be taken back and its accent for a plain one (the asker says which); the one that keeps is the quiet pill under it.
+       19 Nov 2026 (his word: on a phone the Change sheet's Send stood under the fold): BOTH STAND IN AMBIENT'S SHEET FOOT (0.7.30), in view at the
+       sheet's foot while a long body scrolls under them */
+    var foot=el('div','amb-sheet__foot');
     var go=el('button','amb-pill amb-pill--block amb-pill--danger',q.go); go.type='button'; go.id='ynGo';
     go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });
     var keep=el('button','amb-pill amb-pill--block amb-pill--quiet',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
-    body.appendChild(go); body.appendChild(keep);
-    box.appendChild(head); box.appendChild(body);
+    foot.appendChild(go); foot.appendChild(keep);
+    box.appendChild(head); box.appendChild(body); box.appendChild(foot);
     sheetShow(box,function(){ ynShut(); });
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
     yn.shut=q.shut||null;

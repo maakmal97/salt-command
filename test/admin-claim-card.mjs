@@ -171,7 +171,7 @@ export async function run({ ok, pageWork }) {
       && /Says they paid it/.test(lineOf.querySelector(".amb-row__sub").textContent),
       "and restates the claim as a line of its own: the code, the figure, and that they say they sent it");
     ok(!!inSheet("claim.ask-go", C1) && !!inSheet("claim.ask-keep", C1) && !!inSheet("claim.ask-close", C1) && !inSheet("claim.ask-go").classList.contains("amb-pill--danger")
-      && sh.querySelector(".amb-sheet__body").contains(inSheet("claim.ask-go")),
+      && sh.querySelector(".amb-sheet__foot").contains(inSheet("claim.ask-go")),
       "its controls carry their acts, and Received is not a danger action");
     for (const [name, close] of [["Not yet", () => inSheet("claim.ask-keep").click()], ["the close control", () => inSheet("claim.ask-close").click()],
       ["the scrim", () => sheet().dispatchEvent(new w.MouseEvent("click", { bubbles: true, clientX: -1, clientY: -1 }))], ["Escape", () => key(d.body, "Escape")]]) {

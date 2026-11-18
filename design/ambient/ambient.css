@@ -1525,6 +1525,15 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 .amb-sheet__head { display: flex; align-items: center; gap: var(--amb-space-3); padding-bottom: var(--amb-space-3); margin-bottom: var(--amb-space-2); border-bottom: 1px solid var(--amb-line); }
 .amb-sheet__title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--amb-text-body); font-weight: 700; line-height: 1.25; }
 .amb-sheet__body { display: grid; gap: var(--amb-space-3); }
+/* 0.7.30: a sheet's foot: its answers, in view at the foot of the sheet while what stands above them scrolls (the owner's word of
+   19 Nov 2026: on a phone a long sheet's Send stood under the fold). The last thing in the sheet, after its body; on a short sheet it
+   stands where it falls. Like a record's foot it draws no box and no edge: behind it lies a fade of the sheet's own ground, clear at
+   its top and the ground itself from its first pill down, so what scrolls under it dissolves before it reaches them. A sticky box
+   keeps clear of the padding of what scrolls it, so the foot is set back by the sheet's padding at its foot and sides, and that room
+   under and beside its pills is its own. It lets taps through to what shows in its fade; only what it holds takes them. */
+.amb-sheet { --amb-sheet-end: calc(var(--amb-space-5) + var(--amb-safe-bottom)); }
+.amb-sheet__foot { position: sticky; z-index: 1; bottom: calc(-1 * var(--amb-sheet-end)); display: grid; gap: var(--amb-space-3); margin: 0 calc(-1 * var(--amb-space-5)) calc(-1 * var(--amb-sheet-end)); padding: var(--amb-space-5) var(--amb-space-5) var(--amb-sheet-end); background: linear-gradient(to bottom, transparent, var(--amb-solid-sheet) var(--amb-space-5)); pointer-events: none; }
+.amb-sheet__foot > * { pointer-events: auto; }
 .amb-action {
   -webkit-appearance: none;
   appearance: none;
@@ -1576,7 +1585,7 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
    A sheet stands after the shell, outside every container, so this reads the window, which the sheet fills. The
    card is 480px at most, 440px inside, so what it holds still stands as it does on a phone (a table stacks) */
 @media (min-width: 720px) {
-  .amb-sheet { inset: 0; height: fit-content; max-width: 480px; max-height: calc(100dvh - 2 * var(--amb-space-6)); margin: auto; padding-block: var(--amb-space-5); border: 1px solid var(--amb-rim); border-radius: var(--amb-radius-xl); transform: translateY(12px) scale(.98); }
+  .amb-sheet { --amb-sheet-end: var(--amb-space-5); inset: 0; height: fit-content; max-width: 480px; max-height: calc(100dvh - 2 * var(--amb-space-6)); margin: auto; padding-block: var(--amb-space-5); border: 1px solid var(--amb-rim); border-radius: var(--amb-radius-xl); transform: translateY(12px) scale(.98); }
   .amb-sheet--full { height: min(720px, calc(100dvh - 2 * var(--amb-space-8))); }
   @starting-style { .amb-sheet[open] { opacity: 0; transform: translateY(12px) scale(.98); } }
 }

@@ -269,7 +269,7 @@ export async function run({ ok, pageWork }) {
     ok(reason.value === "We do not have enough in hand this week." && inSheet("order.reason-stock").checked, "a tile fills the reason with the Desk's line: " + reason.value);
     reason.value = "Sold out until Friday."; reason.dispatchEvent(new w.Event("input", { bubbles: true }));
     ok([...sh.querySelectorAll(".amb-option input[type=radio]")].every((r) => !r.checked), "and typing his own words clears the tile");
-    ok(!!sh.querySelector("fieldset.amb-options > legend.amb-field__label") && sh.querySelector(".amb-sheet__body").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("amb-pill--danger"),
+    ok(!!sh.querySelector("fieldset.amb-options > legend.amb-field__label") && sh.querySelector(".amb-sheet__foot").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("amb-pill--danger"),
       "Decline order is the one danger action, in the Sheet");
 
     /* Tab stays inside the sheet, across its tiles and its field */

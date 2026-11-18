@@ -64,5 +64,35 @@
 "file": "src/orders.js",
 "find": "  return Math.abs(+POSITION_ENGINE.txPaid(row).toFixed(2) - +((+o.paid || 0) + (+o.credit || 0)).toFixed(2)) < 0.005;",
 "replace": "  return true;"
+},
+{
+"name": "a cancelled row never yields its key",
+"file": "src/orders.js",
+"find": "    if (l.length > 1 && live.length === 1 && live[0].road === \"site\") { byKey.set(k, live[0]); rows.set(k, 1); }",
+"replace": "    if (false) { byKey.set(k, live[0]); rows.set(k, 1); }"
+},
+{
+"name": "a hand row takes a cancelled row's key too",
+"file": "src/orders.js",
+"find": "live.length === 1 && live[0].road === \"site\")",
+"replace": "live.length === 1)"
+},
+{
+"name": "two live rows are counted once",
+"file": "src/orders.js",
+"find": "if (l.length > 1 && live.length === 1 && live[0].road",
+"replace": "if (l.length > 1 && live.length >= 1 && live[0].road"
+},
+{
+"name": "the yielded key still counts every row",
+"file": "src/orders.js",
+"find": "{ byKey.set(k, live[0]); rows.set(k, 1); }",
+"replace": "{ byKey.set(k, live[0]); rows.set(k, l.length); }"
+},
+{
+"name": "no cancelled row is kept apart",
+"file": "src/orders.js",
+"find": " if (s.cancelled) ended.set(k, s); }",
+"replace": " }"
 }
 ]

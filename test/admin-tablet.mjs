@@ -75,7 +75,7 @@ export async function run({ ok, pageWork }) {
      the 560px dialog and the 460px drawer of 12 Oct 2026 went with the salt-ds sheet, and the page writes no placement, colour or surface for a Sheet */
   {
     const flat = AMB_CSS.replace(/\s+/g, " ");
-    ok(/@media \(min-width: 720px\) \{[^@]*?\.amb-sheet \{ inset: 0; height: fit-content; max-width: 480px;/.test(flat),
+    ok(/@media \(min-width: 720px\) \{[^@]*?\.amb-sheet \{ (?:--amb-sheet-end: [^;]+; )?inset: 0; height: fit-content; max-width: 480px;/.test(flat),
       "from 720px a sheet is Ambient's card, 480px at most, in the middle of the window");
     /* read as text: a style parser that stops at the first rule it cannot read would leave these two empty */
     const flatCss = SITE_CSS.replace(/\/\*[\s\S]*?\*\//g, ""), sheetBlocks = [...flatCss.matchAll(/([^{}]*(?:asheet|amb-sheet|salt-sheet)[^{}]*)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2]]);
