@@ -76,6 +76,7 @@ import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEI
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
   isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver, SESSION_TTL } from "./orders.js";
 import { TEST_USERS, TEST_FRESH } from "./testusers.js";
+import { wakeOwner } from "./push.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -125,6 +126,40 @@ export function nudgesDesk(op, a, out) {
   return !TEST_USERS.includes(u);
 }
 
+/* 19 Nov 2026 (docs/plan-instant.html, his answer "Counter rings, with guards"): THE COUNTER RINGS SALT ADMIN AT THE MOVE. Measured on v1547, the
+   Desk's pass took about 5 s to ring him (its marks, then /desk/owner-wake). Now the move that moves a banner mark rings Salt Admin from here, by
+   the Desk's own rule (src/orders.js nudgeOrders): a placement is order, their act on last-theirs its word, a line said (a Place with a note is
+   both, as the Desk rings both). With the guards of Fable's review of 19 Nov 2026:
+   - THE KINDS ARE THIS MOVE'S OWN: the three marks before the write against after it, never the marks against what was rung, so a first move
+     after the deploy rings only itself and an older failed ring is the Desk's to ring;
+   - RUNG HOLDS ONLY WHAT A DEVICE TOOK, max-merged: a kind is written into `owner-rung` only when its wake reached a device, at the value this
+     move wrote, never moving a mark backwards (a slow ring finishing after a later one);
+   - PENDING WHILE IT RINGS: `last` answers `pending` from the write until the ring has ended, and the Desk then neither rings nor moves its own
+     mark for a kind not yet rung; a ring past RING_STALE_MS counts as ended (an instance gone with it);
+   - BOUNDED: every send still open at RING_MS is aborted (wakeOwner's deadline), so nothing lands after the ring has said what it reached;
+   - ONLY THEN THE DESK: the nudge is sent after the ring, so the pass it starts reads what was rung.
+   A failed ring writes nothing, and the Desk rings as it did (the KV road, an old Desk and a Salt Admin with no device the same). */
+export const RING_MS = 3000, RING_STALE_MS = 10000, RUNG = "owner-rung";
+export const THEIRS_KINDS = ["pay", "cancel", "rate", "take", "pass"];
+const RING_MARKS = { last: LAST_PLACED, said: LAST_SAID, theirs: LAST_THEIRS };
+const momentOf = (m) => String(m || "").split("|")[0];
+export function ringKinds(before, after) {
+  const b = before || {}, a = after || {}, out = [];
+  if (a.last && a.last > (b.last || "")) out.push({ k: "order", key: "last", v: a.last });
+  if (a.theirs && a.theirs !== b.theirs) { const word = String(a.theirs).split("|")[1]; if (THEIRS_KINDS.includes(word)) out.push({ k: word, key: "theirs", v: a.theirs }); }
+  if (a.said && a.said > (b.said || "")) out.push({ k: "said", key: "said", v: a.said });
+  return out;
+}
+export function rungAfter(stored, rang, nowTheirs) {
+  const out = Object.assign({}, stored && typeof stored === "object" ? stored : {});
+  for (const r of rang || []) {
+    const old = out[r.key];
+    if (r.key === "theirs") { if (!old || momentOf(r.v) > momentOf(old) || (momentOf(r.v) === momentOf(old) && r.v === nowTheirs)) out.theirs = r.v; }
+    else if (!old || r.v > old) out[r.key] = r.v;
+  }
+  return out;
+}
+
 export class OrderBook {
   constructor(state, env) {
     this.state = state;
@@ -154,9 +189,14 @@ export class OrderBook {
     if (op !== "drop" && op !== "unlive" && op !== "fixture-thread" && op !== "fixture-account" && op !== "fixture-reset") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     if (op === "compare") return Response.json(await this.compare());
-    const out = this.run(op, a && typeof a === "object" ? a : {});
-    this.tell(op, a && typeof a === "object" ? a : {}, out);
-    if (nudgesDesk(op, a && typeof a === "object" ? a : {}, out)) this.nudgeDesk();
+    const args = a && typeof a === "object" ? a : {}, before = this.ringMarks();
+    const out = this.run(op, args);
+    this.tell(op, args, out);
+    const u = (out && out.order && typeof out.order.u === "string" && out.order.u) || String(args.u || "");
+    const kinds = out && out.ok && !out.again && !out.none && !TEST_USERS.includes(u) ? ringKinds(before, this.ringMarks()) : [];
+    const nudge = nudgesDesk(op, args, out);
+    if (kinds.length) this.ringThen(kinds, out.order && typeof out.order.id === "string" && TABLE(out.order.id) === "ord" ? out.order.id : "", nudge);
+    else if (nudge) this.nudgeDesk();
     if (op !== "fixture-account" && op !== "fixture-reset" && out.ok && out.order && !out.again && !out.none && !isPoolId(out.order.id) && this.writesKv()) await this.arm();
     return Response.json(out);
   }
@@ -235,6 +275,27 @@ export class OrderBook {
         } catch (e) { /* a socket closing */ }
       }
     } catch (e) { console.log("orderbook: a tell failed: " + String((e && e.message) || e)); }
+  }
+  /* the ring (above the class): the marks it reads, whether one is on its way, what was rung, and the ring itself, then the nudge */
+  ringMarks() { const o = {}; for (const [k, key] of Object.entries(RING_MARKS)) o[k] = this.meta(key); return o; }
+  ringPending() { return (this.ringing || 0) > 0 && Date.now() - (this.ringingAt || 0) < RING_STALE_MS; }
+  rung() { try { const r = JSON.parse(this.meta(RUNG) || "{}"); return r && typeof r === "object" && !Array.isArray(r) ? r : {}; } catch (e) { return {}; } }
+  ringThen(kinds, o, nudge) {
+    this.ringing = (this.ringing || 0) + 1; this.ringingAt = Date.now();
+    const job = (async () => {
+      const t0 = Date.now();
+      try {
+        const res = await Promise.all(kinds.map((r) => wakeOwner(this.env || {}, o ? { k: r.k, o } : { k: r.k }, { deadlineMs: RING_MS }).catch(() => null)));
+        const rang = kinds.filter((r, i) => res[i] && res[i].ok && res[i].sent > 0);
+        if (rang.length) this.setMeta(RUNG, JSON.stringify(rungAfter(this.rung(), rang, this.meta(LAST_THEIRS))));
+        console.log("orderbook: rang Salt Admin " + JSON.stringify({ kinds: kinds.map((r) => r.k), sent: res.map((x) => (x && x.sent) || 0), ms: Date.now() - t0 }));
+      } catch (e) { console.log("orderbook: the ring failed: " + String((e && e.message) || e) + "; the Desk rings"); }
+      finally { this.ringing = Math.max(0, (this.ringing || 0) - 1); }
+      if (nudge) await this.nudgeDesk();
+    })();
+    if (typeof this.state.waitUntil === "function") this.state.waitUntil(job);
+    this.ringJob = job;
+    return job;
   }
   /* 18 Nov 2026 (docs/plan-nudge.html, his answer A): A CUSTOMER'S MOVE TELLS THE DESK AT ONCE, and the Desk runs the order pass its minute runs.
      One empty POST over the bridge, its key and nothing else: no body, figure, name, order or word. Never awaited by the tap. While one is on its
@@ -743,6 +804,9 @@ export class OrderBook {
     if (op === "last") {
       const out = { ok: true };
       for (const [k, key] of Object.entries(MARKS)) out[k] = this.meta(key);
+      /* 19 Nov 2026: and what this book rang Salt Admin for, and whether a ring is on its way (the ring, above the class) */
+      out.rung = this.rung();
+      if (this.ringPending()) out.pending = true;
       return out;
     }
     if (op === "place") {
