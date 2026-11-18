@@ -80,7 +80,9 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
    filters and the queue's first card start on one line (item 16), and the second pane's group and the foot take the pane's width (item 15) */
 @container amb (min-width: 960px) {
   @media (min-height: 640px) {
-    :is(#unsentBar, .amb-stack:has(> #nFail), .amb-stack:has(> .aparts), .afind):is(:has(~ .amb-split--panes:not([hidden])), :has(~ .amb-place:not([hidden]) .amb-split--panes:not([hidden]))) { padding-inline: 0; }
+    /* 18 Nov 2026 (his answer C): only while the panes that follow are the ones shown (a chain of shown places, as Ambient reads it), and to the edge the panes' cards stand on,
+       which is the bar's too: a part with no panes (Links, the Ledger check) keeps the stack's inset, as its content does */
+    :is(#unsentBar, .amb-stack:has(> #nFail), .amb-stack:has(> .aparts), .afind):has(~ .amb-split--panes:not([hidden]), ~ .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), ~ .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), ~ .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
     .amb-split--panes > .amb-stack:last-child .amb-settings, .amb-split--panes > .amb-stack:last-child .amb-foot > .amb-pill { max-width: none; }
   }
 }
@@ -554,3 +556,7 @@ body.ended > *:not(#aEnded) { display: none; }
 .adm .omoment { font-family: var(--amb-font-mono); }
 .adm .oway--link { min-height: 44px; color: var(--amb-accent); text-decoration: underline; text-underline-offset: 3px; }
 .adm .need-clock--late .oclock__min { color: var(--amb-neg); }
+
+/* 18 Nov 2026 (his answer D): Ledger check in the bar. The tick stands in line with its word */
+.aled__ok { display: inline-flex; }
+.aled__ok[hidden] { display: none; }

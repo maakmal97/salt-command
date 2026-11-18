@@ -568,7 +568,8 @@ export function ambKit(esc, books) {
 }
 export const AMB = ambKit(esc, Object.keys(PSYM));
 /* Salt Admin's place opens with this hero: its name the title, its lead line under it, then the time and the live line (barDraw). heat draws the
-   mood's chip, hidden until salt's supply is tight (moodSet); hours the bar's hours chip, Needs you's alone; approve Orders' Approve. */
+   mood's chip, hidden until salt's supply is tight (moodSet); hours marks Needs you's hours chip, the one a phone shows; acts draws the bar's two moves, Ledger check and Approve
+   (not on the test surface), and approve marks Orders' own, the ones a phone shows. */
 function aHero(title, sub, o) {
   o = o || {};
   return '<header class="amb-hero amb-hero--compact amb-mesh">'
@@ -578,8 +579,13 @@ function aHero(title, sub, o) {
     /* 18 Nov 2026 (Ambient 0.7.20, his answer B): the status is the bar's, in every place: the live word and the time, then the shop's state (data-barhours, barDraw fills each).
        A phone keeps the chip on Needs you alone: the others carry data-wide, shown from 960px (design/site.css) */
     + '<button type="button" class="amb-chip amb-chip--glass"' + (o.hours ? ' id="aBarHours"' : " data-wide") + ' data-barhours data-act="bar.hours" hidden></button>'
-    /* Orders' one main action: Approve, the rows that wait (barLive names it with their count); its act is the bar's of 21 Oct 2026 */
-    + (o.approve ? '<div class="amb-cluster"><button type="button" class="amb-pill amb-pill--quiet" id="aApprove" data-act="bar.approve">Approve</button></div>' : "")
+    /* 18 Nov 2026 (his answer D): EVERY PLACE'S BAR CARRIES LEDGER CHECK AND APPROVE. Ledger check says the Desk's last check of every site order against its row (ledgerPaint in
+       stmt/owner.js: a tick while they agree, the count of differences while they do not) and opens the part its row in Orders' More list opened; Approve stands on Orders always, as
+       it did, and on the other places while rows wait (barLive). A phone keeps both on Orders alone (data-wide). Its act is the bar's of 21 Oct 2026. */
+    + (o.acts ? '<div class="amb-cluster"' + (o.approve ? "" : " data-wide") + '>'
+      + '<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar.ledger" aria-label="Ledger check">' + '<span class="aled__ok" data-ledger-ok hidden>' + AMB.glyph("check", "sm") + "</span>"
+      + '<span>Ledger</span><span class="amb-chip amb-chip--neg" data-ledger-n hidden></span></button>'
+      + '<button type="button" class="amb-pill amb-pill--quiet"' + (o.approve ? ' id="aApprove"' : " hidden") + ' data-approve data-act="bar.approve">Approve</button></div>' : "")
     + "</header>";
 }
 /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026: light and dark follow each device). ONE HEAD FOR EVERY PAGE THE SITE SERVES:
@@ -650,25 +656,23 @@ const TEST_PARTS = { orders: ["todo", "open", "done", "ended", "payments"], cust
 const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
   + ' data-act="nav.' + (p || m) + '" aria-label="' + w + '" data-word="' + w + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
-  orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
+  orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["market", "Market"], ["calendar", "Calendar"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
+  shop: [["hours", "Hours"], ["market", "Market"], ["calendar", "Calendar"], ["notice", "Notice"], ["group", "Group orders"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* 2 Nov 2026 (his Orders canvas, his answers of 31 Oct 2026): THE PARTS ARE ONE SEGMENT OF FOUR, To do, Open, Done and Ended, To do carrying the count of what waits
-   on him; Open lists Agreed, Ready and Out or paid each under its own head. Payments, Group and Ledger are action rows in a More group at the foot of the list, and
-   Approve has no control of its own: the bar's Approve reaches it, and #orders/approve still opens it. Every part keeps its act and its address. */
+   on him; Open lists Agreed, Ready and Out or paid each under its own head. Approve has no control of its own: the bar's Approve reaches it, and #orders/approve still opens it.
+   18 Nov 2026 (his answer D): THE MORE GROUP IS SPLIT UP. Ledger check is the bar's, in every place (aHero), its part and its address #orders/ledger kept; Group orders is a
+   part of Settings (#shop/group, the old #orders/group landing there); Payments they sent has no row here, its part and #orders/payments kept, since Needs you's payment
+   cards, his alerts and the test surface's Payments place open it. */
 const ADMIN_ORDER_STAGES = ["todo", "open", "done", "ended"];
 /* 16 Nov 2026, the move to Ambient (place G): the four stages are Ambient's Segment, each with its count, one with none dimmed (aria-disabled, the count 0: stmt/owner.js paintOrdCounts);
-   More is a settings group, a row a part with its way in at the right, Payments carrying the count of what they say they sent */
+   the More group of rows under the list went on 18 Nov 2026 (above) */
 /* 18 Nov 2026 (Ambient 0.7.20, his answer A): a place's parts are underlined tabs across the content from 960px (amb-segment--tabs), so they never read as the filter pills under them; a phone keeps the segment */
 const ordSegment = () => '<div class="amb-stack"><div class="amb-segment amb-segment--tabs aparts" role="group" aria-label="Orders" data-place="orders">'
   + ADMIN_ORDER_STAGES.map((k) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.orders.' + k + '" aria-pressed="' + (k === "todo" ? "true" : "false") + '">'
     + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class="amb-segment__count" hidden></span></button>').join("") + "</div></div>";
-const ordMore = (test) => '<div class="amb-settings amore" data-in="orders.todo orders.open orders.done orders.ended"><h3 class="amb-settings__head">More</h3><ul class="amb-settings__list amore__list" data-place="orders">'
-  + ["payments", "group", "ledger"].filter((k) => !test || TEST_PARTS.orders.includes(k)).map((k) => '<li><button type="button" class="amb-setting" data-part="' + k + '" data-act="part.orders.' + k + '">'
-    + '<span class="amb-setting__name">' + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '</span>' + (k === "payments" ? '<span class="amb-setting__value" data-n="payments"></span>' : "")
-    + AMB.glyph("next", "sm") + "</button></li>").join("") + "</ul></div>";
 const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
   : p === "orders"
   ? ordSegment()
@@ -756,7 +760,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         /* 16 Nov 2026, the move to Ambient (0.7.8, nested places): each place is an amb-place, and so is a place's body and each part that holds a split
            with filters before it, so the shown chain reaches the split and its two panes take the screen and scroll apart; a split that is itself a part
            (Orders' stages, Shop's hours) is never an amb-place. The parts segment stays before the body (his call, asked) */
-        + '<div id="mHome" class="amb-place" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true })
+        + '<div id="mHome" class="amb-place" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true, acts: !test })
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice) and the kinds (counted filters, one chosen); the glance (Ambient's tiles, each a link
            to Orders: Ready, To approve, Receivables with its meter) heads the queue's pane (17 Nov 2026). Under the head the queue and the open card, two columns from
@@ -777,13 +781,13 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace amb-place" data-in="orders" hidden>'
-        + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, approve: !test })
+        + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, acts: !test, approve: true })
         + adminParts("orders", test)
         + '<div class="abody amb-place">'
         /* 16 Nov 2026, the move to Ambient (place G): the orders are two panes, the queue (its groups, then More) and the record, which ends in its one main action as its foot;
            from 960px they stand side by side, below it the open order takes the list's place and has its way back */
         + '<div id="oSplit" class="amb-split amb-split--panes" data-in="orders.todo orders.open orders.done orders.ended" role="region" aria-label="Orders">'
-        + '<div class="amb-stack ordqueue"><div id="makerOrderList" class="ordlist"></div>' + ordMore(test) + '</div>'
+        + '<div class="amb-stack ordqueue"><div id="makerOrderList" class="ordlist"></div></div>'
         + '<div class="amb-stack ordrecord"><div class="amb-settings" id="ordnone"><h3 class="amb-settings__head">No order open</h3><ul class="amb-settings__list"><li><div class="amb-setting"><span class="amb-setting__name">Choose an order.</span></div></li></ul></div><div id="makerReview" class="ordopen"></div></div></div>'
         /* 16 Nov 2026 (the move to Ambient, place F): Approve is one stack of Ambient's approvals (stmt/owner.js drawDeskRows), a save bar over them once a card is
            chosen (apBarDraw), and the queue a fold shut by default, titled and counted */
@@ -795,9 +799,6 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         /* 16 Nov 2026, the move to Ambient (place G): Payments is a list of rows and the open claim's card in two panes (drawMakerClaims draws both into #makerClaims), Group orders a form and its pools
            in one stack, and the mini ledger Ambient's tables, which stack by the shell's width and never scroll sideways */
         + '<section class="amb-place" data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 class="amb-vh" id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" class="amb-split amb-split--panes" aria-live="polite"></div></section>'
-        + '<section class="amb-stack" data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 class="amb-section" id="makerPoolsTitle">Group orders</h2>'
-        + '<p class="amb-field__hint">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
-        + '<div id="makerPools" class="amb-stack" aria-live="polite"></div></section>'
         /* 16 Oct 2026: THE MINI LEDGER, three tables of the folded book in this order: Open orders, Pending orders and the latest twenty. Every other part of Orders
            is shut while it shows (stmt/owner.js, loadLedger). */
         + '<div id="oLedger" class="amb-stack" data-in="orders.ledger"><p class="amb-field__hint" id="ledgerStatus" role="status">Reading.</p><section class="amb-stack ledgrp" id="led-tie" aria-label="Order and book"></section>'
@@ -807,7 +808,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace amb-place" data-in="customers" hidden>'
-        + aHero("Customers", '<p class="amb-hero__sub" id="mFoot"></p>', { heat: true })   /* the count of accounts, the rail's foot until 15 Nov 2026 */
+        + aHero("Customers", '<p class="amb-hero__sub" id="mFoot"></p>', { heat: true, acts: !test })   /* the count of accounts, the rail's foot until 15 Nov 2026 */
         + adminParts("customers", test)
         + '<div class="abody amb-place">'
         + '<div id="oAccts" class="amb-place" data-in="customers.accounts">'
@@ -858,7 +859,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         /* 17 Nov 2026, the move to Ambient (Fable's review, items 1 and 2): Record is a chain of places like the others, so its hero rests as Needs you's does and its forms' two panes take the screen */
         + '<div id="oRecord" class="aplace amb-place" data-in="record" hidden>'
-        + aHero("Record", "")
+        + aHero("Record", "", { acts: !test })
         + '<p class="amb-vh">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record", test)
         + '<div class="abody amb-place">'
@@ -866,7 +867,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace amb-place" data-in="shop" hidden>'
-        + aHero("Settings", "")
+        + aHero("Settings", "", { acts: !test })
         + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop", test)
         + '<div class="abody amb-place">'
@@ -887,6 +888,10 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         + '<div class="amb-stack" data-in="shop.calendar"><h2 id="makerCalTitle" class="amb-vh">Calendar</h2><div id="makerCalendar"></div></div>'
         + '<div class="amb-stack" data-in="shop.notice"><h2 id="makerBulletinTitle" class="amb-vh">Notice</h2>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></div>'
+        /* 18 Nov 2026 (his answer D): Group orders is a part of Settings; the section, its ids and its routes are the ones Orders held */
+        + '<section class="amb-stack" data-in="shop.group" aria-labelledby="makerPoolsTitle"><h2 class="amb-section" id="makerPoolsTitle">Group orders</h2>'
+        + '<p class="amb-field__hint">Customers join a bulk order, and each order comes to you to agree when you close it.</p>'
+        + '<div id="makerPools" class="amb-stack" aria-live="polite"></div></section>'
         + '<div id="mTest" class="mtest amb-stack" data-in="shop.practice"></div>'
         /* 15 Nov 2026: This device holds the one unlock and his notifications; light and dark follow the device (his answer of 14 Nov 2026) */
         + '<div id="oLook" class="amb-stack" data-in="shop.device"><h2 id="oLookTitle" class="amb-vh">This device</h2>'

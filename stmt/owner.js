@@ -47,13 +47,15 @@ export const OWNER_JS = `
      payments and chats, and nothing else (no account list, links, inputs, notice or book) */
   var TESTING=/*__TESTING__*/false;
   var placeNow='needs', partNow='', PARTS={}, fOpen=null;
-  [].forEach.call(document.querySelectorAll('.aparts, .amore__list'), function(strip){
-    /* a place may draw its parts as a strip and a list (Orders: the Segment of four, then More's rows): PARTS is both, in the order they are drawn */
+  [].forEach.call(document.querySelectorAll('.aparts'), function(strip){
+    /* PARTS is a place's parts in the order its strip draws them */
     var pl=strip.getAttribute('data-place'); PARTS[pl]=(PARTS[pl]||[]).concat([].map.call(strip.querySelectorAll('[data-part]'), function(b){ return b.getAttribute('data-part'); }));
   });
   /* 2 Nov 2026: Approve has no control of its own on Orders (the bar's Approve reaches it), so its address is listed here, and the old stage addresses
      (#orders/ready) land on the part that holds that stage now */
-  if(PARTS.orders&&!TESTING) PARTS.orders.push('approve');
+  /* 18 Nov 2026 (his answer D): Orders' More list is gone. Payments they sent keeps its part and address (Needs you's cards, his alerts and the test surface open it), and so
+     does Ledger check, which the bar's indicator opens from every place */
+  if(PARTS.orders){ PARTS.orders.push('payments'); if(!TESTING) PARTS.orders.push('approve','ledger'); }
   var PART_ALIAS={placed:'todo', confirmed:'open', ready:'open', paid:'open'};
   /* what a place reads when it is entered, and what a part reads when it is entered. The stages of Orders are one list that its
      place reads once, so moving between them is a filter and never a second read. */
@@ -64,7 +66,6 @@ export const OWNER_JS = `
   };
   var PART_READ={
     'orders.approve':function(){ loadMaker(); },
-    'orders.group':function(){ loadMakerPools(); },
     'orders.ledger':function(){ loadLedger(); },
     'customers.accounts':function(){ drawRoster(); if(!sheet&&!sheetBusy) loadSheet(); },
     'customers.messages':function(){ loadMakerThreads(false); },
@@ -72,6 +73,7 @@ export const OWNER_JS = `
     'customers.associates':function(){ if(!cards) loadCards(); else drawCards(); },
     'shop.hours':function(){ loadMakerHours(); loadMakerPoints(); },
     'shop.notice':function(){ loadMakerBulletin(); },
+    'shop.group':function(){ loadMakerPools(); },
     'shop.market':function(){ loadMarket(); },
     'shop.calendar':function(){ loadCalendar(); },
     'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }
@@ -102,7 +104,8 @@ export const OWNER_JS = `
   var ADDR={needs:['needs',''], orders:['orders',''], customers:['customers',''], record:['record',''], shop:['shop',''],
     maker:['orders',''], more:['shop',''], accounts:['customers','accounts'], links:['customers','links'], cards:['customers','associates']};
   /* 17 Oct 2026: Approve moved from Record to Orders, as the Desk's Order book took it; the old address #record/approve lands there */
-  var PART_ADDR={'record/approve':['orders','approve']};
+  /* 18 Nov 2026 (his answer D): Group orders is a part of Settings; its old address under Orders lands there */
+  var PART_ADDR={'record/approve':['orders','approve'], 'orders/group':['shop','group']};
   /* 9 Nov 2026, his word (every Desk conclusion leads to the correct path): the Desk's Act links land here through its /admin, which passes only
      the addresses its ADMIN_TO lists. Three name one thing rather than a place: row/<rid> opens that row in the sale form (as Ledger check's tap),
      acct/<code> that account's card, tip/<id> Desk reminders with that reminder chosen. Each is a want, read once and then left for the place. */
@@ -157,6 +160,7 @@ export const OWNER_JS = `
     unsentPaint();
     if(fresh&&PLACE_READ[placeNow]) PLACE_READ[placeNow]();
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
+    if(!ledgerAt||Date.now()-ledgerAt>600000) ledgerRead();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
     if(fresh) pageTop();
     needsWatch();
@@ -2329,6 +2333,27 @@ export const OWNER_JS = `
     status.textContent='The folded book: '+j.orders+(j.orders===1?' order':' orders')+'. A site order not yet on the book is under Received.';
     drawLedger(j);
     drawTieout(j.tieout);
+    ledgerTie=j.tieout||null; ledgerAt=Date.now(); ledgerPaint();
+  }
+  /* 18 Nov 2026 (his answer D): LEDGER CHECK IN EVERY PLACE'S BAR. It says the tie-out as the Desk last ran it (after each version and every six hours, or his Check now), read
+     with the page and again when he changes place once ten minutes have passed: a tick while every site order matches its row, the count of differences while they do not, the
+     word alone while there is no check to read. It runs no check of its own, and a tap opens the part that Check now stands in. */
+  var ledgerTie=null, ledgerAt=0, ledgerBusy=false;
+  function ledgerPaint(){
+    var t=ledgerTie, known=!!(t&&t.ok), n=known&&!t.clean?(t.faults||[]).length:0;
+    var say='Ledger check: '+(!known?'not checked yet':t.clean?'every order matches the book':n===1?'one difference between the orders and the book':n+' differences between the orders and the book');
+    [].forEach.call(document.querySelectorAll('[data-ledger]'), function(b){
+      var ok=b.querySelector('[data-ledger-ok]'), c=b.querySelector('[data-ledger-n]');
+      if(ok&&ok.hidden!==!(known&&t.clean)) ok.hidden=!(known&&t.clean);
+      if(c){ var v=n?String(n):''; if(c.textContent!==v) c.textContent=v; if(c.hidden!==!n) c.hidden=!n; }
+      if(b.getAttribute('aria-label')!==say){ b.setAttribute('aria-label',say); b.title=say; }
+    });
+  }
+  async function ledgerRead(){
+    if(TESTING||ledgerBusy||!document.querySelector('[data-ledger]')) return;
+    ledgerBusy=true;
+    try{ var j=await refs('/all/maker/ledger'); ledgerTie=j.tieout||null; ledgerAt=Date.now(); ledgerPaint(); }catch(e){ ledgerAt=Date.now()-540000; }   /* a read that failed is tried again after a minute, never on every tap */
+    ledgerBusy=false;
   }
   /* 17 Oct 2026, HIS FLOW: THE TIE-OUT. Every site order against its row, read by the Desk after each version and every six hours: clean, or each
      difference by order and row; a difference a move on its way explains is listed apart, as waiting. Check now asks the Desk for a fresh one. */
@@ -2350,17 +2375,17 @@ export const OWNER_JS = `
     var said=el('p','amb-field__hint msg'); said.setAttribute('role','status'); root.appendChild(said);
     makerButton(root,['Check now','ledger.tieout'],async function(){
       said.textContent='Checking.';
-      var j=await refs('/all/maker/ledger',{}); drawLedger(j); drawTieout(j.tieout);
+      var j=await refs('/all/maker/ledger',{}); drawLedger(j); drawTieout(j.tieout); ledgerTie=j.tieout||null; ledgerAt=Date.now(); ledgerPaint();
     },false);
   }
   /* A GROUP ORDER (the pool): open one, see who is in by units, and Close. Close closes it, tells each joiner once and sends
      each joined order for acknowledgement; one the Desk would not accept is listed under the pool with its reason, and Close
      again retries those alone. Reaching the target closes nothing: only this does. */
   async function loadMakerPools(){
-    var root=document.getElementById('makerPools'); if(!root||placeNow!=='orders') return;
+    var root=document.getElementById('makerPools'); if(!root||placeNow!=='shop'||partNow!=='group') return;
     var result;
     try{ result=await refs('/all/maker/pools'); }catch(error){ refusal(root,error); return; }
-    if(!root.isConnected||placeNow!=='orders') return;
+    if(!root.isConnected||placeNow!=='shop'||partNow!=='group') return;
     root.textContent='';
     var note=el('p','amb-field__hint msg',''); note.setAttribute('role','status');
     function field(label,type,attrs){
@@ -5049,8 +5074,6 @@ export const OWNER_JS = `
     });
     ['done','ended'].forEach(function(st){ if(n[st]>=ordShown(st)&&(ordClosedAll[st]||0)>n[st]) n[st]=ordClosedAll[st]; });
     ordCountN=n; ordSegPaint();
-    var pay=waitingClaims().filter(function(x){ return !x.test; }).length, pn=document.querySelector('.amore__list [data-n="payments"]');
-    if(pn) pn.textContent=pay?String(pay):'';
   }
   /* 3 Nov 2026 (his word: CN3-WM's book row and trip stood in Open and were never counted): THE ORDERS COUNT IS EVERY OPEN ORDER THE LIST HOLDS, a site order
      still open and, since 17 Oct 2026, a row of the book, an order of several books or a buyer's same day not done or ended (the Desk's flowStage), as
@@ -8181,8 +8204,12 @@ export const OWNER_JS = `
   function barLive(rows){
     var n={approve:rows}; ['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count="'+k+'"]'); n[k]=+(c&&c.textContent)||0; });
     /* Orders' Approve, in its hero, names the rows that wait */
-    var apBtn=document.getElementById('aApprove'), apSay=rows?'Approve, '+rows+' to approve':'Approve';
-    if(apBtn&&apBtn.getAttribute('aria-label')!==apSay) apBtn.setAttribute('aria-label',apSay);
+    /* 18 Nov 2026 (his answer D): every place's bar carries Approve; Orders' own always stands, the others only while rows wait */
+    var apSay=rows?'Approve, '+rows+' to approve':'Approve';
+    [].forEach.call(document.querySelectorAll('[data-approve]'), function(apBtn){
+      if(apBtn.getAttribute('aria-label')!==apSay) apBtn.setAttribute('aria-label',apSay);
+      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;
+    });
     return n;
   }
   function needsReady(){ return NEED_SRC.every(function(s){ return nSrc[s[0]]; }); }
@@ -8781,8 +8808,9 @@ export const OWNER_JS = `
   var oAdd=document.getElementById('oAdd');
   if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });
   /* Approve, Orders' one main action (the bar's Approve until 15 Nov 2026) */
-  var aApprove=document.getElementById('aApprove');
-  if(aApprove) aApprove.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); });
+  [].forEach.call(document.querySelectorAll('[data-approve]'), function(ap){ ap.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); }); });
+  /* Ledger check, in every place's bar (18 Nov 2026): the part its row in Orders' More list opened */
+  [].forEach.call(document.querySelectorAll('[data-ledger]'), function(lb){ lb.addEventListener('click', function(){ showPlace('orders','ledger',{fresh:true,push:true}); }); });
   document.getElementById('afil').addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-f]'); if(b&&b.getAttribute('aria-disabled')!=='true') filterBy(b.getAttribute('data-f'));
   });
