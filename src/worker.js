@@ -554,8 +554,11 @@ function reconcileOnTap(env, ctx, mirror) {
 /* 18 Nov 2026 (docs/plan-nudge.html, his answers A to C): THE ORDER PASS, the minute's order work in its order: one read of the site, the banner
    for what moved, the reconcile, the desk's own pass and what it approved, the tell to open desks, then the drafter and the banner for rows to
    approve. Run only through ordersOnce, by the minute's cron and by the Counter's nudge (/_internal/maker/nudge). */
-export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
+/* 19 Nov 2026 (docs/plan-instant.html): `only`, from a nudge, names the orders to reconcile (with every order owing its pending row); null is the
+   whole, the minute's. A nudge's pass logs how long each step took. */
+export async function ordersPass(env, ctx, now = new Date(), mirror = null, only = null) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  const t0 = Date.now(), ms = {};
   /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
      leg so the owed orders are read as it left them. Failed or unread, each step asks for its own. */
   let read = null;
@@ -563,6 +566,7 @@ export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
     read = await tickRead(env);
     if (!read.ok) console.log("orders read: " + JSON.stringify(read));
   } catch (e) { console.log("orders read FAILED: " + String((e && e.stack) || e)); }
+  ms.read = Date.now() - t0;
   /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge. A customer order placed since the last
      pass wakes the phones that asked for orders, once. 19 Nov 2026 (docs/plan-instant.html): it runs BESIDE the reconcile,
      not before it, each in its own try, so neither waits on the other and a drafter failure still cannot swallow it */
@@ -571,24 +575,29 @@ export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
       const n = await nudgeOrders(env, read);
       if (!n.ok || n.newest || n.rung || n.held) console.log("orders nudge: " + JSON.stringify(n));
     } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
+    ms.banner = Date.now() - t0;
   })();
   /* v694: and the stages the ledger has not been told about. The reconcile is the one place that queues
      them; each entry is named by the moment of its own stage, so two passes queue the same entry once.
      It drafts what it queued rather than waiting for the quarter-hour, because he is looking at Approve. */
   const work = (async () => {
   try {
-    const rc = await reconcileOrders(env, read, mirror);
+    const rc = await reconcileOrders(env, read, mirror, only);
+    ms.reconcile = Date.now() - t0;
     /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
     if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped || rc.retired) console.log("orders reconcile: " + JSON.stringify(rc));
     /* S11: and what the desk queued itself, beside it */
     const dp = await deskPass(env, now, mirror);
     if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
     await afterApproval(env, ctx, dp.approved);
+    ms.desk = Date.now() - t0;
     if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, "orders");
-    if (rc.queued || dp.queued) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
+    if (rc.queued || dp.queued) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); ms.drafter = Date.now() - t0; }
   } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
   })();
   await Promise.all([banner, work]);
+  /* each figure is ms from the pass's start to that step's end */
+  if (Array.isArray(only)) console.log("orders pass (nudge): " + JSON.stringify({ orders: only.length, ms }));
 }
 /* ONE PASS AT A TIME in an isolate, as the outbox's drain: a call while a pass runs only marks, and exactly one more pass runs when it ends,
    so a burst of nudges is two passes, never one each. A pass older than PASS_STALE_MS is let go and blocks nothing: a nudge's pass lives in
@@ -598,17 +607,32 @@ export const PASS_STALE_MS = 30000;
 /* how long the minute waits on a pass it did not start before it runs its own (Fable's review of 18 Nov 2026): a pass cut off with its request
    never settles, and the minute's later steps (re-dispatch, accounts, publish, the book net, the quarter-hour drafter) must not wait on it */
 export const PASS_WAIT_MS = 20000;
-let passing = null, passingAt = 0, passAgain = false;
+let passing = null, passingAt = 0, passAgain = false, againOnly = null;
 export const passRunning = () => !!passing && Date.now() - passingAt <= PASS_STALE_MS;
+/* 19 Nov 2026 (docs/plan-instant.html): the orders a nudge names, of the order shape, at most 50; anything else (no body, an older Counter, a
+   body too long or not that shape) is null, a whole pass. An empty list is a pass that reconciles nothing (a move that names no order). */
+export const NUDGE_OID_RE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
+export function nudgeIds(text) {
+  if (typeof text !== "string" || !text || text.length > 4096) return null;
+  let b = null; try { b = JSON.parse(text); } catch (e) { return null; }
+  if (!b || typeof b !== "object" || !Array.isArray(b.o) || b.o.length > 50 || !b.o.every((x) => typeof x === "string" && NUDGE_OID_RE.test(x))) return null;
+  return [...new Set(b.o)];
+}
+/* what the pass after this one covers: a call naming orders adds them, a call for the whole (no list) makes it whole, and whole stays whole */
+function passWant(only) {
+  if (!passAgain) { passAgain = true; againOnly = Array.isArray(only) ? new Set(only) : null; return; }
+  if (againOnly && Array.isArray(only)) for (const x of only) againOnly.add(x);
+  else againOnly = null;
+}
 export function ordersOnce(env, ctx, opts = {}) {
   if (passing && Date.now() - passingAt > PASS_STALE_MS) passing = null;
-  if (passing) { passAgain = true; if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(passing); return passing; }
+  if (passing) { passWant(opts.only); if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(passing); return passing; }
   const job = (async () => {
-    try { passAgain = false; await ordersPass(env, ctx, opts.now || new Date(), opts.mirror || null); }
+    try { passAgain = false; againOnly = null; await ordersPass(env, ctx, opts.now || new Date(), opts.mirror || null, Array.isArray(opts.only) ? opts.only : null); }
     catch (e) { console.log("orders pass FAILED: " + String((e && e.stack) || e)); }
     finally { if (passing === job) passing = null; }   /* a pass let go as stale never clears the marker of the pass after it */
     /* the marker is cleared and the mark read with no await between them, so a call lands either before (its mark is read here) or after (it starts its own) */
-    if (passAgain) { passAgain = false; await ordersOnce(env, ctx); }
+    if (passAgain) { const only = againOnly ? [...againOnly] : null; passAgain = false; againOnly = null; await ordersOnce(env, ctx, { only }); }
   })();
   passing = job; passingAt = Date.now();
   if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(job);
@@ -883,11 +907,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
-  /* 18 Nov 2026 (docs/plan-nudge.html): THE COUNTER'S NUDGE, a customer's move recorded. No body is read, so nothing it could carry is used;
-     answered at once, the order pass runs behind on the one-at-a-time road the minute's cron takes, and the minute stays the net */
+  /* 18 Nov 2026 (docs/plan-nudge.html): THE COUNTER'S NUDGE, a customer's move recorded. Answered at once, the order pass runs behind on the
+     one-at-a-time road the minute's cron takes, and the minute stays the net. 19 Nov 2026 (docs/plan-instant.html): the body names the orders
+     moved ({o: [ids]}, read bounded, ids of the order shape alone), and the pass reconciles those and every order owing its pending row; a body
+     missing or not that shape (an older Counter) is a whole pass, as it was */
   if (p === "/_internal/maker/nudge") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    ordersOnce(env, ctx);
+    ordersOnce(env, ctx, { only: nudgeIds(await request.text().catch(() => "")) });
     return json({ ok: true }, 202);
   }
   if (p === "/_internal/maker/queue") {

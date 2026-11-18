@@ -1846,7 +1846,10 @@ export async function queueSale(env, entry, fixedId = false, mirror = null) {
  * A MINUTE IS NOT A DELAY THAT MATTERS: the entry still has to be drafted and then approved under
  * Approve, and the customer's card says so while it waits.
  */
-export async function reconcileOrders(env, read, mirror) {
+/* 19 Nov 2026 (docs/plan-instant.html): `only`, from a nudge's pass, is the orders the customer moved; the reconcile then takes those and every
+   order owing its pending row (an ack: a basket's lines drafted in one pass, as the minute would, Fable's review), and leaves the orders that
+   wait for their rows to the minute, which takes them all as before. null is the whole. */
+export async function reconcileOrders(env, read, mirror, only = null) {
   /* fold 5.6: the minute's one read carries the owed orders (tickRead); any other caller, or a Counter that sent none, asks */
   let owing = read && read.ok && Array.isArray(read.owing) ? read.owing : null;
   if (!owing) {
@@ -1856,16 +1859,17 @@ export async function reconcileOrders(env, read, mirror) {
     if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
     owing = b.orders || [];
   }
+  if (Array.isArray(only)) owing = owing.filter((o) => only.includes(o.id) || (o.work || []).includes("ack"));
   if (!owing.length) return { ok: true, queued: 0 };
-  const users = await usersMap(env);
+  /* the map and the book are read together (docs/plan-instant.html); the book is read as before, by the shared reader */
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  const [users, book] = await Promise.all([usersMap(env), mirror ? mirror().catch(() => null) : null]);
   /* AN AMENDMENT WAITS FOR ITS ROW. The pending row reaches the book by the long road: queued,
      drafted, approved, folded, and the mirror re-seeded. Until it is there, nothing can be amended,
      and queueing the amendment anyway would put a refusal on his phone every time a customer paid
      early. So the same question the drafter would ask is asked one step earlier, and a stage that
      cannot land yet simply stays owed. A mirror that cannot be read holds everything, rather than
      queueing what would be refused. */
-  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
-  const book = mirror ? await mirror().catch(() => null) : null;
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [], retiredIds = [];
