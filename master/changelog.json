@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1539",
+  "d": "18 Nov 2026",
+  "t": "WORDS THAT CONTRADICTED THEMSELVES",
+  "n": [
+   "<b>A WITHHELD STATEMENT IS SAID ON ORDERS.</b> A customer whose statement is updating reads that on the Counter's Orders, never No orders yet. A new customer still reads No orders yet.",
+   "<b>NEEDS YOU COUNTS PENDING.</b> With cards under Pending and nothing to do, its line says how many are pending, never Nothing needs you. Books in one state are said once: 2 books are low on stock.",
+   "<b>SMALLER WORDS.</b> Receivables says its paid is of the agreed orders. A kind holding FYI cards alone shows no 0. The next unit's row says its share once. The account search's hint is in the page's own face.",
+   "<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"
+  ]
+ },
+ {
   "v": "v1538",
   "d": "18 Nov 2026",
   "t": "AN ADMIN ACCOUNT ON SALT COUNTER",

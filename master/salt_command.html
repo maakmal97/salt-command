@@ -12321,7 +12321,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1538","d":"18 Nov 2026","t":"AN ADMIN ACCOUNT ON SALT COUNTER","n":["<b>YOUR OWN COUNTER ACCOUNT.</b> An admin account signs in at Salt Counter's door like any customer's. It is on no roster and no ledger row, gets no price list, and places, claims and joins nothing.","<b>THE WAY IN, BUILT AND OFF.</b> Signed in with its password, the account can open Salt Admin on that browser for 12 hours. Log out, Leave and Sign out everywhere close it. The switch that makes Salt Admin ask for it ships off: Salt Admin opens as before.","<b>ORDER IDS.</b> About 1 new order id in 500 took the shape of a practice order, and Salt Admin could not act on such an order. An id is now drawn again when it would."]}];
+const evolution=[{"v":"v1539","d":"18 Nov 2026","t":"WORDS THAT CONTRADICTED THEMSELVES","n":["<b>A WITHHELD STATEMENT IS SAID ON ORDERS.</b> A customer whose statement is updating reads that on the Counter's Orders, never No orders yet. A new customer still reads No orders yet.","<b>NEEDS YOU COUNTS PENDING.</b> With cards under Pending and nothing to do, its line says how many are pending, never Nothing needs you. Books in one state are said once: 2 books are low on stock.","<b>SMALLER WORDS.</b> Receivables says its paid is of the agreed orders. A kind holding FYI cards alone shows no 0. The next unit's row says its share once. The account search's hint is in the page's own face.","<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12483,7 +12483,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Nov 2026, 11:29 KL';
+const LAST_UPDATED='18 Nov 2026, 13:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
