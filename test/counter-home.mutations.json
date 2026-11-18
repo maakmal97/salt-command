@@ -9,7 +9,7 @@
  {"name":"the reward for everybody","file":"stmt/page.js","find":"    if(!assoc){\n      var lp=card.products","replace":"    if(!assoc&&card.products.some(function(p){ return p.loyal; })){\n      var lp=card.products"},
  {"name":"the reward is the farthest","file":"stmt/page.js","find":"sort(function(a,b){ return b.reward.next-a.reward.next; })","replace":"sort(function(a,b){ return a.reward.next-b.reward.next; })"},
  {"name":"the meter is left empty","file":"stmt/page.js","find":"m.max=100; m.value=pc;","replace":"m.max=100; m.value=0;"},
- {"name":"the reward names a level","file":"stmt/page.js","find":"tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})","replace":"tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})+' Gold'"},
+ {"name":"the reward names a level","file":"stmt/page.js","find":"tw(rw.held?'rew.held':'rew.ask',{left:Uq(rw.left,p.unit), p:pc})","replace":"tw(rw.held?'rew.held':'rew.ask',{left:Uq(rw.left,p.unit), p:pc})+' Gold'"},
  {"name":"a tap on the reward opens nothing","file":"stmt/page.js","find":"    b.addEventListener('click',function(){ placeShow('card',true); });\n    box.appendChild(hList([b]));","replace":"    box.appendChild(hList([b]));"},
  {"name":"a cancelled line is counted (re-aimed 17 Nov 2026, the second red fix)","file":"stmt/page.js","find":"||r.classList.contains('is-off')) return;","replace":") return;"},
  {"name":"last year is counted","file":"stmt/page.js","find":"if(m.slice(0,4)!==y||!mq||","replace":"if(!mq||"},

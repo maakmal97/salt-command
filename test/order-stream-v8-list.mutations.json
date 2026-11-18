@@ -36,7 +36,7 @@
  {"name":"C9 a table document loses its month filter","file":"stmt/page.js","find":"} else drawMonths();","replace":"} else {}"},
  {"name":"E8 the month list is not named","file":"stmt/page.js","find":"ul.setAttribute('aria-label',m?monthLabel(m):tw('ord.yours'));","replace":""},
  {"name":"E13 no Month select in Earlier","file":"stmt/page.js","find":"if(real.length>=2){ slot.hidden=false; slot.appendChild(ambMonthSelect(real,pick,function(p){ draft.oMonth=p||''; apply(p); })); apply(pick); }","replace":"if(false){}"},
- {"name":"E14 Earlier is not last in the list","file":"stmt/page.js","find":"      var ep=oEarlier(); if(ep) box.appendChild(ep);","replace":"      var ep=oEarlier(); if(ep) box.insertBefore(ep,box.firstChild);"},
+ {"name":"E14 Earlier is not last in the list","file":"stmt/page.js","find":"      var ep=oEarlier(), lb1=oHeld(); if(ep) box.appendChild(ep);","replace":"      var ep=oEarlier(), lb1=oHeld(); if(ep) box.insertBefore(ep,box.firstChild);"},
  {"name":"E16 the month is forgotten at a redraw","file":"stmt/page.js","find":"var pick=months.indexOf(draft.oMonth)>=0?draft.oMonth:null,","replace":"var pick=null,"},
  {"name":"E18 an undated line hides with a month","file":"stmt/page.js","find":"g.node.hidden=!!pick&&g.m!==''&&g.m!==pick;","replace":"g.node.hidden=!!pick&&g.m!==pick;"},
  {"name":"a drawing with no letter is read by its shape (17 Nov 2026)","file":"stmt/page.js","find":"if(t?(sd?sd.getAttribute('d'):'')+'|'+(st?st.textContent:'')===key:(sd?sd.getAttribute('d'):'')===(d?d.getAttribute('d'):'')) hit=k;","replace":"if((sd?sd.getAttribute('d'):'')+'|'+(st?st.textContent:'')===key) hit=k;"}

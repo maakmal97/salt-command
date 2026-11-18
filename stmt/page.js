@@ -4477,13 +4477,17 @@ const CLIENT_JS = `
     if(real.length>=2){ slot.hidden=false; slot.appendChild(ambMonthSelect(real,pick,function(p){ draft.oMonth=p||''; apply(p); })); apply(pick); }
     return box;
   }
+  /* a statement that could not be read or is withheld; an account with none yet (acct.later) is a new customer's, and says nothing here */
+  function oHeld(){ var b=liveBad(); return b&&b!=='acct.later'?b:''; }
   function oList(shown){
     var box=el('div','olist amb-stack'); box.setAttribute('data-olist','');
     if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
     if(!orders.length){
       /* no site order yet: the statement's own lines, if it has any, are still their orders */
       var e0=ordersFailed?null:oEarlier();   /* with the orders unread every line would read as unheld, so none is drawn until they are (Fable's review) */
-      if(e0) box.appendChild(e0); else if(!ordersFailed) box.appendChild(oEmpty('none'));
+      /* 18 Nov 2026: a statement withheld is said, never read as a customer with no orders (the none state is a new customer's alone) */
+      var lb0=oHeld();
+      if(e0) box.appendChild(e0); else if(!ordersFailed) box.appendChild(lb0?unreadNode(lb0,lb0==='acct.unread'?retryAccount:null):oEmpty('none'));
       return box;
     }
     var B=oBuckets();
@@ -4496,7 +4500,7 @@ const CLIENT_JS = `
       if(B.needs.length) sec(tw('x.needs'),B.needs);
       if(B.open.length) sec(tw('ord.open'),B.open);
       if(B.past.length) oFold(box,B.past,shown);
-      var ep=oEarlier(); if(ep) box.appendChild(ep);
+      var ep=oEarlier(), lb1=oHeld(); if(ep) box.appendChild(ep); else if(lb1) box.appendChild(unreadNode(lb1,lb1==='acct.unread'?retryAccount:null));
       return box;
     }
     var list=oOf(k);
@@ -6299,7 +6303,7 @@ const CLIENT_JS = `
       if(!lp) return box;
       var lpc=Math.max(0,Math.min(100,Math.round(lp.loyal.next*100)));
       box.appendChild(hHead(tw('hr.hLoyal')));
-      var lr=hRow({tag:'li', meter:true, attrs:{'data-reward':'loyal'}, thumb:markThumb(lp.product), title:tw('rew.next'), sub:tw('rew.nextAria',{p:lpc}), amount:lpc+'%'});
+      var lr=hRow({tag:'li', meter:true, attrs:{'data-reward':'loyal'}, thumb:markThumb(lp.product), title:tw('rew.next'), sub:'', amount:lpc+'%'});
       lr.appendChild(hMeter(lpc));
       var lu=el('ul','amb-list amb-list--ruled'); lu.appendChild(lr); box.appendChild(lu);
       return box;
@@ -6309,7 +6313,7 @@ const CLIENT_JS = `
     var rw=p.reward, pc=Math.round(rw.next*100);
     box.appendChild(hHead(tw('hr.h')));
     var b=hRow({meter:true, attrs:{'data-reward':'assoc'}, thumb:markThumb(p.product), title:tw('rew.next'),
-      sub:tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc}), amount:pc+'%', act:tw('hr.see')});
+      sub:rw.left>0?tw(rw.held?'rew.held':'rew.ask',{left:Uq(rw.left,p.unit), p:pc}):'', amount:pc+'%', act:tw('hr.see')});
     b.appendChild(hMeter(pc));
     b.addEventListener('click',function(){ placeShow('card',true); });
     box.appendChild(hList([b]));

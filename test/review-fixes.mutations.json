@@ -1,0 +1,11 @@
+[
+ {"name": "R1 a withheld statement reads as no orders", "file": "stmt/page.js", "find": "box.appendChild(lb0?unreadNode(lb0,lb0==='acct.unread'?retryAccount:null):oEmpty('none'));", "replace": "box.appendChild(oEmpty('none'));"},
+ {"name": "R1 a new customer reads the notice", "file": "stmt/page.js", "find": "box.appendChild(lb0?unreadNode(lb0,lb0==='acct.unread'?retryAccount:null):oEmpty('none'));", "replace": "box.appendChild(unreadNode(lb0||'acct.updating',null));"},
+ {"name": "R2 no notice beside the orders", "file": "stmt/page.js", "find": "else if(lb1) box.appendChild(unreadNode(lb1,lb1==='acct.unread'?retryAccount:null));", "replace": ""},
+ {"name": "R3 the row repeats the meter", "file": "stmt/page.js", "find": "title:tw('rew.next'), sub:'', amount:lpc+'%'});", "replace": "title:tw('rew.next'), sub:tw('rew.nextAria',{p:lpc}), amount:lpc+'%'});"},
+ {"name": "R4 the lead says nothing needs him over Pending", "file": "stmt/owner.js", "find": "else if(pend&&!bad.length) parts.push([String(pend),' pending. Nothing waits on your tap now.']);", "replace": ""},
+ {"name": "R5 one state said twice", "file": "stmt/owner.js", "find": "if(n&&!s.past.length&&!(s.out&&s.low)) parts.push(", "replace": "if(0) parts.push("},
+ {"name": "R6 the line does not say agreed", "file": "stmt/owner.js", "find": "t[6]+' paid of '+t[7]+' agreed'));", "replace": "t[6]+' paid of '+t[7]));"},
+ {"name": "R7 a 0 beside FYI cards", "file": "stmt/owner.js", "find": "var said=ready&&(n[k]||!have[k])?String(n[k]||0):'';", "replace": "var said=ready?String(n[k]||0):'';"},
+ {"name": "R8 the placeholder in mono", "file": "stmt/statement-css.js", "find": ".amb-input.mono::placeholder { font-family: var(--amb-font); }", "replace": ".amb-input.mono::placeholder { }"}
+]

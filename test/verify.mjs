@@ -51175,6 +51175,11 @@ await (async () => {
   await (await import("./work-shell.mjs")).run({ ok });
 })();
 
+section("18 Nov 2026: the review's content faults, a withheld statement on Orders, Needs you's lead, the next unit said once");
+await (async () => {
+  await (await import("./review-fixes.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-trips.mjs")).run({ ok, pageWork });

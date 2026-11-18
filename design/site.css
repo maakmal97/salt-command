@@ -485,6 +485,7 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 body.ended > *:not(#aEnded) { display: none; }
 /* a username or a code inside a sentence is a figure, and figures are mono */
 .mono { font-family: var(--amb-font-mono); }
+.amb-input.mono::placeholder { font-family: var(--amb-font); }
 /* a book's mark in a line of words, and in a card: the shape, his letter, and the size in words under it */
 .psym { display: inline-block; vertical-align: -0.22em; }
 .psym .plet { font-family: var(--amb-font-mono); font-weight: 500; letter-spacing: 0; }

@@ -8229,14 +8229,17 @@ export const OWNER_JS = `
     var parts=[];
     if(!needsReady()) parts.push(['','Reading what needs you.']);
     else {
-      var conf=0, agree=0, todo=0;
-      items.forEach(function(i){ if(i.practice||!i.counts||i.sev!=='now') return; todo++; if(i.tap==='confirm') conf+=i.rm; else if(i.tap==='agree') agree+=i.rm; });
+      var conf=0, agree=0, todo=0, pend=0;
+      items.forEach(function(i){ if(!i.practice&&i.sev==='soon') pend++; if(i.practice||!i.counts||i.sev!=='now') return; todo++; if(i.tap==='confirm') conf+=i.rm; else if(i.tap==='agree') agree+=i.rm; });
       var says=[conf>0.004?rmShort(conf)+' to confirm':'', agree>0.004?rmShort(agree)+' to agree':''].filter(Boolean);
       if(says.length) parts.push([rmShort(conf+agree),' waits on your tap now: '+says.join(', ')+'.']);
       else if(todo) parts.push([String(todo),todo===1?' thing waits on your tap now.':' things wait on your tap now.']);
+      else if(pend&&!bad.length) parts.push([String(pend),' pending. Nothing waits on your tap now.']);   /* 18 Nov 2026: with cards under Pending the lead never says nothing needs him */
       else parts.push(['',bad.length?'Nothing in what could be read.':'Nothing needs you.']);
       var s=stockNeeds(), n=s.out+s.past.length+s.low;
-      if(n) parts.push([n+(n===1?' book':' books'),(n===1?' needs':' need')+' stock: '+[s.out?sayN(s.out)+(s.out===1?' is out':' are out'):'',
+      /* 18 Nov 2026: one state alone is said once (it read "2 books need stock: two are low") */
+      if(n&&!s.past.length&&!(s.out&&s.low)) parts.push([n+(n===1?' book':' books'),(n===1?' is ':' are ')+(s.out?'out of':'low on')+' stock.']);
+      else if(n) parts.push([n+(n===1?' book':' books'),(n===1?' needs':' need')+' stock: '+[s.out?sayN(s.out)+(s.out===1?' is out':' are out'):'',
         s.past.length===1?'one is promised '+units(s.past[0])+' past its shelf':s.past.length?sayN(s.past.length)+' are promised past their shelf':'',
         s.low?sayN(s.low)+(s.low===1?' is low':' are low'):''].filter(Boolean).join(', ')+'.']);
     }
@@ -8286,7 +8289,7 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('.nchips button'), function(b){
       var k=b.getAttribute('data-chip'), c=b.querySelector('.nkopt__n');
       if(!c){ c=el('span','amb-segment__count nkopt__n'); b.appendChild(c); }
-      var said=ready?String(n[k]||0):'';
+      var said=ready&&(n[k]||!have[k])?String(n[k]||0):'';   /* 18 Nov 2026: a kind holding FYI cards alone says no figure, never a 0 beside cards */
       if(c.textContent!==said) c.textContent=said;
       var none=ready&&!have[k];
       if((b.getAttribute('aria-disabled')==='true')!==none){ if(none){ b.setAttribute('aria-disabled','true'); b.setAttribute('aria-pressed','false'); } else b.removeAttribute('aria-disabled'); }
@@ -8328,7 +8331,7 @@ export const OWNER_JS = `
       if(t[5]!=null){
         a.classList.add('nkpi--owed'); a.setAttribute('aria-label',t[2]+', '+t[3]+': '+t[6]+' paid of '+t[7]+' agreed');
         var m=el('progress','amb-meter'); m.max=100; m.value=t[5]; m.setAttribute('aria-hidden','true'); a.appendChild(m);
-        a.appendChild(el('span','amb-tile__delta amb-muted',t[6]+' paid of '+t[7]));
+        a.appendChild(el('span','amb-tile__delta amb-muted',t[6]+' paid of '+t[7]+' agreed'));
       }
       g.appendChild(a);
     });

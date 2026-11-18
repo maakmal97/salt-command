@@ -30,7 +30,7 @@ export async function run({ ok, pageWork }) {
       fill: mp ? String(mp.value) : "", n: box ? box.querySelectorAll("[data-reward]").length : 0,
       mark: !!(rc && rc.querySelector(".amb-thumb--mark")), tag: rc && rc.tagName, taps: rc ? rc.querySelectorAll("button,a,[tabindex]").length : -1, see: t(rc).includes("See your card"),
       tab: !!tab && (tab.hidden || tab.closest("[hidden]") !== null) };
-    ok(rw.head === "Your next reward" && rw.left === "70% of the way to your next unit" && rw.pc === "70%" && rw.fill === "70" && rw.n === 1 && rw.mark
+    ok(rw.head === "Your next reward" && rw.left === "" && mp.getAttribute("aria-label") === "70% of the way to your next unit" && rw.pc === "70%" && rw.fill === "70" && rw.n === 1 && rw.mark
       && rw.tag === "LI" && rw.taps === 0 && !rw.see && !/RM|unit[s]? to|[0-9]+\.[0-9]/.test(t(rc).replace("70%", "")) && rw.tab,
       "a customer sees the share of their next unit on Home, nothing to tap and no Rewards tab: " + JSON.stringify(rw));
     /* 2 */

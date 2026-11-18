@@ -50,7 +50,7 @@
  {
   "name": "the menu counts every kind as All",
   "file": "stmt/owner.js",
-  "find": "var said=ready?String(n[k]||0):'';",
+  "find": "var said=ready&&(n[k]||!have[k])?String(n[k]||0):'';",
   "replace": "var said=ready?String(n.all):'';"
  },
  {

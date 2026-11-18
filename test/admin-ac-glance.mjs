@@ -41,7 +41,7 @@ export async function run({ ok, pageWork }) {
       ["owed", "amb-tile nkpi nkpi--owed", "Receivables", "RM 670", "#orders"]]) && tiles.every((a) => a.tagName === "A" && !/salt-/.test(a.outerHTML)),
       "the glance is Ready 4 (three ready and one part paid, the practice order apart), To approve 2 (a trip's two rows one card) and Receivables RM 670, goods and delivery less what is paid, three of Ambient's tiles each a link to Orders: " + J(read));
     const own = tiles[2], meter = own && own.querySelector("progress.amb-meter");
-    ok(!!meter && meter.getAttribute("aria-hidden") === "true" && meter.value === 6 && meter.max === 100 && t(own.querySelector(".amb-tile__delta")) === "RM 40 paid of RM 710"
+    ok(!!meter && meter.getAttribute("aria-hidden") === "true" && meter.value === 6 && meter.max === 100 && t(own.querySelector(".amb-tile__delta")) === "RM 40 paid of RM 710 agreed"
       && own.getAttribute("aria-label") === "Receivables, RM 670: RM 40 paid of RM 710 agreed",
       "Receivables carries the meter of what the agreed orders have paid of what they come to, RM 40 of RM 710, under its figure, and says so to a reader: " + (own && own.getAttribute("aria-label")));
     ok(!d.querySelector('#nGlance [data-glance="stock"], #nGlance [data-glance="lot"]'), "Stock cover and Next lot have left the glance (Stock by book carries them)");
