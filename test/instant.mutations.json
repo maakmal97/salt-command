@@ -108,6 +108,18 @@
   "replace": ""
  },
  {
+  "name": "I15c a whole want carried into a named call is dropped",
+  "file": "src/worker.js",
+  "find": "if (passAgain) { if (!againOnly) only = null; else",
+  "replace": "if (passAgain) { if (!againOnly) {} else"
+ },
+ {
+  "name": "I15c a whole call over a named want is scoped",
+  "file": "src/worker.js",
+  "find": "else if (only) only = [...new Set([...only, ...againOnly])]; }",
+  "replace": "else only = [...new Set([...(only || []), ...againOnly])]; }"
+ },
+ {
   "name": "I16 queueSale reads its blob first",
   "file": "src/orders.js",
   "find": "const [rawR, ownR, draftR] = await Promise.all([settle(env.SALT_QUEUE.get(BLOB)),",

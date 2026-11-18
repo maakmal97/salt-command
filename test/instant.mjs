@@ -21,6 +21,7 @@
  *   I14 the nudge body: ids of the order shape, at most 50; missing or another shape is a whole pass, an empty list a pass of none
  *   I15 a call while a pass runs adds its orders to the next pass, and a whole call makes it whole
  *   I15b a pass let go as stale leaves the orders named while it hung to the next pass
+ *   I15c and whole stays whole across a stale pass, either way round
  *   I16 queueSale's first look has the blob, the entry's own key and its draft all open at once
  *   I17 a fixed id's unreadable draft still counts only past a blob with no hit
  *   I18 end to end, I have sent it is one banner a phone, from the Counter, none from the Desk's wake
@@ -300,6 +301,25 @@ async function deskSide(ok, DO, W) {
   }, logs2);
   const counts = logs2.filter((l) => l.startsWith("orders pass (nudge): ")).map((l) => { try { return JSON.parse(l.slice(21)).orders; } catch (e) { return null; } });
   ok(J(counts.slice().sort()) === J([1, 2]), "I15b: a pass let go as stale leaves the orders named while it hung to the next pass, which reconciles them with its own: " + J({ counts }));
+
+  /* I15c: and whole stays whole across the stale pass, either way round (Fable's re-check) */
+  const staleRun = async (want, next) => {
+    let open3; const gate3 = new Promise((r) => { open3 = r; });
+    const env3 = { SALT_QUEUE: new Store(), STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async () => { await gate3; return Response.json({ ok: false, error: "fixture" }); } } };
+    const logs3 = [];
+    await quiet(async () => {
+      const h1 = W.ordersOnce(env3, null, { only: [A] });
+      await tick();
+      W.ordersOnce(env3, null, want);
+      const realNow = Date.now; let h2;
+      try { Date.now = () => realNow() + W.PASS_STALE_MS + 1000; h2 = W.ordersOnce(env3, null, next); } finally { Date.now = realNow; }
+      open3(); await h1; await h2; for (let i = 0; i < 40 && W.passRunning(); i++) await sleep(5);
+    }, logs3);
+    return logs3.filter((l) => l.startsWith("orders pass (nudge): ")).length;
+  };
+  const wholeIntoNamed = await staleRun({}, { only: [C] }), wholeOverNamed = await staleRun({ only: [B] }, {});
+  ok(wholeIntoNamed === 1 && wholeOverNamed === 1,
+    "I15c: across a stale pass, a whole want makes the next named call whole, and a whole call stays whole over a named want: " + J({ wholeIntoNamed, wholeOverNamed }));
 
   /* I16 and I17: queueSale's first look */
   const q3 = new Store(); let qopen = 0, qmost = 0;
