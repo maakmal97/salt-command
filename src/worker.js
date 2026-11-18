@@ -586,10 +586,15 @@ export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
   } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
 }
 /* ONE PASS AT A TIME in an isolate, as the outbox's drain: a call while a pass runs only marks, and exactly one more pass runs when it ends,
-   so a burst of nudges is two passes, never one each. A pass older than PASS_STALE_MS (cut off where its request's waitUntil ended, so it
-   never cleared its marker) is let go and blocks nothing. The first pass takes the caller's clock and mirror; the one after reads afresh. */
-export const PASS_STALE_MS = 60000;
+   so a burst of nudges is two passes, never one each. A pass older than PASS_STALE_MS is let go and blocks nothing: a nudge's pass lives in
+   its request's context, which the platform ends 30 s after the 202, and a pass cut off there never settles or clears its marker. The first
+   pass takes the caller's clock and mirror; the one after reads afresh. */
+export const PASS_STALE_MS = 30000;
+/* how long the minute waits on a pass it did not start before it runs its own (Fable's review of 18 Nov 2026): a pass cut off with its request
+   never settles, and the minute's later steps (re-dispatch, accounts, publish, the book net, the quarter-hour drafter) must not wait on it */
+export const PASS_WAIT_MS = 20000;
 let passing = null, passingAt = 0, passAgain = false;
+export const passRunning = () => !!passing && Date.now() - passingAt <= PASS_STALE_MS;
 export function ordersOnce(env, ctx, opts = {}) {
   if (passing && Date.now() - passingAt > PASS_STALE_MS) passing = null;
   if (passing) { passAgain = true; if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(passing); return passing; }
@@ -2927,7 +2932,12 @@ export default {
           }
         } catch (e) { console.log("orders tie-out FAILED: " + String((e && e.stack) || e)); }
         /* 18 Nov 2026 (docs/plan-nudge.html): the order work, on the same road as the Counter's nudge, so the two never run two passes at once in this isolate */
-        await ordersOnce(env, ctx, { now: new Date(event.scheduledTime || Date.now()), mirror });
+        {
+          const now = new Date(event.scheduledTime || Date.now()), theirs = passRunning();
+          const job = ordersOnce(env, ctx, { now, mirror });
+          const ended = !theirs ? (await job, true) : await Promise.race([job.then(() => true), new Promise((r) => setTimeout(() => r(false), PASS_WAIT_MS))]);
+          if (!ended) { console.log("orders pass: the running pass did not end in " + PASS_WAIT_MS / 1000 + " s, so the minute runs its own"); await ordersPass(env, ctx, now, mirror); }
+        }
         /* fold 3.3: an approval still uncommitted is rung again on the ladder; one line a try, none after the last */
         try {
           const rd = await redispatchStale(env, ctx, new Date(event.scheduledTime || Date.now()));
