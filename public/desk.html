@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="89b77108d981b61a";
+var SALT_BUILD_ID="4014a2fc359d4728";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12526,7 +12526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1540","d":"18 Nov 2026","t":"MAINTENANCE IS A NOTICE AT THE DOOR","n":["<b>THE SWITCH NO LONGER BLOCKS THE COUNTER.</b> With Maintenance on, Salt Counter's door opens as usual and carries the notice and the time it is back.","<b>NO CUSTOMER SIGNS IN.</b> A password, a link, a code, a passkey and a remembered phone are each refused with the notice. Nothing is used up: the link, the code and the phone work again when it lifts.","<b>ANYONE ALREADY IN STAYS IN.</b> They see their page, can change nothing, and are told nothing. A session lasts 15 minutes at most, then the door and its notice.","<b>YOU STILL GET IN.</b> An admin account signs in as usual, and Salt Admin and its practice surface are untouched. Guest links stay open.","<b>THE DEPLOY'S OWN BLOCK IS UNCHANGED.</b> It still closes everything and an open page still moves to the maintenance page."]}];
+const evolution=[{"v":"v1541","d":"18 Nov 2026","t":"ONE GRID ON THE COUNTER, AND SETTINGS","n":["<b>ONE GRID ON SALT COUNTER.</b> On a laptop Home and Account share the same left and right edges as Orders, the narrow column up to 440px. Shop's notices and prose run no wider than a readable line.","<b>SETTINGS ON SALT ADMIN.</b> His fifth place reads Settings, on its tab and its heading. Shop is the Counter's buying page alone. Shop hours keeps its name, and old links to the place still open it.","<b>PHONES ARE UNCHANGED BUT FOR THE NAME.</b> No price, route or request changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12688,7 +12688,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Nov 2026, 13:17 KL';
+const LAST_UPDATED='18 Nov 2026, 14:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
