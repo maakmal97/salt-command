@@ -90,6 +90,13 @@
   collect order keeps its wanted day; the day and window clear only when this change makes the way collect. Full split suite on the unbumped tree: 12,721 passed, 1 failed,
   green alone. Known gaps: `maker-placed-preview`'s mutation "a failed read offers no second read" and `engine-stages`' "Accept's floor refusal is removed" prove nothing
   (both older than V3); an acknowledge-time window is kept from ANY taken offer whose slot matches, not only an Accept's.
+- The reconcile's pay job retired, live as v1542 (`ac9cf122`, 18 Nov 2026, his "Land it now" typed in the session that acted; Cloud commit `44257179686`: chain green,
+  "live at e003b00ed9a41eac", three suite parts green; CI `44257179667` green): `orderWork` (stmt/orders.js) lists no `pay` job and `reconcileOrders` (src/orders.js) books
+  none (it queued before it marked and read no `rowRoom`, so a part-paid row could book twice); one handed over by an older Counter is said in the pass's `retired`, the
+  cron's console line and the order's card. Either deploy order is safe. Money reaches the ledger only by his Received or Cash received. Section "18 Nov 2026: the
+  reconcile's pay job" (`test/pay-job-retired.mjs`, 10 checks, 10 mutations red); full split suite 12,785 passed, 0 failed. Not verified: whether any live order held an
+  untold payment from before S6 (it would now stay untold; none is expected). Left as dead code: `jobEntry`'s `pay` branch (engine/stages.mjs), `STAGE_WORD.pay`,
+  `paidUntold` and `tell.pay`. The `change-sheet-send` worktree is a different change (queue identity), still uncommitted and untouched.
 - Maintenance as a notice at the door, live as v1540 (`a376ed7f`, 18 Nov 2026; Cloud commit `44248547455`: chain green, "live at 89b77108d981b61a", three suite parts
   green; CI `44248547267` green), his words of 18 Nov, do not ask again: "they cannot sign in and notice is put outside, rather than complete block of the worker"; someone
   already in is "left in but unable to tap anything with no information at all"; the SWITCH only, `MAINTENANCE_UNTIL` stays the complete block. `switchOf` (stmt/maintenance.js)
