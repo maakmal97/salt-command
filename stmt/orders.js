@@ -186,7 +186,7 @@ export const fixtureReset = (env, a) => bookMove(env, "fixture-reset", a);
 /** Whether Salt Admin's move under `rid` is on this order already, and the request it was made with. */
 export const deskSeen = (env, u, id, rid) => onBook(env) ? bookMove(env, "deskseen", { u, id, rid })
   : Promise.resolve({ ok: false, error: "A move with a request id needs the order book.", status: 503 });
-/* 19 Nov 2026 (docs/plan-instant.html): THE DESK TELLS AN OPEN SALT ADMIN THAT A ROW WAS DRAFTED. A drafted row was told to Salt Desk's pages
+/* 19 Nov 2026 (docs/plan-ring.html): THE DESK TELLS AN OPEN SALT ADMIN THAT A ROW WAS DRAFTED. A drafted row was told to Salt Desk's pages
    alone (the Book's live object), so Salt Admin's To approve waited for its poll. The order book sends the kind to the owner's sockets only, a
    kind and nothing else; the KV road has no sockets and tells nobody. Salt Admin re-reads Needs you on any kind it hears. */
 export const OWNER_TELL_KINDS = ["approve"];

@@ -435,7 +435,7 @@ export function liveTell(env, ctx, k, id) {
   if (ctx && typeof ctx.waitUntil === "function") { ctx.waitUntil(job); return undefined; }
   return job;
 }
-/* 19 Nov 2026 (docs/plan-instant.html): Salt Admin's open pages too, through the Counter (tellAdmin), never awaited by the pass */
+/* 19 Nov 2026 (docs/plan-ring.html): Salt Admin's open pages too, through the Counter (tellAdmin), never awaited by the pass */
 function adminTold(env, ctx) {
   const job = tellAdmin(env).catch(() => false);
   if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(job);
@@ -560,7 +560,7 @@ function reconcileOnTap(env, ctx, mirror) {
 /* 18 Nov 2026 (docs/plan-nudge.html, his answers A to C): THE ORDER PASS, the minute's order work in its order: one read of the site, the banner
    for what moved, the reconcile, the desk's own pass and what it approved, the tell to open desks, then the drafter and the banner for rows to
    approve. Run only through ordersOnce, by the minute's cron and by the Counter's nudge (/_internal/maker/nudge). */
-/* 19 Nov 2026 (docs/plan-instant.html): `only`, from a nudge, names the orders to reconcile (with every order owing its pending row); null is the
+/* 19 Nov 2026 (docs/plan-ring.html): `only`, from a nudge, names the orders to reconcile (with every order owing its pending row); null is the
    whole, the minute's. A nudge's pass logs how long each step took. */
 export async function ordersPass(env, ctx, now = new Date(), mirror = null, only = null) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
@@ -574,7 +574,7 @@ export async function ordersPass(env, ctx, now = new Date(), mirror = null, only
   } catch (e) { console.log("orders read FAILED: " + String((e && e.stack) || e)); }
   ms.read = Date.now() - t0;
   /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge. A customer order placed since the last
-     pass wakes the phones that asked for orders, once. 19 Nov 2026 (docs/plan-instant.html): it runs BESIDE the reconcile,
+     pass wakes the phones that asked for orders, once. 19 Nov 2026 (docs/plan-ring.html): it runs BESIDE the reconcile,
      not before it, each in its own try, so neither waits on the other and a drafter failure still cannot swallow it */
   const banner = (async () => {
     try {
@@ -615,7 +615,7 @@ export const PASS_STALE_MS = 30000;
 export const PASS_WAIT_MS = 20000;
 let passing = null, passingAt = 0, passAgain = false, againOnly = null;
 export const passRunning = () => !!passing && Date.now() - passingAt <= PASS_STALE_MS;
-/* 19 Nov 2026 (docs/plan-instant.html): the orders a nudge names, of the order shape, at most 50; anything else (no body, an older Counter, a
+/* 19 Nov 2026 (docs/plan-ring.html): the orders a nudge names, of the order shape, at most 50; anything else (no body, an older Counter, a
    body too long or not that shape) is null, a whole pass. An empty list is a pass that reconciles nothing (a move that names no order). */
 export const NUDGE_OID_RE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
 export function nudgeIds(text) {
@@ -630,6 +630,8 @@ function passWant(only) {
   if (againOnly && Array.isArray(only)) for (const x of only) againOnly.add(x);
   else againOnly = null;
 }
+/* what the pass after the running one is to cover, read by the suite alone */
+export const passNext = () => ({ again: passAgain, only: againOnly ? [...againOnly].sort() : null });
 export function ordersOnce(env, ctx, opts = {}) {
   if (passing && Date.now() - passingAt > PASS_STALE_MS) passing = null;
   if (passing) { passWant(opts.only); if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(passing); return passing; }
@@ -914,7 +916,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
   /* 18 Nov 2026 (docs/plan-nudge.html): THE COUNTER'S NUDGE, a customer's move recorded. Answered at once, the order pass runs behind on the
-     one-at-a-time road the minute's cron takes, and the minute stays the net. 19 Nov 2026 (docs/plan-instant.html): the body names the orders
+     one-at-a-time road the minute's cron takes, and the minute stays the net. 19 Nov 2026 (docs/plan-ring.html): the body names the orders
      moved ({o: [ids]}, read bounded, ids of the order shape alone), and the pass reconciles those and every order owing its pending row; a body
      missing or not that shape (an older Counter) is a whole pass, as it was */
   if (p === "/_internal/maker/nudge") {

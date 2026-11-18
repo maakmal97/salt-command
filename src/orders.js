@@ -1801,7 +1801,7 @@ export async function queueSale(env, entry, fixedId = false, mirror = null) {
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "orders");
     if (admission.error) throw Object.assign(new Error(admission.error), { status: admission.status });
   };
-  /* 19 Nov 2026 (docs/plan-instant.html): THE FIRST LOOK READS ITS THREE PLACES TOGETHER, the blob, the entry's own key and its draft, each held
+  /* 19 Nov 2026 (docs/plan-ring.html): THE FIRST LOOK READS ITS THREE PLACES TOGETHER, the blob, the entry's own key and its draft, each held
      as a value or an error, and decided in the order the reads were made one by one: an error counts only where that order would have reached
      it (Fable's review: a fixed id's own key or draft unreadable still throws only past a blob that had no hit, as before) */
   const settle = (p) => Promise.resolve(p).then((v) => ({ v }), (e) => ({ e }));
@@ -1859,7 +1859,7 @@ export async function queueSale(env, entry, fixedId = false, mirror = null) {
  * A MINUTE IS NOT A DELAY THAT MATTERS: the entry still has to be drafted and then approved under
  * Approve, and the customer's card says so while it waits.
  */
-/* 19 Nov 2026 (docs/plan-instant.html): `only`, from a nudge's pass, is the orders the customer moved; the reconcile then takes those and every
+/* 19 Nov 2026 (docs/plan-ring.html): `only`, from a nudge's pass, is the orders the customer moved; the reconcile then takes those and every
    order owing its pending row (an ack: a basket's lines drafted in one pass, as the minute would, Fable's review), and leaves the orders that
    wait for their rows to the minute, which takes them all as before. null is the whole. */
 export async function reconcileOrders(env, read, mirror, only = null) {
@@ -1874,7 +1874,7 @@ export async function reconcileOrders(env, read, mirror, only = null) {
   }
   if (Array.isArray(only)) owing = owing.filter((o) => only.includes(o.id) || (o.work || []).includes("ack"));
   if (!owing.length) return { ok: true, queued: 0 };
-  /* the map and the book are read together (docs/plan-instant.html); the book is read as before, by the shared reader */
+  /* the map and the book are read together (docs/plan-ring.html); the book is read as before, by the shared reader */
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
   const [users, book] = await Promise.all([usersMap(env), mirror ? mirror().catch(() => null) : null]);
   /* AN AMENDMENT WAITS FOR ITS ROW. The pending row reaches the book by the long road: queued,
@@ -2707,7 +2707,7 @@ export async function wakeAdmin(env, news) {
   } catch { /* the flag is a convenience; the next wake sets it again */ }
   return out;
 }
-/* 19 Nov 2026 (docs/plan-instant.html): and tells an open Salt Admin that a row was drafted, the kind alone (stmt/orders.js ownerTell), so its
+/* 19 Nov 2026 (docs/plan-ring.html): and tells an open Salt Admin that a row was drafted, the kind alone (stmt/orders.js ownerTell), so its
    To approve is read at once and not at its poll. Best effort: the poll stands. */
 export async function tellAdmin(env) {
   try { const r = await site(env, "/desk/owner-tell", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ k: "approve" }) }); return !!(r && r.ok); }
@@ -2751,7 +2751,7 @@ export async function nudgeOrders(env, read) {
   /* 18 Nov 2026 (docs/plan-nudge.html): a pass now runs where the Counter's nudge lands as well as where the cron runs, so the marks are read
      with KV's shortest cache (30 s): a location's copy from before another location's pass rang is not kept a full minute to ring again */
   const fresh = { cacheTtl: 30 };
-  /* 19 Nov 2026 (docs/plan-instant.html): the three marks are read together, and the writes below are made together (1.5 s measured one by one) */
+  /* 19 Nov 2026 (docs/plan-ring.html): the three marks are read together, and the writes below are made together (1.5 s measured one by one) */
   const [m0, s0, t0] = await Promise.all([MARK, SAID_MARK, THEIRS_MARK].map((k) => env.SALT_QUEUE.get(k, fresh)));
   const mark = m0 || "", saidMark = s0 || "", theirsMark = t0 || "";
   const placedNew = !!(newest && newest > mark), spokeNew = !!(said && said > saidMark);
@@ -2767,7 +2767,7 @@ export async function nudgeOrders(env, read) {
   const momentOf = (m) => String(m || "").split("|")[0];
   const didNew = !!(theirs && (momentOf(theirs) > momentOf(theirsMark)
     || (momentOf(theirs) === momentOf(theirsMark) && theirs !== theirsMark)));
-  /* 19 Nov 2026 (docs/plan-instant.html, his answer "Counter rings, with guards"): THE COUNTER RINGS SALT ADMIN AT THE MOVE (stmt/orderbook.js,
+  /* 19 Nov 2026 (docs/plan-ring.html, his answer "Counter rings, with guards"): THE COUNTER RINGS SALT ADMIN AT THE MOVE (stmt/orderbook.js,
      the ring) and says here what it rang (`rung`) and whether a ring is on its way (`pending`). A kind it rang is not rung again: its mark moves
      and nothing is sent. A kind not rung while a ring is on its way is HELD: neither rung nor its mark moved, so the move's own nudge, or the
      minute, reads it again once the ring has said what it reached. Anything else rings as it always did. */

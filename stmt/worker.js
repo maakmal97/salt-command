@@ -1204,7 +1204,7 @@ async function handleDesk(request, env, p, m) {
     const r = await wakeOwner(env, { k: b.k, o: b.o });
     return json(r, r.ok ? 200 : 502);
   }
-  /* 19 Nov 2026 (docs/plan-instant.html): and tells an open Salt Admin that a row was drafted, a kind to the owner's sockets alone (ownerTell) */
+  /* 19 Nov 2026 (docs/plan-ring.html): and tells an open Salt Admin that a row was drafted, a kind to the owner's sockets alone (ownerTell) */
   if (p === "/desk/owner-tell") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const b = await readJson(request);

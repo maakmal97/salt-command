@@ -127,7 +127,7 @@ export function nudgesDesk(op, a, out) {
   return !TEST_USERS.includes(u);
 }
 
-/* 19 Nov 2026 (docs/plan-instant.html, his answer "Counter rings, with guards"): THE COUNTER RINGS SALT ADMIN AT THE MOVE. Measured on v1547, the
+/* 19 Nov 2026 (docs/plan-ring.html, his answer "Counter rings, with guards"): THE COUNTER RINGS SALT ADMIN AT THE MOVE. Measured on v1547, the
    Desk's pass took about 5 s to ring him (its marks, then /desk/owner-wake). Now the move that moves a banner mark rings Salt Admin from here, by
    the Desk's own rule (src/orders.js nudgeOrders): a placement is order, their act on last-theirs its word, a line said (a Place with a note is
    both, as the Desk rings both). With the guards of Fable's review of 19 Nov 2026:
@@ -252,7 +252,7 @@ export class OrderBook {
       else if (op === "pjoin") { k = "order"; id = idOf(out.order); u = accountOf(out.order); pool = idOf(out.pool); }
       else if (op === "aclaim" || op === "adesk") { if (!out.order) return; k = "claim"; id = idOf(out.order); u = accountOf(out.order); }
       else if (op === "tsay" || op === "tdesk") { k = "thread"; u = String(a.u || ""); }
-      /* 19 Nov 2026 (docs/plan-instant.html): the Desk's word that a row was drafted, to the owner's sockets alone (u empty, so no customer's matches) */
+      /* 19 Nov 2026 (docs/plan-ring.html): the Desk's word that a row was drafted, to the owner's sockets alone (u empty, so no customer's matches) */
       else if (op === "otell") { if (!out.otell) return; k = out.otell; }
       else if (op === "popen" || op === "pclose") { if (!out.order) return; k = "pool"; id = idOf(out.order); all = true; }
       else if (op === "fixture-account") {
@@ -296,16 +296,19 @@ export class OrderBook {
       } catch (e) { console.log("orderbook: the ring failed: " + String((e && e.message) || e) + "; the Desk rings"); }
       finally { this.ringing = Math.max(0, (this.ringing || 0) - 1); }
       if (nudge) await this.nudgeDesk(o);
+      this.rings.delete(job);
     })();
     if (typeof this.state.waitUntil === "function") this.state.waitUntil(job);
-    this.ringJob = job;
+    /* the rings on their way, each with its nudge: what a test settles on, and nothing reads them otherwise */
+    if (!this.rings) this.rings = new Set();
+    this.rings.add(job);
     return job;
   }
   /* 18 Nov 2026 (docs/plan-nudge.html, his answer A): A CUSTOMER'S MOVE TELLS THE DESK AT ONCE, and the Desk runs the order pass its minute runs.
      One POST over the bridge, its key and the ids of the orders moved (below, 19 Nov 2026): no figure, name or word. Never awaited by the tap. While one is on its
      way another only marks, and one more is sent when it ends, so a burst is two calls. A refusal, a 404 from a Desk that has not shipped the
      route, or any failure is let go: the minute's pass is the net. A call older than NUDGE_STALE_MS blocks nothing. */
-  /* 19 Nov 2026 (docs/plan-instant.html): AND IT NAMES THE ORDERS MOVED, ids alone ({o: [...]}, at most NUDGE_IDS_MAX a call, the rest in the
+  /* 19 Nov 2026 (docs/plan-ring.html): AND IT NAMES THE ORDERS MOVED, ids alone ({o: [...]}, at most NUDGE_IDS_MAX a call, the rest in the
      next), gathered while a call is on its way, so the Desk's pass reconciles those orders and not every order waiting; a move that names no
      order (a line on the thread, a claim on the account) sends {o: []}, a pass with nothing to reconcile. Still never a figure, name or word. */
   nudgeDesk(id) {
