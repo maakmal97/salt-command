@@ -94,7 +94,9 @@ export function makerOrderFault(action, body) {
     again: ["stage", "rid", "drop"],
     restate: ["qty", "total", "delivery", "rid", "undo", "oneOff", "mode"],
     notfound: ["rid", "claim", "amount"],
-    move: ["rid", "status", "note", "message", "noReply", "mode", "point"],
+    move: ["rid", "status", "note", "message", "noReply", "mode", "point", "slot", "winWithdraw", "back"],
+    /* 18 Nov 2026 (order changes, version 4): what is paid or handed over, taken back, with his reason */
+    lower: ["paid", "moved", "why", "rid"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"],
     take: []
   };
@@ -112,7 +114,7 @@ export function makerOrderFault(action, body) {
       if (body[key] !== undefined && (typeof body[key] !== "string" || body[key].length > 240))
         return "Amendment text fields must be bounded strings.";
   }
-  for (const key of ["delivery", "total", "qty", "amount", "unit"]) {
+  for (const key of ["delivery", "total", "qty", "amount", "unit", "paid", "moved"]) {
     if (body[key] !== undefined && (typeof body[key] !== "number" || !Number.isFinite(body[key])
       || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
   }
@@ -143,7 +145,9 @@ export function makerOrderFault(action, body) {
   if (action === "again" && body.drop === true && body.stage !== undefined && !["cancel", "move", "amend"].includes(body.stage)) return "Not needed covers a cancellation, handover or amendment.";
   if (action === "again" && body.drop !== true && !["pay", "cash", "move", "cancel", "amend"].includes(body.stage)) return "Choose a stage to offer again.";
   if (action === "offer" && body.hash === undefined) return "An offer needs the preview digest.";
-  if (["notfound", "move", "handed", "again", "cash", "received", "restate", "offer", "withdraw"].includes(action)
+  if (action === "lower" && body.paid === undefined && body.moved === undefined) return "Say what is taken back.";
+  if (action === "lower" && (typeof body.why !== "string" || body.why.length > 200)) return "A take-back carries his reason, one line.";
+  if (["notfound", "move", "handed", "again", "cash", "received", "restate", "offer", "withdraw", "lower"].includes(action)
     && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))
     return "Send the action's immutable request id.";
   if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))
@@ -151,8 +155,13 @@ export function makerOrderFault(action, body) {
   if (action === "move") {
     /* Counter Batch A: a collection point alone is a fourth move, Change point; the code's shape only is checked here, and
        whether it is on his list by the Counter, which alone holds it. The Desk never sees a point's place */
-    const kinds = [body.status !== undefined, body.message !== undefined, body.noReply !== undefined, body.point !== undefined && body.status === undefined].filter(Boolean).length;
-    if (kinds !== 1) return "Send one move: a status, a reply, No reply needed or a collection point.";
+    /* 18 Nov 2026 (order changes, version 4): a new window alone, and its offer withdrawn, are a fifth and a sixth */
+    const kinds = [body.status !== undefined, body.message !== undefined, body.noReply !== undefined, body.point !== undefined && body.status === undefined,
+      body.slot !== undefined, body.winWithdraw !== undefined, body.back !== undefined].filter(Boolean).length;
+    if (kinds !== 1) return "Send one move: a status, a reply, No reply needed, a collection point or a window.";
+    if (body.slot !== undefined && (typeof body.slot !== "string" || !body.slot)) return "A time window is a day and one of the six four-hour windows.";
+    if (body.winWithdraw !== undefined && body.winWithdraw !== true) return "Withdraw the window is true or absent.";
+    if (body.back !== undefined && body.back !== true) return "Back to Agreed is true or absent.";
     if (body.point !== undefined && (typeof body.point !== "string" || !/^[A-Z][0-9]{1,2}$/.test(body.point)))
       return "A collection point is one capital letter and one or two digits.";
     if (body.point !== undefined && body.status !== undefined && !(body.status === "ready" && body.mode === "collect"))

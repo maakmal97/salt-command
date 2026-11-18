@@ -46,7 +46,8 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo", "oneOff", "mode"] : ["rid", "status", "note", "message", "noReply", "mode", "point"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo", "oneOff", "mode"]
+    : action === "lower" ? ["rid", "paid", "moved", "why"] : ["rid", "status", "note", "message", "noReply", "mode", "point", "slot", "winWithdraw", "back"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
   if (action === "restate") {
@@ -60,12 +61,23 @@ function orderMoveFault(action, body) {
     if (body.oneOff !== undefined && (typeof body.oneOff !== "string" || body.oneOff.length > 200)) return "A reason is a line of text.";
     return body.qty === 0 || body.total === 0 ? "A size and a price are above nothing." : "";
   }
+  /* 18 Nov 2026 (order changes, version 4): what is paid or handed over, taken back, with his reason; the Desk measures it */
+  if (action === "lower") {
+    const figs = ["paid", "moved"].filter((key) => body[key] !== undefined);
+    if (!figs.length) return "Say what is taken back.";
+    if (figs.some((key) => typeof body[key] !== "number" || !Number.isFinite(body[key]) || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
+    return typeof body.why === "string" && body.why.length <= 200 ? "" : "A take-back carries his reason, one line.";
+  }
   if (action === "notfound")
     return typeof body.claim === "string" && Number.isFinite(Date.parse(body.claim))
       && typeof body.amount === "number" && Number.isFinite(body.amount) && body.amount > 0 ? "" : "Name the claim and its amount.";
   /* Counter Batch A: a point alone is a fourth move, Change point; beside a status it is Ready to collect's */
-  const kinds = ["status", "message", "noReply"].filter((key) => body[key] !== undefined).length + (body.point !== undefined && body.status === undefined ? 1 : 0);
-  if (kinds !== 1) return "Send one move: a status, a reply, No reply needed or a collection point.";
+  const kinds = ["status", "message", "noReply", "slot", "winWithdraw", "back"].filter((key) => body[key] !== undefined).length + (body.point !== undefined && body.status === undefined ? 1 : 0);
+  if (kinds !== 1) return "Send one move: a status, a reply, No reply needed, a collection point or a window.";
+  /* 18 Nov 2026 (order changes, version 4): a new window after Accept, and his window offer withdrawn */
+  if (body.slot !== undefined && (typeof body.slot !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(body.slot))) return "A time window is a day and one of the six four-hour windows.";
+  if (body.winWithdraw !== undefined && body.winWithdraw !== true) return "Withdraw the window is true or absent.";
+  if (body.back !== undefined && body.back !== true) return "Back to Agreed is true or absent.";
   if (body.point !== undefined && !isPointCode(body.point)) return "A collection point is one capital letter and one or two digits.";
   if (body.point !== undefined && body.status !== undefined && !(body.status === "ready" && body.mode === "collect"))
     return "A collection point goes only with Ready to collect, or alone.";
@@ -87,7 +99,7 @@ function sameMove(action, body, kept) {
   if (!kept || typeof kept !== "object") return false;
   if (action === "notfound") return !!kept.verdict && kept.verdict.kind === "notfound" && kept.verdict.claim === body.claim
     && Math.abs(+kept.verdict.amount - body.amount) <= 0.004 && Object.keys(kept).length === 1;
-  const keys = ["status", "note", "message", "noReply", "mode", "point"];
+  const keys = ["status", "note", "message", "noReply", "mode", "point", "slot", "winWithdraw", "back"];
   /* the Desk adds `maker` to a status move; it is the Desk's own, never the owner's content */
   return Object.keys(kept).every((key) => keys.includes(key) || key === "maker") && keys.every((key) => kept[key] === body[key]);
 }
@@ -479,7 +491,7 @@ function internalOperation(path) {
   if (dm) return { kind: "draft-decision", id: dm[1], decision: dm[2] };
   const om = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|offer|withdraw|handed|cash|received|again)$/.exec(path);
   if (om) return { kind: "order-action", id: om[1], action: om[2] };
-  const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(move|notfound|restate)$/.exec(path);
+  const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(move|notfound|restate|lower)$/.exec(path);
   if (mm) return { kind: "order-move", id: mm[1], action: mm[2] };
   return null;
 }
@@ -1018,6 +1030,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
         let move = rest;
         if (rest.status) move = { ...rest, maker: true };   /* the same rules as a real order's, held by the order book */
         if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0), ...(rest.mode !== undefined ? { mode: rest.mode } : {}), ...(rest.undo === undefined ? { tell: true } : {}) } };
+        /* an example order's take-back is the order book's alone: the practice row is the fixture's, so the order's own figures are the measure */
+        if (op.action === "lower") move = { lower: { ...(rest.paid !== undefined ? { paid: rest.paid } : {}), ...(rest.moved !== undefined ? { moved: rest.moved } : {}), tell: true } };
         if (op.action === "notfound") {
           const waiting = (found.payments || []).find((p) => p && p.claim === "waiting" && p.at === rest.claim);
           if (!waiting) return json({ ok: false, error: "That claim is not waiting any more." }, 409);
@@ -1036,6 +1050,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       if (!order) return json({ ok: false, error: "order not found" }, 404);
       /* an amendment is a queued row: the Desk's own once-per-id guard answers its retry */
       if (op.action === "restate") return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/restate", "POST", body));
+      if (op.action === "lower") return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/lower", "POST", body));
       /* the order book keeps the request id: a retry that already landed is answered from it, other content refused */
       const seen = await deskSeen(env, order.u, op.id, rid);
       if (!seen.ok) return json({ ok: false, error: seen.error || "The order book could not be read." }, seen.status || 503);

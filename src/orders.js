@@ -32,8 +32,9 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
 import { reasonOf, outsideBand, bandRefusal, markOf, markOk } from "../engine/oneoff.mjs";
+import { expectFault } from "../engine/expect.mjs";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, tripOf, tripLines, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
-  handoverTap, receivedTap, cashTap, restateTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
+  handoverTap, receivedTap, cashTap, restateTap, lowerTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
   stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
   amendEntry, stageAt, advanceOf, claimOrderFlight } from "../engine/stages.mjs";
@@ -1026,6 +1027,12 @@ async function stageTap(env, id, body, by, now, stage, build, mirror) {
   const b = build(o, at);
   if (b.again) return againOrder(env, id, { stage: b.again }, by, now);
   if (b.error) return Object.assign({ ok: false, status: b.status || 400, error: b.error }, b.outside ? { outside: b.outside } : {}, b.underFloor ? { underFloor: true } : {});
+  /* 18 Nov 2026 (the plan's version 4): a move the row does not hold (a change of way before any handover) goes to the site alone, no row and no yes */
+  if (b.siteOnly) {
+    const r = await moveOrder(env, o.u, id, b.site);
+    if (!r.ok) return r;
+    return { ok: true, order: Object.assign(o, { mode: r.order.mode, status: r.order.status }), push: r.push || null, siteOnly: true };
+  }
   mirror = mirror || (db ? bookOnce(db) : null);   /* the tap's one read: the preview, the yes it tests and the route's tail */
   const pv = await stagePreview(env, o, stage, b.entry, mirror);
   if (!pv.ok) return pv;
@@ -1446,6 +1453,20 @@ export async function restateOrder(env, id, body, by, now, mirror) {
   const earlier = db ? await db.prepare("SELECT id,status,committed_at FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all().catch(() => ({ results: [] })) : { results: [] };
   const live = db ? await livePre(db, id, "amend").catch(() => null) : null;
   return stageTap(env, id, body, by, now, "amend", (o, at) => restateTap(o, at, body, { book, room, earlier: earlier.results || [], live }), mirror);
+}
+
+/** 18 Nov 2026 (order changes, version 4, his answer 6): POST /orders/<id>/lower {paid?, moved?, why}: what is paid or handed over, taken back from
+ *  Salt Admin's Change sheet with his reason. One Correction of the row for Approve (engine/stages.mjs lowerTap), read against the book with its
+ *  refunds, the room and the order's earlier amendments, as a restate is; the order comes down at the tap, told as changed. */
+export async function lowerOrder(env, id, body, by, now, mirror) {
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  const db = env.SALT_LEDGER;
+  const room = db ? await rowRoom(db, "SELL", undefined, mirror) : null;
+  const raw = mirror ? await mirror().catch(() => null) : null;
+  const book = raw && db ? await withRefunds(db, raw).catch(() => null) : raw;
+  const earlier = db ? await db.prepare("SELECT id,status,committed_at FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all().catch(() => ({ results: [] })) : { results: [] };
+  const live = db ? await livePre(db, id, "amend").catch(() => null) : null;
+  return stageTap(env, id, body, by, now, "amend", (o, at) => lowerTap(o, at, body, { book, room, earlier: earlier.results || [], live }), mirror);
 }
 
 /* ---- OFFERED AGAIN (S11 11.13, D6) ----------------------------------------------------------------
@@ -2260,6 +2281,23 @@ export async function orderInFlight(env, o, at) {
     return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
+/* 18 Nov 2026 (order changes, version 4, Fable's review): A TAKE-BACK ON ITS WAY HOLDS THE RAISE only while it can still land: its Correction measured on the
+   row as it stands. One the row has moved past (a payment or a handover folded first) is refused at Approve and waits there for his Reject, and the order is
+   raised back to the row meanwhile, never left showing less paid than the book holds. A read that fails holds, as termsInFlight does */
+export async function takeBackHolds(env, o, row, at) {
+  if (await closeOnItsWay(env, o, at)) return true;
+  try {
+    const d = await env.SALT_LEDGER.prepare(AMEND_FLIGHT(at === undefined ? await siteAt(env.SALT_LEDGER) : at).replace(" LIMIT 1", "").replace("SELECT 1 ", "SELECT entry ") + " AND entry LIKE '%\"expect\"%'")
+      .bind('%"orderId":"' + o.id + '"%').all();
+    const y = await env.SALT_LEDGER.prepare("SELECT entry FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) AND entry LIKE '%\"expect\"%'")
+      .bind(o.id, yesFresh()).all();
+    for (const r of (d.results || []).concat(y.results || [])) {
+      let e = null; try { e = JSON.parse(r.entry); } catch (x) { return true; }
+      if (e && e.payload && expectFault(row, e.payload.expect) === "") return true;
+    }
+    return false;
+  } catch (e) { return true; }
+}
 export async function termsInFlight(env, o, at) {
   if (await closeOnItsWay(env, o, at)) return true;
   try {
@@ -2355,8 +2393,12 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
       }
       /* nothing sent (a move of its own on its way): what rose on the book is still told, below (Fable's review) */
     }
-    if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
-    if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
+    /* 18 Nov 2026 (order changes, version 4, Fable's review): a take-back lowers the order at his tap, before its Correction folds, so while an amendment
+       of the order is on its way the row's older, higher figures are not raised back onto it; a take-back he rejects heals by this raise once it is decided */
+    const raises = paid > (+o.paid || 0) + 0.004 || moved > (+o.moved || 0) + 0.0004;
+    const held = raises && await takeBackHolds(env, o, row, at);
+    if (!held && paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
+    if (!held && moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
     /* 27 Oct 2026 (Fable): a credit the fold cut short (no open refund covered it) is lowered on the order, so it owes the right figure */
     if (+o.credit > 0.004 && (+row.credit || 0) < +o.credit - 0.004) ledger.credit = +(+row.credit || 0).toFixed(2);
     if (Object.keys(ledger).length) {

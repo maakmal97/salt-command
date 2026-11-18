@@ -29,7 +29,7 @@ import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -874,7 +874,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/customer-reading\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/(reward-of|customer-of)\/[A-Z][A-Z0-9-]{2,24}$/.test(p)
     && !/^\/_internal\/maker\/drift-preview\/[A-Z][A-Z0-9-]{2,24}\/[a-z]{2,12}\/-?[0-9]{1,3}$/.test(p)
-    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
+    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|lower|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
@@ -1483,7 +1483,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
     return json(response);
   }
-  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|take)$/.exec(p);
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|lower|take)$/.exec(p);
   if (orderMatch) {
     let body;
     try {
@@ -1533,7 +1533,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         /* a handover, a close, cash, a Received or a move offered again carries its request id: a retry is answered from the first answer */
         const { rid, ...rest } = body;
         const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;   /* the tap and its tail read the mirror once */
-        const tap = () => ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, received: receivedOrder, again: againOrder })[action](
+        const tap = () => ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, lower: lowerOrder, received: receivedOrder, again: againOrder })[action](
           env, id, rest, "Counter Admin", undefined, mirror
         );
         result = !rid ? await tap() : !env.SALT_LEDGER ? { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" }
