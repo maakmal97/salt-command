@@ -157,9 +157,11 @@ export async function run({ ok } = {}) {
       return waitFor(() => !!doc.querySelector("#aopen .acust") && doc.querySelector("#aopen .need-who, #aopen h2, #aopen .oacct") !== null);
     };
     const pct = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(pct(), name, key);
-    /* 16 Nov 2026, the move to Ambient (place H): the stepper is Ambient's, over values: a text field holding the whole % ("-10"), the system's minus and plus beside it, a figure at either end staying put */
-    const val = () => pct().querySelector(".apct__step input").value;
-    const steps = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((resolve) => setTimeout(resolve, 5)); };
+    /* 18 Nov 2026 (his word): the stepper is Ambient's slider (0.7.29), a range holding the whole % ("-10") in steps of 5, a figure at either end staying put;
+       a step is the range's own stepUp or stepDown, then the input and change a hand on it fires */
+    const range = () => pct().querySelector(".apct__step input"), val = () => range().value;
+    const steps = async (name, n) => { const r = range(); if (/\.up$/.test(name)) r.stepUp(n); else r.stepDown(n);
+      r.dispatchEvent(new dom.window.Event("input", { bubbles: true })); r.dispatchEvent(new dom.window.Event("change", { bubbles: true })); await new Promise((resolve) => setTimeout(resolve, 5)); };
     const send = async () => {
       const before = calls.length, b = act("acct.pct.send", "CX1-ZED");
       b.click();
@@ -170,11 +172,11 @@ export async function run({ ok } = {}) {
     const tabs = [...pct().querySelectorAll('[data-act="acct.pct.book"]')];
     check(tabs.length === 1 && tabs[0].getAttribute("data-key") === "salt" && !pct().querySelector("select"),
       "the UI offers salt and omits fixed books from its drift tabs, and has no customer selector");
-    check(pct().querySelectorAll("input").length === 1 && !!pct().querySelector(".amb-stepper > input.amb-input") && pct().querySelector("input").type === "text" && val() === "0" && !!act("acct.pct.clear", "CX1-ZED") && act("acct.pct.send", "CX1-ZED").disabled,
-      "the account card has no typed % field, a stepper at the held zero, Send off while nothing changes and Set back to 0 for the held zero");
+    check(pct().querySelectorAll("input").length === 1 && range().type === "range" && range().step === "5" && val() === "0" && !!act("acct.pct.clear", "CX1-ZED") && act("acct.pct.send", "CX1-ZED").disabled,
+      "the account card has no typed % field, a slider in steps of 5 at the held zero, Send off while nothing changes and Set back to 0 for the held zero");
     await steps("acct.pct.up", 7);
     await steps("acct.pct.up", 1);
-    check(val() === "30" && !act("acct.pct.down").disabled, "the stepper moves a whole 5 at a time and stops at +30: " + val());
+    check(val() === "30", "the slider moves a whole 5 at a time and stops at +30: " + val());
     await steps("acct.pct.down", 13);
     await steps("acct.pct.down", 1);
     check(val() === "-30", "and stops at -30: " + val());
@@ -187,7 +189,7 @@ export async function run({ ok } = {}) {
     check(!!pct() && text(pct().querySelector(".apct__list .amb-setting")) === "Suggested+25%" && text(pct().querySelector(".apct__list .amb-settings__foot")) === "Paid late" && !act("acct.pct.clear", "CX2-ZED") && !act("acct.pct.suggest").disabled && text(act("acct.pct.suggest")) === "Use +25%",
       "none held reads as the Set Price with the suggestion and its reason beside it, and Set back to 0 is unavailable when nothing is held: " + text(pct() && pct().querySelector(".apct__list .amb-setting")));
     act("acct.pct.suggest").click();
-    check(val() === "25" && calls.length === 0, "Use the suggestion fills the stepper with the suggested % and sends nothing");
+    check(val() === "25" && calls.length === 0, "Use the suggestion fills the slider with the suggested % and sends nothing");
     await open("CX1-ZED");
     await steps("acct.pct.up", 3);
     await send();
@@ -197,10 +199,10 @@ export async function run({ ok } = {}) {
     await steps("acct.pct.up", 1);
     await send();
     check(calls.length === 2 && calls[0].bytes === calls[1].bytes,
-      "an uncertain retry sends its entire retained drift request unchanged even if the stepper is moved");
+      "an uncertain retry sends its entire retained drift request unchanged even if the slider is moved");
     await send();
     check(calls.length === 3 && calls[2].body.tier === 0.2 && calls[2].body.at !== calls[1].body.at,
-      "after a confirmed send, the stepper's own value goes with a fresh request timestamp");
+      "after a confirmed send, the slider's own value goes with a fresh request timestamp");
     await send();
     check(calls.length === 4 && calls[3].body.tier === 0.2 && calls[3].body.at !== calls[2].body.at,
       "a successful same-value Send gets a fresh request timestamp on the next intentional tap");
@@ -215,9 +217,9 @@ export async function run({ ok } = {}) {
     const css = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
     /* 2 Nov 2026 (his Orders canvas, page 2): Send, Use and Set back to 0 are action rows of a settings list now (no pill), 56px by the recipe's row */
     const actRows = [...doc.querySelectorAll(".amb-settings.apct__acts button.amb-action")];
-    check(/\.amb-circle--lg \{[^}]*height: var\(--amb-pill-h\)/.test(css) && /\.amb-settings__list \.amb-action \{[^}]*min-height: 56px/.test(css) && pct().querySelectorAll(".amb-stepper > .amb-circle--lg").length === 2
+    check(/\.amb-slider__input \{[^}]*height: var\(--amb-tap\)/.test(css) && /\.amb-settings__list \.amb-action \{[^}]*min-height: 56px/.test(css) && range().classList.contains("amb-slider__input")
       && actRows.length >= 2 && actRows.every((r) => !r.classList.contains("amb-pill") && !r.classList.contains("salt-ghost")),
-      "the stepper's circles are the system's large ones and the actions are rows of a settings list at its 56px, over the 44px tap size on desktop and phone: " + actRows.length);
+      "the slider is the system's, the tap size tall, and the actions are rows of a settings list at its 56px, over the 44px tap size on desktop and phone: " + actRows.length);
     check(/--amb-tap:\s*44px/.test(css),
       "the shared tap token resolves to the hard 44px minimum");
   } finally {

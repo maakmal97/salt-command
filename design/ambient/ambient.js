@@ -21,6 +21,9 @@
  *                           stands and the next step lands on a value; the up and down arrow keys walk it too.
  *                           Either way the field then fires input, change and amb:change (detail.value)
  *   .amb-input--code        a one-time code: spaces and hyphens in what is typed or pasted are taken out
+ *   .amb-slider__input      with data-amb-unit="%" (or any unit, empty for none), says its figure as it moves: the
+ *                           field's .amb-slider__value and the input's aria-valuetext, signed when the range runs
+ *                           below nought (+30%, \u221230%). Without data-amb-unit the app says the figure itself
  *
  * Nothing here waits on a transition or an animation ending: reduced motion sets both durations
  * to nothing, and a timer of nothing still fires. */
@@ -320,9 +323,19 @@
     if (f.classList.contains("amb-input--code")) { var v = f.value.replace(/[\s-]+/g, ""); if (v !== f.value) f.value = v; }
     var box = f.closest(".amb-stepper");
     if (box) bounds(box);
+    if (f.classList.contains("amb-slider__input")) slid(f);
   });
   function allSteppers() { Array.prototype.forEach.call(document.querySelectorAll(".amb-stepper"), bounds); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", allSteppers); else allSteppers();
+  /* a slider that carries its unit: its figure in words, beside its label and to a screen reader */
+  function slid(f) {
+    if (!f.hasAttribute("data-amb-unit")) return;
+    var v = parseFloat(f.value) || 0, signed = parseFloat(f.min) < 0, out = f.closest(".amb-slider"), unit = f.getAttribute("data-amb-unit");
+    var text = (v > 0 && signed ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v) + unit;
+    f.setAttribute("aria-valuetext", text);
+    out = out && out.querySelector(".amb-slider__value");
+    if (out) out.textContent = text;
+  }
 
   function zoneOf(e) { return e.target && e.target.closest ? e.target.closest(".amb-drop") : null; }
   /* what the input would have taken from its own picker: its accept list, and one file unless it says multiple */

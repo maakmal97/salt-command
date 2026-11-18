@@ -30,13 +30,13 @@
     "replace": "tier:Number((whole/100).toFixed(2))}"
   },
   {
-    "name": "the stepper steps by 10, not a whole 5",
+    "name": "the slider steps by 10, not a whole 5",
     "file": "stmt/owner.js",
-    "find": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);",
-    "replace": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=10) list.push(v);"
+    "find": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);",
+    "replace": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||10);"
   },
   {
-    "name": "the stepper runs past its book's high end",
+    "name": "the slider runs past its book's high end",
     "file": "stmt/owner.js",
     "find": "max:typeof pbook.driftMax==='number'?pbook.driftMax:30}",
     "replace": "max:100}"
@@ -44,13 +44,13 @@
   {
     "name": "the account card gets a typed % field back, which has no minus key on a decimal pad",
     "file": "stmt/owner.js",
-    "find": "box.appendChild(stepBtn(-1)); box.appendChild(inp);",
-    "replace": "inp.type='number'; box.appendChild(stepBtn(-1)); box.appendChild(inp);"
+    "find": "lab.setAttribute('for',id); out.setAttribute('for',id); r.id=id; r.type='range';",
+    "replace": "lab.setAttribute('for',id); out.setAttribute('for',id); r.id=id; r.type='number';"
   },
   {
-    "name": "the stepper's buttons shrink under the tap size",
+    "name": "the slider is drawn by another class than the system's 44px one",
     "file": "stmt/owner.js",
-    "find": "var b=actOn(el('button','amb-circle amb-circle--lg'),dir<0?",
-    "replace": "var b=actOn(el('button','amb-circle'),dir<0?"
+    "find": "r=actOn(el('input','amb-slider__input'),L[1],L[2])",
+    "replace": "r=actOn(el('input','amb-input'),L[1],L[2])"
   }
 ]

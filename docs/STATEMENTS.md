@@ -2015,7 +2015,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   tile is a 44px target in both dimensions. The group answers where the select did: `.value` is the tile chosen (`''` when none is), `.disabled` shuts every
   tile (a supplier has no starting %), the radios' `change` and `input` bubble to it, and `fill(items)` draws the tiles again, keeping the choice
   while it is still offered, else the first tile (the appointment's role starts with none chosen, as its select did). **Each radio keeps its select's act**,
-  keyed by its value (`none` for the empty one) and, for a group drawn once for each book, by that book first (`record.add-id.drift`, key `salt-typed`), so the
+  keyed by its value (`none` for the empty one) and, for a group drawn once for each book, by that book first (`record.add-id.role`'s were keyed so; the starting %, once tiles, is a slider since 18 Nov 2026), so the
   act table below and the audit are as they were. **What a form sends is the value it always sent**: no route, body, field, request id, retained send,
   timestamp or signature cache, completion hook or `entryFault` changed. A **party, a row, a loan, a field or a reminder, a list as long as the book, stays
   a select**, and so does a code in a correction.
@@ -2822,11 +2822,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.partner` | Account card, Partner (key: the code) | Makes them a partner on a second tap within four seconds: a name-free partner entry for review; a partner pays the Floor. |
 | `acct.pct.book` | Account card, Their % (key: the book) | Shows that book's %. |
 | `acct.pct.clear` | Account card, Their % (key: the code) | Sends their % back to 0, the Median Price, for review. |
-| `acct.pct.down` | Account card, Their % | Lowers the % by 5, to -30% at most; their prices show at it. |
-| `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the stepper's figure for review; off while it is what is set. |
-| `acct.pct.suggest` | Account card, Their % | Sets the stepper to the engine's suggested %; it sends nothing. |
-| `acct.pct.up` | Account card, Their % | Raises the % by 5, to +30% at most; their prices show at it. |
-| `acct.pct.value` | Account card, Their % | The stepper's field, over the book's steps of 5 (Ambient 0.7.2): a figure typed is held to a whole % inside the book's range; it sends nothing. |
+| `acct.pct.send` | Account card, Their % (key: the code) | Sends their % at the slider's figure for review; off while it is what is set. |
+| `acct.pct.suggest` | Account card, Their % | Sets the slider to the engine's suggested %; it sends nothing. |
+| `acct.pct.value` | Account card, Their % | The slider (Ambient 0.7.29, his word of 18 Nov 2026), the book's range in steps of 5, its figure said beside its label; their prices show once it rests; it sends nothing. |
 | `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Asks on the Sheet (2 Nov 2026), then opens their sealed password straight to the clipboard, never into the page. |
@@ -3072,8 +3070,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `pool.target` | Group orders | The target, in units. |
 | `queue.details` | Server-held entry card (key: the entry id) | Opens the entry's reference, when it was sent and its state, as a list of names and values. |
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
-| `record.add-id.drift` | Record, Add ID, one for each book with a Median Price (key: the book) | The starting %: not set, a preset or another %. |
-| `record.add-id.drift-value` | Record, Add ID, one for each book with a Median Price (key: the book) | The starting % when it is another %, inside the book's own range. |
+| `record.add-id.drift` | Record, Add ID, one for each book with a Median Price (key: the book) | The starting % (18 Nov 2026, his word): a slider over the book's own range in steps of 5, a preset's name said where it rests on one; disabled while it is not set. |
+| `record.add-id.drift-on` | Record, Add ID, one for each book with a Median Price (key: the book) | Set a starting %: a switch, off for Not set. |
 | `record.add-id.link` | Record, Add ID | The one place field: words searched on OpenStreetMap, a Google Maps, Waze or Apple Maps link, or two figures, read on this device (a short link opened on the Worker). |
 | `record.add-id.link.here` | Record, Add ID, under the map link | Use my location: this phone's point put in the field as two figures. |
 | `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |

@@ -35,9 +35,10 @@ const cases = [
     } },
   { label: "Send +20%", path: "tier-set", card: true, find: (doc) => byAct(doc.getElementById("aopen"), "acct.pct.send", "CX1-ZED"), within: ".apct",
     body: { code: "CX1-ZED", product: "salt", tier: 0.2, unit: "pct" },
-    edit(root, changed) {   // a whole % by the stepper, in steps of 5
-      const out = root.querySelector(".apct__step input"), want = changed ? 30 : 20, now = () => parseInt(out.value, 10);   /* 16 Nov 2026 (place H): the stepper is a field holding the whole % */
-      while (now() !== want) root.querySelector('[data-act="' + (now() < want ? "acct.pct.up" : "acct.pct.down") + '"]').click();
+    edit(root, changed) {   // a whole % by the slider, in steps of 5
+      const out = root.querySelector(".apct__step input"), want = changed ? 30 : 20, now = () => parseInt(out.value, 10);   /* 18 Nov 2026 (his word): the slider is a range holding the whole % */
+      while (now() !== want) { if (now() < want) out.stepUp(); else out.stepDown(); }
+      out.dispatchEvent(new (root.ownerDocument.defaultView.Event)("change", { bubbles: true }));
       return out;
     } },
   { label: "Make partner", path: "partner", card: true, clicks: 2, find: (doc) => byAct(doc.getElementById("aopen"), "acct.partner", "CX1-ZED"), within: ".apart",

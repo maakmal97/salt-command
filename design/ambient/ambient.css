@@ -478,6 +478,20 @@ textarea.amb-input { min-height: 96px; padding-block: 12px; resize: none; }
 .amb-switch::after { content: ""; position: absolute; top: calc(50% - 13.5px); left: 2px; width: 27px; height: 27px; border-radius: 50%; background: var(--amb-on-accent); transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
 .amb-switch:checked::before { background: var(--amb-accent); }
 .amb-switch:checked::after { transform: translateX(20px); }
+/* ---- Slider: a figure set by sliding, a native range in even steps, 44px tall; the figure is said in words beside its label ---- */
+.amb-slider { display: grid; gap: 6px; max-width: 28rem; text-align: left; }
+.amb-slider__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--amb-space-3); }
+.amb-slider__value { font-size: var(--amb-text-title2); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--amb-ink); }
+.amb-slider__input { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: var(--amb-tap); margin: 0; padding: 0; border: 0; background: none; cursor: pointer; touch-action: pan-y; }
+.amb-slider__input::-webkit-slider-runnable-track { height: 6px; border-radius: var(--amb-radius-pill); background: var(--amb-line-field); }
+.amb-slider__input::-moz-range-track { height: 6px; border-radius: var(--amb-radius-pill); background: var(--amb-line-field); }
+.amb-slider__input::-moz-range-progress { height: 6px; border-radius: var(--amb-radius-pill); background: var(--amb-accent); }
+.amb-slider__input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; margin-top: -11px; border: 0; border-radius: 50%; background: var(--amb-accent); transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-slider__input::-moz-range-thumb { box-sizing: border-box; width: 28px; height: 28px; border: 0; border-radius: 50%; background: var(--amb-accent); transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-slider__input:active::-webkit-slider-thumb { transform: scale(1.15); }
+.amb-slider__input:active::-moz-range-thumb { transform: scale(1.15); }
+.amb-slider__input:disabled { cursor: not-allowed; opacity: .45; }
+.amb-slider__ends { display: flex; justify-content: space-between; gap: var(--amb-space-3); font-size: var(--amb-text-footnote); font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
 .amb-handle { -webkit-appearance: none; appearance: none; flex: none; display: grid; place-items: center; width: var(--amb-tap); height: var(--amb-tap); padding: 0; border: 0; border-radius: 50%; background: none; color: var(--amb-ink-2); cursor: grab; touch-action: none; }
 
 /* ---- Card: a bank card at its true proportion, flooded by its own mood ---- */

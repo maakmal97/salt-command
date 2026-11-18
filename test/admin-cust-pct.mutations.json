@@ -20,14 +20,14 @@
   {
     "name": "a step is 5",
     "file": "stmt/owner.js",
-    "find": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);",
-    "replace": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=10) list.push(v);"
+    "find": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);",
+    "replace": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||10);"
   },
   {
-    "name": "the list starts at the book's low end",
+    "name": "the slider starts at the book's low end",
     "file": "stmt/owner.js",
-    "find": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);",
-    "replace": "for(v=Math.ceil(lim.min/5)*5+5;v<=lim.max;v+=5) list.push(v);"
+    "find": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);",
+    "replace": "r.min=String(o.min+5); r.max=String(o.max); r.step=String(o.step||5);"
   },
   {
     "name": "2 the low end is the book's, not -30",
@@ -94,5 +94,11 @@
     "file": "stmt/owner.js",
     "find": "if(!none&&!a.test&&a.code){ var more=el('div','amore'); c.appendChild(more); acctMore(more, a); }",
     "replace": ""
+  },
+  {
+    "name": "1 the figure said beside the slider",
+    "file": "stmt/owner.js",
+    "find": "box.say=function(whole,words){ var t=words!=null?words:say(whole); out.textContent=t;",
+    "replace": "box.say=function(whole,words){ var t=words!=null?words:say(whole); out.textContent='';"
   }
 ]

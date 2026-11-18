@@ -590,6 +590,26 @@ export const OWNER_JS = `
      asks once. Nothing on the card prices: every figure is the Desk's. 16 Nov 2026 (Ambient): the stepper walks its values (Ambient 0.7.2). */
   var pctOn={}, pctReads={}, ofReads={}, ofWait={};
   function pctWord(n){ return n>0?'+'+n+'%':n<0?'−'+(-n)+'%':'0%'; }
+  /* 18 Nov 2026 (his word: "a smooth slider that moves in steps of 5 rather than a long options list", for every personalised %): A CUSTOMER'S %
+     IS AMBIENT'S SLIDER (0.7.29), whole steps of 5 from the book's low to its high, its figure in words beside its label (say), moved by the arrow keys
+     a step at a time. o: {label:[words, act, key, book], min, max, value (whole %), say(whole), step}. The range's input fires the words alone; its
+     change (a release, a key) is the app's. */
+  function pctSlider(o){
+    var L=labOf(o.label), id='mslide'+(++tileSeq), box=el('div','amb-field amb-slider mslide'), head=el('span','amb-slider__head'), lab=el('label','amb-field__label',L[0]),
+      out=el('output','amb-slider__value'), r=actOn(el('input','amb-slider__input'),L[1],L[2]), ends=el('span','amb-slider__ends'), say=o.say||pctWord;
+    if(L[3]){ lab.appendChild(document.createTextNode(' ')); lab.appendChild(bookChip(L[3])); }
+    lab.setAttribute('for',id); out.setAttribute('for',id); r.id=id; r.type='range';
+    r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);
+    ends.setAttribute('aria-hidden','true'); ends.appendChild(el('span',null,say(o.min))); ends.appendChild(el('span',null,say(o.max)));
+    head.appendChild(lab); head.appendChild(out); box.appendChild(head); box.appendChild(r); box.appendChild(ends);
+    box.input=r;
+    /* the words: what it is set to, or another word when nothing is set (Not set) */
+    box.say=function(whole,words){ var t=words!=null?words:say(whole); out.textContent=t; r.setAttribute('aria-valuetext',t); };
+    box.put=function(whole){ r.value=String(whole); box.say(whole); };
+    r.addEventListener('input',function(){ box.say(Math.round(+r.value)); });
+    box.put(o.value==null?0:o.value);
+    return box;
+  }
   function acctMore(box, a){
     readParty().then(function(cat){ if(box.isConnected) drawMore(box, a, cat||{}); }, function(){ if(box.isConnected){ box.textContent=''; box.appendChild(el('p','amb-field__hint anote bad amb-neg','Their prices could not be read.')); } });
   }
@@ -663,19 +683,9 @@ export const OWNER_JS = `
     L.add(aLine('Suggested', sug==null?'None':pctWord(sug)));
     if(sug!=null&&card.why) L.foot(card.why.charAt(0).toUpperCase()+card.why.slice(1));
     s.appendChild(L);
-    /* the stepper walks the steps of 5 inside the book's range, and the figures it holds that are not on a step (what is set, the suggestion) */
-    var fld=el('div','amb-field apct__step'), lab=el('label','amb-field__label','Set to, %'), box=el('div','amb-stepper'), inp=actOn(el('input','amb-input'),'acct.pct.value'), vid='apctv'+(++tileSeq);
-    lab.setAttribute('for',vid); inp.id=vid; inp.type='text'; inp.setAttribute('inputmode','numeric'); inp.setAttribute('autocomplete','off');   /* text, not number: a signed figure a number field draws in the device's own style, in brackets on some */
-    function stepsFor(extra){
-      var list=[], v; for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);
-      [held,sug,extra].forEach(function(x){ if(typeof x==='number'&&x>=lim.min&&x<=lim.max&&list.indexOf(x)<0) list.push(x); });
-      return list.sort(function(p,q){ return p-q; }).join(' ');
-    }
-    function stepBtn(dir){
-      var b=actOn(el('button','amb-circle amb-circle--lg'),dir<0?'acct.pct.down':'acct.pct.up'); b.type='button'; b.setAttribute('data-amb-step',String(dir));
-      b.setAttribute('aria-label',dir<0?'5% lower':'5% higher'); b.appendChild(ambIcon(dir<0?'minus':'plus')); return b;
-    }
-    box.appendChild(stepBtn(-1)); box.appendChild(inp); box.appendChild(stepBtn(1)); fld.appendChild(lab); fld.appendChild(box); s.appendChild(fld);
+    /* 18 Nov 2026 (his word): the slider moves in steps of 5 inside the book's range; a figure set off a step (an older place) is said as it stands until he moves it */
+    var fld=pctSlider({label:['Set to','acct.pct.value'],min:lim.min,max:lim.max,value:st.pct[st.book]}), inp=fld.input;
+    fld.classList.add('apct__step'); s.appendChild(fld);
     var prev=el('div','apct__prev'); s.appendChild(prev);
     var acts=aGroup(null,'apct__acts'), answer=acts.foot(''); answer.className='amb-settings__foot anote aanswer apct__answer'; answer.setAttribute('role','status');
     var at=null, sig='';
@@ -720,16 +730,16 @@ export const OWNER_JS = `
     }
     function pctPaint(){
       var whole=st.pct[st.book];
-      inp.setAttribute('data-amb-values',stepsFor(whole)); inp.value=String(whole);
+      fld.put(whole);
       sendB.textContent='Send '+pctWord(whole); sendB.disabled=whole===held;
       var key=code+'/'+st.book+'/'+whole;
       if(pctReads[key]){ pctDraw(pctReads[key]); return; }
       refs('/all/maker/drift-preview/'+key).then(function(j){ pctReads[key]=j.preview; if(st.pct[st.book]===whole&&s.isConnected) pctDraw(j.preview); }, function(error){ if(st.pct[st.book]===whole) refusal(answer,error); });
     }
-    /* a step, or a figure typed: a whole % inside the book's range */
+    /* a release or a key: a whole % inside the book's range, read off the Desk once it rests */
     inp.addEventListener('change', function(){
       var v=Math.round(+inp.value); if(!isFinite(v)) v=st.pct[st.book];
-      v=Math.max(lim.min,Math.min(lim.max,v)); if(v===st.pct[st.book]){ inp.value=String(v); return; }
+      v=Math.max(lim.min,Math.min(lim.max,v)); if(v===st.pct[st.book]){ fld.put(v); return; }
       st.pct[st.book]=v; pctPaint();
     });
     pctPaint();
@@ -3457,18 +3467,28 @@ export const OWNER_JS = `
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
-      /* 27 Oct 2026: the presets are tiles whatever their number (eleven, live), never a Segment */
-      var select=makerTiles(['Starting %','record.add-id.drift',item.product,item.product],[{value:'',label:'Not set'}]
-        .concat(presets.map(function(preset){return {value:String(preset.value),
-          label:preset.name};}))
-        .concat([{value:'typed',label:'Other %'}])); id.appendChild(select);
-      var typed=makerField(id,['Other %','record.add-id.drift-value',item.product,item.product],'number','',0.05);
-      var tlo=typeof item.driftMin==='number'?item.driftMin/100:-0.3, thi=typeof item.driftMax==='number'?item.driftMax/100:0.3;
-      typed.min=String(tlo);typed.max=String(thi);typed.removeAttribute('inputmode');typed.step='0.05';typed.placeholder=tlo+' to '+thi;typed.closest('label').hidden=true;
-      select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
-      /* 11 Nov 2026, his word (always start a stranger at +30%): salt's starting % is +30% unless he chooses another; the Median Price and every other preset stay his to pick */
+      /* 18 Nov 2026 (his word: a smooth slider in steps of 5, never the long list of tiles): Set a starting % is a switch, off for Not set, and the % a slider
+         from the book's low to its high (salt -100 to +100, a board -30 to +30); a preset's name is said where the slider rests on it (Median Price at 0 on salt) */
+      var lo=typeof item.driftMin==='number'?item.driftMin:-30, hi=typeof item.driftMax==='number'?item.driftMax:30;
+      var named=function(whole){ var p=presets.filter(function(x){ return Math.round(+x.value*100)===whole; })[0]; return p&&p.name?p.name:pctWord(whole); };
+      var on=sSwitchRow('Set a starting %','record.add-id.drift-on',item.product,false), grp=sGroup(null,'mslide__on');
+      on.firstChild.appendChild(document.createTextNode(' ')); on.firstChild.appendChild(bookChip(item.product));   /* a row about one book ends in its chip, never its name */
+      grp.list.appendChild(sLi(on)); id.appendChild(grp);
+      var bar=pctSlider({label:['Starting %','record.add-id.drift',item.product,item.product],min:lo,max:hi,value:0,say:named}); id.appendChild(bar);
+      var r=bar.input, dis=false;
+      var paint=function(){ var set=on.sw.checked; r.disabled=dis||!set; if(set) bar.say(Math.round(+r.value)); else bar.say(0,'Not set'); };
+      /* the control the form reads: .value '' while nothing is set, else the fraction it sends (0.3 for +30%); .disabled; a change that bubbles */
+      var select={product:item.product};
+      Object.defineProperty(select,'value',{ get:function(){ return on.sw.checked?String(Number((Math.round(+r.value)/100).toFixed(2))):''; },
+        set:function(v){ var t=String(v==null?'':v); if(t===''){ on.sw.checked=false; } else { on.sw.checked=true; r.value=String(Math.round(Number(t)*100)); } paint(); } });
+      Object.defineProperty(select,'disabled',{ get:function(){ return dis; }, set:function(v){ dis=!!v; on.sw.disabled=dis; paint(); } });
+      select.dispatchEvent=function(e){ return r.dispatchEvent(e); };
+      on.sw.addEventListener('change',function(){ paint(); });
+      r.addEventListener('input',paint);
+      paint();
+      /* 11 Nov 2026, his word (always start a stranger at +30%): salt's starting % is +30% unless he chooses another; the Median Price and every other place stay his to pick */
       if(item.product==='salt'&&presets.some(function(p){ return String(p.value)==='0.3'; })){ select.value='0.3'; id.appendChild(el('p','amb-field__hint ostart30','Starts at +30%.')); }
-      return {product:item.product,select:select,typed:typed,lo:tlo,hi:thi};
+      return {product:item.product,select:select,switchRow:on,slider:bar,lo:lo/100,hi:hi/100};
     });
     /* 25 Oct 2026 (Record redesign P7, his Ask J): the code they will get, worked out as Add the customer works it out, shown as the name and place are typed;
        nothing is shown until there is a code to show */
@@ -3485,7 +3505,7 @@ export const OWNER_JS = `
       idName.disabled=bucket;idPlace.disabled=bucket;idGate.hidden=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
       var canStart=idCanStart(idKind.value);
-      idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
+      idDrifts.forEach(function(item){item.select.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
     joinForm={kind:idKind,name:idName,place:idPlace,status:idStatus,drifts:idDrifts,filled:false};
@@ -3503,13 +3523,8 @@ export const OWNER_JS = `
       if(idCanStart(kind)){
         for(var driftIndex=0;driftIndex<idDrifts.length;driftIndex++){
           var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
-          if(choice==='typed'){
-            var raw=driftItem.typed.value.trim();driftValue=Number(raw);
-            /* 10 Nov 2026: the ends are the book's own, as the field's are (salt -1 to 1 on the band, a board -0.3 to 0.3) */
-            if(!raw||!Number.isFinite(driftValue)||driftValue<driftItem.lo-1e-9||driftValue>driftItem.hi+1e-9){
-              idStatus.textContent='Enter a % from '+driftItem.lo+' to '+driftItem.hi+' (0.2 is 20%, -0.1 is 10% off).';idBusy=false;return;
-            }
-          }else if(choice!=='')driftValue=Number(choice);
+          /* the slider holds the book's own ends (salt -1 to 1 on the band, a board -0.3 to 0.3), so what it gives is always inside them */
+          if(choice!=='')driftValue=Number(choice);
           else continue;
           tiers[driftItem.product]=driftValue;
         }
