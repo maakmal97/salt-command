@@ -147,8 +147,8 @@
  {
   "name": "a Sheet's card is wider than Ambient's 480px",
   "file": "stmt/statement-css.js",
-  "find": ".amb-sheet { inset: 0; height: fit-content; max-width: 480px;",
-  "replace": ".amb-sheet { inset: 0; height: fit-content; max-width: 560px;"
+  "find": ".amb-sheet { --amb-sheet-end: var(--amb-space-5); inset: 0; height: fit-content; max-width: 480px;",
+  "replace": ".amb-sheet { --amb-sheet-end: var(--amb-space-5); inset: 0; height: fit-content; max-width: 560px;"
  },
  {
   "name": "the page sets the Sheet's own width",
