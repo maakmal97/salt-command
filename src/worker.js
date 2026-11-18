@@ -635,8 +635,12 @@ export const passNext = () => ({ again: passAgain, only: againOnly ? [...againOn
 export function ordersOnce(env, ctx, opts = {}) {
   if (passing && Date.now() - passingAt > PASS_STALE_MS) passing = null;
   if (passing) { passWant(opts.only); if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(passing); return passing; }
+  /* a want left by a pass let go as stale is carried into this one, so the orders it named are not lost (Fable's review of the build): whole
+     stays whole, and named orders join this pass's own */
+  let only = Array.isArray(opts.only) ? opts.only : null;
+  if (passAgain) { if (!againOnly) only = null; else if (only) only = [...new Set([...only, ...againOnly])]; }
   const job = (async () => {
-    try { passAgain = false; againOnly = null; await ordersPass(env, ctx, opts.now || new Date(), opts.mirror || null, Array.isArray(opts.only) ? opts.only : null); }
+    try { passAgain = false; againOnly = null; await ordersPass(env, ctx, opts.now || new Date(), opts.mirror || null, only); }
     catch (e) { console.log("orders pass FAILED: " + String((e && e.stack) || e)); }
     finally { if (passing === job) passing = null; }   /* a pass let go as stale never clears the marker of the pass after it */
     /* the marker is cleared and the mark read with no await between them, so a call lands either before (its mark is read here) or after (it starts its own) */

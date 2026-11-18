@@ -102,6 +102,12 @@
   "replace": "  if (againOnly && Array.isArray(only)) againOnly = new Set(only);"
  },
  {
+  "name": "I15b a stale pass's want is dropped",
+  "file": "src/worker.js",
+  "find": "  if (passAgain) { if (!againOnly) only = null; else if (only) only = [...new Set([...only, ...againOnly])]; }",
+  "replace": ""
+ },
+ {
   "name": "I16 queueSale reads its blob first",
   "file": "src/orders.js",
   "find": "const [rawR, ownR, draftR] = await Promise.all([settle(env.SALT_QUEUE.get(BLOB)),",

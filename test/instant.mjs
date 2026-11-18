@@ -20,6 +20,7 @@
  *   I13 the Desk reads its three marks together
  *   I14 the nudge body: ids of the order shape, at most 50; missing or another shape is a whole pass, an empty list a pass of none
  *   I15 a call while a pass runs adds its orders to the next pass, and a whole call makes it whole
+ *   I15b a pass let go as stale leaves the orders named while it hung to the next pass
  *   I16 queueSale's first look has the blob, the entry's own key and its draft all open at once
  *   I17 a fixed id's unreadable draft still counts only past a blob with no hit
  *   I18 end to end, I have sent it is one banner a phone, from the Counter, none from the Desk's wake
@@ -284,6 +285,21 @@ async function deskSide(ok, DO, W) {
   go(); await first; for (let i = 0; i < 20 && W.passRunning(); i++) await sleep(5);
   ok(named.again && J(named.only) === J([B, C]) && whole.again && whole.only === null,
     "I15: a call while a pass runs adds its orders to the next pass, and a call for the whole makes it whole: " + J({ named, whole }));
+
+  /* I15b: a pass let go as stale, with orders named while it hung: the next pass carries them */
+  let go2; const gate2 = new Promise((r) => { go2 = r; });
+  const penv2 = { SALT_QUEUE: new Store(), STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async () => { await gate2; return Response.json({ ok: false, error: "fixture" }); } } };
+  const logs2 = [];
+  await quiet(async () => {
+    const held1 = W.ordersOnce(penv2, null, { only: [A] });
+    await tick();
+    W.ordersOnce(penv2, null, { only: [B] });
+    const realNow = Date.now; let held2;
+    try { Date.now = () => realNow() + W.PASS_STALE_MS + 1000; held2 = W.ordersOnce(penv2, null, { only: [C] }); } finally { Date.now = realNow; }
+    go2(); await held1; await held2; for (let i = 0; i < 40 && W.passRunning(); i++) await sleep(5);
+  }, logs2);
+  const counts = logs2.filter((l) => l.startsWith("orders pass (nudge): ")).map((l) => { try { return JSON.parse(l.slice(21)).orders; } catch (e) { return null; } });
+  ok(J(counts.slice().sort()) === J([1, 2]), "I15b: a pass let go as stale leaves the orders named while it hung to the next pass, which reconciles them with its own: " + J({ counts }));
 
   /* I16 and I17: queueSale's first look */
   const q3 = new Store(); let qopen = 0, qmost = 0;
