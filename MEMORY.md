@@ -96,7 +96,7 @@
 - Checks: sections "18 Nov 2026: tabs for a place's parts, Ledger check and Approve in every bar ..." (`test/work-bar.mjs`, 30 checks, 39 mutations red) and
   "18 Nov 2026: the working shell ..." (`test/work-shell.mjs`, 17 checks, 24 mutations red); 34 older mutations re-aimed and proved red, one dropped (admin-orders
   "Payments is not counted": the count stood on More's row).
-- **ONE SKELETON (v1546, 18 Nov 2026)**, after his screenshots of v1545 and his word: "Alignment ... non-consistent hierarchy ... from tabs to tabs it should always be consistent,
+- **ONE SKELETON (v1546, 18 Nov 2026; live as `f46cb1a5`, Cloud commit `44296557982` chain and three suite parts green, CI `44296558012` green)**, after his screenshots of v1545 and his word: "Alignment ... non-consistent hierarchy ... from tabs to tabs it should always be consistent,
   and the width of the panes". The rule, do not undo: from 960px every place and part shares the bar's two edges (the panes' own, with panes or without), the tab row at
   one height, the first block under it on one line in both panes, headings and ruled lists flush with the pane's edge, one measure (36rem) for a field, a settings group
   and a button on a part with no panes, and the bar's status, Ledger, Approve and + at one place in every place (Record keeps the +'s room). Ambient 0.7.25 to 0.7.28
