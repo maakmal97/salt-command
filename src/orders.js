@@ -1801,21 +1801,34 @@ export async function queueSale(env, entry, fixedId = false, mirror = null) {
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "orders");
     if (admission.error) throw Object.assign(new Error(admission.error), { status: admission.status });
   };
-  const raw = await env.SALT_QUEUE.get(BLOB);
+  /* 19 Nov 2026 (docs/plan-instant.html): THE FIRST LOOK READS ITS THREE PLACES TOGETHER, the blob, the entry's own key and its draft, each held
+     as a value or an error, and decided in the order the reads were made one by one: an error counts only where that order would have reached
+     it (Fable's review: a fixed id's own key or draft unreadable still throws only past a blob that had no hit, as before) */
+  const settle = (p) => Promise.resolve(p).then((v) => ({ v }), (e) => ({ e }));
+  const firstAt = entry.at, ledger = env.SALT_LEDGER;
+  const [rawR, ownR, draftR] = await Promise.all([settle(env.SALT_QUEUE.get(BLOB)), settle(env.SALT_QUEUE.get(OKEY(firstAt), "json")),
+    ledger ? settle(ledger.prepare("SELECT entry FROM draft WHERE id=?1").bind(firstAt).first()) : Promise.resolve({ v: null })]);
+  if (rawR.e) throw rawR.e;
+  const raw = rawR.v;
   let blob = [];
   if (raw) {
     try { const j = JSON.parse(raw); blob = (j && Array.isArray(j.queue) && j.queue) || []; }
     catch (e) { console.log("orders queue: " + BLOB + " could not be read and is left alone, so this entry takes its own key (" + String((e && e.message) || e) + "); it held: " + String(raw).slice(0, 200)); }
   }
-  const spent = async (at) => {
-    let own = null; try { own = await env.SALT_QUEUE.get(OKEY(at), "json"); } catch (e) { if (fixedId) throw e; own = null; }   /* its own key unreadable: written over */
+  const spent = async (at, pre) => {
+    const o = pre ? pre.own : await settle(env.SALT_QUEUE.get(OKEY(at), "json"));
+    let own = null; if (o.e) { if (fixedId) throw o.e; own = null; } else own = o.v;   /* its own key unreadable: written over */
     const hit = ((own && Array.isArray(own.queue) && own.queue) || []).concat(blob).find((x) => x && x.at === at);
-    if (hit || !env.SALT_LEDGER) return hit || null;
-    try { const d = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first(); return d && d.entry ? (JSON.parse(d.entry) || {}) : null; }
+    if (hit || !ledger) return hit || null;
+    const d = pre ? pre.draft : await settle(ledger.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first());
+    if (d.e) { if (fixedId) throw d.e; return null; }
+    try { return d.v && d.v.entry ? (JSON.parse(d.v.entry) || {}) : null; }
     catch (e) { if (fixedId) throw e; return null; }
   };
+  let pre = { own: ownR, draft: draftR };
   for (;;) {
-    const hit = await spent(entry.at);
+    const hit = await spent(entry.at, entry.at === firstAt ? pre : null);
+    pre = null;
     if (!hit) break;
     if (fixedId) {
       if (await makerRequestFingerprint("fixed-input", hit) !== await makerRequestFingerprint("fixed-input", entry))
