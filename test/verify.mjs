@@ -50860,6 +50860,11 @@ await (async () => {
   await (await import("./admin-change-sheet.mjs")).run({ ok, pageWork });
 })();
 
+section("19 Nov 2026: a sheet's answers stand in Ambient's sheet foot, in view while a long body scrolls");
+await (async () => {
+  await (await import("./sheet-foot.mjs")).run({ ok, pageWork });
+})();
+
 section("18 Nov 2026: what is paid or handed over is taken back from the Change sheet, and a new window after Accept is told or asked");
 await (async () => {
   await (await import("./order-changes-v4.mjs")).run({ ok, pageWork });

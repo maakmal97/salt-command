@@ -168,8 +168,7 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .bkline__t { font-size: var(--amb-text-subhead); }
 /* a question of the sheet is a fieldset standing as a field */
 fieldset.amb-field { min-width: 0; margin: 0; padding: 0; border: 0; }
-/* the sheet: its foot is a second body under the first, and a list in it keeps no side inset of the screen's */
-.osheet > .osheet__foot { margin-top: var(--amb-space-3); }
+/* the sheet: its foot is Ambient's sheet foot (0.7.30, 19 Nov 2026), and a list in it keeps no side inset of the screen's */
 .amb-sheet .amb-list { margin: 0; }
 .amb-sheet .amb-list--ruled { border-top: 0; }
 .amb-sheet .amb-options { max-width: none; }

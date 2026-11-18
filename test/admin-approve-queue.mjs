@@ -227,7 +227,7 @@ export async function run({ ok, pageWork }) {
       && /Each is decided as drafted\. One that cannot go stays here with why and how to fix it; the rest go\./.test(sh.textContent) && sh.querySelectorAll(".amb-row").length === 1,
     "the Sheet is titled for the cards, lists those to reject by code, size, kind and figure, and says each is decided as drafted: " + sh.textContent);
     ok(!!p.inSheet("ask.go", "approve:confirm") && !!p.inSheet("ask.keep", "approve:confirm") && !!p.inSheet("ask.close", "approve:confirm")
-      && sh.querySelector(".amb-sheet__body").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Confirm 1" && p.inSheet("ask.keep").textContent === "Not yet",
+      && sh.querySelector(".amb-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Confirm 1" && p.inSheet("ask.keep").textContent === "Not yet",
     "its controls are there by id (the shared Sheet draws its action as the danger action whatever it asks, 16 Nov 2026), the action reads Confirm 1 and the way out Not yet");
     const bad = await p.ways(() => confirm().click(), confirm, () => many().length);
     ok(bad.length === 0 && !bar().hidden, "the ghost, the close control, the scrim and Escape each close it, send nothing, give focus back to Confirm and leave the choice standing: " + bad.join(" | "));
