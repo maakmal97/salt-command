@@ -68,10 +68,32 @@
   failed: one mine (the layer's rule named `#roster`, fixed, its section green), two green when run alone (S4 4.5's bell and Counter maker's leak check, on a loaded machine,
   638 s side by side).
 - His panes are his own word (v1442, 5 Nov 2026, "like Mail or Messages on a Mac") and Ambient's from 960px (the plan's table, his answers of 14 Nov 2026): the line in
-  CLAUDE.md that an open order fills the page from 1080px (canvas V39, 20 Oct 2026) is superseded and waits on his yes to be taken out.
+  CLAUDE.md that an open order fills the page from 1080px (canvas V39, 20 Oct 2026) is superseded; his "Keep the panes" (18 Nov 2026) took it out, with v1538.
 - Left, said: the Design System artifact is not republished at 0.7.16; the Counter's rail runs to the foot with nothing at its foot; the other findings of the review of
   18 Nov (the Counter's Orders saying "No orders yet" while the statement is withheld, Needs you's line against its own counts, RM 730 against RM 570, the mono price on
   the Counter's Home, the dark switch knob, Shop's parts as chips) are not built.
+
+## Change a placed order (v1537) and the admin account (v1538)
+- Order change V3, live as v1537 (`640e67d5`, 18 Nov 2026; Cloud commit `44238764499`: chain green, "live at d07afb2e42d9a668", suite parts 2 and 3 green, part 1 red on
+  ONE check and green on re-run, the order id fault below): on Salt Admin, Change on a PLACED order is the Agree sheet with Units and Way (`src/orders.js` `placedTerms`,
+  read by `previewOrder`, `acceptOrder`, `offerOrder` and `acceptOffer`; `stmt/orders.js` `decideDesk`, `applyEvent`, `priceView`, `acceptOfferEv`). His answer of 18 Nov,
+  do not ask again: a changed size with no figure typed refills the goods at THEIR price (the engine's `cardAt` off the snapshot; no price at that size is refused). A
+  change of units or way needs their yes (`needsYes`) and goes as an offer of the whole order; an offer made before a later change is void (`wasQty`, `wasMode`). The order's
+  own `total` stays what they placed it at unless the size changed (`terms.goods` carries the figure agreed), so the row's note still says a price was set on this order. A
+  collect order keeps its wanted day; the day and window clear only when this change makes the way collect. Full split suite on the unbumped tree: 12,721 passed, 1 failed,
+  green alone. Known gaps: `maker-placed-preview`'s mutation "a failed read offers no second read" and `engine-stages`' "Accept's floor refusal is removed" prove nothing
+  (both older than V3); an acknowledge-time window is kept from ANY taken offer whose slot matches, not only an Accept's.
+- The admin account, live as v1538 (`d1486680`, 18 Nov 2026; Cloud commit `44242736923`: chain green, "live at b33bbeb8435fa80d", three suite parts green; CI
+  `44242736404` green), his answers of 18 Nov typed in the session that acted, do not ask again: AA10-KUL is admin only (no roster, no row, places and claims nothing,
+  `adminTrade`); the entry order as drafted (`/admin` is the Counter's door, then `/admin/enter` on a PASSWORD session of a tier 1 account sets cookie `salt_adm` on `/all`,
+  filed as `adm:<sha256>`); the door holds 12 hours (`ADMIN_TTL`); Log out, `/all/leave` and Sign out everywhere close it. `stmt/admins.js` holds the rule;
+  `statements/_admins.json` is code to tier, one owner at most. Its username was a pool spare already in git, so NO mint was needed: the bind in `_users.json` opened it at
+  that publish, and its password is the spare's, in his laptop's `_passwords.json`. The publish gives an admin code its bundle and tier and no live statement, price list or
+  card (`liveRecords`' `admins`). **`ADMIN_DOOR` shipped EMPTY: Salt Admin opens by Access alone, as before.** Turning it on is his yes, after he has signed in at the door
+  once and after maintenance is the notice at the door (today's guard would hold `/admin`). Known: a device signed out from Account does not end an admin key.
+- Order ids (v1538): `mintOrderId` draws again when the tail would begin `ex`, the shape of an example order (`EXAMPLE_ID`), which Salt Admin's roads send to the practice
+  fixtures. About 1 real id in 500 took it and could not be acted on from Salt Admin; it showed as a once-off red on Actions. An older real order with such an id is not fixed
+  by this: none was looked for.
 
 ## Counter Batch A
 - Built on branch `claude/counter-batch-a-build-b9ddad` (19 Oct 2026), P0 salt-ds#13 (1.7.0) merged; collection points live in Counter KV `maker:points` once the version ships; his list is empty until he fills it on Salt Admin, and a collect Ready is refused without one.
