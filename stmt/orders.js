@@ -1194,7 +1194,7 @@ export function decideDesk(order, body, at) {
     return { error: "the book ends an order by a cancellation or a write-off", status: 400 };
   }
   /* 18 Nov 2026 (order changes, version 4, his answer 6): WHAT IS PAID OR HANDED OVER, TAKEN BACK, from Salt Admin's Change sheet: the desk drafted
-     the Correction of the row at his tap (engine/stages.mjs lowerTap) and the order comes down with it now, told as changed. The figures are the
+     the Correction of the row at his tap (the engine's lowerTap) and the order comes down with it now, told as changed. The figures are the
      NEW ones, never above what the order holds; a retry that already landed finds nothing to lower and is answered as none (Fable's review) */
   if (body && body.lower !== undefined) {
     const l = body.lower;
@@ -1394,7 +1394,7 @@ export function applyEvent(order, ev) {
   } else if (ev.kind === "back") {
     order.status = "acknowledged"; delete order.point; delete order.pointAt;
     order.changed = { at, kind: "changed", was: (order.changed && order.changed.was) || wasOf(order), wasReady: true };
-    order.history.push({ at, status: "acknowledged", by: "desk", note: "back to agreed" });
+    order.history.push({ at, status: "acknowledged", by: "desk", note: "back to agreed", back: true });   /* their page counts Ready from after the mark */
   } else if (ev.kind === "winoffer") {
     order.winOffer = Object.assign({}, ev.offer, { state: "offered", at });
     order.history.push({ at, status: order.status, by: "desk", note: "a later window asked for " + ev.offer.slot });

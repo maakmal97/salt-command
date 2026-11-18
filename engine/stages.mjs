@@ -894,7 +894,7 @@ export function lowerTap(o, at, body, ctx) {
     fields.deliveredQty = newDeliv; expect.deliveredQty = deliv; said.push("handed over " + nowMoved + " to " + moved + " unit");
     if (row.deliveredOn && !(newDeliv + (+row.advanceUnits || 0) + (+row.settledKg || 0) > 0.0004)) fields.deliveredOn = null;
   }
-  const atD = at instanceof Date ? at : new Date(at || Date.now());
+  const atD = at instanceof Date ? at : new Date(at);
   const books = partyOnBook(o, o.code);
   const entry = {
     at: atD.toISOString(), type: "SELL", party: books, qty: +o.qty, total: +o.total, status: "Amendment",

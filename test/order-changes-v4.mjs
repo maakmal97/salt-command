@@ -268,7 +268,7 @@ export async function run({ ok, pageWork }) {
     again2.status = "ready";
     again2 = applyEvent(again2, decideDesk(copy(again2), { back: true }, ago(140)).ev).order;
     again2 = applyEvent(again2, decideDesk(copy(again2), { status: "ready", mode: "collect", point: "A2", pointAt: { lat: 3.1, lng: 101.2 }, maker: true }, ago(2)).ev).order;
-    again2.history = again2.history.map((h) => ({ at: h.at, status: h.status, by: h.by, ...(h.note ? { note: h.note } : {}) }));
+    again2.history = again2.history.map((h) => ({ at: h.at, status: h.status, by: h.by, ...(h.note ? { note: h.note } : {}), ...(h.back ? { back: h.back } : {}) }));
     const only = H("20261118000000-tv5", [{ at: ago(199), status: "acknowledged", by: "desk" }, { at: ago(2), status: "ready", by: "desk" }]);
     const A = await open({ pageWork, orders: [back, ask, wasReady, again2, only] }); pages.push(A);
     const calls = [], f0 = A.w.fetch;

@@ -598,6 +598,21 @@ export async function auditStates({ pageWork }) {
     states.push(["a Ready collection's Change sheet, with a point and a part handed over", actAudit(pt.d)]);
     await pt.click(byAct(pt.d, "order.ask-keep"));
   } finally { pt.w.close(); }
+  /* 18 Nov 2026 (the plan's version 4): the Change sheet's take-back (Paid so far and its reason) on a part handed over, and a delivery's When with a later window waiting on them */
+  const v4o = { u: "abcd-efgh", product: "salt", msgs: [], payments: [], history: [] };
+  const v4 = await richOwnerPage({ pageWork, extra: POINTS_ANSWER, review: (j) => { j.orders.push(
+    { ...v4o, id: "ord-v4d", status: "ready", mode: "collect", qty: 2, total: 200, delivery: 0, moved: 1, paid: 100 },
+    { ...v4o, id: "ord-v4w", status: "acknowledged", mode: "deliver", qty: 1, total: 100, delivery: 5, slot: "2000-01-01T08", slotSpan: "08:00-12:00",
+      winOffer: { id: "w1", state: "offered", slot: "2099-01-01T08", slotSpan: "08:00-12:00", until: "2099-01-01T00:00:00.000Z", was: "2000-01-01T08", wasSpan: "08:00-12:00" } }); return j; } });
+  try {
+    await v4.click(byAct(v4.d, "nav.orders"));
+    for (const id of ["ord-v4d", "ord-v4w"]) {
+      for (const part of ["open", "todo", "done"]) { if (v4.card(id) && byAct(v4.card(id), "order.amend")) break; await v4.click(byAct(v4.d, "part.orders." + part)); const r = byAct(v4.d, "order.open", id); if (r) await v4.click(r); }
+      byAct(v4.card(id), "order.amend").click(); await v4.work.quiet(); await v4.work.quiet();
+      states.push([id === "ord-v4d" ? "a part handed over's Change sheet, with Paid so far and its reason" : "a delivery's Change sheet, its When and a later window asked", actAudit(v4.d)]);
+      await v4.click(byAct(v4.d, "order.ask-keep"));
+    }
+  } finally { v4.w.close(); }
   /* 25 Oct 2026 (Salt Admin Shop): the three practice accounts open, so Practice draws Open the test page */
   const tp = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.concat(["0000-0001", "0000-0002"].map((u) => ({ username: u, code: "", account: true, test: true, state: "open", seen: { opens: 0 } }))) }) });
   try {

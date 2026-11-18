@@ -2991,6 +2991,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.change-why` | Same sheet, shown with a take-back | His reason, 3 to 120 characters, into the ledger note only. |
 | `order.change-window` | Same sheet, a delivery agreed or ready with goods to come (18 Nov 2026) | A window: earlier than theirs is told; later (or any, where they asked for none) is asked of them. Sent last, as a `move` with `slot`. |
 | `order.change-win-withdraw` | Same sheet, a later window waiting on them | Withdraws the ask (`move` with `winWithdraw`); theirs stands. |
+| `order.change-stage` | Same sheet, Ready with nothing handed over (18 Nov 2026, his answer) | Back to Agreed (`move` with `back`), told as changed; goes with terms or a bank payment alone. |
 | `order.change-rest` | Same sheet, a part handover typed (key: more or all) | More to come, or That is all (the handover then sends `close`). |
 | `order.change-paid` | Same sheet, acknowledged or ready | The amount received now, in RM. |
 | `order.change-by` | Same sheet (key: bank or cash) | Bank sends the order's received; Cash (Ready alone) is held ten seconds with its Undo. |

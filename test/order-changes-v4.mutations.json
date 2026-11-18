@@ -77,5 +77,5 @@
  {"name":"V12: the Bill says nothing of Ready","file":"stmt/page.js","find":"      if(cg.wasReady===true) subs.push(tw('om.wasReady'));","replace":""},
  {"name":"V12b: Ready counts from the first Ready","file":"stmt/page.js","find":"    if(st==='ready') for(var i=hs.length-1;i>=0;i--){","replace":"    if(false) for(var i=hs.length-1;i>=0;i--){"},
  {"name":"V5: a second take-back drops the change before the first","file":"stmt/orders.js","find":" : order.changed && order.changed.prev ? { prev: order.changed.prev } : {},","replace":" : {},"},
- {"name":"V12b: the Back line is reworded","file":"stmt/orders.js","find":"order.history.push({ at, status: \"acknowledged\", by: \"desk\", note: \"back to agreed\" });","replace":"order.history.push({ at, status: \"acknowledged\", by: \"desk\", note: \"back to agreed again\" });"}
+ {"name":"V12b: the Back line carries no mark","file":"stmt/orders.js","find":"note: \"back to agreed\", back: true });","replace":"note: \"back to agreed\" });"}
 ]

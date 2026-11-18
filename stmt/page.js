@@ -4611,9 +4611,9 @@ const CLIENT_JS = `
     w.appendChild(el('p','onote',tw(a.mode==='deliver'?'oa.againD':'oa.againC',{rm:rm(priceAt(P,o.qty))})));
     return w;
   }
-  /* 18 Nov 2026 (his answer to Ask 1 of version 4): Ready is counted from the newest Ready after the order went back to Agreed, so a payment falls due from it */
+  /* 18 Nov 2026 (his answer to Ask 1 of version 4): Ready is counted from the newest Ready after the order went back to Agreed (its history line's mark), so a payment falls due from it */
   function firstAt(o,st){ var hs=o.history||[], from=0;
-    if(st==='ready') for(var i=hs.length-1;i>=0;i--){ if(hs[i]&&hs[i].note==='back to agreed'){ from=i+1; break; } }
+    if(st==='ready') for(var i=hs.length-1;i>=0;i--){ if(hs[i]&&hs[i].back===true){ from=i+1; break; } }
     var h=hs.slice(from).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
   function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?dmyOf({day:m[3],month:m[2],year:m[1]},L):''; }
   /* what the last tap on this order said, beside the control it came from; where the answer took the control away
