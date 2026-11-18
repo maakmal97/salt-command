@@ -563,16 +563,19 @@ export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
     read = await tickRead(env);
     if (!read.ok) console.log("orders read: " + JSON.stringify(read));
   } catch (e) { console.log("orders read FAILED: " + String((e && e.stack) || e)); }
-  /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge, and it goes before the
-     reconcile so a drafter failure cannot swallow it. A customer order placed since the last
-     pass wakes the phones that asked for orders, once. */
-  try {
-    const n = await nudgeOrders(env, read);
-    if (!n.ok || n.newest) console.log("orders nudge: " + JSON.stringify(n));
-  } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
+  /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge. A customer order placed since the last
+     pass wakes the phones that asked for orders, once. 19 Nov 2026 (docs/plan-instant.html): it runs BESIDE the reconcile,
+     not before it, each in its own try, so neither waits on the other and a drafter failure still cannot swallow it */
+  const banner = (async () => {
+    try {
+      const n = await nudgeOrders(env, read);
+      if (!n.ok || n.newest || n.rung || n.held) console.log("orders nudge: " + JSON.stringify(n));
+    } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
+  })();
   /* v694: and the stages the ledger has not been told about. The reconcile is the one place that queues
      them; each entry is named by the moment of its own stage, so two passes queue the same entry once.
      It drafts what it queued rather than waiting for the quarter-hour, because he is looking at Approve. */
+  const work = (async () => {
   try {
     const rc = await reconcileOrders(env, read, mirror);
     /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
@@ -584,6 +587,8 @@ export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
     if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, "orders");
     if (rc.queued || dp.queued) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
   } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
+  })();
+  await Promise.all([banner, work]);
 }
 /* ONE PASS AT A TIME in an isolate, as the outbox's drain: a call while a pass runs only marks, and exactly one more pass runs when it ends,
    so a burst of nudges is two passes, never one each. A pass older than PASS_STALE_MS is let go and blocks nothing: a nudge's pass lives in

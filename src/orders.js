@@ -2728,9 +2728,10 @@ export async function nudgeOrders(env, read) {
   /* 18 Nov 2026 (docs/plan-nudge.html): a pass now runs where the Counter's nudge lands as well as where the cron runs, so the marks are read
      with KV's shortest cache (30 s): a location's copy from before another location's pass rang is not kept a full minute to ring again */
   const fresh = { cacheTtl: 30 };
-  const mark = (await env.SALT_QUEUE.get(MARK, fresh)) || "", saidMark = (await env.SALT_QUEUE.get(SAID_MARK, fresh)) || "";
-  const theirsMark = (await env.SALT_QUEUE.get(THEIRS_MARK, fresh)) || "";
-  const placed = !!(newest && newest > mark), spoke = !!(said && said > saidMark);
+  /* 19 Nov 2026 (docs/plan-instant.html): the three marks are read together, and the writes below are made together (1.5 s measured one by one) */
+  const [m0, s0, t0] = await Promise.all([MARK, SAID_MARK, THEIRS_MARK].map((k) => env.SALT_QUEUE.get(k, fresh)));
+  const mark = m0 || "", saidMark = s0 || "", theirsMark = t0 || "";
+  const placedNew = !!(newest && newest > mark), spokeNew = !!(said && said > saidMark);
   /* v760: A PAYMENT AND A WITHDRAWAL WOKE NOBODY. The site has written the moment of every change
      since v694 and the desk asked for it every minute and read only the placement, so somebody
      settling RM435 at midnight was invisible until he next opened the desk. The mark carries the
@@ -2741,45 +2742,60 @@ export async function nudgeOrders(env, read) {
      suite, where the two land in one millisecond often enough to matter, on a section that passed
      alone every time. The prefix is the order; anything else on the mark means something happened. */
   const momentOf = (m) => String(m || "").split("|")[0];
-  const did = !!(theirs && (momentOf(theirs) > momentOf(theirsMark)
+  const didNew = !!(theirs && (momentOf(theirs) > momentOf(theirsMark)
     || (momentOf(theirs) === momentOf(theirsMark) && theirs !== theirsMark)));
-  if (!placed && !spoke && !did) return { ok: true, sent: 0 };
+  /* 19 Nov 2026 (docs/plan-instant.html, his answer "Counter rings, with guards"): THE COUNTER RINGS SALT ADMIN AT THE MOVE (stmt/orderbook.js,
+     the ring) and says here what it rang (`rung`) and whether a ring is on its way (`pending`). A kind it rang is not rung again: its mark moves
+     and nothing is sent. A kind not rung while a ring is on its way is HELD: neither rung nor its mark moved, so the move's own nudge, or the
+     minute, reads it again once the ring has said what it reached. Anything else rings as it always did. */
+  const rung = b.rung && typeof b.rung === "object" && !Array.isArray(b.rung) ? b.rung : {}, pending = b.pending === true;
+  const covered = { order: !!(placedNew && rung.last && rung.last >= newest), said: !!(spokeNew && rung.said && rung.said >= said),
+    theirs: !!(didNew && rung.theirs && rung.theirs === theirs) };
+  const placed = placedNew && !(pending && !covered.order), spoke = spokeNew && !(pending && !covered.said), did = didNew && !(pending && !covered.theirs);
+  const held = (placedNew && !placed) || (spokeNew && !spoke) || (didNew && !did);
+  if (!placed && !spoke && !did) return held ? { ok: true, sent: 0, held: true } : { ok: true, sent: 0 };
   /* the marks move whether or not the push reaches anybody: a wake that failed is not a reason to
      wake for the same line every minute until it does */
-  if (placed) await env.SALT_QUEUE.put(MARK, newest);
-  if (spoke) await env.SALT_QUEUE.put(SAID_MARK, said);
+  const writes = [];
+  if (placed) writes.push(env.SALT_QUEUE.put(MARK, newest));
+  if (spoke) writes.push(env.SALT_QUEUE.put(SAID_MARK, said));
   let news = null;
   if (did) {
-    await env.SALT_QUEUE.put(THEIRS_MARK, theirs);
+    writes.push(env.SALT_QUEUE.put(THEIRS_MARK, theirs));
     news = NEWS_WORD[String(theirs).split("|")[1]] || null;
     /* an hour on the key and ten minutes on the reading: two limits because KV's own expiry is not
        prompt enough to be the freshness rule, and a banner is written from what is true now. */
-    if (news) await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: String(theirs).split("|")[0] }), { expirationTtl: 3600 });
+    if (news) writes.push(env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: String(theirs).split("|")[0] }), { expirationTtl: 3600 }));
   } else if (spoke && !placed) {
     /* 24 Sep 2026: A LINE IS NEWS OF ITS OWN. A wake sent because a customer wrote read "New customer
        order" or "is square", the wrong sentence v760 exists to stop. Not on a placement, whose first
        line is the note typed with it: there the new order is the news. */
     news = NEWS_WORD.said;
-    await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: said }), { expirationTtl: 3600 });
+    writes.push(env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: said }), { expirationTtl: 3600 }));
   } else if (placed) {
     /* S11 11.16: A PLACEMENT CLEARS THE NEWS, so its wake reads as a new order (the banner's own title for one).
        Left standing, the news of a payment minutes before titled the wake for a new order, and said a
        customer had paid. */
-    await env.SALT_QUEUE.delete(NEWS_KEY);
+    writes.push(env.SALT_QUEUE.delete(NEWS_KEY));
   }
+  await Promise.all(writes);
   /* 19 Oct 2026: what waits on his decision wakes Salt Admin, one wake a kind of event; the Desk is rung only when Admin
      could not be (no answer, or no subscribed device), as it always was. An act the table does not know stays the Desk's. */
   const word = did ? String(theirs).split("|")[1] : null;
   const kinds = [];
-  if (placed) kinds.push("order");
-  if (did) kinds.push(NEWS_WORD[word] ? word : null);
-  if (spoke && !kinds.includes("said")) kinds.push("said");
-  let adminSent = 0, viaAdmin = kinds.length > 0 && !kinds.includes(null);
+  if (placed && !covered.order) kinds.push("order");
+  if (did && !covered.theirs) kinds.push(NEWS_WORD[word] ? word : null);
+  if (spoke && !covered.said && !kinds.includes("said")) kinds.push("said");
+  const byCounter = (placed && covered.order) || (did && covered.theirs) || (spoke && covered.said);
+  /* the Counter's ring reached a device, so Salt Admin holds one: the Desk keeps its order banners down, as wakeAdmin's answer would have it */
+  if (byCounter) { try { await env.SALT_QUEUE.put(ADMIN_ON, "1", { expirationTtl: 2 * 86400 }); } catch (e) { /* the next wake sets it again */ } }
+  let adminSent = 0, viaAdmin = !kinds.includes(null);
   for (const k of viaAdmin ? kinds : []) {
     const w = await wakeAdmin(env, { k });
     if (!w.ok || !(w.sent > 0)) { viaAdmin = false; break; }
     adminSent += w.sent;
   }
   const p = viaAdmin ? { sent: adminSent } : await sendPush(env, { tag: "orders", urgency: "high" });
-  return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null };
+  return Object.assign({ ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null },
+    byCounter ? { rung: true } : {}, held ? { held: true } : {});
 }
