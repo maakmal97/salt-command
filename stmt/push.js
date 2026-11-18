@@ -115,8 +115,10 @@ async function listUnder(env, prefix) {
   let cursor;
   do {
     const page = await env.STMT.list({ prefix, cursor });
-    for (const k of page.keys) {
-      const v = await env.STMT.get(k.name);
+    /* 19 Nov 2026 (plan-instant): a page's records are read together, not one after another; the order kept */
+    const vals = await Promise.all(page.keys.map((k) => env.STMT.get(k.name)));
+    for (const [i, k] of page.keys.entries()) {
+      const v = vals[i];
       if (!v) continue;
       try { out.push({ key: k.name, ...JSON.parse(v) }); } catch { /* a corrupt record is skipped */ }
     }
@@ -144,6 +146,15 @@ export async function wakeCustomer(env, u, news, opts) { return wake(env, u, "sa
    of a subscription the service has given up on, a different collapsing topic so a notice does not
    replace an order's banner on the lock screen and neither replaces the other. */
 export async function wakeEveryone(env) { return wake(env, null, "salt-notice"); }
+/* 19 Nov 2026 (plan-instant, measured on live: 3.7 s to wake six devices, 9 to 13 ms of it CPU): EVERY DEVICE AT ONCE. One VAPID token is
+   minted per push service first, then every device is sealed and sent to together (the runtime queues past six connections), each with its own
+   headers; the counts and the pruning of a 404 or 410 are as they were. */
+async function tokensFor(env, key, subs) {
+  const origins = [...new Set(subs.map((s) => { try { return new URL(s.endpoint).origin; } catch { return null; } }).filter(Boolean))];
+  const tokens = new Map();
+  await Promise.all(origins.map(async (o) => { tokens.set(o, await vapidToken(env, key, o)); }));
+  return tokens;
+}
 async function wake(env, u, topic, news, opts) {
   try {
     const key = await signingKey(env);
@@ -151,7 +162,7 @@ async function wake(env, u, topic, news, opts) {
     if (!key || !pub) return { ok: false, error: "push is not configured", sent: 0 };
     const subs = await listSubs(env, u);
     if (!subs.length) return { ok: true, sent: 0 };
-    const tokens = new Map();
+    const tokens = await tokensFor(env, key, subs);
     const o = news && typeof news.o === "string" ? news.o : "";
     const text = news && Object.prototype.hasOwnProperty.call(NEWS, news.k) ? JSON.stringify(sealedNews(news, o)) : null;
     /* a sealed wake collapses per ORDER, under the digest that names a subscription so the push service never
@@ -164,10 +175,9 @@ async function wake(env, u, topic, news, opts) {
     const orderTopic = line ? "m-" + (await endpointId((o || "thread") + "|" + line)) : text && o && news.k === "pool-closed" ? "p-" + (await endpointId(o))
       : text && o ? "o-" + (await endpointId(o)) : topic;
     let sent = 0, gone = 0, failed = 0, sealed = 0;
-    for (const s of subs) {
+    await Promise.all(subs.map(async (s) => {
       let origin;
-      try { origin = new URL(s.endpoint).origin; } catch { failed++; continue; }
-      if (!tokens.has(origin)) tokens.set(origin, await vapidToken(env, key, origin));
+      try { origin = new URL(s.endpoint).origin; } catch { failed++; return; }
       const keys = text && pushKeys(s.keys);
       const headers = { TTL: "3600", Urgency: "high", Topic: topic, Authorization: `vapid t=${tokens.get(origin)}, k=${pub}` };
       /* a phone whose keys are on file reads the kind; one without, or whose keys will not seal, is woken
@@ -175,17 +185,17 @@ async function wake(env, u, topic, news, opts) {
       let body = null;
       if (keys) { try { body = await sealFor(keys, text); } catch { body = null; } }
       /* a wake that must carry its own words (the reminder) goes to sealed phones only */
-      if (!body && opts && opts.sealedOnly) continue;
+      if (!body && opts && opts.sealedOnly) return;
       let r;
       try {
         if (body) { Object.assign(headers, { Topic: orderTopic, "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" }); sealed++; }
         else headers["Content-Length"] = "0";
         r = await fetch(s.endpoint, body ? { method: "POST", headers, body } : { method: "POST", headers });
-      } catch { failed++; continue; }
+      } catch { failed++; return; }
       if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); gone++; }
       else if (r.ok || r.status === 201) sent++;
       else failed++;
-    }
+    }));
     return { ok: true, sent, gone, failed, sealed };
   } catch (e) {
     return { ok: false, error: String((e && e.message) || e), sent: 0 };
@@ -199,7 +209,10 @@ async function wake(env, u, topic, news, opts) {
    knows it, an order id. The words are admin-sw.js's; no name, code, amount or product rides. */
 export const OWNER_KINDS = ["order", "pay", "cancel", "said", "rate", "take", "pass", "approve"];
 export const OWNER_ORDER_RE = /^[A-Za-z0-9_-]{1,40}$/;
-export async function wakeOwner(env, news) {
+/* 19 Nov 2026 (plan-instant): `deadlineMs`, when given, aborts every send still open at that moment, so a wake the Counter rings at the move
+   has ended, sent or failed, by then and nothing it sent can land after it has said what it reached (Fable's review: a race against a timer
+   does not stop the sends). A send aborted counts as failed. */
+export async function wakeOwner(env, news, opts) {
   const none = { ok: true, devices: 0, sent: 0, failed: 0 };
   try {
     const k = news && news.k, o = news && typeof news.o === "string" && OWNER_ORDER_RE.test(news.o) ? news.o : "";
@@ -210,12 +223,14 @@ export async function wakeOwner(env, news) {
     if (!key || !pub) return { ok: false, error: "push is not configured", devices: subs.length, sent: 0, failed: 0 };
     const text = JSON.stringify(o ? { k, o } : { k });
     const topic = "a-" + k + (o ? "-" + (await endpointId(o)).slice(0, 16) : "");
-    const tokens = new Map();
+    const tokens = await tokensFor(env, key, subs);
+    const ms = opts && Number.isFinite(opts.deadlineMs) && opts.deadlineMs > 0 ? opts.deadlineMs : 0;
+    const stop = ms && typeof AbortController === "function" ? new AbortController() : null;
+    const timer = stop ? setTimeout(() => stop.abort(), ms) : null;
     let sent = 0, failed = 0, devices = subs.length;
-    for (const s of subs) {
+    await Promise.all(subs.map(async (s) => {
       let origin;
-      try { origin = new URL(s.endpoint).origin; } catch { failed++; continue; }
-      if (!tokens.has(origin)) tokens.set(origin, await vapidToken(env, key, origin));
+      try { origin = new URL(s.endpoint).origin; } catch { failed++; return; }
       const keys = pushKeys(s.keys);
       let body = null;
       if (keys) { try { body = await sealFor(keys, text); } catch { body = null; } }
@@ -223,11 +238,14 @@ export async function wakeOwner(env, news) {
       if (body) Object.assign(headers, { "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" });
       else headers["Content-Length"] = "0";
       let r;
-      try { r = await fetch(s.endpoint, body ? { method: "POST", headers, body } : { method: "POST", headers }); } catch { failed++; continue; }
+      const init = body ? { method: "POST", headers, body } : { method: "POST", headers };
+      if (stop) init.signal = stop.signal;
+      try { r = await fetch(s.endpoint, init); } catch { failed++; return; }
       if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); devices--; }
       else if (r.ok || r.status === 201) sent++;
       else failed++;
-    }
+    }));
+    if (timer) clearTimeout(timer);
     return { ok: true, devices, sent, failed };
   } catch (e) {
     return { ok: false, error: String((e && e.message) || e), devices: 0, sent: 0, failed: 0 };
