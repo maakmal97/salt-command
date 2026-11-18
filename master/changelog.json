@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1548",
+  "d": "18 Nov 2026",
+  "t": "EVERY ORDER CHANGES AT EVERY STAGE",
+  "n": [
+   "<b>TAKE BACK WHAT WAS PAID OR HANDED OVER.</b> On the Change sheet, Paid so far and Handed over now go down as well as up, any older handover included, with your reason in one line. It is one correction of the row for your Approve, and they are told their order has changed. A refund already raised is never undone this way: mark it paid instead.",
+   "<b>A NEW TIME AFTER ACCEPT.</b> When, on a delivery with goods to come: an earlier window is theirs at once, and they are told; a later one asks their yes on their order, theirs standing until they give it, open until that window starts.",
+   "<b>BACK TO AGREED.</b> Stage sends a Ready order with nothing handed over back to Agreed, and they are told. Cancel with goods out stays two steps: take them back, then Cancel.",
+   "<b>FEWER DEAD ENDS.</b> A change of way before anything is handed over no longer fails as changing nothing, and a delivery made a collection at Ready asks for its point."
+  ]
+ },
+ {
   "v": "v1547",
   "d": "18 Nov 2026",
   "t": "THE DESK HEARS AT ONCE",

@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="7fdcba508f77b082";
+var SALT_BUILD_ID="b7b8ede1f60e7e36";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12526,7 +12526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1547","d":"18 Nov 2026","t":"THE DESK HEARS AT ONCE","n":["<b>A CUSTOMER'S MOVE REACHES THE DESK IN SECONDS.</b> An order, a basket, their change, I have sent it, a withdrawal, No thanks, a rating, a line, a claim on the account or a join: Salt Counter tells the Desk as it records it, and the Desk runs the pass its minute runs. Your banner rings and the row is under Approve without waiting for the minute.","<b>THE CALL CARRIES NOTHING.</b> An empty knock over the link the two already share: no figure, name, order or word. A burst of moves is two passes, not one each. The minute stays as the net for a call that is lost.","<b>TWO TAKES OF ONE OFFER QUEUE ONE ROW.</b> Their Yes and a pass in the same moment could each queue the row, both approved. Now the one that claims your yes queues it and the other stands down.","<b>NO PRICE OR RULE CHANGED.</b> Your own moves, the practice accounts and their Yes keep their own roads. A banner may buzz twice when two passes read the same news at once, as you chose."]}];
+const evolution=[{"v":"v1548","d":"18 Nov 2026","t":"EVERY ORDER CHANGES AT EVERY STAGE","n":["<b>TAKE BACK WHAT WAS PAID OR HANDED OVER.</b> On the Change sheet, Paid so far and Handed over now go down as well as up, any older handover included, with your reason in one line. It is one correction of the row for your Approve, and they are told their order has changed. A refund already raised is never undone this way: mark it paid instead.","<b>A NEW TIME AFTER ACCEPT.</b> When, on a delivery with goods to come: an earlier window is theirs at once, and they are told; a later one asks their yes on their order, theirs standing until they give it, open until that window starts.","<b>BACK TO AGREED.</b> Stage sends a Ready order with nothing handed over back to Agreed, and they are told. Cancel with goods out stays two steps: take them back, then Cancel.","<b>FEWER DEAD ENDS.</b> A change of way before anything is handed over no longer fails as changing nothing, and a delivery made a collection at Ready asks for its point."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
