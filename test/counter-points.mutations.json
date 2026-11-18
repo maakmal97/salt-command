@@ -98,8 +98,8 @@
  {
   "name": "the same id with another code is taken as a retry",
   "file": "stmt/maker.js",
-  "find": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"point\", \"slot\", \"winWithdraw\"];",
-  "replace": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"slot\", \"winWithdraw\"];"
+  "find": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"point\", \"slot\", \"winWithdraw\", \"back\"];",
+  "replace": "  const keys = [\"status\", \"note\", \"message\", \"noReply\", \"mode\", \"slot\", \"winWithdraw\", \"back\"];"
  },
  {
   "name": "Ready's history line carries the place",
