@@ -1,0 +1,170 @@
+[
+ {
+  "name": "N1 the call carries a body",
+  "file": "stmt/orderbook.js",
+  "find": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key } }",
+  "replace": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key }, body: \"{}\" }"
+ },
+ {
+  "name": "N1 the call carries a second header",
+  "file": "stmt/orderbook.js",
+  "find": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key } }",
+  "replace": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key, \"X-Salt-Who\": \"u\" } }"
+ },
+ {
+  "name": "N1 the call goes to another address",
+  "file": "stmt/orderbook.js",
+  "find": "new Request(\"https://desk/_internal/maker/nudge\",",
+  "replace": "new Request(\"https://desk/_internal/maker/nudge?w=1\","
+ },
+ {
+  "name": "N2 a line on the account is not a listed move",
+  "file": "stmt/orderbook.js",
+  "find": "export const NUDGE_OPS = [\"place\", \"replace\", \"customer\", \"aclaim\", \"tsay\", \"pjoin\"];",
+  "replace": "export const NUDGE_OPS = [\"place\", \"replace\", \"customer\", \"aclaim\", \"pjoin\"];"
+ },
+ {
+  "name": "N2 a change of theirs is not a listed move",
+  "file": "stmt/orderbook.js",
+  "find": "export const NUDGE_OPS = [\"place\", \"replace\", \"customer\", \"aclaim\", \"tsay\", \"pjoin\"];",
+  "replace": "export const NUDGE_OPS = [\"place\", \"customer\", \"aclaim\", \"tsay\", \"pjoin\"];"
+ },
+ {
+  "name": "N2 the order book never asks",
+  "file": "stmt/orderbook.js",
+  "find": "    if (nudgesDesk(op, a && typeof a === \"object\" ? a : {}, out)) this.nudgeDesk();\n",
+  "replace": "\n"
+ },
+ {
+  "name": "N3 the Desk's own ops call too",
+  "file": "stmt/orderbook.js",
+  "find": "  if (!NUDGE_OPS.includes(op) || (a && a.by === \"desk\")) return false;",
+  "replace": "  if (a && a.by === \"desk\") return false;"
+ },
+ {
+  "name": "N3 his own Place calls",
+  "file": "stmt/orderbook.js",
+  "find": "  if (!NUDGE_OPS.includes(op) || (a && a.by === \"desk\")) return false;",
+  "replace": "  if (!NUDGE_OPS.includes(op)) return false;"
+ },
+ {
+  "name": "N3 their Yes to an offer calls",
+  "file": "stmt/orderbook.js",
+  "find": "  if (op === \"customer\" && a && a.action === \"take\") return false;\n",
+  "replace": "\n"
+ },
+ {
+  "name": "N3 a practice account calls",
+  "file": "stmt/orderbook.js",
+  "find": "  return !TEST_USERS.includes(u);\n}",
+  "replace": "  return !!u;\n}"
+ },
+ {
+  "name": "N3 a retry calls",
+  "file": "stmt/orderbook.js",
+  "find": "  if (!out || !out.ok || out.again || out.none) return false;\n  if (!NUDGE_OPS",
+  "replace": "  if (!out || !out.ok) return false;\n  if (!NUDGE_OPS"
+ },
+ {
+  "name": "N4 a call while one is on its way sends its own",
+  "file": "stmt/orderbook.js",
+  "find": "    if (this.nudging) { this.nudgeAgain = true; return this.nudging; }",
+  "replace": "    if (false) { this.nudgeAgain = true; return this.nudging; }"
+ },
+ {
+  "name": "N4 no call after a burst",
+  "file": "stmt/orderbook.js",
+  "find": "      if (this.nudgeAgain) { this.nudgeAgain = false; await this.nudgeDesk(); }",
+  "replace": "      if (false) { this.nudgeAgain = false; await this.nudgeDesk(); }"
+ },
+ {
+  "name": "N4 a stuck call blocks the next",
+  "file": "stmt/orderbook.js",
+  "find": "    if (this.nudging && Date.now() - this.nudgingAt > NUDGE_STALE_MS) this.nudging = null;\n",
+  "replace": "\n"
+ },
+ {
+  "name": "N7 a finished call is never let go",
+  "file": "stmt/orderbook.js",
+  "find": "      finally { if (this.nudging === job) this.nudging = null; }\n      if (this.nudgeAgain)",
+  "replace": "      finally { }\n      if (this.nudgeAgain)"
+ },
+ {
+  "name": "N5 the route is not on the allow-list",
+  "file": "src/worker.js",
+  "find": "    && p !== \"/_internal/maker/stock\" && p !== \"/_internal/maker/nudge\"\n",
+  "replace": "    && p !== \"/_internal/maker/stock\"\n"
+ },
+ {
+  "name": "N5 the route takes a GET",
+  "file": "src/worker.js",
+  "find": "  if (p === \"/_internal/maker/nudge\") {\n    if (m !== \"POST\") return json({ ok: false, error: \"method not allowed\" }, 405);",
+  "replace": "  if (p === \"/_internal/maker/nudge\") {"
+ },
+ {
+  "name": "N5 the route answers 200",
+  "file": "src/worker.js",
+  "find": "    ordersOnce(env, ctx);\n    return json({ ok: true }, 202);",
+  "replace": "    ordersOnce(env, ctx);\n    return json({ ok: true }, 200);"
+ },
+ {
+  "name": "N5 the route runs no pass",
+  "file": "src/worker.js",
+  "find": "    ordersOnce(env, ctx);\n    return json({ ok: true }, 202);",
+  "replace": "    return json({ ok: true }, 202);"
+ },
+ {
+  "name": "N6 a call while a pass runs runs its own",
+  "file": "src/worker.js",
+  "find": "  if (passing) { passAgain = true;",
+  "replace": "  if (false) { passAgain = true;"
+ },
+ {
+  "name": "N6 no pass after a burst",
+  "file": "src/worker.js",
+  "find": "    if (passAgain) { passAgain = false; await ordersOnce(env, ctx); }",
+  "replace": "    if (false) { passAgain = false; await ordersOnce(env, ctx); }"
+ },
+ {
+  "name": "N6 a stuck pass blocks the next",
+  "file": "src/worker.js",
+  "find": "  if (passing && Date.now() - passingAt > PASS_STALE_MS) passing = null;\n",
+  "replace": "\n"
+ },
+ {
+  "name": "N6 the cron runs a pass of its own",
+  "file": "src/worker.js",
+  "find": "        await ordersOnce(env, ctx, { now: new Date(event.scheduledTime || Date.now()), mirror });",
+  "replace": "        await ordersPass(env, ctx, new Date(event.scheduledTime || Date.now()), mirror);"
+ },
+ {
+  "name": "N10 the minute runs no order pass",
+  "file": "src/worker.js",
+  "find": "        await ordersOnce(env, ctx, { now: new Date(event.scheduledTime || Date.now()), mirror });",
+  "replace": "        void 0;"
+ },
+ {
+  "name": "N9 a second take queues its own row",
+  "file": "src/orders.js",
+  "find": "    if (!mine) return { ok: true, again: true };",
+  "replace": "    if (false) return { ok: true, again: true };"
+ },
+ {
+  "name": "N9 the claim holds whatever is filed",
+  "file": "src/orders.js",
+  "find": "WHERE id=?2 AND status='waiting' AND entry IS NULL AND entry_at IS NULL\").bind(claimed, pre.id)",
+  "replace": "WHERE id=?2 AND status='waiting'\").bind(claimed, pre.id)"
+ },
+ {
+  "name": "N12 the desk pass never queues a recorded entry",
+  "file": "src/orders.js",
+  "find": "  for (const p of pres.filter((x) => !x.entry_at)) {",
+  "replace": "  for (const p of pres.filter((x) => false)) {"
+ },
+ {
+  "name": "N11 the marks keep KV's minute",
+  "file": "src/orders.js",
+  "find": "  const fresh = { cacheTtl: 30 };\n  const mark =",
+  "replace": "  const fresh = undefined;\n  const mark ="
+ }
+]

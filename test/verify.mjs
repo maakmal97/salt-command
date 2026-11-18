@@ -51185,6 +51185,11 @@ await (async () => {
   await (await import("./pay-job-retired.mjs")).run({ ok });
 })();
 
+section("18 Nov 2026: a customer's move tells the Desk at once, an empty call, one pass at a time, and two passes at once queue one row");
+await (async () => {
+  await (await import("./desk-nudge.mjs")).run({ ok, skip: skipOff });
+})();
+
 section("18 Nov 2026: the review's content faults, a withheld statement on Orders, Needs you's lead, the next unit said once");
 await (async () => {
   await (await import("./review-fixes.mjs")).run({ ok, pageWork });
