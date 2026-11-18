@@ -12,6 +12,7 @@ import PRICING_ENGINE from "./pricing.mjs";
 import PRICING_RULES from "./rules.mjs";
 import { nextRidReserving } from "./rid.mjs";
 import { markOk } from "./oneoff.mjs";
+import { expectFault } from "./expect.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 
 const E = POSITION_ENGINE;
@@ -80,6 +81,9 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     const undo = pay.undo != null ? E.undoOf(row, pay.undo) : null;
     if (undo && undo.fault) throw new Error("the undo was refused: " + undo.fault);
     if (undo && !E.undoSame(undo.fields, f)) throw new Error("the undo was refused: it does not set what undoing that move sets");
+    /* 18 Nov 2026 (order changes, version 4): a take-back names the row it was measured on, checked on the row as it arrives */
+    const ex = expectFault(row, pay.expect);
+    if (ex) throw new Error("the take-back was refused: " + ex);
     const partyKey = dir === "BUY" ? "supplier" : "customer";
     const attr = E.attributionOf(row, partyKey);
     const buyerNow = attr.stream === "R2" ? (attr.downstream || null) : (row[partyKey] || null);
@@ -658,6 +662,13 @@ export function planBatch(book, staged, notes, ctx) {
           const u = Number.isInteger(pay.undo) ? E.undoOf(simOf(hits[0]), pay.undo) : { fault: "it names no step" };
           if (u.fault || !E.undoSame(u.fields, fields)) { out.refused.push({ id: it.id, why: `the undo on ${it.amends} was refused: ${u.fault || "it does not set what undoing that move sets"}` }); continue; }
           entry.pay.undo = pay.undo;
+        }
+        /* 18 Nov 2026 (order changes, version 4, Fable's review): a take-back is refused when the row as this batch leaves it no longer holds the
+           figures it was measured on, so a payment or handover folded first is never written over */
+        if (pay.expect !== undefined) {
+          const ex = expectFault(simOf(hits[0]), pay.expect);
+          if (ex) { out.refused.push({ id: it.id, why: `the take-back on ${it.amends} was refused: ${ex}` }); continue; }
+          entry.pay.expect = pay.expect;
         }
         /* v739: A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE. "A correction moves
            nothing" was written at v358, when a correction could not touch deliveredQty. It has been able to

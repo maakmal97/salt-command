@@ -59,6 +59,7 @@ export { bindBook, wayBound };
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { markOk, oneOffFlag, ONE_OFF_CLEARED } from "../engine/oneoff.mjs";
+import { expectFault } from "../engine/expect.mjs";
 import { admitInput, checkInputAdmission, finishInputAdmission, queueWithdrawalKey } from "./input-admission.js";
 
 export async function readBook(db) {
@@ -852,6 +853,8 @@ export function draftRow(entry, book) {
         if (undone.fault) return { skip: "the undo was refused: " + undone.fault };
         if (!POSITION_ENGINE.undoSame(undone.fields, fields)) return { skip: "the undo was refused: it does not set what undoing that move sets; read the row again" };
       }
+      /* 18 Nov 2026 (order changes, version 4): a take-back is drafted only on the row it was measured on (engine/expect.mjs) */
+      { const ex = expectFault(target, pay.expect); if (ex) return { skip: "the take-back was refused: " + ex }; }
       /* 16 Oct 2026 (plan 3): a row joining a trip holds the trip together with the rows already on it (one buyer, one day, a book once,
          one delivery); its siblings joining in the same tap are held together by the Worker before any is queued, and by the fold */
       /* Fable's review of 16 Oct 2026: and a row already on a trip whose correction moves its delivery, buyer, day or book is held to the

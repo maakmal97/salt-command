@@ -798,6 +798,14 @@ export function restateTap(o, at, body, ctx) {
   if (earlier.some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
     return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
   if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
+  /* 18 Nov 2026 (the plan's version 4, Fable's note at v1525): A CHANGE OF WAY ALONE, WITH NOTHING HANDED OVER, is the order's alone: the row holds no way
+     until a handover (its `handover`), and the delivery it carries is already the one asked, so a Correction would change nothing and the drafter refuses
+     it. The site takes it at the tap, told as changed, and no row is queued */
+  if (wayMoves && !(body && body.undo !== undefined) && !((+o.moved || 0) > 0.0004)) {
+    const row = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+    if (row && Math.abs(+row.qty - figs.qty) < 0.0004 && Math.abs(+row.total - figs.total) < 0.004 && Math.abs((+row.delivery || 0) - figs.delivery) < 0.004 && !row.handover && !row.trip)
+      return { siteOnly: true, site: { restate: Object.assign({}, figs, { mode, tell: true }) }, shown: { was: Object.assign({ mode: o.mode || null }, was), mode } };
+  }
   const entry = amendEntry(o, o.code, figs, was, at, wayMoves ? mode : undefined);
   entry.orderId = o.id;
   if (mark !== undefined) entry.payload.oneOff = mark;
@@ -829,4 +837,76 @@ export function restateTap(o, at, body, ctx) {
   if (over > 0.004) shown.refund = over;
   if (undone != null) shown.undo = undone;
   return Object.assign({ entry, queueIt: true, site: { restate: Object.assign({}, figs, wayMoves ? { mode } : {}, undone != null ? { undo: true } : { tell: true }) }, shown }, over > 0.004 ? { refund: over } : {});
+}
+
+/** 18 Nov 2026 (the order-changes plan, version 4, his answer 6): LOWER WHAT IS PAID OR HANDED OVER, from Salt Admin's Change sheet, with his reason.
+ *  Body { paid?, moved?, why }: the NEW figures on the order, each under what it holds now, and his one line (3 to 120 characters), which reaches
+ *  the ledger note only and never the customer. One Correction of the order's row, an Amendment for Approve like a restate, setting the row's
+ *  `cash` and `deliveredQty` lower by the same differences, clearing `paidOn` once it is paid under what it comes to and `deliveredOn` once nothing
+ *  is out, and carrying `expect` (engine/expect.mjs): the row's figures it was measured on, which the drafter and the fold check again, so a payment
+ *  or handover that folds first refuses it rather than being overwritten (Fable's review). The site lowers the order at the tap, told as changed.
+ *  Measured on the row only where row and order already tie (the return leg's own readings, rowPaidFor and rowOut), so their credit, an offset and
+ *  an advance are never what comes down; a lower of paid that would leave a refund already raised on the row unowed is refused: the refund is
+ *  marked paid instead (Fable's review). ctx: { book (with its refunds), room, earlier, live }, as restateTap's. */
+export function lowerTap(o, at, body, ctx) {
+  const { book, room, earlier, live } = ctx;
+  if (!AGREED_ON_SITE.includes(o.status) && o.status !== "done") return { status: 409, error: "this order is " + o.status + ", so nothing on it is taken back" };
+  const num = (v) => typeof v === "number" && Number.isFinite(v);
+  const has = { paid: !!body && body.paid !== undefined, moved: !!body && body.moved !== undefined };
+  if (!has.paid && !has.moved) return { error: "say what is lowered: what is paid, what is handed over, or both" };
+  const ro = reasonOf({ oneOff: body.why });
+  if (ro.error || !ro.why) return { error: "say why, in one line of 3 to 120 characters, with no < or >" };
+  const nowPaid = +(+o.paid || 0).toFixed(2), nowMoved = +(+o.moved || 0).toFixed(3);
+  const paid = has.paid ? body.paid : nowPaid, moved = has.moved ? body.moved : nowMoved;
+  if (!num(paid) || paid < 0 || !num(moved) || moved < 0) return { error: "what is paid and what is handed over are figures from nothing" };
+  const dPaid = +(nowPaid - paid).toFixed(2), dMoved = +(nowMoved - moved).toFixed(3);
+  if (dPaid < -0.004 || dMoved < -0.0004) return { error: "this only takes back: a payment or a handover is recorded as it arrives" };
+  if (!(dPaid > 0.004) && !(dMoved > 0.0004)) return { status: 409, error: "that is what the order already holds" };
+  if ((o.payments || []).some((p) => p && p.claim === "waiting")) return { status: 409, error: "a payment they say they sent waits on this order: answer it first, Received or Not found" };
+  const told = o.queued || {};
+  if (nowPaid > (+told.paid || 0) + 0.004 || nowMoved > (+told.moved || 0) + 0.0004) return { status: 409, error: "the order has a move the book has not heard yet: wait for it to land" };
+  if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
+  const row = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+  if (!row) return { status: 409, error: "the order's row is not on the book yet: wait for it to land" };
+  if (Math.abs(rowPaidFor(o, row) - nowPaid) > 0.004 || Math.abs(rowOut(row) - nowMoved) > 0.0004)
+    return { status: 409, error: "the order and its row do not agree yet: wait for the Desk to catch up, then try again" };
+  const r = room ? room(ledgerKeyOf(o), null) : null;
+  if (r && r.on > 0.004) return { status: 409, error: "money is already on its way to this row: decide it before taking any back" };
+  if (earlier.some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
+    return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
+  if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
+  const cash = +(+row.cash || 0).toFixed(2), deliv = +(+row.deliveredQty || 0).toFixed(3);
+  if (dPaid > cash + 0.004) return { status: 409, error: "the row holds only " + rm(cash) + " paid in money, so no more of it is taken back here" };
+  if (dMoved > deliv + 0.0004) return { status: 409, error: "the row holds only " + deliv + " unit handed over as goods, so no more is taken back here" };
+  const newCash = +(cash - dPaid).toFixed(2), newDeliv = +(deliv - dMoved).toFixed(3);
+  /* their credit is paid on the row as cash; an offset (settledRM) beside it can leave the cash under the credit, so it is held (Fable's review) */
+  if (dPaid > 0.004 && newCash < (+row.credit || 0) - 0.004) return { status: 409, error: "their credit is paid on this row and is not taken back here" };
+  const owed = POSITION_ENGINE.txOwed(row), after = POSITION_ENGINE.txPaid(row) - dPaid;
+  const had = (book.customerRefunds || []).reduce((a, x) => a + (x && x.rid === row.rid ? (+x.amount || 0) : 0), 0);
+  if (dPaid > 0.004 && had > 0.004 && after - owed < had - 0.004)
+    return { status: 409, error: rm(+Math.min(dPaid, had).toFixed(2)) + " of this is already their refund on this order: mark the refund paid instead" };
+  const fields = {}, expect = {}, said = [];
+  if (dPaid > 0.004) {
+    fields.cash = newCash; expect.cash = cash; said.push("paid " + rm(nowPaid) + " to " + rm(paid));
+    if (row.paidOn && after < owed - 0.004) fields.paidOn = null;
+  }
+  if (dMoved > 0.0004) {
+    fields.deliveredQty = newDeliv; expect.deliveredQty = deliv; said.push("handed over " + nowMoved + " to " + moved + " unit");
+    if (row.deliveredOn && !(newDeliv + (+row.advanceUnits || 0) + (+row.settledKg || 0) > 0.0004)) fields.deliveredOn = null;
+  }
+  const atD = at instanceof Date ? at : new Date(at || Date.now());
+  const books = partyOnBook(o, o.code);
+  const entry = {
+    at: atD.toISOString(), type: "SELL", party: books, qty: +o.qty, total: +o.total, status: "Amendment",
+    raw: "Lowered " + books + ", order " + o.id + ": " + said.join(", "),
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+      orderKey: ledgerKeyOf(o), orderCode: null, linkTo: null, assoc: null, downstream: null,
+      date: klDate(atD), qty: 0, total: 0, cash: 0, kg: 0, fields, expect,
+      note: "Taken back after Accept for order " + o.id + ": " + said.join(", ") + ". His reason: " + ro.why + "." },
+    orderId: o.id
+  };
+  /* the figures it was measured on ride along, so the order book takes it only from them (Fable's review): a move landing between is a refusal, never a wipe */
+  const site = { lower: Object.assign({ tell: true }, dPaid > 0.004 ? { paid: +paid.toFixed(2), wasPaid: nowPaid } : {}, dMoved > 0.0004 ? { moved: +moved.toFixed(3), wasMoved: nowMoved } : {}) };
+  const shown = Object.assign({ was: { paid: nowPaid, moved: nowMoved } }, dPaid > 0.004 ? { paid: +paid.toFixed(2) } : {}, dMoved > 0.0004 ? { moved: +moved.toFixed(3) } : {});
+  return { entry, queueIt: true, site, shown };
 }
