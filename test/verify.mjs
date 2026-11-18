@@ -51170,9 +51170,14 @@ await (async () => {
   await (await import("./admin-fable-fix.mjs")).run({ ok, pageWork });
 })();
 
-section("18 Nov 2026: the working shell on Salt Admin and Salt Counter, the hero one row, the rail to the foot, the queue up to 440px");
+section("18 Nov 2026: the working shell on Salt Admin and Salt Counter, the hero a bar with the status, the rail to the foot, the queue up to 440px");
 await (async () => {
   await (await import("./work-shell.mjs")).run({ ok });
+})();
+
+section("18 Nov 2026: tabs for a place's parts, Ledger check and Approve in every bar, Group orders under Settings, no More list on Orders");
+await (async () => {
+  await (await import("./work-bar.mjs")).run({ ok, pageWork });
 })();
 
 section("18 Nov 2026: the reconcile's pay job is retired, the Counter lists none and the Desk books none, his Received is the one road");

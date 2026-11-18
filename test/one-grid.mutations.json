@@ -32,8 +32,8 @@
  {
   "name": "G3 the hero says Shop",
   "file": "stmt/page.js",
-  "find": "+ aHero(\"Settings\", \"\")",
-  "replace": "+ aHero(\"Shop\", \"\")"
+  "find": "+ aHero(\"Settings\", \"\", { acts: !test })",
+  "replace": "+ aHero(\"Shop\", \"\", { acts: !test })"
  },
  {
   "name": "G3 Shop hours renamed too",

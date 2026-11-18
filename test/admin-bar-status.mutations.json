@@ -14,8 +14,8 @@
  {
   "name": "the hours are never shown",
   "file": "stmt/owner.js",
-  "find": "if(hrs.hidden===!!txt) hrs.hidden=!txt;",
-  "replace": "hrs.hidden=true;"
+  "find": "      if(hb.hidden===!!txt) hb.hidden=!txt;",
+  "replace": "      hb.hidden=true;"
  },
  {
   "name": "open says no time",
@@ -62,13 +62,13 @@
  {
   "name": "the hours are words, not a control",
   "file": "stmt/page.js",
-  "find": "    + (o.hours ? '<button type=\"button\" class=\"amb-chip amb-chip--glass\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button>' : \"\")",
-  "replace": "    + (o.hours ? '<span class=\"amb-chip amb-chip--glass\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></span>' : \"\")"
+  "find": "'<button type=\"button\" class=\"amb-chip amb-chip--glass\"' + (o.hours ? ' id=\"aBarHours\"' : \" data-wide\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
+  "replace": "'<span class=\"amb-chip amb-chip--glass\"' + (o.hours ? ' id=\"aBarHours\"' : \" data-wide\") + ' data-barhours data-act=\"bar.hours\" hidden></span>'"
  },
  {
   "name": "the chip is not named with its tap",
   "file": "stmt/owner.js",
-  "find": "      hrs.setAttribute('aria-label',txt+'. Tap to change');",
+  "find": "        hb.setAttribute('aria-label',txt+'. Tap to change');",
   "replace": ""
  },
  {
@@ -110,14 +110,14 @@
  {
   "name": "no glowing dot",
   "file": "stmt/owner.js",
-  "find": "hrs.innerHTML='<span class=\"amb-chip__dot\"></span>';",
-  "replace": "hrs.innerHTML='';"
+  "find": "hb.innerHTML='<span class=\"amb-chip__dot\"></span>';",
+  "replace": "hb.innerHTML='';"
  },
  {
   "name": "the chip is not glass",
   "file": "stmt/owner.js",
-  "find": "hrs.className='amb-chip amb-chip--glass ashop'+tone;",
-  "replace": "hrs.className='amb-chip ashop'+tone;"
+  "find": "hb.className='amb-chip amb-chip--glass ashop'+tone;",
+  "replace": "hb.className='amb-chip ashop'+tone;"
  },
  {
   "name": "the page styles the chip again",
@@ -128,7 +128,7 @@
  {
   "name": "the live line leaves the hero",
   "file": "stmt/page.js",
-  "find": "aHero(\"Needs you\", '<p class=\"amb-hero__sub\" id=\"nCount\">Reading what needs you.</p>', { heat: true, live: true, hours: true })",
-  "replace": "aHero(\"Needs you\", '<p class=\"amb-hero__sub\" id=\"nCount\">Reading what needs you.</p>', { heat: true, hours: true }) + '<span class=\"abarlive\" data-barlive id=\"aBarLive\"></span>'"
+  "find": "aHero(\"Needs you\", '<p class=\"amb-hero__sub\" id=\"nCount\">Reading what needs you.</p>', { heat: true, live: true, hours: true, acts: !test })",
+  "replace": "aHero(\"Needs you\", '<p class=\"amb-hero__sub\" id=\"nCount\">Reading what needs you.</p>', { heat: true, hours: true, acts: !test }) + '<span class=\"abarlive\" data-barlive id=\"aBarLive\"></span>'"
  }
 ]

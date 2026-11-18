@@ -1,0 +1,206 @@
+[
+ {
+  "name": "Orders' parts are a segment again",
+  "file": "stmt/page.js",
+  "find": "amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\"",
+  "replace": "amb-segment aparts\" role=\"group\" aria-label=\"Orders\""
+ },
+ {
+  "name": "the other places' parts are segments again",
+  "file": "stmt/page.js",
+  "find": "' amb-segment--tabs aparts\"",
+  "replace": "' aparts\""
+ },
+ {
+  "name": "Needs you's kinds are drawn as tabs",
+  "file": "stmt/page.js",
+  "find": "amb-segment amb-segment--wrap nchips",
+  "replace": "amb-segment amb-segment--wrap amb-segment--tabs nchips"
+ },
+ {
+  "name": "Customers' filters are drawn as tabs",
+  "file": "stmt/page.js",
+  "find": "amb-segment amb-segment--wrap afil",
+  "replace": "amb-segment amb-segment--wrap amb-segment--tabs afil"
+ },
+ {
+  "name": "the Counter's Orders tabs are filters again",
+  "file": "stmt/page.js",
+  "find": "'amb-segment amb-segment--wrap amb-segment--tabs otabs'",
+  "replace": "'amb-segment amb-segment--wrap otabs'"
+ },
+ {
+  "name": "tabs are drawn in any shell",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-segment--tabs { flex-wrap: nowrap;",
+  "replace": ".amb-segment--tabs { flex-wrap: nowrap;"
+ },
+ {
+  "name": "the tab row has no hairline",
+  "file": "stmt/statement-css.js",
+  "find": "max-width: none; padding: 0; border: 0; border-bottom: 1px solid var(--amb-line); border-radius: 0; background: none; }",
+  "replace": "max-width: none; padding: 0; border: 0; border-radius: 0; background: none; }"
+ },
+ {
+  "name": "a tab may be under 44px wide",
+  "file": "stmt/statement-css.js",
+  "find": "min-width: var(--amb-tap); padding: 0 2px;",
+  "replace": "padding: 0 2px;"
+ },
+ {
+  "name": "the pressed tab's underline is a hairline's grey",
+  "file": "stmt/statement-css.js",
+  "find": "height: 2px; background: var(--amb-accent); }",
+  "replace": "height: 2px; background: var(--amb-line); }"
+ },
+ {
+  "name": "only Orders' hero carries the two moves",
+  "file": "stmt/page.js",
+  "find": "(o.acts ? '<div class=\"amb-cluster\"'",
+  "replace": "(o.acts && o.approve ? '<div class=\"amb-cluster\"'"
+ },
+ {
+  "name": "every hero's moves show on a phone",
+  "file": "stmt/page.js",
+  "find": "(o.approve ? \"\" : \" data-wide\") + '>'",
+  "replace": "'>'"
+ },
+ {
+  "name": "Approve stands off Orders before any row waits",
+  "file": "stmt/page.js",
+  "find": "(o.approve ? ' id=\"aApprove\"' : \" hidden\")",
+  "replace": "(o.approve ? ' id=\"aApprove\"' : \"\")"
+ },
+ {
+  "name": "the tick shows before the check is read",
+  "file": "stmt/page.js",
+  "find": "data-ledger-ok hidden>",
+  "replace": "data-ledger-ok>"
+ },
+ {
+  "name": "the test surface carries the two moves",
+  "file": "stmt/page.js",
+  "find": "{ heat: true, live: true, hours: true, acts: !test }",
+  "replace": "{ heat: true, live: true, hours: true, acts: true }"
+ },
+ {
+  "name": "Payments is a stage of Orders' strip",
+  "file": "stmt/page.js",
+  "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
+  "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\", \"payments\"];"
+ },
+ {
+  "name": "Group orders is no part of Settings",
+  "file": "stmt/page.js",
+  "find": "[\"notice\", \"Notice\"], [\"group\", \"Group orders\"], [\"practice\", \"Practice\"],",
+  "replace": "[\"notice\", \"Notice\"], [\"practice\", \"Practice\"],"
+ },
+ {
+  "name": "the group section shows under Orders' old address",
+  "file": "stmt/page.js",
+  "find": "data-in=\"shop.group\" aria-labelledby=\"makerPoolsTitle\"",
+  "replace": "data-in=\"orders.group\" aria-labelledby=\"makerPoolsTitle\""
+ },
+ {
+  "name": "only Orders' indicator is painted",
+  "file": "stmt/owner.js",
+  "find": "    [].forEach.call(document.querySelectorAll('[data-ledger]'), function(b){\n      var ok=",
+  "replace": "    [].forEach.call(document.querySelectorAll('#oOrders [data-ledger]'), function(b){\n      var ok="
+ },
+ {
+  "name": "the tick stands beside differences",
+  "file": "stmt/owner.js",
+  "find": "if(ok&&ok.hidden!==!(known&&t.clean)) ok.hidden=!(known&&t.clean);",
+  "replace": "if(ok) ok.hidden=!known;"
+ },
+ {
+  "name": "the count is never shown",
+  "file": "stmt/owner.js",
+  "find": "n=known&&!t.clean?(t.faults||[]).length:0;",
+  "replace": "n=0;"
+ },
+ {
+  "name": "a check that could not be read counts as read",
+  "file": "stmt/owner.js",
+  "find": "var t=ledgerTie, known=!!(t&&t.ok),",
+  "replace": "var t=ledgerTie, known=!!t,"
+ },
+ {
+  "name": "the indicator's name does not say the books agree",
+  "file": "stmt/owner.js",
+  "find": "t.clean?'every order matches the book':n===1",
+  "replace": "t.clean?'checked':n===1"
+ },
+ {
+  "name": "the tie-out is read at every change of place",
+  "file": "stmt/owner.js",
+  "find": "    if(!ledgerAt||Date.now()-ledgerAt>600000) ledgerRead();\n",
+  "replace": "    ledgerRead();\n"
+ },
+ {
+  "name": "the tie-out is never read with the page",
+  "file": "stmt/owner.js",
+  "find": "    if(!ledgerAt||Date.now()-ledgerAt>600000) ledgerRead();\n",
+  "replace": ""
+ },
+ {
+  "name": "a tap on Ledger check opens the orders",
+  "file": "stmt/owner.js",
+  "find": "lb.addEventListener('click', function(){ showPlace('orders','ledger',{push:true}); });",
+  "replace": "lb.addEventListener('click', function(){ showPlace('orders','',{push:true}); });"
+ },
+ {
+  "name": "Check now leaves the bars as they were",
+  "file": "stmt/owner.js",
+  "find": "var j=await refs('/all/maker/ledger',{}); drawLedger(j); drawTieout(j.tieout); ledgerTie=j.tieout||null; ledgerAt=Date.now(); ledgerPaint();",
+  "replace": "var j=await refs('/all/maker/ledger',{}); drawLedger(j); drawTieout(j.tieout);"
+ },
+ {
+  "name": "opening the Ledger check leaves the bars as they were",
+  "file": "stmt/owner.js",
+  "find": "    drawTieout(j.tieout);\n    ledgerTie=j.tieout||null; ledgerAt=Date.now(); ledgerPaint();\n  }",
+  "replace": "    drawTieout(j.tieout);\n  }"
+ },
+ {
+  "name": "Approve never shows off Orders",
+  "file": "stmt/owner.js",
+  "find": "      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;\n",
+  "replace": ""
+ },
+ {
+  "name": "Approve shows off Orders with nothing waiting",
+  "file": "stmt/owner.js",
+  "find": "      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;",
+  "replace": "      if(!apBtn.id) apBtn.hidden=false;"
+ },
+ {
+  "name": "only Orders' Approve is wired",
+  "file": "stmt/owner.js",
+  "find": "  [].forEach.call(document.querySelectorAll('[data-approve]'), function(ap){ ap.addEventListener(",
+  "replace": "  [].forEach.call(document.querySelectorAll('#aApprove'), function(ap){ ap.addEventListener("
+ },
+ {
+  "name": "Settings' Group orders reads no pools",
+  "file": "stmt/owner.js",
+  "find": "    'shop.group':function(){ loadMakerPools(); },\n",
+  "replace": ""
+ },
+ {
+  "name": "the pools are read only under Orders",
+  "file": "stmt/owner.js",
+  "find": "var root=document.getElementById('makerPools'); if(!root||placeNow!=='shop'||partNow!=='group') return;",
+  "replace": "var root=document.getElementById('makerPools'); if(!root||placeNow!=='orders') return;"
+ },
+ {
+  "name": "the old address of Group orders lands on Orders",
+  "file": "stmt/owner.js",
+  "find": ", 'orders/group':['shop','group']};",
+  "replace": "};"
+ },
+ {
+  "name": "Payments they sent has no address",
+  "file": "stmt/owner.js",
+  "find": "if(PARTS.orders){ PARTS.orders.push('payments'); if(!TESTING)",
+  "replace": "if(PARTS.orders){ if(!TESTING)"
+ }
+]

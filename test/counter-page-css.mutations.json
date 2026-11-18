@@ -194,7 +194,7 @@
  {
   "name": "a place loses its hero",
   "file": "stmt/page.js",
-  "find": "        + aHero(\"Record\", \"\")",
+  "find": "        + aHero(\"Record\", \"\", { acts: !test })",
   "replace": "        + '<h1 class=\"sr\">Record</h1>'"
  },
  {

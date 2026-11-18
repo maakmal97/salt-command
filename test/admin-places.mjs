@@ -19,11 +19,12 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Settings"];
 const PARTS = {
-  /* 2 Nov 2026 (Orders on the canvas): the Segment draws the first four; Approve is reached by the bar, and Payments, Group and Ledger are rows under More */
-  orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["group", "Group orders"], ["ledger", "Ledger check"]],
+  /* 2 Nov 2026 (Orders on the canvas): the Segment draws the first four; Approve is reached by the bar. 18 Nov 2026 (his answer D): so is Ledger check, Payments is entered by its
+     address, and Group orders is a part of Settings */
+  orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["market", "Market"], ["calendar", "Calendar"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
+  shop: [["hours", "Hours"], ["market", "Market"], ["calendar", "Calendar"], ["notice", "Notice"], ["group", "Group orders"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* the sections that stand for a place or a part, and so show or do not */
 const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderList", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
@@ -32,12 +33,12 @@ const SHOWS = {
   needs: "mHome",
   "orders/todo": "oOrders makerOrderList makerReview", "orders/open": "oOrders makerOrderList makerReview",
   "orders/done": "oOrders makerOrderList makerReview", "orders/ended": "oOrders makerOrderList makerReview", "orders/payments": "oOrders makerClaims",
-  "orders/group": "oOrders makerPools", "orders/approve": "oOrders makerDrafts makerQueueReview", "orders/ledger": "oOrders oLedger",
+  "orders/approve": "oOrders makerDrafts makerQueueReview", "orders/ledger": "oOrders oLedger",
   "customers/accounts": "oCustomers oAccts", "customers/messages": "oCustomers makerChatList", "customers/links": "oCustomers oLinks",
   "customers/associates": "oCustomers oCards",
   "record/entry": "oRecord makerInputs", "record/customers": "oRecord makerInputs",
   "record/pricing": "oRecord makerInputs",
-  "shop/hours": "oShop makerSchedule", "shop/market": "oShop makerMarket", "shop/calendar": "oShop makerCalendar", "shop/notice": "oShop makerBulletin", "shop/practice": "oShop mTest", "shop/device": "oShop oLook"
+  "shop/hours": "oShop makerSchedule", "shop/market": "oShop makerMarket", "shop/calendar": "oShop makerCalendar", "shop/notice": "oShop makerBulletin", "shop/group": "oShop makerPools", "shop/practice": "oShop mTest", "shop/device": "oShop oLook"
 };
 /* the forms of Record, by the part each belongs to (the page also draws an Unsent entry for the loan this device kept) */
 const FORMS = {
@@ -156,7 +157,7 @@ export async function run({ ok, pageWork }) {
     for (const [part] of PARTS.orders) { await p.tap("part.orders." + part); stage[part] = rows(); }
     /* 2 Nov 2026: what waits on him is in To do (the declined order with a request to send again too), the rest of the live ones in Open, a cancelled or declined one that waits on nothing in Ended */
     ok(stage.todo === "ord-p1,ord-p2,ord-p3,ord-p4,ord-a1,ord-a2,ord-x1" && stage.open === "ord-g1,ord-r1,ord-r2,ord-r3"
-      && stage.done === "" && stage.ended === "ord-c1,ord-c2" && stage.approve === "" && stage.payments === "" && stage.group === "",
+      && stage.done === "" && stage.ended === "ord-c1,ord-c2" && stage.approve === "" && stage.payments === "" && stage.ledger === "",
     "an order is a row in the one part it stands at, a declined or cancelled one in Ended, and none in two: " + JSON.stringify(stage));
     /* 2 Nov 2026: and in Open an agreed order stands under Agreed and a ready one under Ready, the stage each is filed at */
     await p.tap("part.orders.open");
@@ -204,11 +205,11 @@ export async function run({ ok, pageWork }) {
     const q = await drawn({ pageWork });
     try {
       const step = async (act) => { const c = byAct(q.d, act); if (c) c.click(); await q.work.quiet(); return q.w.location.hash; };
-      const trail = [await step("nav.orders"), await step("part.orders.group"), await step("nav.shop")];
+      const trail = [await step("nav.orders"), await step("part.orders.open"), await step("nav.shop")];
       /* the window leaves the address when it has gone, or never if there was nowhere to go: a bounded poll, then what stands */
       const travel = async (dir) => { const from = q.w.location.href; q.w.history[dir](); for (let i = 0; i < 300 && q.w.location.href === from; i++) await new Promise((r) => setTimeout(r, 10)); await q.work.quiet(); return q.where() + " " + q.w.location.hash; };
       const back1 = await travel("back"), back2 = await travel("back"), back3 = await travel("back"), fwd = await travel("forward");
-      ok(same(trail, ["#orders", "#orders/group", "#shop"]) && back1 === "orders orders/group #orders/group" && back2 === "orders orders/todo #orders"
+      ok(same(trail, ["#orders", "#orders/open", "#shop"]) && back1 === "orders orders/open #orders/open" && back2 === "orders orders/todo #orders"
         && back3 === "needs " && fwd === "orders orders/todo #orders",
       "a tap writes the place's address, and Back and Forward move between places: " + JSON.stringify([trail, back1, back2, back3, fwd]));
     } finally { q.w.close(); }
@@ -221,13 +222,13 @@ export async function run({ ok, pageWork }) {
       await step("nav.needs", reads());
       await step("nav.shop", reads("hours", "points"));
       await step("part.shop.notice", reads("bulletin"));
+      await step("part.shop.group", reads("pools"));
       await step("part.shop.practice", reads());
       await step("part.shop.device", reads());
       await step("part.shop.hours", reads("hours", "points"));
       await step("nav.orders", reads("review", "claims"));
       for (const part of ["open", "done", "ended", "payments", "todo"]) await step("part.orders." + part, reads());
-      await step("part.orders.group", reads("pools"));
-      await step("nav.orders", reads("review", "claims", "pools"));
+      await step("nav.orders", reads("review", "claims"));
       await step("part.orders.ledger", reads("ledger"));
       await step("nav.customers", reads());
       await step("part.customers.messages", reads("threads"));

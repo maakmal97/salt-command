@@ -1760,8 +1760,11 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   waits on him, whatever its stage** (a placed one, a payment they say they sent, a stage he rejected, a question, a request to send again; a declined order
   with such a request stands there too); an order is in exactly one part (`ordPartFor`), and cash held for it marks it without moving it, so its card and its Undo
   stay. Open lists **Agreed, Ready and Out or paid** each under its own head, a month a head in Done and Ended, and To do's Orders and each sheet (a sheet's
-  orders at one stage, two or more, stand under "Sheet", its reference and its delivery). Payments they sent, Group orders and Ledger check are action rows in a
-  More group at the foot of the list; **Approve has no control of its own**: the bar's Approve and the Desk's `/admin` land on `#orders/approve`, which still
+  orders at one stage, two or more, stand under "Sheet", its reference and its delivery). **The More group is split up** (his answer D of 18 Nov 2026): Ledger check stands in every place's bar beside Approve (`bar.ledger`: a tick while the Desk's last tie-out was
+  clean, the count of differences while it was not, read with the page and at most every ten minutes after, never a check of its own; `#orders/ledger` kept), Group orders is a
+  part of Settings (`#shop/group`, the old `#orders/group` landing there), and Payments they sent has no row: its part and `#orders/payments` stay, opened by Needs you's payment
+  cards, his alerts and the test surface's Payments place. From 960px a place's parts are underlined tabs (`amb-segment--tabs`) and every place's bar carries the live word, the
+  time, the shop's state, Ledger check and Approve (while rows wait; Orders' always); a phone keeps the hero it had. **Approve has no control of its own**: the bar's Approve and the Desk's `/admin` land on `#orders/approve`, which still
   opens it, and the old stage addresses (`#orders/placed`, `/confirmed`, `/ready`, `/paid`) land on To do or Open (`PART_ALIAS`). The list has **no Refresh and no
   line under it**: the page polls and has the live socket, and a return to Orders reads again. The line over the list is one sentence, money first. A row is a
   settings row below 1080px (the book's typed tag, the first and a +N for an order of several books, the code, the second line saying what and how long, copper
@@ -2925,8 +2928,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
 | `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
-| `bar.hours` | Needs you's hero, its glass hours chip (the bar's until 15 Nov 2026) | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
-| `bar.approve` | Orders' hero, Approve, its one main action (the bar's until 15 Nov 2026), named with the rows to approve | Goes to Orders > Approve; its name counts the rows as their cards do, a trip's as one. |
+| `bar.hours` | Every place's hero, its glass hours chip (Needs you's alone on a phone; the bar's until 15 Nov 2026) | Goes to Shop hours, at the shop held for now (20 Oct 2026, his yes: no toggle in the bar). |
+| `bar.approve` | Every place's hero, Approve (Orders' always; the others from 960px while rows wait; the bar's until 15 Nov 2026), named with the rows to approve | Goes to Orders > Approve; its name counts the rows as their cards do, a trip's as one. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `order.winback` | Order card, Agree, the win-back line | Fills Goods with the win-back price the preview suggests for a lapsed regular and reads the figures again; nothing is sent until his Accept. |
@@ -3010,9 +3013,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.orders.open` | The Segment under Orders (tab: Open) | Shows the live orders that wait on nothing, Agreed, Ready and Out or paid each under its own head, and every row of the book at its stage. |
 | `part.orders.done` | The Segment under Orders (tab: Done) | Shows the orders handed over and closed, a month to a head. |
 | `part.orders.ended` | The Segment under Orders (tab: Ended) | Shows the declined, cancelled and written-off orders that wait on nothing, a month to a head. |
-| `part.orders.payments` | Under More, below the list (row: Payments they sent, with its count) | Shows the payments they say they sent. |
-| `part.orders.group` | Under More, below the list (row: Group orders) | Shows the group orders, reading them. |
-| `part.orders.ledger` | Under More, below the list (row: Ledger check) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
+| `bar.ledger` | Every place's hero, Ledger check, beside Approve (Orders' alone on a phone), with a tick while the Desk's last tie-out was clean and the count of differences while it was not | Goes to Orders > Ledger check (`#orders/ledger`), the mini ledger: Open orders, Pending orders, the latest 20 orders and Check now. It runs no check itself. |
 | `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
 | `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's %, the printed board sizes and the tips, one form at a time. |
@@ -3025,6 +3026,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `calendar.add` | Shop > Calendar, Add a mark | Adds the mark at once (`POST /all/maker/calendar {add}`); nothing waits under Approve, since a mark prices nothing. |
 | `calendar.remove` | Shop > Calendar, a mark's row | Removes that mark at once (`POST /all/maker/calendar {remove: id}`). |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
+| `part.shop.group` | The strip under Settings (tab: Group orders; under Orders' More until 18 Nov 2026, and `#orders/group` still lands here) | Shows the group orders, reading them. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
 | `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Admin, reading nothing. |
 | `points.add` | Collection points, New point, Add point | Adds the point typed to the list, unsaved. |

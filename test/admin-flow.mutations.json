@@ -260,8 +260,8 @@
  {
   "name": "V9: the Ledger draws no tie-out",
   "file": "stmt/owner.js",
-  "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n  }",
-  "replace": "    drawLedger(j);\n  }"
+  "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n    ledgerTie=j.tieout||null;",
+  "replace": "    drawLedger(j);\n    ledgerTie=j.tieout||null;"
  },
  {
   "name": "V9: a difference is not named",

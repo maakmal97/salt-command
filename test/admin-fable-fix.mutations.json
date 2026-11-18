@@ -92,8 +92,8 @@
  {
   "name": "the hero's Approve is a filled pill",
   "file": "stmt/page.js",
-  "find": "class=\"amb-pill amb-pill--quiet\" id=\"aApprove\"",
-  "replace": "class=\"amb-pill\" id=\"aApprove\""
+  "find": "class=\"amb-pill amb-pill--quiet\"' + (o.approve ? ' id=\"aApprove\"'",
+  "replace": "class=\"amb-pill\"' + (o.approve ? ' id=\"aApprove\"'"
  },
  {
   "name": "Needs you's empty pane is a bare line again",
@@ -116,14 +116,14 @@
  {
   "name": "the hours chip is no 44px hit area",
   "file": "stmt/statement-css.js",
-  "find": "#aBarHours { min-height: var(--amb-tap); min-width: var(--amb-tap); }",
-  "replace": "#aBarHours { }"
+  "find": "[data-barhours] { min-height: var(--amb-tap); min-width: var(--amb-tap); }",
+  "replace": "[data-barhours] { }"
  },
  {
   "name": "what stands before the split keeps its own inset",
   "file": "stmt/statement-css.js",
-  "find": ":has(~ .amb-place:not([hidden]) .amb-split--panes:not([hidden]))) { padding-inline: 0; }",
-  "replace": ":has(~ .amb-place:not([hidden]) .amb-split--panes:not([hidden]))) { }"
+  "find": "> .amb-split--panes:not([hidden])) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }",
+  "replace": "> .amb-split--panes:not([hidden])) { }"
  },
  {
   "name": "the second pane's group and foot keep the 36rem measure",

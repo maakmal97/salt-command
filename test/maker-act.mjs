@@ -49,6 +49,14 @@ export function byAct(root, act, key) {
   /* 2 Nov 2026 (Orders on the canvas): Orders' parts are To do, Open, Done and Ended, and Approve, which has no control in the Segment, is found at the bar's Approve, the way to it */
   const all = [...root.querySelectorAll('[data-act="' + act + '"]')];
   if (!all.length && act === "part.orders.approve") all.push(...root.querySelectorAll('[data-act="bar.approve"]'));
+  /* 18 Nov 2026 (his answer D): Orders' More list is split up, and each part an older check names is found at the way to it now. Ledger check is the bar's indicator
+     (Orders' own first); Group orders is a part of Settings; Payments they sent has no control, so it is entered by its address, as Needs you's cards and his alerts enter it */
+  if (!all.length && act === "part.orders.ledger") all.push(...root.querySelectorAll('#oOrders [data-act="bar.ledger"], [data-act="bar.ledger"]'));
+  if (!all.length && act === "part.orders.group") all.push(...root.querySelectorAll('[data-act="part.shop.group"]'));
+  if (!all.length && act === "part.orders.payments" && key === undefined) {
+    const doc = root.ownerDocument || root, w = doc.defaultView;
+    return { click() { w.location.hash = "#orders/payments"; w.dispatchEvent(new w.Event("hashchange")); }, getAttribute: (k) => (k === "data-act" ? act : null), address: "#orders/payments" };
+  }
   if (key === undefined) return all[0] || null;
   const holds = (e) => ACT_KEYS.some((k) => e.getAttribute(k) === String(key));
   return all.find((c) => { for (let e = c; e && e !== root; e = e.parentElement) if (holds(e)) return true; return false; }) || null;

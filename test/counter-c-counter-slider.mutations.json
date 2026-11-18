@@ -26,8 +26,8 @@
  {
   "name": "Record's strip is a salt-ds slider (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' aparts\"",
-  "replace": "<div class=\"salt-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' aparts\""
+  "find": "<div class=\"amb-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\"",
+  "replace": "<div class=\"salt-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\""
  },
  {
   "name": "Customers has no strip (16 Nov 2026)",
@@ -38,14 +38,14 @@
  {
   "name": "Shop's parts do not wrap (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' aparts\"",
-  "replace": "\"\" + ' aparts\""
+  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\"",
+  "replace": "\"\" + ' amb-segment--tabs aparts\""
  },
  {
   "name": "Orders' parts are a salt-ds slider (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
-  "replace": "<div class=\"salt-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
+  "find": "<div class=\"amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
+  "replace": "<div class=\"salt-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
  },
  {
   "name": "a hidden option is the one pressed (16 Nov 2026)",
@@ -92,7 +92,7 @@
  {
   "name": "the Orders tabs are not the system Filters",
   "file": "stmt/page.js",
-  "find": "'amb-segment amb-segment--wrap otabs'",
+  "find": "'amb-segment amb-segment--wrap amb-segment--tabs otabs'",
   "replace": "'salt-segment otabs'"
  },
  {

@@ -142,13 +142,13 @@ export async function run({ ok, pageWork }) {
       && tabs.map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent.trim()).join() === "todo:To do,open:Open,done:Done,ended:Ended"
       && tabs.every((b) => b.classList.contains("amb-segment__opt") && b.hasAttribute("aria-pressed") && !b.hidden),
     "Orders draws one Segment of four, To do, Open, Done and Ended, each a part with its act: " + JSON.stringify(tabs.map((b) => b.getAttribute("data-part"))));
-    const more = [...d.querySelectorAll(".amore__list > li > button")];
-    ok(more.map((b) => b.getAttribute("data-part") + ":" + b.querySelector(".amb-setting__name").textContent).join() === "payments:Payments they sent,group:Group orders,ledger:Ledger check"
-      && more.every((b) => b.classList.contains("amb-setting") && /^part[.]orders[.]/.test(b.getAttribute("data-act")) && !!b.querySelector("svg.amb-icon")),
-    "and Payments they sent, Group orders and Ledger check are rows in a More group at the foot: " + more.map((b) => b.getAttribute("data-part")).join());
+    /* 18 Nov 2026 (his answer D): the More group is split up. Ledger check is the bar's, Group orders a part of Settings, and Payments they sent is entered by its address */
+    const more = [...d.querySelectorAll(".amore__list > li > button, #oOrders .amb-setting[data-part]")];
+    ok(more.length === 0 && !!d.querySelector('#oOrders > header [data-act="bar.ledger"]') && !!d.querySelector('.aparts[data-place="shop"] [data-act="part.shop.group"]'),
+    "and no More group stands at the foot: Ledger check is in the bar and Group orders a part of Settings: " + more.length);
     const reach = [];
-    for (const part of ["approve", "payments", "group", "ledger", "ended", "open", "todo"]) { await p.tap("part.orders." + part); const w = p.where(); if (w !== "orders/" + part) reach.push(part + ">" + w); }
-    ok(reach.length === 0, "and every part is still reached at its own act and address, Approve by the bar: " + JSON.stringify(reach));
+    for (const part of ["approve", "payments", "group", "ledger", "ended", "open", "todo"]) { await p.tap("part.orders." + part); const w = p.where(), to = part === "group" ? "shop/group" : "orders/" + part; if (w !== to) reach.push(part + ">" + w); if (part === "group") await p.tap("nav.orders"); }
+    ok(reach.length === 0, "and every part is still reached, Approve and Ledger check by the bar, Payments at its address, Group orders under Settings: " + JSON.stringify(reach));
     await byAct(d, "part.orders.todo").click(); await p.work.quiet();
     /* 2 Nov 2026 (Orders on the canvas): AN ORDER IS A ROW OF A SETTINGS LIST. The row's link (its act, its key) holds the book's typed tag and the code over what it is and how long,
        copper while it waits on him; the figure beside it, large; the stage's move a lit ghost */
@@ -219,11 +219,12 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.enter();
-    /* 2 Nov 2026: To do carries the count of the orders that wait on him (practice not counted), Payments they sent the claims, and no other part a count */
+    /* 2 Nov 2026: To do carries the count of the orders that wait on him (practice not counted). 18 Nov 2026 (his answer D): Payments they sent has no row here, so the claims are counted on
+       Needs you's Payments kind alone */
     const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".amb-segment__count, [data-n]"); return (b.querySelector(".amb-setting__name") ? b.querySelector(".amb-setting__name").textContent : b.firstChild.textContent.trim()) + ":" + (c && !c.hidden ? c.textContent : ""); };
-    ok(same(["todo", "open", "done", "ended", "payments", "group"].map(pill), ["To do:7", "Open:3", "Done:0", "Ended:0", "Payments they sent:2", "Group orders:"])
+    ok(same(["todo", "open", "done", "ended"].map(pill), ["To do:7", "Open:3", "Done:0", "Ended:0"])
       && byAct(d, "part.orders.done").getAttribute("aria-disabled") === "true" && byAct(d, "part.orders.ended").getAttribute("aria-disabled") === "true" && !byAct(d, "part.orders.open").hasAttribute("aria-disabled"),
-      "each stage carries the count of the orders it holds (practice not counted), one with none dimmed, Payments they sent the claims: " + JSON.stringify(["todo", "open", "done", "ended", "payments", "group"].map(pill)));
+      "each stage carries the count of the orders it holds (practice not counted), one with none dimmed: " + JSON.stringify(["todo", "open", "done", "ended"].map(pill)));
     ok(p.where() === "orders/todo" && !d.getElementById("makerReviewTitle") && !/Choose an order to see it here/.test(d.getElementById("oOrders").textContent)
       && !d.querySelector("#oSplit > h2") && d.getElementById("oSplit").getAttribute("aria-label") === "Orders",
     "the page opens on To do, where orders wait, with no repeated Orders heading and no floating placeholder: " + p.where());

@@ -43,7 +43,7 @@ export async function run({ ok, pageWork }) {
       "Ambient holds his shell to the screen's height, and its screen scrolls inside it");
     /* 4 */
     const cust = landingPage("abcd-efgh", "nfootc", null);
-    ok([html, cust].every((h) => !/data-app|--app-h|navigator\.standalone===true\)\{var r=document\.documentElement/.test(h)) && (cust.match(/<div id="tabs" class="amb-shell/g) || []).length === 1,
+    ok([html, cust].every((h) => !/data-app(?![a-z-])|--app-h|navigator\.standalone===true\)\{var r=document\.documentElement/.test(h)) && (cust.match(/<div id="tabs" class="amb-shell/g) || []).length === 1,
       "no head script marks the root or sets a height, on his page or the customer's, whose places stand in the same Ambient shell");
   } finally { p.w.close(); }
 }

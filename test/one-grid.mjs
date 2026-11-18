@@ -14,8 +14,8 @@ export async function run({ ok }) {
   const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg, .amb-tab__count").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
   /* G1 */
   const rule = ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }";
-  const at = css.indexOf(rule), open = css.lastIndexOf("@container amb (min-width: 960px) {", at), shut = css.indexOf(".amb-tabbar__foot { display: none; }");
-  ok(at > 0 && css.indexOf(rule, at + 1) < 0 && open > shut && shut > 0 && !/@container amb \(min-width: (?!960px)/.test(css.slice(open, at)),
+  const at = css.indexOf(rule), open = css.lastIndexOf("@container amb", at);
+  ok(at > 0 && css.indexOf(rule, at + 1) < 0 && open > 0 && css.startsWith("@container amb (min-width: 960px) {", open),
     "a working shell's plain split takes the panes' columns, written once, inside the 960px container");
   /* G2 */
   ok(/#acct \{ max-width: none; grid-template-columns: minmax\(0, 1fr\) minmax\(280px, min\(440px, 40%\)\); align-items: start; column-gap: var\(--amb-space-6\); \}/.test(css),

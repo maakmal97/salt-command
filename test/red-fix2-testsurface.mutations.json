@@ -1,14 +1,14 @@
 [
  {
-  "name": "More's list loses its place (17 Nov 2026, the second red fix)",
+  "name": "Payments' place on the test surface's bar opens no part (18 Nov 2026: the More list is gone)",
   "file": "stmt/page.js",
-  "find": "<ul class=\"amb-settings__list amore__list\" data-place=\"orders\">",
-  "replace": "<ul class=\"amb-settings__list amore__list\" data-place=\"ordersx\">"
+  "find": "[\"orders\", \"Payments\", \"payments\"]",
+  "replace": "[\"orders\", \"Payments\"]"
  },
  {
-  "name": "Payments leaves the test surface's More (17 Nov 2026, the second red fix)",
+  "name": "Payments is a stage of the test surface's strip (18 Nov 2026: the More list is gone)",
   "file": "stmt/page.js",
-  "find": "(k) => !test || TEST_PARTS.orders.includes(k)).map(",
-  "replace": "(k) => false).map("
+  "find": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\"];",
+  "replace": "const ADMIN_ORDER_STAGES = [\"todo\", \"open\", \"done\", \"ended\", \"payments\"];"
  }
 ]

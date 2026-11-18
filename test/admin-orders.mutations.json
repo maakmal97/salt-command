@@ -528,12 +528,6 @@
   "replace": ""
  },
  {
-  "name": "Payments is not counted",
-  "file": "stmt/owner.js",
-  "find": "if(pn) pn.textContent=pay?String(pay):'';",
-  "replace": ""
- },
- {
   "name": "from 960px an order opens by itself",
   "file": "stmt/owner.js",
   "find": "    if(!e) ordOpened=null;\n    if(split) split.classList.toggle('open', !!e);",
@@ -606,10 +600,10 @@
   "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
  },
  {
-  "name": "no More group",
+  "name": "Ledger check leaves Orders' bar (18 Nov 2026: the More group is split up)",
   "file": "stmt/page.js",
-  "find": "+ ordMore(test) + '</div>'",
-  "replace": "+ '</div>'"
+  "find": "(o.acts ? '<div class=\"amb-cluster\"'",
+  "replace": "(o.acts && !o.approve ? '<div class=\"amb-cluster\"'"
  },
  {
   "name": "Ended is not in the Segment",

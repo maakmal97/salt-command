@@ -132,12 +132,12 @@ export async function run({ ok, pageWork }) {
     const ad = adm.window.document, tick = () => new Promise((r) => setTimeout(r, 60));
     await until(() => calls.length >= 3); await awork.quiet();
     const places = [...ad.querySelectorAll(".amb-tabbar .place")].map((b) => b.textContent.trim());
-    /* 2 Nov 2026 (Orders on the canvas): Orders' parts are the Segment of four and, under More, the Payments row */
+    /* 2 Nov 2026 (Orders on the canvas): Orders' parts are the Segment of four. 18 Nov 2026 (his answer D): the More list is gone, and Payments is reached by its own place on the bar */
     const parts = [...ad.querySelectorAll(".aparts [data-part], .amore__list [data-part]")].map((b) => b.closest("[data-place]").getAttribute("data-place") + "." + b.getAttribute("data-part"));   /* 17 Nov 2026, the move to Ambient (the second red fix): a More row's place is on its list (the li is the parent), as owner.js reads it with closest */
     adm.window.location.hash = "#record"; await tick();
     const onRecord = [...ad.querySelectorAll('.amb-tabbar .place[aria-current="page"]')].map((b) => b.textContent.trim());
     ok(JSON.stringify(places) === JSON.stringify(["Needs you", "Orders", "Payments", "Chat"]) && !ad.getElementById("oAdd")
-      && !parts.some((x) => /approve|group|ledger|accounts|links|associates|record\.|shop\./.test(x)) && parts.includes("orders.payments") && parts.includes("customers.messages")
+      && !parts.some((x) => /approve|group|ledger|accounts|links|associates|record\.|shop\./.test(x)) && !parts.includes("orders.payments") && !ad.querySelector(".amore__list") && !!ad.querySelector('.amb-tabbar .place[data-m="orders"][data-p="payments"]') && parts.includes("customers.messages")
       && JSON.stringify(onRecord) === JSON.stringify(["Needs you"]),
       "Salt Admin in test draws Needs you, Orders, Payments and Chat, no Record, Shop, Approve, account list, links or + orb, and #record lands on Needs you: " + JSON.stringify([places, parts, onRecord]));
     ad.querySelector('.amb-tabbar .place[data-p="payments"]').click(); await tick();

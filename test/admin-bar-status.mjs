@@ -41,8 +41,10 @@ export async function run({ ok }) {
        a glowing status chip at the bar's top right, its dot the system's glyph */
     ok(hrs.tagName === "BUTTON" && hrs.getAttribute("data-act") === "bar.hours" && hrs.getAttribute("aria-label") === "Open to " + until + ". Tap to change" && !!hrs.querySelector(".amb-chip__dot") && hrs.firstElementChild.classList.contains("amb-chip__dot"),
       "the hours are a chip, a button named with what a tap does: " + (hrs.getAttribute("aria-label") || ""));
-    ok(!!hrs.parentElement && hrs.parentElement.matches("#mHome > header.amb-hero") && hrs.parentElement.lastElementChild === hrs && !hrs.closest(".amb-hero__time"),
-      "the chip stands last in Needs you's hero, out of the time line, which keeps Live and the clock: " + (hrs.parentElement && hrs.parentElement.className));
+    /* 18 Nov 2026 (his answers B and D): the chip follows the time line, and the hero ends in its two moves, Ledger check and Approve, which a phone shows on Orders alone */
+    ok(!!hrs.parentElement && hrs.parentElement.matches("#mHome > header.amb-hero") && hrs.previousElementSibling.matches("p.amb-hero__time") && !hrs.closest(".amb-hero__time")
+      && hrs.nextElementSibling === hrs.parentElement.lastElementChild && hrs.nextElementSibling.matches(".amb-cluster[data-wide]"),
+      "the chip stands after the time line in Needs you's hero, out of it, which keeps Live and the clock, and only the wide page's two moves follow: " + (hrs.parentElement && hrs.parentElement.className));
     const css = [...D.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(!/\.ashop|\.abar\b/.test(css.replace(/\/\*[\s\S]*?\*\//g, "")) && /\.amb-chip \{/.test(css),
       "the chip is Ambient's, its size and its dot the part's own, and the page's layer draws none of it, nor a bar");

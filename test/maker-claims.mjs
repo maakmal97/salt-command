@@ -206,8 +206,10 @@ export async function run({ ok }) {
     const thumb = () => inCard("claim.slip");
     const said = () => doc.querySelector("#makerClaims p.msg")?.textContent || "";
     const lock = () => { visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true; };
+    /* 18 Nov 2026 (his answer D): Payments they sent has no row on Orders; it is entered by its address, as Needs you's cards and his alerts enter it */
+    const toPayments = () => { window.location.hash = "#orders/payments"; window.dispatchEvent(new window.Event("hashchange")); };
     doc.querySelector('[data-act="nav.orders"]').click();
-    doc.querySelector('[data-act="part.orders.payments"]').click();
+    toPayments();
     await until(() => rowOf(0) && rowOf(1));
     ok(!!rowOf(0) && !!rowOf(1) && [...doc.querySelectorAll("#makerClaims [data-act]")].every((e) => e.getAttribute("data-act") === "claim.open")
       && posts.length === 0 && fetched.key === 0 && fetched.slip === 0,
@@ -291,7 +293,7 @@ export async function run({ ok }) {
     const unlocked = !!thumb();
     doc.querySelector('[data-act="part.orders.open"]').click();
     const letGo = !doc.querySelector("[data-maker-slip]");
-    doc.querySelector('[data-act="part.orders.payments"]').click();
+    toPayments();
     const shutOnReturn = !card(0) && !!rowOf(0);
     rowOf(0).click();
     const keptKey = await until(() => thumb()) && !unlockBtn();
@@ -300,7 +302,7 @@ export async function run({ ok }) {
       + JSON.stringify([unlocked, letGo, shutOnReturn, keptKey]));
     doc.querySelector('[data-act="nav.customers"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
-    doc.querySelector('[data-act="part.orders.payments"]').click();
+    toPayments();
     await until(() => rowOf(0));
     const slips = fetched.slip;
     rowOf(0).click();

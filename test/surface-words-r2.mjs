@@ -55,7 +55,7 @@ export async function run({ ok, pageWork }) {
 
   /* ---- Salt Admin's two leads, written in the page ---- */
   const page = new JSDOM(landingPage("", "r2-nonce", { master: "fixture-master", accounts: [] })).window.document;
-  const group = t(page.querySelector('[data-in="orders.group"] > .amb-field__hint')), links = t(page.querySelector("#oLinks > .amb-field__hint"));
+  const group = t(page.querySelector('[data-in="shop.group"] > .amb-field__hint')), links = t(page.querySelector("#oLinks > .amb-field__hint"));
   ok(sentence(group, 20) && sentence(links, 20), "W5: Salt Admin's leads on Group orders and Guest links are one sentence of twenty words at most: " + J([group, links]));
   /* 16 Nov 2026, the move to Ambient (place D): the names Sheet leads with the system's basis line */
   const vaultLead = t(page.querySelector("#vaultSheet .amb-basis"));

@@ -20,8 +20,8 @@
  {
   "name": "the filter row is no Filters part",
   "file": "stmt/page.js",
-  "find": "'amb-segment amb-segment--wrap otabs'",
-  "replace": "'amb-segment otabs'"
+  "find": "'amb-segment amb-segment--wrap amb-segment--tabs otabs'",
+  "replace": "'amb-segment amb-segment--tabs otabs'"
  },
  {
   "name": "every count is all of them",

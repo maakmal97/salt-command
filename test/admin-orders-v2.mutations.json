@@ -14,7 +14,7 @@
  {
   "name": "the Segment is a plain group again",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-stack\"><div class=\"amb-segment aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
+  "find": "<div class=\"amb-stack\"><div class=\"amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
   "replace": "<div class=\"amb-stack\"><div class=\"amb-stack aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
  },
  {
@@ -122,8 +122,8 @@
  {
   "name": "Approve has no address",
   "file": "stmt/owner.js",
-  "find": "if(PARTS.orders&&!TESTING) PARTS.orders.push('approve');",
-  "replace": ""
+  "find": "if(!TESTING) PARTS.orders.push('approve','ledger'); }",
+  "replace": "if(!TESTING) PARTS.orders.push('ledger'); }"
  },
  {
   "name": "Open's lead leaves out what is late",

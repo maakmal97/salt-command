@@ -74,8 +74,11 @@ export async function run({ ok, pageWork }) {
     ok(!d.querySelector("#nopen:not([hidden])") && d.getElementById("aopen").hidden && !d.querySelector("#makerFormGrid.open"), "and nothing opens by itself in any of them");
 
     /* A6 */
-    ok(/#aBarHours \{ min-height: var\(--amb-tap\); min-width: var\(--amb-tap\); \}/.test(css), "the hours chip is a 44px hit area");
-    ok(/:is\(#unsentBar, \.amb-stack:has\(> #nFail\), \.amb-stack:has\(> \.aparts\), \.afind\):is\(:has\(~ \.amb-split--panes:not\(\[hidden\]\)\), :has\(~ \.amb-place:not\(\[hidden\]\) \.amb-split--panes:not\(\[hidden\]\)\)\) \{ padding-inline: 0; \}/.test(css),
+    ok(/\[data-barhours\] \{ min-height: var\(--amb-tap\); min-width: var\(--amb-tap\); \}/.test(css), "the hours chip is a 44px hit area");
+    /* 18 Nov 2026 (Ambient 0.7.22): the rule is Ambient's, for any stack before shown panes in a working shell, and the site's layer writes none */
+    ok(css.includes(".amb-shell--work :is(.amb-screen, .amb-place) > .amb-stack:has(~ .amb-split--panes:not([hidden]), ~ .amb-place:not([hidden]) > .amb-split--panes:not([hidden]),")
+      && css.includes("{ padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }")
+      && ["#unsentBar", "#nFail", ".aparts", ".afind"].every((id) => { const n = d.querySelector(id), st = n && (n.matches(".amb-stack") ? n : n.parentElement); return !!st && st.matches(".amb-stack") && st.parentElement.matches(".amb-screen, .amb-place"); }),
       "from 960px what stands before the split takes the panes' own edge");
     ok(/\.amb-split--panes > \.amb-stack:last-child \.amb-settings, \.amb-split--panes > \.amb-stack:last-child \.amb-foot > \.amb-pill \{ max-width: none; \}/.test(css),
       "the second pane's group and the foot take the pane's width");

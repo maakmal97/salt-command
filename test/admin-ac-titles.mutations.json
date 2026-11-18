@@ -2,13 +2,13 @@
  {
   "name": "Orders' title is hidden again",
   "file": "stmt/page.js",
-  "find": "        + aHero(\"Orders\", '<p class=\"amb-hero__sub\" id=\"makerReviewStatus\">Reading.</p>', { heat: true, approve: !test })",
+  "find": "        + aHero(\"Orders\", '<p class=\"amb-hero__sub\" id=\"makerReviewStatus\">Reading.</p>', { heat: true, acts: !test, approve: true })",
   "replace": "        + '<h1 class=\"sr\">Orders</h1>'"
  },
  {
   "name": "Settings' title is hidden again",
   "file": "stmt/page.js",
-  "find": "        + aHero(\"Settings\", \"\")",
+  "find": "        + aHero(\"Settings\", \"\", { acts: !test })",
   "replace": "        + '<h1 class=\"sr\">Settings</h1>'"
  },
  {
