@@ -564,5 +564,25 @@ body.ended > *:not(#aEnded) { display: none; }
   .adm .aled { min-width: calc(var(--amb-tap) * 3.5); }
   .adm #unsentBar:not([hidden]) { margin-top: 0; }
   .adm .amb-stack:has(> .aparts) { margin-top: 0; }
+  /* 18 Nov 2026 (his word: one skeleton for every place and tab). Under the tabs every part starts on one line: no block adds a margin of its own between the
+     blocks of a screen, a part with no panes keeps the panes' top room, and the first thing in a pane or a part stands at its top, a heading with no room over it.
+     A form, a group of settings and a button on a part with no panes keep one measure, the settings group's own */
+  .adm:has(.aplace) :is(.amb-screen, .amb-place) > * + :is(.amb-stack, .amb-split) { margin-top: 0; }
+  .adm .abody > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))), .adm .abody .amb-place > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) { padding-top: calc(var(--amb-space-6) + var(--amb-space-1)); }
+  .adm .abody > .amb-stack > :first-child, .adm .abody > .amb-stack > :first-child > :first-child, .adm:has(.aplace) .amb-split--panes > .amb-stack > :first-child, .adm:has(.aplace) .amb-split--panes > .amb-stack > :first-child > :first-child,
+  .adm:has(.aplace) .amb-split--panes > .amb-stack > :first-child > :first-child > :first-child { margin-top: 0; }
+  .adm .abody > .amb-stack > .amb-section:first-child, .adm .abody > .amb-stack > :first-child > .amb-section:first-child, .adm:has(.aplace) .amb-split--panes > .amb-stack > .amb-section:first-child,
+  .adm:has(.aplace) .amb-split--panes > .amb-stack > :first-child > .amb-section:first-child, .adm:has(.aplace) .amb-split--panes > .amb-stack > :first-child > :first-child > .amb-section:first-child { padding-top: 0; }
+  .adm .amb-split--panes .rnone { margin-top: 0; }
+  .adm .abody > .amb-stack > .amb-vh:first-child + * { margin-top: 0; }
+  .adm .abody > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) .amb-stack > .amb-pill--sm { justify-self: start; }
+  .adm .ledgrp > .amb-settings__head { padding-inline: 0; }
+  /* a heading and a ruled list in a pane start on the pane's own edge, with the tabs, the cards and the fields over and under them */
+  .adm:has(.aplace) .amb-split--panes .amb-section { padding-inline: 0; }
+  .adm:has(.aplace) .amb-split--panes .amb-list { margin-inline: 0; }
+  .adm .abody > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) :is(.amb-field, .amb-form, .amb-settings, .amb-pill:not(.amb-pill--sm)) { max-width: 36rem; justify-self: start; }
+  .adm .abody > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) :is(.amb-field, .amb-form, .amb-settings, .amb-pill--block) { width: 100%; }
   .adm .aparts, .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin-bottom: var(--amb-space-4); }
 }
+/* 18 Nov 2026: the Counter's Account stands on its bar's edges, as Home's columns do by Ambient's rule, where Ambient gives the room to the work */
+@container amb (min-width: 960px) { @media (min-height: 640px) { #acct.amb-stack { padding-inline: 0; } } }

@@ -74,6 +74,17 @@ export async function run({ ok, pageWork }) {
   ok(css.includes(".adm #unsentBar:not([hidden]) { margin-top: 0; }") && css.includes(".adm .amb-stack:has(> .aparts) { margin-top: 0; }")
     && css.includes('.adm .aparts, .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin-bottom: var(--amb-space-4); }'),
     "from 960px one margin of each pair above the tabs is nought and the tabs' foot is one gap, so they stand on one line over panes and over a page");
+  /* T9 (18 Nov 2026, his word: one skeleton for every place and tab; measured in Chromium on all 21 places and parts, pinned here) */
+  ok(css.includes(".amb-shell--work .amb-hero--compact { --amb-bar-l: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l)));"), "in a working shell the bar stands on the panes' edges whether panes show or not");
+  ok(css.includes(".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l)))"), "and so does every block of a screen");
+  ok(css.includes(".amb-shell--work .amb-hero--compact > :is(.amb-hero__title, .amb-hero__sub) { align-self: baseline; }"), "the bar's title and its line share a baseline");
+  ok(css.includes(".amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { border-color: var(--amb-neg); color: var(--amb-ink); }"), "a negative count edges its indicator (the selector 0.7.24 broke)");
+  ok(css.includes(".adm:has(.aplace) :is(.amb-screen, .amb-place) > * + :is(.amb-stack, .amb-split) { margin-top: 0; }"), "no block of a screen adds a margin of its own, so every part starts on one line");
+  ok(css.includes(".adm .abody .amb-place > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) { padding-top: calc(var(--amb-space-6) + var(--amb-space-1)); }"), "a part with no panes keeps the panes' top room");
+  ok(css.includes(".adm:has(.aplace) .amb-split--panes .amb-section { padding-inline: 0; } .adm:has(.aplace) .amb-split--panes .amb-list { margin-inline: 0; }"), "a heading and a list in a pane start on the pane's edge");
+  ok(css.includes(":is(.amb-field, .amb-form, .amb-settings, .amb-pill:not(.amb-pill--sm)) { max-width: 36rem; justify-self: start; }"), "a form on a part with no panes keeps one measure");
+  ok(css.includes(".amb-shell--work:has(> .amb-appbar .amb-circle) .amb-hero--compact { padding-right: calc(var(--amb-tap) + var(--amb-space-3)); }"), "a bar keeps the room a + takes whether its place shows one or not, so Record's buttons stand where the others' do");
+  ok(css.includes("#acct.amb-stack { padding-inline: 0; }"), "the Counter's Account stands on its bar's edges, as Home's columns do");
   /* T5 to T7, the page running */
   const swallow = () => {};
   process.on("unhandledRejection", swallow);

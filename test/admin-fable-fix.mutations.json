@@ -122,8 +122,8 @@
  {
   "name": "what stands before the split keeps its own inset",
   "file": "stmt/statement-css.js",
-  "find": "> .amb-split--panes:not([hidden])) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }",
-  "replace": "> .amb-split--panes:not([hidden])) { }"
+  "find": ":not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }",
+  "replace": ":not(.amb-split) { }"
  },
  {
   "name": "the second pane's group and foot keep the 36rem measure",

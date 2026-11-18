@@ -232,5 +232,65 @@
   "file": "stmt/owner.js",
   "find": "var on=placeNow==='orders'&&partNow==='ledger'?'true':'false';",
   "replace": "var on=placeNow==='orders'?'true':'false';"
+ },
+ {
+  "name": "T9 in a working shell the bar stands on the panes' edges whether panes show or not",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-hero--compact { --amb-bar-l: calc(var(--amb-pane-room) - m",
+  "replace": ".amb-shell--work .amb-hero--compact { x---amb-bar-l: calc(var(--amb-pane-room) - m"
+ },
+ {
+  "name": "T9 and so does every block of a screen",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { padding-inli",
+  "replace": ".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { x-padding-inli"
+ },
+ {
+  "name": "T9 the bar's title and its line share a baseline",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-hero--compact > :is(.amb-hero__title, .amb-hero__sub) { align-self: ",
+  "replace": ".amb-shell--work .amb-hero--compact > :is(.amb-hero__title, .amb-hero__sub) { x-align-self: "
+ },
+ {
+  "name": "T9 a negative count edges its indicator (the selector 0.7.24 broke)",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { border-color",
+  "replace": ".amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { x-border-color"
+ },
+ {
+  "name": "T9 no block of a screen adds a margin of its own, so every part starts on one line",
+  "file": "stmt/statement-css.js",
+  "find": ".adm:has(.aplace) :is(.amb-screen, .amb-place) > * + :is(.amb-stack, .amb-split) { margin-top",
+  "replace": ".adm:has(.aplace) :is(.amb-screen, .amb-place) > * + :is(.amb-stack, .amb-split) { x-margin-top"
+ },
+ {
+  "name": "T9 a part with no panes keeps the panes' top room",
+  "file": "stmt/statement-css.js",
+  "find": ".adm .abody .amb-place > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) { padding-top:",
+  "replace": ".adm .abody .amb-place > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) { x-padding-top:"
+ },
+ {
+  "name": "T9 a heading and a list in a pane start on the pane's edge",
+  "file": "stmt/statement-css.js",
+  "find": ".adm:has(.aplace) .amb-split--panes .amb-section { padding-inline",
+  "replace": ".adm:has(.aplace) .amb-split--panes .amb-section { x-padding-inline"
+ },
+ {
+  "name": "T9 a form on a part with no panes keeps one measure",
+  "file": "stmt/statement-css.js",
+  "find": ":is(.amb-field, .amb-form, .amb-settings, .amb-pill:not(.amb-pill--sm)) { max-width: 3",
+  "replace": ":is(.amb-field, .amb-form, .amb-settings, .amb-pill:not(.amb-pill--sm)) { x-max-width: 3"
+ },
+ {
+  "name": "T9 a bar keeps no room for a + its place does not show",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work:has(> .amb-appbar .amb-circle) .amb-hero--compact { padding-right",
+  "replace": ".amb-shell--work:has(> .amb-appbar .amb-circle) .amb-hero--compact { x-padding-right"
+ },
+ {
+  "name": "T9 the Counter's Account keeps its own inset",
+  "file": "stmt/statement-css.js",
+  "find": "#acct.amb-stack { padding-inline: 0; }",
+  "replace": "#acct.amb-stack { }"
  }
 ]
