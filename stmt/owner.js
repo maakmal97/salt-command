@@ -1521,12 +1521,23 @@ export const OWNER_JS = `
       hrs.setAttribute('aria-label',txt+'. Tap to change');
     }
     if(hrs.hidden===!!txt) hrs.hidden=!txt;
+    /* 18 Nov 2026: the rail's foot says the same state in every place from 960px, a plain chip on the rail's own ground */
+    var rh=document.getElementById('aRailHours');
+    if(rh){
+      if(rh.getAttribute('data-txt')!==txt+tone){
+        rh.setAttribute('data-txt',txt+tone); rh.className='amb-chip ashop'+tone;
+        rh.innerHTML='<span class="amb-chip__dot"></span>';
+        rh.appendChild(document.createTextNode(txt));
+        rh.setAttribute('aria-label',txt+'. Tap to change');
+      }
+      if(rh.hidden===!!txt) rh.hidden=!txt;
+    }
   }
   /* a tap takes him to Shop hours, to the shop held for now */
-  (function(){ var hb=document.getElementById('aBarHours'); if(hb) hb.addEventListener('click',function(){
+  ['aBarHours','aRailHours'].forEach(function(id){ var hb=document.getElementById(id); if(hb) hb.addEventListener('click',function(){
     showPlace('shop','hours',{fresh:true,push:true});
     try{ var t=document.getElementById('makerNowCard'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'start'}); }catch(e){}
-  }); })();
+  }); });
   window.barDraw=barDraw;
   window.addEventListener('online',function(){ barNet=true; barDraw(); });
   window.addEventListener('offline',barDraw);

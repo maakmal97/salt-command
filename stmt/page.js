@@ -734,7 +734,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
          which Ambient stands up as the rail from 960px. The mood is the market's heat off STOCK (moodSet in stmt/owner.js): Flare and Supply
          tight while salt's supply is tight, Lagoon otherwise, Slate on Shop. .adm stays on the root, where every older rule of his page is
          scoped until its place is redrawn. */
-      ? '<div id="roster" class="amb-shell amb-shell--rail amb-shell--page adm" data-mood="lagoon">'
+      ? '<div id="roster" class="amb-shell amb-shell--rail amb-shell--page amb-shell--work adm" data-mood="lagoon">'
         + '<div class="amb-appbar"><span></span><div class="amb-appbar__group">'
         + (test ? "" : '<button type="button" class="amb-circle" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + AMB.glyph("plus") + "</button>")
         + "</div></div>"
@@ -888,7 +888,12 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></main>'
         + '<div class="amb-dock"><div id="apBar" class="apbar" hidden></div><nav class="amb-tabbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("amb-tab", (m, w, p) =>
           AMB.glyph(ADMIN_GLYPH[p === "messages" ? "customers" : m]) + "<span>" + w + "</span>"
-          + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("") + "</nav></div>"
+          + (p ? "" : '<span class="amb-tab__count" data-count="' + m + '" aria-hidden="true" hidden></span>'))).join("")
+          /* 18 Nov 2026 (Ambient 0.7.16, his answers on the laptop's layout): the rail runs to the screen's foot from 960px and its foot says what is true in
+             every place, the live word with the time and the shop's state (barDraw fills both); under 960px the foot is not drawn and each hero keeps its own */
+          + '<div class="amb-tabbar__foot"><p class="arailtime"><span class="abarlive" data-barlive></span><span data-clock class="clk"></span></p>'
+          + '<button type="button" class="amb-chip ashop" id="aRailHours" data-act="bar.hours" hidden></button></div>'
+          + "</nav></div>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
         + '<div id="aEnded" class="amb-shell" data-mood="slate" hidden><main class="amb-screen"><header class="amb-hero amb-mesh">'
@@ -937,7 +942,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
        heat reaches the Counter only after Fable's review, and a customer sees the mood alone, never told); the app bar holds the bell; the
        screen opens on the place's hero, its name the title, whose account it is under it and the time under that; then his read-only line
        on View as them and Order as them, or a lapsed session's, each a notice with its one quiet pill; then the places; then one dock. */
-    + '<div id="tabs" class="amb-shell amb-shell--rail amb-shell--page" data-mood="lagoon" hidden>'
+    + '<div id="tabs" class="amb-shell amb-shell--rail amb-shell--page amb-shell--work" data-mood="lagoon" hidden>'
     + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
     + '<main class="amb-screen amb-screen--docked">'
     + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")

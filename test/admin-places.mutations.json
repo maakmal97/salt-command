@@ -338,8 +338,8 @@
  {
   "name": "his page is not marked .adm",
   "file": "stmt/page.js",
-  "find": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm\" data-mood=\"lagoon\">",
-  "replace": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page\" data-mood=\"lagoon\">"
+  "find": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work adm\" data-mood=\"lagoon\">",
+  "replace": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work\" data-mood=\"lagoon\">"
  },
  {
   "name": "a shared rule is moved under .adm (the customer's lead)",

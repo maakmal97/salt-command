@@ -104,7 +104,7 @@
  {
   "name": "O6.1 Salt Admin is no rail shell",
   "file": "stmt/page.js",
-  "find": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm\" data-mood=\"lagoon\">'",
+  "find": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work adm\" data-mood=\"lagoon\">'",
   "replace": "'<div id=\"roster\" class=\"amb-shell amb-shell--page adm\" data-mood=\"lagoon\">'"
  },
  {
@@ -134,7 +134,7 @@
  {
   "name": "O8 the Counter is no rail shell",
   "file": "stmt/page.js",
-  "find": "'<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page\" data-mood=\"lagoon\" hidden>'",
+  "find": "'<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work\" data-mood=\"lagoon\" hidden>'",
   "replace": "'<div id=\"tabs\" class=\"amb-shell amb-shell--page\" data-mood=\"lagoon\" hidden>'"
  },
  {

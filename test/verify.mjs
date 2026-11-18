@@ -51170,6 +51170,11 @@ await (async () => {
   await (await import("./admin-fable-fix.mjs")).run({ ok, pageWork });
 })();
 
+section("18 Nov 2026: the working shell on Salt Admin and Salt Counter, the hero one row, the rail to the foot, the queue up to 440px");
+await (async () => {
+  await (await import("./work-shell.mjs")).run({ ok });
+})();
+
 section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-trips.mjs")).run({ ok, pageWork });

@@ -2,8 +2,8 @@
  {
   "name": "the dock is not the shell's last child",
   "file": "stmt/page.js",
-  "find": "(p ? \"\" : '<span class=\"amb-tab__count\" data-count=\"' + m + '\" aria-hidden=\"true\" hidden></span>'))).join(\"\") + \"</nav></div>\"\n        + \"</div>\"",
-  "replace": "(p ? \"\" : '<span class=\"amb-tab__count\" data-count=\"' + m + '\" aria-hidden=\"true\" hidden></span>'))).join(\"\") + \"</nav></div>\"\n        + \"<span></span></div>\""
+  "find": "          + \"</nav></div>\"\n        + \"</div>\"",
+  "replace": "          + \"</nav></div>\"\n        + \"<span></span></div>\""
  },
  {
   "name": "the old bar of places comes back",
@@ -38,7 +38,7 @@
  {
   "name": "the Counter's shell is not Ambient's",
   "file": "stmt/page.js",
-  "find": "<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page\" data-mood=\"lagoon\" hidden>",
+  "find": "<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work\" data-mood=\"lagoon\" hidden>",
   "replace": "<div id=\"tabs\" class=\"cshell\" data-mood=\"lagoon\" hidden>"
  }
 ]

@@ -38,7 +38,7 @@
  {
   "name": "F2.1 the frame comes back",
   "file": "stmt/page.js",
-  "find": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm\" data-mood=\"lagoon\">'",
+  "find": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work adm\" data-mood=\"lagoon\">'",
   "replace": "'<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm salt-frame\" data-mood=\"lagoon\">'"
  },
  {

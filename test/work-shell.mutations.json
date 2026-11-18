@@ -1,0 +1,98 @@
+[
+ {
+  "name": "Salt Admin's shell is no working shell",
+  "file": "stmt/page.js",
+  "find": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work adm\"",
+  "replace": "<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page adm\""
+ },
+ {
+  "name": "the Counter's shell is no working shell",
+  "file": "stmt/page.js",
+  "find": "<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work\"",
+  "replace": "<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page\""
+ },
+ {
+  "name": "the hero is a stack again from 960px",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-hero--compact { flex-direction: row; flex-wrap: wrap;",
+  "replace": ".amb-shell--work .amb-hero--compact { flex-direction: column; flex-wrap: wrap;"
+ },
+ {
+  "name": "the hero's action is no longer at the end",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-hero--compact > .amb-cluster { margin-left: auto; }",
+  "replace": ".amb-shell--work .amb-hero--compact > .amb-cluster { margin-left: 0; }"
+ },
+ {
+  "name": "the rail stops short of the foot",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work.amb-shell--rail > .amb-dock > .amb-tabbar { flex: 1 1 auto; }",
+  "replace": ".amb-shell--work.amb-shell--rail > .amb-dock > .amb-tabbar { flex: none; }"
+ },
+ {
+  "name": "the queue is 340px at most again",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }",
+  "replace": ".amb-shell--work :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-columns: minmax(280px, min(340px, 45%)) minmax(0, 1fr); }"
+ },
+ {
+  "name": "the foot is drawn on a phone",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-tabbar__foot { display: none; }\\n@container amb (min-width: 960px) {",
+  "replace": ".amb-tabbar__foot { display: grid; }\\n@container amb (min-width: 960px) {"
+ },
+ {
+  "name": "the rail has no foot",
+  "file": "stmt/page.js",
+  "find": "          + '<div class=\"amb-tabbar__foot\"><p class=\"arailtime\">",
+  "replace": "          + '<div class=\"arailfoot\"><p class=\"arailtime\">"
+ },
+ {
+  "name": "the foot's state is not a control",
+  "file": "stmt/page.js",
+  "find": "'<button type=\"button\" class=\"amb-chip ashop\" id=\"aRailHours\" data-act=\"bar.hours\" hidden></button></div>'",
+  "replace": "'<span class=\"amb-chip ashop\" id=\"aRailHours\" data-act=\"bar.hours\" hidden></span></div>'"
+ },
+ {
+  "name": "the foot's live word is never filled",
+  "file": "stmt/page.js",
+  "find": "<p class=\"arailtime\"><span class=\"abarlive\" data-barlive></span>",
+  "replace": "<p class=\"arailtime\"><span class=\"abarlive\"></span>"
+ },
+ {
+  "name": "the foot's chip is glass, as on the mesh",
+  "file": "stmt/owner.js",
+  "find": "rh.className='amb-chip ashop'+tone;",
+  "replace": "rh.className='amb-chip amb-chip--glass ashop'+tone;"
+ },
+ {
+  "name": "the foot's chip never takes the state's words",
+  "file": "stmt/owner.js",
+  "find": "        rh.appendChild(document.createTextNode(txt));",
+  "replace": "        rh.appendChild(document.createTextNode('Open'));"
+ },
+ {
+  "name": "the foot's chip stays once its moment has passed",
+  "file": "stmt/owner.js",
+  "find": "      if(rh.hidden===!!txt) rh.hidden=!txt;",
+  "replace": "      rh.hidden=false;"
+ },
+ {
+  "name": "the foot's chip is under 44px",
+  "file": "stmt/statement-css.js",
+  "find": "#aRailHours { min-height: var(--amb-tap); min-width: var(--amb-tap); }",
+  "replace": "#aRailHours { }"
+ },
+ {
+  "name": "the hero's chip stays beside the foot's from 960px",
+  "file": "stmt/statement-css.js",
+  "find": "@container amb (min-width: 960px) { #aBarHours { display: none; } }",
+  "replace": ""
+ },
+ {
+  "name": "a tap on the foot's chip goes nowhere",
+  "file": "stmt/owner.js",
+  "find": "  ['aBarHours','aRailHours'].forEach(function(id){",
+  "replace": "  ['aBarHours'].forEach(function(id){"
+ }
+]
