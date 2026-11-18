@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="e003b00ed9a41eac";
+var SALT_BUILD_ID="b525660501c2e336";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12526,7 +12526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1542","d":"18 Nov 2026","t":"ONE ROAD FOR A PAYMENT","n":["<b>THE MINUTE'S PASS BOOKS NO PAYMENT.</b> The pass that carries site orders to the book used to queue a payment itself, before marking the order, without checking what the row could still take. A part-paid row could have been booked twice. That job is retired.","<b>YOUR TAP IS THE ROAD.</b> Money reaches the ledger by Received on their claim or by Cash received, as it has since claims began. Both check the row first.","<b>NOTHING ELSE MOVED.</b> Acknowledgements, claims, handovers, closes, cancellations and amendments reach the book as before. If an older Counter ever lists the old job, the order's card says so."]}];
+const evolution=[{"v":"v1543","d":"18 Nov 2026","t":"BOTH ANSWERS ARE PILLS","n":["<b>A CONFIRM SHEET'S ACTION IS A COLOURED PILL.</b> On Salt Admin and Salt Counter, the answer that commits (Undo, Cancel order, Discard) was plain text over a white Keep it. It is now a pill: red for a move that cannot be taken back, blue for a plain one.","<b>KEEP IT IS THE QUIET PILL UNDER IT.</b> The outlined pill keeps things as they are, so the coloured one reads as the action.","<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12688,7 +12688,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Nov 2026, 14:45 KL';
+const LAST_UPDATED='18 Nov 2026, 16:07 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

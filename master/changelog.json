@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1543",
+  "d": "18 Nov 2026",
+  "t": "BOTH ANSWERS ARE PILLS",
+  "n": [
+   "<b>A CONFIRM SHEET'S ACTION IS A COLOURED PILL.</b> On Salt Admin and Salt Counter, the answer that commits (Undo, Cancel order, Discard) was plain text over a white Keep it. It is now a pill: red for a move that cannot be taken back, blue for a plain one.",
+   "<b>KEEP IT IS THE QUIET PILL UNDER IT.</b> The outlined pill keeps things as they are, so the coloured one reads as the action.",
+   "<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"
+  ]
+ },
+ {
   "v": "v1542",
   "d": "18 Nov 2026",
   "t": "ONE ROAD FOR A PAYMENT",
