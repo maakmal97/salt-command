@@ -1,0 +1,102 @@
+<div class="amb-shell" data-mood="lagoon"><main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh"><span class="amb-chip amb-chip--glass">Plan, 18 Nov 2026</span>
+<h1 class="amb-hero__title">A customer's move can reach the Desk in seconds, not up to 60, in one version</h1>
+<p class="amb-hero__sub">Step 2 of the instant plan, made ready to build. The Counter tells the Desk that something moved, and the Desk runs the pass it already runs each minute. The minute stays as the net.</p>
+<p class="amb-hero__time">salt-command v1544. Nothing is built. Your three answers of 18 Nov 2026 are at the foot.</p></header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#why">Why it can be built now</a></li>
+<li><a class="amb-contents__link" href="#how">How it works</a></li>
+<li><a class="amb-contents__link" href="#moves">Which moves tell the Desk</a></li>
+<li><a class="amb-contents__link" href="#safe">How it stays safe</a></li>
+<li><a class="amb-contents__link" href="#parts">The parts</a></li>
+<li><a class="amb-contents__link" href="#out">What it leaves alone</a></li>
+<li><a class="amb-contents__link" href="#asks">Your answers</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="why"><h2 class="amb-section">Why it can be built now <span class="amb-section__note">what stopped it on 17 Nov is gone</span></h2>
+<div class="amb-prose">
+<p>The first attempt stopped on one fault. During a deploy an old Desk and a new Desk could each queue a different part of one payment, MYR 150 on the book for MYR 100 paid. No safe order of deploys was found.</p>
+<p>v1542 took that road away today. The minute's pass books no payment any more. Money reaches the ledger only by your Received or your Cash received, and each checks what the row can still take.</p>
+<p>So the attempt's heavy parts are not needed: no payment claim on the Counter, no reserved place in the queue. What is left is small: one call, one route, and one guard so a burst of moves runs one pass and then one more.</p>
+</div></section>
+
+<section class="amb-sec" id="how"><h2 class="amb-section">How it works <span class="amb-section__note">one call, no figure in it</span></h2>
+<div class="amb-stack">
+<ol class="amb-steps">
+<li class="amb-step"><span class="amb-step__title">1. The Counter records the move</span><span class="amb-step__text">Every customer's move is written in one place, the order book. Right after the write, where it already tells the open pages, it also tells the Desk.</span></li>
+<li class="amb-step"><span class="amb-step__title">2. The call says only that something moved</span><span class="amb-step__text">An empty POST over the link the two Workers already share, behind the key they already share. No figure, name, order or word travels. The customer's tap never waits for it.</span></li>
+<li class="amb-step"><span class="amb-step__title">3. The Desk answers at once and runs the pass behind</span><span class="amb-step__text">The same steps as the minute, in the same order: read the Counter, ring your banner, queue the rows, spend a yes you gave in advance, draft for Approve.</span></li>
+<li class="amb-step"><span class="amb-step__title">4. A burst runs one pass, then one more</span><span class="amb-step__text">On both sides: while a call or a pass is running, another only leaves a mark, and one more runs when the first ends. Ten moves in a second are two passes, not ten.</span></li>
+<li class="amb-step"><span class="amb-step__title">5. The minute still runs</span><span class="amb-step__text">A call that is lost, a deploy in the middle of a move, a Desk that is busy: the every-minute pass catches it within a minute, as today.</span></li>
+</ol>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> One such call already exists on master for one move: their Yes to your offer tells the Desk at once and does not wait for the minute.</p>
+</div></section>
+
+<section class="amb-sec" id="moves"><h2 class="amb-section">Which moves tell the Desk <span class="amb-section__note">read from the code, 18 Nov 2026</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Their move</th><th scope="col">Today</th><th scope="col">With this</th></tr></thead><tbody>
+<tr><td data-label="Their move">An order, a basket, a price ask</td><td data-label="Today">Banner within a minute</td><td data-label="With this">Banner in seconds</td></tr>
+<tr><td data-label="Their move">I have sent it, with or without a slip</td><td data-label="Today">Under Approve within a minute</td><td data-label="With this">Under Approve in seconds</td></tr>
+<tr><td data-label="Their move">A claim on the account</td><td data-label="Today">Within a minute</td><td data-label="With this">In seconds</td></tr>
+<tr><td data-label="Their move">A withdrawal, a No thanks</td><td data-label="Today">The book within a minute</td><td data-label="With this">The book in seconds</td></tr>
+<tr><td data-label="Their move">Joining a group order</td><td data-label="Today">Within a minute</td><td data-label="With this">In seconds</td></tr>
+<tr><td data-label="Their move">A message on an order, a line on the account, a rating</td><td data-label="Today">Banner within a minute</td><td data-label="With this">Banner in seconds</td></tr>
+<tr><td data-label="Their move">Their Yes to your offer</td><td data-label="Today">At once, by its own call</td><td data-label="With this">Unchanged, kept on its own call</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> Seconds means under 5, from the time one pass takes. It will be measured on the first live order after it ships and written into the record.</p>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">Never a call</span>Your own moves (they already run the pass), the practice accounts, and the Desk's own writes to the order book.</span></div>
+</div></section>
+
+<section class="amb-sec" id="safe"><h2 class="amb-section">How it stays safe <span class="amb-section__note">two passes at once</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">What two passes touch</th><th scope="col">What happens</th><th scope="col">Basis</th></tr></thead><tbody>
+<tr><td data-label="What two passes touch">A row for the ledger</td><td data-label="What happens">Queued once. Each entry is named by the moment of its own stage, so both passes make the same entry, and the same entry is dropped.</td><td data-label="Basis">Verified</td></tr>
+<tr><td data-label="What two passes touch">A payment</td><td data-label="What happens">Neither pass books one. Only your tap does, since v1542.</td><td data-label="Basis">Verified</td></tr>
+<tr><td data-label="What two passes touch">A yes you gave in advance</td><td data-label="What happens">Spent once. The database takes it only while it still waits.</td><td data-label="Basis">Verified</td></tr>
+<tr><td data-label="What two passes touch">A draft under Approve</td><td data-label="What happens">Made once. A second insert of the same draft is ignored.</td><td data-label="Basis">Verified</td></tr>
+<tr><td data-label="What two passes touch">Your banner</td><td data-label="What happens">Can ring twice for one piece of news when two passes read it in the same moment. The second replaces the first on your phone, so one banner shows, with a second buzz. Ask C.</td><td data-label="Basis">Verified</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Two passes can already overlap today: your own tap runs the pass while the minute's may be running. This adds callers, not a new kind of overlap.</p>
+<div class="amb-prose">
+<p><strong>The deploy.</strong> The Desk goes first, as the Actions job already does. For the few minutes an old Desk meets a new Counter, the call finds no route, is dropped in silence, and the minute's pass does the work. Either way round, nothing is booked twice and nothing is lost.</p>
+<p><strong>The checks.</strong> Fable reviews the change as a money path. Each new check is proved by breaking it. The full suite runs, then one version is pushed and proved live.</p>
+</div>
+</div></section>
+
+<section class="amb-sec" id="parts"><h2 class="amb-section">The parts <span class="amb-section__note">one version, one commit a part</span></h2>
+<div class="amb-stack">
+<ol class="amb-steps">
+<li class="amb-step is-now"><span class="amb-step__title">1. The Desk's route and its one pass at a time</span><span class="amb-step__text">A new inside route that answers at once and runs the minute's own steps behind. One pass per running Desk; a call during a pass asks for one more. The minute's cron takes the same road, so the two never double up inside one Desk.</span><span class="amb-chip amb-chip--warn">Next</span></li>
+<li class="amb-step"><span class="amb-step__title">2. The Counter's call</span><span class="amb-step__text">In the order book, after a customer's write: one empty call, never awaited by the tap, one more after a burst. Not for the Desk's writes, the practice accounts, or their Yes to an offer.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">3. The checks</span><span class="amb-step__text">The call carries nothing. Each listed move makes one; each excluded write makes none. A burst is two passes. A Desk with no route is tolerated. Two passes at once queue one row, spend one yes and make one draft. The minute still catches a lost call.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">4. The words and the record</span><span class="amb-step__text">The statements and desk documents say what the call is. A stale line in the code, that the pass runs from the cron and nowhere else, is corrected.</span><span class="amb-chip">Then</span></li>
+</ol>
+<p class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> About 120 lines of code across four files and one new test file. Half a day with its review, suite and landing.</p>
+</div></section>
+
+<section class="amb-sec" id="out"><h2 class="amb-section">What it leaves alone</h2>
+<div class="amb-prose">
+<p><strong>Their statement and price list.</strong> Still 2 to 3 minutes after a change. That is step 3 and ask B of the instant plan, a separate piece.</p>
+<p><strong>The first attempt's other parts.</strong> The payment claim, the reserved queue place and the banner lease are not carried. They stay on the branch that keeps that work whole.</p>
+<p><strong>Every timer.</strong> The minute, the chase, the hourly confirm time and the daily checks run as they do now.</p>
+</div></section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">Your answers <span class="amb-section__note">given 18 Nov 2026</span></h2>
+<div class="amb-stack">
+<fieldset class="amb-options amb-options--record"><legend class="amb-field__label">A. Which moves tell the Desk at once?</legend>
+<label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="askA" value="all" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Every move in the table</span><span class="amb-option__sub">One rule, one place in the code. Messages and ratings ring in seconds too.</span></label>
+<label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="askA" value="money" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Only orders and I have sent it</span><span class="amb-option__sub">Fewer passes. Messages, lines and ratings keep the minute.</span></label>
+<p class="amb-field__hint"><strong>Decided</strong> 18 Nov 2026</p></fieldset>
+<fieldset class="amb-options amb-options--record"><legend class="amb-field__label">B. Your banner for their move: at once, or keep the minute?</legend>
+<label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="askB" value="now" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">At once</span><span class="amb-option__sub">The banner is the point of the change. A burst still rings once or twice, not once a move.</span></label>
+<label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="askB" value="minute" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Keep the minute</span><span class="amb-option__sub">Rows reach Approve in seconds, but your phone hears of them within a minute, as now.</span></label>
+<p class="amb-field__hint"><strong>Decided</strong> 18 Nov 2026</p></fieldset>
+<fieldset class="amb-options amb-options--record"><legend class="amb-field__label">C. The rare second buzz for one piece of news?</legend>
+<label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="askC" value="accept" checked disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Accept it</span><span class="amb-option__sub">One banner shows; the phone may buzz twice when two passes meet. No more code. It can happen today already, between your tap and the minute.</span></label>
+<label class="amb-option"><input class="amb-vh amb-option__input" type="radio" name="askC" value="lease" disabled><span class="amb-option__mark" aria-hidden="true"></span><span class="amb-option__title">Ring once, always</span><span class="amb-option__sub">The Counter's order book keeps what was rung, and a pass must claim news before it rings. About 150 more lines across both Workers, and a second version.</span></label>
+<p class="amb-field__hint"><strong>Decided</strong> 18 Nov 2026</p></fieldset>
+</div></section>
+
+</div></div></main></div>
