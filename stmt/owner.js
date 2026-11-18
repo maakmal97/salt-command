@@ -1396,6 +1396,12 @@ export const OWNER_JS = `
     'they have taken your offer already: its row is drafted at it':'They have already taken your offer. Its row is drafted at that price.',
     'this raises their price or changes their window: send it to them for their yes':'This raises their price or changes their window. Send it to them for their yes.',
     'nothing here needs their yes: Accept it':'Nothing here needs their yes. Accept it.',
+    /* 18 Nov 2026 (order change V3): the refusals of a change of units or way on a placed order */
+    'these terms need their yes: send them an offer':'These terms need their yes. Send them an offer.',
+    'the size has to be a number above zero':'Units must be above zero.',
+    'a group order keeps its size and way':'A group order keeps its size and way.',
+    'a trip keeps one way across its orders':'A trip keeps one way across its orders.',
+    "the offer's terms are not valid":'Those terms cannot be offered. Read the figures again.',
     'they said yes before your withdraw reached them: its row is drafted at your offer':'They said yes before your Withdraw, so its row is drafted at your offer.',
     'no offer of yours is open on this order':'You have no offer open on this order.',
     'that Withdraw was answered already, and a newer offer of yours is open':'Your newer offer is still open, so tap Withdraw again.',
@@ -1569,7 +1575,8 @@ export const OWNER_JS = `
     return out;
   }
   /* what needs their yes, the Worker's needsYes: goods above what they placed it at, or a window other than theirs */
-  function makerNeedsYes(order,total,slot){ return (total>(+order.total||0)+0.004)||(!!slot&&!!order.slot&&slot!==order.slot); }
+  function makerNeedsYes(order,total,slot,qty,mode){ return (total>(+order.total||0)+0.004)||(!!slot&&!!order.slot&&slot!==order.slot)
+    ||(typeof qty==='number'&&Math.abs(qty-(+order.qty||0))>0.0004)||(typeof mode==='string'&&mode!==order.mode); }
   /* an offer of his on the order, open or said yes to: the order waits on them, or on its row. 11 Nov 2026: his answer to THEIR ASK too (Negotiate, a
      price the customer asked for, from not accept), which Salt Admin never drew, so an asked order showed Agree and the Desk refused it */
   function makerAccHeld(order){ var p=order&&order.price; return !!p&&(p.state==='taken'||(p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until))); }
@@ -5540,13 +5547,20 @@ export const OWNER_JS = `
         /* 2 Nov 2026 (his canvas): the four figures under their head, then Agree as a settings list (Goods, Delivery, When) and its one pill */
         var figs=part('The figures','ofigsec');
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','oagree amb-stack');
+        var sheetOrders=((makerData&&makerData.orders)||[]).filter(function(o){ return order.sheet&&o.u===order.u&&o.sheet===order.sheet&&o.status!=='cancelled'&&o.status!=='declined'; });
+        var wayAllowed=(!order.sheet||sheetOrders.length<2)&&!order.pool, termsMode=order.mode||'collect';
         /* 11 Nov 2026: their ask is said first and the goods start at their figure, so one tap offers what they asked; he may type another */
         var asked=makerAsked(order), askRM=asked&&typeof order.price.proposed==='number'&&order.price.proposed>0?order.price.proposed:null;
-        var agreeSec=stageOf(asked?'Offer':'Agree','oagreesec');
+        var agreeSec=stageOf(asked?'Offer':'Change','oagreesec');
         if(asked){ var askLine=el('p','amb-field__hint maker-facts',(askRM!=null?'They asked for '+rm(askRM)+'. ':'They asked for a better price. ')+(+order.total>0?'The list price is '+rm(order.total)+'.':'It has no list price.'));
           askLine.setAttribute('data-ask',''); agreeSec.appendChild(askLine); }
         agreeSec.appendChild(form);
+        var refillGoods=false;
         var total=makerField(form,['Goods, RM','order.total'],'number',quote.total==null?(askRM!=null?askRM:order.total):quote.total);
+        var quantity=makerField(form,['Units','order.qty'],'number',order.qty);
+        quantity.min='0.001'; quantity.max='1000'; quantity.step='any'; quantity.disabled=!!order.pool;
+        var way=el('select'); actOn(way,'order.mode'); [['collect','Collect'],['deliver','Deliver']].forEach(function(opt){ var op=el('option','',opt[1]); op.value=opt[0]; way.appendChild(op); });
+        way.value=termsMode; way.disabled=!wayAllowed; makerRow(form,'Way',way);
         /* 18 Oct 2026 (Salt Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
@@ -5564,7 +5578,7 @@ export const OWNER_JS = `
         var follower=order.mode==='deliver'&&group.length>1&&group[0].id!==order.id&&leadToday;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeSel=null, winDraw=null;
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeSel=null, feeWrap=null, whenWrap=null, winDraw=null;
         /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
            changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
            once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
@@ -5581,7 +5595,7 @@ export const OWNER_JS = `
            its tap brings the Reason line into view; a read that failed is read again by the pill itself. It is grey only while a read is on its way. */
         function waitDraw(bad,ask){
           var old=lead.querySelector('[data-accept-wait]'); if(old) old.remove();
-          var pick=makerPlacedDelivery()==null&&!follower&&order.mode==='deliver';
+          var pick=makerPlacedDelivery()==null&&!follower&&termsMode==='deliver';
           var b=el('button','amb-pill',pick?'Choose the delivery charge':ask?ONE_OFF_WORDS.give:bad?'Read the figures again':'Reading the figures'); b.type='button';
           b.setAttribute('data-accept-wait',''); actOn(b,'order.accept-wait');
           if(pick) b.addEventListener('click',function(){ tf.open=true; if(feeSel&&feeSel.focus) feeSel.focus(); });
@@ -5602,10 +5616,10 @@ export const OWNER_JS = `
           if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
         }
         /* what the figures stand on: the goods total, the charge, and the window, which decides whether Accept goes to them for their yes */
-        function makerPlacedWin(){ return order.mode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
+        function makerPlacedWin(){ return termsMode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
         function makerPlacedKey(){
           var d=makerPlacedDelivery();
-          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d},makerPlacedWin()].concat(order.test?[(makerPayFirst[order.id]||{}).on===true]:[]).concat(makerOneOff[order.id]?[makerOneOff[order.id]]:[]));
+          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d,qty:Number(quantity.value),mode:termsMode},makerPlacedWin()].concat(order.test?[(makerPayFirst[order.id]||{}).on===true]:[]).concat(makerOneOff[order.id]?[makerOneOff[order.id]]:[]));
         }
         function makerPlacedShow(q){
           qsay.className='amb-field__hint'; qsay.textContent='Figures read: check them before you agree.';
@@ -5626,20 +5640,20 @@ export const OWNER_JS = `
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           /* 11 Nov 2026: an open ask is answered by an offer whatever the figure (the Desk's offerOrder files it as Negotiate's, on the same preview's offer digest) */
-          var wv=makerPlacedWin(), askOpen=makerAsked(order), yes=askOpen||makerNeedsYes(order,q.total,wv);
+          var wv=makerPlacedWin(), askOpen=makerAsked(order), yes=askOpen||q.result.needsYes===true||makerNeedsYes(order,q.total,wv,q.qty,q.mode);
           [].forEach.call(document.querySelectorAll('[data-reward="'+order.id+'"]'),function(n){ rewardPaint(n,order); });   /* the reward's figures come with the read */
           /* 25 Oct 2026 (canvas Salt Admin Orders): the pill says the one sum it sends, the goods and the delivery together, so it fits its half of the row; the terms stand above it */
           var accept=makerButton(row3,[(askOpen?'Offer them, ':yes?'Ask them, ':'Agree, ')+rmShort((+q.result.quote||0)+(+q.result.delivery||0)),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses. An answer to
                their ask carries no window: Negotiate's offer holds the goods and the charge alone */
-            if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv&&!askOpen) ob.slot=wv;
+            if(yes){ var ob={total:s.total,delivery:s.delivery,qty:s.qty,mode:s.mode,hash:s.offerHash};             if(s.mode==='deliver'&&wv&&!askOpen) ob.slot=wv;
               if(s.oneOff) ob.oneOff=s.oneOff;
               makerTap(order,'offer',ob,askOpen?'Offer sent. They take it or say no thanks.':'Sent to them for their yes.'); return; }
-            var body={total:s.total,delivery:s.delivery,hash:s.hash};
+            var body={total:s.total,delivery:s.delivery,qty:s.qty,mode:s.mode,hash:s.hash};
             if(s.oneOff) body.oneOff=s.oneOff;
             if(order.test) body.prepay=s.prepay===true;
-            if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
+            if(s.mode==='deliver'&&wv) body.slot=wv;
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
           },true); accept.setAttribute('data-accept',''); row3.appendChild(accept);
         }
@@ -5660,7 +5674,10 @@ export const OWNER_JS = `
         function makerPlacedRead(){
           var delivery=makerPlacedDelivery();
           if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }
-          var payload={total:Number(total.value),delivery:delivery}, key=makerPlacedKey(), turn=++previewTurn;
+          var refill=refillGoods, payload=refill?{}:{total:Number(total.value)}, key=makerPlacedKey(), turn=++previewTurn;
+          payload.delivery=delivery; payload.qty=Number(quantity.value); payload.mode=termsMode;
+          /* 18 Nov 2026: a changed size with no figure typed since asks for no total, and the Desk answers their price for it, which refills Goods */
+          if(makerPlacedWin()) payload.slot=makerPlacedWin();
           if(makerOneOff[order.id]) payload.oneOff=makerOneOff[order.id];
           if(order.test) payload.prepay=(makerPayFirst[order.id]||{}).on===true;
           /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
@@ -5671,7 +5688,9 @@ export const OWNER_JS = `
           pv.p.then(function(result){
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
-            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,prepay:payload.prepay,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
+            if(refill){ var given=result&&result.terms&&result.terms.total; if(typeof given!=='number'){ makerPlacedSay('Their price for that size did not come back: type the goods.',true); return; }
+              payload.total=given; total.value=String(given); refillGoods=false; key=makerPlacedKey(); }
+            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,qty:payload.qty,mode:payload.mode,prepay:payload.prepay,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
             if(payload.oneOff) makerQuotes[order.id].oneOff=payload.oneOff;
             chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;
             makerPlacedShow(makerQuotes[order.id]);
@@ -5697,14 +5716,14 @@ export const OWNER_JS = `
           go.setAttribute('data-one-off-go',''); go.disabled=!oneOffOk(why.value);
           why.addEventListener('input',function(){ makerOneDraft[order.id]=why.value; go.disabled=!oneOffOk(why.value); });
         }
-        total.addEventListener('input',function(){ delete makerOneOff[order.id]; delete makerOneDraft[order.id]; });
+        total.addEventListener('input',function(){ refillGoods=false; delete makerOneOff[order.id]; delete makerOneDraft[order.id]; });
         total.addEventListener('input',makerPlacedInvalidate);
         total.addEventListener('change',makerPlacedRead);
         quoteStart=function(){
           var held=makerQuotes[order.id];
           if(held&&held.sig===sig&&held.key===makerPlacedKey()) makerPlacedShow(held); else makerPlacedRead();
         };
-        if(deliver){
+        if(deliver||wayAllowed){
           /* S11 11.3 on the Counter: the delivery charge is chosen where the order is agreed, RM 0, 10, 15 or his own
              figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set.
              22 Oct 2026 (canvas Needs you): one select beside Goods, its first line Choose, which sends nothing; Other opens his own figure under them */
@@ -5719,7 +5738,7 @@ export const OWNER_JS = `
             if(otherField) otherField.closest('label').hidden=chip.value!=='other';
             makerPlacedInvalidate(); makerPlacedRead();
           });
-          makerRow(form,'Delivery, RM',dsel).classList.add('oagree__fee'); feeSel=dsel;
+          feeWrap=makerRow(form,'Delivery, RM',dsel); feeWrap.classList.add('oagree__fee'); feeSel=dsel;
           otherField=makerField(form,['Other, RM','order.fee-other-amount'],'number',chip.other);
           otherField.closest('label').classList.add('oagree__wide'); otherField.closest('label').hidden=chip.value!=='other';
           otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
@@ -5742,7 +5761,7 @@ export const OWNER_JS = `
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
         var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
         /* 11 Nov 2026 (Fable): an answer to their ask carries no window (Negotiate's offer is goods and charge), so no When is drawn while it is open */
-        if(deliver&&!order.wantBy&&!makerAsked(order)){
+        if((deliver||wayAllowed)&&!order.wantBy&&!makerAsked(order)){
           /* 22 Oct 2026 (canvas Needs you): ONE WHEN, across Goods and Delivery: theirs first (ASAP, which needs no day, or the window they chose), then every
              window still ahead on the days the Counter offers, each saying its own day (Today, Tomorrow, Fri 24 Oct). Its values are the slots the radios sent */
           var now=Date.now(), days=makerWinDays(now), theirs=order.slot?String(order.slot).slice(0,10):'';
@@ -5758,16 +5777,38 @@ export const OWNER_JS = `
           /* a window decides whether Accept goes to them for their yes, so a change reads the figures again */
           ws.addEventListener('change',function(){ win.value=ws.value; if(win.value) win.day=win.value.slice(0,10); makerPlacedInvalidate(); makerPlacedRead(); });
           winDraw=function(){ ws.value=win.value; };
-          makerRow(form,'When',ws).classList.add('oagree__wide');
-          form.appendChild(el('p','amb-field__hint',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'; another asks them.'
-            :'They want it ASAP; a window goes with Agree.'));
+          whenWrap=makerRow(form,'When',ws); whenWrap.classList.add('oagree__wide');
+          win.showHint=el('p','amb-field__hint',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'; another asks them.'
+            :'They want it ASAP; a window goes with Agree.');
+          form.appendChild(win.showHint);
         }
         function makerPlacedDelivery(){
-          if(!deliver) return 0;
+          if(termsMode!=='deliver') return 0;
+          if(follower) return 0;
+          if(!feeSel) return null;
           if(chip.value==='other'){ var v=Number(otherField.value); return otherField.value!==''&&v>=0?v:null; }
           if(chip.value==='0'||chip.value==='10'||chip.value==='15') return Number(chip.value);
           return null;
         }
+        way.addEventListener('change',function(){
+          termsMode=way.value;
+          if(feeWrap) feeWrap.hidden=termsMode!=='deliver'||follower;
+          if(otherField) otherField.closest('label').hidden=termsMode!=='deliver'||chip.value!=='other';
+          if(whenWrap) whenWrap.hidden=termsMode!=='deliver';
+          if(win.showHint) win.showHint.hidden=termsMode!=='deliver';
+          makerPlacedInvalidate(); makerPlacedRead();
+        });
+        quantity.addEventListener('input',function(){
+          /* a size that is not the order's has no figure until the Desk answers their price for it; put back, the figure is the order's again */
+          if(Math.abs(Number(quantity.value)-(+order.qty||0))>0.0004){ refillGoods=true; total.value=''; }
+          else if(refillGoods){ refillGoods=false; total.value=String(order.total); }
+          makerPlacedInvalidate();
+        });
+        quantity.addEventListener('change',makerPlacedRead);
+        if(feeWrap) feeWrap.hidden=termsMode!=='deliver'||follower;
+        if(whenWrap) whenWrap.hidden=termsMode!=='deliver';
+        if(win.showHint) win.showHint.hidden=termsMode!=='deliver';
+        if(!wayAllowed) form.appendChild(el('p','amb-field__hint','Way cannot change on a sheet with several orders or a group order.'));
       }else if(againAck){
         quoteStart=makerAcceptAgain(card,order,acts,stageOf('Agree again'));
       }else if(order.status==='acknowledged'){

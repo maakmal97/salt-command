@@ -5067,7 +5067,10 @@ const CLIENT_JS = `
         w.appendChild(el('p','onote',tw('np.cAsk')));
         var same=Math.abs((+p.total||0)-(+o.total||0))<0.005;
         w.appendChild(ambTile(tw('np.cGoods'),rm(p.total),same?tw('np.cSame'):tw('np.cWas',{rm:rm(o.total)})));
-        if(o.mode==='deliver') w.appendChild(el('p','onote',tw('np.cDeliv',{rm:rm(+p.delivery||0)})));
+        var proposedQty=typeof p.qty==='number'?p.qty:+o.qty, proposedMode=p.mode||o.mode;
+        if(Math.abs(proposedQty-(+o.qty||0))>0.0004) w.appendChild(el('p','onote',tw('np.cUnits',{q:Uq(proposedQty,oUnit(o))})));
+        if(proposedMode!==o.mode) w.appendChild(el('p','onote',tw(proposedMode==='deliver'?'np.cWayDeliver':'np.cWayCollect')));
+        if(proposedMode==='deliver') w.appendChild(el('p','onote',tw('np.cDeliv',{rm:rm(+p.delivery||0)})));
         if(p.slot&&p.slotSpan){ var wl=el('p','onote'); setW(wl,'np.cWin',{a:esch(winPart(p.slotSpan,0)), b:esch(winPart(p.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(p.slot),L)); }}); w.appendChild(wl); }
         w.appendChild(el('p','onote',tw('np.until',{t:Dd(stamp,p.until)})));
         if(!view){
@@ -5084,8 +5087,13 @@ const CLIENT_JS = `
     }
     if(p.state==='asked') w.appendChild(el('p','onote',tw('np.asked')));
     else if(p.state==='offered'&&!lapsed){
-      w.appendChild(ambTile(tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(+o.qty||1)).toFixed(2))})));
-      w.appendChild(el('p','onote',tw('np.until',{t:Dd(stamp,p.until)})+' '+tw(o.mode==='deliver'?'np.deliv':'np.collect')));
+      var proposedQty=typeof p.qty==='number'?p.qty:+o.qty, proposedMode=p.mode||o.mode;
+      w.appendChild(ambTile(tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(proposedQty||1)).toFixed(2))})));
+      if(Math.abs(proposedQty-(+o.qty||0))>0.0004) w.appendChild(el('p','onote',tw('np.cUnits',{q:Uq(proposedQty,oUnit(o))})));
+      if(proposedMode!==o.mode) w.appendChild(el('p','onote',tw(proposedMode==='deliver'?'np.cWayDeliver':'np.cWayCollect')));
+      if(proposedMode==='deliver'&&typeof p.delivery==='number') w.appendChild(el('p','onote',tw('np.cDeliv',{rm:rm(+p.delivery||0)})));
+      if(p.slot&&p.slotSpan){ var wl=el('p','onote'); setW(wl,'np.cWin',{a:esch(winPart(p.slotSpan,0)), b:esch(winPart(p.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(p.slot),L)); }}); w.appendChild(wl); }
+      w.appendChild(el('p','onote',tw('np.until',{t:Dd(stamp,p.until)})+' '+tw(proposedMode==='deliver'?'np.deliv':'np.collect')));
       if(!view){
         var ok=el('button','amb-pill amb-pill--sm',tw('np.accept')); ok.type='button'; ok.disabled=draft.offerBusy===o.id;
         ok.addEventListener('click',function(){ offerAnswer(o,'take'); });
