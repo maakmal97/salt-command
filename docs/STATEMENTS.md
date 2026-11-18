@@ -2376,8 +2376,8 @@ guards"). Measured on v1547, the banner took 5.8 s and the row 10.1 s, nearly al
   `nudgeIds`: order ids, at most 50; a missing or malformed body is a whole pass, an empty list a pass of none); a call
   during a pass adds its orders to the next (`passWant`), a whole call makes it whole. The minute stays whole. A nudge's
   pass logs `orders pass (nudge)` with each step's time.
-- **Push sends go to every device at once** (`stmt/push.js`), and `queueSale`'s first look reads the blob, the entry's own
-  key and its draft together, deciding in the old order.
+- **Push sends go to every device at once** (`stmt/push.js`). The queue's own reads (`queueSale`, the reconcile's map and
+  book) stay one after another: read together they moved the S10 10.2 instruments' races, so that saving was dropped.
 - **A drafted row is told to an open Salt Admin** (`tellAdmin` over `/desk/owner-tell`, the order book's op `otell`):
   `{k: "approve"}` to the owner's sockets alone.
 The Desk deploys before the Counter (rule 8), so an old Counter meets a new Desk, which rings as before; a new Counter
