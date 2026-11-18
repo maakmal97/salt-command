@@ -8810,7 +8810,7 @@ export const OWNER_JS = `
   /* Approve, Orders' one main action (the bar's Approve until 15 Nov 2026) */
   [].forEach.call(document.querySelectorAll('[data-approve]'), function(ap){ ap.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); }); });
   /* Ledger check, in every place's bar (18 Nov 2026): the part its row in Orders' More list opened */
-  [].forEach.call(document.querySelectorAll('[data-ledger]'), function(lb){ lb.addEventListener('click', function(){ showPlace('orders','ledger',{fresh:true,push:true}); }); });
+  [].forEach.call(document.querySelectorAll('[data-ledger]'), function(lb){ lb.addEventListener('click', function(){ showPlace('orders','ledger',{push:true}); }); });
   document.getElementById('afil').addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-f]'); if(b&&b.getAttribute('aria-disabled')!=='true') filterBy(b.getAttribute('data-f'));
   });
