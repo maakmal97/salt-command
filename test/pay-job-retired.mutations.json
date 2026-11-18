@@ -1,0 +1,62 @@
+[
+ {
+  "name": "1 the Counter lists a pay job again",
+  "file": "stmt/orders.js",
+  "find": "  /* 18 Nov 2026: no \"pay\" job. Money he confirmed",
+  "replace": "  if (paidUntold(o) > 0.004) jobs.push(\"pay\");\n  /* 18 Nov 2026: no \"pay\" job. Money he confirmed"
+ },
+ {
+  "name": "1 a close is no longer listed",
+  "file": "stmt/orders.js",
+  "find": "if (closing) jobs.push(\"close\");",
+  "replace": "if (false) jobs.push(\"close\");"
+ },
+ {
+  "name": "2 the Desk queues an entry for a pay job",
+  "file": "src/orders.js",
+  "find": "if (job === \"pay\") { retired = true; continue; }",
+  "replace": "if (job === \"pay\") { retired = true; }"
+ },
+ {
+  "name": "3 the Desk posts a paid mark for a pay job",
+  "file": "src/orders.js",
+  "find": "if (job === \"pay\") { retired = true; continue; }",
+  "replace": "if (job === \"pay\") { retired = true; mark.paid = +((+q.paid || 0) + 60).toFixed(2); continue; }"
+ },
+ {
+  "name": "4 the Desk says nothing of a pay job",
+  "file": "src/orders.js",
+  "find": "if (job === \"pay\") { retired = true; continue; }",
+  "replace": "if (job === \"pay\") { continue; }"
+ },
+ {
+  "name": "4 the cron's console line ignores a retired job",
+  "file": "src/worker.js",
+  "find": "rc.dropped || rc.retired)",
+  "replace": "rc.dropped)"
+ },
+ {
+  "name": "5 the second pass books it",
+  "file": "src/orders.js",
+  "find": "if (job === \"pay\") { retired = true; continue; }",
+  "replace": "if (job === \"pay\" && !globalThis.__payRetiredSeen && (globalThis.__payRetiredSeen = 1)) { retired = true; continue; }"
+ },
+ {
+  "name": "6 a pay job stops the jobs after it",
+  "file": "src/orders.js",
+  "find": "if (job === \"pay\") { retired = true; continue; }",
+  "replace": "if (job === \"pay\") { retired = true; break; }"
+ },
+ {
+  "name": "7 Received no longer books a claim",
+  "file": "src/orders.js",
+  "find": "if (body && body.covered === true) return notFoundOrder(env, id, body, now, true);",
+  "replace": "if (body && body.covered !== true) return notFoundOrder(env, id, body, now, true);"
+ },
+ {
+  "name": "7 Received ignores rowRoom",
+  "file": "src/orders.js",
+  "find": "const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, \"SELL\", way, hold || mirror) : null;\n  return stageTap(env, id, body, by, now, \"pay\"",
+  "replace": "const room = null;\n  return stageTap(env, id, body, by, now, \"pay\""
+ }
+]

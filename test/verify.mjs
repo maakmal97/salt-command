@@ -51175,6 +51175,11 @@ await (async () => {
   await (await import("./work-shell.mjs")).run({ ok });
 })();
 
+section("18 Nov 2026: the reconcile's pay job is retired, the Counter lists none and the Desk books none, his Received is the one road");
+await (async () => {
+  await (await import("./pay-job-retired.mjs")).run({ ok });
+})();
+
 section("18 Nov 2026: the review's content faults, a withheld statement on Orders, Needs you's lead, the next unit said once");
 await (async () => {
   await (await import("./review-fixes.mjs")).run({ ok, pageWork });
