@@ -28,5 +28,11 @@
 "file": "engine/stages.mjs",
 "find": "    if (twin) return clashError(twin, \"change it to another figure, or change that sale instead\");",
 "replace": ""
+},
+{
+"name": "the tie-out reads the old index",
+"file": "src/orders.js",
+"find": "  const { byKey, rows: n, ended: endedByKey } = rowIndex(book.sales);",
+"replace": "  const byKey = new Map(), n = new Map(), endedByKey = new Map();\n  for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }"
 }
 ]
