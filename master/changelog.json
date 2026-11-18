@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1538",
+  "d": "18 Nov 2026",
+  "t": "AN ADMIN ACCOUNT ON SALT COUNTER",
+  "n": [
+   "<b>YOUR OWN COUNTER ACCOUNT.</b> An admin account signs in at Salt Counter's door like any customer's. It is on no roster and no ledger row, gets no price list, and places, claims and joins nothing.",
+   "<b>THE WAY IN, BUILT AND OFF.</b> Signed in with its password, the account can open Salt Admin on that browser for 12 hours. Log out, Leave and Sign out everywhere close it. The switch that makes Salt Admin ask for it ships off: Salt Admin opens as before.",
+   "<b>ORDER IDS.</b> About 1 new order id in 500 took the shape of a practice order, and Salt Admin could not act on such an order. An id is now drawn again when it would."
+  ]
+ },
+ {
   "v": "v1537",
   "d": "18 Nov 2026",
   "t": "CHANGE A PLACED ORDER",
