@@ -1813,3 +1813,29 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked) > .amb-dock > :is(.amb-tabbar, .amb-mini, .amb-savebar) { box-shadow: inset 0 1px 0 var(--amb-sheen); }
 }
 @media print { .amb-shell[data-amb-moved] > .amb-screen--docked { clip-path: none; } }
+
+/* ---- A working shell (0.7.16): the owner's answers of 18 Nov 2026, on Salt Admin at a laptop's width, where the
+   hero took a third of the screen's height before any work showed, the rail left its column empty under five
+   rows, and the queue cut its rows short. A shell with amb-shell--work gives the height and the width to the
+   work from 960px. Its compact hero is one row at the app bar's height: the title at the start, its line and
+   its time beside it, its one action at the end, before the bar's circles, and what does not fit goes to a
+   second line. Its rail runs to the screen's foot, and a foot in the tab bar (amb-tabbar__foot) says there what
+   is true in every place, a time or a state; the hero's time line then stands down, since the foot says it.
+   Its panes give the queue up to 440px, and the queue still gives way first where the panes are narrow.
+   Narrower than 960px nothing changes: the hero is the stack on the mesh, the dock the bar, the foot not drawn. ---- */
+.amb-tabbar__foot { display: none; }
+@container amb (min-width: 960px) {
+  .amb-shell--work .amb-hero--compact { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 0 var(--amb-space-4); padding: calc(var(--amb-safe-top) + var(--amb-space-2)) calc(var(--amb-inset-r) + var(--amb-space-4)) var(--amb-space-5) calc(var(--amb-inset-l) + var(--amb-space-4)); text-align: start; }
+  .amb-shell--work:has(> .amb-appbar) .amb-hero--compact { padding-right: calc(var(--amb-inset-r) + var(--amb-space-4) + var(--amb-tap) + var(--amb-space-3)); }
+  .amb-shell--work:has(> .amb-appbar > :last-child > :nth-child(2):not([hidden])) .amb-hero--compact { padding-right: calc(var(--amb-inset-r) + var(--amb-space-4) + 2 * var(--amb-tap) + var(--amb-space-2) + var(--amb-space-3)); }
+  .amb-shell--work .amb-hero--compact > * { margin: 0; }
+  .amb-shell--work .amb-hero--compact > .amb-hero__title { display: flex; align-items: center; min-height: var(--amb-tap); font-size: var(--amb-text-title2); }
+  .amb-shell--work .amb-hero--compact > .amb-hero__sub { flex: 0 1 auto; min-width: 0; }
+  .amb-shell--work .amb-hero--compact > .amb-cluster { margin-left: auto; }
+  .amb-shell--work:has(> .amb-dock > .amb-tabbar > .amb-tabbar__foot) .amb-hero--compact > .amb-hero__time { display: none; }
+  .amb-shell--work.amb-shell--rail > .amb-dock > .amb-tabbar { flex: 1 1 auto; }
+  .amb-shell--work.amb-shell--rail > .amb-dock > .amb-tabbar > .amb-tabbar__foot { display: grid; justify-items: start; gap: var(--amb-space-2); margin-top: auto; padding: var(--amb-space-3); font-size: var(--amb-text-footnote); font-weight: 500; color: var(--amb-ink-2); }
+  @media (min-height: 640px) {
+    .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }
+  }
+}
