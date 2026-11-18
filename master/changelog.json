@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1540",
+  "d": "18 Nov 2026",
+  "t": "MAINTENANCE IS A NOTICE AT THE DOOR",
+  "n": [
+   "<b>THE SWITCH NO LONGER BLOCKS THE COUNTER.</b> With Maintenance on, Salt Counter's door opens as usual and carries the notice and the time it is back.",
+   "<b>NO CUSTOMER SIGNS IN.</b> A password, a link, a code, a passkey and a remembered phone are each refused with the notice. Nothing is used up: the link, the code and the phone work again when it lifts.",
+   "<b>ANYONE ALREADY IN STAYS IN.</b> They see their page, can change nothing, and are told nothing. A session lasts 15 minutes at most, then the door and its notice.",
+   "<b>YOU STILL GET IN.</b> An admin account signs in as usual, and Salt Admin and its practice surface are untouched. Guest links stay open.",
+   "<b>THE DEPLOY'S OWN BLOCK IS UNCHANGED.</b> It still closes everything and an open page still moves to the maintenance page."
+  ]
+ },
+ {
   "v": "v1539",
   "d": "18 Nov 2026",
   "t": "WORDS THAT CONTRADICTED THEMSELVES",

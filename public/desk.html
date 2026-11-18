@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="b6c1d8771254ab44";
+var SALT_BUILD_ID="89b77108d981b61a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12526,7 +12526,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1539","d":"18 Nov 2026","t":"WORDS THAT CONTRADICTED THEMSELVES","n":["<b>A WITHHELD STATEMENT IS SAID ON ORDERS.</b> A customer whose statement is updating reads that on the Counter's Orders, never No orders yet. A new customer still reads No orders yet.","<b>NEEDS YOU COUNTS PENDING.</b> With cards under Pending and nothing to do, its line says how many are pending, never Nothing needs you. Books in one state are said once: 2 books are low on stock.","<b>SMALLER WORDS.</b> Receivables says its paid is of the agreed orders. A kind holding FYI cards alone shows no 0. The next unit's row says its share once. The account search's hint is in the page's own face.","<b>NO PRICE, ROUTE OR REQUEST CHANGED.</b>"]}];
+const evolution=[{"v":"v1540","d":"18 Nov 2026","t":"MAINTENANCE IS A NOTICE AT THE DOOR","n":["<b>THE SWITCH NO LONGER BLOCKS THE COUNTER.</b> With Maintenance on, Salt Counter's door opens as usual and carries the notice and the time it is back.","<b>NO CUSTOMER SIGNS IN.</b> A password, a link, a code, a passkey and a remembered phone are each refused with the notice. Nothing is used up: the link, the code and the phone work again when it lifts.","<b>ANYONE ALREADY IN STAYS IN.</b> They see their page, can change nothing, and are told nothing. A session lasts 15 minutes at most, then the door and its notice.","<b>YOU STILL GET IN.</b> An admin account signs in as usual, and Salt Admin and its practice surface are untouched. Guest links stay open.","<b>THE DEPLOY'S OWN BLOCK IS UNCHANGED.</b> It still closes everything and an open page still moves to the maintenance page."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
