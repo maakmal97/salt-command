@@ -1,9 +1,9 @@
 {
-  "version": "0.7.23",
-  "commit": "50916f84fbdcb721d0f40d3ca37740c555ea5e9d",
-  "tokens": "b57e1b0b999d85ed46355a26c86965647e9642f0329e6a2e4040ad7acf97a441",
+  "version": "0.7.24",
+  "commit": "cbfdedec4f2adfc5a9dd17f1b414781ef402271b",
+  "tokens": "4823488e13c15ef14fd181d698656c66f0616bfbf92659bf7a222b30bf724c31",
   "files": {
-    "ambient.css": "217a0421dd0fdeae8f536b7ded18bc32ae3ba90a4a222b1f6e4d2ce965bccb82",
+    "ambient.css": "ea48e6db234b1802a41baf2fcababfac884ef1fdef19c81d68889db51b5a22a4",
     "ambient.js": "db2332a0205e84c67eaad0343a43b54fdd035f6e0fca9ac206c5b5c70247e0d8",
     "icons.svg": "0eff228fb9dad9bf5254c0102498cf2665fe79e311ee68e78e183f2bfd4b1a04"
   }

@@ -561,7 +561,7 @@ body.ended > *:not(#aEnded) { display: none; }
 /* Fable's review (18 Nov 2026): from 960px the pill keeps one width whatever it says, so the status beside it stands still; and one margin of each pair is nought,
    so a place's tabs stand on one line whether the screen is a column of panes (margins add) or a page (they collapse) */
 @container amb (min-width: 960px) {
-  .adm .aled { min-width: calc(var(--amb-tap) * 2.5); }
+  .adm .aled { min-width: calc(var(--amb-tap) * 3.5); }
   .adm #unsentBar:not([hidden]) { margin-top: 0; }
   .adm .amb-stack:has(> .aparts) { margin-top: 0; }
   .adm .aparts, .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin-bottom: var(--amb-space-4); }

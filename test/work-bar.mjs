@@ -68,7 +68,7 @@ export async function run({ ok, pageWork }) {
     "Payments they sent and the Ledger check keep their parts under Orders, each at its address");
   dom0.window.close();
   /* T8 (Fable's review, 18 Nov 2026): the indicator keeps one width, is a step under Approve and is pressed while its view is open; a place's tabs stand on one line */
-  ok(css.includes(".adm .aled { min-width: calc(var(--amb-tap) * 2.5); }") && css.includes('.amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed="true"] { background: var(--amb-well); color: var(--amb-ink); }')
+  ok(css.includes(".adm .aled { min-width: calc(var(--amb-tap) * 3.5); }") && css.includes('.amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed="true"] { border-color: var(--amb-accent); box-shadow: inset 0 0 0 1px var(--amb-accent); color: var(--amb-ink); }')
     && css.includes(".amb-shell--work .amb-hero--compact > .amb-chip--glass { border-color: transparent; background: none;") && /<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar\.ledger" aria-pressed="false"/.test(owner),
     "from 960px Ledger check keeps one width whatever it says, it is an indicator (aria-pressed) by Ambient's rule, and the shop's state is a dot and its word with no ground");
   ok(css.includes(".adm #unsentBar:not([hidden]) { margin-top: 0; }") && css.includes(".adm .amb-stack:has(> .aparts) { margin-top: 0; }")

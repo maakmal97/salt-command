@@ -206,7 +206,7 @@
  {
   "name": "the indicator has no kept width",
   "file": "stmt/statement-css.js",
-  "find": ".adm .aled { min-width: calc(var(--amb-tap) * 2.5); }",
+  "find": ".adm .aled { min-width: calc(var(--amb-tap) * 3.5); }",
   "replace": ".adm .aled { }"
  },
  {
