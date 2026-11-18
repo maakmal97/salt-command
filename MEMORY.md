@@ -96,6 +96,15 @@
 - Checks: sections "18 Nov 2026: tabs for a place's parts, Ledger check and Approve in every bar ..." (`test/work-bar.mjs`, 30 checks, 39 mutations red) and
   "18 Nov 2026: the working shell ..." (`test/work-shell.mjs`, 17 checks, 24 mutations red); 34 older mutations re-aimed and proved red, one dropped (admin-orders
   "Payments is not counted": the count stood on More's row).
+- **ONE SKELETON (v1546, 18 Nov 2026)**, after his screenshots of v1545 and his word: "Alignment ... non-consistent hierarchy ... from tabs to tabs it should always be consistent,
+  and the width of the panes". The rule, do not undo: from 960px every place and part shares the bar's two edges (the panes' own, with panes or without), the tab row at
+  one height, the first block under it on one line in both panes, headings and ruled lists flush with the pane's edge, one measure (36rem) for a field, a settings group
+  and a button on a part with no panes, and the bar's status, Ledger, Approve and + at one place in every place (Record keeps the +'s room). Ambient 0.7.25 to 0.7.28
+  (`4c87af2`, `4e79694`, `0e8c3be`, `0332f24`); the Admin rules sit in `design/site.css` under `.adm:has(.aplace)` (the scope check wants an Admin-only name; `#roster`
+  is not one). 0.7.24 had broken the negative edge's selector, so v1545 drew Ledger's count plain: mended in 0.7.25. Audited by script on all 21 places and parts
+  (scratch `audit.mjs`: order of blocks, edges, pane widths, first tops) at 1180, 1440, 1536 and 1920: identical per size; a phone's heights as before. The Counter's
+  Account takes the edge by `#acct.amb-stack` in the site layer (it is no `amb-place`: a check counts shown places). Checks T9 in `test/work-bar.mjs` (40 checks, 49
+  mutations red). This closes, of the list below: the 16px sideways move, the inset headings, the three measures, Record's cluster.
 - Fable's design review, applied and re-checked by the same reviewer. Left open, for him: the bar moves 16px sideways between a part with panes and one without
   (it follows the content, his answer C); 28px of pane top under the tabs; a current tab told from the others by its underline and ink alone; headings inset 16px
   from the cards under them and three measures on single-column parts (both older than this); Record has no +, so its cluster ends 56px further right; on the

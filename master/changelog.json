@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1546",
+  "d": "18 Nov 2026",
+  "t": "ONE SKELETON",
+  "n": [
+   "<b>ONE EDGE.</b> On a laptop every place and every tab of Salt Admin, and every page of Salt Counter, starts and ends on the same two edges, with panes or without. The bar, the notice, the tabs and what is under them no longer step 16px sideways from tab to tab.",
+   "<b>ONE LINE UNDER THE TABS.</b> The tabs stand at one height in every place and the first thing under them starts on one line, in both panes. A heading and a list in a pane start on the pane's edge, with the cards.",
+   "<b>THE BAR STANDS STILL.</b> The title and the line beside it share a baseline. Live, the time, the shop's state, Ledger, Approve and + stand at the same place in every place, Record included.",
+   "<b>LEDGER'S COUNT IS RED AGAIN.</b> A count of differences edges Ledger in red; the last version drew it plain by a fault of mine. A tab with nothing in it reads as a tab, only its count dimmed.",
+   "<b>ONE WIDTH FOR A FORM.</b> On a tab with no panes a field, a group of settings and a button keep one width. <b>PHONES ARE AS THEY WERE. NO PRICE, ROUTE OR REQUEST CHANGED.</b>"
+  ]
+ },
+ {
   "v": "v1545",
   "d": "18 Nov 2026",
   "t": "THE LAPTOP BAR",
