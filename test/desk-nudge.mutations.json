@@ -2,14 +2,14 @@
  {
   "name": "N1 the call carries a body",
   "file": "stmt/orderbook.js",
-  "find": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key } }",
-  "replace": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key }, body: \"{}\" }"
+  "find": "body: JSON.stringify({ o: ids }) }));",
+  "replace": "body: JSON.stringify({ o: ids, w: 1 }) }));"
  },
  {
   "name": "N1 the call carries a second header",
   "file": "stmt/orderbook.js",
-  "find": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key } }",
-  "replace": "{ method: \"POST\", headers: { \"X-Counter-Maker-Key\": key, \"X-Salt-Who\": \"u\" } }"
+  "find": "headers: { \"X-Counter-Maker-Key\": key, \"content-type\": \"application/json\" }",
+  "replace": "headers: { \"X-Counter-Maker-Key\": key, \"content-type\": \"application/json\", \"X-Salt-Who\": \"u\" }"
  },
  {
   "name": "N1 the call goes to another address",
@@ -32,8 +32,8 @@
  {
   "name": "N2 the order book never asks",
   "file": "stmt/orderbook.js",
-  "find": "    if (nudgesDesk(op, a && typeof a === \"object\" ? a : {}, out)) this.nudgeDesk();\n",
-  "replace": "\n"
+  "find": "    const nudge = nudgesDesk(op, args, out);",
+  "replace": "    const nudge = false;"
  },
  {
   "name": "N3 the Desk's own ops call too",
@@ -104,26 +104,26 @@
  {
   "name": "N5 the route answers 200",
   "file": "src/worker.js",
-  "find": "    ordersOnce(env, ctx);\n    return json({ ok: true }, 202);",
-  "replace": "    ordersOnce(env, ctx);\n    return json({ ok: true }, 200);"
+  "find": "    ordersOnce(env, ctx, { only: nudgeIds(await request.text().catch(() => \"\")) });\n    return json({ ok: true }, 202);",
+  "replace": "    ordersOnce(env, ctx, { only: nudgeIds(await request.text().catch(() => \"\")) });\n    return json({ ok: true }, 200);"
  },
  {
   "name": "N5 the route runs no pass",
   "file": "src/worker.js",
-  "find": "    ordersOnce(env, ctx);\n    return json({ ok: true }, 202);",
+  "find": "    ordersOnce(env, ctx, { only: nudgeIds(await request.text().catch(() => \"\")) });\n    return json({ ok: true }, 202);",
   "replace": "    return json({ ok: true }, 202);"
  },
  {
   "name": "N6 a call while a pass runs runs its own",
   "file": "src/worker.js",
-  "find": "  if (passing) { passAgain = true;",
-  "replace": "  if (false) { passAgain = true;"
+  "find": "  if (passing) { passWant(opts.only);",
+  "replace": "  if (false) { passWant(opts.only);"
  },
  {
   "name": "N6 no pass after a burst",
   "file": "src/worker.js",
-  "find": "    if (passAgain) { passAgain = false; await ordersOnce(env, ctx); }",
-  "replace": "    if (false) { passAgain = false; await ordersOnce(env, ctx); }"
+  "find": "    if (passAgain) { const only = againOnly ? [...againOnly] : null;",
+  "replace": "    if (false) { const only = againOnly ? [...againOnly] : null;"
  },
  {
   "name": "N6 a stuck pass blocks the next",
@@ -182,7 +182,7 @@
  {
   "name": "N11 the marks keep KV's minute",
   "file": "src/orders.js",
-  "find": "  const fresh = { cacheTtl: 30 };\n  const mark =",
-  "replace": "  const fresh = undefined;\n  const mark ="
+  "find": "  const fresh = { cacheTtl: 30 };\n  /* 19 Nov",
+  "replace": "  const fresh = undefined;\n  /* 19 Nov"
  }
 ]

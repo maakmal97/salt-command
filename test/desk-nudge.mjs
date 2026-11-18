@@ -64,7 +64,9 @@ async function counterSide(ok, O, OB) {
   const env = { STMT: new Store(), ORDER_STORE: "object", STMT_DESK_KEY: "desk-key", COUNTER_MAKER_KEY: KEY, DESK_MAKER };
   const h = orderBook(env);
   env.ORDERBOOK = h.ns;
-  const settle = async () => { for (let i = 0; i < 50 && h.book.nudging; i++) { await h.book.nudging; await tick(); } await tick(); };
+  /* 19 Nov 2026: a move that moves a banner mark rings Salt Admin first and nudges after (the ring), so both are waited on */
+  const busy = () => h.book.nudging || (h.book.rings && h.book.rings.size);
+  const settle = async () => { for (let i = 0; i < 50 && busy(); i++) { if (h.book.rings) await Promise.all([...h.book.rings]); if (h.book.nudging) await h.book.nudging; await tick(); } await tick(); };
   const U = ["nuaa-cdef", "nubb-cdef", "nucc-cdef", "nudd-cdef", "nuee-cdef"];
   const place = (u, extra, by) => O.placeOrder(env, u, Object.assign({ product: "salt", qty: 2, mode: "collect", place: "", unit: 100, total: 200, week: "", rid: rid() }, extra || {}), by);
   const ack = (u, id) => h.book.fetch(new Request("https://orderbook/desk", { method: "POST", body: J({ u, id, body: { status: "acknowledged", delivery: 0 } }) })).then((r) => r.json());
@@ -74,11 +76,14 @@ async function counterSide(ok, O, OB) {
   /* N1: one Place, held at the Desk: the tap is answered first, and the call is the bare POST */
   let release; hold = new Promise((r) => { release = r; });
   const p1 = await place(U[0]);
-  const answeredFirst = !!(p1.order && calls.length === 1 && h.book.nudging);
+  /* 19 Nov 2026: the call follows the ring (no device here, so the ring ends at once); the tap was answered before it left */
+  const callsAtAnswer = calls.length;
+  for (let i = 0; i < 50 && calls.length < 1; i++) await tick();
+  const answeredFirst = !!(p1.order && callsAtAnswer === 0 && calls.length === 1 && h.book.nudging);
   release(); hold = null; await settle();
   const c = calls[0] || {};
-  ok(answeredFirst && c.url === NUDGE && c.method === "POST" && c.body === "" && J(c.headers) === J(["x-counter-maker-key"]) && c.key === KEY,
-    "N1: a customer's Place calls the Desk once, a POST to the one address with no body, no query and the bridge's key alone, and the tap is answered while it is on its way: " + J({ answeredFirst, c }));
+  ok(answeredFirst && c.url === NUDGE && c.method === "POST" && c.body === J({ o: [p1.order.id] }) && J(c.headers.slice().sort()) === J(["content-type", "x-counter-maker-key"]) && c.key === KEY,
+    "N1: a customer's Place calls the Desk once, a POST to the one address naming the order alone ({o: [id]}, 19 Nov 2026), no query and the bridge's key, and the tap is answered before it leaves: " + J({ answeredFirst, c }));
 
   /* N2: each listed move, one call each */
   const made = {};
@@ -131,9 +136,12 @@ async function counterSide(ok, O, OB) {
   open(); hold = null; await settle();
   const burst = calls.length - b0;
   let stuck; hold = new Promise((r) => { stuck = r; });
+  const c4 = calls.length;
   await O.sayThread(env, U[1], { text: "Four", rid: rid() });
+  /* 19 Nov 2026: a call follows its ring, so it is waited for before counting; and the clock stays moved until the next move's call has left */
+  for (let i = 0; i < 200 && calls.length === c4; i++) await tick();
   const s0 = calls.length, realNow = Date.now;
-  try { Date.now = () => realNow() + OB.NUDGE_STALE_MS + 1000; await O.sayThread(env, U[1], { text: "Five", rid: rid() }); }
+  try { Date.now = () => realNow() + OB.NUDGE_STALE_MS + 1000; await O.sayThread(env, U[1], { text: "Five", rid: rid() }); for (let i = 0; i < 200 && calls.length === s0; i++) await tick(); }
   finally { Date.now = realNow; }
   const afterStale = calls.length - s0;
   stuck(); hold = null; await settle();
@@ -251,7 +259,7 @@ async function bothWorkers(ok, O, W, deskW, stmtW, DatabaseSync) {
   senv.ORDERBOOK = ob.ns;
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets, COUNTER_MAKER_KEY: KEY,
     STMT_SITE: { fetch: async (url, init) => stmtW.fetch(new Request(url, init), senv) } };
-  const settle = async () => { for (let i = 0; i < 60; i++) { if (ob.book.nudging) await ob.book.nudging; for (let k = 0; k < 20 && deskJobs.length; k++) await deskJobs.shift(); await tick(); if (!ob.book.nudging && !deskJobs.length) break; } };
+  const settle = async () => { for (let i = 0; i < 60; i++) { if (ob.book.rings && ob.book.rings.size) await Promise.all([...ob.book.rings]); if (ob.book.nudging) await ob.book.nudging; for (let k = 0; k < 20 && deskJobs.length; k++) await deskJobs.shift(); await tick(); if (!ob.book.nudging && !(ob.book.rings && ob.book.rings.size) && !deskJobs.length) break; } };
   const call = async (path, body) => { const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
     headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: J(body || {}) }), denv, dctx); return { status: r.status, j: await r.json() }; };
   const place = async (u, qty = 2) => (await O.placeOrder(senv, u, { product: "salt", qty, mode: "collect", place: "", unit: 100, total: 100 * qty, week: "", rid: rid() })).order;

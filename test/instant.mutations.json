@@ -1,0 +1,152 @@
+[
+ {
+  "name": "I1 Salt Admin's wake sends one device after another",
+  "file": "stmt/push.js",
+  "find": "      try { r = await fetch(s.endpoint, init); } catch { failed++; return; }",
+  "replace": "      try { const prev = globalThis.__ownerSerial || Promise.resolve(); let done; globalThis.__ownerSerial = new Promise((x) => { done = x; }); await prev; try { r = await fetch(s.endpoint, init); } finally { done(); } } catch { failed++; return; }"
+ },
+ {
+  "name": "I2 the deadline aborts nothing",
+  "file": "stmt/push.js",
+  "find": "      if (stop) init.signal = stop.signal;",
+  "replace": ""
+ },
+ {
+  "name": "I3 the nudge leaves before the ring",
+  "file": "stmt/orderbook.js",
+  "find": "    if (kinds.length) this.ringThen(kinds, oid, nudge);",
+  "replace": "    if (kinds.length) { this.ringThen(kinds, oid, false); if (nudge) this.nudgeDesk(oid); }"
+ },
+ {
+  "name": "I3 the ring names no order",
+  "file": "stmt/orderbook.js",
+  "find": "wakeOwner(this.env || {}, o ? { k: r.k, o } : { k: r.k }",
+  "replace": "wakeOwner(this.env || {}, { k: r.k }"
+ },
+ {
+  "name": "I4 a ring no device took is written as rung",
+  "file": "stmt/orderbook.js",
+  "find": "const rang = kinds.filter((r, i) => res[i] && res[i].ok && res[i].sent > 0);",
+  "replace": "const rang = kinds.filter((r, i) => res[i] && res[i].ok);"
+ },
+ {
+  "name": "I5 the kinds are the marks against what was rung",
+  "file": "stmt/orderbook.js",
+  "find": "ringKinds(before, this.ringMarks())",
+  "replace": "ringKinds(this.rung(), this.ringMarks())"
+ },
+ {
+  "name": "I6 the book never says pending",
+  "file": "stmt/orderbook.js",
+  "find": "  ringPending() { return (this.ringing || 0) > 0 &&",
+  "replace": "  ringPending() { return false && (this.ringing || 0) > 0 &&"
+ },
+ {
+  "name": "I7 the ring is not bounded",
+  "file": "stmt/orderbook.js",
+  "find": "{ deadlineMs: RING_MS }",
+  "replace": "{}"
+ },
+ {
+  "name": "I8 a slow ring moves a mark back",
+  "file": "stmt/orderbook.js",
+  "find": "    else if (!old || r.v > old) out[r.key] = r.v;",
+  "replace": "    else out[r.key] = r.v;"
+ },
+ {
+  "name": "I8 last-theirs takes any value in its millisecond",
+  "file": "stmt/orderbook.js",
+  "find": "(momentOf(r.v) === momentOf(old) && r.v === nowTheirs)",
+  "replace": "(momentOf(r.v) === momentOf(old))"
+ },
+ {
+  "name": "I9 a Place with a note rings no line",
+  "file": "stmt/orderbook.js",
+  "find": "  if (a.said && a.said > (b.said || \"\")) out.push({ k: \"said\", key: \"said\", v: a.said });",
+  "replace": ""
+ },
+ {
+  "name": "I10 the Desk never reads what was rung",
+  "file": "src/orders.js",
+  "find": "theirs: !!(didNew && rung.theirs && rung.theirs === theirs) };",
+  "replace": "theirs: false };"
+ },
+ {
+  "name": "I11 the Desk rings while a ring is pending",
+  "file": "src/orders.js",
+  "find": "did = didNew && !(pending && !covered.theirs);",
+  "replace": "did = didNew;"
+ },
+ {
+  "name": "I12 the Desk rings a kind the Counter rang",
+  "file": "src/orders.js",
+  "find": "  if (placed && !covered.order) kinds.push(\"order\");",
+  "replace": "  if (placed) kinds.push(\"order\");"
+ },
+ {
+  "name": "I13 the Desk reads its marks one by one",
+  "file": "src/orders.js",
+  "find": "await Promise.all([MARK, SAID_MARK, THEIRS_MARK].map((k) => env.SALT_QUEUE.get(k, fresh)));",
+  "replace": "[await env.SALT_QUEUE.get(MARK, fresh), await env.SALT_QUEUE.get(SAID_MARK, fresh), await env.SALT_QUEUE.get(THEIRS_MARK, fresh)];"
+ },
+ {
+  "name": "I14 a missing body is a pass of none",
+  "file": "src/worker.js",
+  "find": "  if (typeof text !== \"string\" || !text || text.length > 4096) return null;",
+  "replace": "  if (typeof text !== \"string\" || !text || text.length > 4096) return [];"
+ },
+ {
+  "name": "I15 a call while a pass runs replaces the orders named",
+  "file": "src/worker.js",
+  "find": "  if (againOnly && Array.isArray(only)) for (const x of only) againOnly.add(x);",
+  "replace": "  if (againOnly && Array.isArray(only)) againOnly = new Set(only);"
+ },
+ {
+  "name": "I16 queueSale reads its blob first",
+  "file": "src/orders.js",
+  "find": "const [rawR, ownR, draftR] = await Promise.all([settle(env.SALT_QUEUE.get(BLOB)),",
+  "replace": "const rawR0 = await settle(env.SALT_QUEUE.get(BLOB)); const [rawR, ownR, draftR] = await Promise.all([rawR0,"
+ },
+ {
+  "name": "I17 an unreadable draft throws before the blob's hit",
+  "file": "src/orders.js",
+  "find": "    if (hit || !ledger) return hit || null;\n    const d = pre",
+  "replace": "    if (pre && pre.draft.e && fixedId) throw pre.draft.e;\n    if (hit || !ledger) return hit || null;\n    const d = pre"
+ },
+ {
+  "name": "I18 the marks carry no ring",
+  "file": "stmt/orders.js",
+  "find": "r.rung && typeof r.rung === \"object\" && !Array.isArray(r.rung) ? { rung: r.rung } : {}",
+  "replace": "{}"
+ },
+ {
+  "name": "I19 a drafted row is not told to Salt Admin",
+  "file": "src/worker.js",
+  "find": "await liveTell(env, ctx, \"drafts\"); adminTold(env, ctx); }",
+  "replace": "await liveTell(env, ctx, \"drafts\"); }"
+ },
+ {
+  "name": "I19 a drafted row is told to customers too",
+  "file": "stmt/orderbook.js",
+  "find": "else if (op === \"otell\") { if (!out.otell) return; k = out.otell; }",
+  "replace": "else if (op === \"otell\") { if (!out.otell) return; k = out.otell; all = true; }"
+ },
+ {
+  "name": "I20 a nudge's pass reconciles every order",
+  "file": "src/orders.js",
+  "find": "  if (Array.isArray(only)) owing = owing.filter((o) => only.includes(o.id) || (o.work || []).includes(\"ack\"));",
+  "replace": ""
+ },
+ {
+  "name": "I20 a nudge's pass leaves an order owing its pending row",
+  "file": "src/orders.js",
+  "find": "  if (Array.isArray(only)) owing = owing.filter((o) => only.includes(o.id) || (o.work || []).includes(\"ack\"));",
+  "replace": "  if (Array.isArray(only)) owing = owing.filter((o) => only.includes(o.id));"
+ },
+ {
+  "name": "I21 a nudge's pass says nothing of its time",
+  "file": "src/worker.js",
+  "find": "  if (Array.isArray(only)) console.log(\"orders pass (nudge): \"",
+  "replace": "  if (false) console.log(\"orders pass (nudge): \""
+ }
+]
