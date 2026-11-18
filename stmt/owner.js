@@ -1816,7 +1816,7 @@ export const OWNER_JS = `
       body:[makerClaimAskRow(claim)].concat(q.say.map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
     var go=document.getElementById('ynGo');
     actOn(go,'claim.ask-go',key); actOn(document.getElementById('ynKeep'),'claim.ask-keep',key); actOn(document.getElementById('ynX'),'claim.ask-close',key);
-    go.classList.toggle('amb-action--danger',!q.plain);
+    go.classList.toggle('amb-pill--danger',!q.plain); go.classList.toggle('amb-pill--accent',!!q.plain);
   }
   /* a claim's rows, one line each, as the card and the Received sheet show them */
   function makerClaimRowLine(row){ return (fmtWhen(row.date)||'Undated')+': '+rm(row.rm)+' of '+rm(row.owed); }
@@ -3978,8 +3978,7 @@ export const OWNER_JS = `
       body:[makerAskRow(order)].concat(q.say.map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
     var go=document.getElementById('ynGo');
     actOn(go,'order.ask-go',order.id); actOn(document.getElementById('ynKeep'),'order.ask-keep',order.id); actOn(document.getElementById('ynX'),'order.ask-close',order.id);
-    if(q.plain) go.classList.remove('amb-action--danger');
-    if(q.primary){ go.classList.remove('amb-action'); go.classList.add('amb-pill','amb-pill--block'); document.getElementById('ynKeep').classList.add('amb-pill--quiet'); }
+    if(q.plain||q.primary){ go.classList.remove('amb-pill--danger'); go.classList.add('amb-pill--accent'); }
   }
   /* 12 Oct 2026 (Phase 2c, his decision 4 of 11 Oct): EVERY OTHER YES OR NO ON THIS PAGE IS THE SAME SHEET, and no native confirm is left in this script. ownerAsk opens
      ynOpen and answers a promise: true when the one action is tapped, false on the ghost, the close control, the scrim, Escape or a lapse. The Sheet tells the promise it
@@ -3997,7 +3996,7 @@ export const OWNER_JS = `
         body:(q.row?[q.row]:[]).concat((q.say||[]).map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
       var go=document.getElementById('ynGo');
       actOn(go,'ask.go',key); actOn(document.getElementById('ynKeep'),'ask.keep',key); actOn(document.getElementById('ynX'),'ask.close',key);
-      go.classList.toggle('amb-action--danger',q.plain!==true);
+      go.classList.toggle('amb-pill--danger',q.plain!==true); go.classList.toggle('amb-pill--accent',q.plain===true);
     });
   }
   /* what a Sheet restates: a mark if there is one (its thumb), a label, a figure, and a line under them, as Ambient's row */

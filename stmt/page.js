@@ -3459,9 +3459,11 @@ const CLIENT_JS = `
     var x=el('button','amb-circle'); x.type='button'; x.id='ynX'; x.setAttribute('aria-label',tw('x.close'));
     x.appendChild(ambIcon('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
     q.body.forEach(function(n){ body.appendChild(n); });
-    var go=el('button','amb-action amb-action--danger',q.go); go.type='button'; go.id='ynGo';
+    /* 18 Nov 2026 (his screenshot of the Undo sheet, whose action read as plain text): BOTH ANSWERS ARE PILLS. The one that commits is coloured, Ambient's danger pill
+       for one that cannot be taken back and its accent for a plain one (the asker says which); the one that keeps is the quiet pill under it */
+    var go=el('button','amb-pill amb-pill--block amb-pill--danger',q.go); go.type='button'; go.id='ynGo';
     go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });
-    var keep=el('button','amb-pill amb-pill--block',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
+    var keep=el('button','amb-pill amb-pill--block amb-pill--quiet',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
     body.appendChild(go); body.appendChild(keep);
     box.appendChild(head); box.appendChild(body);
     sheetShow(box,function(){ ynShut(); });

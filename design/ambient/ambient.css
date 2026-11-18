@@ -186,6 +186,8 @@
   text-align: center;
 }
 .amb-pill--accent { background: var(--amb-accent); color: var(--amb-on-accent); }
+/* 0.7.18: the action that commits and cannot be taken back (Cancel order, Discard), the state's own red under the accent's ink */
+.amb-pill--danger { background: var(--amb-neg); color: var(--amb-on-accent); }
 .amb-pill--quiet { border-color: var(--amb-line-field); background: none; color: var(--amb-ink); }
 .amb-pill--sm { min-height: var(--amb-tap); padding: 0 var(--amb-space-4); font-size: var(--amb-text-subhead); font-weight: 600; }
 .amb-pill--block { display: flex; width: 100%; }

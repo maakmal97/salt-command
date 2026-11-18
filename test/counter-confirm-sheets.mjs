@@ -139,10 +139,10 @@ export async function run({ ok }) {
       "it says what is lost, and that nothing is paid on this one, so nothing is owed: " + JSON.stringify(say));
     const go = P.d.getElementById("ynGo"), keep = P.d.getElementById("ynKeep");
 /* 16 Nov 2026, the move to Ambient (place D): one danger action of the system's, a pill that keeps, on the system's Sheet (a dialog, its backdrop its scrim) with its close circle */
-    ok(sh.querySelectorAll(".amb-action--danger").length === 1 && go.classList.contains("amb-action--danger") && t(go) === W.EN["ord.cancel"]
-      && keep.classList.contains("amb-pill") && !keep.classList.contains("amb-action--danger") && t(keep) === W.EN["yn.keepOrder"]
+    ok(sh.querySelectorAll(".amb-pill--danger").length === 1 && go.className === "amb-pill amb-pill--block amb-pill--danger" && t(go) === W.EN["ord.cancel"]
+      && keep.className === "amb-pill amb-pill--block amb-pill--quiet" && !sh.querySelector(".amb-action") && t(keep) === W.EN["yn.keepOrder"]
       && sh.tagName === "DIALOG" && sh.classList.contains("amb-sheet") && !P.d.getElementById("ynScrim") && P.d.getElementById("ynX").classList.contains("amb-circle"),
-      "one danger action, the system's, and a pill that keeps, on the system's Sheet with its close circle: " + JSON.stringify([go.className, keep.className]));
+      "both answers are pills (18 Nov 2026): one danger pill, the system's, over a quiet pill that keeps, on the system's Sheet with its close circle: " + JSON.stringify([go.className, keep.className]));
     /* 19 Oct 2026: whole words over the sheet spaced at every tag, so encounter, frontier and levelled pass */
     const banned = /\b(salt|oil|candy|rice|gas|titanium|platinum|gold|silver|bronze|ambassador|tiers?|levels?|counter)\b/i;
     ok(!banned.test(sh.innerHTML.replace(/<[^>]*>/g, " ")) && !banned.test(go.textContent + " " + keep.textContent) && !P.d.getElementById("ynSheet").querySelector("[style]") && !/[A-Z]{2,}[0-9]-[A-Z]{3}/.test(say),
@@ -326,7 +326,7 @@ export async function run({ ok }) {
     const sheetRules = [...P.d.styleSheets].flatMap((s) => [...s.cssRules]);
     const own = (re) => sheetRules.filter((r) => re.test(r.selectorText || "") && !/^\.amb/.test(r.selectorText || ""));
     const restated = own(/\.ynsheet[^{]*(amb-action|amb-pill|amb-circle)/), pill = sheetRules.filter((r) => r.selectorText === ".amb-pill--sm").map((r) => r.style.getPropertyValue("min-height"));
-    ok(/amb-action--danger/.test(tap.go) && /amb-pill/.test(tap.keep) && /amb-circle/.test(tap.x) && pill.includes("var(--amb-tap)") && restated.length === 0,
+    ok(/amb-pill--danger/.test(tap.go) && /amb-pill--quiet/.test(tap.keep) && /amb-circle/.test(tap.x) && pill.includes("var(--amb-tap)") && restated.length === 0,
       "a tap is 44 px by the system's own token on both answers and the close circle, and the sheet restates none of it: " + JSON.stringify({ tap, pill, restated: restated.length }));
     P.d.getElementById("ynKeep").click();
 

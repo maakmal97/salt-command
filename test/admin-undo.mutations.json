@@ -634,5 +634,11 @@
   "file": "src/maker-inputs.js",
   "find": " && reading.owes > 0.004 && !row.unpriced",
   "replace": " && !row.unpriced"
+ },
+ {
+  "name": "18 Nov 2026: the Undo action is not the accent pill",
+  "file": "stmt/owner.js",
+  "find": "go.classList.toggle('amb-pill--danger',q.plain!==true); go.classList.toggle('amb-pill--accent',q.plain===true);",
+  "replace": "go.classList.toggle('amb-pill--danger',q.plain!==true);"
  }
 ]

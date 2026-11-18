@@ -92,14 +92,14 @@
  {
   "name": "Not found is not a danger action",
   "file": "stmt/owner.js",
-  "find": "go.classList.toggle('amb-action--danger',!q.plain);",
-  "replace": "go.classList.toggle('amb-action--danger',false);"
+  "find": "go.classList.toggle('amb-pill--danger',!q.plain); go.classList.toggle('amb-pill--accent',!!q.plain);",
+  "replace": "go.classList.toggle('amb-pill--danger',false); go.classList.toggle('amb-pill--accent',true);"
  },
  {
   "name": "Received is a danger action",
   "file": "stmt/owner.js",
-  "find": "go.classList.toggle('amb-action--danger',!q.plain);",
-  "replace": "go.classList.toggle('amb-action--danger',true);"
+  "find": "go.classList.toggle('amb-pill--danger',!q.plain); go.classList.toggle('amb-pill--accent',!!q.plain);",
+  "replace": "go.classList.toggle('amb-pill--danger',true); go.classList.toggle('amb-pill--accent',false);"
  },
  {
   "name": "the answer goes without a request id",

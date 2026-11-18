@@ -341,7 +341,7 @@ export async function run({ ok, pageWork }) {
     ok(w1().textContent === "Withdraw this entry" && w2().textContent === "Finish the withdrawal", "the held entry offers Withdraw and the refused one Finish");
     w1().click(); await p.work.quiet();
     ok(p.title() === "Withdraw this entry?" && /waiting for the Desk/.test(p.sheet().textContent) && /still unsent on a phone is not affected/.test(p.sheet().textContent)
-      && p.inSheet("ask.go").classList.contains("amb-action--danger") && !!p.inSheet("ask.go", "queue:q-1") && sends("q-1").length === 0 && p.confirms.length === 0,
+      && p.inSheet("ask.go").classList.contains("amb-pill--danger") && !!p.inSheet("ask.go", "queue:q-1") && sends("q-1").length === 0 && p.confirms.length === 0,
     "Withdraw opens the Sheet, restating the entry and what it does not do, and sends nothing as it opens: " + (p.sheet() && p.sheet().textContent));
     const bad = await p.ways(() => w1().click(), w1, () => sends("q-1").length);
     ok(bad.length === 0, "the four ways out send nothing and give focus back to Withdraw: " + bad.join(" | "));
@@ -396,7 +396,7 @@ export async function run({ ok, pageWork }) {
     ok(posts().length === 1 && same(posts()[0].body, { lines: ["Closed on Monday"], confirmed: true }) && !p.sheet(),
       "its one action sends the notice as it did, once however often it is tapped: " + J(posts()));
     clear().click(); await p.work.quiet();
-    ok(p.title() === "Clear the notice?" && /No notification is sent/.test(p.sheet().textContent) && p.inSheet("ask.go").classList.contains("amb-action--danger") && posts().length === 1,
+    ok(p.title() === "Clear the notice?" && /No notification is sent/.test(p.sheet().textContent) && p.inSheet("ask.go").classList.contains("amb-pill--danger") && posts().length === 1,
       "Clear notice asks on the Sheet, a danger action that says no notification is sent, and sends nothing as it opens");
     p.inSheet("ask.go").click(); await p.work.quiet();
     ok(posts().length === 2 && same(posts()[1].body, { lines: [], confirmed: true }) && p.confirms.length === 0, "and its one action clears it: " + J(posts()[1]));

@@ -1,23 +1,128 @@
 [
-{"name": "the agreed order's row is labelled Change the order", "file": "stmt/owner.js", "find": "change=aActBtn(stageRows,['Change','order.amend']", "replace": "change=aActBtn(stageRows,['Change the order','order.amend']"},
-{"name": "a done order's row is labelled Change the order", "file": "stmt/owner.js", "find": "var redo=aActBtn(redoList,['Change','order.amend']", "replace": "var redo=aActBtn(redoList,['Change the order','order.amend']"},
-{"name": "the second group has another name", "file": "stmt/owner.js", "find": "[sub('So far')]", "replace": "[sub('Later')]"},
-{"name": "Cash is offered on an acknowledged order", "file": "stmt/owner.js", "find": "[{value:'bank',label:'Bank'}].concat(ready?[{value:'cash',label:'Cash'}]:[]),ready);", "replace": "[{value:'bank',label:'Bank'},{value:'cash',label:'Cash'}],ready);"},
-{"name": "a done order has a So far", "file": "stmt/owner.js", "find": "    if(order.status==='acknowledged'||ready){", "replace": "    if(true){"},
-{"name": "the points are not offered at Ready", "file": "stmt/owner.js", "find": "if(ready&&order.mode==='collect'&&left&&makerPoints){", "replace": "if(false){"},
-{"name": "the bank received carries a field it never sent", "file": "stmt/owner.js", "find": "await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.');", "replace": "await makerTap(cur(),'received',{amount:np2,road:'bank'},'Sent to the Desk.');"},
-{"name": "That is all sends no close", "file": "stmt/owner.js", "find": "ends?{qty:nh,close:true}:{qty:nh}", "replace": "{qty:nh}"},
-{"name": "the point move carries a field it never sent", "file": "stmt/owner.js", "find": "makerMove(cur(),{point:np},", "replace": "makerMove(cur(),{point:np,keep:true},"},
-{"name": "a refused restate does not stop the rest", "file": "stmt/owner.js", "find": "          if(done!==true){", "replace": "          if(false){"},
-{"name": "a lower price is told as changed", "file": "stmt/owner.js", "find": "?'They are told it is a discount.':", "replace": "?'They are told their order has changed.':"},
-{"name": "a higher price is told as a discount", "file": "stmt/owner.js", "find": ":'They are told their order has changed.');", "replace": ":'They are told it is a discount.');"},
-{"name": "nothing changed is told as something", "file": "stmt/owner.js", "find": "'Nothing is sent until you change something.'", "replace": "'They are told it has changed.'"},
-{"name": "the Ready pill hands over one unit", "file": "stmt/owner.js", "find": "makerTap(order,'handed',{qty:Number(order.qty)},'Handover sent to the Desk.');", "replace": "makerTap(order,'handed',{qty:1},'Handover sent to the Desk.');"},
-{"name": "the Change row is not marked", "file": "stmt/owner.js", "find": "change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');", "replace": "makerAskTag(order,change,'amend');"},
-{"name": "money above what is owed goes with a terms change", "file": "stmt/owner.js", "find": "if(Object.keys(body).length&&np2!==null&&np2>dueNow+0.004){", "replace": "if(false){"},
-{"name": "a busy page still sends", "file": "stmt/owner.js", "find": "if(makerBusy||makerCashHeld[order.id]){", "replace": "if(false){"},
-    {"name": "Send the change stays a primary button", "file": "stmt/owner.js", "find": "if(q.primary){ go.classList.remove('amb-action'); go.classList.add('amb-pill','amb-pill--block'); document.getElementById('ynKeep').classList.add('amb-pill--quiet'); }", "replace": "if(false){ go.classList.remove('amb-action'); go.classList.add('amb-pill','amb-pill--block'); document.getElementById('ynKeep').classList.add('amb-pill--quiet'); }"},
-    {"name": "a below-Floor refusal does not fall back to the generic sentence", "file": "stmt/owner.js", "find": "if(floor) return 'RM '+floor[1]+' is below the Floor of RM '+floor[2]+' for '+floor[3]+' unit'+(Number(floor[3])===1?'':'s')+'. Enter RM '+floor[2]+' or more.';", "replace": "if(floor) return REFUSAL_GENERAL;"},
-{"name": "Not now stays a filled pill beside the primary send", "file": "stmt/owner.js", "find": "if(q.primary){ go.classList.remove('amb-action'); go.classList.add('amb-pill','amb-pill--block'); document.getElementById('ynKeep').classList.add('amb-pill--quiet'); }", "replace": "if(q.primary){ go.classList.remove('amb-action'); go.classList.add('amb-pill','amb-pill--block'); }"},
-{"name":"Let it stand in the reason Sheet is a text row again","file":"stmt/owner.js","find":"{title:ONE_OFF_WORDS.title, plain:true, primary:true, go:","replace":"{title:ONE_OFF_WORDS.title, plain:true, go:"}
+ {
+  "name": "the agreed order's row is labelled Change the order",
+  "file": "stmt/owner.js",
+  "find": "change=aActBtn(stageRows,['Change','order.amend']",
+  "replace": "change=aActBtn(stageRows,['Change the order','order.amend']"
+ },
+ {
+  "name": "a done order's row is labelled Change the order",
+  "file": "stmt/owner.js",
+  "find": "var redo=aActBtn(redoList,['Change','order.amend']",
+  "replace": "var redo=aActBtn(redoList,['Change the order','order.amend']"
+ },
+ {
+  "name": "the second group has another name",
+  "file": "stmt/owner.js",
+  "find": "[sub('So far')]",
+  "replace": "[sub('Later')]"
+ },
+ {
+  "name": "Cash is offered on an acknowledged order",
+  "file": "stmt/owner.js",
+  "find": "[{value:'bank',label:'Bank'}].concat(ready?[{value:'cash',label:'Cash'}]:[]),ready);",
+  "replace": "[{value:'bank',label:'Bank'},{value:'cash',label:'Cash'}],ready);"
+ },
+ {
+  "name": "a done order has a So far",
+  "file": "stmt/owner.js",
+  "find": "    if(order.status==='acknowledged'||ready){",
+  "replace": "    if(true){"
+ },
+ {
+  "name": "the points are not offered at Ready",
+  "file": "stmt/owner.js",
+  "find": "if(ready&&order.mode==='collect'&&left&&makerPoints){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "the bank received carries a field it never sent",
+  "file": "stmt/owner.js",
+  "find": "await makerTap(cur(),'received',{amount:np2},'Sent to the Desk.');",
+  "replace": "await makerTap(cur(),'received',{amount:np2,road:'bank'},'Sent to the Desk.');"
+ },
+ {
+  "name": "That is all sends no close",
+  "file": "stmt/owner.js",
+  "find": "ends?{qty:nh,close:true}:{qty:nh}",
+  "replace": "{qty:nh}"
+ },
+ {
+  "name": "the point move carries a field it never sent",
+  "file": "stmt/owner.js",
+  "find": "makerMove(cur(),{point:np},",
+  "replace": "makerMove(cur(),{point:np,keep:true},"
+ },
+ {
+  "name": "a refused restate does not stop the rest",
+  "file": "stmt/owner.js",
+  "find": "          if(done!==true){",
+  "replace": "          if(false){"
+ },
+ {
+  "name": "a lower price is told as changed",
+  "file": "stmt/owner.js",
+  "find": "?'They are told it is a discount.':",
+  "replace": "?'They are told their order has changed.':"
+ },
+ {
+  "name": "a higher price is told as a discount",
+  "file": "stmt/owner.js",
+  "find": ":'They are told their order has changed.');",
+  "replace": ":'They are told it is a discount.');"
+ },
+ {
+  "name": "nothing changed is told as something",
+  "file": "stmt/owner.js",
+  "find": "'Nothing is sent until you change something.'",
+  "replace": "'They are told it has changed.'"
+ },
+ {
+  "name": "the Ready pill hands over one unit",
+  "file": "stmt/owner.js",
+  "find": "makerTap(order,'handed',{qty:Number(order.qty)},'Handover sent to the Desk.');",
+  "replace": "makerTap(order,'handed',{qty:1},'Handover sent to the Desk.');"
+ },
+ {
+  "name": "the Change row is not marked",
+  "file": "stmt/owner.js",
+  "find": "change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');",
+  "replace": "makerAskTag(order,change,'amend');"
+ },
+ {
+  "name": "money above what is owed goes with a terms change",
+  "file": "stmt/owner.js",
+  "find": "if(Object.keys(body).length&&np2!==null&&np2>dueNow+0.004){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "a busy page still sends",
+  "file": "stmt/owner.js",
+  "find": "if(makerBusy||makerCashHeld[order.id]){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "Send the change stays a primary button",
+  "file": "stmt/owner.js",
+  "find": "if(q.plain||q.primary){ go.classList.remove('amb-pill--danger'); go.classList.add('amb-pill--accent'); }",
+  "replace": "if(false){ go.classList.remove('amb-pill--danger'); go.classList.add('amb-pill--accent'); }"
+ },
+ {
+  "name": "a below-Floor refusal does not fall back to the generic sentence",
+  "file": "stmt/owner.js",
+  "find": "if(floor) return 'RM '+floor[1]+' is below the Floor of RM '+floor[2]+' for '+floor[3]+' unit'+(Number(floor[3])===1?'':'s')+'. Enter RM '+floor[2]+' or more.';",
+  "replace": "if(floor) return REFUSAL_GENERAL;"
+ },
+ {
+  "name": "Not now stays a filled pill beside the primary send",
+  "file": "stmt/page.js",
+  "find": "var keep=el('button','amb-pill amb-pill--block amb-pill--quiet',q.keep);",
+  "replace": "var keep=el('button','amb-pill amb-pill--block',q.keep);"
+ },
+ {
+  "name": "Let it stand in the reason Sheet is a text row again",
+  "file": "stmt/owner.js",
+  "find": "{title:ONE_OFF_WORDS.title, plain:true, primary:true, go:",
+  "replace": "{title:ONE_OFF_WORDS.title, plain:true, go:"
+ }
 ]

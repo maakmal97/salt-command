@@ -170,7 +170,7 @@ export async function run({ ok, pageWork }) {
     ok(!!lineOf && /CX1-ZED/.test(lineOf.querySelector(".amb-row__title").textContent) && lineOf.querySelector(".amb-row__amount").textContent === "RM 50.00"
       && /Says they paid it/.test(lineOf.querySelector(".amb-row__sub").textContent),
       "and restates the claim as a line of its own: the code, the figure, and that they say they sent it");
-    ok(!!inSheet("claim.ask-go", C1) && !!inSheet("claim.ask-keep", C1) && !!inSheet("claim.ask-close", C1) && !inSheet("claim.ask-go").classList.contains("amb-action--danger")
+    ok(!!inSheet("claim.ask-go", C1) && !!inSheet("claim.ask-keep", C1) && !!inSheet("claim.ask-close", C1) && !inSheet("claim.ask-go").classList.contains("amb-pill--danger")
       && sh.querySelector(".amb-sheet__body").contains(inSheet("claim.ask-go")),
       "its controls carry their acts, and Received is not a danger action");
     for (const [name, close] of [["Not yet", () => inSheet("claim.ask-keep").click()], ["the close control", () => inSheet("claim.ask-close").click()],
@@ -191,7 +191,7 @@ export async function run({ ok, pageWork }) {
     /* Not found: a danger action, sending the amount and a request id */
     await p.tap("claim.open", C2);
     p.in("claim.not-found", C2).click(); await p.work.quiet();
-    ok(/Not found RM 20\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && inSheet("claim.ask-go", C2).classList.contains("amb-action--danger")
+    ok(/Not found RM 20\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && inSheet("claim.ask-go", C2).classList.contains("amb-pill--danger")
       && answers(p, "c-2", "notfound").length === 0, "Not found asks on the Sheet, a danger action, and sends nothing as it opens");
     /* a second tap on the action of a sheet already closed sends nothing, whether or not the first answer has landed: the sheet is shut before the request goes */
     p.fail.add("/all/maker/claims/" + U + "/c-2/notfound");
@@ -262,7 +262,7 @@ export async function run({ ok, pageWork }) {
     const card = () => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "ord-a1");
     byAct(card(), "order.claim-received", ACLAIM).click(); await p.work.quiet();
     ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /records RM 30\.00 against this order/.test(sheet().textContent)
-      && !byAct(sheet(), "order.ask-go").classList.contains("amb-action--danger") && sends("received").length === 0 && asked.length === 0,
+      && !byAct(sheet(), "order.ask-go").classList.contains("amb-pill--danger") && sends("received").length === 0 && asked.length === 0,
       "an order's Receive claimed asks on the Sheet, naming the amount and who, and sends nothing as it opens: " + (sheet() && sheet().textContent));
     byAct(sheet(), "order.ask-keep").click(); await p.work.quiet();
     ok(!sheet() && sends("received").length === 0, "Not yet sends nothing");
@@ -276,7 +276,7 @@ export async function run({ ok, pageWork }) {
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     ok(sends("received").length === 2 && sends("received")[1].body.covered === true && sends("received")[1].body.claim === BCLAIM, "and sends covered: " + JSON.stringify(sends("received")[1]));
     byAct(card(), "order.claim-not-found", ACLAIM).click(); await p.work.quiet();
-    ok(/Not found RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && byAct(sheet(), "order.ask-go").classList.contains("amb-action--danger") && sends("notfound").length === 0,
+    ok(/Not found RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".amb-sheet__title").textContent) && byAct(sheet(), "order.ask-go").classList.contains("amb-pill--danger") && sends("notfound").length === 0,
       "Not found on an order's claim asks on the Sheet, a danger action, and sends nothing as it opens");
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     const lost = sends("notfound");

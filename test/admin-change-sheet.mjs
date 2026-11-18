@@ -60,7 +60,7 @@ export async function run({ ok, pageWork }) {
     "C2a: at Ready (collect, units left, two points) the Sheet has Order and So far, Point, Handed over, Received now and Paid by with Bank and Cash: " + heads(sh));
     const send = d.getElementById("ynGo");
     ok(send && send.tagName === "BUTTON" && send.textContent === "Send the change" && send.classList.contains("amb-pill")
-      && send.classList.contains("amb-pill--block") && !send.classList.contains("amb-action") && d.getElementById("ynKeep").classList.contains("amb-pill--quiet"),
+      && send.classList.contains("amb-pill--block") && send.classList.contains("amb-pill--accent") && !send.classList.contains("amb-pill--danger") && !send.classList.contains("amb-action") && d.getElementById("ynKeep").classList.contains("amb-pill--quiet"),
     "C10: Send the change is a full-width primary button, not a text-like action row");
     await closeSheet();
     await part("todo"); await tapRow("ord-a1");
@@ -121,7 +121,7 @@ export async function run({ ok, pageWork }) {
     await new Promise((r) => setTimeout(r, 0));
     const stand = d.getElementById("ynGo"), notNow = d.getElementById("ynKeep"), standT = d.getElementById("ynT");
     ok(standT && standT.textContent === "Let this price stand?" && stand && stand.textContent === "Let it stand" && stand.classList.contains("amb-pill") && stand.classList.contains("amb-pill--block")
-      && !stand.classList.contains("amb-action") && notNow && notNow.classList.contains("amb-pill--quiet"),
+      && stand.classList.contains("amb-pill--accent") && !stand.classList.contains("amb-pill--danger") && !stand.classList.contains("amb-action") && notNow && notNow.classList.contains("amb-pill--quiet"),
       "C12: the ask under the Floor opens Let this price stand?, Let it stand the filled pill and Not now the quiet one: " + (stand && stand.className) + " | " + (notNow && notNow.className));
     delete p.refuse["/all/maker/orders/ord-r1/restate"];
     if (d.getElementById("ynKeep")) d.getElementById("ynKeep").click();

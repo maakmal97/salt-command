@@ -269,7 +269,7 @@ export async function run({ ok, pageWork }) {
     ok(reason.value === "We do not have enough in hand this week." && inSheet("order.reason-stock").checked, "a tile fills the reason with the Desk's line: " + reason.value);
     reason.value = "Sold out until Friday."; reason.dispatchEvent(new w.Event("input", { bubbles: true }));
     ok([...sh.querySelectorAll(".amb-option input[type=radio]")].every((r) => !r.checked), "and typing his own words clears the tile");
-    ok(!!sh.querySelector("fieldset.amb-options > legend.amb-field__label") && sh.querySelector(".amb-sheet__body").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("amb-action--danger"),
+    ok(!!sh.querySelector("fieldset.amb-options > legend.amb-field__label") && sh.querySelector(".amb-sheet__body").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("amb-pill--danger"),
       "Decline order is the one danger action, in the Sheet");
 
     /* Tab stays inside the sheet, across its tiles and its field */
@@ -349,7 +349,7 @@ export async function run({ ok, pageWork }) {
     /* Offer again: a stage he rejected, asked on the sheet, sent under a request id */
     await part("todo"); await tapRow("ord-x1");
     byAct(d, "order.again-pay", "ord-x1").click(); await p.work.quiet();
-    ok(/Send the payment again/.test(sheetOf().querySelector(".amb-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("amb-action--danger"),
+    ok(/Send the payment again/.test(sheetOf().querySelector(".amb-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("amb-pill--danger"),
       "offering a stage again asks on the sheet and sends nothing as it opens");
     inSheet("order.ask-go").click(); await p.work.quiet();
     const again = sends("/again");

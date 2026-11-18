@@ -218,8 +218,8 @@
  {
   "name": "a close is a danger action",
   "file": "stmt/owner.js",
-  "find": "    if(q.plain) go.classList.remove('amb-action--danger');",
-  "replace": ""
+  "find": "if(q.plain||q.primary){ go.classList.remove('amb-pill--danger'); go.classList.add('amb-pill--accent'); }",
+  "replace": "if(q.primary){ go.classList.remove('amb-pill--danger'); go.classList.add('amb-pill--accent'); }"
  },
  {
   "name": "Tab inside the sheet misses its field and tiles",

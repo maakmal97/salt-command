@@ -391,7 +391,7 @@ export async function run({ ok, pageWork }) {
     const sheet = p.d.getElementById("ynSheet"), go = p.d.getElementById("ynGo");
     const rowsNA = sheet ? [...sheet.querySelectorAll(".apnow tbody tr")].map((tr) => [...tr.children].map(text).join(" | ")) : [];
     ok(!!sheet && /Undo this move\?/.test(text(sheet)) && J(rowsNA) === J(["Paid | RM 220.00 | RM 0.00", "Owed | RM 0.00 | RM 220.00", "Handed over | 2 of 2 units | 2 of 2 units"])
-      && /open refund of RM 20/.test(text(sheet)) && text(go) === "Undo: zt1 owes RM 220.00" && !p.sent("/all/maker/inputs/ledger-amend").length,
+      && /open refund of RM 20/.test(text(sheet)) && text(go) === "Undo: zt1 owes RM 220.00" && go.className === "amb-pill amb-pill--block amb-pill--accent" && p.d.getElementById("ynKeep").className === "amb-pill amb-pill--block amb-pill--quiet" && !p.sent("/all/maker/inputs/ledger-amend").length,
     "Undo opens the Sheet: Now and After as the Desk read them, what he must know, and one action saying the result; nothing is sent yet: " + J({ rowsNA, go: text(go) }));
     go.click(); await p.work.quiet();
     const sentU = p.sent("/all/maker/inputs/ledger-amend");
