@@ -75,7 +75,7 @@
   Shop's card hierarchy, the weekly hours bars, Shop's grey hero.
 
 ## The laptop bar: a bar on the page ground, tabs, the status in the bar (v1545)
-- Built as v1545 (18 Nov 2026) on his four answers of 18 Nov 2026 after he called Salt Admin at 1536 by 730 "so hectic"; settled, do not ask again:
+- Live as v1545 (`b97d2363`, 18 Nov 2026; Cloud commit `44288974774`: chain and three suite parts green; CI `44288974966` green; full split suite on the unbumped tree 12,819 passed, 0 failed), built on his four answers of 18 Nov 2026 after he called Salt Admin at 1536 by 730 "so hectic"; settled, do not ask again:
   **A** a place's parts are underlined tabs across the content's width, the current one underlined in the accent, counts beside each, filters under them still pills;
   **B** Live, the time and the shop's state stand in the bar's right side before Ledger, Approve and +, and the rail's foot is empty;
   **C** the heading is a bar on the page ground, starting and ending where the content columns do, a hairline under it, the aurora a 4px strip along the top edge;
