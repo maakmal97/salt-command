@@ -12,21 +12,33 @@
   "replace": "geo: body.geo || null, tiers, introducer: body.introducer || null });"
  },
  {
-  "name": "the typed starting % gets the decimal pad back, which has no minus key on an iPhone",
+  "name": "the Add ID slider runs the old ends whatever the book",
   "file": "stmt/owner.js",
-  "find": "typed.removeAttribute('inputmode');",
-  "replace": "typed.inputMode='decimal';"
+  "find": "var lo=typeof item.driftMin==='number'?item.driftMin:-30, hi=typeof item.driftMax==='number'?item.driftMax:30;",
+  "replace": "var lo=-30, hi=30;"
  },
  {
-  "name": "the Add ID form refuses a typed % past the old ends whatever the book",
+  "name": "Not set sends a starting % all the same",
   "file": "stmt/owner.js",
-  "find": "driftValue<driftItem.lo-1e-9||driftValue>driftItem.hi+1e-9",
-  "replace": "driftValue<-0.3||driftValue>0.3"
+  "find": "get:function(){ return on.sw.checked?String(Number((Math.round(+r.value)/100).toFixed(2))):''; },",
+  "replace": "get:function(){ return String(Number((Math.round(+r.value)/100).toFixed(2))); },"
  },
  {
-  "name": "the Add ID form takes a typed % past the book's low end",
+  "name": "the slider says the bare % where a preset is named",
   "file": "stmt/owner.js",
-  "find": "driftValue<driftItem.lo-1e-9||",
-  "replace": ""
+  "find": "return p&&p.name?p.name:pctWord(whole); };",
+  "replace": "return pctWord(whole); };"
+ },
+ {
+  "name": "a supplier's starting % stays open",
+  "file": "stmt/owner.js",
+  "find": "idDrifts.forEach(function(item){item.select.disabled=!canStart;});",
+  "replace": "idDrifts.forEach(function(item){item.select.disabled=false;});"
+ },
+ {
+  "name": "the slider moves by 10",
+  "file": "stmt/owner.js",
+  "find": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);",
+  "replace": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||10);"
  }
 ]

@@ -200,10 +200,13 @@ export async function run({ ok }) {
     [...doc.querySelectorAll("#rlist [data-u]")].find((c) => text(c.querySelector(".acode")) === "CX1-ZED").querySelector(".arow__open").click();
     await waitFor(() => !!doc.querySelector("#aopen .apct .apct__table"));
     const form = () => doc.querySelector("#aopen .apct"), act = (name, key) => byAct(form(), name, key), table = () => form().querySelector(".apct__table");
-    /* 16 Nov 2026, the move to Ambient (place H): the stepper holds the whole % in a text field; it is read as the card has always said it, +15% and −10% */
-    const val = () => { const v = +form().querySelector(".apct__step input").value; return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + "%"; }, step = async (name, n) => { for (let i = 0; i < n; i++) act(name).click(); await new Promise((r) => setTimeout(r, 5)); };
+    /* 18 Nov 2026 (his word): the stepper is Ambient's slider, a range holding the whole %; it is read as the card has always said it, +15% and −10%. A step is the
+       range's own stepUp or stepDown, one at a time, each with the input and change a hand on it fires */
+    const val = () => { const v = +form().querySelector(".apct__step input").value; return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + "%"; }, step = async (name, n) => {
+      for (let i = 0; i < n; i++) { const r = form().querySelector(".apct__step input"); if (/\.up$/.test(name)) r.stepUp(); else r.stepDown(); r.dispatchEvent(new dom.window.Event("input", { bubbles: true })); r.dispatchEvent(new dom.window.Event("change", { bubbles: true })); }
+      await new Promise((r) => setTimeout(r, 5)); };
     check(form().querySelectorAll("input").length === 1 && val() === "0%" && [...form().querySelectorAll('[data-act="acct.pct.book"]')].map((b) => b.getAttribute("data-key")).join() === "salt,oil",
-      "the account card takes a whole % by a stepper (no typed field), on every book that takes a % (salt and oil)");
+      "the account card takes a whole % by a slider (no typed field), on every book that takes a % (salt and oil)");
     await step("acct.pct.down", 2);
     const drawn = await waitFor(() => !!table() && val() === "\u221210%" && reads.at(-1) === "CX1-ZED/salt/-10" && table().querySelectorAll("tbody tr").length === 2);
     const cells = drawn ? [...table().querySelectorAll("tbody tr")[1].children].map(text) : [];
@@ -218,11 +221,11 @@ export async function run({ ok }) {
       "a reply that lands after a newer ask is dropped: the rows stay the +15% read (RM 620 at 6.25 units), not the late -20% one (RM 585)");
     const n = reads.length; await step("acct.pct.down", 5); await new Promise((r) => setTimeout(r, 400));
     check(reads.length === n && val() === "\u221210%" && table().textContent.includes("\u221210%"), "going back to a figure already read draws it again with no new read");
-    /* 10 Nov 2026: the stepper's ends are the book's own, off the catalog: salt passes +30% and stops at +100% */
+    /* 10 Nov 2026: the slider's ends are the book's own, off the catalog: salt passes +30% and stops at +100% */
     await step("acct.pct.up", 9); await waitFor(() => val() === "+35%");
     const past30 = val() === "+35%";
     await step("acct.pct.up", 14); await waitFor(() => val() === "+100%");
-    check(past30 && val() === "+100%", "on salt the stepper passes +30% and stops at +100%, the end the catalog gives: " + val());
+    check(past30 && val() === "+100%", "on salt the slider passes +30% and stops at +100%, the end the catalog gives: " + val());
     act("acct.pct.suggest").click();
     check(val() === "\u221215%", "Use the suggestion fills the whole %: -15");
     act("acct.pct.send", "CX1-ZED").click();

@@ -102,10 +102,10 @@
     "replace": "pctReads[key]=j.preview; pctDraw(j.preview);"
   },
   {
-    "name": "the stepper moves by something other than a share of 5",
+    "name": "the slider moves by something other than a share of 5",
     "file": "stmt/owner.js",
-    "find": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);",
-    "replace": "for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=7) list.push(v);"
+    "find": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);",
+    "replace": "r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||10);"
   },
   {
     "name": "the form sends the whole % instead of the fraction",

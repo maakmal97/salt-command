@@ -172,14 +172,15 @@ export async function run({ ok, pageWork }) {
     const p = await richOwnerPage({ pageWork, inputsAnswer: (j) => { j.catalog.products = [{ product: "salt", drift: true, driftMin: -100, driftMax: 100, driftPresets: [{ name: "Median Price", value: 0 }, { name: "+20%", value: 0.2 }, { name: "+30%", value: 0.3 }] }]; return j; } });
     await p.work.quiet();
     enter(p.d, "record", "customers"); await p.work.quiet();
-    const radio = (v) => p.d.querySelector('input[data-act="record.add-id.drift"][value="' + v + '"]');
-    const line = p.d.querySelector(".ostart30");
-    p.d.querySelector('input[data-act="record.add-id.drift"][value="0"]').click();
-    const chosen = p.d.querySelector('input[data-act="record.add-id.drift"]:checked').value;
-    ok(radio("0.3") && line && line.textContent === "Starts at +30%." && chosen === "0", "the Starting % is +30% unless he picks another, with the line 'Starts at +30%.', and the Median Price stays his to choose");
+    /* 18 Nov 2026 (his word): the starting % is a switch and a slider in whole % */
+    const range = (d) => d.querySelector('input[data-act="record.add-id.drift"]'), on = (d) => d.querySelector('input[data-act="record.add-id.drift-on"]');
+    const line = p.d.querySelector(".ostart30"), opened = [on(p.d).checked, range(p.d).value];
+    range(p.d).value = "0"; range(p.d).dispatchEvent(new p.w.Event("input", { bubbles: true })); range(p.d).dispatchEvent(new p.w.Event("change", { bubbles: true }));
+    const said = range(p.d).closest(".amb-slider").querySelector(".amb-slider__value").textContent;
+    ok(opened[0] === true && opened[1] === "30" && line && line.textContent === "Starts at +30%." && range(p.d).value === "0" && said === "Median Price", "the Starting % is +30% unless he picks another, with the line 'Starts at +30%.', and the Median Price stays his to choose: " + JSON.stringify([opened, said]));
     const q = await richOwnerPage({ pageWork, inputsAnswer: (j) => { j.catalog.products = [{ product: "salt", drift: true, driftMin: -100, driftMax: 100, driftPresets: [{ name: "Median Price", value: 0 }, { name: "+30%", value: 0.3 }] }]; return j; } });
     await q.work.quiet(); enter(q.d, "record", "customers"); await q.work.quiet();
-    ok(q.d.querySelector('input[data-act="record.add-id.drift"]:checked').value === "0.3", "the form opens on +30%: " + q.d.querySelector('input[data-act="record.add-id.drift"]:checked').value);
+    ok(on(q.d).checked && range(q.d).value === "30", "the form opens on +30%: " + JSON.stringify([on(q.d).checked, range(q.d).value]));
     /* the join link's Add them keeping +30% is drawn in test/order-stream-v7-ui.mjs (U4c), where a sealed join is opened */
   }
 

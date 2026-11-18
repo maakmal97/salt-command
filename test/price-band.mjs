@@ -249,7 +249,7 @@ export async function run({ ok }) {
 
   /* the surfaces read the same range: Salt Admin's stepper and the Desk's routes */
   const owner = fs.readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8"), worker = fs.readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
-  ok(owner.includes("v=Math.max(lim.min,Math.min(lim.max,v));") && owner.includes("for(v=Math.ceil(lim.min/5)*5;v<=lim.max;v+=5) list.push(v);") && owner.includes("unit:punit}") && !/unit:'pct'/.test(owner)   /* 17 Nov 2026, the move to Ambient (the second red fix): the stepper is the stepper over values, so its ends are the book's own range in the clamp and in the values it offers, no longer the two arrows' disabled state */
+  ok(owner.includes("v=Math.max(lim.min,Math.min(lim.max,v));") && owner.includes("r.min=String(o.min); r.max=String(o.max); r.step=String(o.step||5);") && owner.includes("unit:punit}") && !/unit:'pct'/.test(owner)   /* 17 Nov 2026, the move to Ambient (the second red fix): its ends are the book's own range in the clamp and in the control; 18 Nov 2026 (his word) the control is a slider over that range in steps of 5 */
     && worker.includes("whole < -100 || whole > 100"),
   "Salt Admin's stepper stops at the book's own ends and sends the book's unit, and the Desk's preview route takes a whole % to 100");
 }

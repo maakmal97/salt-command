@@ -42,7 +42,6 @@ const GROUPS = [
   ["Gift", "Handover", "record.gift.handover", ["", "collected", "delivered"], ""],
   ["Correct a row", "What to do", "record.amend.kind", ["Correction", "Fulfilment", "Cancellation"], "Correction"],
   ["New customer", "Role", "record.add-id.role", ["customer", "supplier", "reseller", "referral", "downstream", "bucket"], "customer"],
-  ["New customer", "Starting %, salt", "record.add-id.drift", ["", "0.25", "typed"], ""],
   ["Make an associate", "As", "record.appoint.role", ["reseller", "referral"], null],
   ["Printed sizes", "Book", "record.house.book", ["salt"], "salt"],
   ["Desk reminders", "Hide for", "record.tip.for", ["7", "30", ""], "7"]
@@ -89,10 +88,10 @@ export async function run({ ok, pageWork }) {
     ok(bad.length === 0 && found.length === GROUPS.length,
       "each of the " + GROUPS.length + " few, fixed choices of the forms is a group of tiles in its own form, offering its values in order with the one a select began on chosen (none for the appointment's role), "
         + "and no other group is drawn: " + JSON.stringify(bad) + " " + found.length);
-    /* 27 Oct 2026 (Record's forms as settings rows): the starting % stays tiles whatever its number of presets, its radios carrying the keys */
-    const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input.amb-option__input");
-    ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
-      "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
+    /* 18 Nov 2026 (his word: a smooth slider in steps of 5, never the long list): the starting % is no group of tiles but a switch and a slider, each keyed by its book */
+    const nc = p.form("New customer"), startOn = nc.querySelectorAll('input.amb-switch[data-act="record.add-id.drift-on"]'), startPct = nc.querySelectorAll('input.amb-slider__input[data-act="record.add-id.drift"]');
+    ok(startOn.length === 1 && startPct.length === 1 && startOn[0].getAttribute("data-key") === "salt" && startPct[0].getAttribute("data-key") === "salt" && startPct[0].type === "range",
+      "a new customer's starting % is a switch and a slider drawn once for each book, each keyed by the book: " + [...startOn, ...startPct].map((r) => r.getAttribute("data-key")).join());
     const parties = ["record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
       "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.tip.tip"];
     const stay = parties.filter((act) => { const c = byAct(p.d, act); return !c || c.tagName !== "SELECT"; });
@@ -130,11 +129,12 @@ export async function run({ ok, pageWork }) {
     const markSets = new Set(books.map((r) => r.closest("fieldset")));
     ok([...markSets].every((g) => g.classList.contains("amb-options")) && radios.filter((r) => r.closest("label").querySelector(".amb-chip")).every((r) => !!r.closest("label").querySelector(".amb-option__title > .amb-chip")),
     "a group of books is Ambient's Choice, the chip the title of each, and only books carry one: " + markSets.size + " groups");
-    /* Their % left Record on 26 Oct 2026 (a stepper on the account card): Record draws no form for it, and the one typed % field left, Add ID's, still takes a negative with no decimal pad */
-    const driftField = byAct(p.d, "record.add-id.drift-value");
-    ok(!p.d.querySelector('[data-act^="record.drift"]') && driftField && driftField.min === "-0.3" && driftField.max === "0.3" && driftField.getAttribute("inputmode") === null
-      && [...p.d.querySelectorAll("#makerInputs input[type=number]")].filter((f) => f !== driftField && f.min === "0").every((f) => f.getAttribute("inputmode") === "decimal"),
-      "Record draws no Their % form, the typed starting % takes a negative and no decimal pad (a negative needs the minus key, which a decimal pad lacks on an iPhone); the other number fields keep the decimal pad");
+    /* Their % left Record on 26 Oct 2026 (a stepper on the account card), and Add ID's typed % left on 18 Nov 2026 (a slider, his word): Record draws no typed %, and the
+       number fields keep the decimal pad */
+    const driftField = byAct(p.d, "record.add-id.drift-value"), startRange = byAct(p.d, "record.add-id.drift", "salt");
+    ok(!p.d.querySelector('[data-act^="record.drift"]') && !driftField && !!startRange && startRange.min === "-30" && startRange.max === "30"
+      && [...p.d.querySelectorAll("#makerInputs input[type=number]")].filter((f) => f.min === "0").every((f) => f.getAttribute("inputmode") === "decimal"),
+      "Record draws no Their % form and no typed starting %, the starting % a slider over the book's own ends (-30 to +30 here); the number fields keep the decimal pad");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.amb-option \{[^}]*min-height: 64px/.test(css) && /--amb-tap: 44px/.test(css) && !/\.adm \.maker-marks|\.adm \.maker-tiles/.test(css),
     "Ambient makes a tile 64px high with the radio over its whole tile, so a tile is 44px in both dimensions and the tile is the hit area; the page adds no rule of its own to a group");
@@ -168,13 +168,12 @@ export async function run({ ok, pageWork }) {
     books.fill([{ value: "candy", label: "candy" }, { value: "rice", label: "rice" }]);
     ok(books.value === "candy", "and falls to its first tile when it is not: " + books.value);
     const role = (v) => tile(p.form("New customer"), "Role", v);
-    const drift = tileGroup(p.form("New customer"), "Starting %, salt");
+    const nc = p.form("New customer"), startOn = byAct(nc, "record.add-id.drift-on", "salt"), startPct = byAct(nc, "record.add-id.drift", "salt");
+    startOn.checked = true; startOn.dispatchEvent(new p.w.Event("change", { bubbles: true }));
     role("supplier");
-    const shut = [drift.disabled, drift.querySelector("input, button").matches(":disabled")];
+    const shut = [startOn.disabled, startPct.disabled];
     role("customer");
-    ok(same(shut, [true, true]) && !drift.disabled, "a supplier has no starting %, so the group is shut with every tile in it, and open again for a customer: " + shut.join());
-    drift.value = "nothing";
-    ok(drift.value === "" && ![...drift.querySelectorAll("input, button")].some((r) => r.checked || r.getAttribute("aria-pressed") === "true"), "a value no tile offers leaves none chosen, as a select left none");
+    ok(same(shut, [true, true]) && !startOn.disabled && !startPct.disabled, "a supplier has no starting %, so its switch and slider are shut, and open again for a customer: " + shut.join());
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 4. EACH TILE SENDS WHAT ITS SELECT DID */

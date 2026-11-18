@@ -7,7 +7,7 @@ import { makerInputCatalog } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
-import { tile, tileGroup, legendLabel } from "./maker-act.mjs";
+import { tile } from "./maker-act.mjs";
 
 export async function run({ ok }) {
   const check = ok || ((condition, message) => { if (!condition) throw new Error(message); });
@@ -134,12 +134,16 @@ export async function run({ ok }) {
       .some((heading) => heading.textContent === "New customer")), "the generated Counter page opens Add ID");
     const section = [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((item) => item.querySelector("h3")?.textContent === "New customer");
-    const driftSelect = [...section.querySelectorAll("fieldset.maker-tiles")]
-      .find((group) => group.querySelector("legend").textContent.startsWith("Starting %"));
-    const driftLabel = driftSelect && legendLabel(driftSelect.querySelector("legend"));   /* the words, then the book's code that its mark stands for: the page draws the mark alone */
-    const pick = (value) => tile(section, driftLabel, value);   /* the drift is a group of tiles, and a tap on one is the change */
-    const typed = [...section.querySelectorAll("input[type=number]")]
-      .find((input) => input.closest("label")?.querySelector(".lbl, .salt-settings__label, .amb-field__label")?.textContent.startsWith("Other %"));
+    /* 18 Nov 2026 (his word: a smooth slider in steps of 5, never the long list): Set a starting % is a switch, off for Not set, and the % Ambient's slider, a range in
+       whole % from the book's low to its high; a hand on it fires input and change */
+    const onSwitch = section.querySelector('input.amb-switch[data-act="record.add-id.drift-on"][data-key="salt"]');
+    const range = section.querySelector('input.amb-slider__input[data-act="record.add-id.drift"]');
+    const said = () => range && range.closest(".amb-slider").querySelector(".amb-slider__value").textContent;
+    const fire = (el, type) => el.dispatchEvent(new dom.window.Event(type, { bubbles: true }));
+    const pick = (value) => {   /* '' is Not set; any other a fraction, put on the slider as its whole % */
+      onSwitch.checked = value !== ""; fire(onSwitch, "change");
+      if (value !== "") { range.value = String(Math.round(Number(value) * 100)); fire(range, "input"); fire(range, "change"); }
+    };
     /* the form's own answer line is the last status in it; the first is the one unlock's (Phase 4b) */
     const status = [...section.querySelectorAll('[role="status"]')].at(-1);
     doc.querySelector('[data-act="vault.unlock"]').click();
@@ -147,17 +151,18 @@ export async function run({ ok }) {
     doc.getElementById("vaultGo").click();
     check(await waitFor(() => /open on this phone/.test(section.textContent)) && doc.getElementById("vaultPass").value === "",
       "the one unlock opens the page for Add ID, which has no password field of its own");
-    check(!!driftSelect && !!typed && driftSelect.value === "0.3" && typed.closest("label").hidden
-      && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",-0.5,-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.5,typed"
-      && typed.min === "-1" && typed.max === "1" && typed.step === "0.05" && typed.getAttribute("inputmode") === null,
-    "generated Add ID starts salt at +30% (his word of 11 Nov 2026), offers the rule presets, and a typed % bounded -1 to 1 with no decimal pad (it has no minus key): "
-      + [...section.querySelectorAll("fieldset.maker-tiles legend")].map((legend) => legend.textContent).join("|"));
-    if (!driftSelect || !typed) throw new Error("Add ID did not render the starting drift controls.");
-    pick("typed");
-    check(!typed.closest("label").hidden, "the typed drift field appears only after choosing Typed");
+    check(!!onSwitch && !!range && onSwitch.checked && range.value === "30" && said() === "+30%" && range.type === "range" && range.step === "5"
+      && range.min === "-100" && range.max === "100" && !section.querySelector('[data-act="record.add-id.drift-value"]')
+      && ![...section.querySelectorAll("fieldset.maker-tiles legend")].some((legend) => legend.textContent.startsWith("Starting %")),
+    "generated Add ID starts salt at +30% (his word of 11 Nov 2026) on a slider in steps of 5 from the book's -100% to +100%, with no list and no typed %: "
+      + JSON.stringify([onSwitch && onSwitch.checked, range && [range.min, range.max, range.step, range.value], said()]));
+    if (!onSwitch || !range) throw new Error("Add ID did not render the starting drift controls.");
+    pick("0");
+    check(said() === "Median Price" && range.getAttribute("aria-valuetext") === "Median Price", "the slider says a preset's name where it rests on one (the Median Price at 0): " + said());
     pick("");
+    check(said() === "Not set" && range.disabled, "Not set is the switch off: the slider stands disabled and says Not set: " + said());
     tile(section, "Role", "supplier");
-    check(driftSelect.disabled && typed.disabled, "Add ID disables starting drift for a supplier");
+    check(onSwitch.disabled && range.disabled, "Add ID disables starting drift for a supplier");
     tile(section, "Role", "customer");
 
     const submit = [...section.querySelectorAll("button")].find((button) => button.textContent === "Add the customer");
@@ -169,14 +174,13 @@ export async function run({ ok }) {
       { name: "Dara", choice: "0.3", expected: { salt: 0.3 } },
       { name: "Hana", choice: "-0.3", expected: { salt: -0.3 } },
       { name: "Ivor", choice: "-0.5", expected: { salt: -0.5 } },
-      { name: "Eli", choice: "typed", value: "0", expected: { salt: 0 } },
-      { name: "Faye", choice: "typed", value: "-1", expected: { salt: -1 } },
-      { name: "Gail", choice: "typed", value: "0.125", expected: { salt: 0.125 } }
+      { name: "Eli", choice: "0.15", expected: { salt: 0.15 } },
+      { name: "Faye", choice: "-1", expected: { salt: -1 } },
+      { name: "Gail", choice: "1", expected: { salt: 1 } }
     ];
     for (const outcome of outcomes) {
       fields[0].value = outcome.name; fields[1].value = "";
       pick(outcome.choice);
-      if (outcome.value !== undefined) typed.value = outcome.value;
       const before = bridged.length;
       submit.click();
       const sent = await waitFor(() => bridged.length === before + 1 && /waits under Approve/.test(status.textContent));
@@ -194,26 +198,13 @@ export async function run({ ok }) {
         && body.pair?.expectedRevision === before + 1 && draftMatches && entry && names
         && Object.values(names).some((value) => value.includes(outcome.name)),
       "Add ID " + (outcome.choice || "automatic") + " choice traverses the encrypted pair, authenticated route and real draft");
-      if (outcome.name === "Gail")
-        check(body.tiers?.salt === 0.125 && draft?.payload.tiers?.salt === 0.125,
-          "typed Add ID drift preserves 0.125 precision like the incumbent Desk");
+      if (outcome.name === "Faye" || outcome.name === "Gail")
+        check(JSON.stringify(body.tiers) === JSON.stringify(want), "the slider reaches the book's own ends, -100% and +100%: " + JSON.stringify(body.tiers));
     }
 
     fields[0].value = "Gopal"; fields[1].value = "";
-    pick("typed");
-    typed.value = "1.01";
-    const beforeInvalid = bridged.length, revisionBeforeInvalid = pair.revision;
-    submit.click();
-    await waitFor(() => !submit.disabled);
-    check(bridged.length === beforeInvalid && pair.revision === revisionBeforeInvalid
-      && status.textContent === "Enter a % from -1 to 1 (0.2 is 20%, -0.1 is 10% off).",
-    "a typed % of 1.01 is refused before encryption, pair mutation or the Add ID route");
-    typed.value = "-1.01";
-    submit.click();
-    await waitFor(() => !submit.disabled);
-    check(bridged.length === beforeInvalid && pair.revision === revisionBeforeInvalid
-      && status.textContent === "Enter a % from -1 to 1 (0.2 is 20%, -0.1 is 10% off).",
-    "and one of -1.01, past the discount");
+    pick("1.05");
+    check(range.value === "100", "the slider holds at the book's high end, so nothing past it can be sent: " + range.value);
   } finally {
     dom.window.close();
   }

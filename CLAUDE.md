@@ -109,10 +109,10 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      15 places): the book holds each carried customer's place on the band, read as it stands, and no table or reader of one is in the rule or the engine. The old curve (`driftMultiple` over a rule's `ends`) stays in the engine
      for a rule that carries `ends`; none does. **Everyone held 0% at the band's switch; a new ID that names no figure starts at +30%**
      (his word of 11 Nov 2026, the fold's `fresh` start in `engine/apply.mjs`, only for an Add ID stamped from `TIER_RULE.salt.startFrom`, the moment v1514 shipped; a figure he picks, nought included, stands). He sets it on the customer's own card under Salt Admin's
-     Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a stepper in steps of 5 between the ends the catalog gives
-     (`driftMin`, `driftMax`, sent with `driftUnit`), its prices shown live off the Desk before it goes to Approve
-     (`makerDriftPreview`, any whole %), or picks at Add ID from salt's presets -50%, -30%, -20%, -10%, Median Price, +10%, +20%,
-     +30% and +50% (a board's run -30% to +30%); it is queued, folded as `tierset`, and a null clears it. **Nothing automatic
+     Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a slider in steps of 5 between the ends the catalog gives
+     (`driftMin`, `driftMax`, sent with `driftUnit`; Ambient's `amb-slider`, his word of 18 Nov 2026), its prices shown live off the Desk before it goes to Approve
+     (`makerDriftPreview`, any whole %), or sets at Add ID on the same slider, a switch off for Not set, a preset's name said where it rests on one
+     (Median Price at 0; a board's run -30% to +30%); it is queued, folded as `tierset`, and a null clears it. **Nothing automatic
      prices a customer but the bounded market move above**: the engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
      `suggestPct`) SUGGESTS a % he may take with Use the suggestion: on salt the median PLACE on the band of their
      last five salt sales (`bandPct` at each sale's own size, never under nought) plus a share for a write-off (30%), a long late

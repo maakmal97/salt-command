@@ -51,11 +51,11 @@ export async function run({ ok, pageWork }) {
       "the Segment answers as the tiles did: Cash makes the loan's amount read RM, and Goods gives Units back: " + J([cashOn, segNow && segNow[2]]));
     /* 3 */
     const bookSet = tileGroup(trade, "Book");
-    /* Starting % is a legend over its tiles, Other % a field's label: each about one book */
+    /* Starting % is the label over its slider (18 Nov 2026, his word; Other % left with the list): about one book */
     const about = add ? [...add.querySelectorAll("fieldset.maker-tiles legend, .amb-field__label")].filter((n) => n.querySelector(".amb-chip")) : [];
     ok(bookSet.classList.contains("amb-options") && [...bookSet.querySelectorAll("label.amb-option")].every((o) => o.querySelector(".amb-option__title > .amb-chip[class*='amb-kind-'] > .amb-chip__dot") && !o.querySelector("svg.psym, .salt-producttag"))
-      && about.length === 2 && about.every((n) => n.lastElementChild.classList.contains("amb-chip") && /amb-kind-1\b/.test(n.lastElementChild.className) && t(n.lastElementChild) === "Salt") && !add.querySelector("legend svg.psym, legend .pwith, .amb-field__label svg.psym"),
-      "the books are a Choice of chips, the dot in the book's hue and its name in ink, and a label or a legend about one book (Starting %, Other %) ends in its chip, never its drawn mark: " + J([bookSet.className, about.map(t)]));
+      && about.length === 1 && about.every((n) => n.lastElementChild.classList.contains("amb-chip") && /amb-kind-1\b/.test(n.lastElementChild.className) && t(n.lastElementChild) === "Salt") && !add.querySelector("legend svg.psym, legend .pwith, .amb-field__label svg.psym"),
+      "the books are a Choice of chips, the dot in the book's hue and its name in ink, and a label or a legend about one book (Starting %) ends in its chip, never its drawn mark: " + J([bookSet.className, about.map(t)]));
     /* 4 */
     const nums = [...d.querySelectorAll("#makerInputs section.maker-input input[type=number]")];
     /* 27 Oct 2026: Units and Handed over are wheels; 16 Nov 2026: each the stepper over its sizes, the plain figures beside them */
