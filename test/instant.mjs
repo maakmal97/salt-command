@@ -1,8 +1,8 @@
 /* test/instant.mjs: A CUSTOMER'S MOVE REACHES HIM AT ONCE (19 Nov 2026, docs/plan-ring.html, his answers "Both, one version" and "Counter rings,
  * with guards"). Measured on v1547: the banner took about 5 s and the row 10 s, nearly all of it waiting on the network. Now the push sends go to
  * every device at once; the Counter's order book rings Salt Admin at the move, with the guards of Fable's review, and the Desk rings only what it
- * did not; the nudge names the orders moved and its pass reconciles those (and every order owing its pending row); queueSale's first look reads
- * together; and a drafted row is told to an open Salt Admin. Driven on the real roads: the order book over node:sqlite, both Workers, the Desk's D1
+ * did not; the nudge names the orders moved and its pass reconciles those (and every order owing its pending row); and a drafted row is
+ * told to an open Salt Admin. Driven on the real roads: the order book over node:sqlite, both Workers, the Desk's D1
  * on the migrated schema, phones with real keys. Every code, username, id and endpoint is invented. Each check is red under its own mutation
  * (test/instant.mutations.json):
  *   I1  every device at once: three subscriptions are all being sent to before any answers
@@ -22,8 +22,6 @@
  *   I15 a call while a pass runs adds its orders to the next pass, and a whole call makes it whole
  *   I15b a pass let go as stale leaves the orders named while it hung to the next pass
  *   I15c and whole stays whole across a stale pass, either way round
- *   I16 queueSale's first look has the blob, the entry's own key and its draft all open at once
- *   I17 a fixed id's unreadable draft still counts only past a blob with no hit
  *   I18 end to end, I have sent it is one banner a phone, from the Counter, none from the Desk's wake
  *   I19 a drafted row is told to Salt Admin's open sockets, and no customer's
  *   I20 a nudge's pass reconciles the order named and every order owing its pending row, and leaves the rest to the minute
@@ -321,21 +319,6 @@ async function deskSide(ok, DO, W) {
   ok(wholeIntoNamed === 1 && wholeOverNamed === 1,
     "I15c: across a stale pass, a whole want makes the next named call whole, and a whole call stays whole over a named want: " + J({ wholeIntoNamed, wholeOverNamed }));
 
-  /* I16 and I17: queueSale's first look */
-  const q3 = new Store(); let qopen = 0, qmost = 0;
-  const qget = q3.get.bind(q3);
-  q3.get = async (k, t) => { qopen++; qmost = Math.max(qmost, qopen); await sleep(5); qopen--; return qget(k, t); };
-  const LEDGER = { prepare: () => ({ bind: () => ({ first: async () => { qopen++; qmost = Math.max(qmost, qopen); await sleep(5); qopen--; return null; } }) }) };
-  const entry = { at: "2026-11-19T01:20:00.000Z", raw: "instant fixture sale", collection: "sales", party: "IN1-AA" };
-  const queued = await DO.queueSale({ SALT_QUEUE: q3, SALT_LEDGER: LEDGER }, Object.assign({}, entry));
-  ok(queued === true && qmost === 3, "I16: queueSale's first look has the blob, the entry's own key and its draft all open at once: " + J({ queued, qmost }));
-
-  const q4 = new Store();
-  await q4.put("q:orders", J({ queue: [Object.assign({}, entry)] }));
-  const BAD = { prepare: () => ({ bind: () => ({ first: async () => { throw new Error("the ledger is unreadable"); } }) }) };
-  let r17;
-  try { r17 = await DO.queueSale({ SALT_QUEUE: q4, SALT_LEDGER: BAD }, Object.assign({}, entry), true); } catch (e) { r17 = "threw: " + e.message; }
-  ok(r17 === false, "I17: a fixed id whose draft cannot be read still counts that only past a blob with no hit: the blob's hit answers first: " + J({ r17 }));
 }
 
 /* ---- both Workers ---- */

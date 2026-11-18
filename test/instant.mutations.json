@@ -120,18 +120,6 @@
   "replace": "else only = [...new Set([...(only || []), ...againOnly])]; }"
  },
  {
-  "name": "I16 queueSale reads its blob first",
-  "file": "src/orders.js",
-  "find": "const [rawR, ownR, draftR] = await Promise.all([settle(env.SALT_QUEUE.get(BLOB)),",
-  "replace": "const rawR0 = await settle(env.SALT_QUEUE.get(BLOB)); const [rawR, ownR, draftR] = await Promise.all([rawR0,"
- },
- {
-  "name": "I17 an unreadable draft throws before the blob's hit",
-  "file": "src/orders.js",
-  "find": "    if (hit || !ledger) return hit || null;\n    const d = pre",
-  "replace": "    if (pre && pre.draft.e && fixedId) throw pre.draft.e;\n    if (hit || !ledger) return hit || null;\n    const d = pre"
- },
- {
   "name": "I18 the marks carry no ring",
   "file": "stmt/orders.js",
   "find": "r.rung && typeof r.rung === \"object\" && !Array.isArray(r.rung) ? { rung: r.rung } : {}",

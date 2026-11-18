@@ -1801,34 +1801,21 @@ export async function queueSale(env, entry, fixedId = false, mirror = null) {
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "orders");
     if (admission.error) throw Object.assign(new Error(admission.error), { status: admission.status });
   };
-  /* 19 Nov 2026 (docs/plan-ring.html): THE FIRST LOOK READS ITS THREE PLACES TOGETHER, the blob, the entry's own key and its draft, each held
-     as a value or an error, and decided in the order the reads were made one by one: an error counts only where that order would have reached
-     it (Fable's review: a fixed id's own key or draft unreadable still throws only past a blob that had no hit, as before) */
-  const settle = (p) => Promise.resolve(p).then((v) => ({ v }), (e) => ({ e }));
-  const firstAt = entry.at, ledger = env.SALT_LEDGER;
-  const [rawR, ownR, draftR] = await Promise.all([settle(env.SALT_QUEUE.get(BLOB)), settle(env.SALT_QUEUE.get(OKEY(firstAt), "json")),
-    ledger ? settle(ledger.prepare("SELECT entry FROM draft WHERE id=?1").bind(firstAt).first()) : Promise.resolve({ v: null })]);
-  if (rawR.e) throw rawR.e;
-  const raw = rawR.v;
+  const raw = await env.SALT_QUEUE.get(BLOB);
   let blob = [];
   if (raw) {
     try { const j = JSON.parse(raw); blob = (j && Array.isArray(j.queue) && j.queue) || []; }
     catch (e) { console.log("orders queue: " + BLOB + " could not be read and is left alone, so this entry takes its own key (" + String((e && e.message) || e) + "); it held: " + String(raw).slice(0, 200)); }
   }
-  const spent = async (at, pre) => {
-    const o = pre ? pre.own : await settle(env.SALT_QUEUE.get(OKEY(at), "json"));
-    let own = null; if (o.e) { if (fixedId) throw o.e; own = null; } else own = o.v;   /* its own key unreadable: written over */
+  const spent = async (at) => {
+    let own = null; try { own = await env.SALT_QUEUE.get(OKEY(at), "json"); } catch (e) { if (fixedId) throw e; own = null; }   /* its own key unreadable: written over */
     const hit = ((own && Array.isArray(own.queue) && own.queue) || []).concat(blob).find((x) => x && x.at === at);
-    if (hit || !ledger) return hit || null;
-    const d = pre ? pre.draft : await settle(ledger.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first());
-    if (d.e) { if (fixedId) throw d.e; return null; }
-    try { return d.v && d.v.entry ? (JSON.parse(d.v.entry) || {}) : null; }
+    if (hit || !env.SALT_LEDGER) return hit || null;
+    try { const d = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first(); return d && d.entry ? (JSON.parse(d.entry) || {}) : null; }
     catch (e) { if (fixedId) throw e; return null; }
   };
-  let pre = { own: ownR, draft: draftR };
   for (;;) {
-    const hit = await spent(entry.at, entry.at === firstAt ? pre : null);
-    pre = null;
+    const hit = await spent(entry.at);
     if (!hit) break;
     if (fixedId) {
       if (await makerRequestFingerprint("fixed-input", hit) !== await makerRequestFingerprint("fixed-input", entry))
@@ -1874,15 +1861,15 @@ export async function reconcileOrders(env, read, mirror, only = null) {
   }
   if (Array.isArray(only)) owing = owing.filter((o) => only.includes(o.id) || (o.work || []).includes("ack"));
   if (!owing.length) return { ok: true, queued: 0 };
-  /* the map and the book are read together (docs/plan-ring.html); the book is read as before, by the shared reader */
-  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
-  const [users, book] = await Promise.all([usersMap(env), mirror ? mirror().catch(() => null) : null]);
+  const users = await usersMap(env);
   /* AN AMENDMENT WAITS FOR ITS ROW. The pending row reaches the book by the long road: queued,
      drafted, approved, folded, and the mirror re-seeded. Until it is there, nothing can be amended,
      and queueing the amendment anyway would put a refusal on his phone every time a customer paid
      early. So the same question the drafter would ask is asked one step earlier, and a stage that
      cannot land yet simply stays owed. A mirror that cannot be read holds everything, rather than
      queueing what would be refused. */
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  const book = mirror ? await mirror().catch(() => null) : null;
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [], retiredIds = [];
