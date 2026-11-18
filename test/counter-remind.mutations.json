@@ -242,7 +242,7 @@
   {
     "name": "W10 a keyless phone gets the bare wake",
     "file": "stmt/push.js",
-    "find": "      if (!body && opts && opts.sealedOnly) continue;",
+    "find": "      if (!body && opts && opts.sealedOnly) return;",
     "replace": ""
   },
   {

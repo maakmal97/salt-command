@@ -212,14 +212,14 @@
  {
   "name": "a drafter pass tells nobody",
   "file": "src/worker.js",
-  "find": "if (d && (d.drafted > 0 || (d.approved && d.approved.length))) await liveTell(env, ctx, \"drafts\");",
+  "find": "if (d && (d.drafted > 0 || (d.approved && d.approved.length))) { await liveTell(env, ctx, \"drafts\"); adminTold(env, ctx); }",
   "replace": "void 0;"
  },
  {
   "name": "a drafter pass that drafted nothing tells",
   "file": "src/worker.js",
-  "find": "if (d && (d.drafted > 0 || (d.approved && d.approved.length))) await liveTell",
-  "replace": "if (d) await liveTell"
+  "find": "if (d && (d.drafted > 0 || (d.approved && d.approved.length))) { await liveTell",
+  "replace": "if (d) { await liveTell"
  },
  {
   "name": "a decided draft tells nobody",
