@@ -382,7 +382,9 @@ export const paidUntold = (o) => +((+o.paid || 0) - (+((o.queued || {}).paid) ||
  * road reads the same list and a step cannot be queued twice by two of them.
  *   ack     the pending row: the order is agreed and no row exists yet
  *   claim   each claim not yet queued, as a Fulfilment of its own for his check (S6 6.5)
- *   pay     money he confirmed SINCE (paidUntold), because a Fulfilment accumulates: the increment, not the total
+ *   pay     RETIRED 18 Nov 2026, never listed: since S6 money reaches the ledger only by his Received (the claim's own entry) or his
+ *           Cash received, each checked by rowRoom at the tap, so a reconcile pay job could only book a second time what a tap had
+ *           booked (paidUntold stays, as the tell's figure and the one rule of what a received claim has told)
  *   move    the goods handed over, as a RUNNING TOTAL, because a Correction states rather than adds
  *   close   the row restated at what was handed over (S11 11.9), which states the goods moved as well
  *   cancel  the row withdrawn, and only where a row was made
@@ -394,7 +396,8 @@ export function orderWork(o) {
   if (!q.ack && !ROWED.includes(o.status)) return jobs;
   if (!q.ack) jobs.push("ack");
   if (claimsToQueue(o).length) jobs.push("claim");
-  if (paidUntold(o) > 0.004) jobs.push("pay");
+  /* 18 Nov 2026: no "pay" job. Money he confirmed is booked by his own tap (Received, Cash received), which reads rowRoom; a stored order whose
+     paid runs ahead of what was told is no stage owed, and his Received on a claim of theirs stays the road. */
   /* S11 11.9: a close restates what was handed over with the size, so it is the one entry owed for both */
   const closing = !!(o.closed && !q.close);
   if (Math.abs(+(o.moved || 0) - +(q.moved || 0)) > 0.0004 && !closing) jobs.push("move");
