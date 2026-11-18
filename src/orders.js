@@ -2324,8 +2324,7 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   const sales = (book && book.sales) || [];
   if (!sales.length) return { ok: true, told: 0, v };
-  const byKey = new Map(), rows = new Map(), byRid = new Map();
-  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); rows.set(k, (rows.get(k) || 0) + 1); if (s.rid) byRid.set(s.rid, s); }
+  const { byKey, rows, byRid } = rowIndex(sales);
   const at = boundOf(book);   /* the flight checks take the bound of THIS book */
   /* S6 (Fable, 28 Oct 2026): a forced pass left `followRows` to the regular pass, since a shared group moved onto its row by two passes at once, one of which fails on a member,
      would split for good, and a tapped row had not landed in git. 17 Nov 2026 (his word): with the Book the source a tapped row is on the book read here, and an amendment names
@@ -2451,6 +2450,21 @@ const namedKeys = (orders) => {
   return n;
 };
 const TIEOUT_STALL_MS = 15 * 60000;
+/* 19 Nov 2026 (s393 and s395, his answer A): THE BOOK'S ROWS BY KEY, AS THE RETURN LEG AND THE TIE-OUT READ THEM. A key names one row. Where a site
+   order's live row shares its key with cancelled rows only (an amendment that took a cancelled row's name, before keyClash refused it), the live row
+   is the key's for a live order, counted once, and the cancelled one is kept apart (`ended`) for the cancelled order that names it; the drafter and
+   the fold already read open rows alone. Two live rows, a live hand row beside a cancelled one, or cancelled rows alone are as before: the newest
+   is byKey's and every row counts, so neither of two twins is ever taken. */
+export function rowIndex(sales) {
+  const all = new Map(), byKey = new Map(), rows = new Map(), byRid = new Map(), ended = new Map();
+  for (const s of sales || []) { const k = POSITION_ENGINE.ovKey(s); all.set(k, (all.get(k) || []).concat([s])); if (s.rid) byRid.set(s.rid, s); if (s.cancelled) ended.set(k, s); }
+  for (const [k, l] of all) {
+    const live = l.filter((s) => !s.cancelled);
+    if (l.length > 1 && live.length === 1 && live[0].road === "site") { byKey.set(k, live[0]); rows.set(k, 1); }
+    else { byKey.set(k, l[l.length - 1]); rows.set(k, l.length); }
+  }
+  return { byKey, rows, byRid, ended };
+}
 /* a stale yes of a handover or a payment whose order and its one row agree on that stage's figure: nothing of it is owed (the tie-out lets it go) */
 export function yesHeld(y, o, byKey, n) {
   if (!y || !o || !["move", "pay"].includes(y.stage) || !o.ledgerKey) return false;
@@ -2484,8 +2498,7 @@ export async function tieOut(env, mirror, now = new Date()) {
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   if (!book || !book.sales) return { at, v, ok: false, error: "the book could not be read" };
   const bound = boundOf(book);   /* the flight checks take the bound of THIS book */
-  const byKey = new Map(), n = new Map();
-  for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }
+  const { byKey, rows: n, ended: endedByKey } = rowIndex(book.sales);
   const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders);
   /* A YES OLDER THAN A DAY THAT NO ROW SPENT holds nothing. 19 Nov 2026 (ssdngq): one whose move the book holds all the same (its row drafted
      without it, under Approve, or a later move of the same stage carrying it) is spent by the book: it is let go, said in the yes itself, and
@@ -2514,7 +2527,9 @@ export async function tieOut(env, mirror, now = new Date()) {
   let orders = 0;
   for (const o of r.orders) {
     if (o.test || !o.ledgerKey || !ROWED_ON_SITE.concat(["cancelled", "declined"]).includes(o.status)) continue;
-    const k = ledgerKeyOf(o), row = byKey.get(k), ended = ["cancelled", "declined"].includes(o.status);
+    const k = ledgerKeyOf(o), ended = ["cancelled", "declined"].includes(o.status);
+    const yielded = ended && endedByKey.has(k) && !byKey.get(k).cancelled;   /* its cancelled row gave the key to a live one (rowIndex) */
+    const row = yielded ? endedByKey.get(k) : byKey.get(k);
     if (ended && !row) continue;   /* withdrawn before its row landed, or its row dropped: nothing to tie */
     orders++;
     const diff = [];
