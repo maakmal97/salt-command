@@ -2646,8 +2646,11 @@ export async function nudgeOrders(env, read) {
   if (!got.ok) return { ok: false, error: got.error };
   const b = got.marks;
   const newest = b.last || null, said = b.said || null, theirs = b.theirs || null;
-  const mark = (await env.SALT_QUEUE.get(MARK)) || "", saidMark = (await env.SALT_QUEUE.get(SAID_MARK)) || "";
-  const theirsMark = (await env.SALT_QUEUE.get(THEIRS_MARK)) || "";
+  /* 18 Nov 2026 (docs/plan-nudge.html): a pass now runs where the Counter's nudge lands as well as where the cron runs, so the marks are read
+     with KV's shortest cache (30 s): a location's copy from before another location's pass rang is not kept a full minute to ring again */
+  const fresh = { cacheTtl: 30 };
+  const mark = (await env.SALT_QUEUE.get(MARK, fresh)) || "", saidMark = (await env.SALT_QUEUE.get(SAID_MARK, fresh)) || "";
+  const theirsMark = (await env.SALT_QUEUE.get(THEIRS_MARK, fresh)) || "";
   const placed = !!(newest && newest > mark), spoke = !!(said && said > saidMark);
   /* v760: A PAYMENT AND A WITHDRAWAL WOKE NOBODY. The site has written the moment of every change
      since v694 and the desk asked for it every minute and read only the placement, so somebody

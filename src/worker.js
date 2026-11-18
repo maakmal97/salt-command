@@ -551,6 +551,60 @@ function reconcileOnTap(env, ctx, mirror) {
   })());
 }
 
+/* 18 Nov 2026 (docs/plan-nudge.html, his answers A to C): THE ORDER PASS, the minute's order work in its order: one read of the site, the banner
+   for what moved, the reconcile, the desk's own pass and what it approved, the tell to open desks, then the drafter and the banner for rows to
+   approve. Run only through ordersOnce, by the minute's cron and by the Counter's nudge (/_internal/maker/nudge). */
+export async function ordersPass(env, ctx, now = new Date(), mirror = null) {
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
+     leg so the owed orders are read as it left them. Failed or unread, each step asks for its own. */
+  let read = null;
+  try {
+    read = await tickRead(env);
+    if (!read.ok) console.log("orders read: " + JSON.stringify(read));
+  } catch (e) { console.log("orders read FAILED: " + String((e && e.stack) || e)); }
+  /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge, and it goes before the
+     reconcile so a drafter failure cannot swallow it. A customer order placed since the last
+     pass wakes the phones that asked for orders, once. */
+  try {
+    const n = await nudgeOrders(env, read);
+    if (!n.ok || n.newest) console.log("orders nudge: " + JSON.stringify(n));
+  } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
+  /* v694: and the stages the ledger has not been told about. The reconcile is the one place that queues
+     them; each entry is named by the moment of its own stage, so two passes queue the same entry once.
+     It drafts what it queued rather than waiting for the quarter-hour, because he is looking at Approve. */
+  try {
+    const rc = await reconcileOrders(env, read, mirror);
+    /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
+    if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped || rc.retired) console.log("orders reconcile: " + JSON.stringify(rc));
+    /* S11: and what the desk queued itself, beside it */
+    const dp = await deskPass(env, now, mirror);
+    if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
+    await afterApproval(env, ctx, dp.approved);
+    if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, "orders");
+    if (rc.queued || dp.queued) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
+  } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
+}
+/* ONE PASS AT A TIME in an isolate, as the outbox's drain: a call while a pass runs only marks, and exactly one more pass runs when it ends,
+   so a burst of nudges is two passes, never one each. A pass older than PASS_STALE_MS (cut off where its request's waitUntil ended, so it
+   never cleared its marker) is let go and blocks nothing. The first pass takes the caller's clock and mirror; the one after reads afresh. */
+export const PASS_STALE_MS = 60000;
+let passing = null, passingAt = 0, passAgain = false;
+export function ordersOnce(env, ctx, opts = {}) {
+  if (passing && Date.now() - passingAt > PASS_STALE_MS) passing = null;
+  if (passing) { passAgain = true; if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(passing); return passing; }
+  const job = (async () => {
+    try { passAgain = false; await ordersPass(env, ctx, opts.now || new Date(), opts.mirror || null); }
+    catch (e) { console.log("orders pass FAILED: " + String((e && e.stack) || e)); }
+    finally { if (passing === job) passing = null; }   /* a pass let go as stale never clears the marker of the pass after it */
+    /* the marker is cleared and the mark read with no await between them, so a call lands either before (its mark is read here) or after (it starts its own) */
+    if (passAgain) { passAgain = false; await ordersOnce(env, ctx); }
+  })();
+  passing = job; passingAt = Date.now();
+  if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(job);
+  return job;
+}
+
 function draftOnArrival(env, ctx, mirror) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_LEDGER) return;
   ctx.waitUntil((async () => {
@@ -799,7 +853,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
     && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading" && p !== "/_internal/maker/trip-split" && p !== "/_internal/maker/undo"
-    && p !== "/_internal/maker/stock"
+    && p !== "/_internal/maker/stock" && p !== "/_internal/maker/nudge"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
@@ -819,6 +873,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  /* 18 Nov 2026 (docs/plan-nudge.html): THE COUNTER'S NUDGE, a customer's move recorded. No body is read, so nothing it could carry is used;
+     answered at once, the order pass runs behind on the one-at-a-time road the minute's cron takes, and the minute stays the net */
+  if (p === "/_internal/maker/nudge") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    ordersOnce(env, ctx);
+    return json({ ok: true }, 202);
+  }
   if (p === "/_internal/maker/queue") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const result = await makerQueueReview(env);
@@ -2865,34 +2926,8 @@ export default {
             if (!tie.ok || !tie.clean) console.log("orders tie-out: " + JSON.stringify(tie));
           }
         } catch (e) { console.log("orders tie-out FAILED: " + String((e && e.stack) || e)); }
-        /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
-           leg so the owed orders are read as it left them. Failed or unread, each step asks for its own. */
-        let read = null;
-        try {
-          read = await tickRead(env);
-          if (!read.ok) console.log("orders read: " + JSON.stringify(read));
-        } catch (e) { console.log("orders read FAILED: " + String((e && e.stack) || e)); }
-        /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge, and it goes before the
-           reconcile so a drafter failure cannot swallow it. A customer order placed since the last
-           minute wakes the phones that asked for orders, once. */
-        try {
-          const n = await nudgeOrders(env, read);
-          if (!n.ok || n.newest) console.log("orders nudge: " + JSON.stringify(n));
-        } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
-        /* v694: and the stages the ledger has not been told about. THE ONE PLACE THAT QUEUES them,
-           so no two roads can queue the same stage; it drafts what it queued rather than waiting
-           for the quarter-hour, because he is looking at Approve. */
-        try {
-          const rc = await reconcileOrders(env, read, mirror);
-          /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
-          if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped || rc.retired) console.log("orders reconcile: " + JSON.stringify(rc));
-          /* S11: and what the desk queued itself, beside it */
-          const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()), mirror);
-          if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
-          await afterApproval(env, ctx, dp.approved);
-          if (rc.queued || rc.dropped || dp.queued || dp.dropped) await liveTell(env, ctx, "orders");
-          if (rc.queued || dp.queued) { const d = await draftedTold(env, ctx, await runDrafter(env, { mirror })); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
-        } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
+        /* 18 Nov 2026 (docs/plan-nudge.html): the order work, on the same road as the Counter's nudge, so the two never run two passes at once in this isolate */
+        await ordersOnce(env, ctx, { now: new Date(event.scheduledTime || Date.now()), mirror });
         /* fold 3.3: an approval still uncommitted is rung again on the ladder; one line a try, none after the last */
         try {
           const rd = await redispatchStale(env, ctx, new Date(event.scheduledTime || Date.now()));
