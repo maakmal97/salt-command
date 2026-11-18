@@ -847,6 +847,8 @@ export async function takeOffer(env, id, now, mirror) {
     if (!(v && v.meta && v.meta.changes === 1)) return { ok: true, again: true };
     return queueOffer(env, f, off, bad, at, mirror, shownWhy(shown));
   }
+  /* 18 Nov 2026 (Fable's review): another take has claimed the yes's entry (below) and is queueing it, or deskPass will: nothing to preview */
+  if (!pre.entry_at && pre.entry) return { ok: true, again: true };
   if (!pre.entry_at) {
     const terms = Object.assign({}, o, { qty: off.qty === undefined ? o.qty : off.qty, mode: off.mode || o.mode,
       total: off.total, delivery: off.delivery || 0, slot: off.slot || null, slotSpan: off.slotSpan || null });
@@ -1631,8 +1633,12 @@ export async function deskPass(env, now, mirror) {
       if (!open) { const bk = await mirror().catch(() => null); open = (bk && bk.state && bk.state.OPEN && bk.state.OPEN.byKey) || {}; }
       if (!open[entry.payload.orderKey]) continue;
     }
-    await queueSale(env, entry, false, mirror);
-    await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), p.id).run();
+    /* 18 Nov 2026 (Fable's review): one entry that cannot be queued (a refusal that persists) is said and left for the next pass, and the
+       rest of the pass goes on: the acks, the settle, and the drafter its caller runs */
+    try {
+      await queueSale(env, entry, false, mirror);
+      await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), p.id).run();
+    } catch (e) { console.log("desk pass: the entry of " + p.id + " could not be queued: " + String((e && e.message) || e)); continue; }
     p.entry_at = entry.at;   /* a row already drafted from it is tested below, in this pass */
     queued++;
   }
