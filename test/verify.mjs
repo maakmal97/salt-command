@@ -10008,7 +10008,7 @@ await (async () => {
     const tmp = join(REPO, "test", "tmp", "pricelist-" + Date.now());
     mkdirSync(join(tmp, "2026-09", "_kv"), { recursive: true });
     const users = JSON.parse(readFileSync(join(REPO, "statements", "_users.json"), "utf8"));
-    const code = Object.keys(users)[0], uu = users[code];
+    const code = Object.keys(users).find((c) => liveSnap.byProduct.salt.cards && liveSnap.byProduct.salt.cards[c]), uu = users[code];
     const ckR = await C.contentKey("test-secret", uu);
     writeFileSync(join(tmp, "_users.json"), JSON.stringify({ [code]: uu }));
     writeFileSync(join(tmp, "2026-09", "_kv", uu + ".json"), JSON.stringify({ u: uu, issued: "2026-09-01", issues: ["2026-09-01"],
@@ -25648,7 +25648,7 @@ await (async () => {
 
   /* ---- the seal: an associate's record carries it, nobody else's does ---- */
   const MS6 = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
-  ok(/if \(cards && cards\[code\]\) \{\n\s+rec\.card = Object\.assign\(\{ at: cards\[code\]\.at \}, await encryptWith\(ck, JSON\.stringify\(cards\[code\]\)\)\);/.test(MS6),
+  ok(/if \(cards && cards\[code\](?: && !isAdmin)?\) \{\n\s+rec\.card = Object\.assign\(\{ at: cards\[code\]\.at \}, await encryptWith\(ck, JSON\.stringify\(cards\[code\]\)\)\);/.test(MS6),
     "it is sealed under the same content key as the statement and the price list, and only where there is one");
   const PUB6 = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
   ok(/const c = associateCard\(rb\.w, row\.id\);/.test(PUB6) && /liveRecords\(root, key, now, pricing, \(opts && opts\.cards\) \|\| null[,)]/.test(PUB6),
@@ -53193,6 +53193,11 @@ await (async () => {
 section("14 Nov 2026: the move to Ambient, part 1: Ambient carried whole and checked against its lock, and the heat read off the supply step");
 await (async () => {
   await (await import("./ambient-carry.mjs")).run({ ok });
+})();
+
+section("17 Nov 2026: the way into Salt Admin is the Counter's own door: admin tiers, the key to /all, ADMIN_DOOR, and an admin account trades nothing");
+await (async () => {
+  await (await import("./admin-door.mjs")).run({ ok, pageWork });
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

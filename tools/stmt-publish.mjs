@@ -27,6 +27,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { liveRecords, siteBaseUrl, partyTotals, reviewFlag, klToday } from "./make_statements.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { isSpare, oneCodeEach } from "./stmt-pool.mjs";
+import { adminMap, ADMIN_CODE_RE } from "../stmt/admins.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
@@ -136,14 +137,30 @@ export async function stockWake(prev, now, env = process.env, post = globalThis.
   } catch (e) { console.log("::warning::a stock light turned and the wake did not go: " + String((e && e.message) || e)); return null; }
 }
 
+/* 17 Nov 2026 (stmt/admins.js, his word): WHO OPENS SALT ADMIN, statements/_admins.json, code to tier, checked; none filed is nobody */
+export function adminsOf(root) {
+  const file = join(root, "_admins.json");
+  return adminMap(existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {});
+}
+
 export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc, opts) {
   /* S14: ONE USERNAME, ONE CODE (tools/stmt-pool.mjs), refused before anything is sealed or put, or the
      account would carry whichever code sorts last and the other would drop off every list in silence */
   const usersFile = join(root, "_users.json");
-  oneCodeEach(existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {});
+  const users = oneCodeEach(existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {});
+  const admins = adminsOf(root);
+  for (const code of Object.keys(users)) {
+    if (ADMIN_CODE_RE.test(code) && !admins[code]) throw new Error("Admin code " + code + " has no tier in statements/_admins.json");
+  }
+  for (const code of Object.keys(admins)) {
+    if (!users[code]) throw new Error("Admin code " + code + " has no account in statements/_users.json");
+  }
   const buildId = key ? (opts && opts.buildId || readDeskBuildId()) : null;
   if (key && !BUILD_ID_RE.test(buildId)) throw new Error("the Desk build id is invalid; live statements were not sealed");
-  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null, buildId, (opts && opts.supply) || null);
+  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null, buildId, (opts && opts.supply) || null, admins);
+  for (const code of Object.keys(admins)) {
+    if (!r.records.some((rec) => rec.u === users[code])) throw new Error("Admin code " + code + " has no publishable account record");
+  }
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
      answers the door and there is no reason for it to be there at all. It travels in `sheet`,
@@ -166,10 +183,12 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      No code, so no row on his list, no line on the roster and nothing in any count. Once bound, the
      mark goes and it is an ordinary account: the live statement and the price list are sealed in above. */
   const spares = new Set(r.records.filter((rec) => isSpare(rec, byUser0)).map((rec) => rec.u));
+  /* 17 Nov 2026: AN ADMIN'S TIER, in the clear as assoc is, and what the Counter's door and /all read; codes only */
   const puts = r.records.map(rec => {
     const { pwMaster, spare, ...forCustomer } = rec;
     if (assocCodes.has(byUser0[rec.u])) forCustomer.assoc = true;
     if (spares.has(rec.u)) forCustomer.spare = true;
+    else if (admins[byUser0[rec.u]]) forCustomer.admin = admins[byUser0[rec.u]];
     return { key: "u:" + rec.u, value: JSON.stringify(forCustomer) };
   });
   const keep = new Set(r.records.map(rec => "u:" + rec.u));

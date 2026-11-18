@@ -98,5 +98,15 @@ export async function run({ ok }) {
     const kept = await s.env.STMT.get("calendar");
     ok(c11.ok && c11.test === true && c11.calendar.list.length === 1 && add11.ok && add11.calendar.list.length === 2 && bad11.status === 400 && kept === null,
       "The practice calendar answers an invented list, Add by the real rules, and writes nothing to his calendar: " + JSON.stringify([c11.calendar, add11.calendar && add11.calendar.list.length, bad11.status, kept]));
+
+    /* 12. A REAL ORDER'S ID IS NEVER AN EXAMPLE'S (18 Nov 2026): the mint draws again when its tail would begin "ex", the example shape Salt
+       Admin's roads send to the fixtures. The first draw here is the bytes that spell "exaaaa"; the second spells "aaaaaq" */
+    const { EXAMPLE_ID } = await import("../stmt/testfix.js");
+    const draws = [[123, 16, 0, 0], [0, 0, 0, 1]], rnd = crypto.getRandomValues;
+    let drawn = 0, minted = "";
+    crypto.getRandomValues = (a) => { a.set(draws[Math.min(drawn++, draws.length - 1)]); return a; };
+    try { minted = O.mintOrderId("2026-11-18T04:00:00.000Z"); } finally { crypto.getRandomValues = rnd; }
+    ok(minted === "20261118040000-aaaaaq" && drawn === 2 && !EXAMPLE_ID.test(minted) && EXAMPLE_ID.test("20261118040000-exaaaa"),
+      "a real order's id never takes an example's shape: a tail beginning ex is drawn again: " + JSON.stringify([minted, drawn]));
   } finally { s.close(); }
 }

@@ -45,6 +45,7 @@ import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
 import { ADMIN_SW_JS } from "./admin-sw.js";
 import { identity } from "./access.js";
+import { adminTier, doorOn, cookieOf, enterCookie, leaveCookie, ADMIN_COOKIE, ADMIN_TTL, ADMIN_KEY_RE } from "./admins.js";
 import { maintenance, exempt, MAINT_KEY, maintOf } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
@@ -232,10 +233,50 @@ async function markSeen(env, u, rec, how, request) {
    a pointer that cannot be written never fails an open, and the session lapses on its own in fifteen minutes. */
 /* S9 9.4: and the pointer names the device in the site's own words (deviceOf), for the account's phones and computers */
 async function openSession(env, u, how, request) {
-  const session = await mintSession(env, u);
+  const session = await mintSession(env, u, how);
   const now = new Date().toISOString(), d = deviceOf(request && request.headers.get("user-agent"));
   try { await pointAt(env, u, await sessKey(session), { how, at: now, last: now, label: d.label, kind: d.kind }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
   return session;
+}
+
+const adminFields = (rec) => adminTier(rec) ? { admin: adminTier(rec), adminLabel: "Salt Admin" } : { admin: 0 };
+
+/* 17 Nov 2026 (stmt/admins.js): THE KEY TO /all, minted on a tier 1 account's password session. The key is the cookie and is filed nowhere;
+   adm:<sha256 of it> names the account and HOLDS THE DOOR FOR TWELVE HOURS (ADMIN_TTL), whether or not the fifteen-minute password session
+   is still there. Its pointer under the account lets Counter Log out, Leave and Sign out everywhere end it at once (endAdminKeys). */
+const admKey = async (key) => "adm:" + (await idOf(key));
+async function adminDoor(request, env) {
+  const key = cookieOf(request, ADMIN_COOKIE);
+  if (!ADMIN_KEY_RE.test(key)) return null;
+  const rec = await env.STMT.get(await admKey(key), "json");
+  if (!rec || rec.tier !== 1 || typeof rec.u !== "string") return null;
+  /* the account must still be the owner's: a code taken off statements/_admins.json loses the door at the next publish */
+  return adminTier(await accountRecord(env, rec.u)) === 1 ? rec : null;
+}
+/* every admin key of an account ended, found through its pointers; the Counter's Log out calls it */
+async function endAdminKeys(env, u) {
+  let n = 0;
+  for (const p of await pointersOf(env, u)) if (/^adm:/.test(p.key)) { await env.STMT.delete(p.key); await env.STMT.delete(p.name); n++; }
+  return n;
+}
+async function handleAdminEnter(request, env) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!/^application\/json\b/i.test(String(request.headers.get("content-type") || ""))) return refused();
+  const u = await sessionUser(request, env);
+  if (!u) return json(Object.assign({ ok: false }, refusal("signinAdmin")), 401);
+  const session = await sessKey(request.headers.get("X-Stmt-Session"));
+  const sessionRecord = await env.STMT.get(session, "json");
+  if (!sessionRecord || sessionRecord.u !== u || sessionRecord.how !== "password")
+    return json(Object.assign({ ok: false }, refusal("signinAdmin")), 401);
+  const tier = adminTier(await accountRecord(env, u));
+  if (!tier) return json(Object.assign({ ok: false }, refusal("adminNot")), 403);
+  if (tier !== 1) return json(Object.assign({ ok: false }, refusal("adminStaff")), 403);
+  const key = b64u(crypto.getRandomValues(new Uint8Array(24))), k = await admKey(key), at = new Date().toISOString();
+  const d = deviceOf(request.headers.get("user-agent"));
+  await pointAt(env, u, k, { how: "admin", at, label: d.label, kind: d.kind }, ADMIN_TTL);
+  await env.STMT.put(k, JSON.stringify({ u, tier, at, session }), { expirationTtl: ADMIN_TTL });
+  return new Response(JSON.stringify({ ok: true, go: "/all" }), {
+    headers: Object.assign({ "content-type": "application/json; charset=utf-8", "set-cookie": enterCookie(key) }, HEADERS) });
 }
 
 async function handleOpen(request, env) {
@@ -356,6 +397,8 @@ async function handleOpen(request, env) {
     /* v702: whether this account may order on behalf of a friend. It decides one tick on the
        order form and nothing else; where a row books is the desk's decision, never this. */
     assoc: !!rec.assoc,
+    /* 17 Nov 2026 (stmt/admins.js): the tier of an admin account, 1 or 2, else 0; the page offers Salt Admin on it */
+    ...(byMaster ? { admin: 0 } : adminFields(rec)),
     /* v706: an associate's own report card, sealed under the same content key as the statement */
     card: rec.card || null,
     env: rec.env, ...live, prices: rec.prices || null, session
@@ -395,6 +438,9 @@ async function handleCustomer(request, env, p, m, ctx) {
      its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
   if (p === "/logout") return logOut(request, env, m, u);
   if (!u) return signinAgain("signinOrders");
+  /* 17 Nov 2026 (stmt/admins.js): AN ADMIN ACCOUNT IS NO PARTY OF THE BOOK, so it places, changes, claims, joins and quotes nothing */
+  if (m === "POST" && (p === "/orders" || p.startsWith("/orders/") || p === "/account/claim" || p === "/claims" || p.startsWith("/pools/") || p === "/quote")
+    && adminTier(await accountRecord(env, u))) return json(Object.assign({ ok: false }, refusal("adminTrade")), 403);
   /* S3 3.5: THE PAGE RE-READS ON EVERY RETURN, on its session: the sealed documents as an open hands them over,
      and never a wrap, because the page still holds the key it opened them with */
   if (p === "/account") {
@@ -402,7 +448,7 @@ async function handleCustomer(request, env, p, m, ctx) {
     const acct = await accountRecord(env, u);
     if (!acct) return signinAgain("signinOrders");
     const live = await customerLive(env, u, acct);
-    return json({ ok: true, u, issued: acct.issued || null, assoc: !!acct.assoc,
+    return json({ ok: true, u, issued: acct.issued || null, assoc: !!acct.assoc, ...adminFields(acct),
       card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null });
   }
   /* R1 (his plan of 19 Oct 2026, wave 1): WHAT TELLS THAT THE ACCOUNT MOVED, and nothing else. An open page reads this on its poll and
@@ -642,6 +688,8 @@ async function logOut(request, env, m, su) {
   const stok = String(request.headers.get("X-Stmt-Session") || "");
   if (su && stok) await unpoint(env, su, await sessKey(stok));
   const u = su || (rec && rec.u) || "";
+  /* 18 Nov 2026: Log out closes Salt Admin on every browser of the account at once (stmt/admins.js) */
+  if (u) await endAdminKeys(env, u);
   await liveDrop(env, u);   /* Speed Wave 2 L2: every socket of the account closes; a live device reconnects with the session it holds now */
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
@@ -800,7 +848,7 @@ async function handleRemember(request, env) {
   } catch (e) { /* the next open writes it */ }
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
-    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, ...adminFields(acct), card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -924,7 +972,7 @@ async function handlePasskeyOpen(request, env) {
   } catch (e) { /* the next open writes it */ }
   return json({
     ok: true, u, passkey: true, share: got.rec.share, wrap, prfWrap,
-    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, ...adminFields(acct), card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -957,7 +1005,7 @@ async function handleSignin(request, env) {
   const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
-    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, ...adminFields(acct), card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -1021,7 +1069,7 @@ async function handleHandover(request, env, p, m) {
   const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
-    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, ...adminFields(acct), card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -1877,6 +1925,10 @@ const worker = {
     if (p === "/all" || p.startsWith("/all/")) {
       if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
       const who = await identity(request, env);
+      /* 17 Nov 2026 (stmt/admins.js): with ADMIN_DOOR on, the owner's Counter account is the second key, on every road under /all:
+         its sign-in's key in this browser's cookie, filed as a hash and naming a tier 1 account. Access alone opens nothing. */
+      const door = doorOn(env) ? await adminDoor(request, env) : null;
+      const passed = isAdminIdentity(who) && (!doorOn(env) || !!door);
       if (p === "/all") {
         if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
         /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
@@ -1885,9 +1937,21 @@ const worker = {
         if (!isAdminIdentity(who)) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
           status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
         });
+        /* past Access with no Counter sign-in: to the Counter's door, which comes back here once he has signed in */
+        if (!passed) return new Response(null, { status: 302, headers: Object.assign({ location: url.searchParams.has("from") ? "/admin?retry=1" : "/admin" }, HEADERS) });
         return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
       }
-      if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
+      if (p === "/all/leave") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const key = cookieOf(request, ADMIN_COOKIE);
+        if (ADMIN_KEY_RE.test(key)) {
+          const k = await admKey(key), rec = await env.STMT.get(k, "json");
+          await env.STMT.delete(k);
+          if (rec && rec.u) await unpoint(env, rec.u, k);
+        }
+        return new Response(JSON.stringify({ ok: true }), { headers: Object.assign({ "content-type": "application/json; charset=utf-8", "set-cookie": leaveCookie() }, HEADERS) });
+      }
+      if (!passed) return json({ ok: false, error: "Access required" }, 401);
       if (p.startsWith("/all/maker/")) return handleMaker(request, env, p, who);
       if (p === "/all/live") return handleLiveOwner(request, env, url);
       /* THE TEST SURFACE (his answers of 18 Oct 2026): his alone, inside this gate, so both locks hold every road under it. Counter
@@ -2134,6 +2198,16 @@ const worker = {
     if (p === "/open") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleOpen(request, env);
+    }
+    /* 17 Nov 2026 (stmt/admins.js): THE WAY INTO SALT ADMIN IS THE COUNTER'S OWN DOOR. /admin is the Counter's page, which goes on to
+       /all by itself once an admin account is signed in; /admin/enter hands a tier 1 account's session the key for this browser */
+    if (p === "/admin") {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      return pageResponse("", null);
+    }
+    if (p === "/admin/enter") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      return handleAdminEnter(request, env);
     }
     /* THE SERVICE WORKER, served as text: the site has no assets. It caches nothing and reads
        nothing; see stmt/sw.js. worker-src 'self' in the page's CSP is what lets it register. */

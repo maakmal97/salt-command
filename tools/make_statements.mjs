@@ -1027,7 +1027,7 @@ export function liveFor(invented, party, now, user) {
    the records go up as issued and no live document is written, and the caller says so.
    `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
    customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
-export async function liveRecords(root, key, now, pricing, cards, buildId, supply) {
+export async function liveRecords(root, key, now, pricing, cards, buildId, supply, admins) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -1071,14 +1071,16 @@ export async function liveRecords(root, key, now, pricing, cards, buildId, suppl
          touched, only what is published. The key was just proved on the old bundle, so this is the same account's key. */
       rec.env = await encryptWith(ck, JSON.stringify({ v: 1, issued: rec.issued, statements: [] }));
       delete rec.issues;
-      const doc = liveStatement(code, now, rec.u);
+      /* 18 Nov 2026: AN ADMIN CODE IS NOT A PARTY OF THE BOOK (stmt/admins.js): its record keeps the account bundle and nothing else is sealed, no live statement, price list, credit or card */
+      const isAdmin = !!(admins && admins[code]);
+      const doc = isAdmin ? null : liveStatement(code, now, rec.u);
       if (doc) {
         const liveDoc = buildId ? Object.assign({}, doc, { buildId }) : doc;
         rec.live = Object.assign(buildId ? { at: doc.at, buildId } : { at: doc.at },
           await encryptWith(ck, JSON.stringify(liveDoc)));
         live++;
       }
-      if (pricing) {
+      if (pricing && !isAdmin) {
         const list = priceList(code, book, pricing, now, supply);
         /* S4 4.1: its stamp, a digest of its figures, sealed inside and in the clear beside it for Place to be checked against */
         list.digest = priceDigest(list, key, rec.u);
@@ -1103,7 +1105,7 @@ export async function liveRecords(root, key, now, pricing, cards, buildId, suppl
          from the start. A fourth sealed document beside the statement and the price list, under the
          same content key, and only for an account that has one. It carries no share, no stars, no
          rank and no margin: tools/book.mjs states why each is left off. */
-      if (cards && cards[code]) {
+      if (cards && cards[code] && !isAdmin) {
         rec.card = Object.assign({ at: cards[code].at }, await encryptWith(ck, JSON.stringify(cards[code])));
         carded++;
       }

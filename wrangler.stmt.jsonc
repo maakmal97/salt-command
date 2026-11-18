@@ -94,6 +94,9 @@
 		// value present and the application gone, no token verifies and the route is 401.
 		"ACCESS_TEAM": "maakmal",
 		"ACCESS_AUD": "14a921e2b5c1ba14ca75026b930208093644ef349993a4fc66015f689060fecf",
+		// 17 Nov 2026 (stmt/admins.js, his word): "1" makes /all ask for his Counter account's sign-in (the key /admin/enter sets) as
+		// well as Access; empty is Access alone. Shipped empty; turned on once he has opened Salt Admin from the Counter once.
+		"ADMIN_DOOR": "",
 		"STMT_VAPID_PUBLIC_KEY": "BDIvD4Y6s-Ucr6twgOkmcYPZiUhGLaXMNzAqFrBKhdNCNy-Iyr9xYl7iWLTEAfL1rtQOJJg7g-m8ZeokZqM493c",
 		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com",
 		// S10 (D10): THE SWITCH for the site's orders (stmt/orders.js, onBook). "object" (10.5, set 04 Oct

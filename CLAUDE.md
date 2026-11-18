@@ -452,8 +452,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 
 - **A change to the statements Worker covers Salt Counter and Salt Admin together** (his word of 20 Oct 2026): every
   batch maps each item onto `stmt/owner.js` too, its look and his side of the feature, or says why it has none.
-- **From 1080px an open order on Salt Admin fills the page** (his answer of 20 Oct 2026, canvas V39), reversing his split of 11 Oct 2026 at that
-  width: it takes the list's place and the rail's Orders closes it; two columns at 1180, three at 1440. From 860 to 1080px the list stands beside it.
+- **On Salt Admin an open order, card or account stands beside its list** (his word of 18 Nov 2026, "Keep the panes", retiring his answer of
+  20 Oct 2026 that an open order fill the page from 1080px): Ambient's panes since v1528, the list beside what is open from 960px of the
+  container's width; narrower, what is open takes the page.
 - **Live sockets are a hint, never the record** (Speed Wave 2 L2, 21 Oct 2026): `/live` and `/all/live` upgrade to the order book's WebSocket, proof at the handshake (the subprotocol carries the session; the book is given the username and reads no KV), kinds and ids only (no figure, name or word), a socket message never moves the book, and the polls stay as the net at a minute. Log out, device sign out and Sign out everywhere close the account's sockets (`unlive`). Mechanism: `docs/STATEMENTS.md`.
 - **On Salt Admin a book is its typed Product tag**, its name in its hue (his answer of 22 Oct 2026, reversing his word of 12 Oct for Salt Admin alone);
   the Counter keeps its marks and no product word. Needs you groups are **To do, Pending and FYI**, money first; a card is one shape with one pill, its

@@ -1,9 +1,15 @@
 [
   {
+    "name": "a real order's id may take an example's shape",
+    "file": "stmt/orders.js",
+    "find": "while (tail.startsWith(\"ex\"));",
+    "replace": "while (false);"
+  },
+  {
     "name": "the test roads pass without his identity",
     "file": "stmt/worker.js",
-    "find": "      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);",
-    "replace": "      if (!isAdminIdentity(who) && !p.startsWith(\"/all/test/\")) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"
+    "find": "      if (!passed) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);",
+    "replace": "      if (!passed && !p.startsWith(\"/all/test/\")) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"
   },
   {
     "name": "/test sends elsewhere",
