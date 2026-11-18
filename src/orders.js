@@ -2707,6 +2707,12 @@ export async function wakeAdmin(env, news) {
   } catch { /* the flag is a convenience; the next wake sets it again */ }
   return out;
 }
+/* 19 Nov 2026 (docs/plan-instant.html): and tells an open Salt Admin that a row was drafted, the kind alone (stmt/orders.js ownerTell), so its
+   To approve is read at once and not at its poll. Best effort: the poll stands. */
+export async function tellAdmin(env) {
+  try { const r = await site(env, "/desk/owner-tell", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ k: "approve" }) }); return !!(r && r.ok); }
+  catch (e) { return false; }
+}
 export async function tellWaiting(env, n, age) {
   if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };
   const a = Number.isInteger(age) && age >= 0 && age <= 30 * 86400 ? age : 0;

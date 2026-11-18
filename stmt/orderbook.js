@@ -74,7 +74,7 @@
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
-  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver, SESSION_TTL } from "./orders.js";
+  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver, SESSION_TTL, OWNER_TELL_KINDS } from "./orders.js";
 import { TEST_USERS, TEST_FRESH } from "./testusers.js";
 import { wakeOwner } from "./push.js";
 
@@ -252,6 +252,8 @@ export class OrderBook {
       else if (op === "pjoin") { k = "order"; id = idOf(out.order); u = accountOf(out.order); pool = idOf(out.pool); }
       else if (op === "aclaim" || op === "adesk") { if (!out.order) return; k = "claim"; id = idOf(out.order); u = accountOf(out.order); }
       else if (op === "tsay" || op === "tdesk") { k = "thread"; u = String(a.u || ""); }
+      /* 19 Nov 2026 (docs/plan-instant.html): the Desk's word that a row was drafted, to the owner's sockets alone (u empty, so no customer's matches) */
+      else if (op === "otell") { if (!out.otell) return; k = out.otell; }
       else if (op === "popen" || op === "pclose") { if (!out.order) return; k = "pool"; id = idOf(out.order); all = true; }
       else if (op === "fixture-account") {
         if (!["customer", "desk", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor)) return;
@@ -811,6 +813,7 @@ export class OrderBook {
       out.joined = pool.joins.map((j) => ({ j, o: this.order(j.u, j.oid) })).filter((x) => joinLive(x.o)).map((x) => ({ u: x.j.u, id: x.j.oid, status: x.o.status }));
       return out;
     }
+    if (op === "otell") return { ok: true, otell: OWNER_TELL_KINDS.includes(a.k) ? a.k : null };
     if (op === "last") {
       const out = { ok: true };
       for (const [k, key] of Object.entries(MARKS)) out[k] = this.meta(key);

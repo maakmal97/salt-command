@@ -72,7 +72,7 @@ export { OrderBook } from "./orderbook.js";
 import { readPoints, resolvePoint } from "./points.js";
 import { sendReminders } from "./remind.js";
 import { mintSession, dropSession, sessionUser, sessionOfToken, onBook, liveConnect, liveDrop, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
-  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, expectedLive, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
+  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, expectedLive, poolsOf, poolJoin, poolView, accountBook, ownerTell } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -1203,6 +1203,13 @@ async function handleDesk(request, env, p, m) {
       return json({ ok: false, error: "send a kind and, if known, an order id" }, 400);
     const r = await wakeOwner(env, { k: b.k, o: b.o });
     return json(r, r.ok ? 200 : 502);
+  }
+  /* 19 Nov 2026 (docs/plan-instant.html): and tells an open Salt Admin that a row was drafted, a kind to the owner's sockets alone (ownerTell) */
+  if (p === "/desk/owner-tell") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const r = await ownerTell(env, b && typeof b === "object" ? b.k : null);
+    return json(r, r.ok ? 200 : (r.status || 400));
   }
   if (p === "/desk/orders/store-check") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -2336,7 +2343,7 @@ const worker = {
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/my/joins") return handleMyJoins(request, env, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/calendar" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/owner-tell" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/calendar" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
