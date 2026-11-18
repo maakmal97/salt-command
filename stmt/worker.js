@@ -46,7 +46,7 @@ import { SW_JS } from "./sw.js";
 import { ADMIN_SW_JS } from "./admin-sw.js";
 import { identity } from "./access.js";
 import { adminTier, doorOn, cookieOf, enterCookie, leaveCookie, ADMIN_COOKIE, ADMIN_TTL, ADMIN_KEY_RE } from "./admins.js";
-import { maintenance, exempt, MAINT_KEY, maintOf } from "./maintenance.js";
+import { maintenance, exempt, MAINT_KEY, maintOf, switchOf, backWords } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
@@ -103,6 +103,14 @@ const PLAIN404 = new WeakSet();
 /* THE TEST SURFACE (his answers of 18 Oct 2026): a customer request made under /all/test/c, both locks passed and its session a test
    account's. Marked here, never by a header a client could send, so the customer's road reads that account's fixture alone. */
 const TEST_REQ = new WeakSet();
+/* 18 Nov 2026, his word ("they cannot sign in and notice is put outside, rather than complete block of the worker"): HIS MAINTENANCE SWITCH IS
+   A NOTICE AND A SIGN-IN STOP, NOT A BLOCK (stmt/maintenance.js). fetch reads the switch once for a request the machine routes do not carry and
+   marks the request here with the moment it lifts (ms); a request not marked is not under it, the test surface's included. Every road that opens
+   an account or writes for a customer reads this mark and refuses with `maint`, unless the account is an admin account (adminTier). */
+const MAINT_SW = new WeakMap();
+const maintNo = (until) => json(Object.assign({ ok: false }, refusal("maint", { back: backWords(until, Date.now()) })), 503);
+/* the moment the switch lifts if this request is held for this account, else 0 (an admin account is never held; an unknown account is) */
+const maintHeld = (request, acct) => (MAINT_SW.get(request) && !adminTier(acct) ? MAINT_SW.get(request) : 0);
 const notFound = () => {
   const r = new Response("Not found", { status: 404, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS) });
   PLAIN404.add(r);
@@ -367,6 +375,11 @@ async function handleOpen(request, env) {
     return refused();
   }
 
+  /* 18 Nov 2026: UNDER HIS SWITCH NO CUSTOMER SIGNS IN. Said only to a right password (a wrong one is the door's one refusal, so the answer never
+     tells an admin account from any other); his own override opens no session and stays; an admin account signs in as normal. */
+  const heldAt = byMaster ? 0 : maintHeld(request, rec);
+  if (heldAt) return maintNo(heldAt);
+
   if (uFails) await env.STMT.delete(uKey);
   if (mFails && byMaster) await env.STMT.delete(mKey);
 
@@ -438,6 +451,11 @@ async function handleCustomer(request, env, p, m, ctx) {
      its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
   if (p === "/logout") return logOut(request, env, m, u);
   if (!u) return signinAgain("signinOrders");
+  /* 18 Nov 2026: UNDER HIS SWITCH A CUSTOMER SIGNED IN IS LEFT IN, to read and change nothing: every write on a session road is refused (Log out,
+     above, is the one exception), the account read and its poll carry `maint: true` for the page, and an admin account is held by none of it */
+  const onSwitch = !!MAINT_SW.get(request), gate = onSwitch ? await accountRecord(env, u) : null;
+  if (onSwitch && m !== "GET" && m !== "HEAD" && maintHeld(request, gate)) return maintNo(MAINT_SW.get(request));
+  const maintField = onSwitch && maintHeld(request, gate) ? { maint: true } : {};
   /* 17 Nov 2026 (stmt/admins.js): AN ADMIN ACCOUNT IS NO PARTY OF THE BOOK, so it places, changes, claims, joins and quotes nothing */
   if (m === "POST" && (p === "/orders" || p.startsWith("/orders/") || p === "/account/claim" || p === "/claims" || p.startsWith("/pools/") || p === "/quote")
     && adminTier(await accountRecord(env, u))) return json(Object.assign({ ok: false }, refusal("adminTrade")), 403);
@@ -449,7 +467,7 @@ async function handleCustomer(request, env, p, m, ctx) {
     if (!acct) return signinAgain("signinOrders");
     const live = await customerLive(env, u, acct);
     return json({ ok: true, u, issued: acct.issued || null, assoc: !!acct.assoc, ...adminFields(acct),
-      card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null });
+      card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null, ...maintField });
   }
   /* R1 (his plan of 19 Oct 2026, wave 1): WHAT TELLS THAT THE ACCOUNT MOVED, and nothing else. An open page reads this on its poll and
      re-reads /account only when it differs from the stamp it opened with, so a republished statement or price list reaches a page that
@@ -463,7 +481,7 @@ async function handleCustomer(request, env, p, m, ctx) {
     return json({ ok: true, issued: acct.issued || null, liveStatus: live.liveStatus,
       live: live.live ? { at: live.live.at || null, buildId: live.live.buildId || null } : null,
       prices: acct.prices ? { at: acct.prices.at || null, digest: acct.prices.digest || null } : null,
-      card: acct.card ? { at: acct.card.at || null } : null });
+      card: acct.card ? { at: acct.card.at || null } : null, ...maintField });
   }
   /* S6 6.6: their word that they sent a figure against the account, for money owed on rows he entered on the desk.
      /claims is the same road under the name the page first asked for. */
@@ -753,6 +771,7 @@ async function handleMyJoins(request, env, m, origin) {
   let acct = null;
   try { acct = await accountRecord(env, u); } catch (e) { acct = null; }
   if (!acct || acct.assoc !== true) return notFound();
+  if (m !== "GET" && m !== "HEAD" && maintHeld(request, acct)) return maintNo(MAINT_SW.get(request));   /* 18 Nov 2026: nothing is minted under his switch */
   if (m === "GET") return json({ ok: true, joins: isTest(u) ? [] : (await joinsBy(env, u)).map((r) => joinMine(origin, r)), max: JOIN_OPEN_MAX });
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   if (isTest(u)) return json({ ok: false, error: "A practice account asks for no join link." }, 409);
@@ -769,6 +788,7 @@ async function handleMyRefs(request, env, p, m, origin) {
   let acct = null;
   try { acct = await accountRecord(env, u); } catch (e) { acct = null; }
   if (!acct || acct.assoc !== true) return notFound();
+  if (m !== "GET" && m !== "HEAD" && maintHeld(request, acct)) return maintNo(MAINT_SW.get(request));   /* 18 Nov 2026: nothing is minted or withdrawn under his switch */
 
   if (p === "/my/refs") {
     if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).concat(await examplesRefs(env, u)).map((r) => mineOut(origin, r)), max: MAX_PER_ASSOC });
@@ -815,6 +835,9 @@ async function handleRemember(request, env) {
   if (!rec || !rec.u) return refused();
   const acct = await accountRecord(env, rec.u);
   if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return refused(); }
+  /* 18 Nov 2026: a remembered phone is not opened under his switch (its record is kept, so it opens again once the switch lifts); an admin account is */
+  const heldAt = maintHeld(request, acct);
+  if (heldAt) return maintNo(heldAt);
   await markSeen(env, rec.u, acct, "remembered", request);
   /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
      so a customer who uses the page is never signed out by a calendar. Every open files the record again for thirty
@@ -947,6 +970,9 @@ async function handlePasskeyOpen(request, env) {
   if (!got) return refused();
   const u = got.rec.u, acct = await accountRecord(env, u);
   if (!acct) return refused();
+  /* 18 Nov 2026: a passkey opens nothing under his switch, an admin account's excepted */
+  const heldAt = maintHeld(request, acct);
+  if (heldAt) return maintNo(heldAt);
   let wrap = null, dkey = null;
   if (typeof b.t === "string" && PKT_RE.test(b.t)) {
     dkey = await pkdKey(got.key, b.t);
@@ -996,6 +1022,13 @@ async function handleSignin(request, env) {
     if (!live || !(await env.STMT.get("u:" + live.u))) return refused();
     return json({ ok: true, u: live.u });
   }
+  /* 18 Nov 2026: under his switch a customer's link is not spent: the account is read from the unspent record (peek) and the link stays good
+     for when the switch lifts; an admin account's link is spent as ever. A link that names no account falls through to the one refusal. */
+  if (MAINT_SW.get(request) && tok) {
+    const pk = await peekSignin(env, tok, b && b.nonce);
+    const heldAt = pk ? maintHeld(request, await accountRecord(env, pk.u)) : 0;
+    if (heldAt) return maintNo(heldAt);
+  }
   const rec = tok ? await burnSignin(env, tok, b && b.nonce) : null;
   if (!rec) return refused();
   const acct = await accountRecord(env, rec.u);
@@ -1042,6 +1075,9 @@ async function handleHandover(request, env, p, m) {
   if (p === "/handover") {
     const u = await sessionUser(request, env);
     if (!u) return signinAgain("signinCode");
+    /* 18 Nov 2026: no hand-over is minted under his switch (it opens an account elsewhere); an admin account's is */
+    const heldAt = MAINT_SW.get(request) ? maintHeld(request, await accountRecord(env, u)) : 0;
+    if (heldAt) return maintNo(heldAt);
     const b = await readJson(request);
     const made = await mintHandover(env, u, b && b.token, b && b.wrap);
     /* S9 9.9: with a QR of the site's own /app for the other device's camera, the address alone and never the key */
@@ -1054,8 +1090,15 @@ async function handleHandover(request, env, p, m) {
   const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
   const ipN = byKey ? 0 : await readN(HO_FAIL(who)), siteN = byKey ? 0 : await readN(HO_SITE);
   if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return tooManyNow();
-  const rec = await burnHandover(env, b);
+  /* 18 Nov 2026: under his switch a customer's code or key is read and NOT spent, then refused; an admin account's is spent as ever */
+  const onSwitch = !!MAINT_SW.get(request);
+  let rec = await burnHandover(env, b, onSwitch);
   const acct = rec ? await accountRecord(env, rec.u) : null;
+  if (acct && onSwitch) {
+    const heldAt = maintHeld(request, acct);
+    if (heldAt) return maintNo(heldAt);
+    rec = await burnHandover(env, b);
+  }
   if (!acct && byKey) return refused();
   if (!acct) {
     /* KV takes one write to a key a second, and the site-wide count is one key: a put it refuses is a brake that
@@ -1826,6 +1869,7 @@ async function handleJoinPage(request, env, p, m) {
     return w ? json(Object.assign({ ok: true }, w)) : no();
   }
   if (!rec) return no();
+  if (MAINT_SW.get(request)) return maintNo(MAINT_SW.get(request));   /* 18 Nov 2026: a join request is a change, held under his switch; the page and its poll are not */
   const r = await sendJoin(env, rec.id, b);
   if (r.error === "shut") return no();
   if (r.error) return json({ ok: false }, 400);
@@ -1870,18 +1914,13 @@ async function testCustomer(request, env, ctx, url, q, m) {
 
 const worker = {
   async fetch(request, env, ctx) {
-    /* 17 Nov 2026: his switch (stmt/maintenance.js) is read only for a request the guard would hold, and never for the test surface's own roads,
-       which his page drives while customers are held */
-    let switched = "";
-    if (env && env.STMT && !TEST_REQ.has(request) && !exempt(request)) {
-      /* 18 Nov 2026: a switch that cannot be read holds this request for a minute on the maintenance page, never a raw error and never open */
-      try {
-        const v = await env.STMT.get(MAINT_KEY, "json");
-        switched = (v && v.until) || "";
-      } catch (e) { switched = new Date(Date.now() + 60000).toISOString(); }
-    }
-    const held = TEST_REQ.has(request) ? null : maintenance(request, env, undefined, Date.now(), switched);
+    /* 18 Nov 2026: MAINTENANCE_UNTIL is the complete block; HIS SWITCH is not (stmt/maintenance.js): it is read for every request the machine
+       routes do not carry, never for the test surface's own roads, and marks the request (MAINT_SW) for the roads that open an account or write
+       for a customer, and for the door's notice. A switch that cannot be read is read as on for a minute (switchOf). */
+    const held = TEST_REQ.has(request) ? null : maintenance(request, env);
     if (held) return held;
+    const swUntil = !TEST_REQ.has(request) && !exempt(request) ? await switchOf(env) : 0;
+    if (swUntil) MAINT_SW.set(request, swUntil);
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
@@ -1899,7 +1938,9 @@ const worker = {
     /* `test` (the test surface): the page under /all/test, framed by its own shell on this origin alone, so frame-ancestors is 'self' */
     const pageResponse = async (user, owner, test) => {
       const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-      return new Response(landingPage(user, nonce, owner, await readBulletin(env), test), {
+      /* 18 Nov 2026: under his switch the door carries the notice, with when it is back (the maintenance page's own words) */
+      const mu = MAINT_SW.get(request);
+      return new Response(landingPage(user, nonce, owner, await readBulletin(env), test, mu && !owner ? backWords(mu, Date.now()) : ""), {
         headers: Object.assign({
           "content-type": "text/html; charset=utf-8",
           "content-security-policy":

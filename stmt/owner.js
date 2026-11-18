@@ -7036,7 +7036,8 @@ export const OWNER_JS = `
     drawMaint(box);
   }
   /* 17 Nov 2026, his word: MAINTENANCE, one Switch under Now. On, it asks when the Counter is back (Kuala Lumpur, a day and a time) and Put it on
-     holds every customer page at once on the maintenance page, which says when; it lifts by itself at that time, or at once when he turns the
+     stops every customer signing in, puts the notice at the door, which says when, and leaves anyone already in unable to change anything (18 Nov
+     2026: a notice and a sign-in stop, not a block); it lifts by itself at that time, or at once when he turns the
      Switch off. Salt Admin is never held. Body {until} or {off: true} to /all/maker/maintenance; the hours read carries it back as maint. */
   var mtOpen=false;
   function maintUntil(){ var m=makerHours&&makerHours.maint, t=m&&Date.parse(m.until); return t>Date.now()?m.until:null; }
@@ -7059,8 +7060,8 @@ export const OWNER_JS = `
       until.type='datetime-local'; until.min=klInputValue(new Date(Math.ceil(Date.now()/60000)*60000).toISOString()); until.value=klInputValue(filed||new Date(Date.now()+3600000).toISOString());
       ur.appendChild(el('span','amb-setting__name','Back at')); ur.appendChild(until); list.appendChild(sLi(ur));
     }
-    g.appendChild(sFoot(filed?'Customers see Under maintenance, back '+w+'. It lifts by itself then; Salt Admin stays open.'
-      :on?'Kuala Lumpur time. Customers are held within a minute; Salt Admin stays open.':'Customers can use the Counter.'));
+    g.appendChild(sFoot(filed?'Customers cannot sign in and see Under maintenance at the door, back '+w+'. Anyone already in can change nothing. It lifts by itself then; Salt Admin stays open.'
+      :on?'Kuala Lumpur time. Within a minute customers cannot sign in and anyone already in can change nothing; Salt Admin stays open.':'Customers can use the Counter.'));
     box.appendChild(g);
     if(on){
       var go=el('div','anow-set'); go.setAttribute('data-amb','');
@@ -7976,7 +7977,7 @@ export const OWNER_JS = `
   function maintNeed(until){
     var said='Under maintenance until '+barWhen(until);
     return item('watch','watch','Maintenance','w:maint', '', {who:'Shop', title:said, what:said, age:'today',
-      why:'Customers see the maintenance page; Salt Admin stays open.', open:goPlace('shop','hours')}, function(c){ mainButton(c,'Change','need.maint','w:maint', goPlace('shop','hours')); });
+      why:'Customers cannot sign in and see the notice at the door; Salt Admin stays open.', open:goPlace('shop','hours')}, function(c){ mainButton(c,'Change','need.maint','w:maint', goPlace('shop','hours')); });
   }
   function noticeNeed(lines){
     return item('watch','watch','Notice','w:notice', '', {who:'Shop', title:cut(lines.join(' · ')), what:cut(lines.join(' · ')), why:'This line is at the top of every customer account.', open:goPlace('shop','notice')},

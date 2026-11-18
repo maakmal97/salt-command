@@ -287,7 +287,8 @@ async function makerPoints(request, env, method) {
 
 /* 17 Nov 2026, his word: HIS MAINTENANCE SWITCH, under Shop hours. POST {until} puts the Counter under maintenance at once until that time
    (stmt/maintenance.js maintSet: any time later than now), POST {off: true} lifts it at once; GET reads it. Written here directly, as the
-   hours are; the key lapses a day after its time, and the guard ignores it once that time has passed. Salt Admin (/all) is never held. */
+   hours are; the key lapses a day after its time, and the guard ignores it once that time has passed. Salt Admin (/all) is never held. Under it customers
+   cannot sign in and see the notice at the door; anyone already in can change nothing (18 Nov 2026, stmt/maintenance.js). */
 async function makerMaint(request, env, method) {
   if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
   if (method === "GET") return json({ ok: true, maint: await readMaint(env) });

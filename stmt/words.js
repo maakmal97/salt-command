@@ -41,6 +41,8 @@ export const EN = {
   "e.adminStaff": "Staff access is not set up yet.",
   "e.adminNot": "This account cannot open that page.",
   "e.signinAdmin": "Sign in with your password to open that page.",
+  /* 18 Nov 2026: under his maintenance switch no account opens and nothing is changed; {back} is the maintenance page's own "Back at 14:30" */
+  "e.maint": "Under maintenance. {back}",
   "admin.go": "Admin",
   "admin.open": "Open",
   "admin.going": "Opening",

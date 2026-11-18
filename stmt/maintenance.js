@@ -1,6 +1,13 @@
-/* Self-lifting maintenance guard. While env.MAINTENANCE_UNTIL parses as an ISO time still ahead,
- * every request answers 503 except the machine routes in MACHINE (their real check is downstream).
- * Absent, empty or unparseable does nothing. env.MAINTENANCE_TEXT, when set, replaces the sentence, escaped.
+/* TWO GUARDS, ONE PAGE OF WORDS.
+ * 1. env.MAINTENANCE_UNTIL, a COMPLETE BLOCK set by a deploy (the guard below): while it parses as an ISO time still ahead, every request
+ *    answers 503 except the machine routes in MACHINE (their real check is downstream). Absent, empty or unparseable does nothing.
+ *    env.MAINTENANCE_TEXT, when set, replaces the sentence, escaped.
+ * 2. HIS SWITCH on Salt Admin (KV MAINT_KEY, below), NOT a block (his word of 18 Nov 2026: "they cannot sign in and notice is put outside,
+ *    rather than complete block of the worker"): the Worker answers as usual, and under the switch (stmt/worker.js) the door pages carry the
+ *    notice, no customer account opens (every road that opens one answers the refusal `maint`, an admin account excepted), a customer
+ *    already signed in is left in, reads as usual, and can change nothing (the Worker refuses each customer write, and the page, told by
+ *    `maint: true` on its account read, makes every control inert and says nothing). Guest links, the service worker, the manifest and the
+ *    icons are untouched. A switch that cannot be read holds for a minute: read as on. The MAINTENANCE_UNTIL block ignores the switch.
  * One copy in src/ (the desk's, its own words) and one in stmt/, which imports stmt/words.js and the generated Ambient strings
  * (stmt/statement-css.js) and nothing else.
  * 12 Oct 2026 (Phase 7d part 4, his yes of 11 Oct): one heading and one sentence, its words from the table and its time read from
@@ -40,8 +47,8 @@ export function backWords(until, now) {
 }
 
 /* 17 Nov 2026, his word: HIS SWITCH ON SALT ADMIN (Shop, Hours). Counter KV `maint` holds {until}, an ISO UTC time with no milliseconds, written
-   and cleared by /all/maker/maintenance (stmt/maker.js) and read by the Worker for any request the guard would hold, so it stands at once with no
-   deploy and lifts by itself at that time, as MAINTENANCE_UNTIL does. Where both are set, the later holds. */
+   and cleared by /all/maker/maintenance (stmt/maker.js) and read by the Worker on every request but the machine routes (switchOf), so it stands
+   at once with no deploy and lifts by itself at that time, as MAINTENANCE_UNTIL does. From 18 Nov 2026 it is a notice and a sign-in stop, not a block. */
 export const MAINT_KEY = "maint";
 const isoMin = (t) => new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z");
 /* what he sends: {until} later than now; the answer is the record to file, or {error} */
@@ -64,9 +71,19 @@ export function exempt(request, machine = MACHINE) {
   return machine.paths.includes(p) || machine.prefixes.some((x) => p.startsWith(x)) || machine.headers.some((h) => request.headers.get(h));
 }
 
-export function maintenance(request, env, machine = MACHINE, now = Date.now(), switched = "") {
-  const at = (x) => { const t = Date.parse(String(x || "").trim()); return Number.isFinite(t) ? t : -Infinity; };
-  const until = Math.max(at(env && env.MAINTENANCE_UNTIL), at(switched));
+/* his switch as it stands: the moment it lifts in ms, or 0 for off. A switch that cannot be read is read as ON for a minute, never open
+   and never a raw error (18 Nov 2026) */
+export async function switchOf(env, now = Date.now()) {
+  if (!(env && env.STMT)) return 0;
+  try {
+    const t = Date.parse(String(((await env.STMT.get(MAINT_KEY, "json")) || {}).until || "").trim());
+    return Number.isFinite(t) && t > now ? t : 0;
+  } catch (e) { return now + 60000; }
+}
+
+/* the complete block, MAINTENANCE_UNTIL alone; his switch is never read here */
+export function maintenance(request, env, machine = MACHINE, now = Date.now()) {
+  const until = Date.parse(String((env && env.MAINTENANCE_UNTIL) || "").trim());
   if (!(until > now)) return null;
   if (exempt(request, machine)) return null;
   const head = { "retry-after": String(Math.max(1, Math.ceil((until - now) / 1000))), "cache-control": "no-store" };

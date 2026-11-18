@@ -419,14 +419,19 @@ function codeScreen() {
 
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
    and what is inside, and an app's own browser is sent to Safari or Chrome first. */
-function linkScreen() {
+/* 18 Nov 2026 (his word: "notice is put outside"): THE NOTICE AT THE DOOR, Ambient's warning Notice with the maintenance page's own heading and its
+   "Back at 14:30" under it. Drawn on the door and on the link page, shown from the first byte when the Worker hands the page the sentence (his
+   switch is on), and shown by the page when a sign-in is refused for it (maintNote in the script). Empty and hidden otherwise. */
+const maintNotice = (id, back) => '<div id="' + id + '" class="amb-notice amb-notice--warn mnote" role="status"' + (back ? "" : " hidden") + ">" + AMB.glyph("info")
+  + "<span>" + wt("span", 'class="amb-notice__title"', "maint.h") + '<span class="mnT">' + esc(back || "") + "</span></span></div>";
+function linkScreen(maint) {
   /* 16 Nov 2026, the move to Ambient (place E): the link page is one shell, its hero the app's name over the line that says which {dev} it opens, then
      what is inside as the system's settings rows, an app's own browser told where to go in a notice, one quiet Copy and one solid Continue */
   const row = (g, k) => '<li><div class="amb-setting"><span class="amb-setting__name">' + AMB.glyph(g) + wt("span", "", k) + "</span></div></li>";
   return '<div id="link" class="amb-shell" data-mood="lagoon" hidden><main class="amb-screen">'
     + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title"', "link.h")
     + wt("p", 'class="amb-hero__sub" id="linkLead"', "link.lead") + "</header>"
-    + '<div class="amb-stack gcol">'
+    + '<div class="amb-stack gcol">' + maintNotice("linkMaint", maint)
     + '<div class="amb-settings">' + wt("h2", 'class="amb-settings__head"', "link.inside") + '<ul class="amb-settings__list">'
     + row("home", "link.r1") + row("tag", "link.r2") + row("doc", "link.r3") + "</ul></div>"
     /* an app's own browser keeps nothing once it closes: the phone's own menu mark, and where to go */
@@ -700,7 +705,7 @@ function placesDock() {
    it is {base, u}: the page's every request goes under the base, its storage under salt-test:, and it registers no service worker, manifest,
    push or passkey (TEST_SHIM, spliced into the script's own scope, so every fetch, localStorage, sessionStorage and navigator in it is the
    shim's). The customer view signs in on its own as `u` with the published test password. */
-export function landingPage(user, nonce, owner, bulletin, test) {
+export function landingPage(user, nonce, owner, bulletin, test, maint) {
   const u = esc(user || "");
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -910,7 +915,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + wt("h1", 'class="amb-hero__title"', "door.h") + wt("p", 'class="amb-hero__sub"', "door.lead") + "</header>"
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
        fill the door; the six boxes of 16 Sep could not be filled by anything but fingers */
-    + '<div id="doorBox" class="amb-stack"><form id="f" class="amb-form" novalidate>'
+    + '<div id="doorBox" class="amb-stack">' + maintNotice("doorMaint", owner ? "" : maint) + '<form id="f" class="amb-form" novalidate>'
     + '<label class="amb-field" for="un">' + wt("span", 'class="amb-field__label"', "door.un")
     + '<input class="amb-input" id="un" name="username" type="text" value="' + u + '" '
     + 'autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="unHint">'
@@ -935,7 +940,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + (owner ? "" : wt("button", 'class="amb-pill amb-pill--quiet amb-pill--block" id="pkGo" type="button" hidden', "door.pk"))
     + "</form>" + wt("p", 'class="amb-field__hint"', "door.help")
     + "</div></main></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
+    + (owner ? "" : linkScreen(maint) + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
     /* plan version 7 (Fable's review): Full statement on his View as them and Order as them too, the owner page being theirs read in his hands */
     + fullSheet()
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, Home first. 15 Nov 2026, THE MOVE TO AMBIENT: one Ambient shell, always Lagoon for now (the
@@ -1607,6 +1612,7 @@ const CLIENT_JS = `
       body=await r.json();
     }catch(e){ if(!stale()) say(tw('x.notSent'),'bad'); pkPrime(); return; }
     if(stale()) return;
+    if(maintBack(body)){ say(''); pkPrime(); return; }   /* 18 Nov 2026: his maintenance switch: the notice stands at the door */
     if(!r.ok||!body||!body.ok){ say(wErr(body,'x.notSent'),'bad'); pkPrime(); return; }
     /* nothing on this device yet: the password once, and this device's wrap is filed after it */
     if(body.once){
@@ -1939,6 +1945,7 @@ const CLIENT_JS = `
     }catch(e){ if(stale()) return false; undo(); csay(tw('code.dropped'),'bad'); return false; }
     if(stale()) return false;
     undo();
+    if(maintBack(body)){ csay(wErr(body),'bad'); return false; }   /* 18 Nov 2026: his maintenance switch: the code screen says it in its own line, the door beside it carries the notice */
     if(!r.ok||!body.ok){
       csay(r.status===429||r.status===503?wErr(body,'x.later'):tw('code.nothing'),'bad');
       if(what.code){ codeIn.setAttribute('aria-invalid','true'); }
@@ -2018,7 +2025,7 @@ const CLIENT_JS = `
   }
 
   function lock(){
-    ticket++; busy=false; go.disabled=false;
+    ticket++; busy=false; go.disabled=false; maintSet(false);
     if(poll){ clearInterval(poll); poll=null; }
     liveStop();   /* Speed Wave 2 L2: Log out closes the socket */
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
@@ -2100,6 +2107,7 @@ const CLIENT_JS = `
   /* what a lapse lets go besides the page's own: his script adds the one unlock's lock (stmt/owner.js), a customer's page adds nothing */
   var lapseHooks=[];
   function lapsed(){
+    maintSet(false);   /* 18 Nov 2026: a lapsed page is the door's again, its taps its own */
     lapseHooks.forEach(function(f){ f(); });
     /* S4 fix: the order sheet lies over the bar, so a lapse closes it; Continue is then in reach, and the sheet will
        not open again until it is tapped (sheetOpen). What was chosen and typed in it stays in draft, and the same account
@@ -3077,13 +3085,18 @@ const CLIENT_JS = `
        caller says whatever the answer's error is, which is a pointer to them */
     if(r.status===401&&session){ lapsed(); return {status:401, body:keptMine()?{ok:false, said:'x.notSent', lost:true}:{ok:false, said:'lapse.notSent'}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
-    /* 17 Nov 2026: put under maintenance while this page is open, it opens again on the maintenance page, which says when it is back */
+    /* 18 Nov 2026 (his word: a page already in is left in, unable to tap, told nothing): put under his maintenance switch while this page is
+       open, it never reloads and draws nothing. The Worker's maint: true on the account read and its poll (stampRead) makes the page's controls
+       do nothing (maintSet) and its absence gives them back; a write that got there first is refused with the code maint, which does the same. */
+    if(j&&j.code==='maint'){ maintSet(true); return {status:503, body:{ok:false, said:'x.later'}}; }
+    /* 17 Nov 2026: put under MAINTENANCE_UNTIL, the complete block, while this page is open, it opens again on the maintenance page, which says when it is back */
     /* 18 Nov 2026: once a minute at most, and only when that is kept, so a page the edge still serves open never reloads in a loop */
     if(r.status===503&&j&&j.error==='maintenance'){
       var mr=0, kept=false; try{ mr=+sessionStorage.getItem('salt-maint-reload')||0; }catch(e){}
       if(Date.now()-mr>60000){ try{ sessionStorage.setItem('salt-maint-reload', String(Date.now())); kept=true; }catch(e){} if(kept) location.reload(); }
       return {status:503, body:{ok:false, said:'x.later'}};
     }
+    if(j&&j.ok&&(path==='/account'||path==='/account/stamp')) maintSet(j.maint===true);
     return {status:r.status, body:busyOr(r.status,j)||{}};
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
@@ -3303,6 +3316,30 @@ const CLIENT_JS = `
      every close calls it before focus goes back, so the control that opened the Sheet can take it; a lapse and a log out reach it
      through the closes they already make (lapsed, lock). A yes or no over the order sheet shuts that sheet too. What it
      shuts it marks (data-behind), so another use of inert is left alone. His page draws Sheets of its own and is left as it was. */
+  /* ---- 18 Nov 2026, HIS WORD: UNDER MAINTENANCE A CUSTOMER ALREADY SIGNED IN IS LEFT IN, CAN CHANGE NOTHING, AND IS TOLD NOTHING ----
+     The Worker refuses every write of theirs and answers the account read and its poll with maint: true (never to an admin account); the page
+     makes every control do nothing and draws no banner, toast, sheet or word. ONE MECHANISM: capture-phase listeners on the document that
+     swallow a tap, a key press, a field's change and a form's submit before any control sees them. It is not the inert attribute: Ambient's
+     .amb-screen scrolls inside itself, and inert would stop its scrolling, which no listener here touches. It lifts by itself when the field
+     is gone (api), and on a lapse or a log out the page is the door's again (maintSet(false)). Log out is a control, so it does nothing too. */
+  var MAINT=false;
+  function maintSet(on){ MAINT=!!on&&!OWNER; }
+  function maintStop(ev){
+    if(!MAINT) return;
+    if(ev.type==='keydown'&&ev.key!=='Enter'&&ev.key!==' ') return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+  }
+  ['click','auxclick','dblclick','submit','change','input','beforeinput','keydown'].forEach(function(t){ document.addEventListener(t,maintStop,true); });
+  /* a sign-in refused for the switch puts the notice on the door and on the link page, with when it is back */
+  function maintNote(back){
+    ['doorMaint','linkMaint'].forEach(function(id){
+      var n=document.getElementById(id), t=n&&n.querySelector('.mnT');
+      if(!n) return;
+      if(t&&back) t.textContent=back;
+      n.hidden=false;
+    });
+  }
+  function maintBack(b){ return !!b&&b.code==='maint'?(maintNote(b.vars&&b.vars.back),true):false; }
   function behind(){
     if(OWNER) return;
     var open=[].filter.call(document.querySelectorAll('[role=dialog][aria-modal=true]'),function(d){ return !d.hidden; }), keep=[];
@@ -6764,6 +6801,7 @@ const CLIENT_JS = `
     if(stale()) return;
     if(!r.ok||!body.ok){
       done();
+      if(maintBack(body)){ say(''); return; }   /* 18 Nov 2026: refused for his maintenance switch: the notice stands at the door */
       /* S13: the Worker's refusal worded from its code, its English standing for a code this page does not know */
       say(wErr(body,r.status===429?'door.tooMany':'e.refused'),'bad');
       return;
@@ -6841,6 +6879,7 @@ const CLIENT_JS = `
     /* S1 1.41, 24 SEP 2026: ONLY THE DOOR'S REFUSAL FORGETS THIS PHONE. A server fault forgot it too, so one
        bad minute on the site signed every returning phone out for good; that, and a dropped connection,
        now keep it and say so. */
+    if(maintBack(body)){ if(!keep) say(''); return false; }   /* 18 Nov 2026: his maintenance switch: this phone stays remembered, the notice stands at the door */
     if(r.status===401){ remClear(); if(!keep) say(''); return false; }
     if(!r.ok||!body.ok){ if(!keep){ say(tw('door.kept'),'bad'); again(true); } return false; }
     var ck, b;
@@ -7134,6 +7173,7 @@ const CLIENT_JS = `
       }catch(e){ if(stale()) return; busy=false; linkGo.disabled=false; lsay(tw('link.lost'),'bad'); return; }
       if(stale()) return;
       busy=false;
+      if(maintBack(body)){ linkGo.disabled=false; lsay(''); return; }   /* 18 Nov 2026: his maintenance switch: the link is not spent; the notice stands on this page */
       if(r.status===401){ lsay(''); linkSpent(); return; }
       if(!r.ok||!body.ok){ linkGo.disabled=false; lsay(tw('link.lost'),'bad'); return; }
       /* spent, and the answer is in hand: this address is never presented again */

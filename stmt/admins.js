@@ -18,8 +18,9 @@
  * (POST /all/leave, this browser's key); Sign out everywhere (POST /all/signout); the account losing tier 1 at a publish.
  * A device signed out from Account (POST /devices/signout) does not end it: a key is tied to a browser's cookie, not to a device row.
  * With it off (the value it ships with), /all is as before and the Counter's road is tried beside it.
- * ADMIN_DOOR IS NOT TO BE TURNED ON until maintenance is the notice at the door (planned next): today's maintenance guard holds /admin
- * and the sign-in roads, which would lock him out of Salt Admin while it stands.
+ * ADMIN_DOOR MAY BE TURNED ON once he has signed in once: his maintenance switch is now the notice at the door and a stop on customers
+ * signing in (stmt/maintenance.js), and an admin account signs in, reaches /admin and /all as normal under it. MAINTENANCE_UNTIL, the
+ * deploy's complete block, still holds /admin and the sign-in roads with everything else.
  *
  * NO IMPORT. Only a sibling would do and this file needs none.
  */

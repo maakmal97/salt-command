@@ -240,7 +240,7 @@ export async function dropHandover(env, token) {
  *  S3 FIX, 24 SEP 2026: A KEY A BROWSER TAB FOUND IN ITS ADDRESS ({ token, tab: true }) OPENS ONLY ONE HE MINTED, the QR
  *  at his counter, and anything else is refused unspent. Any customer can mint a key for their own account, and
  *  /app#<key> sent to somebody else signed that browser into the sender's account with no tap, and kept it. */
-export async function burnHandover(env, b) {
+export async function burnHandover(env, b, keep = false) {
   const secret = String(env.STMT_HANDOVER_KEY || "");
   const token = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : "";
   const code = token ? "" : normCode(b && b.code);
@@ -249,13 +249,14 @@ export async function burnHandover(env, b) {
   let rec = null;
   try { rec = await env.STMT.get(id, "json"); } catch (e) { rec = null; }
   if (!rec || !rec.s || (b.tab === true && rec.admin !== true)) return null;
-  try { await env.STMT.delete(id); if (rec.pair) await env.STMT.delete(rec.pair); } catch (e) { /* each expires on its own */ }
+  /* `keep` (18 Nov 2026, under his maintenance switch): READ it, spend nothing, so a customer's code or key survives a refused open */
+  if (!keep) { try { await env.STMT.delete(id); if (rec.pair) await env.STMT.delete(rec.pair); } catch (e) { /* each expires on its own */ } }
   if (!(Date.parse(rec.exp) > Date.now())) return null;
   try {
     const body = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(rec.s.iv) },
       await sealKey(secret), unb64(rec.s.ct))));
     if (!(body && body.u && body.token && body.wrap)) return null;
-    try { await unpoint(env, body.u, token ? id : rec.pair); } catch (e) { /* the pointer lapses with it */ }
+    if (!keep) { try { await unpoint(env, body.u, token ? id : rec.pair); } catch (e) { /* the pointer lapses with it */ } }
     return Object.assign(body, { by: token ? (rec.admin === true ? "qr" : "copy") : "code" });
   } catch (e) { return null; }
 }
