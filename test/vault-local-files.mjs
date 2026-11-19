@@ -3,6 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+/* 20 Nov 2026: a child gets 180 s, not 30. ledger.mjs opens the master in jsdom (24 to 29 s on an idle laptop) before its vault check, so under
+   the split suite the 30 s limit killed it before it could refuse, and the check read red (MEMORY "Known red"). A failure now says how the child ended. */
+const CHILD_MS=180000, ended=c=>c.status!==0&&c.signal?" (killed: "+c.signal+" after "+CHILD_MS/1000+" s)":"";
 import { lockVaultFiles, vaultFilesReady, withVaultFiles, recoverLocalVaultFiles } from "../tools/vault-local-files.mjs";
 
 export async function run({ ok }) {
@@ -18,10 +21,10 @@ export async function run({ ok }) {
     writeFileSync(join(dir,"salt_addr.json"),JSON.stringify({addr:{}}));
     for(const tool of ["seed-vault","pull-vault"]){
       const child=spawnSync(process.execPath,[fileURLToPath(new URL("../tools/"+tool+".mjs",import.meta.url)),"--dry-run"],{
-        encoding:"utf8",timeout:30000,env:{...process.env,SALT_DATA:dir,SALT_VAULT_PASS:"invented-local-lock-pass",SALT_BASE:"http://127.0.0.1:1"}
+        encoding:"utf8",timeout:CHILD_MS,env:{...process.env,SALT_DATA:dir,SALT_VAULT_PASS:"invented-local-lock-pass",SALT_BASE:"http://127.0.0.1:1"}
       });
       ok(child.status!==0&&/Another process holds/.test(child.stderr),
-        "actual "+tool+" CLI refuses an active pair-file lock before any local read or remote operation");
+        "actual "+tool+" CLI refuses an active pair-file lock before any local read or remote operation"+ended(child));
     }
     let interrupted=false;
     try{lock.commit(value,()=>{throw new Error("fixture interrupted pull");});}catch(error){interrupted=error.message==="fixture interrupted pull";}
@@ -32,14 +35,14 @@ export async function run({ ok }) {
       &&!existsSync(join(dir,"salt_vault_pair.json")),
       "an interrupted first pair rename leaves a durable journal and refuses mixed-revision readers");
     const reader=spawnSync(process.execPath,[fileURLToPath(new URL("../tools/ledger.mjs",import.meta.url)),"--check"],{
-      encoding:"utf8",timeout:30000,env:{...process.env,SALT_DATA:dir}
+      encoding:"utf8",timeout:CHILD_MS,env:{...process.env,SALT_DATA:dir}
     });
     ok(reader.status!==0&&/locked or needs recovery/.test(reader.stderr),
-      "the actual ledger leak-check consumer refuses a partial local pair revision until journal recovery completes");
+      "the actual ledger leak-check consumer refuses a partial local pair revision until journal recovery completes"+ended(reader));
     const recovery=spawnSync(process.execPath,[fileURLToPath(new URL("../tools/vault-local-files.mjs",import.meta.url)),
-      "--recover","--directory",dir],{encoding:"utf8",timeout:30000});
+      "--recover","--directory",dir],{encoding:"utf8",timeout:CHILD_MS});
     ok(recovery.status===0&&/journal recovered/.test(recovery.stdout),
-      "the explicit local recovery CLI completes a partial pair-file transaction without a remote operation");
+      "the explicit local recovery CLI completes a partial pair-file transaction without a remote operation"+ended(recovery));
     await withVaultFiles(dir,async()=>{
       const read=file=>existsSync(join(dir,file))?JSON.parse(readFileSync(join(dir,file),"utf8")):{};
       ok(read("salt_bio.json").bio?.["CX1-ZED"]?.raw==="Invented pair"
