@@ -211,6 +211,8 @@ export const OWNER_JS = `
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
       sheetSpares=typeof j.spares==='number'&&j.spares>=0?j.spares:null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
+      liveSheet();   /* 20 Nov 2026: each account's credit is the Desk's, not the sealed statement's (liveAcct) */
+      if(!TESTING&&!owedReading&&Date.now()-owedAt>5000) loadOwed();
       drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true); joinsDrive();
       if(aOpen) openCard(aOpen);
       /* the count is of accounts on the book: the test account is not one (v689) */
@@ -8009,7 +8011,7 @@ export const OWNER_JS = `
      and owedGoods: src/maker-inputs.js owedBothWays over the engine's txAdvance, txUnpaidSince, the term and txStat), so nothing is reckoned here.
      A card's button opens the site order its row belongs to (the order's ledgerKey is the row's ovKey) on Money received or the handover; a row
      with no site order opens Record's Correct a row on that row, as goods or cash moved. The button opens; it books nothing. ---- */
-  var owed=null, owedReading=false;
+  var owed=null, owedReading=false, owedAt=0;
   async function loadOwed(){
     if(owedReading) return;
     owedReading=true;
@@ -8018,12 +8020,32 @@ export const OWNER_JS = `
       var j=await refs('/all/maker/inputs'), c=(j&&j.catalog)||{};
       if(!Array.isArray(c.owedMoney)||!Array.isArray(c.owedGoods)) throw new Error(c.owedError||c.error||'The Desk did not say what is owed.');
       nGot('book');
-      var v={money:c.owedMoney, goods:c.owedGoods};
+      var v={money:c.owedMoney, goods:c.owedGoods, refunds:Array.isArray(c.openRefunds)?c.openRefunds:null};
       if(changed('book', v)){ owed=v; apply=true; }
     }catch(error){ nGot('book', error); apply=failNew('book', error); }
-    owedReading=false;
-    /* 25 Oct 2026: and Accounts, whose Owed says how late (P1) */
-    if(apply){ drawNeeds(); drawRoster(); }
+    owedAt=Date.now(); owedReading=false;
+    /* 25 Oct 2026: and Accounts, whose Owed says how late (P1); 20 Nov 2026: and each account's credit, off the same read */
+    if(apply){ liveSheet(); drawNeeds(); drawRoster(); if(aOpen) openCard(aOpen); }
+  }
+  /* 20 Nov 2026 (his yes: Salt Admin reads the live Desk, after CM4-TO's and CD4-DAM's credits stood four minutes past his Approve): AN ACCOUNT'S
+     CREDIT IS THE DESK'S OPEN REFUNDS, read with what is owed (/all/maker/inputs, openRefunds off the book's customerRefunds), never the statement
+     sealed at the last publish. The refund is theirs by its exact code, as the statement counts it (make_statements stmtRefunds), and the flag is
+     chosen again in the publish's own order (reviewFlag): owed, goods, credit, agreed, settled. The sealed figures stay under seal, and stand alone
+     while the Desk's read has not landed or names no refunds. Only the credit is live: what they owe stays the statement's until the next publish. */
+  function liveAcct(a, refunds){
+    if(!a||a.test||!a.t||!Array.isArray(refunds)) return a;
+    var seal=a.seal||{t:a.t, flag:a.flag}, t={}, o={}, k;
+    for(k in seal.t) t[k]=seal.t[k];
+    t.refund=+refunds.filter(function(r){ return r&&r.party===a.code; }).reduce(function(s,r){ return s+(+r.amount||0); },0).toFixed(2);
+    for(k in a) o[k]=a[k];
+    o.t=t; o.seal=seal;
+    o.flag=+t.owed>0.009?'owes':+t.toGet>0.009?'goods':t.refund>0.009?'refund':+t.pend>0.009?'pend':'clear';
+    return o;
+  }
+  function liveSheet(){
+    if(!sheet||!owed||!owed.refunds) return;
+    sheetRows=sheetRows.map(function(a){ return liveAcct(a, owed.refunds); });
+    sheet={}; sheetRows.forEach(function(a){ sheet[a.username]=a; });
   }
   /* the open site order a Desk row is, found by its key (a key of three parts is salt's, from before a key named its book) */
   function siteOrderOf(r){
