@@ -1338,7 +1338,9 @@ a row in `preapproval` (`migrations/0011`): the digest of what he saw (`stageDig
 `src/drafter.js`), spent by the drafter the moment the row is drafted (`preFor`, `applyPre`): equal, the
 row is approved where it is drafted; different, it waits under Approve, marked "differs from what you
 saw" with what he was shown beside it (`GET /drafts` carries it as `preapproval`), and a yes is spent
-once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview (`POST
+once. **A flag that says only how old a snapshot was is the read's, not the row's** (20 Nov 2026, his Received on a claim
+stranded by a fold between the draft and his tap): every stage but the pending row leaves the pricing and open-order
+snapshot-age flags out of its digest (`rowFlags`); every figure and every other flag still counts. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview (`POST
 /orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
 refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
 runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
@@ -3368,7 +3370,8 @@ it.
 
 - **A card is ticked, not decided.** On Orders > Approve each card's Approve and Reject choose (one or the other, the card whole: a trip's rows,
   or every move on one order); **Approve all**, shown from two cards, chooses Approve on every card that can go; the bar counts "to approve" and "to reject" with **Clear** and **Confirm**.
-  A payment they say they sent is never ticked: it is answered on its order. A pick is kept by the card's first draft and let go when it leaves.
+  A payment they say they sent is never ticked: it is answered on its order, until his Received has been given for it and its row came out
+  other than he saw (`preapproval` differs), when it is a row like any other, ticked here (20 Nov 2026; the Desk's `decideDraft` already took it). A pick is kept by the card's first draft and let go when it leaves.
 - **Confirm sends approvals at once; it asks only when a Reject is among them** (12 Nov 2026, his Approve review: the tick and Confirm are already the
   second look; a rejected row a site order made is written onto its order, so that is asked: the page's Sheet, "Decide N cards?", the rows under
   "to approve" and "to reject"). Either way ONE

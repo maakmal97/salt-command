@@ -322,8 +322,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   the draft and computes nothing; the drafter's flags do the measuring, and a purchase is never
   measured with a seller's ruler. A card's flags freeze at drafting. **One tap a stage on a site order
   (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
-  if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
-  waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
+  if the draft equals what he was shown, every field, flag and (for Accept) pricing version, a later stage leaving
+  out the flags that say only how old a snapshot was (`rowFlags`); else it waits under Approve, marked, a claim's row too. Accept moves the order only once its row is approved; a later stage
   tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
   drawn as the engine's `claimAlloc` (goods out oldest first, then the orders at Ready, each owing all that is left, V2), each row less the money already on its way to it, and its one Received approves exactly those rows. **A row paid past what it
   comes to is a refund the fold raises** (06 Oct 2026, the engine's `refundOnOverpay` beside `refundOnCancel`, read off the row as
