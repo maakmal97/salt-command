@@ -345,7 +345,9 @@ export async function run({ ok }) {
     const code = text.replace(/\/\*[\s\S]*?\*\//g, "");
     ok(!/\b(env|fetch|SALT_QUEUE|SALT_LEDGER|crypto|localStorage)\b/.test(code) && !/Date\.now\(\)/.test(code.replace(/new Date\(now \|\| Date\.now\(\)\)/g, "")),
       "S1b: engine/stages.mjs touches no env, store, fetch or crypto, and reads the clock only as the moment it is handed");
-    const stmt = readdirSync(join(REPO, "stmt")).filter((f) => /\.js$/.test(f)).filter((f) => /stages\.mjs/.test(readFileSync(join(REPO, "stmt", f), "utf8")));
+    /* 20 Nov 2026: an IMPORT of it, static, bare or dynamic, never the name in prose (stmt/owner.js names engine/stages.mjs keyClash in a comment since #208) */
+    const importsStages = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["'`][^"'`\n]*stages\.mjs["'`]/;
+    const stmt = readdirSync(join(REPO, "stmt")).filter((f) => /\.js$/.test(f)).filter((f) => importsStages.test(readFileSync(join(REPO, "stmt", f), "utf8")));
     const eng = readFileSync(join(REPO, "tools", "engine.mjs"), "utf8");
     ok(!stmt.length && !/stages\.mjs/.test(eng), "S1b: nothing under stmt/ imports engine/stages.mjs and tools/engine.mjs does not carry it into the master");
   } finally { globalThis.Date = realDate; rmSync(dir, { recursive: true, force: true }); }
