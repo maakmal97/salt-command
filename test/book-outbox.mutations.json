@@ -236,8 +236,8 @@
  {
   "name": "the forced pass follows no row again",
   "file": "src/orders.js",
-  "find": "  const fr = await followRows(env, r.orders, { byKey, rows, byRid }, at, { solo: !!opts.force });",
-  "replace": "  const fr = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid }, at, { solo: !!opts.force });"
+  "find": "  const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });",
+  "replace": "  const fr = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });"
  },
  {
   "name": "a key the site refuses fails the forced pass",

@@ -47720,7 +47720,7 @@ await (async () => {
     const efFault = (t) => (t.faults || []).find((f) => f.order === EF.o.id);
     await tellSite(denv);
     const tie2 = await tieOut(denv);
-    ok(tie1.ok && tie1.orders > 10 && efFault(tie1) && efFault(tie1).rid === EF.rid && /paid RM 31 on the order, RM 81 on the row/.test(efFault(tie1).what.join("; "))
+    ok(tie1.ok && tie1.orders > 10 && efFault(tie1) && efFault(tie1).rid === EF.rid && /paid RM 31 on the order, RM 81 on the book/.test(efFault(tie1).what.join("; "))
       && !tie1.faults.some((f) => f.what === "return leg") && tieLate.faults.some((f) => f.what === "return leg")
       && tie2.ok && !efFault(tie2) && !tie2.faults.some((f) => f.what === "return leg"),
       tag + ", the tie-out names an order whose row moved untold, a return leg stalled past fifteen minutes, and nothing once told: "
@@ -47740,7 +47740,7 @@ await (async () => {
     await O.deskMove(senv, EH.u, EH.o.id, { mark: { ledgerKey: EG.key } });
     correct(EG.rid, { cash: 40 });
     const ofrT27 = await tellSite(denv), eg1 = await orderOf(EG.o.id), eh1 = await orderOf(EH.o.id), tieTwo = await tieOut(denv);
-    const twoOf = (id) => (tieTwo.faults || []).find((f) => f.order === id && f.what.some((w) => /units 2 on its 2 orders, 1 on the row/.test(w)));
+    const twoOf = (id) => (tieTwo.faults || []).find((f) => f.order === id && f.what.some((w) => /units 2 on its 2 orders, 1 on the book/.test(w)));
     await O.deskMove(senv, EH.u, EH.o.id, { mark: { ledgerKey: EH.key } });
     reseed();
     const ofrT28 = await tellSite(denv), eg2 = await orderOf(EG.o.id);
@@ -47773,7 +47773,7 @@ await (async () => {
     db.prepare("UPDATE draft SET status='rejected' WHERE id=?").run(EJ.ack); reseed();
     const tieRej = await tieOut(denv);
     const ejIn = (t, g) => (t[g] || []).find((f) => f.order === EJ.o.id);
-    ok(ejIn(tieOn, "waiting") && !ejIn(tieOn, "faults") && ejIn(tieRej, "faults") && /rejected under Approve: tap Accept again/.test(ejIn(tieRej, "faults").what.join("; ")),
+    ok(ejIn(tieOn, "waiting") && !ejIn(tieOn, "faults") && ejIn(tieRej, "faults") && /rejected its sale under Approve: tap Accept again/.test(ejIn(tieRej, "faults").what.join("; ")),
       tag + ", an order whose pending row is on its way waits, and one whose row he rejected is a difference naming the re-offer: " + J({ on: ejIn(tieOn, "waiting"), rej: ejIn(tieRej, "faults") }));
     /* v1149 (s218 and s219): two orders of one account and day the book holds as ONE row of their sum, the key both name cancelled. Both take that row
        together, are never cancelled by the dead key, and the tie-out reads the row as their sum */
@@ -47825,7 +47825,7 @@ await (async () => {
       tag + ", the reconcile queues no stage of one order against a row it shares: " + J({ drafts: drafts(SA1.id).length - before, sync: sa1w.sync }));
     rb.cash = 250; putRow(rb); reseed();
     const tieOff = await tieOut(denv);
-    ok(shareIn(tieOff).length === 2 && shareIn(tieOff).every((f) => f.what.some((w) => /paid RM 284 on its 2 orders, RM 250 on the row/.test(w))),
+    ok(shareIn(tieOff).length === 2 && shareIn(tieOff).every((f) => f.what.some((w) => /paid RM 284 on its 2 orders, RM 250 on the book/.test(w))),
       tag + ", a shared row that is not its orders' sum is a difference on each, said as the sum: " + J(shareIn(tieOff)));
     rb.cash = 284; putRow(rb); reseed();
     /* a row of their size whose goods are not their sum is never taken */
@@ -47899,9 +47899,9 @@ await (async () => {
     /* 19 Nov 2026 (s393 and s395, his answer A): a cancelled row that shares a live site row's key gives the key to the live row, in the tie-out and the return leg */
     const kxNow = saleOf(KX.rid), kxSite = Object.assign({}, kxNow, { road: "site" });   /* the fixture's fold writes no road; the live book's site rows carry it */
     putRow(kxSite); addRow(Object.assign({}, kxSite, { rid: "s9gone", cancelled: true, cancelledOn: kxNow.date, amend: [] })); reseed();
-    const tieGone = await tieOut(denv), goneFault = (tieGone.faults || []).concat(tieGone.waiting || []).find((f) => f.order === KX.o.id && f.what.some((w) => /two rows share its key/.test(w)));
+    const tieGone = await tieOut(denv), goneFault = (tieGone.faults || []).concat(tieGone.waiting || []).find((f) => f.order === KX.o.id && f.what.some((w) => /holds two sales of theirs with this day and total/.test(w)));
     putRow(kxNow); reseed();
-    const tieHand = await tieOut(denv), handFault = (tieHand.faults || []).concat(tieHand.waiting || []).find((f) => f.order === KX.o.id && f.what.some((w) => /two rows share its key/.test(w)));
+    const tieHand = await tieOut(denv), handFault = (tieHand.faults || []).concat(tieHand.waiting || []).find((f) => f.order === KX.o.id && f.what.some((w) => /holds two sales of theirs with this day and total/.test(w)));
     db.prepare("DELETE FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='s9gone'").run(); reseed();
     ok(!goneFault && !!handFault,
       tag + ", a cancelled row beside a live site row of the same key is no twin to the tie-out, and beside a hand row it still is: " + J({ goneFault, handFault }));
@@ -50848,6 +50848,11 @@ await (async () => {
 section("19 Nov 2026: a row's new name is never another row's, and a stale yes the book holds is let go");
 await (async () => {
   await (await import("./order-key-clash.mjs")).run({ ok });
+})();
+
+section("20 Nov 2026: a live order follows its row past a cancelled order's key, and the Ledger check says every difference in plain words");
+await (async () => {
+  await (await import("./ledger-plain.mjs")).run({ ok, pageWork });
 })();
 
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");

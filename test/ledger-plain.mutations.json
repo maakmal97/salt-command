@@ -1,0 +1,230 @@
+[
+{
+"name":"a cancelled order is counted as a claim on a live order's key (the fault of 20 Nov)",
+"file":"src/orders.js",
+"find":"const m = endedOrder(o) ? ended : live; m.set(k, (m.get(k) || 0) + 1); };",
+"replace":"const m = live; m.set(k, (m.get(k) || 0) + 1); };"
+},
+{
+"name":"the waiting cash is never pointed at the row",
+"file":"src/orders.js",
+"find":"try { await repoint(env.SALT_LEDGER, o.id, nk, party); }",
+"replace":"try { }"
+},
+{
+"name":"a live order passes an ended one onto a key of two rows",
+"file":"src/orders.js",
+"find":"return (live.get(p.nk) || 0) === n && (!past || !!(rows && gone && rows.get(p.nk) === 1 && gone.has(p.nk)));",
+"replace":"return (live.get(p.nk) || 0) === n;"
+},
+{
+"name":"a live order takes a key another live order names",
+"file":"src/orders.js",
+"find":"return (live.get(p.nk) || 0) === n && (!past || !!(rows && gone && rows.get(p.nk) === 1 && gone.has(p.nk)));",
+"replace":"return (!past || !!(rows && gone && rows.get(p.nk) === 1 && gone.has(p.nk)));"
+},
+{
+"name":"a live order passes an ended one with no cancelled row kept apart",
+"file":"src/orders.js",
+"find":"rows.get(p.nk) === 1 && gone.has(p.nk)));",
+"replace":"rows.get(p.nk) === 1));"
+},
+{
+"name":"the drafter counts a cancelled row as a twin",
+"file":"src/drafter.js",
+"find":"if (hits.length > 1 && live.length === 1 && live[0].road === \"site\") return",
+"replace":"if (false) return"
+},
+{
+"name":"the drafter takes a live hand row beside a cancelled one",
+"file":"src/drafter.js",
+"find":"live.length === 1 && live[0].road === \"site\") return",
+"replace":"live.length === 1) return"
+},
+{
+"name":"the drafter takes the first of two live rows",
+"file":"src/drafter.js",
+"find":"live.length === 1 && live[0].road === \"site\") return",
+"replace":"live.length >= 1 && live[0].road === \"site\") return"
+},
+{
+"name":"an ended order's own move ignores the other ended orders",
+"file":"src/orders.js",
+"find":"if (endedOrder(p.o)) return (live.get(p.nk) || 0) + past === n;",
+"replace":"if (endedOrder(p.o)) return (live.get(p.nk) || 0) + past === n + 1;"
+},
+{
+"name":"one order alone is let onto a key two are moving to",
+"file":"src/orders.js",
+"find":"  return (p, n = 1) => {",
+"replace":"  return (p, n = 2) => {"
+},
+{
+"name":"an order's differences are three items again",
+"file":"src/orders.js",
+"find":"faults: oneAnOrder(faults), waiting };",
+"replace":"faults, waiting };"
+},
+{
+"name":"who drops the word ordered",
+"file":"src/orders.js",
+"find":"\"ordered \" + sayDay(klDate(new Date(o.at || 0)))].join(\", \");",
+"replace":"sayDay(klDate(new Date(o.at || 0)))].join(\", \");"
+},
+{
+"name":"a figure difference carries no who",
+"file":"src/orders.js",
+"find":"const item = { order: o.id, who: tieWho(o), ",
+"replace":"const item = { order: o.id, "
+},
+{
+"name":"a tap on an order with no sale is told to tap again",
+"file":"src/orders.js",
+"find":"what: [k && !byKey.get(k) ? tap + \" is held, not lost",
+"replace":"what: [false ? tap + \" is held, not lost"
+},
+{
+"name":"a tap's day is the UTC day",
+"file":"src/orders.js",
+"find":"\" you tapped on \" + sayDay(klDate(new Date(y.at))), k = ",
+"replace":"\" you tapped on \" + sayDay(String(y.at)), k = "
+},
+{
+"name":"a tap is named by the desk's stage word",
+"file":"src/orders.js",
+"find":"const tap = \"the \" + (TAP_WORD[y.stage] || y.stage) + \" you tapped on \"",
+"replace":"const tap = \"the \" + y.stage + \" you tapped on \""
+},
+{
+"name":"the missing sale never says what the order now says",
+"file":"src/orders.js",
+"find":"+ (Number.isFinite(fig) && Math.abs(fig - now) > 0.004 ? \", and the order now says \"",
+"replace":"+ (false ? \", and the order now says \""
+},
+{
+"name":"the missing sale is said by its key",
+"file":"src/orders.js",
+"find":"if (!row) diff.push(sayKey(k, o));",
+"replace":"if (!row) diff.push(\"no row on the book under \" + k);"
+},
+{
+"name":"a cancelled order with a live sale is let go when a live order names its key",
+"file":"src/orders.js",
+"find":"    if (ended && !row) continue;   /* withdrawn before its row landed, or its row dropped: nothing to tie */",
+"replace":"    if (ended && (!row || (!row.cancelled && named.get(k) > 0))) continue;"
+},
+{
+"name":"a cancelled order with a live sale is let go",
+"file":"src/orders.js",
+"find":"    if (ended && !row) continue;   /* withdrawn before its row landed, or its row dropped: nothing to tie */",
+"replace":"    if (ended && (!row || !row.cancelled)) continue;"
+},
+{
+"name":"the figures say the row",
+"file":"src/orders.js",
+"find":"bk = \"on the book\";",
+"replace":"bk = \"on the row\";"
+},
+{
+"name":"twins are said as rows sharing a key",
+"file":"src/orders.js",
+"find":"diff.push(\"the book holds two sales of theirs with this day and total, so it cannot tell which is this order's\");",
+"replace":"diff.push(\"two rows share its key, so neither is its\");"
+},
+{
+"name":"a rejected sale is said as a pending row",
+"file":"src/orders.js",
+"find":"[\"you rejected its sale under Approve: tap Accept again or cancel the order\"]",
+"replace":"[\"its pending row was rejected under Approve: tap Accept again or cancel the order\"]"
+},
+{
+"name":"an ended sale is said as a row",
+"file":"src/orders.js",
+"find":"row.cancelled ? \"its sale on the book is cancelled and the order is \" + o.status",
+"replace":"row.cancelled ? \"the row is cancelled and the order is \" + o.status"
+},
+{
+"name":"a write-off is said as a row",
+"file":"src/orders.js",
+"find":"row.defaulted ? \"its sale on the book is written off and the order is not\"",
+"replace":"row.defaulted ? \"the row is written off and the order is not\""
+},
+{
+"name":"a shared write-off is said as a row",
+"file":"src/orders.js",
+"find":"\"some of the orders sharing its sale on the book are written off and some are not\"",
+"replace":"\"some of the orders on its row are written off and some are not\""
+},
+{
+"name":"a stale tap is said as a yes",
+"file":"src/orders.js",
+"find":": tap + \" never reached Approve, so the book does not hold it: tap it again on the order if it is still owed\"] });",
+"replace":": \"your yes to its \" + y.stage + \" never reached Approve\"] });"
+},
+{
+"name":"a day is the month's number",
+"file":"src/orders.js",
+"find":"? m[3] + \" \" + MONTHS[+m[2] - 1] + \" \" + m[1]",
+"replace":"? m[3] + \" \" + m[2] + \" \" + m[1]"
+},
+{
+"name":"one unit is plural",
+"file":"src/orders.js",
+"find":"q + (q === 1 ? \" unit\" : \" units\")",
+"replace":"q + \" units\""
+},
+{
+"name":"who's total leaves out the delivery",
+"file":"src/orders.js",
+"find":"sayRM((+o.total || 0) + (+o.delivery || 0)), \"ordered \"",
+"replace":"sayRM(+o.total || 0), \"ordered \""
+},
+{
+"name":"an order gone from the site has no words",
+"file":"src/orders.js",
+"find":"if (!o) return \"an order no longer on the site\";",
+"replace":"if (!o) return \"\";"
+},
+{
+"name":"a sentence found twice is said twice",
+"file":"src/orders.js",
+"find":"for (const w of f.what) if (!had.what.includes(w)) had.what.push(w);",
+"replace":"for (const w of f.what) had.what.push(w);"
+},
+{
+"name":"an item with no order is joined like one",
+"file":"src/orders.js",
+"find":"if (!f || !f.order || !Array.isArray(f.what)) { out.push(f); continue; }",
+"replace":"if (!f) { out.push(f); continue; }"
+},
+{
+"name":"Salt Admin names a difference by its id",
+"file":"stmt/owner.js",
+"find":"var who=f.who||f.order||'', said=",
+"replace":"var who=f.order||'', said="
+},
+{
+"name":"Salt Admin drops an older check's order",
+"file":"stmt/owner.js",
+"find":"var who=f.who||f.order||'', said=",
+"replace":"var who=f.who||'', said="
+},
+{
+"name":"Salt Admin says the desk's why for the orders behind",
+"file":"stmt/owner.js",
+"find":":(f.say||f.why||String(f.what||''));",
+"replace":":(f.why||String(f.what||''));"
+},
+{
+"name":"Salt Admin says book@",
+"file":"stmt/owner.js",
+"find":"return m?'book revision '+m[1]:'book '+v; }",
+"replace":"return 'book '+v; }"
+},
+{
+"name":"Salt Admin drops the sale's number",
+"file":"stmt/owner.js",
+"find":"(who?who+(f.rid?' · '+f.rid:'')+': ':'')+said+'.';",
+"replace":"(who?who+': ':'')+said+'.';"
+}
+]

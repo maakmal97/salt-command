@@ -266,8 +266,8 @@
  {
   "name": "V9: a difference is not named",
   "file": "stmt/owner.js",
-  "find": "(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.'",
-  "replace": "'.'"
+  "find": "(who?who+(f.rid?' · '+f.rid:'')+': ':'')+said+'.';",
+  "replace": "'.';"
  },
  {
   "name": "Fable V9: Check now has no line of its own",
