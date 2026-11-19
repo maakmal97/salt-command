@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="edab8d22bd6d1591";
+var SALT_BUILD_ID="18d2954a23236ae2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12558,7 +12558,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1551","d":"20 Nov 2026","t":"THE LEDGER CHECK IN PLAIN WORDS, AND AN ORDER THAT FOLLOWS ITS SALE","n":["<b>A PAID ORDER REACHES THE BOOK.</b> An order whose price you changed after Accept now follows its sale on the book even when a cancelled order of the same customer, day and total came before it. One such order stood on the book unpaid and undelivered while the Counter had it paid and delivered; its cash and its handover now come through to Approve.","<b>PLAIN WORDS.</b> Ledger check names each order by its customer code, book, units, total and day, says each difference in a sentence with what to do, and counts orders, not lines. No order number and no internal key is shown.","<b>HELD, NOT LOST.</b> A tap waiting for its order's sale to reach the book says so, where it told you to tap again."]}];
+const evolution=[{"v":"v1552","d":"20 Nov 2026","t":"A REFUND'S PAID AND REMOVE SEND AGAIN","n":["<b>REMOVE AS STALE AND MARK PAID TODAY WORK.</b> On a customer's account under Refunds, both now reach Approve. Since 03 Nov 2026 each tap said the entry could not be sent and nothing left Salt Admin."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
