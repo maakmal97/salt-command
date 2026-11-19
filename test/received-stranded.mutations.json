@@ -1,0 +1,8 @@
+[
+ {"name": "R1/R5 the age flags stay in the amendment's digest", "file": "src/drafter.js", "find": "amendKind: d.amendKind || null, flags: rowFlags(d.flags) };", "replace": "amendKind: d.amendKind || null, flags: d.flags || [] };"},
+ {"name": "R1 rowFlags keeps every flag", "file": "src/drafter.js", "find": "export const rowFlags = (flags) => (flags || []).filter((f) => !SNAPSHOT_AGE.test(String(f)));", "replace": "export const rowFlags = (flags) => (flags || []).slice();"},
+ {"name": "R1 the pricing age flag is kept", "file": "src/drafter.js", "find": "const SNAPSHOT_AGE = /^The (pricing|open-order) snapshot", "replace": "const SNAPSHOT_AGE = /^The (open-order) snapshot"},
+ {"name": "R2 every flag is left out", "file": "src/drafter.js", "find": "(flags || []).filter((f) => !SNAPSHOT_AGE.test(String(f)));", "replace": "(flags || []).filter((f) => false);"},
+ {"name": "R3 the pending row's digest drops the age flags too", "file": "src/drafter.js", "find": "? Object.assign({ stage, collection: d.collection, row: d.row, flags: d.flags || [], pricing: pricing || null },", "replace": "? Object.assign({ stage, collection: d.collection, row: d.row, flags: rowFlags(d.flags), pricing: pricing || null },"},
+ {"name": "R4 a flag quoting the words is left out", "file": "src/drafter.js", "find": "const SNAPSHOT_AGE = /^The (pricing|open-order)", "replace": "const SNAPSHOT_AGE = /The (pricing|open-order)"}
+]

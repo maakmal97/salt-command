@@ -51236,6 +51236,11 @@ await (async () => {
   await (await import("./instant.mjs")).run({ ok, skip: skipOff });
 })();
 
+section("20 Nov 2026: his Received never strands on how old a snapshot was");
+await (async () => {
+  await (await import("./received-stranded.mjs")).run({ ok });
+})();
+
 section("18 Nov 2026: the review's content faults, a withheld statement on Orders, Needs you's lead, the next unit said once");
 await (async () => {
   await (await import("./review-fixes.mjs")).run({ ok, pageWork });

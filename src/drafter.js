@@ -2081,6 +2081,14 @@ export async function pricingOf(book) {
   const rest = Object.assign({}, p); delete rest.takenAt;   /* minted per extract, as tools/d1.mjs says */
   return { v: p.v || null, digest: (await sha(canon(rest))).slice(0, 16) };
 }
+/* 20 Nov 2026 (his Received on CZ5-TM's claim, stranded): A FLAG THAT SAYS HOW OLD A SNAPSHOT WAS IS THE READ'S, NOT THE ROW'S. A handover
+   folding between a payment's draft and his Received moved the mirror a version, so the preview at his tap said "snapshot at book@573, mirror
+   at book@574" and the draft, read a moment earlier, said nothing: equal figures, unequal digests, his yes filed as differing. An amendment's
+   digest leaves those flags out; every figure and every other flag is still in it. It is no guard on money by itself (the other flags read the
+   same open-order snapshot, so a payment folded between the two reads moves neither): what a row can still take is rowRoom's and the fold's
+   payFault, as it was. */
+const SNAPSHOT_AGE = /^The (pricing|open-order) snapshot was taken at \S+ but the mirror is at \S+, /;
+export const rowFlags = (flags) => (flags || []).filter((f) => !SNAPSHOT_AGE.test(String(f)));
 /** The digest of a draft for its stage. `d` is draftRow's answer or a stored draft ({collection,row,flags,amendKind}). */
 export async function stageDigest(stage, entry, d, pricing) {
   const pay = (entry && entry.payload) || {};
@@ -2090,7 +2098,7 @@ export async function stageDigest(stage, entry, d, pricing) {
       entry && entry.rwd === "cross" ? { rwd: "cross" } : {})   /* 20 Oct 2026: the reward word, likewise only when set */
     : { stage: stage === "cash" ? "pay" : stage, kind: pay.kind || null, party: pay.party || null, orderKey: pay.orderKey || null,
         date: pay.date || null, cash: isNum(pay.cash) ? pay.cash : null, kg: isNum(pay.kg) ? pay.kg : null, fields: pay.fields || null,
-        amendKind: d.amendKind || null, flags: d.flags || [] };
+        amendKind: d.amendKind || null, flags: rowFlags(d.flags) };
   /* 10 Nov 2026 (his ask D): an amendment's one-off mark, set or cleared, is part of what he said yes to; absent, the digest is as it was */
   if (stage !== "ack" && pay.oneOff !== undefined) shown.oneOff = pay.oneOff;
   return sha(canon(shown));
