@@ -614,6 +614,10 @@
   **Money received by book is `bookCash`**, the row's cash less every refund on its rid, so s296 reads RM 455 on salt; cash flow
   is the till, raw cash in and refunds in `refPaid` (a set-off named), the s190 and s191 precedent. `refundStale` flags a set-off
   whose row was later paid less. Paid out in cash, the hand road stays: `paidOn` in the book.
+  **Salt Admin's account list reads each credit live** (20 Nov 2026, his yes): `liveAcct` in `stmt/owner.js` lays the Desk's
+  `openRefunds` (by the exact code, as `stmtRefunds` counts) over the sealed sheet's `t.refund` and chooses the flag again in
+  `reviewFlag`'s order, so a refund paid or removed leaves the card at the Desk's next read, not the next publish. What they owe
+  on the card stays the sealed statement's; the sealed figures stand alone while the Desk names no refunds.
 - **The delivery fee by distance** (F15, 29 Sep 2026; the Desk's Site orders card left on 18 Oct 2026): a delivery's card, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
   device: `navigator.geolocation` read once, fresh (kept nowhere), else `_base`; to the
