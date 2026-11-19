@@ -79,9 +79,9 @@ export async function run({ ok }) {
   ok(X.chainBusy([R(1, { status: "in_progress" })], by({ 1: [chain([], "in_progress")] })) === 1, "a run whose chain job runs is busy");
   ok(X.chainBusy([R(1, { status: "in_progress" })], by({ 1: [chain([]), { name: "suite (1)", status: "in_progress", steps: [] }] })) === 0,
     "a run whose chain has finished and only its suite runs is not busy: the lock is free");
-  ok(X.chainBusy([R(1, { status: "queued", run_attempt: 2 })], by({ 1: [{ ...chain([]), run_attempt: 1 }] })) === 1
+  ok(X.chainBusy([R(1, { status: "queued", run_attempt: 2, run_started_at: "2026-11-14T21:58:00Z" })], by({ 1: [{ ...chain([]), run_attempt: 1 }] }), Date.parse("2026-11-14T22:00:00Z")) === 1
     && X.chainBusy([R(1, { status: "in_progress", run_attempt: 2 })], by({ 1: [{ ...chain([]), run_attempt: 1 }, { ...chain([]), run_attempt: 2 }] })) === 0,
-    "a re-run that has listed no job of its new attempt is busy, whatever its finished first attempt says; once the new attempt's chain is done it is not");
+    "a re-run queued two minutes ago with no job of its new attempt is busy, whatever its finished first attempt of two hours ago says; once the new attempt's chain is done it is not");
   ok(X.exportInHand([R(2, { status: "in_progress", display_title: X.exportTitle(DAY) })], DAY) === 2
     && X.exportInHand([R(2, { display_title: X.exportTitle(DAY) })], DAY) === 0
     && X.exportInHand([R(2, { status: "in_progress", display_title: X.exportTitle("2026-11-14") })], DAY) === 0

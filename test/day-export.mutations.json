@@ -86,8 +86,14 @@
  {
   "name": "a run is stuck at ten minutes to the second",
   "file": "src/day-export.js",
-  "find": "nowMs - Date.parse(run.created_at) > STUCK_MIN * 60000",
-  "replace": "nowMs - Date.parse(run.created_at) >= STUCK_MIN * 60000"
+  "find": "nowMs - Date.parse(run.run_started_at || run.created_at) > STUCK_MIN * 60000",
+  "replace": "nowMs - Date.parse(run.run_started_at || run.created_at) >= STUCK_MIN * 60000"
+ },
+ {
+  "name": "a re-run is aged from its first attempt",
+  "file": "src/day-export.js",
+  "find": "Date.parse(run.run_started_at || run.created_at)",
+  "replace": "Date.parse(run.created_at)"
  },
  {
   "name": "a run waiting on the lock reads as never started",

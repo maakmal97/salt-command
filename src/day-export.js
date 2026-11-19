@@ -68,10 +68,11 @@ const chainNow = (run, jobsOf) => (jobsOf(run.id) || []).filter((j) => j && j.na
 /* A RUN GITHUB NEVER STARTED COVERS NOTHING (the Worker's cloudCommitWaiting learnt it on 16 Nov 2026: a dispatch sat `queued` with no
    job for 35 minutes, and a newer dispatch ran at once beside it). A run still `queued` at its own level, with no chain job listed,
    more than STUCK_MIN after it was made has not reached the lock: it is neither busy nor in hand. A chain job listed, waiting
-   included, is never this. With no clock handed in (`nowMs`) nothing is. */
+   included, is never this. With no clock handed in (`nowMs`) nothing is. The age is the latest attempt's (`run_started_at`, which
+   GitHub resets on a re-run; read so on three re-runs of 17 and 18 Nov 2026), so a re-run just queued is not aged from its first. */
 export const STUCK_MIN = 10;
 export const neverStarted = (run, jobsOf, nowMs) => !!run && run.status === "queued" && Number.isFinite(nowMs)
-  && nowMs - Date.parse(run.created_at) > STUCK_MIN * 60000
+  && nowMs - Date.parse(run.run_started_at || run.created_at) > STUCK_MIN * 60000
   && !chainNow(run, jobsOf).length;
 
 /* the id of a run whose chain job is waiting or running, 0 for none. A run with no jobs listed yet counts by its own status, so a
