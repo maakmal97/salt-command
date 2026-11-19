@@ -194,7 +194,7 @@
  {
   "name": "a claim card can be chosen",
   "file": "stmt/owner.js",
-  "find": "function apTickable(g){ return !g.drafts.some(draftClaim); }",
+  "find": "function apTickable(g){ return !g.drafts.some(claimAsks); }",
   "replace": "function apTickable(g){ return true; }"
  },
  {

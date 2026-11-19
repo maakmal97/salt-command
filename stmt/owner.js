@@ -6459,6 +6459,10 @@ export const OWNER_JS = `
   /* a trip's rows (the Desk decides them in one batch) or every move on one row is one card, in the order entered. A customer's claim stands alone: it is answered
      on its order's card, never approved here, so it never shuts his own move on the same row (Fable's review of 16 Oct 2026) */
   function draftClaim(d){ var e=d.entry||{}; return !!(e.claim||e.fulfil&&e.fulfil.claim); }
+  /* 20 Nov 2026 (his Received on CZ5-TM's claim, stranded): a claim's row his Received was given for, which came out other than he was shown, is a
+     row like any other, as the Desk's decideDraft says; only a claim still waiting on his Received is answered on its payment card */
+  function claimHeard(d){ return !!(d.preapproval&&d.preapproval.state==='differs'); }
+  function claimAsks(d){ return draftClaim(d)&&!claimHeard(d); }
   /* plan 3 (16 Oct 2026): a move on a row of an order of several books, his own (never a site order's or a claim's), names that order: the trip the Desk read
      off the row (figures.trip), or the one a These are one order sets. Such moves on the order's rows are one card, each draft approved in the order entered. */
   function moveTrip(d){
@@ -6647,7 +6651,7 @@ export const OWNER_JS = `
      (decide-many), so they fold together. A card the Desk would not decide stays, with why and how to fix it; the rest go. A payment they say they
      sent is never ticked: it is answered on its order. A pick is kept by the card's first draft and let go when the card leaves. */
   var apPick={}, apRefused={}, apDone=null;
-  function apTickable(g){ return !g.drafts.some(draftClaim); }
+  function apTickable(g){ return !g.drafts.some(claimAsks); }
   /* a refusal is kept by every draft of its card, so a card whose first move went and whose lead has changed still says it */
   function apGone(g){ for(var i=0;i<g.drafts.length;i++){ if(apRefused[g.drafts[i].id]) return apRefused[g.drafts[i].id]; } return null; }
   function apGroups(){ return draftGroups(pendingRows()).filter(apTickable); }
@@ -6722,7 +6726,7 @@ export const OWNER_JS = `
     live.forEach(function(g){
       /* 16 Nov 2026 (the move to Ambient, place F): AN APPROVAL IS AMBIENT'S, the figures that decide first (the cost and his margin stay, the hard rule), then why it
          was flagged, then the two small pills: Approve and Reject choose, and the card says which in its chip */
-      var draft=g.lead, pick=apPick[draft.id], gone=apGone(g), claim=g.drafts.some(draftClaim);
+      var draft=g.lead, pick=apPick[draft.id], gone=apGone(g), claim=g.drafts.some(claimAsks), heard=g.drafts.some(function(d){ return draftClaim(d)&&claimHeard(d); });
       var card=el('article','amb-task apcard'+(pick==='r'?' ap--r':pick==='a'?' ap--a':gone?' ap--r':'')), head=el('div','amb-task__head apphead');
       card.setAttribute('data-maker-card','draft:'+draft.id); draftRoot.appendChild(card);
       var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','amb-task__kind apparty');
@@ -6762,6 +6766,11 @@ export const OWNER_JS = `
       if(fg&&fg.approvedBefore) card.appendChild(el('p','amb-task__text aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
       var asks=askLines(g);
       if(asks.length){ var fl=el('ul','amb-task__flags apflags'); asks.forEach(function(line){ var li=el('li','apflag'); li.appendChild(el('span','amb-chip amb-chip--warn',line)); fl.appendChild(li); }); card.appendChild(fl); }
+      /* the Book's own reason, when it refused his yes, is what he reads instead (shown.refused); and a claim against the account has no order to offer
+         its move again, so a Reject would leave their page reading the money received and the book never holding it: Approve alone (Fable, 20 Nov 2026) */
+      var heardWhy=heard?g.drafts.map(function(d){ var s=d.preapproval&&d.preapproval.shown; return s&&s.refused?String(s.refused).replace(/[.]+$/,''):''; }).filter(Boolean)[0]||'':'',
+          heardAcct=heard&&g.drafts.some(function(d){ var e=d.entry||{}; return draftClaim(d)&&e.claimId&&!e.orderId; });
+      if(heard&&!claim) card.appendChild(el('p','amb-task__text apheard',heardWhy?'Received given. The book would not take its row: '+heardWhy+'.':'Received given. Its row came out different from what you saw, so Approve books it.'));
       var panel=apDetails(g,[from?'from '+from:'',when].filter(Boolean).join(', '));
       var more=actOn(el('button','amb-pill amb-pill--sm amb-pill--quiet apmore','Details'),'row.proposed'); more.type='button'; more.setAttribute('aria-expanded','false');
       more.addEventListener('click',function(){ var open=more.getAttribute('aria-expanded')!=='true'; more.setAttribute('aria-expanded',String(open)); panel.hidden=!open; });
@@ -6784,7 +6793,7 @@ export const OWNER_JS = `
         var approve=actOn(el('button','amb-pill amb-pill--sm'+(pick==='a'?'':' amb-pill--quiet'),approveLabel(g)),'draft.approve'); approve.type='button'; approve.setAttribute('aria-pressed',String(pick==='a'));
         var reject=actOn(el('button','amb-pill amb-pill--sm'+(pick==='r'?'':' amb-pill--quiet'),g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject'),'draft.reject'); reject.type='button'; reject.setAttribute('aria-pressed',String(pick==='r'));
         approve.addEventListener('click',function(){ apChose(g,'a'); }); reject.addEventListener('click',function(){ apChose(g,'r'); });
-        acts.appendChild(approve); acts.appendChild(reject);
+        acts.appendChild(approve); if(!heardAcct||heardWhy) acts.appendChild(reject);
       }
       card.appendChild(acts);
       card.appendChild(panel);

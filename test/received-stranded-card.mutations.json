@@ -1,0 +1,56 @@
+[
+ {
+  "name": "a Received given is not read",
+  "file": "stmt/owner.js",
+  "find": "function claimHeard(d){ return !!(d.preapproval&&d.preapproval.state==='differs'); }",
+  "replace": "function claimHeard(d){ return false; }"
+ },
+ {
+  "name": "the card still sends him to the payment card",
+  "file": "stmt/owner.js",
+  "find": "claim=g.drafts.some(claimAsks), heard=",
+  "replace": "claim=g.drafts.some(draftClaim), heard="
+ },
+ {
+  "name": "the card cannot be chosen",
+  "file": "stmt/owner.js",
+  "find": "function apTickable(g){ return !g.drafts.some(claimAsks); }",
+  "replace": "function apTickable(g){ return !g.drafts.some(draftClaim); }"
+ },
+ {
+  "name": "the card says nothing of why it waits",
+  "file": "stmt/owner.js",
+  "find": "if(heard&&!claim) card.appendChild(",
+  "replace": "if(false) card.appendChild("
+ },
+ {
+  "name": "an account claim keeps its Reject",
+  "file": "stmt/owner.js",
+  "find": "acts.appendChild(approve); if(!heardAcct||heardWhy) acts.appendChild(reject);",
+  "replace": "acts.appendChild(approve); acts.appendChild(reject);"
+ },
+ {
+  "name": "every heard claim loses its Reject",
+  "file": "stmt/owner.js",
+  "find": "return draftClaim(d)&&e.claimId&&!e.orderId; });",
+  "replace": "return draftClaim(d); });"
+ },
+ {
+  "name": "the Book refusal is not said",
+  "file": "stmt/owner.js",
+  "find": "return s&&s.refused?String(s.refused).replace(/[.]+$/,''):''; })",
+  "replace": "return ''; })"
+ },
+ {
+  "name": "a refused account claim loses its Reject",
+  "file": "stmt/owner.js",
+  "find": "if(!heardAcct||heardWhy) acts.appendChild(reject);",
+  "replace": "if(!heardAcct) acts.appendChild(reject);"
+ },
+ {
+  "name": "the Book's full stop doubles",
+  "file": "stmt/owner.js",
+  "find": "String(s.refused).replace(/[.]+$/,'')",
+  "replace": "String(s.refused)"
+ }
+]

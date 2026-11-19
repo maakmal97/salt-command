@@ -209,6 +209,45 @@ export async function run({ ok, pageWork }) {
     ok(!!row && row.getAttribute("aria-current") === "true" && p.approves().length === 0 && !p.posts.some((x) => /\/(approve|reject|received)$|decide-many/.test(x.route)),
       "and it opens the payment card of that claim, c-2, on Orders > Payments, sending nothing");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  /* 20 Nov 2026 (his Received on CZ5-TM's claim, stranded): a claim's row his Received was given for, which came out other than he was shown, waits
+     marked as the Desk sends it (preapproval differs); the claim is no longer waiting, so its payment card is gone, and the row is decided here */
+  const HEARD = () => ({ ...CLAIM(), preapproval: { state: "differs", says: "differs from what you saw", stage: "pay", at: "2026-10-15T12:51:00.000Z", shown: { figures: { amount: 220 } } } });
+  p = await open(() => [HEARD()]);
+  try {
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
+    const c = p.card(CLAIM().id);
+    ok(!!c && !byAct(c, "approve.to-payment", CLAIM().id) && !!byAct(c, "draft.approve") && !!byAct(c, "draft.reject")
+      && (c.querySelector(".apheard") || {}).textContent === "Received given. Its row came out different from what you saw, so Approve books it.",
+      "a claim's row his Received was given for has Approve and Reject, not Open the payment card, and says why it waits: " + (c && c.textContent.slice(0, 240)));
+    await p.pick(CLAIM().id, "draft.approve"); await p.confirm();
+    ok(J(p.approves()) === J([CLAIM().id]),
+      "and his Approve sends that row in the one decide-many request: " + J(p.approves()));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  /* Fable, 20 Nov 2026: a claim against the account has no order to offer its move again, so its heard row has Approve alone; and a yes the Book
+     refused says the Book's reason, not that the row came out different */
+  const ACCT = () => { const h = HEARD(); const { orderId, ...rest } = h.entry; return { ...h, entry: { ...rest, claimId: "a20261015125000-ab12" } }; };
+  const REFUSED = () => { const h = HEARD(); return { ...h, preapproval: { ...h.preapproval, shown: { ...h.preapproval.shown, refused: "it would leave the row overpaid." } } }; };
+  p = await open(() => [ACCT()]);
+  try {
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
+    const c = p.card(CLAIM().id);
+    ok(!!c && !!byAct(c, "draft.approve") && !byAct(c, "draft.reject") && !byAct(c, "approve.to-payment", CLAIM().id),
+      "a claim against the account whose Received was given has Approve and no Reject, since nothing could offer its move again: " + (c && c.textContent.slice(0, 200)));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  p = await open(() => { const a = ACCT(); return [{ ...a, preapproval: { ...a.preapproval, shown: { ...a.preapproval.shown, refused: "it would leave the row overpaid" } } }]; });
+  try {
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
+    const c = p.card(CLAIM().id);
+    ok(!!c && !!byAct(c, "draft.approve") && !!byAct(c, "draft.reject"),
+      "but one whose Received the Book refused keeps its Reject, since its Approve would be refused again: " + (c && c.textContent.slice(0, 200)));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  p = await open(() => [REFUSED()]);
+  try {
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
+    const c = p.card(CLAIM().id);
+    ok(!!c && (c.querySelector(".apheard") || {}).textContent === "Received given. The book would not take its row: it would leave the row overpaid." && !!byAct(c, "draft.reject"),
+      "a Received the Book refused says the Book's reason, and an order's claim keeps its Reject: " + (c && (c.querySelector(".apheard") || {}).textContent));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   /* a half-approved order: the move left reads from the one approved, and says so */
   p = await open(() => { const left = [CASH()]; approveFigures(book(), left, [CLOSE()]); return left; });
   try {
