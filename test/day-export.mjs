@@ -19,6 +19,7 @@ import { createServer } from "node:http";
 import { DatabaseSync } from "node:sqlite";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
+import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 import { parseDocument } from "yaml";
 
@@ -61,8 +62,8 @@ export async function run({ ok }) {
   const SKIPPED = st(X.EXPORT_STEP, "skipped", "2026-11-14T16:20:00Z");
 
   /* A. THE ONE RULE */
-  ok(X.klDay("2026-11-14T15:59:59Z") === "2026-11-14" && X.klDay("2026-11-14T16:00:00Z") === DAY && X.klDayStart(DAY) === Date.parse("2026-11-14T16:00:00Z"),
-    "the Kuala Lumpur day turns at 16:00 UTC: " + J([X.klDay("2026-11-14T15:59:59Z"), X.klDay("2026-11-14T16:00:00Z")]));
+  ok(X.klDate("2026-11-14T15:59:59Z") === "2026-11-14" && X.klDate("2026-11-14T16:00:00Z") === DAY && X.klDateStart(DAY) === Date.parse("2026-11-14T16:00:00Z"),
+    "the Kuala Lumpur day turns at 16:00 UTC: " + J([X.klDate("2026-11-14T15:59:59Z"), X.klDate("2026-11-14T16:00:00Z")]));
   const landed = X.exportLanded([R(1)], by({ 1: [chain([LANDED])] }), DAY);
   ok(landed.done && landed.run === 1, "an export step with success on today's date has landed: " + J(landed));
   const notLanded = [
@@ -74,11 +75,13 @@ export async function run({ ok }) {
   ok(notLanded.every(([, v]) => !v.done), "skipped, failed, yesterday's, another step and another job are not today's export: " + J(notLanded.map(([k, v]) => [k, v.done])));
   const reRun = X.exportLanded([R(1)], by({ 1: [chain([LANDED]), chain([st(X.EXPORT_STEP, "failure", "2026-11-14T17:00:00Z")])] }), DAY);
   ok(reRun.done, "an export that landed in one attempt counts though a later attempt of the run failed: " + J(reRun));
-  ok(X.chainBusy([R(1, { status: "queued" })], by({}), null) === 1, "a run created and not started is busy before it lists a job");
-  ok(X.chainBusy([R(1, { status: "in_progress" })], by({ 1: [chain([], "in_progress")] }), null) === 1, "a run whose chain job runs is busy");
-  ok(X.chainBusy([R(1, { status: "in_progress" })], by({ 1: [chain([]), { name: "suite (1)", status: "in_progress", steps: [] }] }), null) === 0,
+  ok(X.chainBusy([R(1, { status: "queued" })], by({})) === 1, "a run created and not started is busy before it lists a job");
+  ok(X.chainBusy([R(1, { status: "in_progress" })], by({ 1: [chain([], "in_progress")] })) === 1, "a run whose chain job runs is busy");
+  ok(X.chainBusy([R(1, { status: "in_progress" })], by({ 1: [chain([]), { name: "suite (1)", status: "in_progress", steps: [] }] })) === 0,
     "a run whose chain has finished and only its suite runs is not busy: the lock is free");
-  ok(X.chainBusy([R(7, { status: "in_progress" })], by({ 7: [chain([], "in_progress")] }), 7) === 0, "the run asking leaves itself out");
+  ok(X.chainBusy([R(1, { status: "queued", run_attempt: 2 })], by({ 1: [{ ...chain([]), run_attempt: 1 }] })) === 1
+    && X.chainBusy([R(1, { status: "in_progress", run_attempt: 2 })], by({ 1: [{ ...chain([]), run_attempt: 1 }, { ...chain([]), run_attempt: 2 }] })) === 0,
+    "a re-run that has listed no job of its new attempt is busy, whatever its finished first attempt says; once the new attempt's chain is done it is not");
   ok(X.exportInHand([R(2, { status: "in_progress", display_title: X.exportTitle(DAY) })], DAY) === 2
     && X.exportInHand([R(2, { display_title: X.exportTitle(DAY) })], DAY) === 0
     && X.exportInHand([R(2, { status: "in_progress", display_title: X.exportTitle("2026-11-14") })], DAY) === 0
@@ -90,15 +93,20 @@ export async function run({ ok }) {
   const at = (kl) => Date.parse(DAY + "T" + kl + ":00+08:00");
   /* 17 Nov 2026, the Worker's own rule for its publish: a run GitHub never started covers nothing */
   const Q = (min, o = {}) => R(3, { status: "queued", created_at: new Date(at("01:00") - min * 60000).toISOString(), ...o });
-  ok(X.chainBusy([Q(11)], by({}), null, at("01:00")) === 0 && X.chainBusy([Q(10)], by({}), null, at("01:00")) === 3,
+  ok(X.chainBusy([Q(11)], by({}), at("01:00")) === 0 && X.chainBusy([Q(10)], by({}), at("01:00")) === 3,
     "a run still queued with no job more than 10 minutes after it was made is not busy; one at 10 minutes is");
-  ok(X.chainBusy([Q(40)], by({ 3: [chain([], "queued")] }), null, at("01:00")) === 3 && X.chainBusy([Q(40, { status: "in_progress" })], by({}), null, at("01:00")) === 3,
+  ok(X.chainBusy([Q(40)], by({ 3: [chain([], "queued")] }), at("01:00")) === 3 && X.chainBusy([Q(40, { status: "in_progress" })], by({}), at("01:00")) === 3,
     "but one whose chain job waits on the lock, or that has started, is busy however old");
   const QX = (min) => Q(min, { display_title: X.exportTitle(DAY) });
   const stuckDue = [X.dueVerdict([QX(11)], by({}), DAY, null, at("01:00")), X.dueVerdict([QX(9)], by({}), DAY, null, at("01:00")),
     X.dueVerdict([QX(40)], by({ 3: [chain([], "queued")] }), DAY, null, at("01:00"))];
   ok(stuckDue[0].due && !stuckDue[1].due && !stuckDue[2].due,
     "an export run GitHub never started leaves the clock's export due; a fresh one, or one waiting on the lock, does not: " + J(stuckDue));
+  const FAILED = st(X.EXPORT_STEP, "failure", "2026-11-14T16:20:00Z"), failedOld = st(X.EXPORT_STEP, "failure", "2026-11-14T15:59:00Z");
+  const fv = [X.dueVerdict([R(1)], by({ 1: [chain([FAILED])] }), DAY), X.dueVerdict([R(1)], by({ 1: [chain([failedOld])] }), DAY),
+    X.dueVerdict([R(1), R(2)], by({ 1: [chain([FAILED])], 2: [chain([LANDED])] }), DAY), X.dueVerdict([R(1)], by({ 1: [{ name: "suite (1)", steps: [FAILED] }] }), DAY)];
+  ok(!fv[0].due && /failed today in run 1/.test(fv[0].why) && fv[1].due && !fv[2].due && /landed/.test(fv[2].why) && fv[3].due,
+    "once the export step has failed today the clock leaves the export and publishes; yesterday's failure or another job's does not stop it, and a later success reads landed: " + J(fv));
   const P = (kl, mark) => X.askPace(at(kl), mark).act;
   ok(P("00:04", null) === "rest" && P("00:05", null) === "read" && P("05:59", null) === "read" && P("06:00", null) === "rest",
     "the Worker reads from 00:05 to 05:59 and rests outside it: " + J(["00:04", "00:05", "05:59", "06:00"].map((t) => P(t, null))));
@@ -118,13 +126,21 @@ export async function run({ ok }) {
     && paths.some((p) => p === "actions/runs/100/jobs?filter=all&per_page=100") && paths.some((p) => p.startsWith("actions/runs/201/jobs"))
     && paths.some((p) => p.startsWith("actions/runs/202/jobs")) && !paths.some((p) => p.startsWith("actions/runs/200/jobs")),
     "the reads page on, start six hours before the day, read every attempt's jobs of dispatched, scheduled and open runs, and skip a finished push run: " + J(paths));
+  let capped = false, under = null;
+  try { await X.readRuns(fakeGet([full, full, [R(1)]], {}), DAY, { perPage: 2, maxPages: 2 }); } catch (e) { capped = /over 4 runs/.test(String(e.message)); }
+  try { under = await X.readRuns(fakeGet([full, [R(1)]], {}), DAY, { perPage: 2, maxPages: 2 }); } catch (e) { under = null; }
+  ok(capped && under && under.runs.length === 3, "a run list longer than it reads is refused, never taken as the whole day; one that ends inside the last page is read");
+  paths.length = 0;
+  await X.readRuns(fakeGet([[R(300, { updated_at: "2026-11-14T15:59:00Z" }), R(301, { updated_at: "2026-11-14T16:01:00Z" }), R(302, { updated_at: "2026-11-14T15:00:00Z", status: "in_progress" }), R(303)]], {}), DAY);
+  ok(!paths.some((p) => p.startsWith("actions/runs/300/jobs")) && [301, 302, 303].every((id) => paths.some((p) => p.startsWith("actions/runs/" + id + "/jobs"))),
+    "a run finished before the day began is not asked for its jobs; one touched today, one still open and one with no time are: " + J(paths));
   let threw = false;
   try { await X.readRuns(async () => ({ message: "Bad credentials" }), DAY); } catch (e) { threw = /workflow_runs/.test(String(e.message)); }
   ok(threw, "an answer with no run list throws, so silence is never read as no export");
   const wf = readFileSync(join(ROOT, ".github", "workflows", "cloud-commit.yml"), "utf8"), doc = parseDocument(wf).toJS();
   const exportStep = (doc.jobs.chain.steps || []).find((s) => s.name === X.EXPORT_STEP);
-  ok(!!exportStep && /book-export\.mjs --day/.test(exportStep.run || "") && /export == '1'/.test(String(exportStep.if || "")) && X.CHAIN_JOB === "chain",
-    "the step the rule reads by name is the chain job's own export step, the one that runs book-export --day: " + J({ found: !!exportStep, if: exportStep && exportStep.if }));
+  ok(!!exportStep && /book-export\.mjs --day/.test(exportStep.run || "") && /export == '1'/.test(String(exportStep.if || "")) && X.CHAIN_JOB === "chain" && !exportStep["continue-on-error"],
+    "the step the rule reads by name is the chain job's own export step, the one that runs book-export --day, and a failure of it is a failure: " + J({ found: !!exportStep, if: exportStep && exportStep.if }));
   ok(String(doc["run-name"]).includes("format('Cloud commit: {0}', inputs.reason)"), "the run-name gives a dispatch's reason after 'Cloud commit: ', which exportTitle matches");
 
   /* A STAND-IN GITHUB for B and C: one scenario at a time, every request counted */
@@ -160,8 +176,8 @@ export async function run({ ok }) {
     ok(b3c.code === 0, "nor is an export run GitHub has left queued with no job for half an hour: " + J({ code: b3c.code, out: b3c.out.trim() }));
     scen = { runs: [], jobs: {}, status: 500 };
     const b4 = await due(), b5 = await due({ GH_TOKEN: "" });
-    ok(b4.code === 2 && /cannot tell: GitHub answered 500/.test(b4.out) && b5.code === 2 && /no GH_TOKEN/.test(b5.out),
-      "a GitHub that will not answer, or no token, is cannot tell (exit 2): " + J([b4.code, b4.out.trim(), b5.code, b5.out.trim()]));
+    ok(b4.code === 2 && /^::warning::day export: cannot tell: GitHub answered 500/m.test(b4.out) && b5.code === 2 && /^::warning::day export: cannot tell: no GH_TOKEN/m.test(b5.out) && !/::warning::/.test(b1.out + b2.out),
+      "a GitHub that will not answer, or no token, is cannot tell (exit 2), said as a warning on the run: " + J([b4.code, b4.out.trim(), b5.code, b5.out.trim()]));
 
     /* C. THE PLAN STEP, AS GITHUB RUNS IT */
     const planStep = doc.jobs.chain.steps.find((s) => s.name === "What this run does");
@@ -186,6 +202,8 @@ export async function run({ ok }) {
     ok(c3.code === 0 && c3.o.export === "0" && /cannot tell/.test(c3.out), "a GitHub that will not answer leaves export at 0 and the step green: " + J({ code: c3.code, o: c3.o }));
     const c4 = await plan({ "github.event_name": "workflow_dispatch", "inputs.export": "true", "inputs.stage_only": "true" }, done);
     ok(c4.code === 0 && c4.o.export === "1" && c4.hits === 0, "a dispatch with export always exports and asks GitHub nothing: " + J({ o: c4.o, hits: c4.hits }));
+    const c7 = await plan({}, { runs: [R(1)], jobs: { 1: [chain([FAILED])] }, status: 200 });
+    ok(c7.code === 0 && c7.o.export === "0" && c7.o.publish === "1", "a scheduled run after the export step failed today does not export, and publishes: " + J(c7.o));
     const c5 = await plan({ "steps.source.outputs.mode": "d1" }, none), c6 = await plan({ "github.event_name": "push" }, none);
     ok(c5.code === 0 && c5.o.export === "0" && c5.hits === 0 && c6.o.export === "0" && c6.hits === 0,
       "with git as the source, or on a push, nothing exports and GitHub is not asked: " + J({ c5: c5.o, c6: c6.o, hits: [c5.hits, c6.hits] }));
@@ -213,13 +231,15 @@ export async function run({ ok }) {
     console.log = (...x) => logs.push(x.join(" "));
     globalThis.fetch = async (input, init = {}) => {
       const u = String((input && input.url) || input), method = (init && init.method) || "GET";
-      calls.push({ u, method, body: init && init.body ? String(init.body) : "" });
+      calls.push({ u, method, body: init && init.body ? String(init.body) : "", timed: !!(init && init.signal) });
       if (u.startsWith("https://push.example/")) return new Response("", { status: 201 });
       if (u.startsWith(GH)) {
+        if (/cloud-commit\.yml\/runs\?created/.test(u) && g.seen) g.seen.push(await env.SALT_QUEUE.get("export:night", "json"));
         if (g.status && g.status !== 200) return new Response("{}", { status: g.status });
         if (method === "POST" && u.endsWith("/dispatches")) return new Response(null, { status: g.dispatch || 204 });
         const m = /actions\/runs\/(\d+)\/jobs/.exec(u);
         if (m) return new Response(J({ jobs: (g.jobs || {})[m[1]] || [] }), { status: 200 });
+        if (/cloud-commit\.yml\/runs\?per_page=10/.test(u) && g.plain) return new Response(J({ workflow_runs: g.plain }), { status: 200 });
         if (/actions\/workflows\/cloud-commit\.yml\/runs/.test(u)) return new Response(J({ workflow_runs: g.runs || [] }), { status: 200 });
       }
       return new Response("", { status: 404 });
@@ -239,13 +259,20 @@ export async function run({ ok }) {
   ok(d1.dispatches.length === 1 && d1.dispatches[0].export === "true" && d1.dispatches[0].stage_only === "true" && d1.dispatches[0].reason === "export: the day " + DAY
     && night && night.tries === 1 && d1.logs.some((l) => /^export dispatch: try 1 for 2026-11-15$/.test(l)),
     "at 00:05 with no export today the Desk sends ONE run, with export, and the day's publish sends no second: " + J({ dispatches: d1.dispatches, night }));
+  const asked = d1.calls.filter((c) => /runs\?created|\/jobs\?filter=all/.test(c.u));
+  ok(asked.length >= 2 && asked.every((c) => c.timed), "every read of GitHub for the export is timed, so a call that hangs cannot hold the minute: " + J(asked.map((c) => c.timed)));
+  const seen = [], h = world();
+  const d0 = await tick(h.env, "* * * * *", KLT("00:05"), { status: 502, seen }), d0b = await tick(h.env, "* * * * *", KLT("00:06"), quiet);
+  ok(d0.reads === 1 && !d0.dispatches.some((x) => x.export) && d0.logs.some((l) => /^export check: GitHub did not answer: /.test(l)) && d0b.reads === 0,
+    "a GitHub that will not answer at night is said in the log, sends no export, and is asked again only at the next read: " + J({ reads: [d0.reads, d0b.reads], logs: d0.logs.filter((l) => /export/.test(l)) }));
+  ok(seen.length === 1 && seen[0] && seen[0].read === KLT("00:05"), "the read is marked before it begins, so one that outlives its minute is not begun again: " + J(seen));
   const d2 = await tick(w.env, "* * * * *", KLT("00:06"), quiet);
   ok(d2.reads === 0 && d2.dispatches.length === 0, "a minute later it reads nothing: the rule is read at most every 10 minutes: " + J({ reads: d2.reads }));
   const busy = { runs: [R(5, { status: "in_progress", display_title: X.exportTitle(DAY) })], jobs: { 5: [chain([], "in_progress")] } };
   const d3 = await tick(w.env, "* * * * *", KLT("00:15"), busy);
   ok(d3.reads === 1 && d3.dispatches.length === 0, "while the chain runs it reads and sends nothing: " + J({ reads: d3.reads, dispatches: d3.dispatches }));
   const d4 = await tick(w.env, "* * * * *", KLT("00:25"), quiet);
-  ok(d4.dispatches.length === 0, "a run replaced and gone, under 30 minutes since the try, waits: " + J(d4.dispatches));
+  ok(!d4.dispatches.some((x) => x.export), "a run replaced and gone, under 30 minutes since the try, waits for its next try: " + J(d4.dispatches));
   const d5 = await tick(w.env, "* * * * *", KLT("00:35"), quiet);
   ok(d5.dispatches.length === 1 && d5.dispatches[0].export === "true" && (await w.kv.get("export:night", "json")).tries === 2, "30 minutes on it tries again: " + J(d5.dispatches));
   const landedNight = { runs: [R(6)], jobs: { 6: [chain([st(X.EXPORT_STEP, "success", KLT("00:41"))])] } };
@@ -271,22 +298,54 @@ export async function run({ ok }) {
   ok(!d13.dispatches.some((x) => x.export) && d14.dispatches.length === 1 && d14.dispatches[0].export === "true",
     "a run made five minutes ago and not started holds the try; one GitHub has left queued with no job for 40 minutes does not: " + J([d13.dispatches, d14.dispatches]));
 
+  const lw = world();
+  const d15 = await tick(lw.env, "* * * * *", KLT("00:05"), Object.assign({ plain: [R(11, { event: "push", status: "queued", created_at: KLT("00:05") })] }, quiet));
+  const lwNight = await lw.kv.get("export:night", "json");
+  ok(!d15.dispatches.some((x) => x.export) && !(lwNight && lwNight.tries),
+    "a run that turned pending while the jobs were read is found just before the dispatch: nothing is sent over it and no try is spent: " + J({ dispatches: d15.dispatches, night: lwNight }));
+  const fw = world(), failedTry = { runs: [R(9, { display_title: X.exportTitle(DAY) })], jobs: { 9: [chain([st(X.EXPORT_STEP, "failure", KLT("00:10"))])] } };
+  const d16 = await tick(fw.env, "* * * * *", KLT("00:05"), quiet), d17 = await tick(fw.env, "* * * * *", KLT("00:15"), failedTry), d18 = await tick(fw.env, "* * * * *", KLT("00:25"), failedTry);
+  ok(d16.dispatches.length === 1 && d16.dispatches[0].export === "true" && d17.dispatches.length === 1 && !d17.dispatches[0].export && d17.dispatches[0].stage_only === "true"
+    && /the export try did not land/.test(d17.dispatches[0].reason) && d17.logs.some((l) => /ended with no export, so the publish is asked for again/.test(l)) && d18.dispatches.length === 0,
+    "a try whose run ended with no export took the day's publish with it, so the next read sends a publish run of its own, once: " + J([d16.dispatches, d17.dispatches, d18.dispatches]));
+  const rw = world();
+  const d19 = await tick(rw.env, "* * * * *", KLT("00:05"), Object.assign({ dispatch: 422 }, quiet)), d20 = await tick(rw.env, "* * * * *", KLT("00:15"), quiet);
+  ok(d19.dispatches.length === 2 && d20.dispatches.length === 0, "a refused try swallowed no publish, so none is asked for again: " + J([d19.dispatches, d20.dispatches]));
+
   /* E. THE 09:00 DIGEST */
   const digest = async (source, gh) => {
     const x = world(source);
     await x.kv.put("push:aa11", J({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
     await x.kv.put("export:landed", J({ day: "2026-11-13", run: 4 }));
     const r = await tick(x.env, "0 1 * * *", "2026-11-15T01:00:00Z", gh);
-    return { ...r, inform: await x.kv.get("inform:last", "json") };
+    const summary = await (await desk.fetch(new Request("https://salt-command.example/push/summary"), x.env, { waitUntil() { } })).json();
+    return { ...r, inform: await x.kv.get("inform:last", "json"), summary };
   };
   const e1 = await digest("book", quiet), e2 = await digest("book", landedNight), e3 = await digest("book", { status: 502 }), e4 = await digest("d1", quiet);
-  ok(e1.pushes === 1 && e1.inform && e1.inform.k === "export" && e1.logs.some((l) => /^git export alarm: git has no export of the Book on 2026-11-15; the last landed on 2026-11-13$/.test(l)),
-    "no export by 09:00 rings a device subscribed as the Desk subscribes, the warning's kind kept for its words: " + J({ pushes: e1.pushes, inform: e1.inform, logs: e1.logs.slice(0, 3) }));
+  ok(e1.pushes === 1 && e1.inform && e1.inform.k === "export" && Date.parse(e1.inform.at) > Date.parse("2026-11-15T01:00:00Z") + 60000 && e1.logs.some((l) => /^git export alarm: git has no export of the Book on 2026-11-15; the last landed on 2026-11-13$/.test(l)),
+    "no export by 09:00 rings a device subscribed as the Desk subscribes, the warning's kind kept for its words at the real clock's moment: " + J({ pushes: e1.pushes, inform: e1.inform, logs: e1.logs.slice(0, 3) }));
   ok(e2.pushes === 0 && !e2.inform && e2.logs.some((l) => /nothing worth saying/.test(l)), "a landed export leaves the digest quiet: " + J(e2.logs.slice(0, 3)));
   ok(e3.pushes === 1 && e3.inform && e3.inform.k === "export-unchecked" && e3.logs.some((l) => /git export alarm: the day's export could not be checked/.test(l)),
     "a GitHub that will not answer rings too, with its own kind: " + J({ inform: e3.inform }));
   ok(e4.pushes === 0 && !e4.inform, "with git as the source the digest says nothing of it");
-  const sw = readFileSync(join(ROOT, "public", "sw.js"), "utf8");
-  ok(/\n  export: \["No export of the Book to git today", /.test(sw) && /\n  "export-unchecked": \["The day's export could not be checked", /.test(sw),
-    "the phone's worker has words for both kinds, so the banner names them and never says Nothing to tell");
+  /* the phone's own worker, run on the summary the Desk served after each digest: what it shows */
+  const swSrc = readFileSync(join(ROOT, "public", "sw.js"), "utf8");
+  const banner = async (summary) => {
+    const L = {}, shown = [], data = {};
+    const cell = (fn) => { const r = {}; Promise.resolve().then(() => { fn(r); if (r.onsuccess) r.onsuccess(); }); return r; };
+    const idb = { open: () => { const rq = {}; Promise.resolve().then(() => { rq.result = { createObjectStore() {}, transaction: () => ({ objectStore: () => ({
+      get: (k) => cell((r) => { r.result = data[k]; }), put: (v, k) => cell((r) => { data[k] = v; }) }) }) }; if (rq.onsuccess) rq.onsuccess(); }); return rq; } };
+    const ctx = { URL, console, caches: {}, indexedDB: idb,
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, tag: opt && opt.tag }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} },
+      fetch: async () => ({ ok: true, json: async () => summary }) };
+    vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+    return shown;
+  };
+  const s1 = await banner(e1.summary), s3 = await banner(e3.summary), s2 = await banner(e2.summary);
+  ok(e1.summary.inform && e1.summary.inform.k === "export" && s1.some((b) => b.t === "No export of the Book to git yet today" && b.tag === "i-export")
+    && s3.some((b) => b.t === "The day's export could not be checked" && b.tag === "i-export-unchecked") && !s2.some((b) => /^i-export/.test(b.tag || "")),
+    "the phone shows each warning in its own words off the summary the Desk serves, and neither once the export has landed: " + J([s1, s3, s2]));
 }

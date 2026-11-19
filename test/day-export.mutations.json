@@ -14,14 +14,38 @@
  {
   "name": "an export step of any day has landed",
   "file": "src/day-export.js",
-  "find": " || klDay(step.completed_at) !== day) continue;",
+  "find": " || klDate(step.completed_at) !== day) continue;",
   "replace": ") continue;"
  },
  {
   "name": "a step of any job counts",
   "file": "src/day-export.js",
-  "find": "if (!job || job.name !== CHAIN_JOB) continue;",
-  "replace": "if (!job) continue;"
+  "find": "if (!job || job.name !== CHAIN_JOB) continue;\n      for (const step of job.steps || []) {",
+  "replace": "if (!job) continue;\n      for (const step of job.steps || []) {"
+ },
+ {
+  "name": "a failed step of any job stops the clock",
+  "file": "src/day-export.js",
+  "find": "if (!job || job.name !== CHAIN_JOB) continue;\n      if ((job.steps || []).some(",
+  "replace": "if (!job) continue;\n      if ((job.steps || []).some("
+ },
+ {
+  "name": "a failure of any day stops the clock",
+  "file": "src/day-export.js",
+  "find": " && s.conclusion === \"failure\" && klDate(s.completed_at) === day)) return run.id;",
+  "replace": " && s.conclusion === \"failure\")) return run.id;"
+ },
+ {
+  "name": "a skipped export step reads as failed",
+  "file": "src/day-export.js",
+  "find": "s.conclusion === \"failure\"",
+  "replace": "s.conclusion !== \"success\""
+ },
+ {
+  "name": "the clock exports again after the export failed",
+  "file": "src/day-export.js",
+  "find": "  if (failed) return { due: false, why: \"the export step failed today in run \" + failed + \", so this run publishes and leaves the export to the Desk or a dispatch by hand\" };\n",
+  "replace": ""
  },
  {
   "name": "a run is busy while any job of it runs",
@@ -36,16 +60,16 @@
   "replace": "!chain.length ? false"
  },
  {
-  "name": "the run asking counts itself busy",
+  "name": "a re-run reads as its old attempt",
   "file": "src/day-export.js",
-  "find": " || String(run.id) === String(except) || neverStarted(run, jobsOf, nowMs)) continue;",
-  "replace": " || neverStarted(run, jobsOf, nowMs)) continue;"
+  "find": "\n  && (j.run_attempt == null || run.run_attempt == null || j.run_attempt === run.run_attempt));",
+  "replace": ");"
  },
  {
   "name": "a run GitHub never started is busy for good",
   "file": "src/day-export.js",
-  "find": " || String(run.id) === String(except) || neverStarted(run, jobsOf, nowMs)) continue;",
-  "replace": " || String(run.id) === String(except)) continue;"
+  "find": " || neverStarted(run, jobsOf, nowMs)) continue;",
+  "replace": ") continue;"
  },
  {
   "name": "an export run never started stays in hand",
@@ -68,7 +92,7 @@
  {
   "name": "a run waiting on the lock reads as never started",
   "file": "src/day-export.js",
-  "find": "\n  && !(jobsOf(run.id) || []).some((j) => j && j.name === CHAIN_JOB);",
+  "find": "\n  && !chainNow(run, jobsOf).length;",
   "replace": ";"
  },
  {
@@ -76,18 +100,6 @@
   "file": "src/day-export.js",
   "find": "!!run && run.status === \"queued\" && Number.isFinite(nowMs)",
   "replace": "!!run && Number.isFinite(nowMs)"
- },
- {
-  "name": "the Worker hands the busy check no clock",
-  "file": "src/worker.js",
-  "find": "chainBusy(ev.runs, ev.jobsOf, null, now.getTime())",
-  "replace": "chainBusy(ev.runs, ev.jobsOf)"
- },
- {
-  "name": "the reader hands the verdict no clock",
-  "file": "tools/day-export.mjs",
-  "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null, nowMs)",
-  "replace": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null)"
  },
  {
   "name": "the run asking counts itself in hand",
@@ -114,6 +126,12 @@
   "replace": "break;"
  },
  {
+  "name": "a list cut short is read as the whole day",
+  "file": "src/day-export.js",
+  "find": "    if (page >= maxPages) throw new Error(\"GitHub listed over \" + maxPages * perPage + \" runs since \" + since + \", more than this reads\");\n",
+  "replace": "    if (page >= maxPages) break;\n"
+ },
+ {
   "name": "the jobs read the latest attempt only",
   "file": "src/day-export.js",
   "find": "\"/jobs?filter=all&per_page=100\"",
@@ -122,8 +140,14 @@
  {
   "name": "a finished push run's jobs are read",
   "file": "src/day-export.js",
-  "find": "    if (!mayExport(run) && run.status === \"completed\") continue;\n",
-  "replace": ""
+  "find": "(!mayExport(run) || Date.parse(run.updated_at) < dayStart)",
+  "replace": "(Date.parse(run.updated_at) < dayStart)"
+ },
+ {
+  "name": "a run finished yesterday is asked for its jobs",
+  "file": "src/day-export.js",
+  "find": "(!mayExport(run) || Date.parse(run.updated_at) < dayStart)",
+  "replace": "(!mayExport(run))"
  },
  {
   "name": "an answer with no run list reads as no runs",
@@ -180,21 +204,57 @@
   "replace": "const xa = {};"
  },
  {
-  "name": "a try leaves the day's publish to send a second run",
+  "name": "a GitHub read waits for ever",
   "file": "src/worker.js",
-  "find": "  await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify({ at: now.toISOString(), for: now.toISOString(), reason: \"covered by \" + reason }));\n",
-  "replace": ""
+  "find": ", signal: AbortSignal.timeout(GH_READ_MS) });",
+  "replace": " });"
+ },
+ {
+  "name": "the read is marked after it",
+  "file": "src/worker.js",
+  "find": "  await keep();\n  if (await sourceMode(env.SALT_LEDGER) !== \"book\") return { git: true };",
+  "replace": "  if (await sourceMode(env.SALT_LEDGER) !== \"book\") return { git: true };"
  },
  {
   "name": "the Worker asks with git as the source",
   "file": "src/worker.js",
-  "find": "  if (await sourceMode(env.SALT_LEDGER) !== \"book\") { await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m)); return { git: true }; }\n",
+  "find": "  if (await sourceMode(env.SALT_LEDGER) !== \"book\") return { git: true };\n",
   "replace": ""
+ },
+ {
+  "name": "the Worker hands the busy check no clock",
+  "file": "src/worker.js",
+  "find": "chainBusy(ev.runs, ev.jobsOf, now.getTime())",
+  "replace": "chainBusy(ev.runs, ev.jobsOf)"
  },
  {
   "name": "a landed night is not marked done",
   "file": "src/worker.js",
   "find": "    m.done = true;\n",
+  "replace": ""
+ },
+ {
+  "name": "a failed try leaves the day's publish swallowed",
+  "file": "src/worker.js",
+  "find": "  if (again) { m.asked = m.tried; await wantPublish(env, \"the export try did not land\", now); }\n",
+  "replace": ""
+ },
+ {
+  "name": "the publish is asked for again at every read",
+  "file": "src/worker.js",
+  "find": " && !!m.tried && m.asked !== m.tried;",
+  "replace": " && !!m.tried;"
+ },
+ {
+  "name": "the publish is asked for again while the try still runs",
+  "file": "src/worker.js",
+  "find": "(v.act === \"spaced\" || v.act === \"spent\")",
+  "replace": "(v.act === \"spaced\" || v.act === \"spent\" || v.act === \"busy\")"
+ },
+ {
+  "name": "a run turned pending meanwhile is dispatched over",
+  "file": "src/worker.js",
+  "find": "  if (waiting !== 0) return { busy: true, run: waiting, day: pace.day };\n",
   "replace": ""
  },
  {
@@ -212,7 +272,19 @@
  {
   "name": "a refused try reads as sent",
   "file": "src/worker.js",
-  "find": "  if (!r.ok) return { refused: await ghRefusal(r, \"export dispatch:\"), tries: m.tries, day: pace.day };\n",
+  "find": "  if (!r.ok) { m.asked = m.tried; await keep(); return { refused: await ghRefusal(r, \"export dispatch:\"), tries: m.tries, day: pace.day }; }\n",
+  "replace": ""
+ },
+ {
+  "name": "a refused try asks for the publish again",
+  "file": "src/worker.js",
+  "find": "if (!r.ok) { m.asked = m.tried; await keep(); return {",
+  "replace": "if (!r.ok) { return {"
+ },
+ {
+  "name": "a try leaves the day's publish to send a second run",
+  "file": "src/worker.js",
+  "find": "  await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify({ at: now.toISOString(), for: now.toISOString(), reason: \"covered by \" + reason }));\n",
   "replace": ""
  },
  {
@@ -224,8 +296,14 @@
  {
   "name": "the warning's kind is not kept for its words",
   "file": "src/worker.js",
-  "find": "  try { await env.SALT_QUEUE.put(\"inform:last\", JSON.stringify({ k: kind, at: now.toISOString() }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }\n",
+  "find": "  try { await env.SALT_QUEUE.put(\"inform:last\", JSON.stringify({ k: kind, at }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }\n",
   "replace": ""
+ },
+ {
+  "name": "the warning carries the cron's minute",
+  "file": "src/worker.js",
+  "find": "  const at = new Date().toISOString();\n  try { await env.SALT_QUEUE.put(\"inform:last\", JSON.stringify({ k: kind, at })",
+  "replace": "  const at = now.toISOString();\n  try { await env.SALT_QUEUE.put(\"inform:last\", JSON.stringify({ k: kind, at })"
  },
  {
   "name": "an unreadable GitHub is silent at 09:00",
@@ -270,6 +348,12 @@
   "replace": "      - name: Export the Book to git (the record)\n"
  },
  {
+  "name": "the export step may fail and the run go on",
+  "file": ".github/workflows/cloud-commit.yml",
+  "find": "      - name: Export the Book to git (the day's record)\n",
+  "replace": "      - name: Export the Book to git (the day's record)\n        continue-on-error: true\n"
+ },
+ {
   "name": "the plan asks with git as the source",
   "file": ".github/workflows/cloud-commit.yml",
   "find": "          if [ \"${{ steps.source.outputs.mode }}\" = \"book\" ]; then\n            if [ \"${{ inputs.export }}\"",
@@ -288,15 +372,33 @@
   "replace": "  say(0, \"cannot tell: \" + String((e && e.message) || e));"
  },
  {
+  "name": "cannot tell is one unread log line",
+  "file": "tools/day-export.mjs",
+  "find": "(code === 2 ? \"::warning::\" : \"\")",
+  "replace": "\"\""
+ },
+ {
   "name": "the run asking is not left out",
   "file": "tools/day-export.mjs",
   "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null, nowMs)",
   "replace": "dueVerdict(runs, jobsOf, day, null, nowMs)"
  },
  {
+  "name": "the reader hands the verdict no clock",
+  "file": "tools/day-export.mjs",
+  "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null, nowMs)",
+  "replace": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null)"
+ },
+ {
   "name": "the phone has no words for the warning",
   "file": "public/sw.js",
-  "find": "  export: [\"No export of the Book to git today\",",
-  "replace": "  exportx: [\"No export of the Book to git today\","
+  "find": "  export: [\"No export of the Book to git yet today\",",
+  "replace": "  exportx: [\"No export of the Book to git yet today\","
+ },
+ {
+  "name": "the phone has no words for an export it could not check",
+  "file": "public/sw.js",
+  "find": "\"export-unchecked\": [\"The day's export could not be checked\"",
+  "replace": "\"export-uncheckedx\": [\"The day's export could not be checked\""
  }
 ]

@@ -19,12 +19,12 @@ export const exportTitle = (day) => "Cloud commit: " + exportReason(day);   /* t
 
 const KL_MS = 8 * 3600000, DAY_MS = 86400000;   /* Kuala Lumpur keeps no summer time */
 /* the Kuala Lumpur date of a moment (ms or an ISO string), YYYY-MM-DD; null for one that does not parse */
-export function klDay(t) {
+export function klDate(t) {
   const ms = typeof t === "number" ? t : Date.parse(t);
   return Number.isFinite(ms) ? new Date(ms + KL_MS).toISOString().slice(0, 10) : null;
 }
 /* the UTC moment a Kuala Lumpur date begins */
-export const klDayStart = (day) => Date.parse(day + "T00:00:00Z") - KL_MS;
+export const klDateStart = (day) => Date.parse(day + "T00:00:00Z") - KL_MS;
 /* minutes into the Kuala Lumpur day */
 export const klMinutes = (ms) => ((ms + KL_MS) % DAY_MS) / 60000;
 
@@ -38,7 +38,7 @@ export function exportLanded(runs, jobsOf, day) {
     for (const job of jobsOf(run.id) || []) {
       if (!job || job.name !== CHAIN_JOB) continue;
       for (const step of job.steps || []) {
-        if (!step || step.name !== EXPORT_STEP || step.conclusion !== "success" || klDay(step.completed_at) !== day) continue;
+        if (!step || step.name !== EXPORT_STEP || step.conclusion !== "success" || klDate(step.completed_at) !== day) continue;
         if (!best || Date.parse(step.completed_at) > Date.parse(best.at)) best = { run: run.id, at: step.completed_at };
       }
     }
@@ -46,8 +46,25 @@ export function exportLanded(runs, jobsOf, day) {
   return best ? { done: true, run: best.run, at: best.at } : { done: false, run: null, at: null };
 }
 
+/* the id of a run whose chain job FAILED the export step on `day`, 0 for none. The step failing stops its run before the publish, so
+   once it has failed the clock leaves the export alone and publishes (dueVerdict): a broken export never takes the four-a-day
+   publish net with it (Fable's review of 20 Nov 2026). A step skipped because an earlier one failed is not this. */
+export function exportFailed(runs, jobsOf, day) {
+  for (const run of runs || []) {
+    for (const job of jobsOf(run.id) || []) {
+      if (!job || job.name !== CHAIN_JOB) continue;
+      if ((job.steps || []).some((s) => s && s.name === EXPORT_STEP && s.conclusion === "failure" && klDate(s.completed_at) === day)) return run.id;
+    }
+  }
+  return 0;
+}
+
 /* GitHub's words for a run or job that has not started or not finished */
 const OPEN = new Set(["queued", "pending", "waiting", "requested", "in_progress"]);
+/* the chain job(s) of the run's CURRENT attempt: with filter=all a re-run lists its older attempts' jobs too, and a new attempt that
+   has listed none yet must not read as its old, finished one (Fable's review of 20 Nov 2026) */
+const chainNow = (run, jobsOf) => (jobsOf(run.id) || []).filter((j) => j && j.name === CHAIN_JOB
+  && (j.run_attempt == null || run.run_attempt == null || j.run_attempt === run.run_attempt));
 /* A RUN GITHUB NEVER STARTED COVERS NOTHING (the Worker's cloudCommitWaiting learnt it on 16 Nov 2026: a dispatch sat `queued` with no
    job for 35 minutes, and a newer dispatch ran at once beside it). A run still `queued` at its own level, with no chain job listed,
    more than STUCK_MIN after it was made has not reached the lock: it is neither busy nor in hand. A chain job listed, waiting
@@ -55,14 +72,14 @@ const OPEN = new Set(["queued", "pending", "waiting", "requested", "in_progress"
 export const STUCK_MIN = 10;
 export const neverStarted = (run, jobsOf, nowMs) => !!run && run.status === "queued" && Number.isFinite(nowMs)
   && nowMs - Date.parse(run.created_at) > STUCK_MIN * 60000
-  && !(jobsOf(run.id) || []).some((j) => j && j.name === CHAIN_JOB);
+  && !chainNow(run, jobsOf).length;
 
 /* the id of a run whose chain job is waiting or running, 0 for none. A run with no jobs listed yet counts by its own status, so a
-   dispatch never goes over a run GitHub has created and not yet started. `except` is the run asking (the chain's own plan step). */
-export function chainBusy(runs, jobsOf, except = null, nowMs = NaN) {
+   dispatch never goes over a run GitHub has created and not yet started. */
+export function chainBusy(runs, jobsOf, nowMs = NaN) {
   for (const run of runs || []) {
-    if (!run || run.status === "completed" || String(run.id) === String(except) || neverStarted(run, jobsOf, nowMs)) continue;
-    const chain = (jobsOf(run.id) || []).filter((j) => j && j.name === CHAIN_JOB);
+    if (!run || run.status === "completed" || neverStarted(run, jobsOf, nowMs)) continue;
+    const chain = chainNow(run, jobsOf);
     if (!chain.length ? OPEN.has(run.status) : chain.some((j) => OPEN.has(j.status))) return run.id;
   }
   return 0;
@@ -82,17 +99,21 @@ export function exportInHand(runs, day, except = null, jobsOf = () => [], nowMs 
    silence as "no export". */
 export const LOOKBACK_MS = 6 * 3600000;
 export async function readRuns(get, day, { perPage = 100, maxPages = 5 } = {}) {
-  const since = new Date(klDayStart(day) - LOOKBACK_MS).toISOString().replace(/\.\d{3}Z$/, "Z");
-  const runs = [];
-  for (let page = 1; page <= maxPages; page++) {
+  const since = new Date(klDateStart(day) - LOOKBACK_MS).toISOString().replace(/\.\d{3}Z$/, "Z");
+  const runs = [], dayStart = klDateStart(day);
+  for (let page = 1; ; page++) {
     const j = await get("actions/workflows/cloud-commit.yml/runs?created=%3E%3D" + encodeURIComponent(since) + "&per_page=" + perPage + "&page=" + page);
     if (!j || !Array.isArray(j.workflow_runs)) throw new Error("GitHub's run list had no workflow_runs");
     runs.push(...j.workflow_runs);
     if (j.workflow_runs.length < perPage) break;
+    /* a list cut short would hide an export in the runs left out, so it is refused, never read as the whole day */
+    if (page >= maxPages) throw new Error("GitHub listed over " + maxPages * perPage + " runs since " + since + ", more than this reads");
   }
   const jobs = new Map();
   for (const run of runs) {
-    if (!mayExport(run) && run.status === "completed") continue;
+    /* a finished run holds a step completed today only if GitHub touched it today: a push run, or one finished before the day began, is
+       not asked for its jobs, which leaves the 00:05 read a handful of calls (a time that will not parse is asked) */
+    if (run.status === "completed" && (!mayExport(run) || Date.parse(run.updated_at) < dayStart)) continue;
     const j = await get("actions/runs/" + run.id + "/jobs?filter=all&per_page=100");
     if (!j || !Array.isArray(j.jobs)) throw new Error("GitHub's jobs for run " + run.id + " had no jobs");
     jobs.set(run.id, j.jobs);
@@ -100,11 +121,13 @@ export async function readRuns(get, day, { perPage = 100, maxPages = 5 } = {}) {
   return { runs, jobsOf: (id) => jobs.get(id) || [] };
 }
 
-/* THE CHAIN'S QUESTION on a scheduled run: is the export due? Due when nothing has landed today and no run named for today's export
-   is waiting or running (one GitHub never started aside). { due, why } */
+/* THE CHAIN'S QUESTION on a scheduled run: is the export due? Due when nothing has landed today, the export step has not failed
+   today, and no run named for today's export is waiting or running (one GitHub never started aside). { due, why } */
 export function dueVerdict(runs, jobsOf, day, self = null, nowMs = NaN) {
   const landed = exportLanded(runs, jobsOf, day);
   if (landed.done) return { due: false, why: "landed today in run " + landed.run };
+  const failed = exportFailed(runs, jobsOf, day);
+  if (failed) return { due: false, why: "the export step failed today in run " + failed + ", so this run publishes and leaves the export to the Desk or a dispatch by hand" };
   const hand = exportInHand(runs, day, self, jobsOf, nowMs);
   if (hand) return { due: false, why: "run " + hand + " is exporting today" };
   return { due: true, why: "no export has landed on " + day };
@@ -114,7 +137,7 @@ export function dueVerdict(runs, jobsOf, day, self = null, nowMs = NaN) {
    most every 10 minutes). `mark` is the night's KV record {day, done, tries, tried, read}. What to do this minute, before any read. */
 export const ASK = { fromMin: 5, untilMin: 360, readEveryMin: 10, tryEveryMin: 30, tries: 4 };
 export function askPace(nowMs, mark) {
-  const into = klMinutes(nowMs), day = klDay(nowMs);
+  const into = klMinutes(nowMs), day = klDate(nowMs);
   if (into < ASK.fromMin || into >= ASK.untilMin) return { act: "rest", day };
   const m = mark && mark.day === day ? mark : { day, done: false, tries: 0, tried: null, read: null };
   if (m.done) return { act: "rest", day, mark: m };

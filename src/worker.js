@@ -27,7 +27,7 @@ import { bookTap, bookNet, ridStmts, voidEntries, voidUnlessApproved, tapMode, s
 import { compactAndMark } from "./book-compact.js";
 import { boundOf, unfolded } from "./way.js";
 import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } from "./backup.js";
-import { klDay, readRuns, exportLanded, chainBusy, askPace, askVerdict, exportReason } from "./day-export.js";
+import { klDate, readRuns, exportLanded, chainBusy, askPace, askVerdict, exportReason } from "./day-export.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
@@ -126,7 +126,7 @@ async function accessOk(request, env, p, m) {
   return CI_ROUTES.has(m + " " + p) && ciAccess(request, env);
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
-const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock", "export", "export-unchecked"]);
+const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
 const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/compact", "POST /book/derived", "POST /book/notes", "POST /book/pitr", "GET /book/window", "GET /book/readcheck", "GET /book/ledger", "GET /book/roster"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
@@ -2675,13 +2675,17 @@ async function publishWanted(env, ctx, now) {
  * export itself: from 00:05 to 06:00 Kuala Lumpur it reads the rule (src/day-export.js, at most every 10 minutes), and while today's
  * export has not landed and no chain job is waiting or running it dispatches cloud-commit.yml with `export`, a try at most every
  * 30 minutes and four a night. The export run also publishes, so a try writes the publish mark and the day's publish sends no second
- * run that minute. KV `export:night` {day, done, tries, tried, read} keeps the pace only; whether it landed is always GitHub's
- * answer. With git as the source it stands down. A failed read or dispatch is logged and waits for the next read. */
-const EXPORT_NIGHT_KEY = "export:night", EXPORT_LANDED_KEY = "export:landed";
+ * run that minute. KV `export:night` {day, done, tries, tried, read, asked} keeps the pace only; whether it landed is always GitHub's
+ * answer. With git as the source it stands down. A failed read or dispatch is logged and waits for the next read.
+ * Fable's review of 20 Nov 2026: the mark is written BEFORE the read and each GitHub call is timed, so a read that outlives its minute
+ * is not begun again by the next; a run turned pending while the jobs were read is asked for once more just before the dispatch, as
+ * the publish asks; and A TRY WHOSE RUN ENDED WITH NO EXPORT took the day's publish with it (the try's mark covered the want), so the
+ * read that finds it so asks for the publish again, once a try. */
+const EXPORT_NIGHT_KEY = "export:night", EXPORT_LANDED_KEY = "export:landed", GH_READ_MS = 8000;
 async function ghGet(env) {
   const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
   return async (path) => {
-    const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/" + path, { headers: { ...GH_HEADERS, authorization: "Bearer " + token } });
+    const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/" + path, { headers: { ...GH_HEADERS, authorization: "Bearer " + token }, signal: AbortSignal.timeout(GH_READ_MS) });
     if (!r.ok) throw new Error(await ghRefusal(r, path.split("?")[0]));
     return r.json();
   };
@@ -2692,37 +2696,46 @@ async function exportAsk(env, now) {
   try { mark = await env.SALT_QUEUE.get(EXPORT_NIGHT_KEY, "json"); } catch (e) { mark = null; }
   const pace = askPace(now.getTime(), mark);
   if (pace.act !== "read") return {};
-  const m = Object.assign({}, pace.mark, { read: now.toISOString() });
-  if (await sourceMode(env.SALT_LEDGER) !== "book") { await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m)); return { git: true }; }
+  const m = Object.assign({}, pace.mark, { read: now.toISOString() }), keep = () => env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m));
+  await keep();
+  if (await sourceMode(env.SALT_LEDGER) !== "book") return { git: true };
   let ev;
   try { ev = await readRuns(await ghGet(env), pace.day); }
-  catch (e) { await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m)); return { unread: String((e && e.message) || e) }; }
-  const landed = exportLanded(ev.runs, ev.jobsOf, pace.day), v = askVerdict(now.getTime(), m, landed, chainBusy(ev.runs, ev.jobsOf, null, now.getTime()));
+  catch (e) { return { unread: String((e && e.message) || e) }; }
+  const landed = exportLanded(ev.runs, ev.jobsOf, pace.day), v = askVerdict(now.getTime(), m, landed, chainBusy(ev.runs, ev.jobsOf, now.getTime()));
   if (v.act === "done") {
     m.done = true;
     await env.SALT_QUEUE.put(EXPORT_LANDED_KEY, JSON.stringify({ day: pace.day, run: landed.run, at: landed.at }));
   }
-  if (v.act !== "dispatch") { await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m)); return { [v.act]: true, run: landed.run || v.run || null, day: pace.day }; }
+  /* nothing landed, nothing waits or runs, and no new try goes this minute: the last try's run is over with no export, and no publish */
+  const again = (v.act === "spaced" || v.act === "spent") && !!m.tried && m.asked !== m.tried;
+  if (again) { m.asked = m.tried; await wantPublish(env, "the export try did not land", now); }
+  if (v.act !== "dispatch") { await keep(); return { [v.act]: true, again, run: landed.run || v.run || null, day: pace.day }; }
+  const waiting = await cloudCommitWaiting(env, now.getTime());
+  if (waiting !== 0) return { busy: true, run: waiting, day: pace.day };
   /* the try is counted before it is sent, as the ladder's is: a refusal or a thrown fetch is a try, and four end the night */
   m.tries = (m.tries || 0) + 1; m.tried = now.toISOString();
-  await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m));
+  await keep();
   const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN, reason = exportReason(pace.day);
   const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/dispatches", {
     method: "POST",
     headers: { ...GH_HEADERS, authorization: "Bearer " + token, "content-type": "application/json" },
     body: JSON.stringify({ ref: "master", inputs: { stage_only: "true", export: "true", reason } })
   });
-  if (!r.ok) return { refused: await ghRefusal(r, "export dispatch:"), tries: m.tries, day: pace.day };
+  /* a refused try wrote no publish mark, so it swallowed nothing: the day's publish goes this minute and is not asked for again */
+  if (!r.ok) { m.asked = m.tried; await keep(); return { refused: await ghRefusal(r, "export dispatch:"), tries: m.tries, day: pace.day }; }
   /* the export run publishes as every run does: the day's publish, wanted at this same moment, is covered by it */
   await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify({ at: now.toISOString(), for: now.toISOString(), reason: "covered by " + reason }));
   return { did: true, tries: m.tries, day: pace.day };
 }
 /* the 09:00 digest's question: a word when git has no export of the Book today, or when GitHub cannot be read to say; null when it has
    one or git is the source. The kind is written where the banner reads its words (inform:last), since a Desk device hears only its
-   own wakes (orders, approve, salt) and the digest sends `salt`. */
+   own wakes (orders, approve, salt) and the digest sends `salt`. Its moment is the real clock's, as /push/send's is: the banner shows
+   an inform only past the mark of the last one it showed, and the cron's scheduled minute could fall behind one shown seconds before.
+   It rings while a run is still exporting too: a ring a minute early costs less than a failed day passed in silence. */
 async function exportAlarm(env, now) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE || !dispatchArmed(env) || await sourceMode(env.SALT_LEDGER) !== "book") return null;
-  const day = klDay(now.getTime());
+  const day = klDate(now.getTime());
   let kind, line;
   try {
     const ev = await readRuns(await ghGet(env), day), landed = exportLanded(ev.runs, ev.jobsOf, day);
@@ -2732,7 +2745,8 @@ async function exportAlarm(env, now) {
   } catch (e) {
     kind = "export-unchecked"; line = "the day's export could not be checked: " + String((e && e.message) || e);
   }
-  try { await env.SALT_QUEUE.put("inform:last", JSON.stringify({ k: kind, at: now.toISOString() }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }
+  const at = new Date().toISOString();
+  try { await env.SALT_QUEUE.put("inform:last", JSON.stringify({ k: kind, at }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }
   return line;
 }
 
@@ -3069,6 +3083,7 @@ export default {
           if (xa.did) console.log("export dispatch: try " + xa.tries + " for " + xa.day);
           if (xa.refused) console.log("export dispatch REFUSED: " + xa.refused + " (try " + xa.tries + " for " + xa.day + ")");
           if (xa.unread) console.log("export check: GitHub did not answer: " + xa.unread);
+          if (xa.again) console.log("export check: the try for " + xa.day + " ended with no export, so the publish is asked for again");
           if (xa.spent) console.log("export check: four tries spent for " + xa.day + "; the GitHub clock and the 09:00 digest stand");
         } catch (e) { console.log("export ask FAILED: " + String((e && e.stack) || e)); }
         /* 10 Oct 2026: a publish asked for since the last one, at most one dispatch every five minutes */
