@@ -70,6 +70,7 @@ async function phone() {
 /* the push services: every request recorded in one sequence with the nudges; each endpoint answers as its mode says */
 let seq = 0;
 const hits = [], mode = {}, held = [];
+let onHold = null; /* told the moment a send is held (I6) */
 function pushStub() {
   const base = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
@@ -81,7 +82,7 @@ function pushStub() {
     if (m === "hold" || m === "never") {
       return new Promise((resolve, reject) => {
         const go = () => { hit.open = false; resolve(new Response("", { status: 201 })); };
-        if (m === "hold") held.push(go);
+        if (m === "hold") { held.push(go); if (onHold) onHold(); }
         if (hit.signal) hit.signal.addEventListener("abort", () => { hit.open = false; hit.aborted = true; reject(new Error("aborted")); });
       });
     }
@@ -184,12 +185,16 @@ async function counterSide(ok, O, OB, PU) {
   ok(k5.length === 2 && k5.every((k) => k === "pay") && m5.rung.theirs === m5.theirs && m5.rung.last === m1.last,
     "I5: the kinds are the move's own: I have sent it after an unrung Place rings pay alone, and owner-rung still leaves that Place to the Desk: " + J({ k5, rung: m5.rung }));
 
-  /* I6 */
+  /* I6. The read starts the moment both sends are held, so the ring is surely on its way (20 Nov 2026): read after the Place, a loaded laptop
+     could pass RING_MS (3 s, the ring's own deadline) first, the ring had rightly ended, and I6 read nothing pending (red once in a split run). */
   mode[EA] = "hold"; mode[EB] = "hold";
+  let duringP = null;
+  onHold = () => { if (!duringP && held.length >= 2) duringP = last(); };
   const p3 = place(U[2]);
   await p3;
-  for (let i = 0; i < 200 && held.length < 2; i++) await tick();
-  const during = await last();
+  for (let i = 0; i < 200 && !duringP; i++) await tick();
+  onHold = null;
+  const during = duringP ? await duringP : {};
   release(); await settle();
   const after = await last();
   ok(during.pending === true && after.pending === undefined && after.rung.last === after.last,

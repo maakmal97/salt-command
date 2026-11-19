@@ -34,7 +34,9 @@
   behavioural, purity and boundary check still runs on the working code. Section green (11 checks), 6 mutations red. It still proves nothing in CI (shallow).
 - Fixed 20 Nov 2026, was load-flaky: "Counter maker: verified owner, narrow Desk bridge" (`test/vault-local-files.mjs`) gave its spawned CLIs 30 s; `tools/ledger.mjs --check`
   opens the master in jsdom (24 to 29 s idle) before its vault check, so under the split suite the child was killed before it refused (red in 2 of 3 runs on 20 Nov). Now 180 s, and a
-  failure names a killed child; 3 mutations red. In the 18 Nov runs "Book S5f-3 ... when the flag
+  failure names a killed child; 3 mutations red. Fixed the same day: I6 of "19 Nov 2026: a customer's move reaches him at once" (`test/instant.mjs`) read the book after
+  the whole Place, so a loaded laptop passed the ring's own 3 s deadline (`RING_MS`) first and read nothing pending (`{}`); it now reads the moment both sends are held. A Place
+  3.5 s late reproduces the red on the old I6 and stays green on the new; 2 mutations red. In the 18 Nov runs "Book S5f-3 ... when the flag
   cannot be read" and "Salt Admin: Orders open by stage" (Message cards) were red only while a second suite ran beside them; each green alone.
 - S1b, red on master from #208 (`d7028d88`, 18 Nov 2026) because its stmt/ boundary check read the TEXT `stages.mjs` that a comment in `stmt/owner.js` names, is fixed (`8f0e4793`, 20 Nov 2026, his "solve s1b"): it reads a static, bare or dynamic import; four mutations red; full split suite 12,922 passed, 0 failed.
 - Not the suite but the chain (19 Nov 2026, v1549): "Export the Book to the checkout for the publish" can fail with Access `401 not authenticated` on `GET /book/roster` or `POST /book/derived` in the minutes after a Desk deploy, while `GET /rev` passes (fresh isolates fetching Access's certs). Nothing moves on a refused call: run `gh run rerun <id> --failed`, do not chase it.
