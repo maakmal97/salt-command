@@ -153,7 +153,7 @@ export function lanesFor(jobs, cores, free, count) {
    git still read it (and could write it: a section only reads git). A mutation edits the copy's file, never the checkout's. */
 export function copyCheckout(from, to, gitDir) {
   mkdirSync(to, { recursive: true });
-  const skip = new Set([".git", ".claude", "node_modules"]), shards = join(from, "test");
+  const skip = new Set([".git", ".claude", ".worktrees", "node_modules"]), shards = join(from, "test"); /* .worktrees: Copilot's, whose node_modules links refuse a copy (EPERM), 20 Nov 2026 */
   for (const e of readdirSync(from)) {
     if (skip.has(e)) continue;
     cpSync(join(from, e), join(to, e), { recursive: true, filter: (src) => !(dirname(src) === shards && /^\.shard-.+\.mjs$/.test(src.slice(shards.length + 1))) });
