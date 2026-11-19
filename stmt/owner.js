@@ -646,7 +646,9 @@ export const OWNER_JS = `
           if(k[1]==='refundPaid') body.paidOn=new Date(Date.now()+8*36e5).toISOString().slice(0,10);
           if(!at) at=new Date().toISOString();
           body.at=at;
-          try{ await send('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }
+          /* 20 Nov 2026 (CM4-TO's and CD4-DAM's credits): sent straight to the Desk, as the market's edits are. Through send() it was kept on the phone first,
+             and the kept-entry check (vaultPendingOk) names no edit path, so every tap said it could not be sent and nothing left; the Desk files it for Approve */
+          try{ await refs('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }
           catch(error){ refusal(answer,error); }
         },function(){ at=null; },k[1]==='refundRemove');
       });
