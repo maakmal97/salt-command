@@ -175,11 +175,13 @@ export async function run({ ok }) {
       "choosing Scan a code the way the arrow keys do redraws the sheet, and the radio chosen has the focus, so the next Tab goes on from it: " + lbl(R.d.activeElement));
     const back = arrow("payHow", "transfer"), again = radio("payHow", "transfer");
     ok(back !== again && again.checked && R.d.activeElement === again, "and back to Transfer the same: " + lbl(R.d.activeElement));
-    const banks = [...R.d.querySelectorAll('#payBody input[name="payInto"]')];
+    /* 20 Nov 2026: the account is a drop-down after the way */
+    const into = R.d.getElementById("payIntoSel"), banks = into ? [...into.options].filter((o) => o.value) : [];
     if (banks.length) {
-      const bank = banks[0].value, at = arrow("payInto", bank), kept = radio("payInto", bank);
-      ok(at !== kept && kept.checked && R.d.activeElement === kept, "and a bank chosen that way keeps it too: " + lbl(R.d.activeElement));
-    } else ok(false, "the pay sheet offers a bank to choose on Transfer");
+      const bank = banks[banks.length - 1].value; into.focus(); into.value = bank; into.dispatchEvent(new R.w.Event("change", { bubbles: true }));
+      const kept = R.d.getElementById("payIntoSel");
+      ok(into !== kept && !!kept && kept.value === bank && R.d.activeElement === kept, "and an account chosen from the drop-down keeps the focus too: " + lbl(R.d.activeElement));
+    } else ok(false, "the pay sheet offers an account to choose on Transfer");
 
     /* ---- 6: the yes or no over the New order sheet closes alone, and two quick opens leave one */
     const L = await open({ orders: [A, B, Cc, D, E, F], fast: true });

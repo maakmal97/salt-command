@@ -247,7 +247,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     await until(() => !d.getElementById("tabs").hidden && !!d.getElementById("payNow"));
     await work.quiet();
     const w = dom.window;
-    const pick = (key) => { const r = d.querySelector('#payBody input[name="payInto"][value="' + key + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+    const pick = (key) => { const s = d.getElementById("payIntoSel"); s.value = key; s.dispatchEvent(new w.Event("change", { bubbles: true })); };
     const way = (v) => { const r = d.querySelector('#payBody input[name="payHow"][value="' + v + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
     const go = () => d.getElementById("payGo");
     return { w, d, work, calls, copied, shares, downloads, fills: () => fillRects, sum, pick, way, go, up: () => { isDown = false; }, setLive: (x) => { liveDown = x; }, holdAsk: () => { let r; hold = { p: new Promise((y) => { r = y; }) }; return () => { const h = hold; hold = null; r(); return h; }; }, open: () => d.getElementById("payNow").click(), asked: () => calls.filter((c) => c.p === "/pay/accounts").length,
@@ -255,17 +255,20 @@ export async function run({ ok, okOff, pageWork, KV }) {
   };
   const kind = (e) => (e ? e.tagName + (e.disabled ? " disabled" : "") : "(none)");
   try {
-    /* the order of the sheet, none chosen, the pill waiting, What this pays shut */
+    /* the order of the sheet (his of 20 Nov 2026, reversing Phase 7b's banks first), none chosen, the pill waiting, What this pays shut */
     const A = await openPage({ numbers: BASE });
     A.open();
     const body = A.d.getElementById("payBody"), kids = [...body.children], at = (sel) => kids.findIndex((n) => n.matches(sel));
-    const idx = ["#payInto", ".amb-tiles", ".payseg", "#payWhat", ".payhow", ".payref"].map(at);
-    const tiles = [...body.querySelectorAll('#payInto input[name="payInto"]')], what = A.d.getElementById("payWhat");
+    const idx = [".amb-tiles", "#payWhat", ".payseg", ".payhow", "#payInto", ".payref"].map(at);
+    const sel = A.d.getElementById("payIntoSel"), opts = sel ? [...sel.options] : [], tiles = opts.filter((o) => o.value), what = A.d.getElementById("payWhat");
     const offered = (rail, nums) => PAY_ACCOUNTS.filter((a) => a[rail] && !a.maintenance && nums[a.key] && (rail === "qr" ? nums[a.key].rows : rail === "transfer" ? nums[a.key].number : nums[a.key].biller)).map((a) => a.key);
     ok(idx.every((i) => i >= 0) && idx.every((i, k) => k === 0 || i > idx[k - 1]),
-      "the sheet runs in this order: his banks, the figure, All or Part, What this pays, the way, then the details: " + JSON.stringify(idx));
-    ok(tiles.map((r) => r.value).join() === offered("transfer", BASE).join() && tiles.length === 3 && tiles.every((r) => !r.checked) && kind(A.go()) === "BUTTON disabled" && tx(A.go()) === "I have paid",
-      "his banks stand first as tiles, only those with a number to show and none suspended, none chosen, and the pill waits as I have paid: " + JSON.stringify([tiles.map((r) => r.value), kind(A.go()), tx(A.go())]));
+      "the sheet runs in his order: what is still to pay and What this pays, All or Part, the way, then his account, then the details: " + JSON.stringify(idx));
+    ok(!!sel && sel.tagName === "SELECT" && !!sel.closest("#payInto.amb-field .amb-select") && tx(A.d.querySelector("#payInto .amb-field__label")) === "Pay into"
+      && tiles.map((o) => o.value).join() === offered("transfer", BASE).join() && tiles.length === 3 && opts[0].value === "" && tx(opts[0]) === "Choose an account" && sel.value === ""
+      && kind(A.go()) === "BUTTON disabled" && tx(A.go()) === "I have paid",
+      "his accounts are the system's Select under Pay into, after the way: only those with a number to show and none suspended, Choose an account first and none chosen, and the pill waits as I have paid: "
+      + JSON.stringify([opts.map((o) => o.value), sel && sel.value, kind(A.go()), tx(A.go())]));
     ok(!!what && what.getAttribute("aria-expanded") === "false" && what.tagName === "BUTTON" && what.classList.contains("amb-more") && tx(what) === "What this pays"
       && A.d.getElementById("payInv").hidden && A.d.querySelectorAll("#payInv .inv .amb-list > li, #payInv.inv .amb-list > li").length === 3,
       "What this pays is the system's More, shut, and holds the invoice's three lines as its Rows: " + JSON.stringify([!!what, what && what.getAttribute("aria-expanded")]));
@@ -303,10 +306,10 @@ export async function run({ ok, okOff, pageWork, KV }) {
 
     /* a tap is 44px both ways: the tiles, Copy, the pill, Save and the fold's summary hold the design system's tap size */
     const cs = (e) => A.w.getComputedStyle(e);
-    const tap = { tile: A.d.querySelector("#payInto .amb-option").className, copy: copyNo.className, pill: A.go().className, more: what.className };
-    const tapRules = [...A.d.styleSheets].flatMap((x) => [...x.cssRules]).filter((r) => /^\.amb-(option|plate__row|pill|more)\b/.test(r.selectorText || "")).map((r) => r.style.getPropertyValue("min-height")).filter(Boolean);
-    ok(/amb-option/.test(tap.tile) && /amb-plate__row/.test(tap.copy) && /amb-pill/.test(tap.pill) && /amb-more/.test(tap.more) && tapRules.length >= 3 && tapRules.every((v) => /^var\(--amb-[a-z-]+\)$|^(4[4-9]|[5-9][0-9])px$/.test(v)),
-      "a tap is 44px both ways on the bank options, the Copy rows, the pill and the fold's More, all by the system's own tokens: " + JSON.stringify({ tap, tapRules }));
+    const tap = { tile: A.d.querySelector("#payInto .amb-select > select").className, copy: copyNo.className, pill: A.go().className, more: what.className };
+    const tapRules = [...A.d.styleSheets].flatMap((x) => [...x.cssRules]).filter((r) => /^\.amb-(input|plate__row|pill|more)\b/.test(r.selectorText || "")).map((r) => r.style.getPropertyValue("min-height")).filter(Boolean);
+    ok(/amb-input/.test(tap.tile) && /amb-plate__row/.test(tap.copy) && /amb-pill/.test(tap.pill) && /amb-more/.test(tap.more) && tapRules.length >= 3 && tapRules.every((v) => /^var\(--amb-[a-z-]+\)$|^(4[4-9]|[5-9][0-9])px$/.test(v)),
+      "a tap is 44px both ways on the account's drop-down, the Copy rows, the pill and the fold's More, all by the system's own tokens: " + JSON.stringify({ tap, tapRules }));
 
     /* copying the number is leaving for the banking app (18 Oct 2026): the visit is kept for a reload, and coming back asks */
     const keptCopy = A.q();
@@ -319,7 +322,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     ok(!!again && again.tagName === "BUTTON" && !again.getAttribute("href") && tx(again) === "Show account number again" && A.d.querySelectorAll("#paySheet a[href]").length === 0,
       "the check step's Show again is a button with no address, worded for the account number: " + JSON.stringify([again && again.tagName, again && tx(again)]));
     again.click();
-    ok(!A.d.getElementById("paySent") && tx(A.d.getElementById("payAcctNo").querySelector(".amb-plate__value")) === GROUPED && A.d.querySelector('#payBody input[name="payInto"]:checked').value === "maybank"
+    ok(!A.d.getElementById("paySent") && tx(A.d.getElementById("payAcctNo").querySelector(".amb-plate__value")) === GROUPED && A.d.getElementById("payIntoSel").value === "maybank"
       && tx(A.go()) === "I have paid",
       "Show again redraws the sheet with the same account and number, the pill ready: " + JSON.stringify([!!A.d.getElementById("paySent"), !!A.d.getElementById("payAcctNo")]));
 
@@ -369,7 +372,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     A.d.getElementById("payX").click();
 
     /* a bank with no number to show is not offered on Transfer, and with the Worker unreachable the sheet says so and offers none */
-    const tilesOf = (X) => [...X.d.querySelectorAll('#payBody input[name="payInto"]')].map((r) => r.value);
+    const tilesOf = (X) => [...X.d.querySelectorAll('#payBody #payIntoSel > option')].map((o) => o.value).filter(Boolean);
     const waysOf2 = (X) => [...X.d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")).join();
     const E = await openPage({ numbers: { maybank: { number: "12345678" }, ambank: { number: NUMBER } } }), D = await openPage({ down: true, numbers: BASE });
     E.open(); D.open(); await D.work.quiet(); await until(() => !!D.d.getElementById("payNone"), 60);
@@ -502,7 +505,9 @@ export async function run({ ok, okOff, pageWork, KV }) {
     /* JOMPAY: the biller code and Ref-1 with Copy, Ref-2 left empty, the figure, and no username anywhere beside it */
     const J = await openPage({ numbers: BASE });
     J.open(); J.way("jompay");
-    ok(tilesOf(J).join() === "instapay" && !J.d.getElementById("payBiller") && kind(J.go()) === "BUTTON disabled", "JomPAY offers the accounts that gave a biller code and Ref-1, and shows nothing until one is chosen: " + JSON.stringify(tilesOf(J)));
+    const jSel = J.d.getElementById("payIntoSel");
+    ok(tilesOf(J).join() === "instapay" && !!jSel && jSel.options.length === 1 && jSel.value === "instapay" && !!J.d.getElementById("payBiller") && kind(J.go()) === "BUTTON",
+      "JomPAY offers the accounts that gave a biller code and Ref-1, and the one there is stands chosen in the drop-down, its details shown and the pill lit (20 Nov 2026): " + JSON.stringify([tilesOf(J), jSel && jSel.value, kind(J.go())]));
     J.pick("instapay");
     const jr = [...J.d.querySelectorAll("#payBody .payref > .amb-plate__row")], JB = BASE.instapay.biller, J1 = BASE.instapay.ref1;
     ok(jr.map((r) => tx(r.querySelector(".amb-plate__label"))).join() === "Biller code,Ref-1,Ref-2,Amount" && tx(jr[0].querySelector(".amb-plate__value")) === JB && tx(jr[1].querySelector(".amb-plate__value")) === J1
@@ -519,7 +524,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
       "the question after JomPAY says it was by JomPAY, without the username, and its Show again is its own words: " + JSON.stringify(jq));
     J.d.getElementById("payAgain").click();
     ok(!!J.d.getElementById("payBiller") && tx(J.d.getElementById("payBiller").querySelector(".amb-plate__value")) === JB && J.d.querySelector('#payBody input[name="payHow"]:checked').value === "jompay"
-      && J.d.querySelector('#payBody input[name="payInto"]:checked').value === "instapay", "Show again brings back the JomPAY details with the way and the account as they were");
+      && J.d.getElementById("payIntoSel").value === "instapay", "Show again brings back the JomPAY details with the way and the account as they were");
     J.go().click(); J.d.getElementById("paySent").click(); await until(() => J.posts().length === 1);
     ok(J.posts()[0].b.method === "jompay" && J.posts()[0].b.account === "instapay" && J.posts()[0].b.amount === 303 && !JSON.stringify(J.posts()[0].b).includes(UN), "and Yes claims it by jompay at that account");
     /* JomPAY is not offered with no account giving its pair, and falls back to Transfer if the pair goes while it is chosen */
@@ -561,7 +566,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     const let_go = I.holdAsk(); I.open(); I.pick("maybank"); I.setLive({ maybank: true }); const held = I.asked() === asked0 + 1 && tilesOf(I).includes("maybank");
     await let_go().p; await I.work.quiet();
     await until(() => !tilesOf(I).includes("maybank"), 60);
-    ok(held && !tilesOf(I).includes("maybank") && !I.d.querySelector('#payBody input[name="payInto"]:checked') && !I.d.getElementById("payAcctNo") && kind(I.go()) === "BUTTON disabled",
+    ok(held && !tilesOf(I).includes("maybank") && I.d.getElementById("payIntoSel").value === "" && !I.d.getElementById("payAcctNo") && kind(I.go()) === "BUTTON disabled",
       "a bank chosen before the answer came, which the Worker has down, is no longer offered, none of its details is drawn and the pill goes dark: " + JSON.stringify([tilesOf(I), kind(I.go()), held]));
     I.d.getElementById("payX").click(); const before = I.asked();
     I.setLive({ maybank: false }); I.w.Date.now = () => realNow2() + 122000;
