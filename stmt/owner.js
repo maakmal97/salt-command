@@ -2371,6 +2371,13 @@ export const OWNER_JS = `
   }
   /* 17 Oct 2026, HIS FLOW: THE TIE-OUT. Every site order against its row, read by the Desk after each version and every six hours: clean, or each
      difference by order and row; a difference a move on its way explains is listed apart, as waiting. Check now asks the Desk for a fresh one. */
+  /* 20 Nov 2026 (his word, "why is it not in plain language"): a difference names its order as he knows it (the Desk's who: code, book, size, total, day), never by the order's id or
+     its key; the id stands only for a check filed before the Desk said who. A difference with no order (the orders behind the book) is its plain sentence (say). */
+  function tieLine(f){
+    var who=f.who||f.order||'', said=f.order||Array.isArray(f.what)?[].concat(f.what||[]).join('; '):(f.say||f.why||String(f.what||''));
+    return (who?who+(f.rid?' · '+f.rid:'')+': ':'')+said+'.';
+  }
+  function tieBook(v){ var m=/^book@([0-9]+)$/.exec(String(v||'')); return m?'book revision '+m[1]:'book '+v; }
   function drawTieout(t){
     var root=document.getElementById('led-tie'); if(!root) return;
     root.textContent='';
@@ -2379,11 +2386,11 @@ export const OWNER_JS = `
     else if(!t.ok) root.appendChild(el('p','amb-field__hint amb-neg msg bad','Not checked: '+(t.error||'the Desk could not read it')+'.'));
     else{
       root.appendChild(el('p',t.clean?'amb-field__hint':'amb-field__hint amb-neg msg bad',(t.clean?'Every site order matches its row on the book':(t.faults.length===1?'One difference':t.faults.length+' differences')+' between the orders and the book')
-        +', '+t.orders+(t.orders===1?' order':' orders')+' checked against book '+t.v+' at '+fmtWhen(t.at)+'.'));
+        +', '+t.orders+(t.orders===1?' order':' orders')+' checked against '+tieBook(t.v)+' at '+fmtWhen(t.at)+'.'));
       [['faults','Differences'],['waiting','Waiting on a move under Approve']].forEach(function(g){
         if(!(t[g[0]]||[]).length) return;
         root.appendChild(el('h3','amb-settings__head',g[1]));
-        t[g[0]].forEach(function(f){ root.appendChild(el('p','amb-field__hint maker-facts',(f.order?f.order:'')+(f.rid?' · '+f.rid:'')+(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.')); });
+        t[g[0]].forEach(function(f){ root.appendChild(el('p','amb-field__hint maker-facts',tieLine(f))); });
       });
     }
     var said=el('p','amb-field__hint msg'); said.setAttribute('role','status'); root.appendChild(said);
