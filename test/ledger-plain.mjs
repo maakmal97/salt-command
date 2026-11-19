@@ -149,7 +149,7 @@ export async function run({ ok, pageWork }) {
   }
   /* T3 */
   {
-    const mk = (n, over) => order(Object.assign({ id: "2026111810000" + n + "-eeeee" + n, queued: {}, status: "ready", paid: 0, moved: 0, forFriend: false }, over));
+    const mk = (n, over) => order(Object.assign({ id: "20261118" + "10000" + n + "-eeeee" + n, queued: {}, status: "ready", paid: 0, moved: 0, forFriend: false }, over));
     const k = (total, delivery, date) => key(CODE, total, delivery, "oil", date);
     const sales = [
       row({ rid: "s1", customer: CODE, qty: 9, total: 90, delivery: 20, cash: 30, deliveredQty: 4, road: "hand" }),                 /* figures */
