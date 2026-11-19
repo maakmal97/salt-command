@@ -11791,7 +11791,12 @@ await (async () => {
   for (const d of ["test", "stmt", ".git", ".claude", "node_modules/lib"]) mkdirSync(join(from, d), { recursive: true });
   writeFileSync(join(from, "stmt", "a.js"), "a"); writeFileSync(join(from, "test", ".shard-x.mjs"), ""); writeFileSync(join(from, "test", "keep.mjs"), "k");
   writeFileSync(join(from, "node_modules", "lib", "i.js"), "i"); writeFileSync(join(from, ".git", "HEAD"), "h");
+  /* 20 Nov 2026: test/tmp is copied apart (a file another run removes mid-copy is skipped), and Copilot's .worktrees is left out */
+  for (const d of ["test/tmp/one", ".worktrees/w"]) mkdirSync(join(from, d), { recursive: true });
+  writeFileSync(join(from, "test", "tmp", "one", "t.txt"), "t"); writeFileSync(join(from, ".worktrees", "w", "x"), "x");
   T.copyCheckout(from, to, "C:/somewhere/.git");
+  const loose = { tmp: existsSync(join(to, "test", "tmp", "one", "t.txt")) && readFileSync(join(to, "test", "tmp", "one", "t.txt"), "utf8") === "t", worktrees: existsSync(join(to, ".worktrees")) };
+  ok(loose.tmp && !loose.worktrees, "a lane's copy holds test/tmp, copied apart from the rest, and leaves Copilot's .worktrees out: " + JSON.stringify(loose));
   const cp = { a: existsSync(join(to, "stmt", "a.js")), keep: existsSync(join(to, "test", "keep.mjs")), shard: existsSync(join(to, "test", ".shard-x.mjs")),
     claude: existsSync(join(to, ".claude")), git: existsSync(join(to, ".git")) && readFileSync(join(to, ".git"), "utf8"), link: lstatSync(join(to, "node_modules")).isSymbolicLink(),
     through: existsSync(join(to, "node_modules", "lib", "i.js")) };
