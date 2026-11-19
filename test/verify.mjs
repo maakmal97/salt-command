@@ -51371,6 +51371,11 @@ await (async () => {
   await (await import("./admin-acct-grid.mjs")).run({ ok, pageWork });
 })();
 
+section("20 Nov 2026: a refund's Mark paid today and Remove as stale reach the Desk");
+await (async () => {
+  await (await import("./admin-refund-send.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin Customers P4: This customer and the associate reward by the account's code, behind both locks (26 Oct 2026)");
 await (async () => {
   await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });

@@ -158,8 +158,8 @@
  {
   "name": "Salt Admin sends the edit to another route",
   "file": "stmt/owner.js",
-  "find": "try{ await send('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }",
-  "replace": "try{ await send('/all/maker/inputs/partner',body); answer.textContent=k[2]; loadMaker(); }"
+  "find": "try{ await refs('/all/maker/inputs/edit',body); answer.textContent=k[2]; loadMaker(); }",
+  "replace": "try{ await refs('/all/maker/inputs/partner',body); answer.textContent=k[2]; loadMaker(); }"
  },
  {
   "name": "the refund card is not on the account card",
