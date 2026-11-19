@@ -152,6 +152,10 @@ export function findRow(book, ref) {
   for (const coll of ["sales", "purchases"]) {
     const hits = (book[coll] || []).filter((r) => r && POSITION_ENGINE.ovKey(r) === ref);
     if (hits.length === 1) return { row: hits[0], collection: coll };
+    /* 20 Nov 2026 (Fable's review of the Ledger check's fix): the key's one live site row beside cancelled rows is the key's row, as the return leg and the tie-out read it
+       (src/orders.js rowIndex). Counted as twins, a handover (a Correction named by its order's key) could never be drafted once its order shared a key with a cancelled one */
+    const live = hits.filter((r) => !r.cancelled);
+    if (hits.length > 1 && live.length === 1 && live[0].road === "site") return { row: live[0], collection: coll };
     if (hits.length > 1) return { err: `${ref} matches ${hits.length} rows on the book, so which one is meant is a judgement. It has a rid now; name that instead` };
   }
   return { err: `no row on the book matches ${ref}` };

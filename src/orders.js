@@ -2204,6 +2204,26 @@ function sharedOk(os, k, orders, idx) {
    Book at once, so an order follows the row its approved amendment names (by rid) in that same pass, within seconds; a close or re-date already named its key when it was
    queued, and a row found without a rid (strayRow) or behind a close not yet compacted still waits for `landed`, as in the regular pass. A group of orders sharing one row
    is left to the minute pass alone, its members held out of the singles too (Fable, 28 Oct and 17 Nov 2026: two passes at once could split a group). Two passes following one single order write the same key, so the minute pass stays the net. */
+/* 20 Nov 2026 (iewwkq, the Ledger check's three differences): WHO ELSE WANTS THE KEY A ROW NOW CARRIES. An order takes its row's new key only when
+   no other order names or is moving to it, so two orders never read one row. A CANCELLED OR DECLINED ORDER IS NOT A CLAIM ON A LIVE ORDER'S KEY: its
+   row is ended and kept apart for it (rowIndex's `ended`, the tie-out's `yielded`), as namedKeys already counts live orders alone. Counted with the
+   live ones, a cancelled order of the same customer, day and figure held a live order off its own row for good: the order stayed on the key from
+   before its amendment, every later move of it waited for a row that had already landed, and the book never heard it was paid and delivered. An
+   ended order's own move is weighed as before, against every order. And a live order passes an ended one only onto a key the book reads as ONE row
+   WITH A CANCELLED ROW KEPT APART (`rows` and `gone`, rowIndex's count and its `ended`: the ended order's row cancelled, this one the live site row).
+   While the ended order's row is still live the key is two rows, or one row that is the ended order's own (Fable's review: its cancellation not landed
+   or rejected), and the order waits. `free(p, n)`: whether plan line `p` may take `p.nk`, wanted by `n` in all. */
+export const endedOrder = (o) => !!o && ["cancelled", "declined"].includes(o.status);
+export function followFree(orders, plan, rows, gone) {
+  const live = new Map(), ended = new Map(), add = (o, k) => { const m = endedOrder(o) ? ended : live; m.set(k, (m.get(k) || 0) + 1); };
+  for (const o of orders || []) { const k = ledgerKeyOf(o); if (k) add(o, k); }
+  for (const p of plan || []) if (p.nk !== p.k) add(p.o, p.nk);
+  return (p, n = 1) => {
+    const past = ended.get(p.nk) || 0;
+    if (endedOrder(p.o)) return (live.get(p.nk) || 0) + past === n;
+    return (live.get(p.nk) || 0) === n && (!past || !!(rows && gone && rows.get(p.nk) === 1 && gone.has(p.nk)));
+  };
+}
 async function followRows(env, orders, idx, at, { solo = false } = {}) {
   const plan = [], failed = [], amended = new Map(), miss = new Set();
   for (const o of orders) if (o.code && ledgerKeyOf(o) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);
@@ -2239,9 +2259,7 @@ async function followRows(env, orders, idx, at, { solo = false } = {}) {
     const nk = POSITION_ENGINE.ovKey(row), friend = POSITION_ENGINE.isBucket(row.customer);
     if (nk !== k || !!o.forFriend !== friend) plan.push({ o, k, nk, friend, party: row.customer });
   }
-  const wants = new Map();
-  for (const o of orders) { const k = ledgerKeyOf(o); if (k) wants.set(k, (wants.get(k) || 0) + 1); }
-  for (const p of plan) if (p.nk !== p.k) wants.set(p.nk, (wants.get(p.nk) || 0) + 1);
+  const free = followFree(orders, plan, idx.rows, idx.ended);
   let followed = 0;
   const broke = new Set(), movedIn = new Map();
   /* a group that moved in part goes back, so it is tried whole next pass: one left on the dead key alone would read that key's row */
@@ -2251,7 +2269,7 @@ async function followRows(env, orders, idx, at, { solo = false } = {}) {
   };
   for (const { o, k, nk, friend, party, shared } of plan) {
     if (shared && broke.has(k)) continue;
-    if (nk !== k && wants.get(nk) !== (shared ? groups.get(k).length : 1)) continue;
+    if (nk !== k && !free({ o, nk }, shared ? groups.get(k).length : 1)) continue;
     if (!!o.forFriend !== friend) {
       const b = await answerOf(await markOrder(env, o.u, o.id, { forFriend: friend }));
       if (!b.order || b.order.forFriend !== friend) { failed.push({ id: o.id, why: "the site would not take its row's side" + b.why }); continue; }
@@ -2328,13 +2346,13 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   const sales = (book && book.sales) || [];
   if (!sales.length) return { ok: true, told: 0, v };
-  const { byKey, rows, byRid } = rowIndex(sales);
+  const { byKey, rows, byRid, ended } = rowIndex(sales);
   const at = boundOf(book);   /* the flight checks take the bound of THIS book */
   /* S6 (Fable, 28 Oct 2026): a forced pass left `followRows` to the regular pass, since a shared group moved onto its row by two passes at once, one of which fails on a member,
      would split for good, and a tapped row had not landed in git. 17 Nov 2026 (his word): with the Book the source a tapped row is on the book read here, and an amendment names
      its row by rid (AMENDS), so the forced pass follows single orders now (`solo`) and leaves the groups to the regular pass. What it could not follow is the regular pass's to
      try again and report (TOLD_FAILED), never a fault of the outbox's rows, which would then wait on it */
-  const fr = await followRows(env, r.orders, { byKey, rows, byRid }, at, { solo: !!opts.force });
+  const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });
   const followed = fr.followed, failed = opts.force ? [] : fr.failed;
   /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
   const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows));
@@ -2477,6 +2495,24 @@ export function yesHeld(y, o, byKey, n) {
   if (y.stage === "move") return Math.abs(rowOut(row) - (+(+o.moved || 0).toFixed(3))) < 0.0004;
   return Math.abs(+POSITION_ENGINE.txPaid(row).toFixed(2) - +((+o.paid || 0) + (+o.credit || 0)).toFixed(2)) < 0.005;
 }
+/* 20 Nov 2026 (his word on the Ledger check: "why is it not in plain language"): EVERY DIFFERENCE IS SAID IN WORDS HE READS ON SALT ADMIN. No order
+   id, no key and no "row" or "yes": the order is named by its customer code, book, size, total and day (`who`), a stage by the tap he made
+   (TAP_WORD), a day as DD Mon YYYY, and the book's side as "the book". The id stays on the item (`order`, `rid`) for the page to open the order. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const sayDay = (d) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || "")); return m && MONTHS[+m[2] - 1] ? m[3] + " " + MONTHS[+m[2] - 1] + " " + m[1] : String(d || "an unknown day"); };
+const TAP_WORD = { ack: "Accept", pay: "Received", cash: "Cash received", move: "handover", close: "close", cancel: "cancellation", amend: "change" };
+const sayRM = (x) => "RM " + (+(+x || 0).toFixed(2));
+export function tieWho(o) {
+  if (!o) return "an order no longer on the site";
+  const book = String(o.product || "salt"), q = +(+o.qty || 0).toFixed(3), party = o.code ? (o.forFriend ? bucketFor(o.code) : o.code) : "an account with no code";
+  return [party, book.charAt(0).toUpperCase() + book.slice(1), q + (q === 1 ? " unit" : " units"), sayRM((+o.total || 0) + (+o.delivery || 0)), "ordered " + sayDay(klDate(new Date(o.at || 0)))].join(", ");
+}
+/* what the book was asked for, read off the key (party|day|goods and delivery|book): the day and the figure, never the key itself */
+const sayKey = (k, o) => {
+  const p = String(k || "").split("|"), fig = +p[2], now = +(((+o.total || 0) + (+o.delivery || 0)).toFixed(2));
+  return "the book has no sale for this order: it looked for one of " + sayRM(fig) + " on " + sayDay(p[1])
+    + (Number.isFinite(fig) && Math.abs(fig - now) > 0.004 ? ", and the order now says " + sayRM(now) : "");
+};
 export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
@@ -2495,7 +2531,8 @@ export async function tieOut(env, mirror, now = new Date()) {
     let held = null;
     try { held = await env.SALT_QUEUE.get(TOLD_FAILED, "json"); } catch (e) { held = null; }
     const who = held && Array.isArray(held.failed) && held.failed.length ? "; held by " + held.failed.map((f) => (f.id || "the pass") + " (" + f.why + ")").join(", ") : "";
-    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + new Date(since).toISOString() + " (last told " + (told || "never") + ")" + who });
+    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + new Date(since).toISOString() + " (last told " + (told || "never") + ")" + who,
+      say: "the orders have not been brought up to date with the book since " + sayDay(klDate(new Date(since))) + ": open Approve, and if nothing waits there, tell the session that looks after the Desk" });
   }
   const r = await listOrders(env, true);
   if (!r.ok) return { at, v, ok: false, error: "the site's orders could not be read: " + (r.error || "") };
@@ -2516,7 +2553,10 @@ export async function tieOut(env, mirror, now = new Date()) {
           .bind(at, "the book holds its " + y.stage + " already", y.id).run();
         continue;
       }
-      faults.push({ order: y.order_id, what: ["your yes to its " + y.stage + " of " + String(y.at).slice(0, 10) + " never reached Approve, so it holds nothing: tap it again if the move is still owed"] });
+      /* 20 Nov 2026 (iewwkq): with no sale on the book for its order the tap is not lost, it is held for that sale (deskPass, the reconcile), so "tap it again" was the wrong advice */
+      const tap = "the " + (TAP_WORD[y.stage] || y.stage) + " you tapped on " + sayDay(klDate(new Date(y.at))), k = o && o.ledgerKey ? ledgerKeyOf(o) : null;
+      faults.push({ order: y.order_id, who: tieWho(o), what: [k && !byKey.get(k) ? tap + " is held, not lost: it is booked once the book has this order's sale"
+        : tap + " never reached Approve, so the book does not hold it: tap it again on the order if it is still owed"] });
     }
   } catch (e) { /* the yeses are read again next pass */ }
   /* a row several live orders name is their sum (17 Oct 2026, s219): each is read against it with the others */
@@ -2537,37 +2577,49 @@ export async function tieOut(env, mirror, now = new Date()) {
     if (ended && !row) continue;   /* withdrawn before its row landed, or its row dropped: nothing to tie */
     orders++;
     const diff = [];
-    if (!row) diff.push("no row on the book under " + k);
-    else if ((n.get(k) || 0) > 1) diff.push("two rows share its key, so neither is its");
+    if (!row) diff.push(sayKey(k, o));
+    else if ((n.get(k) || 0) > 1) diff.push("the book holds two sales of theirs with this day and total, so it cannot tell which is this order's");
     else {
-      const g = !ended ? sums.get(k) : null, fig = g || o, on = g ? "on its " + g.n + " orders" : "on the order";
+      const g = !ended ? sums.get(k) : null, fig = g || o, on = g ? "on its " + g.n + " orders" : "on the order", bk = "on the book";
       const off = g ? (g.off === g.n ? true : g.off === 0 ? false : null) : !!o.writtenOff;
-      if (!!row.cancelled !== ended) diff.push(row.cancelled ? "the row is cancelled and the order is " + o.status : "the order is " + o.status + " and its row is live");
+      if (!!row.cancelled !== ended) diff.push(row.cancelled ? "its sale on the book is cancelled and the order is " + o.status : "the order is " + o.status + " and its sale on the book is not");
       if (!ended) {
-        if (off === null) diff.push("some of the orders on its row are written off and some are not");
-        else if (!!row.defaulted !== off) diff.push(row.defaulted ? "the row is written off and the order is not" : "the order is written off and its row is not");
-        if (Math.abs(f3(row.qty) - f3(fig.qty)) > 0.0004) diff.push("units " + f3(fig.qty) + " " + on + ", " + f3(row.qty) + " on the row");
-        if (Math.abs(f2(row.total) - f2(fig.total)) > 0.004) diff.push("goods RM " + f2(fig.total) + " " + on + ", RM " + f2(row.total) + " on the row");
-        if (!row.trip && Math.abs(f2(row.delivery) - f2(fig.delivery)) > 0.004) diff.push("delivery RM " + f2(fig.delivery) + " " + on + ", RM " + f2(row.delivery) + " on the row");
+        if (off === null) diff.push("some of the orders sharing its sale on the book are written off and some are not");
+        else if (!!row.defaulted !== off) diff.push(row.defaulted ? "its sale on the book is written off and the order is not" : "the order is written off and its sale on the book is not");
+        if (Math.abs(f3(row.qty) - f3(fig.qty)) > 0.0004) diff.push("units " + f3(fig.qty) + " " + on + ", " + f3(row.qty) + " " + bk);
+        if (Math.abs(f2(row.total) - f2(fig.total)) > 0.004) diff.push("goods RM " + f2(fig.total) + " " + on + ", RM " + f2(row.total) + " " + bk);
+        if (!row.trip && Math.abs(f2(row.delivery) - f2(fig.delivery)) > 0.004) diff.push("delivery RM " + f2(fig.delivery) + " " + on + ", RM " + f2(row.delivery) + " " + bk);
         const paid = f2(POSITION_ENGINE.txPaid(row)), moved = rowOut(row);
-        if (Math.abs(paid - f2(+fig.paid + (+fig.credit || 0))) > 0.004) diff.push("paid RM " + f2(+fig.paid + (+fig.credit || 0)) + " " + on + ", RM " + paid + " on the row");   /* their credit is paid on the row */
-        if (Math.abs(moved - f3(fig.moved)) > 0.0004) diff.push("handed over " + f3(fig.moved) + " " + on + ", " + moved + " on the row");
+        if (Math.abs(paid - f2(+fig.paid + (+fig.credit || 0))) > 0.004) diff.push("paid RM " + f2(+fig.paid + (+fig.credit || 0)) + " " + on + ", RM " + paid + " " + bk);   /* their credit is paid on the row */
+        if (Math.abs(moved - f3(fig.moved)) > 0.0004) diff.push("handed over " + f3(fig.moved) + " " + on + ", " + moved + " " + bk);
       }
     }
     if (!diff.length) continue;
-    const item = { order: o.id, ...(row && row.rid ? { rid: row.rid } : {}), what: diff };
+    const item = { order: o.id, who: tieWho(o), ...(row && row.rid ? { rid: row.rid } : {}), what: diff };
     /* a claim of theirs waiting holds the order on purpose: his Received or Not found is owed, so it is waiting, said so (Fable's review) */
     if ((o.payments || []).some((p) => p && p.claim === "waiting")) waiting.push({ ...item, what: diff.concat(["a payment they say they sent waits on your Received or Not found"]) });
     else if (await orderInFlight(env, o, bound)) waiting.push(item);
     else if (!row) {
       const ack = await fate(env, o.queued && o.queued.ack, bound);
       /* its pending row rejected under Approve is no row to come: the re-offer is owed */
-      if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["its pending row was rejected under Approve: tap Accept again or cancel the order"]) });
+      if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["you rejected its sale under Approve: tap Accept again or cancel the order"]) });
       else if (!ack || !ack.landed) waiting.push(item); else faults.push(item);
     }
     else faults.push(item);
   }
-  return { at, v, told, ok: true, orders, clean: !faults.length, faults, waiting };
+  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting };
+}
+/* one item an order, its sentences in the order they were found: three lines about one order read as three faults (iewwkq), and the bar counted three */
+export function oneAnOrder(items) {
+  const out = [], at = new Map();
+  for (const f of items || []) {
+    if (!f || !f.order || !Array.isArray(f.what)) { out.push(f); continue; }
+    const had = at.get(f.order);
+    if (!had) { const c = { ...f, what: f.what.slice() }; at.set(f.order, c); out.push(c); continue; }
+    for (const w of f.what) if (!had.what.includes(w)) had.what.push(w);
+    for (const key of ["rid", "who"]) if (had[key] == null && f[key] != null) had[key] = f[key];
+  }
+  return out;
 }
 
 /* ---- A LINE THE DESK WROTE BY MISTAKE, TAKEN BACK (28 Sep 2026, fix 4, his answers on CE5-SA's three orders) ------
