@@ -27,7 +27,7 @@
  * the run crashed before any check failed, which is the runner's word and not a check's.
  */
 import "../test/frozen.mjs";   /* first: a mutation copy is made of the frozen master, as a suite run reads it */
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync, readdirSync, cpSync, symlinkSync, mkdirSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync, readdirSync, cpSync, symlinkSync, mkdirSync, unlinkSync, lstatSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve, relative, dirname, isAbsolute, sep } from "node:path";
 import { tmpdir, cpus, freemem } from "node:os";
@@ -151,13 +151,24 @@ export function lanesFor(jobs, cores, free, count) {
 /* THIS CHECKOUT COPIED for one lane's checkout mutations: every entry but .git, .claude, node_modules and the shard files of
    runs live here; node_modules a junction, never copied; .git a file naming this checkout's git folder, so the few checks asking
    git still read it (and could write it: a section only reads git). A mutation edits the copy's file, never the checkout's. */
+/* test/tmp is every live run's scratch, made and removed as this copies: a file gone mid-copy is skipped, never fatal (20 Nov 2026; cpSync threw
+   ENOENT on every copy while files there churned, and the section.mjs check read red in a split run) */
+function copyLoose(s, d) {
+  const gone = (e) => { if (e.code !== "ENOENT" && e.code !== "EPERM") throw e; }; /* EPERM: Windows' answer for a file being deleted */
+  let st; try { st = lstatSync(s); } catch (e) { return gone(e); }
+  if (!st.isDirectory()) { try { cpSync(s, d); } catch (e) { gone(e); } return; }
+  mkdirSync(d, { recursive: true });
+  let es = []; try { es = readdirSync(s); } catch (e) { gone(e); }
+  for (const e of es) copyLoose(join(s, e), join(d, e));
+}
 export function copyCheckout(from, to, gitDir) {
   mkdirSync(to, { recursive: true });
   const skip = new Set([".git", ".claude", ".worktrees", "node_modules"]), shards = join(from, "test"); /* .worktrees: Copilot's, whose node_modules links refuse a copy (EPERM), 20 Nov 2026 */
   for (const e of readdirSync(from)) {
     if (skip.has(e)) continue;
-    cpSync(join(from, e), join(to, e), { recursive: true, filter: (src) => !(dirname(src) === shards && /^\.shard-.+\.mjs$/.test(src.slice(shards.length + 1))) });
+    cpSync(join(from, e), join(to, e), { recursive: true, filter: (src) => src !== join(shards, "tmp") && !(dirname(src) === shards && /^\.shard-.+\.mjs$/.test(src.slice(shards.length + 1))) });
   }
+  if (existsSync(join(shards, "tmp"))) copyLoose(join(shards, "tmp"), join(to, "test", "tmp"));
   if (existsSync(join(from, "node_modules"))) symlinkSync(join(from, "node_modules"), join(to, "node_modules"), "junction");
   if (gitDir) writeFileSync(join(to, ".git"), `gitdir: ${gitDir}\n`);
   return to;
