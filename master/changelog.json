@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1553",
+  "d": "20 Nov 2026",
+  "t": "A CUSTOMER'S CREDIT ON SALT ADMIN IS LIVE",
+  "n": [
+   "<b>CREDIT AT ONCE.</b> On Salt Admin, a customer's Credit is read from the Desk's open refunds, so a refund you mark paid or remove leaves their card within seconds of your Approve, not minutes later when the statements are published.",
+   "<b>WHAT STAYS SEALED.</b> What they owe on the card is still the statement's figure until the next publish; the customer's own page is unchanged."
+  ]
+ },
+ {
   "v": "v1552",
   "d": "20 Nov 2026",
   "t": "A REFUND'S PAID AND REMOVE SEND AGAIN",

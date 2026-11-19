@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="18d2954a23236ae2";
+var SALT_BUILD_ID="df6edc6caf6d6e6c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12558,7 +12558,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1552","d":"20 Nov 2026","t":"A REFUND'S PAID AND REMOVE SEND AGAIN","n":["<b>REMOVE AS STALE AND MARK PAID TODAY WORK.</b> On a customer's account under Refunds, both now reach Approve. Since 03 Nov 2026 each tap said the entry could not be sent and nothing left Salt Admin."]}];
+const evolution=[{"v":"v1553","d":"20 Nov 2026","t":"A CUSTOMER'S CREDIT ON SALT ADMIN IS LIVE","n":["<b>CREDIT AT ONCE.</b> On Salt Admin, a customer's Credit is read from the Desk's open refunds, so a refund you mark paid or remove leaves their card within seconds of your Approve, not minutes later when the statements are published.","<b>WHAT STAYS SEALED.</b> What they owe on the card is still the statement's figure until the next publish; the customer's own page is unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
