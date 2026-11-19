@@ -38,8 +38,56 @@
  {
   "name": "the run asking counts itself busy",
   "file": "src/day-export.js",
-  "find": " || String(run.id) === String(except)) continue;",
-  "replace": ") continue;"
+  "find": " || String(run.id) === String(except) || neverStarted(run, jobsOf, nowMs)) continue;",
+  "replace": " || neverStarted(run, jobsOf, nowMs)) continue;"
+ },
+ {
+  "name": "a run GitHub never started is busy for good",
+  "file": "src/day-export.js",
+  "find": " || String(run.id) === String(except) || neverStarted(run, jobsOf, nowMs)) continue;",
+  "replace": " || String(run.id) === String(except)) continue;"
+ },
+ {
+  "name": "an export run never started stays in hand",
+  "file": "src/day-export.js",
+  "find": "\n      && !neverStarted(run, jobsOf, nowMs)) return run.id;",
+  "replace": ") return run.id;"
+ },
+ {
+  "name": "a run is stuck only after an hour",
+  "file": "src/day-export.js",
+  "find": "export const STUCK_MIN = 10;",
+  "replace": "export const STUCK_MIN = 60;"
+ },
+ {
+  "name": "a run is stuck at ten minutes to the second",
+  "file": "src/day-export.js",
+  "find": "nowMs - Date.parse(run.created_at) > STUCK_MIN * 60000",
+  "replace": "nowMs - Date.parse(run.created_at) >= STUCK_MIN * 60000"
+ },
+ {
+  "name": "a run waiting on the lock reads as never started",
+  "file": "src/day-export.js",
+  "find": "\n  && !(jobsOf(run.id) || []).some((j) => j && j.name === CHAIN_JOB);",
+  "replace": ";"
+ },
+ {
+  "name": "a started run with no job listed reads as never started",
+  "file": "src/day-export.js",
+  "find": "!!run && run.status === \"queued\" && Number.isFinite(nowMs)",
+  "replace": "!!run && Number.isFinite(nowMs)"
+ },
+ {
+  "name": "the Worker hands the busy check no clock",
+  "file": "src/worker.js",
+  "find": "chainBusy(ev.runs, ev.jobsOf, null, now.getTime())",
+  "replace": "chainBusy(ev.runs, ev.jobsOf)"
+ },
+ {
+  "name": "the reader hands the verdict no clock",
+  "file": "tools/day-export.mjs",
+  "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null, nowMs)",
+  "replace": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null)"
  },
  {
   "name": "the run asking counts itself in hand",
@@ -242,8 +290,8 @@
  {
   "name": "the run asking is not left out",
   "file": "tools/day-export.mjs",
-  "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null)",
-  "replace": "dueVerdict(runs, jobsOf, day, null)"
+  "find": "dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null, nowMs)",
+  "replace": "dueVerdict(runs, jobsOf, day, null, nowMs)"
  },
  {
   "name": "the phone has no words for the warning",

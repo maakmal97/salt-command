@@ -48,11 +48,20 @@ export function exportLanded(runs, jobsOf, day) {
 
 /* GitHub's words for a run or job that has not started or not finished */
 const OPEN = new Set(["queued", "pending", "waiting", "requested", "in_progress"]);
+/* A RUN GITHUB NEVER STARTED COVERS NOTHING (the Worker's cloudCommitWaiting learnt it on 16 Nov 2026: a dispatch sat `queued` with no
+   job for 35 minutes, and a newer dispatch ran at once beside it). A run still `queued` at its own level, with no chain job listed,
+   more than STUCK_MIN after it was made has not reached the lock: it is neither busy nor in hand. A chain job listed, waiting
+   included, is never this. With no clock handed in (`nowMs`) nothing is. */
+export const STUCK_MIN = 10;
+export const neverStarted = (run, jobsOf, nowMs) => !!run && run.status === "queued" && Number.isFinite(nowMs)
+  && nowMs - Date.parse(run.created_at) > STUCK_MIN * 60000
+  && !(jobsOf(run.id) || []).some((j) => j && j.name === CHAIN_JOB);
+
 /* the id of a run whose chain job is waiting or running, 0 for none. A run with no jobs listed yet counts by its own status, so a
    dispatch never goes over a run GitHub has created and not yet started. `except` is the run asking (the chain's own plan step). */
-export function chainBusy(runs, jobsOf, except = null) {
+export function chainBusy(runs, jobsOf, except = null, nowMs = NaN) {
   for (const run of runs || []) {
-    if (!run || run.status === "completed" || String(run.id) === String(except)) continue;
+    if (!run || run.status === "completed" || String(run.id) === String(except) || neverStarted(run, jobsOf, nowMs)) continue;
     const chain = (jobsOf(run.id) || []).filter((j) => j && j.name === CHAIN_JOB);
     if (!chain.length ? OPEN.has(run.status) : chain.some((j) => OPEN.has(j.status))) return run.id;
   }
@@ -60,9 +69,10 @@ export function chainBusy(runs, jobsOf, except = null) {
 }
 
 /* the id of a run named for `day`'s export that has not finished, 0 for none: a scheduled run leaves the export to it */
-export function exportInHand(runs, day, except = null) {
+export function exportInHand(runs, day, except = null, jobsOf = () => [], nowMs = NaN) {
   for (const run of runs || []) {
-    if (run && run.status !== "completed" && String(run.id) !== String(except) && run.display_title === exportTitle(day)) return run.id;
+    if (run && run.status !== "completed" && String(run.id) !== String(except) && run.display_title === exportTitle(day)
+      && !neverStarted(run, jobsOf, nowMs)) return run.id;
   }
   return 0;
 }
@@ -91,11 +101,11 @@ export async function readRuns(get, day, { perPage = 100, maxPages = 5 } = {}) {
 }
 
 /* THE CHAIN'S QUESTION on a scheduled run: is the export due? Due when nothing has landed today and no run named for today's export
-   is waiting or running. { due, why } */
-export function dueVerdict(runs, jobsOf, day, self = null) {
+   is waiting or running (one GitHub never started aside). { due, why } */
+export function dueVerdict(runs, jobsOf, day, self = null, nowMs = NaN) {
   const landed = exportLanded(runs, jobsOf, day);
   if (landed.done) return { due: false, why: "landed today in run " + landed.run };
-  const hand = exportInHand(runs, day, self);
+  const hand = exportInHand(runs, day, self, jobsOf, nowMs);
   if (hand) return { due: false, why: "run " + hand + " is exporting today" };
   return { due: true, why: "no export has landed on " + day };
 }

@@ -31,7 +31,7 @@ const get = async (path) => {
 
 try {
   const { runs, jobsOf } = await readRuns(get, day);
-  const v = dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null);
+  const v = dueVerdict(runs, jobsOf, day, env.GITHUB_RUN_ID || null, nowMs);
   say(v.due ? 0 : 1, (v.due ? "due: " : "not due: ") + v.why);
 } catch (e) {
   say(2, "cannot tell: " + String((e && e.message) || e));

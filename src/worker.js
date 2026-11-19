@@ -2697,7 +2697,7 @@ async function exportAsk(env, now) {
   let ev;
   try { ev = await readRuns(await ghGet(env), pace.day); }
   catch (e) { await env.SALT_QUEUE.put(EXPORT_NIGHT_KEY, JSON.stringify(m)); return { unread: String((e && e.message) || e) }; }
-  const landed = exportLanded(ev.runs, ev.jobsOf, pace.day), v = askVerdict(now.getTime(), m, landed, chainBusy(ev.runs, ev.jobsOf));
+  const landed = exportLanded(ev.runs, ev.jobsOf, pace.day), v = askVerdict(now.getTime(), m, landed, chainBusy(ev.runs, ev.jobsOf, null, now.getTime()));
   if (v.act === "done") {
     m.done = true;
     await env.SALT_QUEUE.put(EXPORT_LANDED_KEY, JSON.stringify({ day: pace.day, run: landed.run, at: landed.at }));

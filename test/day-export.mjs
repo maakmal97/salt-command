@@ -88,6 +88,17 @@ export async function run({ ok }) {
     X.dueVerdict([R(1)], by({ 1: [chain([SKIPPED])] }), DAY)];
   ok(!dv[0].due && !dv[1].due && dv[2].due, "the clock's verdict: not due once landed or in hand, due otherwise: " + J(dv));
   const at = (kl) => Date.parse(DAY + "T" + kl + ":00+08:00");
+  /* 17 Nov 2026, the Worker's own rule for its publish: a run GitHub never started covers nothing */
+  const Q = (min, o = {}) => R(3, { status: "queued", created_at: new Date(at("01:00") - min * 60000).toISOString(), ...o });
+  ok(X.chainBusy([Q(11)], by({}), null, at("01:00")) === 0 && X.chainBusy([Q(10)], by({}), null, at("01:00")) === 3,
+    "a run still queued with no job more than 10 minutes after it was made is not busy; one at 10 minutes is");
+  ok(X.chainBusy([Q(40)], by({ 3: [chain([], "queued")] }), null, at("01:00")) === 3 && X.chainBusy([Q(40, { status: "in_progress" })], by({}), null, at("01:00")) === 3,
+    "but one whose chain job waits on the lock, or that has started, is busy however old");
+  const QX = (min) => Q(min, { display_title: X.exportTitle(DAY) });
+  const stuckDue = [X.dueVerdict([QX(11)], by({}), DAY, null, at("01:00")), X.dueVerdict([QX(9)], by({}), DAY, null, at("01:00")),
+    X.dueVerdict([QX(40)], by({ 3: [chain([], "queued")] }), DAY, null, at("01:00"))];
+  ok(stuckDue[0].due && !stuckDue[1].due && !stuckDue[2].due,
+    "an export run GitHub never started leaves the clock's export due; a fresh one, or one waiting on the lock, does not: " + J(stuckDue));
   const P = (kl, mark) => X.askPace(at(kl), mark).act;
   ok(P("00:04", null) === "rest" && P("00:05", null) === "read" && P("05:59", null) === "read" && P("06:00", null) === "rest",
     "the Worker reads from 00:05 to 05:59 and rests outside it: " + J(["00:04", "00:05", "05:59", "06:00"].map((t) => P(t, null))));
@@ -144,6 +155,9 @@ export async function run({ ok }) {
     ok(b3.code === 1 && /run 2 is exporting today/.test(b3.out), "a run named for today's export still running makes it not due: " + J({ code: b3.code, out: b3.out.trim() }));
     const b3b = await due({ GITHUB_RUN_ID: "2" });
     ok(b3b.code === 0, "but the run asking is never its own reason not to: " + J({ code: b3b.code, out: b3b.out.trim() }));
+    scen = { runs: [R(3, { status: "queued", display_title: X.exportTitle(DAY), created_at: "2026-11-14T16:30:00Z" })], jobs: {}, status: 200 };
+    const b3c = await due();
+    ok(b3c.code === 0, "nor is an export run GitHub has left queued with no job for half an hour: " + J({ code: b3c.code, out: b3c.out.trim() }));
     scen = { runs: [], jobs: {}, status: 500 };
     const b4 = await due(), b5 = await due({ GH_TOKEN: "" });
     ok(b4.code === 2 && /cannot tell: GitHub answered 500/.test(b4.out) && b5.code === 2 && /no GH_TOKEN/.test(b5.out),
@@ -252,6 +266,10 @@ export async function run({ ok }) {
   const d12 = await tick(f.env, "* * * * *", KLT("00:05"), Object.assign({ dispatch: 422 }, quiet));
   ok(d12.dispatches.length === 2 && d12.dispatches[0].export === "true" && !d12.dispatches[1].export && d12.logs.some((l) => /export dispatch REFUSED/.test(l)),
     "a refused try is said, and leaves the day's publish to send its own run: " + J(d12.dispatches));
+  const k = world(), never = (kl) => ({ runs: [R(8, { status: "queued", created_at: KLT(kl) })], jobs: {} });
+  const d13 = await tick(k.env, "* * * * *", KLT("00:35"), never("00:30")), d14 = await tick(k.env, "* * * * *", KLT("00:45"), never("00:05"));
+  ok(!d13.dispatches.some((x) => x.export) && d14.dispatches.length === 1 && d14.dispatches[0].export === "true",
+    "a run made five minutes ago and not started holds the try; one GitHub has left queued with no job for 40 minutes does not: " + J([d13.dispatches, d14.dispatches]));
 
   /* E. THE 09:00 DIGEST */
   const digest = async (source, gh) => {
