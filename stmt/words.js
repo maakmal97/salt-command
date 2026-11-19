@@ -1054,6 +1054,7 @@ export const EN = {
   "pay.fromApp": "From your banking app, to {a}",
   "pay.fromAppAny": "From your banking app, to one of our accounts",
   "pay.into": "Pay into",
+  "pay.intoPick": "Choose an account",
   "pay.ref": "Reference",
   "pay.refHint": "Put this in the reference, so we can match it.",
   "pay.refCopy": "Copy the reference",

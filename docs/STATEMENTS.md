@@ -1154,9 +1154,11 @@ it does with the quoted total. An associate with no bucket on the roster is refu
 **MONEY AND GOODS ARE TWO TRACKS** (v694). `payments[]` is what the customer says they
 sent and `paid` what he has received (S6), `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
 **from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
-S6 6.4, his D8 as amended, then Phase 7b of 11 Oct 2026): **his banks first**, one Option tile a tap, **none chosen for them**
-(the accounts `/pay/accounts` gave that way's details, a suspended one never offered); then the figure, All or Part, and What this pays, the invoice's
-lines in a shut Plan fold; then the ways, Transfer, Scan a code and JomPAY, Transfer chosen as it opens (the way, never the account).
+S6 6.4, his D8 as amended, then Phase 7b of 11 Oct 2026, **reordered by his word of 20 Nov 2026**): **what is still to pay and what for** (the
+figure and What this pays, the invoice's lines in a shut More); then **how much**, All or Part; then **the way**, Transfer, Scan a code and JomPAY,
+Transfer chosen as it opens; then **which of his accounts**, Pay into, the system's Select of only the accounts `/pay/accounts` gave that way's details
+(a suspended one never offered), Choose an account first and **none chosen for them** while there are several, the one there is chosen where there is
+one; then that account's details. Each answer narrows the next question. (Phase 7b put his banks first, as Option tiles.)
 **The customer never leaves the Counter and never learns where the details come from** (his rule of 06 Nov 2026, `docs/plan-jompay-counter.html`):
 no link, address or name of the pay site is served. The Counter's Worker reads the pay site's bundle (`/data.js`, anchored on
 `self.QR_CODES = ... ;

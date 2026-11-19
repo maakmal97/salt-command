@@ -5935,7 +5935,8 @@ const CLIENT_JS = `
     if(PS.step==='check'){ drawPayCheck(); return; }
     var body=document.getElementById('payBody'), c=PS.ctx;
     /* 13 Oct 2026 (stress): the sheet is drawn afresh, so a radio chosen by the arrow keys, which holds focus as it redraws, is given it again (name and value) */
-    var held=document.activeElement&&document.activeElement.type==='radio'&&body.contains(document.activeElement)?document.activeElement.name+'|'+document.activeElement.value:'';
+    var held=document.activeElement&&document.activeElement.type==='radio'&&body.contains(document.activeElement)?document.activeElement.name+'|'+document.activeElement.value:'',
+        heldInto=document.activeElement&&document.activeElement.id==='payIntoSel';
     body.textContent=''; payTitle();
     if(c.kind==='order'&&PS.rail==='cod'&&readyDue(oFind(c.id))) PS.rail='transfer';
     /* JomPAY is offered while some account gives its details; if they go while it is chosen, the way falls back to Transfer, and an account the sheet can no longer draw is not kept */
@@ -5947,21 +5948,16 @@ const CLIENT_JS = `
     var cash=PS.rail==='cod';
     /* 16 Nov 2026 (place D): in the system's parts. A choice is its Options (a real radio each, a mark, its title and its line), the figure its Tile,
        All or Part its Segment, an amount its Field, the details its Plate (a row each, a tap on it copying it), the code its frame. */
-    /* PHASE 7B: HIS BANKS FIRST, one tap each, none chosen; then the figure beside them */
-    if(PS.rail&&!cash){
-      var fi=el('fieldset','amb-options payinto');
-      fi.id='payInto'; fi.appendChild(el('legend','amb-field__label',tw('pay.into')));
-      var offer=payInto(PS.rail);
-      offer.forEach(function(a){
-        var lab=el('label','amb-option'), r=el('input','amb-vh amb-option__input'), mk=el('span','amb-option__mark');
-        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key; mk.setAttribute('aria-hidden','true');
-        r.addEventListener('change',function(){ PS.acct=a.key; drawPay(); });
-        lab.appendChild(r); lab.appendChild(mk); lab.appendChild(el('span','amb-option__title',a.name)); fi.appendChild(lab);
-      });
-      body.appendChild(fi);
-      if(!offer.length&&!payNumAsked){ var na=el('p','amb-basis',tw('pay.noAcct')); na.id='payNone'; body.appendChild(na); }
-    }
+    /* 20 NOV 2026, HIS ORDER (reversing Phase 7b's banks first): WHAT IS STILL TO PAY AND WHAT FOR, then how much of it they pay, then the way,
+       then which of his accounts that way runs, as a drop-down, then that account's details. Each answer narrows the next question. */
     body.appendChild(ambTile(tw(c.label),rm(c.fig),c.note()));
+    /* What this pays: the invoice's lines, shut, and as they left it across a redraw (the system's More; the lines are its rows) */
+    if(c.lines){
+      var wd=el('button','amb-more paywhat',tw('pay.what')); wd.type='button'; wd.id='payWhat'; wd.setAttribute('aria-expanded',PS.what?'true':'false');
+      wd.addEventListener('click',function(){ if(!PS) return; PS.what=!PS.what; drawPay(); var again=document.getElementById('payWhat'); if(again) try{ again.focus({preventScroll:true}); }catch(e){} });
+      body.appendChild(wd);
+      var ib=invNode(c.lines,true); ib.id='payInv'; ib.hidden=!PS.what; body.appendChild(ib);
+    }
     var seg=el('div','amb-segment payseg'); seg.setAttribute('role','group');
     [[false,tw('pay.all',{rm:rm(c.fig)})],[true,tw('pay.part')]].forEach(function(x){
       var b=el('button','amb-segment__opt',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
@@ -5978,13 +5974,6 @@ const CLIENT_JS = `
         var ar=document.getElementById('payAmtRow'); if(ar) ar.querySelector('.amb-plate__value').firstChild.nodeValue=rm(payAmt()||c.fig); });
       row.appendChild(inp); row.appendChild(el('span','amb-field__hint',tw('pay.upTo',{rm:rm(c.fig)}))); body.appendChild(row);
     }
-    /* What this pays: the invoice's lines, shut, and as they left it across a redraw (the system's More; the lines are its rows) */
-    if(c.lines){
-      var wd=el('button','amb-more paywhat',tw('pay.what')); wd.type='button'; wd.id='payWhat'; wd.setAttribute('aria-expanded',PS.what?'true':'false');
-      wd.addEventListener('click',function(){ if(!PS) return; PS.what=!PS.what; drawPay(); var again=document.getElementById('payWhat'); if(again) try{ again.focus({preventScroll:true}); }catch(e){} });
-      body.appendChild(wd);
-      var ib=invNode(c.lines,true); ib.id='payInv'; ib.hidden=!PS.what; body.appendChild(ib);
-    }
     /* V5c: the pay sheet says in full what paying late can cost */
     var lf=lateFull(); if(lf){ var lp=el('p','amb-basis',lf); lp.id='lateFull'; body.appendChild(lp); }
     var fs=el('fieldset','amb-options payhow');
@@ -5999,6 +5988,20 @@ const CLIENT_JS = `
       fs.appendChild(lab);
     });
     body.appendChild(fs);
+    if(PS.rail&&!cash){
+      var offer=payInto(PS.rail);
+      if(offer.length===1) PS.acct=offer[0].key;
+      if(offer.length){
+        var fi=el('label','amb-field payinto'), sw=el('span','amb-select'), sel=el('select','amb-input');
+        fi.id='payInto'; fi.appendChild(el('span','amb-field__label',tw('pay.into')));
+        sel.id='payIntoSel'; sel.name='payInto';
+        if(offer.length>1){ var o0=el('option','',tw('pay.intoPick')); o0.value=''; sel.appendChild(o0); }
+        offer.forEach(function(a){ var o=el('option','',a.name); o.value=a.key; sel.appendChild(o); });
+        sel.value=PS.acct||'';
+        sel.addEventListener('change',function(){ PS.acct=sel.value; drawPay(); });
+        sw.appendChild(sel); sw.appendChild(ambIcon('chevron','amb-icon--sm')); fi.appendChild(sw); body.appendChild(fi);
+      } else if(!payNumAsked){ var na=el('p','amb-basis',tw('pay.noAcct')); na.id='payNone'; body.appendChild(na); }
+    }
     /* the details of the account chosen, each a Plate row with its own copy: the code and Save for a code, the number for Transfer, the biller code and Ref-1 for
        JomPAY (Ref-2 is left empty), then the figure on every rail and the username as the reference on a code and on Transfer only (his B1). Copy and Save
        leave for the banking app and so mark the visit away, the net for a phone that reloads while they pay. */
@@ -6043,6 +6046,7 @@ const CLIENT_JS = `
       var again=[].filter.call(body.querySelectorAll('input[type=radio]'),function(x){ return x.name+'|'+x.value===held&&!x.disabled; })[0];
       try{ if(again) again.focus({preventScroll:true}); }catch(e){}
     }
+    if(heldInto){ var si=document.getElementById('payIntoSel'); try{ if(si) si.focus({preventScroll:true}); }catch(e){} }
   }
   /* they have paid, or have copied or saved a detail and are back: the one question, with the figure, the way and the bank as they stand */
   function payAway(a){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; payqPut(); }
