@@ -1,0 +1,14 @@
+[
+  { "name": "L1: the sheet is never laid over by the Desk's refunds", "file": "stmt/owner.js",
+    "find": "      liveSheet();   /* 20 Nov 2026: each account's credit", "replace": "      0;   /* 20 Nov 2026: each account's credit" },
+  { "name": "L1: the Desk's read leaves the sheet as sealed", "file": "stmt/owner.js",
+    "find": "    if(apply){ liveSheet(); drawNeeds();", "replace": "    if(apply){ drawNeeds();" },
+  { "name": "L2: a bucket's refund counts as the owner's", "file": "stmt/owner.js",
+    "find": "return r&&r.party===a.code; })", "replace": "return r&&(r.party===a.code||r.party===a.code+'-R'); })" },
+  { "name": "L2: the flag is never chosen again", "file": "stmt/owner.js",
+    "find": "    o.flag=+t.owed>0.009?'owes'", "replace": "    o.flg=+t.owed>0.009?'owes'" },
+  { "name": "L3: a Desk answer with no refunds clears every credit", "file": "stmt/owner.js",
+    "find": "refunds:Array.isArray(c.openRefunds)?c.openRefunds:null}", "replace": "refunds:Array.isArray(c.openRefunds)?c.openRefunds:[]}" },
+  { "name": "L4: a credit is said before what they owe", "file": "stmt/owner.js",
+    "find": "o.flag=+t.owed>0.009?'owes':+t.toGet>0.009?'goods':t.refund>0.009?'refund'", "replace": "o.flag=t.refund>0.009?'refund':+t.owed>0.009?'owes':+t.toGet>0.009?'goods'" }
+]

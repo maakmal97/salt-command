@@ -51381,6 +51381,11 @@ await (async () => {
   await (await import("./admin-refund-send.mjs")).run({ ok, pageWork });
 })();
 
+section("20 Nov 2026: an account's credit on Salt Admin is the Desk's open refunds, not the sealed statement's");
+await (async () => {
+  await (await import("./admin-live-credit.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin Customers P4: This customer and the associate reward by the account's code, behind both locks (26 Oct 2026)");
 await (async () => {
   await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });
