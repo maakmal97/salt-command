@@ -2768,6 +2768,18 @@ export async function deskImport(env, b, mirror, now = new Date()) {
   for (const x of go) { const res = by.get(x.order.id) || { ok: false, why: "the site did not answer for it" }; x.id = x.order.id; x.ok = !!res.ok; if (res.why) x.why = res.why; if (res.again) x.again = true; delete x.order; }
   return { ok: true, dry: false, results: out };
 }
+/** 20 Nov 2026 (order import): THE WAY BACK. POST /orders/unimport {ids}: up to IMPORT_MAX imported order ids, each taken back by the Counter only while nothing but
+ *  its import (and the pass's reward word) has happened to it, answered {id, ok, why?}. The fixed marks written at import are left: a re-import needs them. */
+export async function deskUnimport(env, b) {
+  const no = (status, error) => ({ ok: false, status, error });
+  const ids = b && Array.isArray(b.ids) ? b.ids.map((x) => String(x || "")) : [];
+  if (!ids.length || ids.length > IMPORT_MAX || ids.some((x) => !x)) return no(400, "send 1 to " + IMPORT_MAX + " ids");
+  const m = await site(env, "/desk/unimport", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ids }) });
+  if (!m) return no(503, "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)");
+  const j = await m.json().catch(() => ({}));
+  if (!m.ok || !j.ok || !Array.isArray(j.results)) return no(502, "the site would not take them back: " + (j.error || "http " + m.status));
+  return { ok: true, results: j.results };
+}
 /* ---- V4a: A KEY WRITTEN BEFORE THE PRODUCT WAS IN IT (28 Sep 2026) -----------------------------------------------
  * The row key names the product on every book but salt (the engine's ovKey), and an order acknowledged before that
  * carries the old key as its ledgerKey: on salt it is the same key, on any other book it lacks the tail. ONCE, on the

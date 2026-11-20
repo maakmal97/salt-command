@@ -86,7 +86,7 @@
 {
 "name": "B6 unimport takes a touched order",
 "file": "stmt/orderbook.js",
-"find": "        if (evs.length !== 1 || evs[0].kind !== \"import\") { results.push({ id, ok: false, why: \"a move has touched it since its import\" }); continue; }\n",
+"find": "        if (moved.length) { results.push({ id, ok: false, why: \"a move has touched it since its import: \" + TOUCH_WORD(moved[0]) }); continue; }\n",
 "replace": ""
 },
 {
@@ -148,6 +148,24 @@
 "file": "stmt/orders.js",
 "find": "    if (order.imported === true) return Object.assign(refusal(\"rateNone\"), { status: 409 });\n",
 "replace": ""
+},
+{
+"name": "B6 a marked order is refused as touched",
+"file": "stmt/orderbook.js",
+"find": "k !== \"import\" && k !== \"mark\");",
+"replace": "k !== \"import\");"
+},
+{
+"name": "B6 the refusal names no move",
+"file": "stmt/orderbook.js",
+"find": "\"a move has touched it since its import: \" + TOUCH_WORD(moved[0])",
+"replace": "\"a move has touched it since its import\""
+},
+{
+"name": "B6 a rating counts as a message",
+"file": "stmt/orderbook.js",
+"find": "rate: \"a rating\", rateask",
+"replace": "rate: \"a message\", rateask"
 },
 {
 "name": "B3 an order whose queue differs from its paid and moved is taken",

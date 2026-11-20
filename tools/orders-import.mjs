@@ -4,6 +4,8 @@
  *   node tools/orders-import.mjs                    dry (the default): every sales rid in ledger/book.json, one line a rid, then a total by verdict and reason
  *   node tools/orders-import.mjs --rids s1,s2       only those rows
  *   node tools/orders-import.mjs --run              the real import
+ *   node tools/orders-import.mjs --undo             the way back: every imported order on the Counter (read off GET /orders?all=1), taken back while untouched
+ *   node tools/orders-import.mjs --undo --ids a,b   only those order ids
  *
  * The rids go to the Desk's keyed POST /orders/import, 20 at a time (a trip is never split across two calls); the Desk builds each order from the Book,
  * never from this laptop's book.json, which may be a day behind and is read here only for the list of rids. Needs SALT_WRITE_KEY (and SALT_ACCESS_JWT,
@@ -89,6 +91,11 @@ export function client({ base, key, token, fetch: transport = globalThis.fetch }
       const j = await r.json().catch(() => ({}));
       return r.ok && j.ok ? { ok: true, results: j.results } : { ok: false, error: (j.error || "HTTP " + r.status) + " (" + r.status + ")" };
     },
+    async unimp(ids) {
+      const r = await transport(root + "/orders/unimport", { method: "POST", headers, body: JSON.stringify({ ids }), cache: "no-store" });
+      const j = await r.json().catch(() => ({}));
+      return r.ok && j.ok ? { ok: true, results: j.results } : { ok: false, error: (j.error || "HTTP " + r.status) + " (" + r.status + ")" };
+    },
     async orders() {
       const r = await transport(root + "/orders?all=1", { headers, cache: "no-store" });
       const j = await r.json().catch(() => ({}));
@@ -119,12 +126,37 @@ export async function drive(c, groups, { run, say = () => {} }) {
   return { ok: true, results: all };
 }
 
+/** the way back over `ids` (or, with none, every imported order the Desk lists), 20 at a time; stops at the first batch with a refusal, saying why. */
+export async function undo(c, ids, say = () => {}) {
+  let list = ids;
+  if (!list || !list.length) {
+    const r = await c.orders();
+    if (!r.ok) { say("STOP: the orders could not be read: " + r.error); return { ok: false, results: [] }; }
+    list = r.orders.filter((o) => o && o.imported === true).map((o) => o.id);
+  }
+  const all = [];
+  for (let i = 0; i < list.length; i += BATCH) {
+    const got = await c.unimp(list.slice(i, i + BATCH));
+    if (!got.ok) { say("STOP: " + got.error); return { ok: false, results: all }; }
+    for (const r of got.results) { say(r.id + "  " + (r.ok ? "taken back" : "REFUSED: " + (r.why || ""))); all.push(r); }
+    if (got.results.some((r) => !r.ok)) { say("STOP: a batch had a refusal, the next never asked"); return { ok: false, results: all }; }
+  }
+  say("UNDO: " + all.length + " order(s) taken back");
+  return { ok: true, results: all };
+}
+
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const argv = process.argv.slice(2), run = argv.includes("--run"), i = argv.indexOf("--rids");
   const key = process.env.SALT_WRITE_KEY;
   if (!key) { console.error("Set SALT_WRITE_KEY in the environment (and SALT_ACCESS_JWT); neither is ever written to a file."); process.exit(2); }
   if (run && argv.includes("--dry")) { console.error("--run and --dry are opposites."); process.exit(2); }
+  if (argv.includes("--undo")) {
+    const j = argv.indexOf("--ids"), ids = j >= 0 && argv[j + 1] ? argv[j + 1].split(",").map((x) => x.trim()).filter(Boolean) : [];
+    const cu = client({ base: process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev", key, token: process.env.SALT_ACCESS_JWT });
+    const ru = await undo(cu, ids, (s) => console.log(s));
+    process.exit(ru.ok ? 0 : 1);
+  }
   const rows = i >= 0 && argv[i + 1] ? argv[i + 1].split(",").map((x) => ({ rid: x.trim(), trip: null })).filter((x) => x.rid) : salesRids(resolve(REPO, "ledger", "book.json"));
   if (run) {
     const g = runGuards(outside());

@@ -156,6 +156,36 @@
   "replace": "done = (await env.SALT_QUEUE.get(FIXED_MARK, \"json\").catch(() => null)) || {};"
  },
  {
+  "name": "R9 the way back takes no ids limit",
+  "file": "src/orders.js",
+  "find": "if (!ids.length || ids.length > IMPORT_MAX || ids.some((x) => !x)) return no(400, \"send 1 to \" + IMPORT_MAX + \" ids\");\n  const m = await site(env, \"/desk/unimport\"",
+  "replace": "const m = await site(env, \"/desk/unimport\""
+ },
+ {
+  "name": "R9 the way back answers no per-id result",
+  "file": "src/orders.js",
+  "find": "  return { ok: true, results: j.results };\n}\n/* ---- V4a",
+  "replace": "  return { ok: true, results: [] };\n}\n/* ---- V4a"
+ },
+ {
+  "name": "R9 the way back is a GET too",
+  "file": "src/worker.js",
+  "find": "    if (p === \"/orders/unimport\") {\n      if (m !== \"POST\") return json({ ok: false, error: \"method not allowed\" }, 405);",
+  "replace": "    if (p === \"/orders/unimport\") {"
+ },
+ {
+  "name": "T6 the undo takes back orders that are not imported",
+  "file": "tools/orders-import.mjs",
+  "find": "o && o.imported === true).map((o) => o.id)",
+  "replace": "o).map((o) => o.id)"
+ },
+ {
+  "name": "T6 the undo goes on past a refusal",
+  "file": "tools/orders-import.mjs",
+  "find": "    if (got.results.some((r) => !r.ok)) { say(\"STOP: a batch had a refusal, the next never asked\"); return { ok: false, results: all }; }\n",
+  "replace": ""
+ },
+ {
   "name": "T4 the read back leaves queued, rateAsk and history",
   "file": "tools/orders-import.mjs",
   "find": ", \"queued\", \"rateAsk\", \"history\"];",

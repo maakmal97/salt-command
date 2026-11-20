@@ -87,6 +87,17 @@ export async function run({ ok, skip }) {
   const un = await call("unimport", { ids: ["20261110000000-i421", "no-such-id", "20261110000000-i401"] });
   ok(!un.results[0].ok && /touched/.test(un.results[0].why) && !!h.book.order("abcd-efgh", "20261110000000-i421"), "B6: a touched order is refused, with its reason: " + J(un.results[0]));
   ok(!un.results[1].ok && /no such/.test(un.results[1].why) && un.results[2].ok && !h.book.order("abcd-efgh", "20261110000000-i401"), "B6: an unknown id is refused and the batch goes on: " + J(un));
+  /* the pass's own reward word is bookkeeping and goes with the order; any other move is refused, and says which */
+  ok((await call("import", { orders: [mk(base("20261110000000-i430"))] })).results[0].ok, "B6: a second order lands for the mark case");
+  h.book.append("d:abcd-efgh:x:rid:mark0000000000000", "abcd-efgh", "20261110000000-i430", { kind: "mark", at: AT, mark: { rwd: "given" } }, h.book.order("abcd-efgh", "20261110000000-i430"));
+  ok(evCount("abcd-efgh", "20261110000000-i430") === 2 && h.book.order("abcd-efgh", "20261110000000-i430").rwd === "given", "B6: the pass marked it with the reward word");
+  const um = await call("unimport", { ids: ["20261110000000-i430"] });
+  ok(um.results[0].ok && !h.book.order("abcd-efgh", "20261110000000-i430") && evCount("abcd-efgh", "20261110000000-i430") === 0, "B6: an order the pass only marked is taken back, marks and all: " + J(um));
+  ok((await call("import", { orders: [mk(base("20261110000000-i431"))] })).results[0].ok, "B6: a third order lands for the refusal words");
+  const word = async (id, n, ev) => { h.book.append("d:abcd-efgh:x:rid:" + n, "abcd-efgh", id, ev, h.book.order("abcd-efgh", id)); return (await call("unimport", { ids: [id] })).results[0]; };
+  const rs = await word("20261110000000-i431", "rate00000000000000", { kind: "rate", at: AT, stars: 4 });
+  ok(!rs.ok && /a rating/.test(rs.why), "B6: a rating is named in the refusal: " + J(rs));
+  ok(!un.results[0].ok && /a message/.test(un.results[0].why), "B6: and a message is named in the refusal: " + J(un.results[0]));
   h.book.append(null, "abcd-efgh", "20261110000000-p001", { kind: "place", at: AT, order: { id: "20261110000000-p001", u: "abcd-efgh", status: "placed", product: "salt", qty: 1, total: 1, delivery: 0, mode: "collect", at: AT, payments: [], msgs: [], history: [] } }, null);
   ok(!(await call("unimport", { ids: ["20261110000000-p001"] })).results[0].ok && !!h.book.order("abcd-efgh", "20261110000000-p001"), "B6: an order that was never imported is never taken");
 

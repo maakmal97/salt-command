@@ -109,6 +109,9 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 const IMPORT_MAX = 20;
 /* a row's key as an order names it: V4a's tail on any product but salt, given to a key written before it (the engine's ovRekey, which stmt/ cannot import) */
 const rowKey = (o) => { const k = o && o.ledgerKey; return typeof k === "string" && k ? (k.split("|").length === 3 && o.product && o.product !== "salt" ? k + "|" + o.product : k) : null; };
+/* what a move on an imported order was, in words, for the refusal to take it back */
+const TOUCH_WORD = (k) => ({ pay: "money", cash: "money", ledger: "money", verdict: "money", handover: "goods", claim: "a claim", say: "a message", rate: "a rating", rateask: "a rating" }[k]
+  || (["restate", "lower", "window", "back", "winoffer", "winanswer", "offer", "price", "fix", "point", "writeoff", "method", "status"].includes(k) ? "terms (" + k + ")" : "a move (" + k + ")"));
 const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk", "popen", "pjoin", "pclose", "import", "unimport"];
 /* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix; Step 7: so does an
    account's thread, one a username; and a group order (the pool), one the site, whose u is empty and which KV never holds */
@@ -956,8 +959,11 @@ export class OrderBook {
       for (const raw of ids) {
         const id = String(raw || ""), row = sql.exec("SELECT u, doc FROM ord WHERE oid = ?", id).toArray()[0];
         if (!row) { results.push({ id, ok: false, why: "no such order" }); continue; }
-        const o = JSON.parse(row.doc), evs = sql.exec("SELECT kind FROM ev WHERE u = ? AND oid = ?", row.u, id).toArray();
-        if (evs.length !== 1 || evs[0].kind !== "import") { results.push({ id, ok: false, why: "a move has touched it since its import" }); continue; }
+        const evs = sql.exec("SELECT kind FROM ev WHERE u = ? AND oid = ?", row.u, id).toArray();
+        /* the pass's own marks (the reward word) are bookkeeping and go with it; any other move names what it was */
+        const moved = evs.map((e) => e.kind).filter((k) => k !== "import" && k !== "mark");
+        if (evs.filter((e) => e.kind === "import").length !== 1) { results.push({ id, ok: false, why: "it was not imported" }); continue; }
+        if (moved.length) { results.push({ id, ok: false, why: "a move has touched it since its import: " + TOUCH_WORD(moved[0]) }); continue; }
         this.state.storage.transactionSync(() => {
           sql.exec("DELETE FROM ev WHERE u = ? AND oid = ?", row.u, id);
           sql.exec("DELETE FROM ord WHERE u = ? AND oid = ?", row.u, id);

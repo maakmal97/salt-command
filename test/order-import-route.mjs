@@ -26,7 +26,7 @@ const s297 = () => ({ customer: "CZ4-MK", date: "2026-10-27", product: "oil", qt
 
 export async function run({ ok }) {
   const { buildSeed } = await import("../tools/d1.mjs");
-  const { deskImport } = await import("../src/orders.js");
+  const { deskImport, deskUnimport } = await import("../src/orders.js");
   const worker = (await import("../src/worker.js")).default;
   const world = () => {
     const db = new DatabaseSync(":memory:");
@@ -52,6 +52,12 @@ export async function run({ ok }) {
         const b = JSON.parse(init.body); sent.push(...b.orders);
         if (over && over.status) return Response.json({ ok: false, error: "down" }, { status: over.status });
         return Response.json({ ok: true, results: b.orders.map((o) => (over && over.refuse === o.rid ? { id: o.id, ok: false, why: "an order already names its row" } : { id: o.id, ok: true })) });
+      }
+      if (String(url).endsWith("/desk/unimport")) {
+        log.push("site /desk/unimport");
+        const b = JSON.parse(init.body); sent.push(...b.ids);
+        if (over && over.status) return Response.json({ ok: false, error: "down" }, { status: over.status });
+        return Response.json({ ok: true, results: b.ids.map((id) => (over && over.touched === id ? { id, ok: false, why: "a move has touched it since its import: money" } : { id, ok: true })) });
       }
       log.push("site " + url); return Response.json({ ok: true });
     } };
@@ -144,6 +150,19 @@ export async function run({ ok }) {
     const E = envOf([], { failFixed: true }), r = await call(E, rows(), { rids: ["s297"], dry: false });
     ok(r.ok === false && r.status === 503 && /fixed marks/.test(r.error) && !E.sent.length && !E.log.some((x) => /put orders:fixed|site/.test(x)), "R8: a failed read of orders:fixed answers 503 and writes and sends nothing: " + J([r, E.log]));
   }
+  /* R9: the way back */
+  {
+    const E = envOf([]), post = (body, key, method) => worker.fetch(new Request("https://salt.test/orders/unimport", { method: method || "POST", headers: Object.assign({ "content-type": "application/json" }, key ? { "X-Salt-Key": key } : {}), body: method === "GET" ? undefined : J(body) }), E.env, { waitUntil() {} });
+    ok((await post({ ids: ["a"] })).status === 401 && !E.log.length, "R9: the way back needs the write key");
+    ok((await post({ ids: [] }, "wk")).status === 400 && (await post({ ids: Array.from({ length: 21 }, (_, i) => "i" + i) }, "wk")).status === 400 && !E.log.length, "R9: none and over 20 ids are refused 400");
+    ok((await post(null, "wk", "GET")).status === 405, "R9: a GET is 405");
+    const r = await post({ ids: ["20261101000000-i401", "20261102000000-i402"] }, "wk"), j = await r.json();
+    ok(r.status === 200 && j.ok && j.results.length === 2 && j.results.every((x) => x.ok) && E.sent.length === 2 && E.log.includes("site /desk/unimport"), "R9: the ids go to the Counter and its answer comes back a id: " + J(j));
+    const E2 = envOf([], { touched: "20261102000000-i402" }), r2 = await deskUnimport(E2.env, { ids: ["20261101000000-i401", "20261102000000-i402"] });
+    ok(r2.ok && r2.results[0].ok && !r2.results[1].ok && /money/.test(r2.results[1].why), "R9: a refusal is answered for that id alone, saying what touched it: " + J(r2));
+    const E3 = envOf([], { status: 500 }), r3 = await deskUnimport(E3.env, { ids: ["x"] });
+    ok(!r3.ok && r3.status === 502, "R9: the Counter down is 502");
+  }
   /* T: the laptop tool's pure parts, and its drive over the real route */
   {
     const T = await import("../tools/orders-import.mjs");
@@ -164,6 +183,13 @@ export async function run({ ok }) {
     const w = { id: "i1", u: "u", status: "done", rid: "s1", paid: 5 }, g = Object.assign({}, w, { importedAt: "2026-11-20T03:00:00.000Z" });
     ok(T.diffOrder(w, g).length === 0 && T.diffOrder(w, Object.assign({}, g, { paid: 6 })).join() === "paid" && T.diffOrder(w, w).join() === "importedAt" && T.diffOrder(w, undefined).length === 1, "T4: a read back differs on a field, or lacks importedAt, or is missing");
     ok(T.FIELDS.includes("queued") && T.FIELDS.includes("rateAsk") && T.FIELDS.includes("history"), "T4: the read back compares queued, rateAsk and history too");
+    {
+      const calls = [], c = { async orders() { return { ok: true, orders: [{ id: "i1", imported: true }, { id: "p1" }, { id: "i2", imported: true }] }; }, async unimp(ids) { calls.push(ids); return { ok: true, results: ids.map((id) => ({ id, ok: id !== "bad", why: id === "bad" ? "touched" : undefined })) }; } };
+      const u1 = await T.undo(c, []);
+      ok(u1.ok && J(calls) === J([["i1", "i2"]]), "T6: --undo with no ids reads the imported orders off the Desk and takes only those back: " + J(calls));
+      const u2 = await T.undo(c, ["a", "bad"]);
+      ok(!u2.ok && u2.results.length === 2, "T6: a refusal stops it, saying why");
+    }
     /* the drive over the real route: a client whose calls are deskImport on a fake site */
     const clientOf = (E, rs, hold = {}) => ({ calls: [],
       async imp(rids, dry) { this.calls.push((dry ? "dry " : "run ") + rids.join(",")); const r = await deskImport(E.env, { rids, dry }, async () => bookOf(rs), NOW); return r.ok ? { ok: true, results: r.results } : { ok: false, error: r.error }; },
