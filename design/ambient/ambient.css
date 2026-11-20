@@ -1281,6 +1281,54 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 .amb-steps--path .amb-step__date + .amb-step__title { padding-top: 0; }
 .amb-steps--path > .amb-step:has(> .amb-step__leg) { padding-bottom: var(--amb-space-3); }
 .amb-step__leg { justify-self: start; margin-top: var(--amb-space-3); padding: 3px 10px; border-radius: var(--amb-radius-pill); background: var(--amb-well); font-size: var(--amb-text-footnote); font-weight: 600; line-height: 1.4; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+/* a flow across places (0.7.31): the steps of a system, each led by the place it happens in and the
+   time it is reached after the first, and under every stop but the last the hand-off to the next:
+   what travels, by what road, opened by which key. The hand-off is the connector, so its line is
+   solid and an arrow on it points to the next stop. The slow stop is ringed in the warn and says Slow. */
+.amb-steps--flow > .amb-step::after { background: var(--amb-line-field); }
+.amb-steps--flow > .amb-step:has(> .amb-step__hand) { padding-bottom: var(--amb-space-3); }
+.amb-step__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--amb-space-2); min-height: 36px; }
+.amb-step__place { font-size: var(--amb-text-footnote); font-weight: 600; line-height: 1.3; color: var(--amb-ink); }
+.amb-step__time { font-size: var(--amb-text-footnote); font-weight: 500; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--amb-ink-2); }
+.amb-steps--flow .amb-step__head + .amb-step__title { padding-top: 0; }
+.amb-step__hand { position: relative; justify-self: start; margin-top: var(--amb-space-3); padding: 5px 10px; border-radius: var(--amb-radius-sm); background: var(--amb-well); font-size: var(--amb-text-footnote); font-weight: 500; line-height: 1.4; color: var(--amb-ink-2); overflow-wrap: anywhere; }
+/* the arrow on the connector beside the hand-off: the line stands at the middle of the 36px ring */
+.amb-step__hand::before { content: ""; position: absolute; top: 50%; left: calc(13px - 36px - var(--amb-space-3)); box-sizing: border-box; width: 10px; height: 10px; border-right: 2px solid var(--amb-ink-2); border-bottom: 2px solid var(--amb-ink-2); transform: translateY(-70%) rotate(45deg); }
+.amb-step__key, .amb-row__key { font-family: var(--amb-font-mono); font-size: var(--amb-text-footnote); font-weight: 600; color: var(--amb-ink); overflow-wrap: anywhere; }
+.amb-steps--flow > .amb-step.is-slow::before { border-color: var(--amb-warn); }
+
+/* an architecture map (0.7.31): a fifth drawing of the chart frame. Lanes are full-width bands on the
+   well, each holding its boxes; roads run between boxes, each with its number, as a map's marks; a road
+   a key opens is numbered on a filled disc. Every word on the drawing is also in the table under it,
+   and what travels on each road is its row in the key. The frame is 320 units wide, so a phone draws it
+   about 1:1; its words stay between 12px and 15px at any width, and the boxes grow round them. */
+.amb-chart:has(> .amb-diagram) { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--amb-space-3) var(--amb-space-5); }
+.amb-chart:has(> .amb-diagram) > * { flex: 1 1 100%; min-width: 0; }
+.amb-chart > .amb-diagram { flex: 3 1 18rem; max-width: 36rem; }
+.amb-chart:has(> .amb-diagram) > .amb-list--keyed { flex: 2 1 17rem; }
+.amb-diagram { container-type: inline-size; overflow: clip; border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); }
+.amb-diagram__drawing { display: block; width: 100%; height: auto; }
+.amb-diagram__drawing text { dominant-baseline: central; }
+.amb-diagram__lane > rect { fill: var(--amb-well); rx: 10px; }
+.amb-diagram__lane > text { fill: var(--amb-ink-2); font-size: clamp(calc(12px * tan(atan2(320px, 100cqi))), 12px, calc(13px * tan(atan2(320px, 100cqi)))); font-weight: 600; }
+.amb-diagram__box > rect { fill: var(--amb-surface); stroke: var(--amb-line-field); stroke-width: 1; vector-effect: non-scaling-stroke; rx: 8px; }
+.amb-diagram__name, .amb-diagram__line { text-anchor: middle; }
+.amb-diagram__name { fill: var(--amb-ink); font-size: clamp(calc(12px * tan(atan2(320px, 100cqi))), 13px, calc(15px * tan(atan2(320px, 100cqi)))); font-weight: 600; }
+.amb-diagram__line { fill: var(--amb-ink-2); font-size: clamp(calc(12px * tan(atan2(320px, 100cqi))), 12px, calc(13px * tan(atan2(320px, 100cqi)))); }
+.amb-diagram__road > polyline { fill: none; stroke: var(--amb-ink-2); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.amb-diagram__head > path { fill: var(--amb-ink-2); }
+.amb-diagram__mark { transform-box: fill-box; transform-origin: center; transform: scale(tan(atan2(320px, 100cqi))); }
+.amb-diagram__mark > circle { fill: var(--amb-surface); stroke: var(--amb-ink); stroke-width: 2; }
+.amb-diagram__mark > text { fill: var(--amb-ink); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-anchor: middle; }
+.amb-diagram__road--locked .amb-diagram__mark > circle { fill: var(--amb-pill); stroke: var(--amb-pill); }
+.amb-diagram__road--locked .amb-diagram__mark > text { fill: var(--amb-on-pill); }
+.amb-key--locked { border-color: var(--amb-pill); background: var(--amb-pill); color: var(--amb-on-pill); }
+/* a road both ways carries an arrow at each end, by its marker-start */
+.amb-diagram__road--both > polyline { stroke-linecap: butt; }
+/* the key of a diagram stands narrow beside it, so a road's key name takes its own line under the words */
+.amb-chart:has(> .amb-diagram) > .amb-list--keyed .amb-row { flex-wrap: wrap; row-gap: 2px; }
+.amb-chart:has(> .amb-diagram) > .amb-list--keyed .amb-row > .amb-row__text { flex: 1 1 0; }
+.amb-chart:has(> .amb-diagram) > .amb-list--keyed .amb-row > .amb-row__trail { flex: 1 1 100%; padding-left: 40px; }
 /* a Wi-Fi card: one network as a guest meets it. The values to type, each copied whole, beside the code
    that joins it, one code a band. The page draws the code as an SVG of its modules; the frame keeps it
    on the field that always scans. On a phone the copies are the way in: a code is for another screen. */
@@ -1292,9 +1340,11 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 .amb-codeframe__code { fill: var(--amb-qr-ink); shape-rendering: crispEdges; }
 /* a map is a picture: in forced colours it keeps its own, and the key carries it in words */
 @media (forced-colors: active) {
-  .amb-map__drawing { forced-color-adjust: none; }
+  .amb-map__drawing, .amb-diagram__drawing { forced-color-adjust: none; }
   .amb-key { border-color: CanvasText; }
   .amb-key--stay { background: CanvasText; }
+  .amb-key--locked { background: CanvasText; color: Canvas; }
+  .amb-steps--flow > .amb-step.is-slow::before { border-color: CanvasText; border-style: double; border-width: 4px; }
   .amb-key--route { forced-color-adjust: none; }
 }
 
