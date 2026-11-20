@@ -1,0 +1,126 @@
+<div class="amb-shell" data-mood="lagoon"><main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh"><span class="amb-chip amb-chip--glass">Plan, 20 Nov 2026, draft 2</span>
+<h1 class="amb-hero__title">Every older sale becomes a site order</h1>
+<p class="amb-hero__sub">Your words of 20 Nov 2026: "retrospectively amend all non-site orders to become a site order". The book is left as it is. The Counter's order book takes in one order for each older row, already level with that row, so nothing is booked twice and the minute's pass keeps it level from then on.</p>
+<p class="amb-hero__time">salt-command, one version after v1555. A plan only, reviewed by Fable on 20 Nov 2026 and corrected: nothing is built until you answer the Asks.</p></header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#book">What the book holds</a></li>
+<li><a class="amb-contents__link" href="#road">The road, and its traps</a></li>
+<li><a class="amb-contents__link" href="#told">The order as it is born</a></li>
+<li><a class="amb-contents__link" href="#rows">Which rows, and which stay</a></li>
+<li><a class="amb-contents__link" href="#effects">What it changes, and what it never does</a></li>
+<li><a class="amb-contents__link" href="#parts">The parts</a></li>
+<li><a class="amb-contents__link" href="#proof">The proof, and the way back</a></li>
+<li><a class="amb-contents__link" href="#asks">Asks</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="book"><h2 class="amb-section">What the book holds <span class="amb-section__note">ledger/book.json at 3377c942</span></h2>
+<div class="amb-stack">
+<div class="amb-tiles">
+<div class="amb-tile"><span class="amb-tile__label">Sales rows</span><span class="amb-tile__figure">397</span><span class="amb-tile__delta amb-muted">26 Jun to 19 Nov 2026</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Counted from ledger/book.json</span></div>
+<div class="amb-tile"><span class="amb-tile__label">Not by the site</span><span class="amb-tile__figure">257</span><span class="amb-tile__delta amb-muted">142 hand, 78 desk, 37 Salt Admin; the two fold gifts left out</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Counted from ledger/book.json</span></div>
+<div class="amb-tile"><span class="amb-tile__label">Still owing</span><span class="amb-tile__figure">3</span><span class="amb-tile__delta amb-muted">s182, s235 and s236, all CN3-WM; the last two one trip</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Read by the engine (txAdvance), by Fable</span></div>
+<div class="amb-tile"><span class="amb-tile__label">Need a rule</span><span class="amb-tile__figure">81</span><span class="amb-tile__delta amb-muted">37 on a -R bucket, 16 a partner's, 11 trip lines, 13 cancelled, 2 written off, 2 a shared key</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Counted from ledger/book.json; the groups overlap</span></div>
+</div>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> All 44 customers of the 257 rows have a username in statements/_users.json, both partners included.</p>
+<p class="amb-basis"><span class="amb-claim amb-claim--assumption">Assumption</span> <code>road</code> is stamped by the fold only from 04 Nov 2026, so a "hand" or "desk" row may already have a site order. The road is never the test: the dry run reads the live order book, and 257 is a most, not a count.</p>
+</div></section>
+
+<section class="amb-sec" id="road"><h2 class="amb-section">The road, and its traps</h2>
+<div class="amb-prose">
+<p>A row and its order are tied by the order's <code>ledgerKey</code>, the engine's <code>ovKey</code> (<code>party|date|goods plus delivery</code>, then <code>|product</code> on any book but salt). Nothing goes from a row to an order today, and nothing is placed again: Order for them runs an Accept, and an Accept drafts a new Pending row.</p>
+<p>So each order is <strong>born told</strong>: its <code>queued</code> already says what the row holds, so <code>orderWork</code> (<code>stmt/orders.js</code>) owes the book nothing. Fable found four places where that alone is not enough, each now a part below:</p>
+<ul>
+<li><strong>Old undo steps.</strong> <code>undoFixes</code> (<code>src/orders.js</code>) sends every past undo on a row an order names. s297 carries one: its order would drop to nothing paid, reopen and wake the customer. The import marks every past undo of its row as sent.</li>
+<li><strong>A close or redate.</strong> <code>queued.close</code> with no Close draft holds the order in flight for good (<code>closeOnItsWay</code>). An imported order carries the row's present size and goods, and never <code>closed</code>, <code>queued.close</code> or <code>queued.redate</code>.</li>
+<li><strong>A key that moves.</strong> A Correction of total, delivery or date moves the row's key. An order follows a moved key only through its acknowledgement draft, and an imported order has none. It stores its row's <code>rid</code>, and the pass and the tie-out find its row by rid first.</li>
+<li><strong>The acknowledgement's day.</strong> With no draft, <code>pendingDay</code> reads the day from the id. Stamped today, every imported order would look like a Pending row of today to Accept's twin check. It is stamped on the row's own day, in a form no draft id can equal.</li>
+</ul>
+</div></section>
+
+<section class="amb-sec" id="told"><h2 class="amb-section">The order as it is born <span class="amb-section__note">every field, from Fable's reading</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Field</th><th scope="col">Value</th></tr></thead><tbody>
+<tr><td data-label="Field">status</td><td data-label="Value">done when settled, else ready</td></tr>
+<tr><td data-label="Field">ledgerKey, rid</td><td data-label="Value">the row's <code>ovKey</code>, and its <code>rid</code></td></tr>
+<tr><td data-label="Field">size, goods, delivery, product</td><td data-label="Value">the row's own, a trip's delivery on its own line</td></tr>
+<tr><td data-label="Field">mode</td><td data-label="Value">so that <code>rowWay</code> reads nothing to change</td></tr>
+<tr><td data-label="Field">forFriend</td><td data-label="Value">true on a -R bucket's row</td></tr>
+<tr><td data-label="Field">paid, credit, moved</td><td data-label="Value"><code>rowPaidFor</code>, the row's credit, <code>rowOut</code>; never the row's <code>cash</code> alone</td></tr>
+<tr><td data-label="Field">queued</td><td data-label="Value"><code>ack</code> on the row's day, <code>paid</code> and <code>moved</code> equal to the above, <code>cancel</code> only if cancelled</td></tr>
+<tr><td data-label="Field">movedOn, at</td><td data-label="Value">the row's <code>deliveredOn</code> or date; its day</td></tr>
+<tr><td data-label="Field">rwd, rateAsk, payments</td><td data-label="Value">what <code>rwdOf</code> says; set, so no rating is asked; none</td></tr>
+<tr><td data-label="Field">imported</td><td data-label="Value">true</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> By Fable against <code>orderWork</code>, <code>settledFromRow</code>, the site's book restate and <code>cashTap</code>, which each refuse when paid runs ahead of <code>queued.paid</code>.</p>
+</div></section>
+
+<section class="amb-sec" id="rows"><h2 class="amb-section">Which rows, and which stay <span class="amb-section__note">one pure function decides</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Row</th><th scope="col">Becomes</th></tr></thead><tbody>
+<tr><td data-label="Row">Settled</td><td data-label="Becomes">a done order</td></tr>
+<tr><td data-label="Row">Still owing (3)</td><td data-label="Becomes">an order at Ready, or left (Ask A)</td></tr>
+<tr><td data-label="Row">On a -R bucket (37)</td><td data-label="Becomes">the associate's order, for a friend (Ask B)</td></tr>
+<tr><td data-label="Row">A trip line (11)</td><td data-label="Becomes">one order a line under one sheet, the carrying line first (Ask C)</td></tr>
+<tr><td data-label="Row">Cancelled or written off (15)</td><td data-label="Becomes">left in Earlier (Ask D)</td></tr>
+<tr><td data-label="Row">A partner's (16)</td><td data-label="Becomes">a done order, as any customer's (Ask F)</td></tr>
+<tr><td data-label="Row">Refused, with its reason</td><td data-label="Becomes">a fold gift; a test account; a key two rows share; a row any order names, read through <code>ledgerKeyOf</code> so an older key shape counts; a row of an account with a live order that names no row that day; a row with money, a Correction or a yes on its way to it</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Two keys are shared: s053 and s208 (a hand pair), and s393 (cancelled) with s395. 28 rows were settled partly in kind and read as paid; s296 is paid RM 480 against RM 455 and keeps its refund on the book.</p>
+</div></section>
+
+<section class="amb-sec" id="effects"><h2 class="amb-section">What it changes, and what it never does</h2>
+<div class="amb-prose">
+<p><strong>What the customer gains.</strong> Those rows leave Earlier and stand as orders, with Order again on a done one. A book Correction later reaches the order and tells them, as on any site order.</p>
+<p><strong>At import, never:</strong></p>
+<ul>
+<li>a banner to the customer or a ring on Salt Admin;</li>
+<li>a "How was your order" (born with <code>rateAsk</code> set);</li>
+<li>a place in the confirm time (its history is born with no placed and acknowledged pair, so no Accept is measured);</li>
+<li>a moved price, Floor, reward, loyalty count or row; the book's <code>road</code> stays as written, a dated record.</li>
+</ul>
+<p><strong>Read off orders, so it does move</strong> (corrected: the first draft said otherwise). The chase reads orders (<code>isAdvance</code>, <code>graceOver</code> on <code>movedOn</code>), and so do cash on handover and the price ask. An imported order at Ready with goods out and money owed is chased, at once three times a day given its old <code>movedOn</code>, withholds cash on handover and refuses a price ask. This touches the 3 owing rows alone (Ask E).</p>
+<p><strong>The five open orders.</strong> Kept as it is: with 3 rows at most, an exemption is not worth its code in four readers.</p>
+</div></section>
+
+<section class="amb-sec" id="parts"><h2 class="amb-section">The parts <span class="amb-section__note">one version, one commit a part, the full suite</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step"><span class="amb-step__title">1. importOf(row, book, orders)</span><span class="amb-step__text">In <code>engine/stages.mjs</code>, pure: the order above, or a refusal with its reason. Order ids in the site's shape (14 digits, a dash, up to 8 characters), sorted so a trip's carrying line comes first.</span></li>
+<li class="amb-step"><span class="amb-step__title">2. The order book's import and unimport</span><span class="amb-step__text">Two writes in <code>stmt/orderbook.js</code>, on its <code>WRITES</code> list, under a rid of 16 to 64 characters made from the row's <code>rid</code>, so a retry lands once. Import is refused when any order holds that key; it wakes nobody. Unimport takes back an imported order nothing has moved since.</span></li>
+<li class="amb-step"><span class="amb-step__title">3. The Desk follows by rid</span><span class="amb-step__text"><code>followRows</code>, <code>rowOf</code> and the tie-out find an imported order's row by <code>rid</code> first and read its acknowledgement as landed. The import writes every past undo of its row into <code>orders:fixed</code> before the order lands.</span></li>
+<li class="amb-step"><span class="amb-step__title">4. Changing an imported order</span><span class="amb-step__text">Per Ask G: on a done imported order Salt Admin hides Change, Cash received and Handed over, and a change is a book Correction, which the order follows.</span></li>
+<li class="amb-step"><span class="amb-step__title">5. A keyed Desk route, dry first</span><span class="amb-step__text"><code>POST /desk/orders/import</code> behind the write key takes rids alone and builds each order from the Book through the pass's own reader, never the laptop's <code>book.json</code>, which may be a day behind. <code>dry: true</code> answers each verdict and writes nothing.</span></li>
+<li class="amb-step"><span class="amb-step__title">6. tools/orders-import.mjs</span><span class="amb-step__text">Sends rids and prints verdicts. A real run needs a clean tie-out, no Actions run in progress and no approved row unfolded; it goes 20 rows at a time, reads each order back and stops at the first difference.</span></li>
+<li class="amb-step"><span class="amb-step__title">7. The docs</span><span class="amb-step__text"><code>docs/STATEMENTS.md</code> under "Which row a later stage amends", and the rule's line in <code>CLAUDE.md</code>.</span></li>
+</ol></div></section>
+
+<section class="amb-sec" id="proof"><h2 class="amb-section">The proof, and the way back</h2>
+<div class="amb-prose">
+<p>Each new check is proved red by its own mutation. The pass is driven with its told mark cleared, since a pass at an unchanged version returns early and would prove nothing. Right after an import it must tell nothing, follow nothing, send no undo, and leave a tie-out clean with nothing waiting. Then:</p>
+<ul>
+<li>a Correction of an imported row's total and of its date restates its order;</li>
+<li>s297's past undo is never sent;</li>
+<li>a second import of one row lands once;</li>
+<li>an imported order neither rings nor asks for a rating;</li>
+<li>Accept's twin check reads no imported order as a Pending row of today.</li>
+</ul>
+<p>After the live run: Salt Admin's Ledger check stays clean, <code>node tools/standing.mjs</code> reads the same seven lines, and the Counter's Earlier list holds only the rows that stayed. The way back is unimport over the same rids; the book never moved.</p>
+<p>Said, not built: once imported, a live row beside a cancelled twin on one key reads as two rows, since the tie-break prefers a row whose road is the site. A new clash is refused at a change of goods or delivery, a close or a redate (<code>keyClash</code>), so this stays latent.</p>
+</div></section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">Asks <span class="amb-section__note">seven, each with a recommendation</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step"><span class="amb-step__title">A. The 3 owing rows (CN3-WM)</span><span class="amb-step__text">Recommended: leave them until they are paid, then import them as done. Or import them at Ready now, so they can pay on them from the Counter.</span></li>
+<li class="amb-step"><span class="amb-step__title">B. The 37 -R rows</span><span class="amb-step__text">Recommended: each becomes the associate's order for a friend, on their account.</span></li>
+<li class="amb-step"><span class="amb-step__title">C. The 11 trip lines</span><span class="amb-step__text">Recommended: one order a line, joined as one sheet, the delivery on the line that carries it.</span></li>
+<li class="amb-step"><span class="amb-step__title">D. The 15 cancelled or written-off rows</span><span class="amb-step__text">Recommended: leave them in Earlier. An ended order adds nothing to read, and on a shared key it is the risk v1551 fixed.</span></li>
+<li class="amb-step"><span class="amb-step__title">E. The chase on an imported order</span><span class="amb-step__text">Recommended: moot if A is left. If A imports now: chase it as any order, from the day of the import, through a start day of its own on the order (<code>chaseFrom</code>, read by <code>graceOver</code> and <code>chaseDay</code>), since <code>movedOn</code> is the true handover day the customer reads.</span></li>
+<li class="amb-step"><span class="amb-step__title">F. The 16 partner rows</span><span class="amb-step__text">Recommended: import them as any customer's.</span></li>
+<li class="amb-step"><span class="amb-step__title">G. Changing a done imported order</span><span class="amb-step__text">Recommended: Salt Admin hides Change, Cash received and Handed over on it, and you change it on the book. Or teach the order's change sheet to draft against the book's row, a larger change.</span></li>
+</ol></div></section>
+
+</div>
+</div>
+</main></div>
