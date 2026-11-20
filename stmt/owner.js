@@ -5890,7 +5890,7 @@ export const OWNER_JS = `
       /* 17 Nov 2026 (the order-changes plan, version 2): a payment he records is the Change sheet's; Money received is drawn for what waits on him alone,
          their claims and cash held with its Undo */
       var claimsWaiting=(order.payments||[]).some(function(p){ return p&&p.claim==='waiting'; }), cashHeld=!!(makerCashHeld[order.id]||makerCashStorageError||makerCashSaid[order.id]);
-      if(order.imported!==true&&!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.status==='ready'&&cashHeld))){
+      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.imported!==true&&order.status==='ready'&&cashHeld))){
         /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
            Since 16 Oct 2026 the bank and the cash are one amount and two tiles (makerPayControl). 2 Nov 2026: a part of his decision, its claims rows */
         var money=part(null,'omoney'), moneyHead=el('h2','amb-section','Money received'), claims=aGroup(null,'oclaims');

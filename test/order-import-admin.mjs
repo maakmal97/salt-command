@@ -16,8 +16,9 @@ const mk = (id, extra) => Object.assign({ id, u: "abcd-efgh", product: "salt", q
 
 export async function run({ ok, pageWork }) {
   /* A */
-  const imp = mk("20261110000000-i501", { imported: true, rid: "s501" }), open2 = mk("20261110000000-i504", { imported: true, rid: "s504", status: "ready", moved: 0, paid: 0, mode: "collect", point: "A2", history: [{ at: AT, status: "ready", by: "desk" }] }), plain = mk("20261110000000-p502", { at: "2026-11-10T01:00:00.000Z" });
-  const p = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: (j.orders || []).concat([imp, plain, open2]) }) });
+  const imp = mk("20261110000000-i501", { imported: true, rid: "s501" }), open2 = mk("20261110000000-i504", { imported: true, rid: "s504", status: "ready", moved: 0, paid: 0, mode: "collect", point: "A2", history: [{ at: AT, status: "ready", by: "desk" }] }), plain = mk("20261110000000-p502", { at: "2026-11-10T01:00:00.000Z" }),
+    claimed = mk("20261110000000-i505", { imported: true, rid: "s505", status: "ready", moved: 0, paid: 0, mode: "collect", point: "A2", payments: [{ at: "2026-11-12T02:00:00.000Z", amount: 40, claim: "waiting" }], claimed: 40, history: [{ at: AT, status: "ready", by: "desk" }] });
+  const p = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: (j.orders || []).concat([imp, plain, open2, claimed]) }) });
   try {
     await p.work.quiet();
     const d = p.d;
@@ -34,6 +35,10 @@ export async function run({ ok, pageWork }) {
     const oa = co ? acts(co) : [];
     ok(!!co && !oa.includes("order.amend") && !oa.some((a) => /^order\.(cash|handed|pay)/.test(a)) && /An older sale: change it on the book\./.test(t(co)),
       "A1: an imported order that a book change has reopened at Ready draws no Change, Cash received or Handed over either: " + JSON.stringify(oa));
+    const cc = cardOf(d, claimed.id); await p.work.quiet();
+    const ca = cc ? acts(cc) : [];
+    ok(!!cc && ca.some((a) => /^order\.claim-received/.test(a)) && ca.some((a) => /^order\.claim-not-found/.test(a)) && !ca.includes("order.amend") && !ca.some((a) => /^order\.(cash|handed|pay)/.test(a)),
+      "A4: a customer's claim on a reopened imported order can still be answered, Received and Not found, with no Cash received or Handed over: " + JSON.stringify(ca));
     ok(!!cp && acts(cp).includes("order.amend") && !/An older sale/.test(t(cp)), "A2: a done order that is not imported keeps Change and says nothing of the book: " + JSON.stringify(acts(cp || d)));
     ok(!!ci && ci.querySelector(".oldsale") && !ci.querySelector(".oldsale button, .oldsale a"), "A3: the line is plain text, so it adds no tap to size");
   } finally { p.w.close(); }

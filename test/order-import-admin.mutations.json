@@ -52,5 +52,11 @@
   "file": "stmt/owner.js",
   "find": "else if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){",
   "replace": "if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){"
+ },
+ {
+  "name": "A4 the claims block is hidden on an imported order",
+  "file": "stmt/owner.js",
+  "find": "if(!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.imported!==true&&",
+  "replace": "if(order.imported!==true&&!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.imported!==true&&"
  }
 ]
