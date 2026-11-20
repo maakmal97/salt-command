@@ -154,5 +154,11 @@
   "file": "src/orders.js",
   "find": "try { done = (await env.SALT_QUEUE.get(FIXED_MARK, \"json\")) || {}; } catch (e) { return no(503, \"the fixed marks could not be read, so nothing is sent\"); }",
   "replace": "done = (await env.SALT_QUEUE.get(FIXED_MARK, \"json\").catch(() => null)) || {};"
+ },
+ {
+  "name": "T4 the read back leaves queued, rateAsk and history",
+  "file": "tools/orders-import.mjs",
+  "find": ", \"queued\", \"rateAsk\", \"history\"];",
+  "replace": "];"
  }
 ]

@@ -937,6 +937,7 @@ export class OrderBook {
         else if (typeof q.ack !== "string" || !q.ack) refuse("it carries no acknowledgement");
         else if (o.closed || q.close || q.redate || q.cancel) refuse("it carries a close, a redate or a cancellation");
         else if (typeof o.rid !== "string" || !o.rid || typeof o.ledgerKey !== "string" || !o.ledgerKey) refuse("it names no row");
+        else if (+q.paid !== +o.paid || +q.moved !== +o.moved) refuse("what the ledger was told differs from what the order holds");
         else {
           const key = rowKey(o), all = this.all();
           const held = all.some((x) => x.id === id) ? "an order already has its id" : all.some((x) => rowKey(x) === key || (x.rid && x.rid === o.rid)) ? "an order already names its row" : "";

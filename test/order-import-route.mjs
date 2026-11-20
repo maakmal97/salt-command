@@ -163,6 +163,7 @@ export async function run({ ok }) {
     ok(T.runGuards({ runs: null, approved: { count: 0 } }).length === 1 && T.runGuards({ runs: [], approved: null }).length === 1, "T3: what cannot be read stops it");
     const w = { id: "i1", u: "u", status: "done", rid: "s1", paid: 5 }, g = Object.assign({}, w, { importedAt: "2026-11-20T03:00:00.000Z" });
     ok(T.diffOrder(w, g).length === 0 && T.diffOrder(w, Object.assign({}, g, { paid: 6 })).join() === "paid" && T.diffOrder(w, w).join() === "importedAt" && T.diffOrder(w, undefined).length === 1, "T4: a read back differs on a field, or lacks importedAt, or is missing");
+    ok(T.FIELDS.includes("queued") && T.FIELDS.includes("rateAsk") && T.FIELDS.includes("history"), "T4: the read back compares queued, rateAsk and history too");
     /* the drive over the real route: a client whose calls are deskImport on a fake site */
     const clientOf = (E, rs, hold = {}) => ({ calls: [],
       async imp(rids, dry) { this.calls.push((dry ? "dry " : "run ") + rids.join(",")); const r = await deskImport(E.env, { rids, dry }, async () => bookOf(rs), NOW); return r.ok ? { ok: true, results: r.results } : { ok: false, error: r.error }; },

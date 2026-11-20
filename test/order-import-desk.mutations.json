@@ -76,5 +76,11 @@
   "file": "src/orders.js",
   "find": "klDate(new Date(o.importedAt || o.at))",
   "replace": "klDate(new Date(o.at))"
+ },
+ {
+  "name": "L1 a draft is looked up for an imported order's acknowledgement",
+  "file": "src/orders.js",
+  "find": "const ackRow = ack && !isImported(o) && ackRowWanted(",
+  "replace": "const ackRow = ack && ackRowWanted("
  }
 ]

@@ -1002,7 +1002,7 @@ async function stagePreview(env, o, stage, entry, mirror) {
   }
   /* the pending row a stage waits on, when the book's own does not hold the row yet (engine/stages.mjs stageAgainst) */
   const ack = o.queued && o.queued.ack;
-  const ackRow = ack && ackRowWanted(book, entry, rd) ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
+  const ackRow = ack && !isImported(o) && ackRowWanted(book, entry, rd) ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
   const ag = stageAgainst(book, entry, rd, ackRow, isImported(o));
   if (!ag.ok) return ag;
   const d = draftRow(entry, ag.against);

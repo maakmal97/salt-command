@@ -141,6 +141,14 @@ export async function run({ ok }) {
     const flights = [await orderInFlight(E.env, o, 0), await termsInFlight(E.env, o, 0), await takeBackHolds(E.env, o, plain(1), 0)];
     ok(flights.every((f) => f === false) && !o.queued.close && !o.queued.redate, "I1: no imported order is held by a close, a redate or a flight: " + J(flights));
   }
+  /* L1: no draft is looked up for an imported order's acknowledgement, which is no draft id */
+  {
+    const [o0] = born([plain(1)]), o = Object.assign({}, o0, { status: "ready", moved: 0, paid: 205 });
+    const E = envOf([o]), seen = [], real = E.env.SALT_LEDGER.prepare;
+    E.env.SALT_LEDGER = { prepare(sql) { seen.push(sql); return real(sql); } };
+    const r = await orders.handedOrder(E.env, o.id, { qty: 2 }, "desk", NOW, async () => bookOf([plain(1)]));
+    ok(r && !seen.some((q) => /FROM draft WHERE id=\?1/.test(q)), "L1: an imported order's stage preview looks up no draft by its acknowledgement: " + J([r && (r.error || r.ok), seen.filter((q) => /draft/.test(q)).map((q) => q.slice(0, 60))]));
+  }
   /* A1 */
   {
     const [o] = born([plain(1)]);

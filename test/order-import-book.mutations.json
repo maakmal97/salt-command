@@ -148,5 +148,11 @@
 "file": "stmt/orders.js",
 "find": "    if (order.imported === true) return Object.assign(refusal(\"rateNone\"), { status: 409 });\n",
 "replace": ""
+},
+{
+"name": "B3 an order whose queue differs from its paid and moved is taken",
+"file": "stmt/orderbook.js",
+"find": "        else if (+q.paid !== +o.paid || +q.moved !== +o.moved) refuse(\"what the ledger was told differs from what the order holds\");\n",
+"replace": ""
 }
 ]

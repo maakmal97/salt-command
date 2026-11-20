@@ -63,6 +63,8 @@ export async function run({ ok, skip }) {
   await R(/imported/, mk(base("20261110000000-i410", { imported: undefined })), "no imported mark");
   await R(/done/, mk(base("20261110000000-i411", { status: "ready" })), "not done");
   await R(/acknowledgement/, mk(base("20261110000000-i412", { queued: { paid: 205, moved: 2 } })), "no acknowledgement");
+  await R(/ledger was told/, mk(base("20261110000000-i418", { queued: { ack: AT, paid: 0, moved: 2 } })), "queued.paid not the order's paid");
+  await R(/ledger was told/, mk(base("20261110000000-i419", { queued: { ack: AT, paid: 205, moved: 0 } })), "queued.moved not the order's moved");
   await R(/close/, mk(base("20261110000000-i413", { closed: { total: 1 } })), "closed");
   await R(/close/, mk(base("20261110000000-i414", { queued: { ack: AT, close: "x" } })), "queued.close");
   await R(/close/, mk(base("20261110000000-i415", { queued: { ack: AT, redate: "x" } })), "queued.redate");
@@ -73,7 +75,7 @@ export async function run({ ok, skip }) {
   /* B4 */
   const two = await call("import", { orders: [mk(base("20261110000000-i420", { status: "ready" })), mk(base("20261110000000-i421"))] });
   ok(two.results.length === 2 && !two.results[0].ok && two.results[1].ok && !!h.book.order("abcd-efgh", "20261110000000-i421"), "B4: a refused order never stops the batch: " + J(two));
-  const many = await call("import", { orders: Array.from({ length: 21 }, (_, i) => mk(base("2026111000000" + String(i % 10) + "-i5" + String(i).padStart(2, "0")))) });
+  const many = await call("import", { orders: Array.from({ length: 21 }, (_, i) => mk(base("20261110" + "00000" + String(i % 10) + "-i5" + String(i).padStart(2, "0")))) });
   ok(many.ok === false && many.status === 400 && !mine("abcd-efgh").some((o) => /-i5/.test(o.id)), "B4: more than 20 is refused whole: " + J(many));
 
   /* B6 */

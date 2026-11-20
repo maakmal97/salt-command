@@ -22,7 +22,7 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const BATCH = 20;
 const BUSY = ["in_progress", "queued", "waiting", "pending", "requested"];
 /* every field of the order as the dry run built it, read back and compared; `importedAt` is the run's own and is only required to be there */
-const FIELDS = ["id", "u", "status", "product", "qty", "total", "delivery", "mode", "forFriend", "credit", "rid", "ledgerKey", "paid", "moved", "movedOn", "at", "sheet", "imported"];
+export const FIELDS = ["id", "u", "status", "product", "qty", "total", "delivery", "mode", "forFriend", "credit", "rid", "ledgerKey", "paid", "moved", "movedOn", "at", "sheet", "imported", "queued", "rateAsk", "history"];
 
 /** rows (each {rid, trip?}) into batches of at most `size`, a trip kept whole; a trip longer than a batch is an error. */
 export function batches(rows, size = BATCH) {
