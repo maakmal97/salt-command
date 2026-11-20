@@ -43,7 +43,7 @@ export async function run({ ok }) {
   const envOf = (orderList, over) => {
     const log = [], m = new Map();
     m.set("stmt-users", J({ "abcd-efgh": "CQ4-ZEN", "ijkl-mnop": "CZ4-MK" })); m.set("orders:told", V); m.set("orders:fixed", "{}");
-    const q = { m, get: async (k, t) => (m.has(k) ? (t === "json" ? JSON.parse(m.get(k)) : m.get(k)) : null), put: async (k, v) => { log.push("put " + k); m.set(k, v); }, delete: async (k) => { log.push("delete " + k); m.delete(k); } };
+    const q = { m, get: async (k, t) => (over && over.failFixed && k === "orders:fixed" ? (() => { throw new Error("kv down"); })() : m.has(k) ? (t === "json" ? JSON.parse(m.get(k)) : m.get(k)) : null), put: async (k, v) => { log.push("put " + k); m.set(k, v); }, delete: async (k) => { log.push("delete " + k); m.delete(k); } };
     const W = world(), sent = [];
     const STMT_SITE = { fetch: async (url, init) => {
       if (String(url).includes("/desk/orders?")) return Response.json({ ok: true, orders: orderList });
@@ -138,6 +138,11 @@ export async function run({ ok }) {
     const r2 = await call(E2, rows(), { rids: ["s401", "s402"], dry: false });
     const by = Object.fromEntries(r2.results.map((x) => [x.rid, x]));
     ok(by.s401.verdict === "refused" && /on its way/.test(by.s401.why) && by.s402.verdict === "import", "R7: a row with a draft on its way is refused, its neighbour is not: " + J(r2.results));
+  }
+  /* R8: a failed read of the fixed marks sends nothing */
+  {
+    const E = envOf([], { failFixed: true }), r = await call(E, rows(), { rids: ["s297"], dry: false });
+    ok(r.ok === false && r.status === 503 && /fixed marks/.test(r.error) && !E.sent.length && !E.log.some((x) => /put orders:fixed|site/.test(x)), "R8: a failed read of orders:fixed answers 503 and writes and sends nothing: " + J([r, E.log]));
   }
   /* T: the laptop tool's pure parts, and its drive over the real route */
   {

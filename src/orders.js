@@ -2751,7 +2751,10 @@ export async function deskImport(env, b, mirror, now = new Date()) {
   const byRid = new Map(book.sales.filter((s) => s && s.rid).map((s) => [s.rid, s]));
   const ids = go.flatMap((x) => importFixedIds(byRid.get(x.rid)));
   if (ids.length) {
-    const done = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {}, at = now.toISOString();
+    /* a failed read is no empty list: writing back what was read as nothing would wipe every mark, so it answers 503 and sends nothing */
+    let done;
+    try { done = (await env.SALT_QUEUE.get(FIXED_MARK, "json")) || {}; } catch (e) { return no(503, "the fixed marks could not be read, so nothing is sent"); }
+    const at = now.toISOString();
     for (const id of ids) if (!done[id]) done[id] = { at, refused: "an older sale's order, born after it" };
     await env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done));
   }

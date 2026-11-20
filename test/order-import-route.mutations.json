@@ -20,8 +20,8 @@
  {
   "name": "the undo ids are written after the site call",
   "file": "src/orders.js",
-  "find": "    await env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done));\r\n  }\r\n  const importedAt",
-  "replace": "    setTimeout(() => env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done)), 0);\r\n  }\r\n  const importedAt"
+  "find": "    await env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done));\n  }\n  const importedAt",
+  "replace": "    setTimeout(() => env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done)), 0);\n  }\n  const importedAt"
  },
  {
   "name": "importedAt is not stamped",
@@ -148,5 +148,11 @@
   "file": "tools/orders-import.mjs",
   "find": "\"credit\", \"rid\", \"ledgerKey\", \"paid\", \"moved\",",
   "replace": "\"credit\", \"rid\", \"ledgerKey\", \"moved\","
+ },
+ {
+  "name": "R8 a failed read of the fixed marks is read as none",
+  "file": "src/orders.js",
+  "find": "try { done = (await env.SALT_QUEUE.get(FIXED_MARK, \"json\")) || {}; } catch (e) { return no(503, \"the fixed marks could not be read, so nothing is sent\"); }",
+  "replace": "done = (await env.SALT_QUEUE.get(FIXED_MARK, \"json\").catch(() => null)) || {};"
  }
 ]
