@@ -496,6 +496,7 @@ export const OWNER_JS = `
     line.appendChild(el('span','un',u));
     head.appendChild(line);
     if(f){ var fb=amb.node(amb.stat(f.word,f.fig)); fb.classList.add('ahead__fig'); if(f.hot) fb.querySelector('.amb-stat__value').classList.add('amb-neg'); head.appendChild(fb); }
+    if(differsLine(a)){ var dl=el('p','amb-field__hint ahead__differs',differsLine(a)); dl.setAttribute('data-differs',''); head.appendChild(dl); }   /* 20 Nov 2026: their page is the sealed one */
     c.appendChild(head);
     var stand=aGroup(null,'astand'); stand.setAttribute('aria-label','Where it stands');
     function standRow(k, v, hot){ var r=aLine(k, v, hot); r.setAttribute('data-line',k); stand.add(r); return r; }
@@ -8020,9 +8021,14 @@ export const OWNER_JS = `
       var j=await refs('/all/maker/inputs'), c=(j&&j.catalog)||{};
       if(!Array.isArray(c.owedMoney)||!Array.isArray(c.owedGoods)) throw new Error(c.owedError||c.error||'The Desk did not say what is owed.');
       nGot('book');
-      var v={money:c.owedMoney, goods:c.owedGoods, refunds:Array.isArray(c.openRefunds)?c.openRefunds:null};
+      var v={money:c.owedMoney, goods:c.owedGoods, refunds:Array.isArray(c.openRefunds)?c.openRefunds:null,
+        standing:c.standing&&Array.isArray(c.standing.rows)?c.standing:null};
       if(changed('book', v)){ owed=v; apply=true; }
-    }catch(error){ nGot('book', error); apply=failNew('book', error); }
+    }catch(error){
+      nGot('book', error); apply=failNew('book', error);
+      /* 20 Nov 2026: a read that fails takes the live figures back, so nothing older than the sheet is shown as live */
+      if(owed&&(owed.refunds||owed.standing)){ owed={money:owed.money, goods:owed.goods, refunds:null, standing:null}; delete nSeen.book; unSeal(); apply=true; }   /* forgotten, so the next good read lays them again even if it is the same */
+    }
     owedAt=Date.now(); owedReading=false;
     /* 25 Oct 2026: and Accounts, whose Owed says how late (P1); 20 Nov 2026: and each account's credit, off the same read */
     if(apply){ liveSheet(); drawNeeds(); drawRoster(); if(aOpen) openCard(aOpen); }
@@ -8032,19 +8038,40 @@ export const OWNER_JS = `
      sealed at the last publish. The refund is theirs by its exact code, as the statement counts it (make_statements stmtRefunds), and the flag is
      chosen again in the publish's own order (reviewFlag): owed, goods, credit, agreed, settled. The sealed figures stay under seal, and stand alone
      while the Desk's read has not landed or names no refunds. Only the credit is live: what they owe stays the statement's until the next publish. */
-  function liveAcct(a, refunds){
-    if(!a||a.test||!a.t||!Array.isArray(refunds)) return a;
-    var seal=a.seal||{t:a.t, flag:a.flag}, t={}, o={}, k;
+  /* 20 Nov 2026 (docs/plan-admin-live-owed.html P3, his yes to its picks): AND WHAT THEY OWE, the goods owed them and what is agreed, off the Desk's
+     standing (the engine's accountStanding, the statement's own rule), a party it does not name standing at nought only when the list arrived.
+     Their own page still reads the sealed figures, and the Counter holds their ordering on the sealed owed, so where the two differ (owed by over
+     one sen, or the word) the account carries differs: the sealed owed and the sheet's time, which its card says. */
+  function liveAcct(a, live){
+    if(!a||a.test||!a.t||!live) return a;
+    var refunds=Array.isArray(live.refunds)?live.refunds:null, st=live.standing&&Array.isArray(live.standing.rows)?live.standing.rows:null;
+    if(!refunds&&!st) return a;
+    var seal=a.seal||{t:a.t, flag:a.flag}, t={}, o={}, k, m;
     for(k in seal.t) t[k]=seal.t[k];
-    t.refund=+refunds.filter(function(r){ return r&&r.party===a.code; }).reduce(function(s,r){ return s+(+r.amount||0); },0).toFixed(2);
+    if(refunds) t.refund=+refunds.filter(function(r){ return r&&r.party===a.code; }).reduce(function(s,r){ return s+(+r.amount||0); },0).toFixed(2);
+    /* a code the Desk's list does not name (off the roster) keeps its sealed figures: nought is said only by a row that says it */
+    if(st){ m=st.filter(function(r){ return r&&r.party===a.code; })[0]; if(m){ t.owed=+m.owed||0; t.toGet=+m.toGet||0; t.pend=+m.pend||0; } }
     for(k in a) o[k]=a[k];
     o.t=t; o.seal=seal;
     o.flag=+t.owed>0.009?'owes':+t.toGet>0.009?'goods':t.refund>0.009?'refund':+t.pend>0.009?'pend':'clear';
+    o.differs=Math.abs((+t.owed||0)-(+seal.t.owed||0))>0.009||o.flag!==seal.flag?{seal:seal, at:sheetAt}:null;
     return o;
   }
+  /* the line an account's card says when their page differs from what the Desk holds now: their page's own word and figure */
+  function differsLine(a){
+    var d=a&&a.differs; if(!d) return '';
+    var s=d.seal.t||{}, w={owes:rm(+s.owed||0)+' owed', refund:rm(+s.refund||0)+' of credit', goods:units(Math.round((+s.toGet||0)*100)/100)+' to hand over',
+      pend:rm(+s.pend||0)+' agreed'}[d.seal.flag]||'nothing owed';
+    return 'Their page shows '+w+(d.at?', from '+hm(d.at)+(dayMon(d.at)===dayMon(new Date().toISOString())?'':' '+dayMon(d.at)):'')+', until the next update.';
+  }
+  function unSeal(){
+    if(!sheet) return;
+    sheetRows=sheetRows.map(function(a){ if(!a||!a.seal) return a; var o={}, k; for(k in a) o[k]=a[k]; o.t=a.seal.t; o.flag=a.seal.flag; delete o.seal; delete o.differs; return o; });
+    sheet={}; sheetRows.forEach(function(a){ sheet[a.username]=a; });
+  }
   function liveSheet(){
-    if(!sheet||!owed||!owed.refunds) return;
-    sheetRows=sheetRows.map(function(a){ return liveAcct(a, owed.refunds); });
+    if(!sheet||!owed||(!owed.refunds&&!owed.standing)) return;
+    sheetRows=sheetRows.map(function(a){ return liveAcct(a, owed); });
     sheet={}; sheetRows.forEach(function(a){ sheet[a.username]=a; });
   }
   /* the open site order a Desk row is, found by its key (a key of three parts is salt's, from before a key named its book) */
