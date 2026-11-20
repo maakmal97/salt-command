@@ -93,6 +93,27 @@ function kvGet(name) {
   try { return wr(["kv", "key", "get", name]); }
   catch (e) { return null; }   // a key deleted mid-run just drops out
 }
+/* ONE READ FOR MANY KEYS (20 Nov 2026). A get a key was a wrangler spawn each, about 2.5 s, so --status over 24 device
+   keys took a minute, and the standing table with it; `kv bulk get` reads them all in one spawn. It is open beta, so a
+   failed answer, or one missing a key or holding anything but a string or null, falls back to the get a key for that
+   key, never to nothing. */
+export function readMany(names, bulk, one) {
+  let got = null;
+  try { got = names.length ? bulk(names) : {}; } catch (e) { got = null; }
+  const fine = (n) => got && Object.prototype.hasOwnProperty.call(got, n) && (got[n] === null || typeof got[n] === "string");
+  return new Map(names.map((n) => [n, fine(n) ? got[n] : one(n)]));
+}
+function kvBulk(names) {
+  const dir = _mkdtemp(_join(_tmpdir(), "drain-")), file = _join(dir, "keys.json");
+  _write(file, JSON.stringify(names));
+  try {
+    const j = jsonSlice(wr(["kv", "bulk", "get", file]), "{", "}");
+    if (!j || typeof j !== "object" || Array.isArray(j)) throw new Error("could not parse `kv bulk get` output");
+    return j;
+  } finally { try { _rm(dir, { recursive: true, force: true }); } catch (e) { /* a temp dir */ } }
+}
+/* the many-key read a mode uses: a test's own `many`, else its stubbed `get` a key, else the bulk read */
+const manyOf = (IO, io) => io.many || (io.get ? (ks) => new Map(ks.map((k) => [k, IO.get(k)])) : (ks) => readMany(ks, kvBulk, IO.get));
 function kvDelete(name) {
   try { wr(["kv", "key", "delete", name]); return true; } catch (e) { return false; }
 }
@@ -242,13 +263,13 @@ export function runStatus({ io = {} } = {}) {
   const IO = Object.assign({ list: kvList, get: kvGet, read: readFile, mark: bookMark, drafts: d1Drafts }, io);
   let keys = [];
   try { keys = IO.list(); } catch (e) { console.error("KV unreachable: " + e.message); process.exit(1); }
-  const kv = [], bad = [];
-  for (const k of keys) { const v = IO.get(k); if (v) { const qq = deviceQueue(v); if (qq) kv.push(...qq); else bad.push([k, v]); } }
+  const kv = [], bad = [], vals = manyOf(IO, io)(keys);
+  for (const k of keys) { const v = vals.get(k); if (v) { const qq = deviceQueue(v); if (qq) kv.push(...qq); else bad.push([k, v]); } }
   const file = IO.read();
   console.log(`KV: ${keys.length} device key(s), ${bad.length} unreadable, ${kv.length} entr${kv.length === 1 ? "y" : "ies"}.`);
   /* fold 2.1: the old orders blob, read only now, until --retire-orders-blob takes it */
   if (keys.includes(BLOB)) {
-    const bq = deviceQueue(IO.get(BLOB) || ""), own = keys.filter((k) => k.startsWith(BLOB + ":")).length;
+    const bq = deviceQueue(vals.get(BLOB) || ""), own = keys.filter((k) => k.startsWith(BLOB + ":")).length;
     console.log(`  ${BLOB}, the old orders blob: ${bq ? bq.length : "unreadable"}; orders keys of their own: ${own}.`);
   }
   for (const [k, v] of bad) console.log(`  ${k} could not be parsed (${Buffer.byteLength(v, "utf8")} bytes): ${v.slice(0, 80)}`);
@@ -282,9 +303,9 @@ export function runDrain({ keep = false, io = {} } = {}) {
     console.error("  Timed out: run it again. Anything else: check `npx wrangler whoami`, that the KV id in wrangler.jsonc is real, and CLOUDFLARE_API_TOKEN for unattended runs.");
     process.exit(1);
   }
-  const captured = [];   // {name, raw, entries}
+  const captured = [], vals = manyOf(IO, io)(keys);   // {name, raw, entries}
   for (const name of keys) {
-    const raw = IO.get(name);
+    const raw = vals.get(name);
     if (!raw) continue;
     const qq = deviceQueue(raw);
     captured.push({ name, raw, entries: qq || [], unreadable: !qq });
@@ -326,8 +347,9 @@ export function runForget({ at = process.argv[3], io = {} } = {}) {
   let fromKv = 0, keys = [];
   try { keys = IO.list(); }
   catch (e) { console.error("KV unreachable, so only the file was cleaned: " + wranglerSaid(e)); }
+  const vals = manyOf(IO, io)(keys);
   for (const name of keys) {
-    const raw = IO.get(name); if (!raw) continue;
+    const raw = vals.get(name); if (!raw) continue;
     const qq = deviceQueue(raw);
     if (!qq) { console.log("  " + name + " could not be parsed and is left alone"); continue; }
     if (!qq.some(e => e && e.at === at)) continue;

@@ -716,7 +716,7 @@ npm test           # THE DEFAULT full run (his word of 12 Nov 2026): the suite s
 npm run test:serial  # the same suite in one process, 21 to 27 minutes here (measured 12 Nov 2026); 4 GB heap. Only to rule out a cross-process fault
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
-node tools/standing.mjs   # the standing-state table a task closes with, about a minute
+node tools/standing.mjs   # the standing-state table a task closes with, about 11 s (one KV bulk read, 20 Nov 2026)
 ```
 
 Each build patch is anchored on one unique line; a moved anchor aborts. First-time Cloudflare and

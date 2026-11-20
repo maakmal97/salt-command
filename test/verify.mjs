@@ -25229,6 +25229,26 @@ await (async () => {
   const src = readFileSync(join(REPO, "tools", "drain.mjs"), "utf8");
   ok(/wr\(\["kv", "key", "put", name, "--path", file\]\)/.test(src) && !/"put", name, JSON\.stringify/.test(src),
     "the only KV put in drain.mjs goes through --path, never a JSON argument the shell can strip");
+  /* 20 Nov 2026: one bulk read for the device keys, a minute of get-a-key spawns before; a bad bulk answer falls back a key at a time */
+  const oneCalls = [], one = (k) => (oneCalls.push(k), "one:" + k);
+  for (const [name, bulk, want, calls] of [
+    ["a whole answer", () => ({ a: "A", b: null }), { a: "A", b: null }, []],
+    ["a thrown bulk", () => { throw new Error("beta"); }, { a: "one:a", b: "one:b" }, ["a", "b"]],
+    ["a key missing", () => ({ a: "A" }), { a: "A", b: "one:b" }, ["b"]],
+    ["a parsed value", () => ({ a: { queue: [] }, b: "B" }), { a: "one:a", b: "B" }, ["a"]],
+  ]) {
+    oneCalls.length = 0;
+    let m; try { m = DR.readMany(["a", "b"], bulk, one); } catch (e) { m = new Map([["threw", e.message]]); }
+    ok(JSON.stringify(Object.fromEntries(m)) === JSON.stringify(want) && JSON.stringify(oneCalls) === JSON.stringify(calls),
+      "readMany, " + name + ": " + JSON.stringify([...m]) + " after " + JSON.stringify(oneCalls));
+  }
+  const many = [], gets = [];
+  const io5 = Object.assign({}, io, { list: () => ["q:good"], get: (k) => (gets.push(k), null),
+    many: (ks) => (many.push(ks), new Map([["q:good", JSON.stringify({ device: "good", queue: [{ at: "b1", raw: "x" }] })]])) });
+  const lines5 = []; console.log = (...x) => lines5.push(x.join(" "));
+  try { DR.runStatus({ io: io5 }); } finally { console.log = realLog; }
+  ok(many.length === 1 && JSON.stringify(many[0]) === '["q:good"]' && !gets.length && lines5.some((l) => /^KV: 1 device key\(s\), 0 unreadable, 1 entry\./.test(l)),
+    "--status reads every device key in ONE many-key read, never a get a key: " + JSON.stringify([many, gets, lines5[0]]));
 })();
 section("v732: a bulletin is set from Enter, stands on Salt Counter (Home's Today card, one line at a time since Counter Batch A), and never names the desk, a code or a level");
 await (async () => {
