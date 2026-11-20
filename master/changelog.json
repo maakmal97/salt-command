@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1556",
+  "d": "20 Nov 2026",
+  "t": "EVERY OLDER SALE CAN BECOME A SITE ORDER",
+  "n": [
+   "<b>BORN LEVEL WITH ITS ROW.</b> A sale that never came by the Counter can now be taken into the order book as a site order, already standing as the book has it: paid, handed over and done. Nothing is booked twice, the book does not move, and nobody is woken.",
+   "<b>WHAT IS LEFT.</b> A sale still owing, cancelled, written off, a reward unit, a test account, a key two sales share, or a sale with anything on its way stays where it is, each with its reason.",
+   "<b>IT FOLLOWS ITS ROW.</b> A Correction on the book reaches the order by the row itself, even when it changes the total or the day. Its old undos are never replayed onto it.",
+   "<b>CHANGED ON THE BOOK.</b> On Salt Admin an older sale&#39;s order has no Change, Cash received or Handed over: it reads An older sale, change it on the book. A claim of theirs on one can still be answered. Their page shows it as Complete and never asks for a rating.",
+   "<b>THE ROAD.</b> tools/orders-import.mjs asks the Desk dry first, 20 at a time, only on a clean Ledger check, and reads every order back; --undo takes them back, listing first."
+  ]
+ },
+ {
   "v": "v1555",
   "d": "20 Nov 2026",
   "t": "THE BOOK'S DAILY EXPORT IS ASKED FOR EACH NIGHT",
