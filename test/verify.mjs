@@ -50897,6 +50897,11 @@ await (async () => {
   await (await import("./order-import-desk.mjs")).run({ ok });
 })();
 
+section("20 Nov 2026: Salt Admin keeps an older sale's order to the book");
+await (async () => {
+  await (await import("./order-import-admin.mjs")).run({ ok, pageWork });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });

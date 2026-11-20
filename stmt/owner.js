@@ -5546,6 +5546,9 @@ export const OWNER_JS = `
     if(!order||!order.sheet) return [order];
     return ((makerData&&makerData.orders)||[]).filter(function(o){ return o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
   }
+  /* 20 Nov 2026 (the order import, his Ask G): an older sale's order is born from its book row and follows it, so it is changed there: the card draws no Change, Cash
+     received or Handed over for it, and says so once. The pill, the history and the messages stay. */
+  function oldSaleNote(){ return el('p','amb-field__hint maker-facts oldsale','An older sale: change it on the book.'); }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order,opts){
     var open=makerOpenOrders, inline=!!(opts&&opts.inline);
@@ -5576,7 +5579,8 @@ export const OWNER_JS = `
          16 Oct 2026 (plan 5, part 2): Change the order stands under the head, where the figures it changes are read, in place of below the money; it opens
          the same Sheet and sends the same restate (stage amend), so nothing about what it books moved */
       var change=null;
-      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
+      if(order.imported===true) dec.appendChild(oldSaleNote());
+      else if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         change=aActBtn(stageRows,['Change','order.amend'],function(){ amendOpen(order,change); });
         change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
       }
@@ -5875,16 +5879,18 @@ export const OWNER_JS = `
         if(order.mode==='collect'&&!order.point) stage.appendChild(el('p','msg maker-point-at','No collection point named.'));
         /* 17 Nov 2026 (the order-changes plan, version 2, his answer 8): the stage keeps its one pill, every unit handed over; part of them, a finish at
            fewer, and another point are the Change sheet's, which sends each by the same road */
+        if(order.imported!==true){
         var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed'],function(){
           makerTap(order,'handed',{qty:Number(order.qty)},'Handover sent to the Desk.');
         },true);
         handed.setAttribute('data-handed-all','');
+        }
       }
       stageEnd();
       /* 17 Nov 2026 (the order-changes plan, version 2): a payment he records is the Change sheet's; Money received is drawn for what waits on him alone,
          their claims and cash held with its Undo */
       var claimsWaiting=(order.payments||[]).some(function(p){ return p&&p.claim==='waiting'; }), cashHeld=!!(makerCashHeld[order.id]||makerCashStorageError||makerCashSaid[order.id]);
-      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.status==='ready'&&cashHeld))){
+      if(order.imported!==true&&!againAck&&(order.status==='acknowledged'||order.status==='ready')&&(claimsWaiting||(order.status==='ready'&&cashHeld))){
         /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
            Since 16 Oct 2026 the bank and the cash are one amount and two tiles (makerPayControl). 2 Nov 2026: a part of his decision, its claims rows */
         var money=part(null,'omoney'), moneyHead=el('h2','amb-section','Money received'), claims=aGroup(null,'oclaims');
@@ -6434,7 +6440,8 @@ export const OWNER_JS = `
       orderHead(card,order);
       /* his answer of 17 Oct 2026: a completed order keeps Change the order; figures that leave it owing open it again at Ready */
       /* 2 Nov 2026 (his Orders canvas, page 2): Change the order a row of its own list, and This customer and the Order log the rows that go on */
-      if(order.status==='done'&&!order.test&&!makerAgainAck(order)){
+      if(order.imported===true&&order.status==='done') card.appendChild(oldSaleNote());
+      else if(order.status==='done'&&!order.test&&!makerAgainAck(order)){
         var redoList=aGroup(null,'ostagerows'); card.appendChild(redoList);
         var redo=aActBtn(redoList,['Change','order.amend'],function(){ amendOpen(order,redo); });
         redo.setAttribute('data-amend',''); makerAskTag(order,redo,'amend');

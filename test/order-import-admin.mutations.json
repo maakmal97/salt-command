@@ -1,0 +1,56 @@
+[
+ {
+  "name": "the plain card still offers Change on an imported order",
+  "file": "stmt/owner.js",
+  "find": "if(order.imported===true&&order.status==='done') card.appendChild(oldSaleNote());",
+  "replace": "if(false) card.appendChild(oldSaleNote());"
+ },
+ {
+  "name": "the line's words change",
+  "file": "stmt/owner.js",
+  "find": "'An older sale: change it on the book.'",
+  "replace": "'An older sale.'"
+ },
+ {
+  "name": "the open card draws no note for an imported order",
+  "file": "stmt/owner.js",
+  "find": "if(order.imported===true) dec.appendChild(oldSaleNote());",
+  "replace": "if(false) dec.appendChild(oldSaleNote());"
+ },
+ {
+  "name": "the open card still offers Handed over on an imported order",
+  "file": "stmt/owner.js",
+  "find": "if(order.imported!==true){",
+  "replace": "if(true){"
+ },
+ {
+  "name": "the customer's whitelist carries imported",
+  "file": "stmt/orders.js",
+  "find": "\"changed\", \"winOffer\"];",
+  "replace": "\"changed\", \"winOffer\", \"imported\"];"
+ },
+ {
+  "name": "the customer's page names the import in its history",
+  "file": "stmt/page.js",
+  "find": "done:'st.done', declined",
+  "replace": "done:by==='import'?'Imported':'st.done', declined"
+ },
+ {
+  "name": "Order again is withheld from an imported order",
+  "file": "stmt/page.js",
+  "find": "return !!o&&!ro()&&!hold",
+  "replace": "return !!o&&!o.imported&&!ro()&&!hold"
+ },
+ {
+  "name": "a customer is refused a line on an imported order",
+  "file": "stmt/orders.js",
+  "find": "  if (action === \"say\") {",
+  "replace": "  if (action === \"say\" && order.imported === true) return Object.assign(refusal(\"sayEmpty\"), { status: 400 });\n  if (action === \"say\") {"
+ },
+ {
+  "name": "the open card's Change shows for an imported order but the note stays",
+  "file": "stmt/owner.js",
+  "find": "else if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){",
+  "replace": "if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){"
+ }
+]
