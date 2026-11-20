@@ -82,5 +82,71 @@
   "file": "src/orders.js",
   "find": "(b && b.dry === false)",
   "replace": "(b && b.dry !== false)"
+ },
+ {
+  "name": "the tool splits a trip across batches",
+  "file": "tools/orders-import.mjs",
+  "find": "if (r.trip && at.has(r.trip)) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "a batch holds more than 20",
+  "file": "tools/orders-import.mjs",
+  "find": "cur.length + g.length > size)",
+  "replace": "cur.length + g.length > size + 5)"
+ },
+ {
+  "name": "the tally counts no import",
+  "file": "tools/orders-import.mjs",
+  "find": "if (r.verdict === \"import\") t.import++;",
+  "replace": "if (false) t.import++;"
+ },
+ {
+  "name": "a queued run does not stop a real run",
+  "file": "tools/orders-import.mjs",
+  "find": "\"in_progress\", \"queued\",",
+  "replace": "\"in_progress\","
+ },
+ {
+  "name": "a held approved row does not stop it",
+  "file": "tools/orders-import.mjs",
+  "find": "approved.count > 0 || approved.held > 0",
+  "replace": "approved.count > 0"
+ },
+ {
+  "name": "unreadable Actions runs do not stop it",
+  "file": "tools/orders-import.mjs",
+  "find": "out.push(\"the Actions runs could not be read, so none is known to be idle\");",
+  "replace": "runs = [];"
+ },
+ {
+  "name": "the read back needs no importedAt",
+  "file": "tools/orders-import.mjs",
+  "find": "if (typeof got.importedAt !== \"string\" || !got.importedAt) d.push(\"importedAt\");",
+  "replace": ""
+ },
+ {
+  "name": "a failed order does not stop the run",
+  "file": "tools/orders-import.mjs",
+  "find": "if (bad.length) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "a read back that differs does not stop the run",
+  "file": "tools/orders-import.mjs",
+  "find": "if (diffs.length) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "a dry drive runs for real",
+  "file": "tools/orders-import.mjs",
+  "find": "if (!run) {",
+  "replace": "if (false) {"
+ },
+ {
+  "name": "the read back ignores paid",
+  "file": "tools/orders-import.mjs",
+  "find": "\"credit\", \"rid\", \"ledgerKey\", \"paid\", \"moved\",",
+  "replace": "\"credit\", \"rid\", \"ledgerKey\", \"moved\","
  }
 ]

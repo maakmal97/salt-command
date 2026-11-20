@@ -139,4 +139,37 @@ export async function run({ ok }) {
     const by = Object.fromEntries(r2.results.map((x) => [x.rid, x]));
     ok(by.s401.verdict === "refused" && /on its way/.test(by.s401.why) && by.s402.verdict === "import", "R7: a row with a draft on its way is refused, its neighbour is not: " + J(r2.results));
   }
+  /* T: the laptop tool's pure parts, and its drive over the real route */
+  {
+    const T = await import("../tools/orders-import.mjs");
+    const many = Array.from({ length: 19 }, (_, i) => ({ rid: "a" + i, trip: null })).concat([{ rid: "t1", trip: "T" }, { rid: "t2", trip: "T" }, { rid: "t3", trip: "T" }], Array.from({ length: 25 }, (_, i) => ({ rid: "b" + i, trip: null })));
+    const bs = T.batches(many);
+    ok(bs.every((b) => b.length <= 20) && bs.flat().length === 47 && new Set(bs.flat()).size === 47 && bs.some((b) => b.includes("t1") && b.includes("t2") && b.includes("t3")) && bs[0].length === 19,
+      "T1: batches of 20 at most, every rid once, a trip never split: " + J(bs.map((b) => b.length)));
+    const apart = T.batches([{ rid: "x", trip: "Q" }, { rid: "y", trip: null }, { rid: "z", trip: "Q" }]);
+    ok(J(apart) === J([["x", "z", "y"]]), "T1: a trip's lines are brought together: " + J(apart));
+    let threw = false; try { T.batches(Array.from({ length: 3 }, (_, i) => ({ rid: "q" + i, trip: "Z" })), 2); } catch (e) { threw = true; }
+    ok(threw, "T1: a trip longer than a batch is an error, not a split");
+    const t = T.tally([{ verdict: "import" }, { verdict: "refused", why: "cancelled" }, { verdict: "refused", why: "cancelled" }, { verdict: "refused", why: "a test account" }]);
+    ok(t.import === 1 && t.refused === 3 && t.why.cancelled === 2 && t.why["a test account"] === 1, "T2: the tally counts verdicts and reasons: " + J(t));
+    ok(T.runGuards({ runs: [{ status: "completed" }], approved: { count: 0, held: 0 } }).length === 0, "T3: nothing running and nothing approved is a go");
+    ok(/in progress/.test(T.runGuards({ runs: [{ status: "in_progress" }], approved: { count: 0 } })[0] || "") && /in progress/.test(T.runGuards({ runs: [{ status: "queued" }], approved: { count: 0 } })[0] || ""), "T3: a run in progress or queued stops it");
+    ok(/approved row/.test(T.runGuards({ runs: [], approved: { count: 2 } })[0] || "") && /approved row/.test(T.runGuards({ runs: [], approved: { count: 0, held: 1 } })[0] || ""), "T3: an approved row unfolded stops it, held under the Book too");
+    ok(T.runGuards({ runs: null, approved: { count: 0 } }).length === 1 && T.runGuards({ runs: [], approved: null }).length === 1, "T3: what cannot be read stops it");
+    const w = { id: "i1", u: "u", status: "done", rid: "s1", paid: 5 }, g = Object.assign({}, w, { importedAt: "2026-11-20T03:00:00.000Z" });
+    ok(T.diffOrder(w, g).length === 0 && T.diffOrder(w, Object.assign({}, g, { paid: 6 })).join() === "paid" && T.diffOrder(w, w).join() === "importedAt" && T.diffOrder(w, undefined).length === 1, "T4: a read back differs on a field, or lacks importedAt, or is missing");
+    /* the drive over the real route: a client whose calls are deskImport on a fake site */
+    const clientOf = (E, rs, hold = {}) => ({ calls: [],
+      async imp(rids, dry) { this.calls.push((dry ? "dry " : "run ") + rids.join(",")); const r = await deskImport(E.env, { rids, dry }, async () => bookOf(rs), NOW); return r.ok ? { ok: true, results: r.results } : { ok: false, error: r.error }; },
+      async orders() { return { ok: true, orders: E.sent.map((o) => Object.assign({}, o, hold.alter && o.rid === hold.alter ? { paid: 1 } : {})) }; } });
+    const say = [], mk = () => ({ say: (s) => say.push(s) });
+    const E = envOf([]), c = clientOf(E, rows()), d = await T.drive(c, [["s401", "s403"], ["s297"]], Object.assign({ run: false }, mk()));
+    ok(d.ok && d.results.length === 3 && c.calls.every((x) => x.startsWith("dry")) && !E.log.length, "T5: a dry drive asks dry only and writes nothing: " + J([c.calls, E.log]));
+    const E2 = envOf([]), c2 = clientOf(E2, rows()), r2 = await T.drive(c2, [["s401", "s403"], ["s297"]], Object.assign({ run: true }, mk()));
+    ok(r2.ok && c2.calls.join("|") === "dry s401,s403|run s401,s403|dry s297|run s297" && E2.sent.length === 2, "T5: a run asks each batch dry, then real, in turn: " + J(c2.calls));
+    const E3 = envOf([], { refuse: "s401" }), c3 = clientOf(E3, rows()), r3 = await T.drive(c3, [["s401", "s402"], ["s297"]], Object.assign({ run: true }, mk()));
+    ok(!r3.ok && !c3.calls.some((x) => /s297/.test(x)) && say.some((s) => /STOP: 1 order\(s\) failed/.test(s)), "T5: it stops at the first batch with a failed order, the next never asked: " + J(c3.calls));
+    const E4 = envOf([]), c4 = clientOf(E4, rows(), { alter: "s401" }), r4 = await T.drive(c4, [["s401"], ["s297"]], Object.assign({ run: true }, mk()));
+    ok(!r4.ok && !c4.calls.some((x) => /s297/.test(x)) && say.some((s) => /read back differs: s401 \(paid\)/.test(s)), "T5: it stops on a read back that differs, the next batch never asked: " + J(say.slice(-2)));
+  }
 }
