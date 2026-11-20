@@ -1,0 +1,146 @@
+[
+ {
+  "name": "I1: the told state is wrong",
+  "file": "engine/stages.mjs",
+  "find": "o.queued = { ack: at, paid: o.paid, moved: o.moved };",
+  "replace": "o.queued = { ack: at, paid: o.paid + 1, moved: o.moved };"
+ },
+ {
+  "name": "I1: a collection is told as a delivery",
+  "file": "engine/stages.mjs",
+  "find": "const mode = trip || own > 0.004 || row.handover === \"delivered\" ? \"deliver\" : \"collect\";",
+  "replace": "const mode = \"deliver\";"
+ },
+ {
+  "name": "I2: the key loses its product tail",
+  "file": "engine/stages.mjs",
+  "find": "imported: true, rid: row.rid, ledgerKey: key,",
+  "replace": "imported: true, rid: row.rid, ledgerKey: key.split(\"|\").slice(0, 3).join(\"|\"),"
+ },
+ {
+  "name": "I3: a bucket row is not for a friend",
+  "file": "engine/stages.mjs",
+  "find": "forFriend: E.isBucket(code)",
+  "replace": "forFriend: false"
+ },
+ {
+  "name": "I4: the carrying line is not first",
+  "file": "engine/stages.mjs",
+  "find": "(trip && !carrier ? \"01\" : \"00\")",
+  "replace": "\"00\""
+ },
+ {
+  "name": "I4: each trip line has its own sheet",
+  "file": "engine/stages.mjs",
+  "find": "if (trip) o.sheet = \"imp-\" + trip;",
+  "replace": "if (trip) o.sheet = \"imp-\" + trip + digits;"
+ },
+ {
+  "name": "I4: every line carries the delivery",
+  "file": "engine/stages.mjs",
+  "find": "const delivery = trip && !carrier ? 0 : +own.toFixed(2);",
+  "replace": "const delivery = trip && !carrier ? 40 : +own.toFixed(2);"
+ },
+ {
+  "name": "I5: a fold gift is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (row.road === \"fold\" || row.goodwill || row.rewardOf || row.loyal) return no(",
+  "replace": "if (false) return no("
+ },
+ {
+  "name": "I5: a purchase is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (row.supplier && !row.customer) return no(\"a purchase\");",
+  "replace": ""
+ },
+ {
+  "name": "I5: a cancelled row is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (row.cancelled) return no(\"cancelled\");",
+  "replace": ""
+ },
+ {
+  "name": "I5: a written-off row is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (row.defaulted) return no(\"written off\");",
+  "replace": ""
+ },
+ {
+  "name": "I5: a row owing money is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (E.txAdvance(row) > 0.004 || out",
+  "replace": "if (out"
+ },
+ {
+  "name": "I5: a row owing goods is imported",
+  "file": "engine/stages.mjs",
+  "find": "|| out < qty - 0.0004) return no(\"still owing money or goods\");",
+  "replace": ") return no(\"still owing money or goods\");"
+ },
+ {
+  "name": "I5: a test account is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (c.test && c.test.has(u)) return no(\"a test account\");",
+  "replace": ""
+ },
+ {
+  "name": "I5: no username is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (!u) return no(\"the account has no username\");",
+  "replace": ""
+ },
+ {
+  "name": "I5: a shared key is imported",
+  "file": "engine/stages.mjs",
+  "find": "if (live.filter((s) => s !== row).length) return no(",
+  "replace": "if (false) return no("
+ },
+ {
+  "name": "I5: a row an order names by key is imported",
+  "file": "engine/stages.mjs",
+  "find": "|| (o.ledgerKey && ledgerKeyOf(o) === key)));",
+  "replace": "|| (o.ledgerKey && o.ledgerKey === key)));"
+ },
+ {
+  "name": "I5: a row an order names by rid is imported",
+  "file": "engine/stages.mjs",
+  "find": "((o.rid && o.rid === row.rid) ||",
+  "replace": "((false) ||"
+ },
+ {
+  "name": "I5: a loose live order that day is no bar",
+  "file": "engine/stages.mjs",
+  "find": "if (loose) return no(",
+  "replace": "if (false) return no("
+ },
+ {
+  "name": "I5: money on its way is no bar",
+  "file": "engine/stages.mjs",
+  "find": "if (way.has(row.rid) || way.has(key)) return no(",
+  "replace": "if (way.has(row.rid)) return no("
+ },
+ {
+  "name": "I6: a trip with one bad line imports the good one",
+  "file": "engine/stages.mjs",
+  "find": "    if (bad) {\n      lines.forEach",
+  "replace": "    if (bad && got.every((g) => g.refused)) {\n      lines.forEach"
+ },
+ {
+  "name": "I6: a faulted trip is not refused",
+  "file": "engine/stages.mjs",
+  "find": "const fault = s.trip && !s.cancelled ? E.tripFault(lines) : null;",
+  "replace": "const fault = null;"
+ },
+ {
+  "name": "I7: a trip's lines are imported twice",
+  "file": "engine/stages.mjs",
+  "find": "    if (done.has(s)) continue;\n",
+  "replace": ""
+ },
+ {
+  "name": "I7: the order is not told what it holds",
+  "file": "engine/stages.mjs",
+  "find": "o.queued = { ack: at, paid: o.paid, moved: o.moved };",
+  "replace": "o.queued = { ack: at, paid: o.paid, moved: 0 };"
+ }
+]

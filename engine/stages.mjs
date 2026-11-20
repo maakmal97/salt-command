@@ -931,3 +931,81 @@ export function lowerTap(o, at, body, ctx) {
   const shown = Object.assign({ was: { paid: nowPaid, moved: nowMoved } }, dPaid > 0.004 ? { paid: +paid.toFixed(2) } : {}, dMoved > 0.0004 ? { moved: +moved.toFixed(3) } : {});
   return { entry, queueIt: true, site, shown };
 }
+
+/* ---- THE ORDER IMPORT (20 Nov 2026, docs/plan-order-import.html): an older sale's site order, BORN TOLD ---------------------------------
+ * PURE. importOf reads one sales row and what the site and the book already say about it, and answers `{ order }` (a done order whose `queued`
+ * already states the row, so orderWork owes the book nothing) or `{ refused }` with a plain reason. importPlan runs it over every row, a trip
+ * whole (one order a line under one sheet, the carrying line first) or not at all, and refuses a key two live rows share.
+ * ctx: { users: {code: username} (a -R bucket's row under its associate's username), orders: every site order of any status,
+ *        onWay: Set of rids and keys with money, a Correction or a yes on its way, test: Set of test usernames, keys: Map key -> live rows (importPlan) }.
+ * The history entry carries `status`, the shape every other entry has (stageAt reads it), and `by: "import"`. `rwd` is left to the pass: rwdOf
+ * needs the whole book, which a row alone does not give. */
+const klDay = (iso) => new Date(new Date(iso).getTime() + 8 * 3600e3).toISOString().slice(0, 10);
+export function importOf(row, ctx) {
+  const E = POSITION_ENGINE, c = ctx || {};
+  const no = (why) => ({ refused: why });
+  if (!row || typeof row !== "object") return no("not a sale");
+  if (row.supplier && !row.customer) return no("a purchase");
+  const code = row.customer;
+  if (!code) return no("a sale with no customer");
+  if (row.road === "fold" || row.goodwill || row.rewardOf || row.loyal) return no("a reward or loyalty unit the fold raised");
+  if (row.cancelled) return no("cancelled");
+  if (row.defaulted) return no("written off");
+  const qty = +row.qty, total = +row.total, own = +row.delivery || 0;
+  if (!(qty > 0) || !(total > 0)) return no("no size or goods to carry");
+  if (!isDay(row.date)) return no("no date");
+  if (!/[0-9]/.test(String(row.rid || ""))) return no("no rid");
+  const out = rowOut(row);
+  if (E.txAdvance(row) > 0.004 || out < qty - 0.0004) return no("still owing money or goods");
+  const u = (c.users || {})[code];
+  if (!u) return no("the account has no username");
+  if (c.test && c.test.has(u)) return no("a test account");
+  const key = E.ovKey(row), live = (c.keys && c.keys.get(key)) || [];
+  if (live.filter((s) => s !== row).length) return no("another live sale shares its key");
+  const orders = c.orders || [];
+  const named = orders.find((o) => o && ((o.rid && o.rid === row.rid) || (o.ledgerKey && ledgerKeyOf(o) === key)));
+  if (named) return no("an order already names it (" + named.id + ")");
+  const at = new Date(row.date + "T00:00:00+08:00").toISOString();
+  const open = ["placed", "acknowledged", "ready"];
+  const loose = orders.find((o) => o && o.u === u && open.includes(o.status) && !o.ledgerKey && !o.rid && (isDay(o.on) ? o.on : klDay(o.at)) === row.date);
+  if (loose) return no("their live order that day (" + loose.id + ") names no row");
+  const way = c.onWay || new Set();
+  if (way.has(row.rid) || way.has(key)) return no("money, a Correction or a yes is on its way to it");
+  const trip = row.trip ? String(row.trip) : "";
+  const carrier = !trip || own > 0.004;
+  const delivery = trip && !carrier ? 0 : +own.toFixed(2);
+  const mode = trip || own > 0.004 || row.handover === "delivered" ? "deliver" : "collect";
+  const digits = String(row.rid).replace(/[^0-9]/g, "").slice(-7);
+  const credit = +(+row.credit || 0);
+  const o = { id: row.date.replace(/-/g, "") + "0000" + (trip && !carrier ? "01" : "00") + "-i" + digits, u, status: "done", product: row.product || "salt",
+    qty, total, delivery, mode, forFriend: E.isBucket(code), credit, movedOn: row.deliveredOn || row.date, at, imported: true, rid: row.rid, ledgerKey: key,
+    rateAsk: at, payments: [], msgs: [], claimed: 0, history: [{ at, status: "done", by: "import" }] };
+  if (trip) o.sheet = "imp-" + trip;
+  o.paid = rowPaidFor(o, row);
+  o.moved = out;
+  o.queued = { ack: at, paid: o.paid, moved: o.moved };
+  return { order: o };
+}
+export function importPlan(book, ctx) {
+  const E = POSITION_ENGINE, sales = ((book && book.sales) || []).filter((s) => s && s.customer);
+  const keys = new Map();
+  for (const s of sales) if (!s.cancelled) { const k = E.ovKey(s); (keys.get(k) || keys.set(k, []).get(k)).push(s); }
+  const c = Object.assign({}, ctx, { keys }), orders = [], refused = [], done = new Set();
+  const trips = new Map();
+  for (const s of sales) if (s.trip && !s.cancelled) (trips.get(s.trip) || trips.set(s.trip, []).get(s.trip)).push(s);
+  for (const s of sales) {
+    if (done.has(s)) continue;
+    const lines = s.trip && !s.cancelled ? trips.get(s.trip) : [s];
+    lines.forEach((x) => done.add(x));
+    const fault = s.trip && !s.cancelled ? E.tripFault(lines) : null;
+    const got = lines.map((x) => (fault ? { refused: fault } : importOf(x, c)));
+    const bad = got.find((g) => g.refused);
+    if (bad) {
+      lines.forEach((x, i) => refused.push({ rid: x.rid || null, why: got[i].refused || "its trip's " + bad.refused }));
+      continue;
+    }
+    got.forEach((g) => orders.push(g.order));
+  }
+  orders.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  return { orders, refused };
+}

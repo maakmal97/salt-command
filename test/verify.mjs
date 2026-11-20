@@ -50882,6 +50882,11 @@ await (async () => {
   await (await import("./ledger-plain.mjs")).run({ ok, pageWork });
 })();
 
+section("20 Nov 2026: an older sale becomes a site order, born told, or the reason it is left");
+await (async () => {
+  await (await import("./order-import.mjs")).run({ ok });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });
