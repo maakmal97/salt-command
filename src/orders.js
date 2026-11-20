@@ -341,7 +341,9 @@ export function cardAt(pricing, code, product, qty) { return PRICING_ENGINE.card
 /* `mirror`, here and below: the invocation's one reader of the mirror (bookOnce, 06 Oct 2026); without one, a read of its own */
 /* another order's pending row, found by its own draft (queued, or waiting under Approve after his yes) and read for the day it is dated, its
    payload's date (a row offered again keeps its first), never the moment it was queued; null with no row, or one rejected (it stands aside) */
-async function pendingDay(env, x) {
+export async function pendingDay(env, x) {
+  /* 20 Nov 2026 (order import): an older sale's order has no draft, its ack is the row's own day, so its day is the row's and no database is asked */
+  if (isImported(x) && x.queued && x.queued.ack) return klDate(new Date(x.queued.ack));
   let id = x.queued && x.queued.ack;
   if (!id && env.SALT_LEDGER) { const p = await livePre(env.SALT_LEDGER, x.id, "ack"); id = p && p.entry_at; }
   if (!id) return null;
@@ -983,8 +985,11 @@ export async function amendOrder(env, id, body) {
  * date, figures and every flag. So a stage that waits on the first row NEVER WAITS SILENTLY: it is booked
  * when that row lands, and the card can say so ("waits": true). The pricing version is not part of it,
  * because the first row landing is itself a fold. */
+const IMPORTED_SAYS = "an older sale's order changes on the book, not here";
 async function stagePreview(env, o, stage, entry, mirror) {
   const db = env.SALT_LEDGER;
+  /* 20 Nov 2026 (order import): an older sale's order changes on the book, never from here */
+  if (isImported(o) && stage === "amend") return { ok: false, status: 409, error: IMPORTED_SAYS };
   const book = await (mirror ? mirror() : readBook(db));
   const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
   let rd = null;
@@ -997,7 +1002,7 @@ async function stagePreview(env, o, stage, entry, mirror) {
   /* the pending row a stage waits on, when the book's own does not hold the row yet (engine/stages.mjs stageAgainst) */
   const ack = o.queued && o.queued.ack;
   const ackRow = ack && ackRowWanted(book, entry, rd) ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
-  const ag = stageAgainst(book, entry, rd, ackRow);
+  const ag = stageAgainst(book, entry, rd, ackRow, isImported(o));
   if (!ag.ok) return ag;
   const d = draftRow(entry, ag.against);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
@@ -1024,6 +1029,7 @@ async function stageTap(env, id, body, by, now, stage, build, mirror) {
   if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   if (!ROWED_ON_SITE.includes(o.status)) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to record against it" };
   if (!o.ledgerKey) return { ok: false, status: 409, error: "its pending row is not queued yet: accept it first" };
+  if (isImported(o) && stage === "amend") return { ok: false, status: 409, error: IMPORTED_SAYS };   /* an older sale's order changes on the book, before any price is weighed */
   const b = build(o, at);
   if (b.again) return againOrder(env, id, { stage: b.again }, by, now);
   if (b.error) return Object.assign({ ok: false, status: b.status || 400, error: b.error }, b.outside ? { outside: b.outside } : {}, b.underFloor ? { underFloor: true } : {});
@@ -2109,6 +2115,11 @@ async function siteAt(db) {
   siteMemo.set(db, { t: now, at });
   return at;
 }
+/* 20 Nov 2026 (order import, docs/plan-order-import.html): AN OLDER SALE'S ORDER IS BORN TOLD. It names its row by rid, its acknowledgement (an ISO of the row's day) has no draft behind it,
+   so it is read as landed and `fate` is never asked of it; it follows its row by rid whatever a Correction did to the key. */
+export const isImported = (o) => !!o && o.imported === true && !!o.rid;
+const IMPORTED_ACK = { status: "approved", landed: 1 };
+const ackFate = async (env, o, at) => (isImported(o) ? IMPORTED_ACK : fate(env, o && o.queued && o.queued.ack, at));
 const FATE = (at) => "SELECT status, " + landedBy(at) + " AS landed FROM draft WHERE id=?1";
 const fate = async (env, id, at) => { try { return id ? await env.SALT_LEDGER.prepare(FATE(at === undefined ? await siteAt(env.SALT_LEDGER) : at)).bind(id).first() : null; } catch (e) { return null; } };
 /* a close names the row as the close will leave it (closedKey) before its Correction folds, and so does a close rejected
@@ -2134,6 +2145,7 @@ const AMENDS = "SELECT amends, json_extract(entry,'$.orderId') AS oid FROM draft
 async function rowOf(env, o, k, idx, amended, at) {
   if (await closeOnItsWay(env, o, at)) return null;
   const rids = amended.get(o.id), product = o.product || "salt";
+  if (isImported(o)) { const r = idx.byRid.get(o.rid); return r && (r.product || "salt") === product ? r : null; }   /* by rid first, and only by rid */
   if (rids) { const hit = [...rids].map((r) => idx.byRid.get(r)).filter((r) => r && (r.product || "salt") === product); return hit.length === 1 ? hit[0] : null; }
   const day = k.split("|").slice(1), hits = [o.code, bucketFor(o.code)].map((p) => [p].concat(day).join("|")).filter((c) => c !== k && idx.rows.get(c) === 1);
   const row = hits.length === 1 ? idx.byKey.get(hits[0]) : null;
@@ -2254,7 +2266,7 @@ async function followRows(env, orders, idx, at, { solo = false } = {}) {
   for (const o of orders) {
     const k = ledgerKeyOf(o);
     if (!k || !o.code || sharing.has(o.id)) continue;
-    const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);
+    const row = !isImported(o) && idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);
     if (!row || POSITION_ENGINE.ownerCode(row.customer) !== o.code) continue;
     const nk = POSITION_ENGINE.ovKey(row), friend = POSITION_ENGINE.isBucket(row.customer);
     if (nk !== k || !!o.forFriend !== friend) plan.push({ o, k, nk, friend, party: row.customer });
@@ -2600,7 +2612,7 @@ export async function tieOut(env, mirror, now = new Date()) {
     if ((o.payments || []).some((p) => p && p.claim === "waiting")) waiting.push({ ...item, what: diff.concat(["a payment they say they sent waits on your Received or Not found"]) });
     else if (await orderInFlight(env, o, bound)) waiting.push(item);
     else if (!row) {
-      const ack = await fate(env, o.queued && o.queued.ack, bound);
+      const ack = await ackFate(env, o, bound);
       /* its pending row rejected under Approve is no row to come: the re-offer is owed */
       if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["you rejected its sale under Approve: tap Accept again or cancel the order"]) });
       else if (!ack || !ack.landed) waiting.push(item); else faults.push(item);
@@ -2646,15 +2658,20 @@ const FIXED_MARK = "orders:fixed";
 /* PLAN 4 (16 Oct 2026): THE UNDOS ON SITE ORDERS' ROWS, as lines of the list sendFixes sends: each undo step on a row an order names (its one
    row by the key, never a twin's), what it took back (`took`, the fold's reading) as the order's undo fix, its id the row and the step, so a
    pass sends it once and the done mark keeps it from ever going twice. A change of terms took nothing back here: restateOrder told the order. */
+const undoId = (row, i) => ("un-" + String(row.rid).toLowerCase() + "-" + i).slice(0, 40);
+const isUndoStep = (a) => !!a && a.undoes != null && !!a.took;
+/** 20 Nov 2026 (order import): every undo id a row's past steps would make, for the import route to write into KV `orders:fixed` before an older sale's order lands, so none is ever sent to it. */
+export const importFixedIds = (row) => (row && row.rid ? (row.amend || []).flatMap((a, i) => (isUndoStep(a) && /^[a-z0-9-]{1,40}$/.test(undoId(row, i)) ? [undoId(row, i)] : [])) : []);
 export function undoFixes(orders, byKey, rows) {
   const out = [];
   for (const o of orders || []) {
     if (!o || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const k = ledgerKeyOf(o), row = byKey.get(k);
     if (!row || row.cancelled || !row.rid || (rows.get(k) || 0) > 1) continue;
+    const cut = isImported(o) ? klDate(new Date(o.at)) : null;   /* belt and braces: an older sale's order is never told an undo dated on or before its day */
     (row.amend || []).forEach((a, i) => {
-      if (!a || a.undoes == null || !a.took) return;
-      const id = ("un-" + String(row.rid).toLowerCase() + "-" + i).slice(0, 40);
+      if (!isUndoStep(a) || (cut && a.date && String(a.date) <= cut)) return;
+      const id = undoId(row, i);
       if (!/^[a-z0-9-]{1,40}$/.test(id)) return;   /* the order book's FIX_ID_RE */
       out.push(Object.assign({ id, order: o.id, undo: true }, +a.took.cash > 0.004 ? { unpay: +a.took.cash } : {}, +a.took.units > 0.0004 ? { unmove: +a.took.units } : {}));
     });

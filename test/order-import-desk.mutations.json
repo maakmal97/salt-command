@@ -1,0 +1,74 @@
+[
+ {
+  "name": "followRows reads an imported order's row by key, not rid",
+  "file": "src/orders.js",
+  "find": "const row = !isImported(o) && idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);",
+  "replace": "const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);"
+ },
+ {
+  "name": "rowOf looks for an imported order's row by rid no more",
+  "file": "src/orders.js",
+  "find": "if (isImported(o)) { const r = idx.byRid.get(o.rid); return r && (r.product || \"salt\") === product ? r : null; }",
+  "replace": "if (false) { return null; }"
+ },
+ {
+  "name": "undoFixes sends an imported order's past undo (belt)",
+  "file": "src/orders.js",
+  "find": "if (!isUndoStep(a) || (cut && a.date && String(a.date) <= cut)) return;",
+  "replace": "if (!isUndoStep(a)) return;"
+ },
+ {
+  "name": "undoFixes drops a later undo of an imported order",
+  "file": "src/orders.js",
+  "find": "(cut && a.date && String(a.date) <= cut)",
+  "replace": "(cut && a.date)"
+ },
+ {
+  "name": "importFixedIds names none",
+  "file": "src/orders.js",
+  "find": "export const importFixedIds = (row) => (row && row.rid ?",
+  "replace": "export const importFixedIds = (row) => (false ?"
+ },
+ {
+  "name": "importFixedIds names a step that is no undo",
+  "file": "src/orders.js",
+  "find": "(isUndoStep(a) && /^[a-z0-9-]{1,40}$/.test(undoId(row, i)) ?",
+  "replace": "(a && /^[a-z0-9-]{1,40}$/.test(undoId(row, i)) ?"
+ },
+ {
+  "name": "an imported order's day is today",
+  "file": "src/orders.js",
+  "find": "if (isImported(x) && x.queued && x.queued.ack) return klDate(new Date(x.queued.ack));",
+  "replace": "if (isImported(x) && x.queued && x.queued.ack) return klDate(new Date());"
+ },
+ {
+  "name": "the tie-out asks the drafts for an imported order's ack",
+  "file": "src/orders.js",
+  "find": "const ack = await ackFate(env, o, bound);",
+  "replace": "const ack = await fate(env, o.queued && o.queued.ack, bound);"
+ },
+ {
+  "name": "isImported reads any order with a rid",
+  "file": "src/orders.js",
+  "find": "export const isImported = (o) => !!o && o.imported === true && !!o.rid;",
+  "replace": "export const isImported = (o) => !!o && !!o.rid && false;"
+ },
+ {
+  "name": "a change of an imported order reaches the price",
+  "file": "src/orders.js",
+  "find": "if (isImported(o) && stage === \"amend\") return { ok: false, status: 409, error: IMPORTED_SAYS };   /* an older",
+  "replace": "if (false) return { ok: false, status: 409, error: IMPORTED_SAYS };   /* an older"
+ },
+ {
+  "name": "the engine says its pending row is not drafted for an imported order",
+  "file": "engine/stages.mjs",
+  "find": "const NO_ROW = (r, imported) => imported ?",
+  "replace": "const NO_ROW = (r, imported) => false ?"
+ },
+ {
+  "name": "pendingDay asks the database for an imported order",
+  "file": "src/orders.js",
+  "find": "if (isImported(x) && x.queued && x.queued.ack) return klDate(new Date(x.queued.ack));",
+  "replace": "if (false) return null;"
+ }
+]

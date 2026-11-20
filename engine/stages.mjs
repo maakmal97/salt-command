@@ -532,18 +532,18 @@ export function floorRefusal(price, fl, qty) {
    row it moves. `rd` is the redate entry's draft ({entry, status}) or null and `ackRow` the pending row's draft ({row, status})
    or null, both read by the caller (ackRowWanted says whether the second is needed). Returns { ok, against, waits } or the
    refusal. The book is never changed. */
-const NO_ROW = (r) => ({ ok: false, status: 409, error: "its pending row " + (r ? "was rejected" : "is not drafted yet") + ", so there is no row for this to amend" });
+const NO_ROW = (r, imported) => imported ? ({ ok: false, status: 409, error: "an older sale's order changes on the book, not here" }) : ({ ok: false, status: 409, error: "its pending row " + (r ? "was rejected" : "is not drafted yet") + ", so there is no row for this to amend" });
 export const ackRowWanted = (book, entry, rd) => {
   const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
   return rd && rd.status !== "rejected" ? !open[JSON.parse(rd.entry).payload.orderKey] : !open[entry.payload.orderKey];
 };
-export function stageAgainst(book, entry, rd, ackRow) {
+export function stageAgainst(book, entry, rd, ackRow, imported) {
   const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
   if (rd && rd.status !== "rejected") {
     const re = JSON.parse(rd.entry), was = re.payload.orderKey, day = re.payload.fields.date;
     let base = book;
     if (!open[was]) {
-      if (!ackRow || ackRow.status === "rejected") return NO_ROW(ackRow);
+      if (!ackRow || ackRow.status === "rejected") return NO_ROW(ackRow, imported);
       base = withPending(book, JSON.parse(ackRow.row));
     }
     const row = (base.sales || []).find((s) => POSITION_ENGINE.ovKey(s) === was);
@@ -553,7 +553,7 @@ export function stageAgainst(book, entry, rd, ackRow) {
     return { ok: true, waits: true, against: withPending(Object.assign({}, base, { sales, state: st }), Object.assign({}, row, { date: day })) };
   }
   if (!open[entry.payload.orderKey]) {
-    if (!ackRow || ackRow.status === "rejected") return NO_ROW(ackRow);
+    if (!ackRow || ackRow.status === "rejected") return NO_ROW(ackRow, imported);
     return { ok: true, waits: true, against: withPending(book, JSON.parse(ackRow.row)) };
   }
   return { ok: true, waits: false, against: book };
