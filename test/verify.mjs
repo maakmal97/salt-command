@@ -51386,6 +51386,16 @@ await (async () => {
   await (await import("./admin-live-credit.mjs")).run({ ok, pageWork });
 })();
 
+section("20 Nov 2026: the engine's accountStanding is the statement's own reading on every book");
+await (async () => {
+  await (await import("./standing-parity.mjs")).run({ ok });
+})();
+
+section("20 Nov 2026: Salt Admin's They owe is the Desk's standing, and its card says what their page still shows");
+await (async () => {
+  await (await import("./admin-live-owed.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Admin Customers P4: This customer and the associate reward by the account's code, behind both locks (26 Oct 2026)");
 await (async () => {
   await (await import("./admin-cust-reads.mjs")).run({ ok, pageWork });

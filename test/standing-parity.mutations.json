@@ -1,0 +1,44 @@
+[
+ {
+  "name": "S1: an agreed row is owed, as partyOwedRM counts it",
+  "file": "engine/position.mjs",
+  "find": "return {owed:(pending||cancelled||gift)?0:",
+  "replace": "return {owed:(cancelled||gift)?0:"
+ },
+ {
+  "name": "S1: a cancelled row's goods count",
+  "file": "engine/position.mjs",
+  "find": "toGet:(!pending&&!cancelled&&toGet>0)?toGet:0",
+  "replace": "toGet:(!pending&&toGet>0)?toGet:0"
+ },
+ {
+  "name": "S1: agreed carries the delivery",
+  "file": "engine/position.mjs",
+  "find": "pend:pending&&!gift?(+s.total||0):0",
+  "replace": "pend:pending&&!gift?txOwed(s):0"
+ },
+ {
+  "name": "S2: the day read is ignored",
+  "file": "engine/position.mjs",
+  "find": "if(txStat(s).order!=='Pending'&&end&&new Date(s.date)>end)return;",
+  "replace": "if(false)return;"
+ },
+ {
+  "name": "S2: an agreed row keeps to the window",
+  "file": "engine/position.mjs",
+  "find": "if(txStat(s).order!=='Pending'&&end&&new Date(s.date)>end)return;",
+  "replace": "if(end&&new Date(s.date)>end)return;"
+ },
+ {
+  "name": "S4: a bucket's row is not its owner's",
+  "file": "engine/position.mjs",
+  "find": "if(!s||!ownsCode(party,s.customer))return;",
+  "replace": "if(!s||s.customer!==party)return;"
+ },
+ {
+  "name": "S1: the parity reads a figure that is not a number as equal",
+  "file": "test/standing-parity.mjs",
+  "find": "      if (bad || Math.abs",
+  "replace": "      if (Math.abs"
+ }
+]

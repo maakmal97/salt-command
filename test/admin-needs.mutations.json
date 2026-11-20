@@ -572,8 +572,8 @@
  {
   "name": "a failed owed read is not noted",
   "file": "stmt/owner.js",
-  "find": "}catch(error){ nGot('book', error); apply=failNew('book', error); }",
-  "replace": "}catch(error){ apply=failNew('book', error); }"
+  "find": "      nGot('book', error); apply=failNew('book', error);",
+  "replace": "      apply=failNew('book', error);"
  },
  {
   "name": "the owed read is not on the tick",

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "E2: a written-off row's goods do not count",
+    "file": "engine/position.mjs",
+    "find": "const toGet=+(s.qty-(+(s.deliveredQty||0))-(+(s.settledKg||0))).toFixed(4);",
+    "replace": "const toGet=s.defaulted?0:+(s.qty-(+(s.deliveredQty||0))-(+(s.settledKg||0))).toFixed(4);"
+  },
+  {
+    "name": "E2: a written-off row is owed",
+    "file": "engine/position.mjs",
+    "find": "owed=s.defaulted?0:bal;",
+    "replace": "owed=bal;"
+  },
+  {
+    "name": "D1: the Desk sends no standing",
+    "file": "src/maker-inputs.js",
+    "find": "    standing: { today, rows:",
+    "replace": "    standingOff: { today, rows:"
+  },
+  {
+    "name": "D1: buckets get their own row",
+    "file": "src/maker-inputs.js",
+    "find": "standing: { today, rows: bookRoster.filter((id) => !POSITION_ENGINE.isBucket(id))",
+    "replace": "standing: { today, rows: bookRoster.filter((id) => true)"
+  },
+  {
+    "name": "O1: the card never reads the standing",
+    "file": "stmt/owner.js",
+    "find": "if(st){ m=st.filter(",
+    "replace": "if(false){ m=st.filter("
+  },
+  {
+    "name": "O1: Salt Admin drops the standing it is sent",
+    "file": "stmt/owner.js",
+    "find": "standing:c.standing&&Array.isArray(c.standing.rows)?c.standing:null};",
+    "replace": "standing:null};"
+  },
+  {
+    "name": "O4: a code the list does not name stands at nought",
+    "file": "stmt/owner.js",
+    "find": "[0]; if(m){ t.owed=+m.owed||0; t.toGet=+m.toGet||0; t.pend=+m.pend||0; } }",
+    "replace": "[0]||{}; t.owed=+m.owed||0; t.toGet=+m.toGet||0; t.pend=+m.pend||0; }"
+  },
+  {
+    "name": "O2: the card never says their page differs",
+    "file": "stmt/owner.js",
+    "find": "    if(differsLine(a)){ var dl=",
+    "replace": "    if(false){ var dl="
+  },
+  {
+    "name": "O5: the mark shows whatever the figures",
+    "file": "stmt/owner.js",
+    "find": "o.differs=Math.abs((+t.owed||0)-(+seal.t.owed||0))>0.009||o.flag!==seal.flag?",
+    "replace": "o.differs=true?"
+  },
+  {
+    "name": "O2: the mark names no time",
+    "file": "stmt/owner.js",
+    "find": "+(d.at?', from '+hm(d.at)",
+    "replace": "+(false?', from '+hm(d.at)"
+  },
+  {
+    "name": "E6: goodwill is not a gift",
+    "file": "engine/position.mjs",
+    "find": "const gift=!!s.goodwill||(!!s.rebate&&paid<=0.009&&owed<=0.009),pending",
+    "replace": "const gift=(!!s.rebate&&paid<=0.009&&owed<=0.009),pending"
+  },
+  {
+    "name": "O6: a failed read keeps the live figures",
+    "file": "stmt/owner.js",
+    "find": "unSeal(); apply=true; }",
+    "replace": "apply=true; }"
+  },
+  {
+    "name": "O7: the mark always speaks of owed",
+    "file": "stmt/owner.js",
+    "find": "pend:rm(+s.pend||0)+' agreed'}[d.seal.flag]||'nothing owed';",
+    "replace": "pend:rm(+s.pend||0)+' agreed'}['owes'];"
+  },
+  {
+    "name": "O6: a failed read leaves the last answer remembered",
+    "file": "stmt/owner.js",
+    "find": "delete nSeen.book; unSeal();",
+    "replace": "unSeal();"
+  }
+]

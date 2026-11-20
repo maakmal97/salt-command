@@ -899,6 +899,13 @@ export function partyTotals(party, to) {
   const rows = stmtRows(party, o);
   return accountTotals(rows, stmtRefunds(party, o));
 }
+/* 20 Nov 2026 (docs/plan-admin-live-owed.html P4): the same over another book, the lists swapped and put back as liveFor does,
+   for the parity check that pins the engine's accountStanding to this reading; nothing here publishes */
+export function partyTotalsFor(other, party, to) {
+  const was = [sales, customerRefunds];
+  sales = (other && other.sales) || []; customerRefunds = (other && other.customerRefunds) || [];
+  try { return partyTotals(party, to); } finally { [sales, customerRefunds] = was; }
+}
 
 /* ---- WHAT IS TO PAY NOW, WHAT IS OVERDUE AND WHAT IS COMING UP (S6, his D9 of 24 Sep 2026) ----
    The engine's own readings, so the customer reads what his Order book reads and the site prices
