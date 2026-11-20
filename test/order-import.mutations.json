@@ -92,7 +92,7 @@
  {
   "name": "I5: a shared key is imported",
   "file": "engine/stages.mjs",
-  "find": "if (live.filter((s) => s !== row).length) return no(",
+  "find": "if (other.length) return no(",
   "replace": "if (false) return no("
  },
  {
@@ -142,5 +142,11 @@
   "file": "engine/stages.mjs",
   "find": "o.queued = { ack: at, paid: o.paid, moved: o.moved };",
   "replace": "o.queued = { ack: at, paid: o.paid, moved: 0 };"
+ },
+ {
+  "name": "I5: a cancelled twin on the key is not counted",
+  "file": "engine/stages.mjs",
+  "find": "for (const s of sales) { const k = E.ovKey(s);",
+  "replace": "for (const s of sales) if (!s.cancelled) { const k = E.ovKey(s);"
  }
 ]

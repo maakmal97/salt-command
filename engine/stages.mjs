@@ -961,7 +961,8 @@ export function importOf(row, ctx) {
   if (!u) return no("the account has no username");
   if (c.test && c.test.has(u)) return no("a test account");
   const key = E.ovKey(row), live = (c.keys && c.keys.get(key)) || [];
-  if (live.filter((s) => s !== row).length) return no("another live sale shares its key");
+  const other = live.filter((s) => s !== row);
+  if (other.length) return no(other.some((s) => !s.cancelled) ? "another live sale shares its key" : "another sale, cancelled, shares its key");
   const orders = c.orders || [];
   const named = orders.find((o) => o && ((o.rid && o.rid === row.rid) || (o.ledgerKey && ledgerKeyOf(o) === key)));
   if (named) return no("an order already names it (" + named.id + ")");
@@ -989,7 +990,7 @@ export function importOf(row, ctx) {
 export function importPlan(book, ctx) {
   const E = POSITION_ENGINE, sales = ((book && book.sales) || []).filter((s) => s && s.customer);
   const keys = new Map();
-  for (const s of sales) if (!s.cancelled) { const k = E.ovKey(s); (keys.get(k) || keys.set(k, []).get(k)).push(s); }
+  for (const s of sales) { const k = E.ovKey(s); (keys.get(k) || keys.set(k, []).get(k)).push(s); }
   const c = Object.assign({}, ctx, { keys }), orders = [], refused = [], done = new Set();
   const trips = new Map();
   for (const s of sales) if (s.trip && !s.cancelled) (trips.get(s.trip) || trips.set(s.trip, []).get(s.trip)).push(s);

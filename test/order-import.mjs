@@ -59,7 +59,7 @@ export async function run({ ok }) {
   const pair = importPlan({ sales: [row({ rid: "s420" }), row({ rid: "s421" })] }, ctx());
   ok(!pair.orders.length && pair.refused.length === 2 && /shares its key/.test(pair.refused[0].why), "I5: a key two live rows share refuses both: " + J(pair.refused));
   const live = importPlan({ sales: [row({ rid: "s420" }), row({ rid: "s421", cancelled: true })] }, ctx());
-  ok(live.orders.length === 1, "I5: a cancelled row does not share a key");
+  ok(!live.orders.length && live.refused.some((r) => /another sale, cancelled, shares its key/.test(r.why)), "I5: a live row beside a cancelled twin on its key is refused, saying so: " + J(live.refused));
   const key = POSITION_ENGINE.ovKey(row());
   R(/names it/, why({}, { orders: [{ id: "x1", u: "abcd-efgh", ledgerKey: key, product: "salt" }] }), "named by an order's key");
   R(/names it/, why({ product: "oil", delivery: 0, cash: 190 }, { orders: [{ id: "x2", u: "abcd-efgh", ledgerKey: "CQ4-ZEN|2026-11-10|190", product: "oil" }] }), "named by an old untailed key");
