@@ -43,7 +43,7 @@ export function mastersPresent() {
   return existsSync(join(PAY_MASTER, "accounts.json")) && existsSync(join(QR_REPO, "wrangler.jsonc"));
 }
 
-/** What the page may know about each account: the key, the name, the bank and the rails. */
+/** What the page may know about each account: the key, the name, the bank, the rails and a note where one is set. */
 export function shipAccounts(doc) {
   return (doc.accounts || []).map((a) => ({
     key: String(a.key),
@@ -52,7 +52,9 @@ export function shipAccounts(doc) {
     qr: !!a.payload,
     transfer: !!a.bank,
     jompay: !!a.biller,
-    maintenance: !!a.maintenance
+    maintenance: !!a.maintenance,
+    /* one plain line a payer reads before a transfer (Wise, 20 Nov 2026: which banks cannot send to it); only where the store sets one */
+    ...(a.note ? { note: String(a.note) } : {})
   }));
 }
 

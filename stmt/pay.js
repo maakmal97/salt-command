@@ -12,7 +12,8 @@ export const PAY_ACCOUNTS = [
   "qr": false,
   "transfer": true,
   "jompay": false,
-  "maintenance": false
+  "maintenance": false,
+  "note": "DuitNow Transfer only. Not from HSBC, Alliance Bank or AEON Bank."
  },
  {
   "key": "maybank",

@@ -9777,10 +9777,12 @@ await (async () => {
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
   const ship = shipAccounts({ accounts: [
-    { key: "x", name: "X", sub: "1234 5678", payload: "00020101", acct: "12345678", bank: "X Bank", mid: "123456", biller: "biller-x", ref1: "601112345" },
+    { key: "x", name: "X", sub: "1234 5678", payload: "00020101", acct: "12345678", bank: "X Bank", mid: "123456", biller: "biller-x", ref1: "601112345", note: "Not from Q Bank." },
     { key: "y", name: "Y", bank: "Y Bank", maintenance: true }] });
   ok(ship.length === 2 && ship[0].qr && ship[0].transfer && ship[0].jompay && !ship[1].qr && ship[1].transfer && !ship[1].jompay && ship[1].maintenance,
     "a rail is derived from the record: a payload is a code, a bank is a transfer, a biller is JomPAY");
+  ok(ship[0].note === "Not from Q Bank." && !("note" in ship[1]),
+    "an account's note ships where the store sets one, and an account without one carries no note field: " + JSON.stringify([ship[0].note, Object.keys(ship[1])]));
   const rendered = renderPayJs(ship);
   ok(!/12345678|123456|60111|000201|1234 5678/.test(rendered) && rendered.includes('"key": "x"') && !/https?:/.test(rendered) && !/PAY_SITE|payHref/.test(rendered),
     "and what is rendered carries the key, the name, the bank and the rails, and no number, payload, member number, reference, address or link");

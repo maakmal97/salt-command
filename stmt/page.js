@@ -6033,6 +6033,7 @@ const CLIENT_JS = `
       body.appendChild(sv); body.appendChild(el('p','amb-basis',tw('pay.codeHint')));
     }
     if(num) plate('payAcctNo',tw('pay.acctNo'),groupFours(num),ac.bank||ac.name,num,'pay.acctCopy',true);
+    if(num&&ac.note) plate('payNote',tw('pay.note'),ac.note,'',null);   /* the account's one line, which banks cannot send to it (Wise, 20 Nov 2026); read, never copied */
     if(jom){
       plate('payBiller',tw('pay.biller'),jom.biller,ac.name,jom.biller,'pay.billerCopy',true);
       plate('payRef1',tw('pay.ref1'),jom.ref1,'',jom.ref1,'pay.ref1Copy',true);

@@ -982,5 +982,17 @@
   "file": "stmt/page.js",
   "find": "var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');\n    s.setAttribute('aria-hidden','true');",
   "replace": "var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');"
+ },
+ {
+  "name": "the account's note is not drawn",
+  "file": "stmt/page.js",
+  "find": "    if(num&&ac.note) plate('payNote',tw('pay.note'),ac.note,'',null);   /* the account's one line, which banks cannot send to it (Wise, 20 Nov 2026); read, never copied */\n",
+  "replace": ""
+ },
+ {
+  "name": "the account's note is drawn on every account",
+  "file": "stmt/page.js",
+  "find": "if(num&&ac.note) plate('payNote',tw('pay.note'),ac.note,'',null);",
+  "replace": "if(num) plate('payNote',tw('pay.note'),ac.note||'-','',null);"
  }
 ]

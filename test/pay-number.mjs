@@ -39,7 +39,7 @@ export const NOT_SCANNED = /^(master|public|ledger|test\/fixtures|test\/vendor)\
    marks, a purpose label, the group an account sits in and the group names), and the store's own bookkeeping. A generic word of those is in half
    the repository. */
 const PUBLIC_FIELDS = ["accounts[].key", "accounts[].name", "accounts[].bank", "accounts[].brand", "accounts[].ring", "accounts[].bankMark", "accounts[].holderMark",
-  "accounts[].tag", "accounts[].group", "accounts[].maintenance", "rev", "updated"];
+  "accounts[].tag", "accounts[].group", "accounts[].note", "accounts[].maintenance", "rev", "updated"];
 const publicField = (path) => PUBLIC_FIELDS.includes(path) || path === "groups" || path.startsWith("groups.") || path.startsWith("groups[");
 export function leavesOf(doc) {
   const out = [];
@@ -424,6 +424,16 @@ export async function run({ ok, okOff, pageWork, KV }) {
     ok(waysOf(W1) === "transfer*" && waysOf(W2) === "qr*" && tilesOf(W2).join() === "maybank" && tilesOf(W1).join() === "ambank",
       "with only a number the sheet offers Transfer alone, with only a code Scan a code alone (chosen, so the sheet is never on a way with nothing to show), and neither says the accounts cannot be shown: " + waysOf(W1) + " | " + waysOf(W2));
     W1.d.getElementById("payX").click(); W2.d.getElementById("payX").click();
+
+    /* an account's note (Wise, 20 Nov 2026): on Transfer, a plain row after the account number, read and never copied; an account without one has none */
+    const WISE = PAY_ACCOUNTS.find((a) => a.key === "wise"), WN = await openPage({ numbers: { wise: { number: NUMBER }, ambank: { number: DIG("5550", "9999", "0001") } } });
+    WN.open(); WN.pick("wise");
+    const wRows = [...WN.d.querySelectorAll("#payBody .payref > .amb-plate__row")], wNote = WN.d.getElementById("payNote");
+    const wiseNote = !!wNote && wRows[1] === wNote && wNote.tagName === "DIV" && tx(wNote.querySelector(".amb-plate__label")) === "Note" && tx(wNote.querySelector(".amb-plate__value")) === WISE.note;
+    WN.pick("ambank");
+    ok(!!WISE && /DuitNow Transfer only/.test(WISE.note || "") && wiseNote && !WN.d.getElementById("payNote"),
+      "Wise's note stands as a plain row after its account number, and AmBank, with none, shows no note: " + JSON.stringify([!!WISE && WISE.note, wRows.map((r) => r.id), !!WN.d.getElementById("payNote")]));
+    WN.d.getElementById("payX").click();
 
     /* with a canvas the same modules are painted onto it and the code stands as a PNG picture a long press can save; Save offers the file */
     const C1 = await openPage({ numbers: BASE, canvas: true, share: "ok" });

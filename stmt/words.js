@@ -1061,6 +1061,7 @@ export const EN = {
   /* Phase 7b (11 Oct 2026): the account number beside the reference */
   "pay.what": "What this pays",
   "pay.acctNo": "Account number",
+  "pay.note": "Note",
   "pay.acctCopy": "Copy the account number",
   /* 06 Nov 2026: the sheet draws the code and the details itself, and links nowhere */
   "pay.biller": "Biller code",
