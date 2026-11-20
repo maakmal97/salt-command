@@ -105,6 +105,7 @@ export const EN = {
   "e.claimHowMuch": "say how much you sent",
   "e.claimsMax": "there are already {n} payments of yours waiting for us to confirm",
   "e.rateEarly": "an order is rated once all of it is with you",
+  "e.rateNone": "this order is not rated",
   "e.rated": "this order is rated already",
   "e.rateStars": "choose from one to five stars",
   /* F13: a slip rides on the claim, sealed on their phone; these are the Worker's refusals of one */

@@ -344,6 +344,8 @@ export const customerView = (o) => {
   if (o && o.price) v.price = priceView(o.price);
   /* 10 Oct 2026: that the exact spot is shared, never its id: the id names a sealed record they have no road to */
   if (o && o.pin) v.pinned = true;
+  /* 20 Nov 2026: an older sale entered by the Desk is never asked how it was; the flag says so and names nothing else */
+  if (o && o.imported === true) v.norate = true;
   return v;
 };
 
@@ -906,6 +908,7 @@ export function decideCustomer(order, action, body, mine, at) {
   }
   if (action === "rate") {
     /* F10: one rating, one to five stars, once every unit is with them; a second is refused, never a change of mind */
+    if (order.imported === true) return Object.assign(refusal("rateNone"), { status: 409 });
     if (!handedAll(order)) return Object.assign(refusal("rateEarly"), { status: 409 });
     if (order.rating) return Object.assign(refusal("rated"), { status: 409 });
     const n = body && body.stars;

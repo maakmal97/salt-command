@@ -130,5 +130,23 @@
 "file": "stmt/worker.js",
 "find": "json({ ok: true, results: r.results });\n  }\n  if (p === \"/desk/orders/store-check\")",
 "replace": "json({ ok: true });\n  }\n  if (p === \"/desk/orders/store-check\")"
+},
+{
+"name": "B8 the page asks a rating of an imported order",
+"file": "stmt/page.js",
+"find": "movedAll(o)&&!o.norate&&!o.rating",
+"replace": "movedAll(o)&&!o.rating"
+},
+{
+"name": "B8 the flag is not carried",
+"file": "stmt/orders.js",
+"find": "  if (o && o.imported === true) v.norate = true;\n",
+"replace": ""
+},
+{
+"name": "B8 a rating of an imported order is taken",
+"file": "stmt/orders.js",
+"find": "    if (order.imported === true) return Object.assign(refusal(\"rateNone\"), { status: 409 });\n",
+"replace": ""
 }
 ]

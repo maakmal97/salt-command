@@ -5067,7 +5067,7 @@ const CLIENT_JS = `
      banner and by a card on Home (for a phone with no banners), and answered on the order or on the card alike. The
      card asks while the handover is under two weeks old, as the banner does; the order asks for good. A rating stands:
      it is said as five marks, never asked again. His read-only view shows a rating and asks nothing. ---- */
-  function rateOpen(o){ return movedAll(o)&&!o.rating&&o.status!=='declined'&&o.status!=='cancelled'; }
+  function rateOpen(o){ return movedAll(o)&&!o.norate&&!o.rating&&o.status!=='declined'&&o.status!=='cancelled'; }
   function dayMinus(n){ var p=klBits(new Date().toISOString()); return new Date(Date.UTC(+p.year,+p.month-1,+p.day)-n*864e5).toISOString().slice(0,10); }
   function rateDue(o){ var d=String(o.movedOn||''); return !view&&rateOpen(o)&&/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)&&d<=dayMinus(2); }
   function rateHome(o){ return rateDue(o)&&String(o.movedOn)>dayMinus(14); }

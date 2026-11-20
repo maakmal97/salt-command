@@ -5,8 +5,9 @@
  *   B9 the Desk's route answers per order, and only on its key
  * Every group is red under its own mutation (test/order-import-book.mutations.json). */
 import { orderBook } from "./orderbook-harness.mjs";
-import { customerView, rateAskable, rateDue, isAdvance, wakes, marksOf, importOrders, unimportOrders } from "../stmt/orders.js";
+import { decideCustomer, customerView, rateAskable, rateDue, isAdvance, wakes, marksOf, importOrders, unimportOrders } from "../stmt/orders.js";
 import { confirmWithin } from "../stmt/confirm.js";
+import { readFileSync } from "node:fs";
 
 const J = JSON.stringify;
 const KEY = "import-book-bridge-key-0123456789abcdef";
@@ -102,6 +103,13 @@ export async function run({ ok, skip }) {
   const o = h.book.order("abcd-efgh", "20261110000000-i421"), v = customerView(o);
   ok(!("rid" in v) && !("imported" in v) && !("ledgerKey" in v) && !("queued" in v) && !("rateAsk" in v) && v.rowOn === "2026-11-10", "B8: a customer reads no rid, imported mark, key or queue: " + J(Object.keys(v)));
   ok(!rateAskable(mk()) && !rateDue(mk(), new Date("2026-11-20T09:00:00Z")), "B8: no rating is ever asked of it");
+  /* the page's own rating test, lifted from its source and run on the order as the customer is sent it */
+  const src = readFileSync(new URL("../stmt/page.js", import.meta.url), "utf8");
+  const fn = (n) => { const i = src.indexOf("function " + n + "(o)"); return i < 0 ? "" : src.slice(i, src.indexOf("\n", i) + 1); };
+  const pageDue = new Function("view", "movedAll", "dayMinus", fn("rateOpen") + fn("rateDue") + fn("rateHome") + "return { due: rateDue, home: rateHome };")(false, (x) => (+x.moved || 0) >= (+x.qty || 0), () => "2026-11-18");
+  ok(v.norate === true && !pageDue.due(v) && !pageDue.home(v), "B8: the page asks no rating of it (norate): " + J(v));
+  ok(pageDue.due(Object.assign({}, v, { norate: undefined })) === true, "B8: and the page's test does ask of an order without the flag");
+  ok(decideCustomer(o, "rate", { stars: 5 }, [], AT).status === 409, "B8: a rating of it is refused");
   ok(!isAdvance(mk()), "B8: it is never chased");
   ok(confirmWithin([mk(), mk({ id: "20261110000000-i499" })], { schedule: null }) === null, "B8: the confirm time never measures it");
 
