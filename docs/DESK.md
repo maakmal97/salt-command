@@ -616,8 +616,12 @@
   whose row was later paid less. Paid out in cash, the hand road stays: `paidOn` in the book.
   **Salt Admin's account list reads each credit live** (20 Nov 2026, his yes): `liveAcct` in `stmt/owner.js` lays the Desk's
   `openRefunds` (by the exact code, as `stmtRefunds` counts) over the sealed sheet's `t.refund` and chooses the flag again in
-  `reviewFlag`'s order, so a refund paid or removed leaves the card at the Desk's next read, not the next publish. What they owe
-  on the card stays the sealed statement's; the sealed figures stand alone while the Desk names no refunds.
+  `reviewFlag`'s order, so a refund paid or removed leaves the card at the Desk's next read, not the next publish; the sealed
+  figures stand alone while the Desk names no refunds. **And what they owe, the goods owed them and what is agreed** (20 Nov 2026,
+  `docs/plan-admin-live-owed.html`): the catalog's `standing`, the engine's `accountStanding` by the statement's own row rule,
+  pinned to `make_statements`' `partyTotals` on the live, frozen and practice books by `test/standing-parity.mjs`; a party it leaves
+  out is nought once the list arrived. Their page and the Counter's hold on ordering still read the sealed figures, so where owed or
+  the word differ the card says what their page shows and from when (`differsLine`).
 - **The delivery fee by distance** (F15, 29 Sep 2026; the Desk's Site orders card left on 18 Oct 2026): a delivery's card, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
   device: `navigator.geolocation` read once, fresh (kept nowhere), else `_base`; to the
