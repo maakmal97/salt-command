@@ -498,6 +498,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   not on the flip to `kv`.**
   Rejecting a draft a site order made is asked first and written onto that order, and its move is
   offered again under a fresh entry (the stage's own tap, or `/again`; `again` on `GET /orders`).
+- **An older sale is a site order, born told** (his yes of 20 Nov 2026): taken in once by `tools/orders-import.mjs` over the Desk's keyed `/orders/import`, dry first and on a clean tie-out only, already level with its row so nothing is booked twice and nobody is woken; found by its row's `rid`, changed on the book alone. Mechanism: `docs/STATEMENTS.md`.
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces. `siteWords` reads
