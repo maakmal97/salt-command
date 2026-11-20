@@ -7,8 +7,8 @@
 export const PAY_ACCOUNTS = [
  {
   "key": "wise",
-  "name": "JPMorgan Chase",
-  "bank": "JPMorgan Chase Bank Berhad",
+  "name": "Wise",
+  "bank": "Wise",
   "qr": false,
   "transfer": true,
   "jompay": false,
@@ -76,6 +76,15 @@ export const PAY_ACCOUNTS = [
   "transfer": true,
   "jompay": false,
   "maintenance": false
+ },
+ {
+  "key": "atlas",
+  "name": "ATLAS",
+  "bank": "Bank Muamalat",
+  "qr": true,
+  "transfer": true,
+  "jompay": false,
+  "maintenance": true
  },
  {
   "key": "tng",
