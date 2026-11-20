@@ -737,6 +737,11 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     /* S5f-5: the refunds the book still owes (no paid day), and the edits of them already waiting, for Salt Admin's refund card (Ask A); nothing here prices */
     openRefunds: ((book && book.customerRefunds) || []).filter((r) => r && !r.paidOn && +r.amount > 0.004 && typeof r.party === "string" && typeof r.since === "string")
       .map((r) => ({ party: r.party, since: r.since, amount: +r.amount, ...(r.rid ? { rid: r.rid } : {}) })),
+    /* 20 Nov 2026 (docs/plan-admin-live-owed.html P2): each owner's standing off the live book, by the statement's own rule (the engine's
+       accountStanding, pinned to it by test/standing-parity.mjs), so Salt Admin's card says what they owe without waiting on a publish; codes
+       and figures only, the bucket read with its owner */
+    standing: { today, rows: bookRoster.filter((id) => !POSITION_ENGINE.isBucket(id))
+      .map((id) => ({ party: id, ...POSITION_ENGINE.accountStanding(book.sales || [], id, today) })) },
     editWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "edit")
       .map((entry) => ({ party: entry.payload.party, since: entry.payload.since, amount: +entry.payload.amount })),
     /* 11 Nov 2026, the price band's version 2 (Salt Admin's Market part): the day's move and its words as the snapshot reads them, the points he has set, the sizes a point may name and the market edits waiting under Approve; nothing here prices */
