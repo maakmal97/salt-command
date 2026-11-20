@@ -29,8 +29,9 @@ import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
-import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor } from "../engine/stages.mjs";
+import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor, importPlan } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
+import { TEST_USERS } from "../stmt/testusers.js";
 import { reasonOf, outsideBand, bandRefusal, markOf, markOk } from "../engine/oneoff.mjs";
 import { expectFault } from "../engine/expect.mjs";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, tripOf, tripLines, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
@@ -2668,7 +2669,7 @@ export function undoFixes(orders, byKey, rows) {
     if (!o || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const k = ledgerKeyOf(o), row = byKey.get(k);
     if (!row || row.cancelled || !row.rid || (rows.get(k) || 0) > 1) continue;
-    const cut = isImported(o) ? klDate(new Date(o.at)) : null;   /* belt and braces: an older sale's order is never told an undo dated on or before its day */
+    const cut = isImported(o) ? klDate(new Date(o.importedAt || o.at)) : null;   /* belt and braces: an older sale's order is never told an undo dated on or before the moment it was imported (its day when none is kept) */
     (row.amend || []).forEach((a, i) => {
       if (!isUndoStep(a) || (cut && a.date && String(a.date) <= cut)) return;
       const id = undoId(row, i);
@@ -2700,6 +2701,70 @@ export async function sendFixes(env, orders, fixes) {
   return Object.assign({ sent }, refused.length ? { refused } : {}, waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
 }
 
+/* ---- THE ORDER IMPORT'S DESK ROUTE (20 Nov 2026, docs/plan-order-import.html, Part 5) ----------------------------------------------------
+ * POST /orders/import {rids, dry}: builds each asked row's order from the Book through the pass's own reader (never the laptop's book.json), by the
+ * engine's importPlan, and answers a verdict a rid. Refused whole unless the tie-out is clean with nothing waiting. A real run writes every past undo
+ * id of each row into KV `orders:fixed` FIRST, then sends the batch to the Counter stamped `importedAt` (the moment, which the undo belt reads), and answers
+ * the Counter's per-order result. A trip is imported whole, so a line asked without its siblings is refused. */
+export const IMPORT_MAX = 20;
+export async function deskImport(env, b, mirror, now = new Date()) {
+  const no = (status, error) => ({ ok: false, status, error });
+  const rids = b && Array.isArray(b.rids) ? b.rids.map((x) => String(x || "")) : [];
+  if (!rids.length || rids.length > IMPORT_MAX || rids.some((x) => !x)) return no(400, "send 1 to " + IMPORT_MAX + " rids");
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE) return no(503, "the book is not configured");
+  const dry = !(b && b.dry === false);
+  mirror = mirror || bookOnce(env.SALT_LEDGER);
+  const tie = await tieOut(env, mirror, now);
+  if (!tie.ok) return no(409, "the tie-out could not be read (" + (tie.error || "no reason given") + "), so nothing is imported");
+  if (!tie.clean || tie.waiting.length) return no(409, "the book and the orders do not agree yet (" + tie.faults.length + " fault" + (tie.faults.length === 1 ? "" : "s") + ", " + tie.waiting.length + " waiting), so nothing is imported");
+  const book = await mirror().catch(() => null);
+  if (!book || !book.sales) return no(503, "the book could not be read");
+  const r = await listOrders(env, true);
+  if (!r.ok) return no(503, "the site's orders could not be read: " + (r.error || ""));
+  const names = await usersMap(env), users = {};
+  for (const [u, code] of Object.entries(names)) if (typeof code === "string" && !users[code]) users[code] = u;
+  for (const s of book.sales) if (s && POSITION_ENGINE.isBucket(s.customer) && !users[s.customer]) { const own = users[POSITION_ENGINE.ownerCode(s.customer)]; if (own) users[s.customer] = own; }
+  /* what is on its way to a row: every draft not yet in the book that names its rid or its key, whatever it is */
+  const onWay = new Set();
+  const rs = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE " + onItsWay(boundOf(book))).all();
+  for (const x of rs.results || []) {
+    let e = null; try { e = JSON.parse(x.entry); } catch (_) { e = null; }
+    const p = e && e.payload;
+    if (p) { if (p.rid) onWay.add(String(p.rid)); if (p.orderKey) onWay.add(String(p.orderKey)); }
+  }
+  const room = await rowRoom(env.SALT_LEDGER, "SELL", undefined, mirror), live = (book.sales || []).filter((s) => s && !s.cancelled);
+  for (const s of live) { const k = POSITION_ENGINE.ovKey(s), q = s.rid && room(k, { payload: { rid: s.rid } }); if (q && q.on > 0.004) { onWay.add(String(s.rid)); onWay.add(k); } }
+  const plan = importPlan(book, { users, orders: r.orders, onWay, test: new Set(TEST_USERS) });
+  const made = new Map(plan.orders.map((o) => [o.rid, o])), turned = new Map(plan.refused.filter((x) => x.rid).map((x) => [x.rid, x.why]));
+  const asked = new Set(rids), tripOf2 = new Map(live.filter((s) => s.trip && s.rid).map((s) => [s.rid, s.trip]));
+  const sibs = (rid) => live.filter((s) => s.trip && s.trip === tripOf2.get(rid) && s.rid).map((s) => s.rid);
+  const out = rids.map((rid) => {
+    if (made.has(rid)) { const lone = sibs(rid).filter((x) => !asked.has(x)); return lone.length ? { rid, verdict: "refused", why: "its trip's other lines were not asked, and a trip imports whole" } : { rid, verdict: "import", order: made.get(rid) }; }
+    return { rid, verdict: "refused", why: turned.get(rid) || "no such sale on the book" };
+  });
+  const bad = new Set(out.filter((x) => x.verdict === "refused").map((x) => x.rid));
+  for (const x of out) if (x.verdict === "import" && sibs(x.rid).some((s) => bad.has(s))) { x.verdict = "refused"; x.why = "a line of its trip is refused, and a trip imports whole"; delete x.order; }
+  if (dry) return { ok: true, dry: true, results: out };
+  const go = out.filter((x) => x.verdict === "import");
+  if (!go.length) return { ok: true, dry: false, results: out };
+  /* the undos first: every id of a past undo, written before the order exists, so no pass can send one to it */
+  const byRid = new Map(book.sales.filter((s) => s && s.rid).map((s) => [s.rid, s]));
+  const ids = go.flatMap((x) => importFixedIds(byRid.get(x.rid)));
+  if (ids.length) {
+    const done = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {}, at = now.toISOString();
+    for (const id of ids) if (!done[id]) done[id] = { at, refused: "an older sale's order, born after it" };
+    await env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done));
+  }
+  const importedAt = now.toISOString();
+  const send = go.map((x) => Object.assign({}, x.order, { importedAt }));
+  const m = await site(env, "/desk/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ orders: send }) });
+  if (!m) return no(503, "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)");
+  const j = await m.json().catch(() => ({}));
+  if (!m.ok || !j.ok || !Array.isArray(j.results)) return no(502, "the site would not take the batch: " + (j.error || "http " + m.status));
+  const by = new Map(j.results.map((x) => [x.id, x]));
+  for (const x of go) { const res = by.get(x.order.id) || { ok: false, why: "the site did not answer for it" }; x.id = x.order.id; x.ok = !!res.ok; if (res.why) x.why = res.why; if (res.again) x.again = true; delete x.order; }
+  return { ok: true, dry: false, results: out };
+}
 /* ---- V4a: A KEY WRITTEN BEFORE THE PRODUCT WAS IN IT (28 Sep 2026) -----------------------------------------------
  * The row key names the product on every book but salt (the engine's ovKey), and an order acknowledged before that
  * carries the old key as its ledgerKey: on salt it is the same key, on any other book it lacks the tail. ONCE, on the

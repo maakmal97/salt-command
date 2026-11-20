@@ -113,6 +113,14 @@ export async function run({ ok }) {
     const later = Object.assign({}, row, { amend: row.amend.concat([{ cash: 0, date: "2026-11-21", kg: 0, kind: "Correction", note: "later", took: { cash: 5, units: 0 }, undoes: 4 }]) });
     const fl = undoFixes([o], new Map([[o.ledgerKey, later]]), rows);
     ok(fl.length === 1 && fl[0].id === "un-s297-4" && fl[0].unpay === 5, "U1: an undo dated after its day is still sent: " + J(fl));
+    /* s297's real shape: an undo dated after the row's day but before the import moment is skipped; one after the moment is sent */
+    const imp = Object.assign({}, o, { importedAt: "2026-11-20T03:00:00.000Z" });
+    const mid = Object.assign({}, row, { amend: row.amend.concat([{ cash: 0, date: "2026-11-05", kg: 0, kind: "Correction", note: "between", took: { cash: 7, units: 0 }, undoes: 4 }]) });
+    ok(J(undoFixes([imp], new Map([[o.ledgerKey, mid]]), rows)) === "[]", "U1: an undo dated after the row's day but before importedAt is skipped: " + J(undoFixes([imp], new Map([[o.ledgerKey, mid]]), rows)));
+    const after = Object.assign({}, row, { amend: row.amend.concat([{ cash: 0, date: "2026-11-21", kg: 0, kind: "Correction", note: "after", took: { cash: 9, units: 0 }, undoes: 4 }]) });
+    const fa = undoFixes([imp], new Map([[o.ledgerKey, after]]), rows);
+    ok(fa.length === 1 && fa[0].id === "un-s297-4" && fa[0].unpay === 9, "U1: one dated after importedAt is sent: " + J(fa));
+    ok(undoFixes([o], new Map([[o.ledgerKey, mid]]), rows).length === 1, "U1: with no importedAt kept the order's own day is the cut");
     const site = Object.assign({}, o, { imported: undefined, rid: undefined });
     const sf = undoFixes([site], byKey, rows);
     ok(sf.length === 1 && sf[0].id === "un-s297-2" && sf[0].unpay === 120 && sf[0].unmove === 10, "U1: a site order's undo is sent as before: " + J(sf));

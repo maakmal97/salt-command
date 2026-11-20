@@ -70,5 +70,11 @@
   "file": "src/orders.js",
   "find": "if (isImported(x) && x.queued && x.queued.ack) return klDate(new Date(x.queued.ack));",
   "replace": "if (false) return null;"
+ },
+ {
+  "name": "the belt cuts at the order's day, not the import moment",
+  "file": "src/orders.js",
+  "find": "klDate(new Date(o.importedAt || o.at))",
+  "replace": "klDate(new Date(o.at))"
  }
 ]

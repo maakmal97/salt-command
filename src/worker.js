@@ -30,7 +30,7 @@ import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } f
 import { klDate, readRuns, exportLanded, chainBusy, askPace, askVerdict, exportReason } from "./day-export.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
+import { deskImport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -3393,6 +3393,17 @@ export default {
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
       const r = await tellWaiting(env, b && b.n, b && b.age);
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* 20 Nov 2026 (docs/plan-order-import.html, Part 5): AN OLDER SALE'S ORDER, IMPORTED. Behind the write key with every /orders/ route; up to 20 rids, dry by default
+       (dry: false runs it); refused whole unless the tie-out is clean. A rid is never an order id, so it is read before a move `/orders/<u>/<id>`. */
+    if (p === "/orders/import") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      let r;
+      try { r = await deskImport(env, b); } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      if (r.ok && r.dry === false) await liveTell(env, ctx, "orders");
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a

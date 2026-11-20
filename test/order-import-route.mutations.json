@@ -1,0 +1,86 @@
+[
+ {
+  "name": "a dirty tie-out no longer refuses the call",
+  "file": "src/orders.js",
+  "find": "if (!tie.clean || tie.waiting.length) return no(409,",
+  "replace": "if (false) return no(409,"
+ },
+ {
+  "name": "dry is never honoured",
+  "file": "src/orders.js",
+  "find": "const dry = !(b && b.dry === false);",
+  "replace": "const dry = false;"
+ },
+ {
+  "name": "the undo ids are never written",
+  "file": "src/orders.js",
+  "find": "const ids = go.flatMap((x) => importFixedIds(byRid.get(x.rid)));",
+  "replace": "const ids = [];"
+ },
+ {
+  "name": "the undo ids are written after the site call",
+  "file": "src/orders.js",
+  "find": "    await env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done));\r\n  }\r\n  const importedAt",
+  "replace": "    setTimeout(() => env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done)), 0);\r\n  }\r\n  const importedAt"
+ },
+ {
+  "name": "importedAt is not stamped",
+  "file": "src/orders.js",
+  "find": "Object.assign({}, x.order, { importedAt })",
+  "replace": "Object.assign({}, x.order)"
+ },
+ {
+  "name": "a refused rid is sent too",
+  "file": "src/orders.js",
+  "find": "const send = go.map((x) => Object.assign({}, x.order, { importedAt }));",
+  "replace": "const send = out.map((x) => Object.assign({ rid: x.rid, id: \"20260101000000-\" + x.rid }, x.order, { importedAt }));"
+ },
+ {
+  "name": "more than 20 rids are taken",
+  "file": "src/orders.js",
+  "find": "rids.length > IMPORT_MAX ||",
+  "replace": "rids.length > 99 ||"
+ },
+ {
+  "name": "a trip asked in part is imported in part",
+  "file": "src/orders.js",
+  "find": "return lone.length ? {",
+  "replace": "return false ? {"
+ },
+ {
+  "name": "a draft on its way names no rid",
+  "file": "src/orders.js",
+  "find": "if (p.rid) onWay.add(String(p.rid));",
+  "replace": "if (false) onWay.add(String(p.rid));"
+ },
+ {
+  "name": "a -R bucket has no username",
+  "file": "src/orders.js",
+  "find": "users[s.customer] = own; }",
+  "replace": "void own; }"
+ },
+ {
+  "name": "the Counter's refusal is answered as imported",
+  "file": "src/orders.js",
+  "find": "x.ok = !!res.ok;",
+  "replace": "x.ok = true;"
+ },
+ {
+  "name": "an unknown rid has no reason",
+  "file": "src/orders.js",
+  "find": "turned.get(rid) || \"no such sale on the book\"",
+  "replace": "turned.get(rid) || \"refused\""
+ },
+ {
+  "name": "the route is open without the write key",
+  "file": "src/worker.js",
+  "find": "|| p === \"/orders\" || p.startsWith(\"/orders/\") ||",
+  "replace": "|| p === \"/orders\" ||"
+ },
+ {
+  "name": "dry is not the default",
+  "file": "src/orders.js",
+  "find": "(b && b.dry === false)",
+  "replace": "(b && b.dry !== false)"
+ }
+]
