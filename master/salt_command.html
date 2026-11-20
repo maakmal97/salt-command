@@ -8018,6 +8018,20 @@ function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET
    and delivery less what is paid. A gift, a write-off or a cancelled row owes nothing; everything else counts until it is
    paid, an order paid in advance included, and so does an agreed row dated ahead (a pending order). A row with no
    figure counts nought. Against RULES.creditCeilingRM it decides an order paid in advance. */
+/* 20 Nov 2026 (docs/plan-admin-live-owed.html P1, his yes): WHAT AN ACCOUNT STANDS AT, BY THE STATEMENT'S OWN ROW RULE (tools/make_statements.mjs
+   stmtRows and accountTotals), so Salt Admin's card reads it live off the Book. partyOwedRM is not it: it counts an agreed order, the statement never does.
+   A row: owed is goods and delivery less cash and settled in kind, over one sen, nought for an agreed, cancelled, gift or written-off row; goods to hand
+   over is units less handed over and settled in kind, to four places, not for an agreed or cancelled row (a gift or a write-off still counts); agreed is
+   the goods total of an agreed row, a gift nought. The account: the code and its -R bucket, an agreed row whatever its date, any other dated after to left
+   out (an undated row kept). The statement builder does not call this; a parity check pins the two equal on every book. */
+function standingRow(s){const st=txStat(s).order,paid=+(s.cash||0),kind=+(s.settledRM||0),bal=+(txOwed(s)-paid-kind).toFixed(2),owed=s.defaulted?0:bal;
+  const gift=!!s.goodwill||(!!s.rebate&&paid<=0.009&&owed<=0.009),pending=st==='Pending',cancelled=st==='Cancelled';
+  const toGet=+(s.qty-(+(s.deliveredQty||0))-(+(s.settledKg||0))).toFixed(4);
+  return {owed:(pending||cancelled||gift)?0:(owed>0.009?owed:0),toGet:(!pending&&!cancelled&&toGet>0)?toGet:0,pend:pending&&!gift?(+s.total||0):0};}
+function accountStanding(sales,party,to){const end=to?new Date(to):null,t={owed:0,toGet:0,pend:0};
+  (sales||[]).forEach(s=>{if(!s||!ownsCode(party,s.customer))return;if(txStat(s).order!=='Pending'&&end&&new Date(s.date)>end)return;
+    const r=standingRow(s);t.owed+=r.owed;t.toGet+=r.toGet;t.pend+=r.pend;});
+  return {owed:+t.owed.toFixed(2),toGet:+t.toGet.toFixed(4),pend:+t.pend.toFixed(2)};}
 function partyOwedRM(sales,party){return +(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.cancelled&&!s.goodwill&&!s.defaulted)
   .reduce((a,s)=>a+Math.max(0,txOwed(s)-txPaid(s)),0).toFixed(2);}
 /* S6 11.15 (his decision D7 of 24 Sep 2026): A PAYMENT AGAINST THE ACCOUNT, OLDEST FIRST. What a customer says they sent
@@ -8230,7 +8244,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,addIdPlan:addIdPlan,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,standingRow:standingRow,accountStanding:accountStanding,appointBucket:appointBucket,addIdPlan:addIdPlan,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
         vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 /* ==== END ENGINE position ==== */
