@@ -5916,7 +5916,7 @@ export const OWNER_JS = `
           });
           makerAskTag(order,lost,'lost-'+payment.at);
         });
-        if(order.status==='ready'&&cashHeld){ makerCashControls(money,order); cashed=true; }
+        if(order.status==='ready'&&cashHeld&&order.imported!==true){ makerCashControls(money,order); cashed=true; }
       }
       /* the stage he rejected, offered again, and Not needed: rows of his decision */
       makerAgain(card,order,acts);

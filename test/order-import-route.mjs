@@ -185,9 +185,11 @@ export async function run({ ok }) {
     ok(T.FIELDS.includes("queued") && T.FIELDS.includes("rateAsk") && T.FIELDS.includes("history"), "T4: the read back compares queued, rateAsk and history too");
     {
       const calls = [], c = { async orders() { return { ok: true, orders: [{ id: "i1", imported: true }, { id: "p1" }, { id: "i2", imported: true }] }; }, async unimp(ids) { calls.push(ids); return { ok: true, results: ids.map((id) => ({ id, ok: id !== "bad", why: id === "bad" ? "touched" : undefined })) }; } };
-      const u1 = await T.undo(c, []);
+      const u0 = await T.undo(c, []);
+      ok(u0.ok && u0.dry && u0.results.length === 2 && !calls.length, "T6: --undo without --run lists what would go and takes nothing back: " + J(calls));
+      const u1 = await T.undo(c, [], () => {}, true);
       ok(u1.ok && J(calls) === J([["i1", "i2"]]), "T6: --undo with no ids reads the imported orders off the Desk and takes only those back: " + J(calls));
-      const u2 = await T.undo(c, ["a", "bad"]);
+      const u2 = await T.undo(c, ["a", "bad"], () => {}, true);
       ok(!u2.ok && u2.results.length === 2, "T6: a refusal stops it, saying why");
     }
     /* the drive over the real route: a client whose calls are deskImport on a fake site */

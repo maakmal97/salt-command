@@ -148,5 +148,17 @@
   "file": "engine/stages.mjs",
   "find": "for (const s of sales) { const k = E.ovKey(s);",
   "replace": "for (const s of sales) if (!s.cancelled) { const k = E.ovKey(s);"
+ },
+ {
+  "name": "I5: a done order with no key that day is no bar",
+  "file": "engine/stages.mjs",
+  "find": "!ended.includes(o.status) && !o.ledgerKey",
+  "replace": "[\"placed\", \"acknowledged\", \"ready\"].includes(o.status) && !o.ledgerKey"
+ },
+ {
+  "name": "I5: a cancelled order with no key that day is a bar",
+  "file": "engine/stages.mjs",
+  "find": "!ended.includes(o.status) && !o.ledgerKey",
+  "replace": "!!o.status && !o.ledgerKey"
  }
 ]

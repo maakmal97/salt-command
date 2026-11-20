@@ -190,5 +190,11 @@
   "file": "tools/orders-import.mjs",
   "find": ", \"queued\", \"rateAsk\", \"history\"];",
   "replace": "];"
+ },
+ {
+  "name": "T6: --undo without --run takes them back",
+  "file": "tools/orders-import.mjs",
+  "find": "  if (run !== true) { for (const id of list)",
+  "replace": "  if (false) { for (const id of list)"
  }
 ]

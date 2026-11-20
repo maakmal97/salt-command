@@ -967,9 +967,9 @@ export function importOf(row, ctx) {
   const named = orders.find((o) => o && ((o.rid && o.rid === row.rid) || (o.ledgerKey && ledgerKeyOf(o) === key)));
   if (named) return no("an order already names it (" + named.id + ")");
   const at = new Date(row.date + "T00:00:00+08:00").toISOString();
-  const open = ["placed", "acknowledged", "ready"];
-  const loose = orders.find((o) => o && o.u === u && open.includes(o.status) && !o.ledgerKey && !o.rid && (isDay(o.on) ? o.on : klDay(o.at)) === row.date);
-  if (loose) return no("their live order that day (" + loose.id + ") names no row");
+  const ended = ["cancelled", "declined"];   /* a done order with no key is a bar too (Fable, 20 Nov 2026): its row is unknown */
+  const loose = orders.find((o) => o && o.u === u && !ended.includes(o.status) && !o.ledgerKey && !o.rid && (isDay(o.on) ? o.on : klDay(o.at)) === row.date);
+  if (loose) return no("their order that day (" + loose.id + ") names no row");
   const way = c.onWay || new Set();
   if (way.has(row.rid) || way.has(key)) return no("money, a Correction or a yes is on its way to it");
   const trip = row.trip ? String(row.trip) : "";

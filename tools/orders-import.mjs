@@ -127,13 +127,14 @@ export async function drive(c, groups, { run, say = () => {} }) {
 }
 
 /** the way back over `ids` (or, with none, every imported order the Desk lists), 20 at a time; stops at the first batch with a refusal, saying why. */
-export async function undo(c, ids, say = () => {}) {
+export async function undo(c, ids, say = () => {}, run = false) {
   let list = ids;
   if (!list || !list.length) {
     const r = await c.orders();
     if (!r.ok) { say("STOP: the orders could not be read: " + r.error); return { ok: false, results: [] }; }
     list = r.orders.filter((o) => o && o.imported === true).map((o) => o.id);
   }
+  if (run !== true) { for (const id of list) say(id + "  would be taken back"); say("UNDO DRY: " + list.length + " order(s); add --run to take them back"); return { ok: true, dry: true, results: list.map((id) => ({ id, dry: true })) }; }
   const all = [];
   for (let i = 0; i < list.length; i += BATCH) {
     const got = await c.unimp(list.slice(i, i + BATCH));
@@ -154,7 +155,7 @@ if (isMain) {
   if (argv.includes("--undo")) {
     const j = argv.indexOf("--ids"), ids = j >= 0 && argv[j + 1] ? argv[j + 1].split(",").map((x) => x.trim()).filter(Boolean) : [];
     const cu = client({ base: process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev", key, token: process.env.SALT_ACCESS_JWT });
-    const ru = await undo(cu, ids, (s) => console.log(s));
+    const ru = await undo(cu, ids, (s) => console.log(s), run);
     process.exit(ru.ok ? 0 : 1);
   }
   const rows = i >= 0 && argv[i + 1] ? argv[i + 1].split(",").map((x) => ({ rid: x.trim(), trip: null })).filter((x) => x.rid) : salesRids(resolve(REPO, "ledger", "book.json"));

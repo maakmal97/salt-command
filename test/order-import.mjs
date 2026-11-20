@@ -65,6 +65,8 @@ export async function run({ ok }) {
   R(/names it/, why({ product: "oil", delivery: 0, cash: 190 }, { orders: [{ id: "x2", u: "abcd-efgh", ledgerKey: "CQ4-ZEN|2026-11-10|190", product: "oil" }] }), "named by an old untailed key");
   R(/names it/, why({}, { orders: [{ id: "x3", u: "abcd-efgh", rid: "s402", status: "done" }] }), "named by rid");
   R(/no row/, why({}, { orders: [{ id: "x4", u: "abcd-efgh", status: "placed", at: "2026-11-10T03:00:00.000Z" }] }), "their live order that day naming no row");
+  R(/no row/, why({}, { orders: [{ id: "x5", u: "abcd-efgh", status: "done", at: "2026-11-10T03:00:00.000Z" }] }), "their done order that day naming no row");
+  ok(why({}, { orders: [{ id: "x7", u: "abcd-efgh", status: "cancelled", at: "2026-11-10T03:00:00.000Z" }] }) === undefined, "I5: a cancelled order that day is no bar");
   ok(why({}, { orders: [{ id: "x5", u: "abcd-efgh", status: "placed", at: "2026-11-12T03:00:00.000Z" }, { id: "x6", u: "other", status: "placed", at: "2026-11-10T03:00:00.000Z" }] }) === undefined,
     "I5: a live order of another day, or of another account, is no bar");
   R(/on its way/, why({}, { onWay: new Set(["s402"]) }), "money on its way, by rid");
