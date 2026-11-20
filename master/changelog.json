@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1555",
+  "d": "20 Nov 2026",
+  "t": "THE BOOK'S DAILY EXPORT IS ASKED FOR EACH NIGHT",
+  "n": [
+   "<b>THE DESK ASKS FOR IT.</b> From 00:05 the Desk asks for the night's export of the Book to git and checks that it landed, up to four times before 06:00. GitHub started its own runs too late, so 12, 13, 18 and 20 Nov had none.",
+   "<b>THE CLOCK AT ANY HOUR.</b> GitHub's scheduled runs now export at whatever hour they start while none has landed that day, and stand down and only publish once the export has failed that day.",
+   "<b>A WORD AT 09:00.</b> If git still has no export of the Book that day, or GitHub cannot be read to say, the morning digest rings once in its own words."
+  ]
+ },
+ {
   "v": "v1554",
   "d": "20 Nov 2026",
   "t": "WHAT A CUSTOMER OWES, LIVE ON SALT ADMIN",

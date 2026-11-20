@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="cf56a9fd4a525004";
+var SALT_BUILD_ID="577cda968b7b1ca5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12572,7 +12572,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1554","d":"20 Nov 2026","t":"WHAT A CUSTOMER OWES, LIVE ON SALT ADMIN","n":["<b>THEY OWE AT ONCE.</b> On Salt Admin a customer's card reads what they owe, the goods you owe them and their agreed orders from the Desk as it stands, so a payment you approve shows within seconds, not after the next publish. The figures follow their statement's own rule, checked equal on every book.","<b>THEIR PAGE.</b> Their own page still shows the published figures. Where the two differ, their card says what their page shows and from when, until the next update.","<b>A FAILED READ.</b> If the Desk cannot be read, the card goes back to the published figures rather than holding an old live one."]}];
+const evolution=[{"v":"v1555","d":"20 Nov 2026","t":"THE BOOK'S DAILY EXPORT IS ASKED FOR EACH NIGHT","n":["<b>THE DESK ASKS FOR IT.</b> From 00:05 the Desk asks for the night's export of the Book to git and checks that it landed, up to four times before 06:00. GitHub started its own runs too late, so 12, 13, 18 and 20 Nov had none.","<b>THE CLOCK AT ANY HOUR.</b> GitHub's scheduled runs now export at whatever hour they start while none has landed that day, and stand down and only publish once the export has failed that day.","<b>A WORD AT 09:00.</b> If git still has no export of the Book that day, or GitHub cannot be read to say, the morning digest rings once in its own words."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
