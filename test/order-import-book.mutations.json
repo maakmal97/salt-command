@@ -1,0 +1,134 @@
+[
+{
+"name": "B1/B2 a retry lands again, not once",
+"file": "stmt/orderbook.js",
+"find": "        if (this.event(eid)) { results.push({ id, ok: true, again: true }); continue; }\n",
+"replace": ""
+},
+{
+"name": "B3 an id that exists is not refused",
+"file": "stmt/orderbook.js",
+"find": "all.some((x) => x.id === id) ? \"an order already has its id\" : ",
+"replace": ""
+},
+{
+"name": "B3 the rid is not compared",
+"file": "stmt/orderbook.js",
+"find": " || (x.rid && x.rid === o.rid)",
+"replace": ""
+},
+{
+"name": "B3 the key is not read through its product tail",
+"file": "stmt/orderbook.js",
+"find": "k.split(\"|\").length === 3 && o.product && o.product !== \"salt\" ? k + \"|\" + o.product : k",
+"replace": "k"
+},
+{
+"name": "B3 a test account is taken",
+"file": "stmt/orderbook.js",
+"find": "        else if (TEST_USERS.includes(o.u)) refuse(\"a test account\");\n",
+"replace": ""
+},
+{
+"name": "B3 the imported mark is not required",
+"file": "stmt/orderbook.js",
+"find": "        else if (o.imported !== true) refuse(\"it is not marked imported\");\n",
+"replace": ""
+},
+{
+"name": "B3 an order not done is taken",
+"file": "stmt/orderbook.js",
+"find": "        else if (o.status !== \"done\") refuse(\"it is not done\");\n",
+"replace": ""
+},
+{
+"name": "B3 an order with no acknowledgement is taken",
+"file": "stmt/orderbook.js",
+"find": "        else if (typeof q.ack !== \"string\" || !q.ack) refuse(\"it carries no acknowledgement\");\n",
+"replace": ""
+},
+{
+"name": "B3 a close, redate or cancellation is taken",
+"file": "stmt/orderbook.js",
+"find": "        else if (o.closed || q.close || q.redate || q.cancel) refuse(\"it carries a close, a redate or a cancellation\");\n",
+"replace": ""
+},
+{
+"name": "B3 an id of another shape is taken",
+"file": "stmt/orderbook.js",
+"find": "!/^[0-9]{14}-[a-z0-9]{1,8}$/.test(id)) { refuse(\"not an order of the site's shape\"); continue; }",
+"replace": "false) { refuse(\"not an order of the site's shape\"); continue; }"
+},
+{
+"name": "B4 a refused order stops the batch",
+"file": "stmt/orderbook.js",
+"find": "        const id = o && typeof o.id === \"string\" ? o.id : \"\", refuse = (why) => results.push({ id, ok: false, why });",
+"replace": "        if (results.some((x) => !x.ok)) break;\n        const id =o && typeof o.id === \"string\" ? o.id : \"\", refuse = (why) => results.push({ id, ok: false, why });"
+},
+{
+"name": "B4 the batch has no limit",
+"file": "stmt/orderbook.js",
+"find": "      if (!list.length || list.length > IMPORT_MAX) return { ok: false, error: \"send 1 to \" + IMPORT_MAX + \" orders\", status: 400 };",
+"replace": "      if (!list.length) return { ok: false, error: \"send 1 to \" + IMPORT_MAX + \" orders\", status: 400 };"
+},
+{
+"name": "B5 an import wakes the customer",
+"file": "stmt/orders.js",
+"find": "  if (ev.kind === \"import\") return null;   /* 20 Nov 2026 (docs/plan-order-import.html): an older sale's order is born told and wakes nobody */\n",
+"replace": "  if (ev.kind === \"import\") return { k: \"complete\", o };\n"
+},
+{
+"name": "B5 an import moves the shared marks",
+"file": "stmt/orders.js",
+"find": "ev.kind === \"copy\" || ev.kind === \"import\" || ev.kind === \"rateask\"",
+"replace": "ev.kind === \"copy\" || ev.kind === \"rateask\""
+},
+{
+"name": "B6 unimport takes a touched order",
+"file": "stmt/orderbook.js",
+"find": "        if (evs.length !== 1 || evs[0].kind !== \"import\") { results.push({ id, ok: false, why: \"a move has touched it since its import\" }); continue; }\n",
+"replace": ""
+},
+{
+"name": "B6 unimport leaves its event behind",
+"file": "stmt/orderbook.js",
+"find": "          sql.exec(\"DELETE FROM ev WHERE u = ? AND oid = ?\", row.u, id);\n          sql.exec(\"DELETE FROM ord WHERE u = ? AND oid = ?\", row.u, id);\n          sql.exec(\"DELETE FROM behind",
+"replace": "          sql.exec(\"DELETE FROM ord WHERE u = ? AND oid = ?\", row.u, id);\n          sql.exec(\"DELETE FROM behind"
+},
+{
+"name": "B7 the import takes any road",
+"file": "stmt/orderbook.js",
+"find": "    if (op === \"import\") {\n      if (!/^object/.test(String((this.env && this.env.ORDER_STORE) || \"\"))) return { ok: false, error: \"An order import needs the order book.\", status: 503 };\n",
+"replace": "    if (op === \"import\") {\n"
+},
+{
+"name": "B7 the unimport takes any road",
+"file": "stmt/orderbook.js",
+"find": "    if (op === \"unimport\") {\n      if (!/^object/.test(String((this.env && this.env.ORDER_STORE) || \"\"))) return { ok: false, error: \"An order import needs the order book.\", status: 503 };\n",
+"replace": "    if (op === \"unimport\") {\n"
+},
+{
+"name": "B7 the Counter's own call goes to the book on the kv road",
+"file": "stmt/orders.js",
+"find": "export async function importOrders(env, list) {\n  if (!onBook(env)) return { error: NOT_ON_KV, status: 503 };\n",
+"replace": "export async function importOrders(env, list) {\n"
+},
+{
+"name": "B8 a customer reads the rid",
+"file": "stmt/orders.js",
+"find": "\"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\",",
+"replace": "\"slot\", \"slotSpan\", \"point\", \"rwd\", \"credit\", \"rid\", \"imported\", \"ledgerKey\",\"queued\","
+},
+{
+"name": "B9 the route skips the Desk's key",
+"file": "stmt/worker.js",
+"find": "  if (!deskOk(request, env)) return json({ ok: false, error: \"desk key required\" }, 401);\n  if (p === \"/desk/bulletin\") {",
+"replace": "  if (!deskOk(request, env) && p !== \"/desk/import\") return json({ ok: false, error: \"desk key required\" }, 401);\n  if (p === \"/desk/bulletin\") {"
+},
+{
+"name": "B9 the route answers no per-order results",
+"file": "stmt/worker.js",
+"find": "json({ ok: true, results: r.results });\n  }\n  if (p === \"/desk/orders/store-check\")",
+"replace": "json({ ok: true });\n  }\n  if (p === \"/desk/orders/store-check\")"
+}
+]

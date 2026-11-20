@@ -50887,6 +50887,11 @@ await (async () => {
   await (await import("./order-import.mjs")).run({ ok });
 })();
 
+section("20 Nov 2026: the order book takes an older sale's order, quietly, once");
+await (async () => {
+  await (await import("./order-import-book.mjs")).run({ ok });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });

@@ -105,7 +105,11 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk", "popen", "pjoin", "pclose"];
+/* 20 Nov 2026: the most orders one import batch carries (stmt/orders.js says the same) */
+const IMPORT_MAX = 20;
+/* a row's key as an order names it: V4a's tail on any product but salt, given to a key written before it (the engine's ovRekey, which stmt/ cannot import) */
+const rowKey = (o) => { const k = o && o.ledgerKey; return typeof k === "string" && k ? (k.split("|").length === 3 && o.product && o.product !== "salt" ? k + "|" + o.product : k) : null; };
+const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk", "popen", "pjoin", "pclose", "import", "unimport"];
 /* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix; Step 7: so does an
    account's thread, one a username; and a group order (the pool), one the site, whose u is empty and which KV never holds */
 const TABLE = (oid) => (isThreadId(oid) ? "thr" : isClaimId(oid) ? "acl" : isPoolId(oid) ? "pool" : "ord");
@@ -910,6 +914,57 @@ export class OrderBook {
       const order = this.order(u, id);
       if (!rateAskable(order)) return { ok: true, fresh: false };
       return Object.assign(this.append(null, u, id, { kind: "rateask", at }, order), { fresh: true });
+    }
+    /* 20 Nov 2026 (docs/plan-order-import.html, Part 2): AN OLDER SALE'S ORDER, BORN TOLD. One event an order under `import-<id>`, so a retry lands
+       once; it moves no mark, wakes nobody and rings nothing (marksOf and wakes read nothing from it). Each order is refused with its reason
+       and the batch goes on. The object road only. */
+    if (op === "import") {
+      if (!/^object/.test(String((this.env && this.env.ORDER_STORE) || ""))) return { ok: false, error: "An order import needs the order book.", status: 503 };
+      const list = Array.isArray(a.orders) ? a.orders : [];
+      if (!list.length || list.length > IMPORT_MAX) return { ok: false, error: "send 1 to " + IMPORT_MAX + " orders", status: 400 };
+      const results = [];
+      for (const o of list) {
+        const id = o && typeof o.id === "string" ? o.id : "", refuse = (why) => results.push({ id, ok: false, why });
+        if (!o || typeof o !== "object" || !/^[0-9]{14}-[a-z0-9]{1,8}$/.test(id)) { refuse("not an order of the site's shape"); continue; }
+        const eid = "i:import-" + id;
+        if (!RID_RE.test("import-" + id)) { refuse("no request id can be made from its id"); continue; }
+        if (this.event(eid)) { results.push({ id, ok: true, again: true }); continue; }
+        const q = o.queued && typeof o.queued === "object" ? o.queued : {};
+        if (typeof o.u !== "string" || !o.u) refuse("it names no account");
+        else if (TEST_USERS.includes(o.u)) refuse("a test account");
+        else if (o.imported !== true) refuse("it is not marked imported");
+        else if (o.status !== "done") refuse("it is not done");
+        else if (typeof q.ack !== "string" || !q.ack) refuse("it carries no acknowledgement");
+        else if (o.closed || q.close || q.redate || q.cancel) refuse("it carries a close, a redate or a cancellation");
+        else if (typeof o.rid !== "string" || !o.rid || typeof o.ledgerKey !== "string" || !o.ledgerKey) refuse("it names no row");
+        else {
+          const key = rowKey(o), all = this.all();
+          const held = all.some((x) => x.id === id) ? "an order already has its id" : all.some((x) => rowKey(x) === key || (x.rid && x.rid === o.rid)) ? "an order already names its row" : "";
+          if (held) refuse(held);
+          else { this.append(eid, o.u, id, { kind: "import", at: o.at || at, order: o }, null); results.push({ id, ok: true }); }
+        }
+      }
+      return { ok: true, results };
+    }
+    /* takes an imported order back, only while nothing has touched it since: its one event is its import */
+    if (op === "unimport") {
+      if (!/^object/.test(String((this.env && this.env.ORDER_STORE) || ""))) return { ok: false, error: "An order import needs the order book.", status: 503 };
+      const ids = Array.isArray(a.ids) ? a.ids : [];
+      if (!ids.length || ids.length > IMPORT_MAX) return { ok: false, error: "send 1 to " + IMPORT_MAX + " ids", status: 400 };
+      const sql = this.state.storage.sql, results = [];
+      for (const raw of ids) {
+        const id = String(raw || ""), row = sql.exec("SELECT u, doc FROM ord WHERE oid = ?", id).toArray()[0];
+        if (!row) { results.push({ id, ok: false, why: "no such order" }); continue; }
+        const o = JSON.parse(row.doc), evs = sql.exec("SELECT kind FROM ev WHERE u = ? AND oid = ?", row.u, id).toArray();
+        if (evs.length !== 1 || evs[0].kind !== "import") { results.push({ id, ok: false, why: "a move has touched it since its import" }); continue; }
+        this.state.storage.transactionSync(() => {
+          sql.exec("DELETE FROM ev WHERE u = ? AND oid = ?", row.u, id);
+          sql.exec("DELETE FROM ord WHERE u = ? AND oid = ?", row.u, id);
+          sql.exec("DELETE FROM behind WHERE u = ? AND oid = ?", row.u, id);
+        });
+        results.push({ id, ok: true });
+      }
+      return { ok: true, results };
     }
     /* his test account, unmade: its orders and their events go with it */
     if (op === "drop") {

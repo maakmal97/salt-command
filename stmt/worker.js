@@ -71,7 +71,7 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
 export { OrderBook } from "./orderbook.js";
 import { readPoints, resolvePoint } from "./points.js";
 import { sendReminders } from "./remind.js";
-import { mintSession, dropSession, sessionUser, sessionOfToken, onBook, liveConnect, liveDrop, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+import { mintSession, dropSession, sessionUser, sessionOfToken, onBook, liveConnect, liveDrop, SESSION_TTL, customerView, deskOrderView, importOrders, unimportOrders, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, expectedLive, poolsOf, poolJoin, poolView, accountBook, ownerTell } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -1211,6 +1211,15 @@ async function handleDesk(request, env, p, m) {
     const r = await ownerTell(env, b && typeof b === "object" ? b.k : null);
     return json(r, r.ok ? 200 : (r.status || 400));
   }
+  /* 20 Nov 2026 (docs/plan-order-import.html, Part 2): AN OLDER SALE'S ORDER, BORN TOLD. The Desk builds each order and sends up to 20; each is answered
+     {id, ok, why?}, one refused never stopping the rest. Object road only, nothing woken. */
+  if (p === "/desk/import" || p === "/desk/unimport") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    if (!b || typeof b !== "object") return json({ ok: false, error: "send JSON" }, 400);
+    const r = p === "/desk/import" ? await importOrders(env, b.orders) : await unimportOrders(env, b.ids);
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, results: r.results });
+  }
   if (p === "/desk/orders/store-check") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json(await storeCompare(env));
@@ -2343,7 +2352,7 @@ const worker = {
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/my/joins") return handleMyJoins(request, env, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/owner-tell" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/calendar" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
+    if (p === "/desk/orders" || p === "/desk/import" || p === "/desk/unimport" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/owner-tell" || p === "/desk/expected" || p === "/desk/quotes" || p === "/desk/calendar" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {

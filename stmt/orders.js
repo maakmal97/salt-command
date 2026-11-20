@@ -1342,7 +1342,7 @@ export function decideDesk(order, body, at) {
 export function applyEvent(order, ev) {
   const at = ev.at;
   let done = false;
-  if (ev.kind === "place" || ev.kind === "copy") return { order: JSON.parse(JSON.stringify(ev.order)), done };
+  if (ev.kind === "place" || ev.kind === "copy" || ev.kind === "import") return { order: JSON.parse(JSON.stringify(ev.order)), done };
   if (ev.kind === "aclaim") return { order: JSON.parse(JSON.stringify(ev.claim)), done };   /* S6 6.6: an account claim, its own record */
   if (ev.kind === "tsay" || ev.kind === "tmark") return { order: foldThread(order, ev), done };   /* Step 7: the account's thread */
   if (ev.kind === "popen" || ev.kind === "pjoin" || ev.kind === "pclose") return { order: foldPool(order, ev), done };   /* a group order */
@@ -1616,7 +1616,7 @@ export function applyEvent(order, ev) {
    back mark `last-theirs` (v760), and so does a rating (F10); the ask is the desk's own, and marks nothing; his moves wake
    them, and of theirs only a payment that completes. */
 export function marksOf(ev, order) {
-  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "rateask" || ev.kind === "tmark" || ev.kind === "popen" || ev.kind === "pjoin" || ev.kind === "pclose") return [];
+  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "import" || ev.kind === "rateask" || ev.kind === "tmark" || ev.kind === "popen" || ev.kind === "pjoin" || ev.kind === "pclose") return [];
   const at = ev.at;
   /* Step 7: a line of theirs on the account's thread wakes him as a line on an order does; it touches no order, so the
      reconcile is not sent to list them */
@@ -1673,6 +1673,7 @@ function handedWake(order, o) {
    payment of theirs that completes the order, complete. A handover of nothing still wakes, with no kind, as it did. */
 export function wakes(ev, order, done) {
   const o = (order && order.id) || "";
+  if (ev.kind === "import") return null;   /* 20 Nov 2026 (docs/plan-order-import.html): an older sale's order is born told and wakes nobody */
   if (ev.kind === "ledger") return ev.paid !== undefined ? { k: "paid", o } : handedWake(order, o);
   if (ev.kind === "handover") return handedWake(order, o);
   /* plan 4 (16 Oct 2026, his answer): a move of his taken back on the book, or a change of terms undone, is told by its own banner, its body the case */
@@ -1706,6 +1707,24 @@ export function wakes(ev, order, done) {
   /* S6: his Received, and his Not found (11.14), whose own words the service worker has; an account's claim opens no order */
   if (ev.kind === "verdict") return { k: ev.verdict === "notfound" ? "notfound" : done ? "complete" : "paid", o: order && order.kind === "account" ? "" : o };
   return null;
+}
+
+/* 20 Nov 2026 (docs/plan-order-import.html, Part 2): THE ORDER IMPORT'S TWO ROADS INTO THE BOOK, object road only (the KV road keeps no event
+   under a request id, so it cannot promise a retry lands once). A batch of up to IMPORT_MAX built orders, each answered {id, ok, why?}; the
+   Desk builds them (engine/stages.mjs importOf), this file only carries them. */
+export const IMPORT_MAX = 20;
+const NOT_ON_KV = "An order import needs the order book.";
+export async function importOrders(env, list) {
+  if (!onBook(env)) return { error: NOT_ON_KV, status: 503 };
+  if (!Array.isArray(list) || !list.length || list.length > IMPORT_MAX) return { error: "send 1 to " + IMPORT_MAX + " orders", status: 400 };
+  const r = await bookMove(env, "import", { orders: list });
+  return r.error ? r : { results: r.results };
+}
+export async function unimportOrders(env, ids) {
+  if (!onBook(env)) return { error: NOT_ON_KV, status: 503 };
+  if (!Array.isArray(ids) || !ids.length || ids.length > IMPORT_MAX) return { error: "send 1 to " + IMPORT_MAX + " ids", status: 400 };
+  const r = await bookMove(env, "unimport", { ids });
+  return r.error ? r : { results: r.results };
 }
 
 /** The marks as the desk reads them, one question a minute (/desk/orders/last). */
