@@ -14,7 +14,7 @@
 - His switch on Salt Admin (Shop > Hours, Maintenance, 17 Nov 2026) holds the Counter alone at once without a deploy: Counter KV `maint` `{until}`, written by `/all/maker/maintenance`; the later of it and `MAINTENANCE_UNTIL` holds (docs/STATEMENTS.md "His maintenance switch").
 
 ## Migrations
-- Newest rebuild of `draft`: `migrations/0024`; of `preapproval`: `migrations/0017`. Newest file: `0024`.
+- Newest rebuild of `draft`: `migrations/0024`; of `preapproval`: `migrations/0017`. Newest file: `0025`.
 - `0011` adds `preapproval` (applied alone, the same way as 0010).
 - `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`.
 - `0017_preapproval_amend.sql` rebuilds `preapproval` with `amend` in its stage CHECK (restateOrder's yes), keeping rows and both indexes. Live D1 carried 0011's narrow CHECK, so every amend tap answered 500; 0017 applied alone on 06 Oct 2026, schema, both indexes and the 71 rows by stage and status read back after.
@@ -25,6 +25,7 @@
 - `0022_book_page.sql` (28 Oct 2026, a new table, applied alone to the live D1 before the deploy and read back `off`): `book_page`, one row `'off'` or `'on'`, shipped `'off'`. The flag for S5d (see "S5 and S6").
 - `0023_book_source.sql` (29 Oct 2026, a new table, applied alone before v1311, read back `d1`): `book_source`, one row `'d1'` or `'book'`, shipped `'d1'`: which store is the source of the ledger (the flip's flag).
 - `0024_draft_edit.sql` (29 Oct 2026, a REBUILD of `draft`, applied alone before v1319: 649 rows kept, the four indexes made again, read back): the CHECK names `edit`. Newest rebuild of `draft`: now `0024`. Newest file: `0024`.
+- `0025_sale_recovery.sql` (21 Nov 2026, a new table, applied alone to the live D1 before the deploy, read back `off`): `sale_recovery`, one row `'off'` or `'on'`, shipped `'off'`. The switch for Salt Admin's `sale` road as recovery only (item 2, every sale has its order; docs/DESK.md "Every road that mints a sale").
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
 ## Known red in the suite
