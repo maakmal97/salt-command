@@ -101,7 +101,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
      there is no line to roll; `fold.mjs --apply` ignores a figure here and prints a `note` saying so.
 
 4. **`node tools/fold.mjs --apply`.** It appends the new rows with their notes, applies each
-   fulfilment exactly as the desk's own `ovAmend` would (cash and units added, the trail extended
+   fulfilment through `applyAmend`, the one applier since the desk's `ovAmend` went on 21 Nov 2026 (cash and units added, the trail extended
    from an as-booked seed, a pending lot that stops being pending gets `receivedQty:0` and
    `inTransit` so a deposit cannot walk it into stock), **replaces** a modified row's qty and
    total with its new terms (nothing is added, unlike a fulfilment; `unpriced` is cleared if the

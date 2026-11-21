@@ -93,7 +93,7 @@
   and the ledger row, never to the site, and no customer view names it. `payFault`, `rowRoom`, COGS, refunds and stock read nothing of it.
   **Not built, said**: no surface types a Median point, so that half of the plan's paragraph has nothing to check; Pricing's 30-day tally of
   one-offs; Salt Admin's Correct a row (`ledger-amend`) still refuses under the Floor on every book in its old words and knows no Ceiling; an undo is never asked, so on any book it may put back figures under today's Floor, marked only if the step kept `oneOffWas`; an undo off
-  the site road does not restore a mark; the Desk page's own overlay (`ovAmend`) does not carry the mark until the row is booked; the reason is
+  the site road does not restore a mark; the Desk shows the mark once the Book holds the row (its own overlay, `ovAmend`, went on 21 Nov 2026); the reason is
   free text on a public repo's ledger and nothing scans it for a name. Checks: `test/price-band-oneoff.mjs`.
 - **The price band, version 2: the market** (his answer B of 10 Nov 2026 and his answers of 11 Nov 2026; `TIER_RULE.salt.market`, the snapshot
   engine's market section). **The move**: `marketWalk(C, p, day, from)` walks from the rule's `since` (the day the version shipped) a day at a time, each
@@ -600,7 +600,7 @@
   (`rowRoom`, until it lands), an earlier amendment not yet on the book. A figure under what is paid is taken (06 Oct
   2026): the answer carries `refund`, the card says it, and the fold opens a `customerRefunds` row for the difference as
   the Correction lands (the engine's `refundOnOverpay`, the same rule on every sale amendment, a payment over the row
-  included, and on the desk's overlay). The board is never repriced; the order book's `restate`
+  included). The board is never repriced; the order book's `restate`
   event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
 - **A refund becomes their credit** (his word and answers of 27 Oct 2026, `docs/plan-refund-credit.html`). Every open
   `customerRefunds` row of theirs (no `paidOn`), on their own code or their -R bucket, overpays and cancelled orders alike, is

@@ -1938,7 +1938,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   fields it changes and which way (Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row ...); Correction and
   Fulfilment stand only in Details. **Now and After** (Paid, Owed, Handed over), only what changes marked, are the Desk's: `src/approve-figures.js` reads each
   pending sale's row off the mirror, applies the approved moves on that row not yet folded and then the pending ones in entry order, moved for the figure fields
-  as `ovAmend` moves a sale, and reads them with the engine's `txPaid`, `txOwed` and `txEffDeliv`; `owedNow` and `owedAfter` are `partyOwedRM` for the bucket's
+  as the fold's `applyAmend` moves a sale (the Desk's `ovAmend` did too, until 21 Nov 2026), and reads them with the engine's `txPaid`, `txOwed` and `txEffDeliv`; `owedNow` and `owedAfter` are `partyOwedRM` for the bucket's
   owner against `TERMS.ceiling`. The Counter computes no money. **At most two lines that ask a decision**, in sentence case: over the ceiling (or, on a move on a
   booked row that raises what is owed, under it), then the drafter's flags for under the floor, a refund opening, stock below zero and a twin. Every flag, the
   drafter's note and the row (its id added where the drafted row leaves it off) stand in **Details**, its own control. **Drafts on one row (same `amends`), or
