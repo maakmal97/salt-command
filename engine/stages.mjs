@@ -1033,13 +1033,16 @@ export function orderlessSales(book, orders, idx) {
   const rids = new Set(live.filter((o) => o.rid).map((o) => String(o.rid)));
   const keys = new Set(live.filter((o) => o.ledgerKey).map(ledgerKeyOf));
   const byKey = (idx && idx.byKey) || new Map(), out = [];
+  /* a key's one live row is its row whatever cancelled twin sits beside it (Fable, 21 Nov 2026: a hand row with a cancelled twin after it is byKey's no more) */
+  const liveAt = new Map();
+  for (const s of (book && book.sales) || []) if (s && typeof s === "object" && !s.cancelled) { const k = E.ovKey(s); liveAt.set(k, (liveAt.get(k) || 0) + 1); }
   for (const s of (book && book.sales) || []) {
     if (!s || typeof s !== "object") continue;
     const why = importOf(s, {}).refused;
     if (why && ORDER_NOT_NEEDED.includes(why)) continue;
     if (s.rid && rids.has(String(s.rid))) continue;
     const k = E.ovKey(s);
-    if (keys.has(k) && byKey.get(k) === s) continue;
+    if (keys.has(k) && (byKey.get(k) === s || liveAt.get(k) === 1)) continue;
     if (s.rid && Object.hasOwn(ORDERLESS_KNOWN, s.rid)) continue;
     out.push(s);
   }
