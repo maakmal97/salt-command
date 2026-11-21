@@ -1,0 +1,212 @@
+[
+  {
+    "name": "a row a purchase is listed as orderless",
+    "file": "engine/stages.mjs",
+    "find": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);",
+    "replace": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase (dropped)\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);"
+  },
+  {
+    "name": "a row a sale with no customer is listed as orderless",
+    "file": "engine/stages.mjs",
+    "find": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);",
+    "replace": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer (dropped)\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);"
+  },
+  {
+    "name": "a row a reward or loyalty unit the fold raised is listed as orderless",
+    "file": "engine/stages.mjs",
+    "find": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);",
+    "replace": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised (dropped)\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);"
+  },
+  {
+    "name": "a row cancelled is listed as orderless",
+    "file": "engine/stages.mjs",
+    "find": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);",
+    "replace": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled (dropped)\", \"written off\",\n  \"no size or goods to carry\"]);"
+  },
+  {
+    "name": "a row written off is listed as orderless",
+    "file": "engine/stages.mjs",
+    "find": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);",
+    "replace": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off (dropped)\",\n  \"no size or goods to carry\"]);"
+  },
+  {
+    "name": "a row no size or goods to carry is listed as orderless",
+    "file": "engine/stages.mjs",
+    "find": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry\"]);",
+    "replace": "export const ORDER_NOT_NEEDED = Object.freeze([\"a purchase\", \"a sale with no customer\", \"a reward or loyalty unit the fold raised\", \"cancelled\", \"written off\",\n  \"no size or goods to carry (dropped)\"]);"
+  },
+  {
+    "name": "a null row throws",
+    "file": "engine/stages.mjs",
+    "find": "    if (!s || typeof s !== \"object\") continue;\n",
+    "replace": ""
+  },
+  {
+    "name": "the known list is not read",
+    "file": "engine/stages.mjs",
+    "find": "    if (s.rid && Object.hasOwn(ORDERLESS_KNOWN, s.rid)) continue;\n",
+    "replace": ""
+  },
+  {
+    "name": "s053 leaves the known list",
+    "file": "engine/stages.mjs",
+    "find": "  s053: \"two live sales of one day and figure, which no order can tell apart (with s208)\",\n",
+    "replace": ""
+  },
+  {
+    "name": "an ended order names its row",
+    "file": "engine/stages.mjs",
+    "find": "(o) => o && !o.test && ![\"cancelled\", \"declined\"].includes(o.status));",
+    "replace": "(o) => o && !o.test);"
+  },
+  {
+    "name": "a test account's order names its row",
+    "file": "engine/stages.mjs",
+    "find": "(o) => o && !o.test && ![\"cancelled\", \"declined\"].includes(o.status));",
+    "replace": "(o) => o && ![\"cancelled\", \"declined\"].includes(o.status));"
+  },
+  {
+    "name": "a rid names nothing",
+    "file": "engine/stages.mjs",
+    "find": "    if (s.rid && rids.has(String(s.rid))) continue;\n",
+    "replace": ""
+  },
+  {
+    "name": "any row at a named key is named",
+    "file": "engine/stages.mjs",
+    "find": "    if (keys.has(k) && byKey.get(k) === s) continue;",
+    "replace": "    if (keys.has(k)) continue;"
+  },
+  {
+    "name": "a key names nothing",
+    "file": "engine/stages.mjs",
+    "find": "    if (keys.has(k) && byKey.get(k) === s) continue;",
+    "replace": ""
+  },
+  {
+    "name": "a shared group's key names nothing",
+    "file": "engine/stages.mjs",
+    "find": "  const keys = new Set(live.filter((o) => o.ledgerKey).map(ledgerKeyOf));",
+    "replace": "  const keys = new Set(live.filter((o) => o.ledgerKey).map(ledgerKeyOf).filter((k, i, a) => a.indexOf(k) === a.lastIndexOf(k)));"
+  },
+  {
+    "name": "rowIndex takes the newest row at a key, cancelled or not",
+    "file": "src/orders.js",
+    "find": "    if (l.length > 1 && live.length === 1 && live[0].road === \"site\") { byKey.set(k, live[0]); rows.set(k, 1); }",
+    "replace": "    if (false) { byKey.set(k, live[0]); rows.set(k, 1); }"
+  },
+  {
+    "name": "an orderless row makes the tie-out unclean",
+    "file": "src/orders.js",
+    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };",
+    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length && !orderlessOf(book, r.orders, { byKey }).length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };"
+  },
+  {
+    "name": "an orderless row is a fault",
+    "file": "src/orders.js",
+    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };",
+    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults.concat(orderlessOf(book, r.orders, { byKey }))), waiting, orderless: [] };"
+  },
+  {
+    "name": "the tie-out lists nothing",
+    "file": "src/orders.js",
+    "find": "waiting, orderless: orderlessOf(book, r.orders, { byKey }) };",
+    "replace": "waiting, orderless: [] };"
+  },
+  {
+    "name": "the import's gate counts the orderless",
+    "file": "src/orders.js",
+    "find": "  if (!tie.clean || tie.waiting.length) return no(409,",
+    "replace": "  if (!tie.clean || tie.waiting.length || (tie.orderless || []).length) return no(409,"
+  },
+  {
+    "name": "who names the row by its rid",
+    "file": "src/orders.js",
+    "find": "    sayRM((+(s && s.total) || 0) + (+(s && s.delivery) || 0)), \"sold \" + sayDay(s && s.date)].join(\", \");",
+    "replace": "    sayRM((+(s && s.total) || 0) + (+(s && s.delivery) || 0)), \"row \" + (s && s.rid)].join(\", \");"
+  },
+  {
+    "name": "the cure says row and key",
+    "file": "src/orders.js",
+    "find": "export const ORDERLESS_SAY = \"no site order names this sale:",
+    "replace": "export const ORDERLESS_SAY = \"no ledgerKey names this row:"
+  },
+  {
+    "name": "Salt Admin's sale is taken again",
+    "file": "src/worker.js",
+    "find": "    if (operation === \"sale\") {\n      if (body.recovery",
+    "replace": "    if (false) {\n      if (body.recovery"
+  },
+  {
+    "name": "the switch is not read",
+    "file": "src/worker.js",
+    "find": "      if (body.recovery !== true || !await saleRecoveryOn(env.SALT_LEDGER))",
+    "replace": "      if (body.recovery !== true)"
+  },
+  {
+    "name": "recovery need not be asked for",
+    "file": "src/worker.js",
+    "find": "      if (body.recovery !== true || !await saleRecoveryOn(env.SALT_LEDGER))",
+    "replace": "      if (!await saleRecoveryOn(env.SALT_LEDGER))"
+  },
+  {
+    "name": "the recovery word reaches the trade's own check",
+    "file": "src/worker.js",
+    "find": "      delete body.recovery;\n",
+    "replace": ""
+  },
+  {
+    "name": "a missing table reads on",
+    "file": "src/worker.js",
+    "find": "return !!(r && r.mode === \"on\"); } catch (e) { return false; }",
+    "replace": "return !!(r && r.mode === \"on\"); } catch (e) { return true; }"
+  },
+  {
+    "name": "a missing row reads on",
+    "file": "src/worker.js",
+    "find": "return !!(r && r.mode === \"on\"); }",
+    "replace": "return !(r && r.mode === \"off\"); }"
+  },
+  {
+    "name": "the refusal names no way to order",
+    "file": "src/worker.js",
+    "find": "export const SALE_ORDER_FOR_THEM = \"A new sale is a site order: open their account under Customers, then Order for them.\";",
+    "replace": "export const SALE_ORDER_FOR_THEM = \"A new sale is not taken here.\";"
+  },
+  {
+    "name": "the switch ships on",
+    "file": "migrations/0025_sale_recovery.sql",
+    "find": "INSERT OR IGNORE INTO sale_recovery (one, mode) VALUES (1, 'off');",
+    "replace": "INSERT OR IGNORE INTO sale_recovery (one, mode) VALUES (1, 'on');"
+  },
+  {
+    "name": "no card says noOrder",
+    "file": "src/drafter.js",
+    "find": "      dir === \"SELL\" && !(entry && entry.orderId) ? [NO_ORDER_FLAG] : [])",
+    "replace": "      [])"
+  },
+  {
+    "name": "every sale's card says noOrder",
+    "file": "src/drafter.js",
+    "find": "      dir === \"SELL\" && !(entry && entry.orderId) ? [NO_ORDER_FLAG] : [])",
+    "replace": "      dir === \"SELL\" ? [NO_ORDER_FLAG] : [])"
+  },
+  {
+    "name": "Salt Admin draws no orderless list",
+    "file": "stmt/owner.js",
+    "find": "['waiting','Waiting on a move under Approve'],['orderless','Sales no order names']]",
+    "replace": "['waiting','Waiting on a move under Approve']]"
+  },
+  {
+    "name": "the Ledger check's count takes the orderless in",
+    "file": "stmt/owner.js",
+    "find": "n=known&&!t.clean?(t.faults||[]).length:0;",
+    "replace": "n=known?(t.faults||[]).length+(t.orderless||[]).length:0;"
+  },
+  {
+    "name": "an orderless sale reads as a difference on the page",
+    "file": "stmt/owner.js",
+    "find": "root.appendChild(el('p',t.clean?'amb-field__hint':'amb-field__hint amb-neg msg bad',(t.clean?",
+    "replace": "root.appendChild(el('p',t.clean&&!(t.orderless||[]).length?'amb-field__hint':'amb-field__hint amb-neg msg bad',(t.clean&&!(t.orderless||[]).length?"
+  }
+]

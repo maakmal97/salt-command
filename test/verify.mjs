@@ -50658,6 +50658,11 @@ await (async () => {
   await (await import("./drop-overlay.mjs")).run({ ok });
 })();
 
+section("21 Nov 2026: every sale has its order: a sale no order names is listed apart, and Salt Admin's sale is recovery behind a switch");
+await (async () => {
+  await (await import("./sale-has-order.mjs")).run({ ok, pageWork });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });
