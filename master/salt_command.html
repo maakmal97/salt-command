@@ -7621,13 +7621,13 @@ function openable(r){return r.st!=='done'&&r.st!=='canc';}
 
    So the associate has to be DERIVED from a row rather than read off a field, and clearing
    an R2 has to put the buyer back from downstream or the counterparty is lost outright.
-   It lives here, in the engine, because three places need the same answer: the desk's
-   ovAmend, the fold's applyAmend, and the phone payload below. Two of them had their own
+   It lives here, in the engine, because several places need the same answer: the fold's
+   applyAmend, the desk's row editor and the phone payload below (the desk's ovAmend too, until 21 Nov 2026). Two of them had their own
    copy for about an hour on 25 Aug and that is exactly the drift this file exists to stop. */
 /* WHAT A CORRECTION MAY SET, grouped by how each field is checked. It lives in the engine
    for the same reason attributionOf does, one line above: the drafter decides whether to
-   accept a correction, the fold applies it and the desk's ovAmend applies it too, and all
-   three have to agree about which fields exist and what kind each one is. A table in two
+   accept a correction and the fold's applyAmend alone applies it (the desk's ovAmend did too, until 21 Nov 2026), and both
+   have to agree about which fields exist and what kind each one is. A table in two
    places is a table that will differ.
 
    NOT HERE, and excluded rather than forgotten: rid (identity), amend and mod (the trail),
@@ -7680,7 +7680,8 @@ function attributionOf(row,partyKey){
    was handed, and the desk's ovAmend PREVIEWED whatever it was handed. So the row editor drew a
    cancelled-and-delivered order as done, and the queue then refused the very edit the desk had
    just shown the owner as applied. A desk and a fold that disagree about what an edit does is two
-   books. The cross-field refusals live here now and all four callers read them from one place.
+   books. The cross-field refusals live here now and every caller reads them from one place (three since the desk's ovAmend
+   went, 21 Nov 2026).
    WHAT STAYS WITH THE DRAFTER: the per-field type and roster checks. It is the only reader taking
    untyped input off the wire; the other three are handed values the drafter has already typed. */
 /* ====== THE SAME MONEY BY TWO ROADS (28 Sep 2026, s210) =========================================
@@ -7762,8 +7763,8 @@ function correctionFaults(row,fields,isSale){
   /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER: R2 books the row to the
      associate with the buyer behind it, R3 leaves the buyer on the row and credits the
      introduction. One leg without the others is how a downsell reaches a bucket owed by nobody. */
-  /* READ THE LEGS THE WAY THE WRITER WRITES THEM. Both the fold's applyAmend and the desk's
-     ovAmend take `no associate` to mean no attribution at all: they delete rev, ref, refKg and
+  /* READ THE LEGS THE WAY THE WRITER WRITES THEM. The fold's applyAmend (and the desk's ovAmend,
+     until 21 Nov 2026) takes `no associate` to mean no attribution at all: they delete rev, ref, refKg and
      downstream outright. So a stream left over on the BEFORE state of a row whose associate is
      being cleared is not a contradiction, it is a leg about to be deleted. Lifting the drafter's
      wording literally refused every attribution clear the moment the fold started reading it, and
@@ -12681,7 +12682,7 @@ let stockCounted=true;
    screen was accepted, announced, discarded for oil, and silently overwrote SALT's counted
    inventory: the one figure this desk documents as always winning. It is now keyed by product,
    and a product with no count of its own falls back exactly as it did before. */
-let statedStockBy={},provCount=0,provNotes=[],provRM=0;
+let statedStockBy={},provCount=0,provNotes=[],provRM=0,provTrades=0;
 /* B3 of #62 (13 Oct 2026): THE ONE SWITCH FOR UNSENT ENTRIES. true while the Desk still writes: an entry this device
    holds but the Worker has not confirmed (qIsUnsent) would fold into every figure and be marked Unsent. B5 of #62 set it false
    because the Desk's write controls are gone: such an entry moves no figure and waits in the recovery panel to be sent or discarded. */
@@ -12696,28 +12697,6 @@ let provUnsent=0,unsentAts=new Set();
    figure, then the salt roll for salt. Null means nobody has counted this book. */
 function countedFor(pr){return SNAPSHOT_ENGINE.countedFor(snapCtx().B,pr||PROD);}
 const ovKey=t=>POSITION_ENGINE.ovKey(t);   // v338: shared with the phone and the drafter
-/* BY rid FIRST (25 Aug 2026), then by ovKey. ovKey is party|date|total, which names a row only
-   while none of those three changes; a correction changes exactly those, and two SA5-BTR lots
-   already share one key. tools/rid.mjs gave every row an id for this. ovKey stays as the
-   fallback so an entry queued before rids existed still resolves against the same rows. */
-function ovFind(arr,key){
-  for(let i=arr.length-1;i>=0;i--)if(arr[i]&&arr[i].rid===key)return arr[i];
-  for(let i=arr.length-1;i>=0;i--)if(ovKey(arr[i])===key)return arr[i];
-  return null;}
-/* v444: the desk's half of the payable, one line so the two roads to a cancelled row cannot
-   disagree, and the engine's rule so the desk and the fold cannot either. It records a note
-   because a payable appearing on the Order book with no provenance is worse than none. */
-function ovRefund(row,date){
-  if(typeof customerRefunds==='undefined')return;
-  const rec=POSITION_ENGINE.refundOnCancel(customerRefunds,row,date||null);
-  if(rec)provNotes.push('refund payable '+fmt0(rec.amount)+' to '+codeOf(rec.party)+' on the cancelled order');
-  /* 06 Oct 2026: and a row paid past what it comes to (a close or an amendment under what they paid, a payment over
-     the row), the engine's rule as the fold applies it, so the preview and the book carry one payable */
-  const over=POSITION_ENGINE.refundOnOverpay(customerRefunds,row,date||null);
-  if(over)provNotes.push('refund payable '+fmt0(over.amount)+' to '+codeOf(over.party)+', paid past what the row comes to');
-  const stale=POSITION_ENGINE.refundStale(customerRefunds,row);
-  if(stale)provNotes.push('STALE refund on '+row.rid+': '+fmt0(stale)+' of its open refunds is no longer owed; remove it in ledger/book.json');
-}
 /* S5d (28 Oct 2026, flag book_page in D1, shipped off): THE BOOK SERVED AT REQUEST TIME, AND THE PAGE TAKING IT. When /rev says the Book's revision moved (it says one only with the flag on), the page fetches /book/page as its
    own no-store request, keyed, and swaps the answer in over the book baked into it, in place (every list and document is a const the rest of the page holds, so the arrays and objects are emptied and refilled, the two
    primitives are BOOK_STATED and BOOK_MARK), then rebuilds. The baked book stays as the fallback: an answer that is not a whole book, an older Book than this page was built with, or a failure changes nothing, and a failure is
@@ -12800,14 +12779,16 @@ function applyOverlay(){
      being rebuilt, so without this line the preview would keep a refund the queue no longer has. */
   customerRefunds.length=0;JSON.parse(JSON.stringify(BASE_REFUNDS)).forEach(r=>customerRefunds.push(r));
   loans.length=0;JSON.parse(JSON.stringify(BASE_LOANS)).forEach(l=>loans.push(l));   // v589: rebuilt each pass, so a queued loan counts once
-  statedStockBy={};provCount=0;provNotes=[];provRM=0;provUnsent=0;unsentAts=new Set();
+  statedStockBy={};provCount=0;provNotes=[];provRM=0;provTrades=0;provUnsent=0;unsentAts=new Set();
   queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).forEach(q=>{
     const p=q.payload;if(!p)return;
     if(BOOKED_IDS.size&&BOOKED_IDS.has(q.at))return;   /* S5d: the served Book already holds this entry's draft */
     if(!OVERLAY_UNSENT&&qIsUnsent(q))return;
     try{
-      if(p.mode==='new')ovNew(p,q);
-      else if(p.mode==='amend')ovAmend(p,q);
+      /* 21 Nov 2026: A QUEUED TRADE COUNTS IN NO FIGURE. The Desk takes the Book's own view (book_page), so a sale, a lot or an amendment
+         is shown once the Book holds it and never replayed here: ovNew and ovAmend are gone, and the fold's applyAmend is the one applier.
+         The entry stays in the queue panel, and the bar says how many wait. */
+      if(p.mode==='new'||p.mode==='amend'){provTrades++;return;}
       else if(p.mode==='count'){const _pk=(p.product&&PRODUCTS[p.product])?p.product:DEFAULT_PROD;
         statedStockBy[_pk]=+p.qty;
         provNotes.push('stock count '+units(+p.qty)+' '+((PRODUCTS[_pk]||{}).name||_pk));}
@@ -12841,288 +12822,6 @@ function applyOverlay(){
   });
   DATA_STAMP++;   /* and again once the pass is whole, so nothing read part way through stands */
 }
-function ovNew(p,q){
-  const who=p.party||p.newId||'NEW party';   // a new party arrives as a provisional code, never a name
-  if(p.direction==='BUY'){
-    const row={date:p.date,qty:+p.qty,total:+p.total,supplier:who,cash:+p.cash||0,
-      status:((+p.cash||0)>=p.total-0.009?'paid':((+p.cash||0)<=0.009?'unpaid':'partial')),
-      note:p.note||'',_prov:q.at};
-    /* v275: THE ROW SAYS WHICH BOOK IT IS ON. Before this, no entry made through the
-       Transaction tab carried a product, so prodOf() read every one of them as salt and
-       oil could not be recorded at all. Absent still means salt, which is what keeps the
-       sixty-odd rows written before v228 correct without being touched. */
-    if(p.product&&p.product!==DEFAULT_PROD)row.product=p.product;
-    /* record the units that actually landed, not a yes/no. A lot part-received enters
-       the cost basis for that part only, at its own rate. */
-    row.receivedQty=Math.max(0,Math.min(+p.kg||0,row.qty));
-    if(row.receivedQty>0.0001)row.receivedOn=p.date;
-    if(row.receivedQty<row.qty-0.0001)row.inTransit=true;   // balance still to arrive
-    purchases.push(row);
-  }else{
-    const row={date:p.date,customer:who,qty:+p.qty,total:+p.total,cash:+p.cash||0,
-      deliveredQty:+p.kg||0,note:p.note||'',_prov:q.at};
-    if(p.product&&p.product!==DEFAULT_PROD)row.product=p.product;   /* v275, see the BUY branch */
-    /* R2 books to the associate with the buyer behind him; R3 books to the buyer and
-       credits the introduction. Same person can do both, on different lines. */
-    /* THE CODE ALREADY SAYS WHO THE ASSOCIATE IS (v195). A downstream code names its
-       reseller by construction, so leaving the attribution to a tickbox means a missed
-       tick silently books a downsell as a direct sale to a bucket. That is what happened
-       to the 02 Aug CS6-BS-R order: queued with assoc null, it would have minted the
-       general-downsell bucket as a customer in its own right, owed money by nobody, and
-       issued a statement with no one to send it to. So where the form gave no associate
-       and the party is a known downstream, the desk infers it and says so in the note
-       rather than booking something it can see is wrong. An explicit tick always wins;
-       this only fills a silence. */
-    if(!p.assoc){
-      const par=assocOf(who);
-      if(par){p={...p,assoc:par,stream:p.stream||'R2',downstream:p.downstream||who};
-        provNotes.push('attributed '+codeOf(who)+' to associate '+codeOf(par)+' from the code');}
-    }
-    if(p.assoc&&p.stream==='R3'){row.ref=p.assoc;row.refKg=+p.qty;}
-    else if(p.assoc)POSITION_ENGINE.bookR2(row,'customer',p.assoc,p.downstream);   /* v611: into the associate's bucket, as the drafter books it */
-    /* v620: a queued cover spends the balance at once, so the same units cannot be offered twice before the fold */
-    if(p.more&&+p.more.coverUnits>0){row.coverUnits=+p.more.coverUnits;row.coverRM=+p.more.coverRM||0;}
-    sales.push(row);
-  }
-}
-/* The attribution rule is the ENGINE's (engine/position.mjs attributionOf), because this
-   desk, tools/fold.mjs and the phone payload all need the same answer to "who is the
-   associate on this row", and two of them carried their own copy for about an hour on
-   25 Aug before it was consolidated. */
-const ovAttribution=(row,partyKey)=>POSITION_ENGINE.attributionOf(row,partyKey);
-/* v449: the trail's first step, read with the row's own ruler; the mirror of seedStep in tools/fold.mjs,
-   which says why. */
-function ovSeed(row,dir){return {date:row.date,kind:'Fulfilment',cash:dir==='BUY'?poCash(row):txPaid(row),kg:dir==='BUY'?poRecvUnits(row):txEffDeliv(row),note:'as booked'+(row.date?'':', pending and undated')};}
-function ovAmend(p,q){
-  const row=ovFind(p.direction==='BUY'?purchases:sales,p.rid||p.orderKey);
-  if(!row){provNotes.push('no order matched '+(p.orderCode||p.orderKey)+', so it was not applied');return;}
-  row._prov=q.at;
-  /* A CORRECTION REWRITES WHAT THE ROW SAYS AND NOTHING ELSE (25 Aug 2026). It moves no cash
-     and no inventory, so cash, deliveredQty and receivedQty are untouched by design: those move by
-     fulfilment. This is the same code as applyAmend in tools/fold.mjs, and the suite folds one
-     of each and compares, because a desk and a fold that disagree about what an edit does is
-     two books. It takes its branch above the BUY split because it is the one amendment that
-     works the same on a lot as on an order. */
-  /* A CORRECTION REWRITES WHAT THE ROW SAYS AND NOTHING ELSE, and from 25 Aug 2026 that is
-     EVERY attribute a person states. This is the same code as applyAmend in tools/fold.mjs,
-     over the same field table out of the engine, because a desk and a fold that disagree
-     about what an edit does is two books. It takes its branch above the BUY split because it
-     is the one amendment that works identically on a lot and on an order. */
-  if(p.kind==='Correction'){
-    /* v416: the same capture the fold makes, in the same words, because a desk and a fold that
-       disagree about what an edit does is two books. poCash reads a paid status as the row's
-       TOTAL, so it must be read before a total correction rewrites it. */
-    const paidBefore=poCash(row);
-    const f=p.fields||{};
-    /* v436: THE PREVIEW REFUSES WHAT THE BOOK REFUSES. This branch had no gate of any kind, so
-       the row editor drew a cancelled-and-delivered order as done and the queue then refused the
-       same edit at the drafter. One ruler now, POSITION_ENGINE.correctionFaults, read here, by the
-       drafter, by the fold's plan and by applyAmend. DECLINES rather than throws, as every other
-       refusal in this function does, because it is drawing a preview. */
-    const cfaults=POSITION_ENGINE.correctionFaults(row,f,p.direction!=='BUY');
-    if(cfaults.length){
-      provNotes.push('a correction on '+(row.rid||'a row')+' was not applied: '+cfaults[0]);return;}
-    const partyKey=p.direction==='BUY'?'supplier':'customer';
-    const attr=ovAttribution(row,partyKey);
-    const buyerNow=attr.stream==='R2'?(attr.downstream||null):(row[partyKey]||null);
-    const before=Object.assign({},row,{product:row.product||'salt',party:buyerNow,
-      assoc:attr.assoc,stream:attr.stream,downstream:attr.downstream});
-    const asked=k=>Object.prototype.hasOwnProperty.call(f,k)&&f[k]!==undefined;
-    const said=[];
-    /* ====== THE RECORD IS BUILT FROM WHAT IS WRITTEN, NOT FROM WHAT IS ASKED (v385) ======
-       v383 folded two re-keys naming `customer`, which the table calls `party`. The writes
-       below run off the engine's field lists, so nothing was written; this loop ran off the
-       caller's keys, so everything was recorded, and both rows came out asserting a re-key
-       they had not made. Refusing an unknown field upstream stops the case that is known.
-       Reading the SAME list the writes read makes the whole class impossible: a field the
-       writes cannot set can no longer reach the record. CORRECTABLE is exactly the union of
-       the lists below, so the two can no longer disagree. applyAmend in tools/fold.mjs took
-       the matching repair at be2de5a, reading the row back after every write, so the strip on
-       the Ledger is now a check on the record rather than a guard against the tool. */
-    POSITION_ENGINE.CORRECTABLE.forEach(k=>{
-      if(!asked(k))return;
-      const was=before[k]===undefined?null:before[k];
-      if(JSON.stringify(f[k])===JSON.stringify(was))return;
-      said.push(k+' '+(was==null?'(unset)':was)+' to '+(f[k]==null?'(cleared)':f[k]));});
-    const PE=POSITION_ENGINE;
-    const PLAIN=[].concat(PE.CORRECT_NUM_POS,PE.CORRECT_NUM_NN,PE.CORRECT_DATE,PE.CORRECT_TEXT);
-    PLAIN.forEach(k=>{if(!asked(k))return;if(f[k]===null)delete row[k];else row[k]=f[k];});
-    /* A FALSE FLAG IS AN ABSENT FLAG on this book: an uncancelled row simply has no
-       `cancelled` key, so writing false would shape this row unlike every one of its peers. */
-    PE.CORRECT_BOOL.forEach(k=>{if(!asked(k))return;if(f[k]===true)row[k]=true;else delete row[k];});
-    if(asked('defaulted')&&f.defaulted!==true)delete row.defaultedOn;   /* A4: a lot revived from a default loses its date */
-    /* A row with an agreed figure is priced by definition, as a Modification already treats it. */
-    if(!asked('unpriced')&&asked('total')&&f.total>0.005&&row.unpriced){delete row.unpriced;said.push('unpriced true to (cleared), a real total was set');}   /* v440: the SHAPE is a contract. The strip at modClaims parses field-was-to-now with an optional reason after a comma, so the old free-text form rendered on the desk own Ledger as an unreadable claim, and it disagreed with the fold word for word. */
-    /* The v146 guard on the correction road: an ABSENT receivedQty reads as fully received, so
-       clearing pending alone would walk the whole lot into inventory on a deposit. State the
-       receipt explicitly, exactly as the fulfilment path does. */
-    if(p.direction==='BUY'&&asked('pending')&&f.pending!==true&&row.receivedQty==null){row.receivedQty=0;row.inTransit=true;}
-    if(asked('product')){if(f.product==='salt')delete row.product;else row.product=f.product;}
-    const wantAssoc=asked('assoc')?f.assoc:attr.assoc;
-    const wantStream=asked('stream')?f.stream:attr.stream;
-    let wantBuyer=asked('party')?f.party:buyerNow;
-    if(asked('downstream')&&f.downstream!==null)wantBuyer=f.downstream;
-    delete row.rev;delete row.ref;delete row.refKg;delete row.downstream;
-    if(wantAssoc&&wantStream==='R3'){row[partyKey]=wantBuyer;row.ref=wantAssoc;row.refKg=row.qty;}
-    else if(wantAssoc)PE.bookR2(row,partyKey,wantAssoc,wantBuyer);   /* v611: the fold's writer, into the bucket */
-    else{row[partyKey]=wantBuyer||PE.ownerCode(row[partyKey]);}
-    /* Only when a figure it derives from was set: an old lot stores its payment as
-       status:'paid' with no cash field, so an unconditional recompute flipped it to unpaid on
-       any correction, a date fix included. */
-    if(p.direction==='BUY'&&(asked('cash')||asked('total'))){
-      const paid=asked('cash')?(row.cash!=null?+row.cash:0):paidBefore;
-      row.status=paid>=(row.total||0)-0.009?'paid':(paid<=0.009?'unpaid':'partial');}
-    /* v444: a Correction that sets `cancelled` is the OTHER road to a cancelled row, and the
-       payable belongs to the row rather than to the name of the amendment that made it one. */
-    if(p.direction!=='BUY')ovRefund(row,p.date);
-    if(said.length){
-      const line='corrected'+(p.date?' on '+p.date:'')+': '+said.join('; ');
-      row.mod=row.mod?row.mod+', then '+line:line;
-      /* v420: the fold's own words; the differential caught the drift. 28 SEP 2026, AS THE FOLD: seeded from the row
-         as it arrived, and the step carries the units the correction moved, so a handover in stages keeps each
-         stage's day for the engine's txUnpaidSince; the engine's reading of units, never the raw field. */
-      if(!row.amend||!row.amend.length)row.amend=[ovSeed(before,p.direction)];
-      const units=p.direction==='BUY'?PE.poRecvUnits:PE.txPhys, moved=+(units(row)-units(before)).toFixed(3);
-      /* plan 4 (16 Oct 2026), AS THE FOLD: the step says what the correction replaced, every correctable figure that moved, read off the row
-         as written in the person's terms, so it can be undone from its own record */
-      const attrN=ovAttribution(row,partyKey), afterR=Object.assign({},row,{product:row.product||'salt',party:attrN.stream==='R2'?(attrN.downstream||null):(row[partyKey]||null),
-        assoc:attrN.assoc,stream:attrN.stream,downstream:attrN.downstream}), wasR={};
-      PE.CORRECTABLE.forEach(k=>{const a=before[k]===undefined?null:before[k],b=afterR[k]===undefined?null:afterR[k];if(JSON.stringify(a)!==JSON.stringify(b))wasR[k]=a;});
-      row.amend=row.amend.concat([{date:p.date||null,kind:'Correction',cash:0,kg:Math.abs(moved)>0.0009?moved:0,note:p.note||line,was:wasR}]);}
-    return;}
-  /* ====== RESTATE (v439) ================================================================
-     THE DESK HAD NO MODIFICATION BRANCH AT ALL, and the fold has had one since v358. A
-     Modification carries newQty and newTotal and moves no cash and no goods, so it fell through to
-     the movement path, which applied a movement of nothing. On a lot that left the row untouched.
-     On an ORDER it was worse than nothing: the trail seeding at the foot of that path appended a
-     Modification step, so the desk drew a row whose trail asserted a restatement WHILE ITS
-     QUANTITY AND TOTAL STILL READ THE OLD FIGURES. A row asserting a change it did not make is
-     the one thing a ledger must never do, which is v383's own sentence about the same shape.
-     Byte for byte the fold's applyAmend, because a desk and a fold that disagree about what an
-     edit does is two books. It takes its branch ABOVE the cancelled-movement guard for the same
-     reason the fold does: restating the record of a cancelled row is not moving goods against it. */
-  if(p.kind==='Modification'){
-    const newQty=+p.newQty, newTotal=+p.newTotal;
-    if(!(newQty>0)||!(newTotal>=0)){
-      provNotes.push('a restatement of '+(row.rid||'a row')+' was not applied: it carries no valid new quantity and total');return;}
-    const wasQty=row.qty, wasTotal=row.total;
-    /* v416's capture, for the same reason: poCash reads a paid status as the row's TOTAL, so it
-       must be read before the total is rewritten or a restatement would read as already paid. */
-    const paidBefore=poCash(row);
-    const modLine='restated'+(p.date?' on '+p.date:'')+' from '+wasQty+' unit / RM'+wasTotal+' to '+newQty+' unit / RM'+newTotal;
-    row.mod=row.mod?row.mod+', then '+modLine:modLine;
-    if(p.direction==='BUY'){
-      /* v450: a lot keeps a trail; the same seed and step the fold writes, before the figures move. */
-      if(!row.amend||!row.amend.length)row.amend=[ovSeed(row,p.direction)];
-      {const step={date:p.date||null,kind:'Modification',cash:0,kg:0};if(p.note)step.note=p.note;row.amend=row.amend.concat([step]);}
-      if(row.cost!=null&&row.qty>0)row.cost=+(txUnitCost(row)*newQty).toFixed(2);   /* v496: the order's cost follows its quantity; the unit cost it was costed at is kept */
-      row.qty=newQty;row.total=newTotal;
-      row.status=paidBefore>=row.total-0.009?'paid':(paidBefore<=0.009?'unpaid':'partial');
-      return;}
-    /* SELL: qty and total are REPLACED, not added to, which is what restate means and what tells
-       this apart from a Fulfilment. Nothing moves, so cash and deliveredQty are untouched. */
-    if(!row.amend||!row.amend.length)row.amend=[ovSeed(row,p.direction)];
-    const step={date:p.date||null,kind:'Modification',cash:0,kg:0};
-    if(p.note)step.note=p.note;
-    row.amend=row.amend.concat([step]);
-    if(row.cost!=null&&row.qty>0)row.cost=+(txUnitCost(row)*newQty).toFixed(2);   /* v496: the order's cost follows its quantity; the unit cost it was costed at is kept */
-      row.qty=newQty;row.total=newTotal;
-    if(row.unpriced&&newTotal>0)delete row.unpriced;
-    return;}
-  /* v434: the same guard the fold gained, in the same words, because a desk and a fold that
-     disagree about what an edit does is two books. The desk DECLINES rather than throws, as it does
-     for every other refusal in this function, because it is drawing a preview. */
-  if(row.cancelled&&((+p.cash||0)>0.009||(+p.kg||0)>0.009)){
-    provNotes.push('a movement on '+(row.rid||'a row')+' was not applied: the row is already cancelled');return;}
-  if(row.defaulted&&((+p.cash||0)>0.009||(+p.kg||0)>0.009)){
-    provNotes.push('a movement on '+(row.rid||'a lot')+' was not applied: the lot is already a supplier default');return;}
-  if(p.direction==='BUY'){
-    /* v435: the same guard the fold gained, declining rather than throwing as this function does. */
-    if(p.kind==='Default'){
-      const arrivedD=poRecvUnits(row);
-      if(arrivedD>0.009){provNotes.push('a default on '+(row.rid||'a lot')+' was not applied: '+units(arrivedD)+' has already arrived');return;}
-      if(!row.amend||!row.amend.length)row.amend=[ovSeed(row,p.direction)];
-      row.amend=row.amend.concat([{date:p.date,kind:'Default',cash:0,kg:0,note:p.note||undefined}]);
-      row.defaulted=true;if(p.date)row.defaultedOn=p.date;delete row.receivedOn;delete row.pending;return;}
-    /* An agreed-only lot STOPS being agreed only the moment real money or real salt
-       moves against it. Without this, poCash and poRecvUnits keep returning zero for it by
-       design, so the payment you just recorded and the units you just received would
-       both vanish from every figure on the desk and the row would sit pending forever.
-       The prior balance is read as zero rather than from status, because a pending row
-       has paid nothing and received nothing however its status field happens to read. */
-    /* 1 Nov 2026: a cancellation the lot has outrun is declined BEFORE its step is written, as the Default branch is, so the trail
-       never holds a cancellation the book will refuse (History read it as closed) */
-    if(p.kind==='Cancellation'&&poRecvUnits(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a lot')+' was not applied: '+units(poRecvUnits(row))+' has already been received');return;}
-    /* v450: the seed and the step, before anything moves; the fold's BUY branch does the same. */
-    if(!row.amend||!row.amend.length)row.amend=[ovSeed(row,p.direction)];
-    /* v496: a movement carries the cost of what it moved, in RM, from the row's own unit cost; a lot has none. */
-  const stepC=(+p.kg||0)>0.0001&&row.cost!=null?+(txUnitCost(row)*(+p.kg)).toFixed(2):undefined;
-  row.amend=row.amend.concat([{date:p.date,kind:p.kind,cash:+p.cash||0,kg:+p.kg||0,cost:stepC,note:p.note||undefined}]);
-    const wasPending=!!row.pending;
-    if(((+p.cash||0)>0.009)||((+p.kg||0)>0.009)){
-      delete row.pending;
-      /* CRITICAL. poRecvUnits treats a lot with no receivedQty as FULLY RECEIVED, which is
-         how every historical lot is booked. So simply clearing pending would walk the
-         whole 100 unit into inventory and the cost basis the moment a deposit is paid, which
-         is precisely the v146 failure the pending flag exists to prevent. Clearing it
-         must therefore state the receipt explicitly: nothing has arrived yet, and the
-         lot is now on order. The unit branch below adds to this. */
-      if(wasPending&&row.receivedQty==null){row.receivedQty=0;row.inTransit=true;}
-    }
-    if(p.kind==='Cancellation'){
-      row.cancelled=true;if(p.date)row.cancelledOn=p.date;return;}   /* the field as well as the trail, as the fold stamps it (08 Sep 2026) */
-    if((+p.cash||0)>0.009){
-      const before=wasPending?0:(row.cash!=null?row.cash:(row.status==='paid'?row.total:0));
-      row.cash=+(before+(+p.cash)).toFixed(2);}
-    if((+p.kg||0)>0.009){row.receivedOn=p.date;
-      const had=row.receivedQty!=null?row.receivedQty:((wasPending||row.inTransit)?0:row.qty);
-      row.receivedQty=Math.max(0,Math.min(had+(+p.kg||0),row.qty));
-      if(row.receivedQty>=row.qty-0.0001)delete row.inTransit;else row.inTransit=true;}
-    /* v413b: THE SAME TWO FAULTS THE FOLD CARRIED, and they must be fixed in the same words: a
-       desk and a fold that disagree about what an edit does is two books. The status recompute
-       read a raw cash where the accumulator four lines above honours status:'paid', so a receipt
-       carrying no cash rewrote a settled lot to unpaid; and this branch RETURNED before the
-       Cancellation handler below, so cancelling a lot set nothing and did that damage on the way. */
-    const paid=poCash(row);
-    row.status=paid>=row.total-0.009?'paid':(paid<=0.009?'unpaid':'partial');
-    /* v420: the fold's BUY tail dates an undated lot on its first movement and stamps paidOn when
-       the payment completes; this made neither write, so the desk and the book disagreed about
-       when a lot happened. */
-    if(!row.date)row.date=p.date;
-    if(!row.paidOn&&row.status==='paid'&&(+p.cash||0)>0.009)row.paidOn=p.date;
-    return;
-  }
-  /* 1 Nov 2026: v419's gate is read BEFORE the step is written: a cancellation on a sale that has delivered is declined with the
-     trail as it was, so it never holds a cancellation the book will refuse */
-  if(p.kind==='Cancellation'&&txEffDeliv(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a row')+' was not applied: '+units(txEffDeliv(row))+' has already been delivered');return;}
-  /* seed the trail from the row as booked, else wbSoFar would read only this step */
-  if(!row.amend||!row.amend.length)
-    row.amend=[ovSeed(row,p.direction)];   /* v420: the fold's own words; the differential caught the drift */
-  /* v496: a movement carries the cost of what it moved, in RM, from the row's own unit cost; a lot has none. */
-  const stepC=(+p.kg||0)>0.0001&&row.cost!=null?+(txUnitCost(row)*(+p.kg)).toFixed(2):undefined;
-  row.amend=row.amend.concat([{date:p.date,kind:p.kind,cash:+p.cash||0,kg:+p.kg||0,cost:stepC,note:p.note||undefined}]);
-  /* v419: THE TWIN OF THE BUY GATE v414 ADDED, AND IT SAT UNGUARDED FOR FIVE VERSIONS. The fold
-     throws on cancelling a sale that has delivered; this replayed it happily, so the desk previewed
-     a cancelled row the book could never hold, and the batch died at the fold instead. It DECLINES
-     rather than throws, as the BUY branch does, because this is drawing a preview and must not
-     take the screen down. txEffDeliv is the sale's ruler and counts a settlement in kind, which is
-     the same helper v415 gave the fold. */
-  if(p.kind==='Cancellation'){
-    row.cancelled=true;if(p.date)row.cancelledOn=p.date;ovRefund(row,p.date);return;}   /* the field as well as the trail, as the fold stamps it (08 Sep 2026) */
-  row.cash=+((row.cash||0)+(+p.cash||0)).toFixed(2);
-  row.deliveredQty=+((row.deliveredQty||0)+(+p.kg||0)).toFixed(2);
-  /* v420: THE FOLD MAKES FIVE WRITES HERE AND THE DESK MADE TWO. The three missing ones are the
-     dates the phone and the ledger read: the first movement DATES an undated order, and a step
-     that completes delivery or payment stamps the day it did. So the overlay previewed an order
-     that had been paid in full and still showed no paid-on date, and a first movement on an
-     undated row left it undated on screen and dated in the book. Same code, same words, as the
-     fold's own tail, because a desk and a fold that disagree about what an edit does is two
-     books, and that rule has now cost three versions in a row. */
-  if(!row.date)row.date=p.date;
-  if((+p.kg||0)>0.009&&row.qty>0&&row.deliveredQty>=row.qty-0.0001)row.deliveredOn=p.date;
-  if((+p.cash||0)>0.009&&row.total>0&&row.cash>=txOwed(row)-0.009)row.paidOn=p.date;   // v738: paid in full is the goods and the delivery
-  if(p.direction!=='BUY'&&(+p.cash||0)>0.009)ovRefund(row,p.date);   /* 06 Oct 2026: a payment past what the row comes to, as the fold books it */
-}
 const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
 /* ============ BOUNDARIES ============
    Every rule the desk trades by, evaluated in one place, so a rule reads the same
@@ -13132,8 +12831,7 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    in the register on Overview until it is actually resolved.
      breach = a rule is being broken now
      watch  = inside the rule but close enough to act on
-     risk   = a provisional entry whose committed answer will likely differ from
-              the live one, because committing applies judgement the desk cannot */
+   (risk, a queued trade previewed here, went with ovNew and ovAmend on 21 Nov 2026: none is previewed now) */
 /* ============ POLICY (v137) ============
    One setting for everyone is why this panel got ignored. An associate moving 12.5 unit
    lots was judged against a retail one-unit cap, so his row sat permanently red and
@@ -14421,28 +14119,10 @@ function boundaryScan(){
     else if(dd>=8)add('watch','Aged recoverable',supplierReceivable.party,fmt0(supRecovGross)+' at '+nDays(dd),Math.round(provRate(dd)*100)+'% provisioned, fully provisioned at '+nDays(RULES.fullProvDays));}
   return out;
 }
-/* the commit boundary: which provisional entries will probably read differently
-   once judgement is applied. Flagged now so the difference is never a surprise. */
-function commitRisks(){
-  const out=[];
-  queue.forEach(q=>{const p=q.payload;if(!p)return;
-    const code=p.orderCode||'new entry',who=p.party||'new party';
-    if(p.mode==='amend'&&p.direction==='SELL'&&(+p.cash||0)>0.009){
-      const older=sales.filter(s=>s.customer===p.party&&ovKey(s)!==p.orderKey&&txAdvance(s)>0.009&&s.date<(p.date||'9999'));
-      if(older.length)out.push({sev:'risk',rule:'Late cash',who:who,what:fmt0(+p.cash)+' booked on '+code,
-        why:'this party still owes on an older order ('+older.map(o=>fmt0(txAdvance(o))+' from '+o.date).join(', ')+'), so at commit some of this may clear that instead'});}
-    if(p.mode==='amend'&&p.sameDay)
-      out.push({sev:'risk',rule:'Same-day settlement',who:who,what:code+' amended on its own order date',
-        why:'at commit this folds into the opening line, so the separate movement you can see now will disappear'});
-    if(p.mode==='new'&&p.direction==='SELL'&&(+p.kg||0)>0.009)
-      out.push({sev:'risk',rule:'Cost basis',who:who,what:units(+p.kg)+' costed at the weighted average '+fmt(wavgBuy)+'/unit',
-        why:'at commit the traceable lot cost is assigned instead, so the margin on this sale will move'});});
-  return out;
-}
-const bSevTag={breach:'<span class="tag salt-status def">Breach</span>',watch:'<span class="tag salt-status unpaid">Watch</span>',risk:'<span class="tag salt-status salt-status--dashed prov">Commit risk</span>'};
-function boundaryPanel(b,r){
-  b=b||boundaryScan();r=r||commitRisks();   /* v795: Rules hands in every book's register, merged */
-  const all=b.filter(x=>x.sev==='breach').concat(b.filter(x=>x.sev==='watch')).concat(r);
+const bSevTag={breach:'<span class="tag salt-status def">Breach</span>',watch:'<span class="tag salt-status unpaid">Watch</span>'};
+function boundaryPanel(b){
+  b=b||boundaryScan();   /* v795: Rules hands in every book's register, merged */
+  const all=b.filter(x=>x.sev==='breach').concat(b.filter(x=>x.sev==='watch'));
   const nb=b.filter(x=>x.sev==='breach').length,nw=b.filter(x=>x.sev==='watch').length;
   const head=`<h2>Boundaries <span class="rule"></span></h2>`;
   /* v385: THE COUNT GOES ON THE CARD AS A CHIP, not in the card's first sentence. That
@@ -14457,8 +14137,7 @@ function boundaryPanel(b,r){
   if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${nDays(RULES.holdDays)} from the handover, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
-      +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
-      +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
+      +(nw?`<span class="pchip warn">${nw} to watch</span>`:''))}
     <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
     <table class="salt-table"><thead><tr><th class="l salt-table__label">Rule</th><th class="l salt-table__label">Party</th><th class="l salt-table__label">Position</th></tr></thead><tbody>
     ${all.map(x=>`<tr><td class="l salt-table__label">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l salt-table__label mono">${x.who==='stock'?NIL:ID(x.who)}</td><td class="l salt-table__label">${x.what}</td></tr>`).join('')}
@@ -14682,7 +14361,7 @@ function tabOverview(){
     return {arGross,ar,held:currentStock,defUnits,srNet:supRecovNet,srGross:supRecovGross,
       defRows:S.filter(s=>txDeferUnits(s)>0.009).map(s=>({who:s.customer,u:txDeferUnits(s)})),
       adv:arList.map(s=>({who:s.customer,rm:outstandingOf(s),over:overCap(s)})),
-      bnd:boundaryScan(),risks:commitRisks()};});
+      bnd:boundaryScan()};});
   const ids=Object.keys(B), sum=k=>+ids.reduce((a,p)=>a+B[p][k],0).toFixed(2);
   const tag=p=>prodTag({product:p});
   const split=(k,f)=>ids.filter(p=>Math.abs(B[p][k])>0.009).map(p=>esc(PRODUCTS[p].name)+' '+f(B[p][k])).join(' &middot; ');
@@ -14691,7 +14370,7 @@ function tabOverview(){
   const once=k=>{const seen={},out=[];ids.forEach(p=>B[p][k].forEach(x=>{const key=JSON.stringify(x);
       if(seen[key])seen[key].books.push(p);else{seen[key]={x:x,books:[p]};out.push(seen[key]);}}));
     return out.map(e=>e.books.length===ids.length?e.x:Object.assign({},e.x,{rule:e.x.rule+' '+e.books.map(tag).join(' ')}));};
-  const bnd=once('bnd'), risks=once('risks');
+  const bnd=once('bnd');
   /* 10 Nov 2026, his word: the digest, Position at a glance and Latest ledger left Rules; each repeated a tile of its own page */
   const arG=sum('arGross'), arNet=sum('ar'), srNet=sum('srNet'), srGross=sum('srGross');
   /* advances by party across the books, because the money adds and he calls a person, not a book */
@@ -14701,7 +14380,7 @@ function tabOverview(){
   return `<h1>Rules</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
   <div class="dsc dsclead">What breaks a rule today, what is owed out and what is owed in.</div>
-  ${boundaryPanel(bnd,risks)}
+  ${boundaryPanel(bnd)}
   ${defAll.length?`<div class="pend"><h3>Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
   ${arG>0.5?`<div class="pend"><h3>Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${[...new Set(a.over)].map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
   ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul and the lot never arrived; the ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul and the lot never arrived; recoverable pending the settlement meeting, ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
@@ -16521,7 +16200,7 @@ function deskExit(){
    Buyer box and every diff line would be wrong. attributionOf is the one place that knows. */
 function edView(row,dir){
   const partyKey=dir==='BUY'?'supplier':'customer';
-  const at=ovAttribution(row,partyKey);
+  const at=POSITION_ENGINE.attributionOf(row,partyKey);
   return Object.assign({},row,{product:row.product||'salt',
     party:at.stream==='R2'?(at.downstream||null):(row[partyKey]||null),
     assoc:at.assoc,stream:at.stream,downstream:at.downstream});
@@ -16751,8 +16430,8 @@ function ledSumBar(list,total){
    search haystack, never onto the page, and on a settled row the correction step itself is
    swallowed by the collapse. The one screen built to audit this book had no way to contradict
    it, which is why it took a person reading two rows back by hand.
-   IT IS PRINTED NOW, AND EVERY CLAIM IN IT IS READ BACK AGAINST THE ROW. ovAmend and
-   applyAmend both write "corrected on <date>: <field> <was> to <now>", joined by ", then".
+   IT IS PRINTED NOW, AND EVERY CLAIM IN IT IS READ BACK AGAINST THE ROW. applyAmend (and
+   ovAmend, until 21 Nov 2026) writes "corrected on <date>: <field> <was> to <now>", joined by ", then".
    Only that shape is checked; anything a person typed is carried through without a verdict
    rather than with a wrong one.
    A LATER STEP ENDS THE CHECK. A correction states what the row read that day, and a
@@ -20247,7 +19926,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   const rec=renderRecovery();
   if(!txq.length){b.innerHTML=rec+cleared+stuck;return;}
   b.innerHTML=rec+cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
-    +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk until they are committed to the ledger.</div>'
+    +'<div class="dsc" style="margin-top:5px">A count, a loss or a loan is in every figure on the desk until it is committed to the ledger; a queued trade counts in no figure until the Book holds it.</div>'
     +'<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l salt-table__label" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?units(q.qty):NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
@@ -24812,10 +24491,12 @@ function renderRole(){
 }
 function renderProvBar(){
   const b=document.getElementById('provBar');if(!b)return;
-  if(!provCount){b.innerHTML='';return;}
-  b.innerHTML='<div class="provbar"><span>&#9679; <b>'+provCount+'</b> entr'+(provCount===1?'y':'ies')+' recorded but <b>not yet committed</b>'
+  if(!provCount&&!provTrades){b.innerHTML='';return;}
+  b.innerHTML='<div class="provbar"><span>&#9679; '
+    +(provCount?'<b>'+provCount+'</b> entr'+(provCount===1?'y':'ies')+' recorded but <b>not yet committed</b>'
     +(provRM>0.009?', <b>'+fmt0(provRM)+'</b> of cash':'')
-    +': every figure below includes '+(provCount===1?'it':'them')+'.'
+    +': every figure below includes '+(provCount===1?'it':'them')+'.':'')
+    +(provTrades?(provCount?' ':'')+'<b>'+provTrades+'</b> queued trade'+(provTrades===1?' waits':'s wait')+' on the Book and '+(provTrades===1?'counts':'count')+' in no figure.':'')
     +(provUnsent?' <b>'+provUnsent+'</b> '+(provUnsent===1?'is':'are')+' <b>unsent</b>, held on this device only.':'')+'</span>'
     +'<button class="ubtn salt-ghost" onclick="switchTab(\'add\')">Review on To do</button>'
     +(provNotes.length?'<span style="color:var(--crim)">'+esc(provNotes.join('; '))+'</span>':'')

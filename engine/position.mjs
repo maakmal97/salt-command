@@ -1300,13 +1300,13 @@ function openable(r){return r.st!=='done'&&r.st!=='canc';}
 
    So the associate has to be DERIVED from a row rather than read off a field, and clearing
    an R2 has to put the buyer back from downstream or the counterparty is lost outright.
-   It lives here, in the engine, because three places need the same answer: the desk's
-   ovAmend, the fold's applyAmend, and the phone payload below. Two of them had their own
+   It lives here, in the engine, because several places need the same answer: the fold's
+   applyAmend, the desk's row editor and the phone payload below (the desk's ovAmend too, until 21 Nov 2026). Two of them had their own
    copy for about an hour on 25 Aug and that is exactly the drift this file exists to stop. */
 /* WHAT A CORRECTION MAY SET, grouped by how each field is checked. It lives in the engine
    for the same reason attributionOf does, one line above: the drafter decides whether to
-   accept a correction, the fold applies it and the desk's ovAmend applies it too, and all
-   three have to agree about which fields exist and what kind each one is. A table in two
+   accept a correction and the fold's applyAmend alone applies it (the desk's ovAmend did too, until 21 Nov 2026), and both
+   have to agree about which fields exist and what kind each one is. A table in two
    places is a table that will differ.
 
    NOT HERE, and excluded rather than forgotten: rid (identity), amend and mod (the trail),
@@ -1359,7 +1359,8 @@ function attributionOf(row,partyKey){
    was handed, and the desk's ovAmend PREVIEWED whatever it was handed. So the row editor drew a
    cancelled-and-delivered order as done, and the queue then refused the very edit the desk had
    just shown the owner as applied. A desk and a fold that disagree about what an edit does is two
-   books. The cross-field refusals live here now and all four callers read them from one place.
+   books. The cross-field refusals live here now and every caller reads them from one place (three since the desk's ovAmend
+   went, 21 Nov 2026).
    WHAT STAYS WITH THE DRAFTER: the per-field type and roster checks. It is the only reader taking
    untyped input off the wire; the other three are handed values the drafter has already typed. */
 /* ====== THE SAME MONEY BY TWO ROADS (28 Sep 2026, s210) =========================================
@@ -1441,8 +1442,8 @@ function correctionFaults(row,fields,isSale){
   /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER: R2 books the row to the
      associate with the buyer behind it, R3 leaves the buyer on the row and credits the
      introduction. One leg without the others is how a downsell reaches a bucket owed by nobody. */
-  /* READ THE LEGS THE WAY THE WRITER WRITES THEM. Both the fold's applyAmend and the desk's
-     ovAmend take `no associate` to mean no attribution at all: they delete rev, ref, refKg and
+  /* READ THE LEGS THE WAY THE WRITER WRITES THEM. The fold's applyAmend (and the desk's ovAmend,
+     until 21 Nov 2026) takes `no associate` to mean no attribution at all: they delete rev, ref, refKg and
      downstream outright. So a stream left over on the BEFORE state of a row whose associate is
      being cleared is not a contradiction, it is a leg about to be deleted. Lifting the drafter's
      wording literally refused every attribution clear the moment the fold started reading it, and
