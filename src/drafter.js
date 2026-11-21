@@ -726,6 +726,9 @@ const BUY_KINDS = ["Payment", "Receipt", "Default"];
 /* 4 Nov 2026 (his yes, after the ledger conventions): A NEW SALE IS A SITE ORDER. Record's form stopped taking one at v1389; the Desk's queue and the laptop's
    still did (two on 03 Nov 2026, road desk). The queue's roads (the drafter's pass, its dry run and tools/drafts.mjs --from-queue) refuse a new sale with no site
    order behind it and no Salt Admin request; draftRow, the law, is unchanged. A purchase, a gift, a redemption and a change to a booked row go on as before. */
+/* 21 Nov 2026 (item 2, every sale has its order): A NEW SALE WITH NO SITE ORDER BEHIND IT says so on its card, frozen with the draft's flags: the
+   recovery road (Salt Admin's sale with D1 sale_recovery on) or an older queued entry. The row is listed on the Ledger check until it is imported. */
+export const NO_ORDER_FLAG = "No site order names this sale: it is listed on the Ledger check until it is paid, handed over and brought in as an older sale's order.";
 export const QUEUE_SALE_REFUSAL = "a new sale is a site order now: place it with Order for them on Salt Admin";
 /* from the day he said so: an entry stamped earlier was queued under the old rule and is still drafted, never dropped (the watermark's own rule) */
 export const QUEUE_SALE_SINCE = "2026-11-04";
@@ -1941,7 +1944,8 @@ export function draftRow(entry, book) {
     collection: dir === "BUY" ? "purchases" : "sales",
     row,
     reasoning: bits.join(" "),
-    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced), row.cost != null ? basisFlags(priced) : [], oneOffFlags)
+    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced), row.cost != null ? basisFlags(priced) : [], oneOffFlags,
+      dir === "SELL" && !(entry && entry.orderId) ? [NO_ORDER_FLAG] : [])
   };
 }
 
