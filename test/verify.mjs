@@ -3198,10 +3198,11 @@ await (async () => {
     for (const wanted of ["cash", "deliveredQty", "cost", "paidOn", "cancelled", "goodwill", "settledRM", "orderCode", "unpriced", "note"]) {
       ok(E.CORRECTABLE.includes(wanted), `${wanted} is editable`);
     }
-    /* ONE TABLE, THREE CONSUMERS: the drafter decides what to accept, the fold applies it, the
-       desk applies it too. A table in two places is a table that will differ. */
+    /* ONE TABLE: the drafter decides what to accept and the fold applies it (the desk's ovAmend applied it too, until
+       21 Nov 2026). A table in two places is a table that will differ. */
     ok(CORRECTABLE === E.CORRECTABLE, "the drafter reads the engine table rather than its own copy");
-    ok(/PE\.CORRECT_BOOL/.test(mtxt), "and the desk applies a correction from that same table");
+    ok(/const \{ CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT \} = E;/.test(readFileSync(join(REPO, "engine", "apply.mjs"), "utf8")),
+      "and the fold applies a correction from that same table");
 
     const bk = { state: { roster: ["CA4-DAM", "CN3-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN3-WM"] } };
     const tgt = { rid: "sZ1", customer: "CA4-DAM", qty: 2, total: 200, cash: 200, deliveredQty: 2, cost: 44 };
