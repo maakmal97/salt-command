@@ -1,0 +1,138 @@
+<div class="amb-shell" data-mood="lagoon">
+<main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh">
+<span class="amb-chip amb-chip--glass">Plan, 22 Nov 2026</span>
+<h1 class="amb-hero__title">One head for every place: the title, the parts, the status, then the headline</h1>
+<p class="amb-hero__sub">Every place on Salt Admin, Salt Counter and later Salt Desk opens the same way on every screen: its title with no gap above it, then one row of sliding parts, then one row of status, both rows the same height on every place, then the place's headline. Filters leave the navigation and become a menu at the head of the list they filter. Display only: nothing that prices, books, folds, routes or holds money moves.</p>
+<p class="amb-hero__time">salt-command at 29c6443a (v1562 live), Ambient 0.7.31. Built only on your answers to the four asks at the end.</p>
+</header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#head">The head, row by row</a></li>
+<li><a class="amb-contents__link" href="#why">Why, from your five screenshots</a></li>
+<li><a class="amb-contents__link" href="#admin">Salt Admin, place by place</a></li>
+<li><a class="amb-contents__link" href="#counter">Salt Counter and Salt Desk</a></li>
+<li><a class="amb-contents__link" href="#sizes">Every device and width</a></li>
+<li><a class="amb-contents__link" href="#ambient">What Ambient gains</a></li>
+<li><a class="amb-contents__link" href="#order">The order of the work</a></li>
+<li><a class="amb-contents__link" href="#proof">How it is proved</a></li>
+<li><a class="amb-contents__link" href="#asks">Four asks</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="head"><h2 class="amb-section">The head, row by row <span class="amb-section__note">the same on every place and part</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Row</th><th scope="col">What it holds</th><th scope="col">Its rule</th></tr></thead><tbody>
+<tr><td data-label="Row">Title</td><td data-label="What it holds">The place's name on the mood's mesh, centred on a phone (your answer of 18 Nov 2026 kept); the bar's title from 960px.</td><td data-label="Its rule">No room kept above it for a button. The lead line, the clock and the chips leave it.</td></tr>
+<tr><td data-label="Row">1. Parts</td><td data-label="What it holds">The place's parts as Ambient's sliding segment: one row, one part pressed, a count beside a part where something waits.</td><td data-label="Its rule">Never wraps. More parts than fit slide sideways inside the segment, the pressed one kept in view (ask 2). Navigation only: no filter here.</td></tr>
+<tr><td data-label="Row">2. Status</td><td data-label="What it holds">A green dot and Live with the time, then the shop's state (Open, Closed, Held), then Supply tight when it is; at its end Ledger (a tick, or the count of differences) and Approve with its count.</td><td data-label="Its rule">One line, never wrapping, at the same place on every place and part. Identical content everywhere: what does not apply is said, not hidden (Approve 0 greyed).</td></tr>
+<tr><td data-label="Row">Headline</td><td data-label="What it holds">The place's lead line, today under the title ("3 pending. Nothing waits on your tap now. 1 book is out of stock."), then the part's first block as it is now (At a glance, the list, the Now group).</td><td data-label="Its rule">Starts on one line in both panes from 960px, as v1546's one skeleton already holds.</td></tr>
+<tr><td data-label="Row">Filters</td><td data-label="What it holds">One quiet pill at the head of the list it narrows, "Show: All" with a chevron, opening a menu of the choices, each counted, one chosen.</td><td data-label="Its rule">Never above row 1 or between rows 1 and 2. A sheet on a phone, a menu by the pill from 960px.</td></tr>
+</tbody></table>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">Same height, always</span>Rows 1 and 2 are each one tap high (44px, Ambient's <code>--amb-tap</code>), with one gap between them, on every place, part and width. They grow together only when the device's text size is raised, so they stay equal to each other.</span></div>
+</div>
+</section>
+
+<section class="amb-sec" id="why"><h2 class="amb-section">Why, from your five screenshots <span class="amb-section__note">read off the code at v1562</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">What you saw</th><th scope="col">Where it comes from</th><th scope="col">What changes</th></tr></thead><tbody>
+<tr><td data-label="What you saw">A tall gap between the top of the phone and the title, on every place</td><td data-label="Where it comes from">Ambient's hero keeps a whole tap row plus 24px above the title for the app bar, because Salt Admin's app bar holds the + (Record an entry). That room is kept even on places where the + is hidden.</td><td data-label="What changes">The + goes (Record is one tap in the dock and the rail). With no app bar, the hero keeps no room: the title sits 12px under the safe area.</td></tr>
+<tr><td data-label="What you saw">Needs you opens with six loose pills (All, Orders, Payments, Messages, Rows, Accounts)</td><td data-label="Where it comes from">They are filters of one list drawn as a wrapping segment, and Needs you has no parts, so filters stand where parts stand elsewhere.</td><td data-label="What changes">Needs you gains parts (To do, Pending, FYI: the groups it already draws, ask 1); the six kinds become the Show menu on its list.</td></tr>
+<tr><td data-label="What you saw">Settings opens with seven loose pills on two rows</td><td data-label="Where it comes from">Settings' parts are a wrapping segment, the only place whose parts wrap.</td><td data-label="What changes">One sliding row like every other place (ask 2).</td></tr>
+<tr><td data-label="What you saw">Orders shows Ledger and Approve above its parts; Customers and Record show neither</td><td data-label="Where it comes from">A phone shows the bar's moves on Orders alone, and the shop's state on Needs you alone (<code>data-wide</code>).</td><td data-label="What changes">Row 2 holds all of them on every place, so nothing appears, moves or vanishes between tabs.</td></tr>
+<tr><td data-label="What you saw">Live and the time sit at a different height on each place</td><td data-label="Where it comes from">They sit under the lead line, which is one, two or no lines long, so they move with it.</td><td data-label="What changes">They are row 2, under the parts, at one height. The lead line becomes the headline under row 2.</td></tr>
+</tbody></table>
+<div class="amb-tiles">
+<div class="amb-tile"><span class="amb-tile__label">Room before Needs you's first card, phone</span><span class="amb-tile__figure">about 335 to 170px</span><span class="amb-tile__delta amb-muted">hero 242.6px and two rows of pills, to title, two rows and the headline</span><span class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> From the measured hero heights of v1545 and Ambient's spacing tokens; measured for real at 390 before anything ships.</span></div>
+<div class="amb-tile"><span class="amb-tile__label">Bar height, 960 to 1200px</span><span class="amb-tile__figure">86 to 61px</span><span class="amb-tile__delta amb-muted">the lead line no longer takes its own row in the bar</span><span class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> From v1545's measures (61px from 1200px, 86px below it).</span></div>
+</div>
+</div>
+</section>
+
+<section class="amb-sec" id="admin"><h2 class="amb-section">Salt Admin, place by place <span class="amb-section__note">the first version</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Place</th><th scope="col">Row 1, parts</th><th scope="col">Headline</th><th scope="col">Filters move to</th></tr></thead><tbody>
+<tr><td data-label="Place">Needs you</td><td data-label="Row 1, parts">To do, Pending, FYI, each counted (new, ask 1)</td><td data-label="Headline">"3 pending. Nothing waits on your tap now. 1 book is out of stock.", then At a glance</td><td data-label="Filters move to">Show: All, Orders, Payments, Messages, Rows, Accounts, at the head of the list</td></tr>
+<tr><td data-label="Place">Orders</td><td data-label="Row 1, parts">To do, Open, Done, Ended (as now)</td><td data-label="Headline">Its lead line, then the list</td><td data-label="Filters move to">None today</td></tr>
+<tr><td data-label="Place">Customers</td><td data-label="Row 1, parts">Accounts, Messages, Links, Associates (as now)</td><td data-label="Headline">"56 accounts", then the list</td><td data-label="Filters move to">Show: All, Not sent, Not opened, They owe, Locked out, No account, beside the find field</td></tr>
+<tr><td data-label="Place">Record</td><td data-label="Row 1, parts">Entry, Customers, Pricing (as now)</td><td data-label="Headline">The part's first group (Everyday)</td><td data-label="Filters move to">None</td></tr>
+<tr><td data-label="Place">Settings</td><td data-label="Row 1, parts">Hours, Market, Calendar, Notice, Group orders, Practice, This device, sliding (ask 2)</td><td data-label="Headline">The part's first group (Now)</td><td data-label="Filters move to">None</td></tr>
+</tbody></table>
+<p class="amb-prose">What stays exactly as it is: every act (<code>part.*</code>, <code>need.kind.*</code>, <code>acct.filter-*</code>, <code>bar.ledger</code>, <code>bar.approve</code>, <code>bar.hours</code>), every address (<code>#orders/approve</code>, <code>#shop/group</code>), what each tap sends, the panes from 960px, and the mood's mesh behind the title. One act retires: <code>nav.add</code>, the +, with its row in the act table of <code>docs/STATEMENTS.md</code>. The test surface draws the same head with its own four places.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="counter"><h2 class="amb-section">Salt Counter and Salt Desk <span class="amb-section__note">where it applies</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Surface</th><th scope="col">Row 1, parts</th><th scope="col">Row 2, status</th><th scope="col">What differs, and why</th></tr></thead><tbody>
+<tr><td data-label="Surface">Salt Counter</td><td data-label="Row 1, parts">Orders: All, Open, To pay, Done, moved up out of the list's pane. Home, Shop, Account and Rewards have one view each (ask 3).</td><td data-label="Row 2, status">Open until 22:00 (or when it opens), then the account they are signed in as</td><td data-label="What differs, and why">No clock and no Live: a customer is never shown a bare clock (Fable's review of 17 Nov 2026), and the opening line leaves the Today card, which keeps your notice.</td></tr>
+<tr><td data-label="Surface">Salt Desk</td><td data-label="Row 1, parts">Each of its six destinations' pages: Today (To do), Money (Receivables, Financials), Stock (On hand, Next 30 days, Sourcing), Pricing (Pricing, Rules), Network (Clients, Associates, Coverage), Record (Ledger, Analysis)</td><td data-label="Row 2, status">Live, the time, the shop's state, the fold's state</td><td data-label="What differs, and why">The Desk still draws on salt-ds and moves to Ambient only on your word; built once in Ambient, the head arrives with that move (ask 4).</td></tr>
+<tr><td data-label="Surface">Salt QR and the finance vault</td><td data-label="Row 1, parts">Not touched</td><td data-label="Row 2, status">Not touched</td><td data-label="What differs, and why">They take Ambient's new parts at their next pull; nothing of theirs changes unless they use them.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="sizes"><h2 class="amb-section">Every device and width <span class="amb-section__note">one order of rows on all</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Device</th><th scope="col">Width</th><th scope="col">The head</th></tr></thead><tbody>
+<tr><td data-label="Device">Small Android (your screenshots)</td><td data-label="Width">360px</td><td data-label="The head">Centred title on the mesh; row 1 slides where parts overflow; row 2 keeps the dot, Live, the time and the state, and shortens Ledger to its tick or count and Approve to its count beside the word.</td></tr>
+<tr><td data-label="Device">iPhone, iPhone Pro Max</td><td data-label="Width">390 and 430px</td><td data-label="The head">The same; Settings' parts slide, the others fit. The saved app adds only the safe area above the title.</td></tr>
+<tr><td data-label="Device">iPad portrait, a split window</td><td data-label="Width">600 to 959px</td><td data-label="The head">The phone's head with the dock; row 2 has room for every word.</td></tr>
+<tr><td data-label="Device">iPad landscape, a small laptop</td><td data-label="Width">960 to 1199px</td><td data-label="The head">The bar holds the title alone; row 1 and row 2 run across the content's two edges (v1546's one skeleton), the panes under them.</td></tr>
+<tr><td data-label="Device">Laptop and desktop (your 1536 by 730)</td><td data-label="Width">1200 to 1920px</td><td data-label="The head">The same as 960; the rows keep the bar's edges, with panes or without.</td></tr>
+<tr><td data-label="Device">Every device</td><td data-label="Width">Light and dark, larger text, reduced motion</td><td data-label="The head">Both modes from Ambient's tokens; at larger text both rows grow together and row 2 ends in an ellipsis before it wraps; under reduced motion the segment's pressed pill moves without sliding.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="ambient"><h2 class="amb-section">What Ambient gains <span class="amb-section__note">first, so no Salt page draws its own</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Part</th><th scope="col">What it is</th><th scope="col">Checked by</th></tr></thead><tbody>
+<tr><td data-label="Part"><code>amb-head</code></td><td data-label="What it is">The block a place opens with after its title: row 1 then row 2, each <code>--amb-head-row</code> (one tap) high, one gap between, on the content's two edges from 960px.</td><td data-label="Checked by">build-page refuses a head whose rows are out of order or a filter inside it</td></tr>
+<tr><td data-label="Part"><code>amb-hero--title</code></td><td data-label="What it is">A hero with the title alone and no room kept for an app bar; from 960px the bar's title.</td><td data-label="Checked by">the specimen's work screen measured at 390, 1180, 1440</td></tr>
+<tr><td data-label="Part"><code>amb-segment--slide</code></td><td data-label="What it is">The segment on one row that slides sideways inside itself when its parts overflow, the pressed one scrolled into view (ambient.js), a soft fade at the cut edge. The one sideways scroll Ambient allows, and only inside this box.</td><td data-label="Checked by">the page never scrolls sideways at 360px; the rule check names the one exception</td></tr>
+<tr><td data-label="Part"><code>amb-status</code></td><td data-label="What it is">The status row: a live dot and its word, the time in figures, a state chip, then a cluster at its end for indicators. One line; what does not fit ends in an ellipsis.</td><td data-label="Checked by">contrast of every ink on both modes; no wrap at 360px</td></tr>
+<tr><td data-label="Part"><code>amb-filter</code></td><td data-label="What it is">A quiet pill naming the choice ("Show: All") that opens Ambient's sheet on a phone and a menu by the pill from 960px, its choices counted, one chosen, Escape and a tap outside closing it.</td><td data-label="Checked by">keyboard and screen-reader roles in the specimen; 44px targets</td></tr>
+<tr><td data-label="Part"><code>amb-segment--wrap</code></td><td data-label="What it is">Kept, but only as a choice inside a form (a size, a way), never as navigation.</td><td data-label="Checked by">build-page refuses a wrapping segment that carries parts</td></tr>
+</tbody></table>
+<p class="amb-basis">Ambient 0.7.32, then the specimen's work screen, <code>docs/CONTRACT.md</code> and the guide (a place's head, in order), <code>npm run build</code> and <code>npm run check</code>, commit and push on main (your standing yes for ambient-ds), the Design System artifact republished once.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="order"><h2 class="amb-section">The order of the work <span class="amb-section__note">one version an app, one commit a part</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step is-now"><span class="amb-step__title">Your four answers</span><span class="amb-step__text">Nothing is built before them.</span><span class="amb-chip amb-chip--warn">Now</span></li>
+<li class="amb-step"><span class="amb-step__title">Ambient 0.7.32</span><span class="amb-step__text">The six parts above, drawn on the specimen at 360, 390, 768, 1180 and 1536 in both modes, reviewed by a fresh Opus stand-in at max for the design (the Fable pass owed after), its findings re-checked by the same reviewer.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Salt Admin, one version</span><span class="amb-step__text">Commits: the title without the +; the head on all five places; Needs you's parts; the two filters as menus; the old CSS removed whole; the checks. Display only: touched sections, the gate, then CI's full suite read after the push.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Salt Counter, one version</span><span class="amb-step__text">The same head on its places, Orders' four views moved up, the opening line into row 2. Salt Counter and Salt Admin share <code>stmt/page.js</code>, so its head is the same helper with an owner flag.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Salt Desk</span><span class="amb-step__text">With its move to Ambient, on your word (ask 4).</span><span class="amb-chip">Later</span></li>
+</ol></div>
+</section>
+
+<section class="amb-sec" id="proof"><h2 class="amb-section">How it is proved</h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li>A new section, "the place head": on every place and part, at 360, 390, 430, 768, 1180, 1440, 1536 and 1920, row 1's top and height are one figure, row 2's the same, row 2 never wraps, nothing stands between the title and row 1, no hero keeps room for an app bar, no filter sits in the head, and the page never scrolls sideways. Each check proved red by its own mutation before its green counts.</li>
+<li>The older checks that read the old head are re-aimed with a dated note, never deleted: the phone's hero heights, the bar's status (<code>test/work-bar.mjs</code>), the +'s hiding on Record, Needs you's kinds and the Accounts filters as segments.</li>
+<li>Drawn and measured with <code>admin-snap</code> and <code>counter-render</code>, with real data and with long words, every screenshot looked at; the 390 and 1180 shots sent to you after it lands.</li>
+<li>The skeleton audit of v1546 run again on all 21 places and parts: identical per size.</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">Four asks <span class="amb-section__note">a recommendation first in each</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">The other way</th></tr></thead><tbody>
+<tr><td data-label="Ask">1. Needs you's row 1</td><td data-label="Recommended">Parts To do, Pending and FYI, the groups it already draws, each counted</td><td data-label="The other way">No parts: row 1 is left out on Needs you alone, breaking the one order</td></tr>
+<tr><td data-label="Ask">2. More parts than fit (Settings' seven)</td><td data-label="Recommended">The segment slides sideways inside itself, the pressed part kept in view</td><td data-label="The other way">Four shown and a More that opens the rest in a sheet</td></tr>
+<tr><td data-label="Ask">3. A Counter place with one view (Home, Shop, Account, Rewards)</td><td data-label="Recommended">No row 1 there; row 2 takes its place at the same height, so the status is still first and still level</td><td data-label="The other way">Give each real parts (Shop by book; Account as Statement, Messages and This device)</td></tr>
+<tr><td data-label="Ask">4. Salt Desk</td><td data-label="Recommended">The head arrives with the Desk's move to Ambient, built once</td><td data-label="The other way">Now, as a salt-ds recipe first, then redrawn at the move</td></tr>
+</tbody></table>
+<p class="amb-basis">Kept from your earlier answers and not asked again: the title centred on a phone (18 Nov 2026); panes from 960px; parts as underlined tabs from 960px and the bar on the page ground (v1545, answers A and C); the one skeleton's edges (v1546); a pressed filter the neutral pill. If you want the sliding segment from 960px too, in place of the underlined tabs, say so with your answers.</p>
+</div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
