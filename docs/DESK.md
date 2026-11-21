@@ -1127,6 +1127,31 @@ can tell apart). A rid leaves the list in a version once it is imported. The tie
 `waiting` and `clean`, so `deskImport`'s clean gate still passes and a settled orderless row can be imported; Salt Admin's Ledger check draws it
 under "Sales no order names".
 
+### Every order follows its row by rid, version A (21 Nov 2026, item 3 of `docs/plan-ledger-simplify.html`)
+
+Additive: the key stays the road for an order with no rid, and nothing is removed until version B, a week of no counted fallbacks later.
+- **One reader**, the engine's `rowFor(o, idx, tally, reader)` (`engine/stages.mjs`): the row the order's `rid` names while it is live and of the
+  order's own book, its key the row's key as it stands (so a Correction that moved the key moves no order off its row); else the row its key names,
+  as `rowIndex` reads it. A rid naming a cancelled row falls back to the key. Every reader goes through it: the follow (`followRows`, where a live
+  rid is followed as an older sale's order is), the return leg, `namedKeys`, the tie-out, `yesHeld`, `undoFixes`, the reconcile's open-row checks,
+  money on its way, the Accept preview, a trip's first line, Not needed's own rows, `claimOrderFlight`, the taps' `orderRow`, and Salt Admin's two
+  order-to-row lookups. `rowRoom` reads a row found by rid with what is on its way to its own key. The suite holds no `byKey.get(ledgerKeyOf(`.
+- **The fallback is counted** for accepted live orders whose row is on the book, test accounts left out: the tie-out's `ridFallback` (count and
+  the first 20 orders, kept with the check at KV `orders:tieout`), the return leg's `ridFallback` in its result. Version B waits for it to be nought.
+- **Every stage entry carries the order's `rid`** (`payload.rid`), so the drafter's `findRow` and a Fulfilment's target find the row by rid first.
+  Known gap: a Correction (a close, an amendment, a cancellation) naming a rid whose row was cancelled is refused at drafting where the key's live
+  row was taken before; such orders are listed by the backfill (`staleRid`) and on the tie-out.
+- **The stamp** (Opus's M1): the minute's tie-out, when clean, offers each order it tied out by key with that row's rid (`stamp`), only for a live
+  row of the order's own code, one row at its key, once the order's Accept row has landed (approved and committed), at most 40 a pass;
+  `stampRids` sends each as a mark and the stored check keeps no `stamp`. Orders sharing one row each take its one rid (his answer F). Never from
+  the Accept draft, never onto a cancelled row, never while the check has a fault.
+- **The Counter takes a rid once** (`decideDesk`'s mark, `ROW_RID_RE`, a letter and its number): a second rid only by a mark naming the first as
+  `ridWas`, refused 409 otherwise; a replay over a moved order changes nothing. `rid` is never in `CUSTOMER_FIELDS`.
+- **The backfill**, his to run (his answer E): `node tools/orders-rid.mjs` is dry and lists every order the clean tie-out would stamp (no cap) and
+  every order naming a row no longer live; `--run` stamps them through the Desk's keyed `POST /orders/rid` (`deskRidStamp`) and reads each back.
+  Refused whole unless the tie-out is clean with nothing waiting, and while an Actions run or an unfolded approval waits. No undo is needed: an
+  order stamped reads its row as it did.
+
 ## Every conclusion's path: Show, then act (9 Nov 2026, his word and his answer "Show, then act")
 
 Every conclusion on the Desk (a To do row, a Noticed card) and every ledger row has one shape. **Show** opens exactly what it names, on the Desk:
