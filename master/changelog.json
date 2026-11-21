@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1562",
+  "d": "21 Nov 2026",
+  "t": "A RECORD OF THE ORDER CHECK'S HEALTHY RUN",
+  "n": [
+   "<b>THE ORDER CHECK KEEPS ITS RUN.</b> Each minute&#39;s check that orders name their rows now keeps a record of how long it has run healthy: clean, with no order falling back to its key twice running and none naming a row no longer live. Nothing a customer or the desk reads changes.",
+   "<b>IT GATES THE NEXT STEP.</b> Removing the old key roads waits for seven healthy days; the record says when they are up, and a pass that is not healthy starts the count again, saying why."
+  ]
+ },
+ {
   "v": "v1561",
   "d": "21 Nov 2026",
   "t": "A TAP TELLS ITS OWN ORDERS",
