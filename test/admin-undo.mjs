@@ -230,6 +230,12 @@ export async function run({ ok, pageWork }) {
       && h3.j.history.undo.route === "restate" && J(h3.j.history.undo.restate) === J({ qty: 1, total: 110, delivery: 0 })
       && s3.status === 400 && /order card/.test(s3.j.error || ""),
     "a site order's card reads its row's History; a change of its terms is undone by restateOrder, and refused by the ledger's road: " + J([h2.j.history.undo, h3.j.history.undo, s3.j]));
+    /* 21 Nov 2026 (item 3A, Fable's M4): an order stamped with its row's rid whose key is stale (a Correction moved the row's key) is found by both of
+       Salt Admin's lookups: the order's card reads that row's History, and the row's History names the order */
+    const fs = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", rid: "zu2", ledgerKey: E.ovKey({ ...zu2(), total: 999 }) })] });
+    const hs = await fs.call("/all/maker/undo", { order: "20261002000000-un2" }), hr = await fs.call("/all/maker/undo", { rid: "zu2" });
+    ok(hs.status === 200 && hs.j.history.rid === "zu2", "M4: a stamped order's card reads its row's History by rid, its key stale: " + J([hs.status, hs.j.error]));
+    ok(hr.status === 200 && hr.j.history.order === "20261002000000-un2", "M4: and the row's History names the stamped order: " + J([hr.status, hr.j.history && hr.j.history.order]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
   /* 16 Oct 2026, CR3-DAM's s263: a Correction of an agreed site order's units, price or delivery is refused by the ledger's road, naming the
      order and the figures its Amend takes; anything else on it, or a row whose order is done, goes by the ledger as before */

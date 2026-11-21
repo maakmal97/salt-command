@@ -184,5 +184,53 @@
 "file": "tools/orders-rid.mjs",
 "find": "  const got = await c.stamp(false);",
 "replace": "  const got = dry;"
+},
+{
+"name": "M1: a rid naming another party's row is the order's",
+"file": "engine/stages.mjs",
+"find": " && !!o.code && POSITION_ENGINE.ownerCode(r.customer) === o.code ? r : null;",
+"replace": " ? r : null;"
+},
+{
+"name": "M2: a Correction naming a cancelled row's rid is refused, not drafted on the key's live row",
+"file": "src/drafter.js",
+"find": "      if (pay.rid && pay.orderKey && found.row && found.row.cancelled && !reviving(fields)) { const byKey = findRow(book, pay.orderKey); if (byKey.row) found = byKey; }\n",
+"replace": ""
+},
+{
+"name": "M3: a stale rid in rowRoom reads no row",
+"file": "src/orders.js",
+"find": "const s = (rid && byRid.get(rid)) || (matches.length === 1 ? matches[0] : null);",
+"replace": "const s = rid ? byRid.get(rid) : matches.length === 1 ? matches[0] : null;"
+},
+{
+"name": "L5: Received's guard reads the order's own key",
+"file": "engine/stages.mjs",
+"find": "onRows[(ctx.rowKey || ledgerKeyOf)(o)]",
+"replace": "onRows[ledgerKeyOf(o)]"
+},
+{
+"name": "L6: keyClash takes the order's own row for its twin",
+"file": "engine/stages.mjs",
+"find": " && !(o.rid && s.rid === o.rid)) || null;",
+"replace": ") || null;"
+},
+{
+"name": "L7: the minute's check stamps while an order waits",
+"file": "src/orders.js",
+"find": "tie.ok && tie.clean && !(tie.waiting || []).length && stamp",
+"replace": "tie.ok && tie.clean && stamp"
+},
+{
+"name": "L7: the minute's check keeps its stamp at TIEOUT_KEY",
+"file": "src/orders.js",
+"find": "  delete tie.stamp;\n  await env.SALT_QUEUE.put(TIEOUT_KEY",
+"replace": "  await env.SALT_QUEUE.put(TIEOUT_KEY"
+},
+{
+"name": "L8: a dry backfill lets go of a stale yes",
+"file": "src/orders.js",
+"find": "        if (opts.readOnly) continue;   /* item 3A (Fable's L8): a dry backfill reads, and lets go of nothing */\n",
+"replace": ""
 }
 ]

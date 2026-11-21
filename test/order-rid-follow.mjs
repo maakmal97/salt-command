@@ -193,4 +193,50 @@ export async function run({ ok }) {
     const r2 = await T.drive(c, { run: true, say: () => {} });
     ok(r2.ok && J(asked) === "[true,false]", "R9: a run asks dry first, then stamps: " + J(asked));
   }
+  /* R10: Fable's review of version A (21 Nov 2026), each finding its own check */
+  {
+    /* M1: a rid's row moved to another party is not the order's */
+    const theirs = row({ rid: "s395", customer: "ZZ2-BBB" }), mine = row({ rid: "s396" });
+    const f = S.rowFor(order({ rid: "s395" }), rowIndex([theirs, mine]));
+    ok(f.by === "key" && f.row === mine, "M1: a rid naming a row of another party falls back to the key: " + J([f.by, f.row && f.row.rid]));
+    /* M2: a Correction naming a cancelled row's rid drafts against the key's live row, as before entries carried a rid */
+    const { draftRow } = await import("../src/drafter.js");
+    const dead = row({ rid: "s390", cancelled: true, cancelledOn: DAY, cash: 0, deliveredQty: 0 }), live = row({ rid: "s395", cash: 0, deliveredQty: 0 });
+    const close = S.closeEntry(order({ rid: "s390", status: "ready", paid: 0, moved: 4, mode: "collect", queued: {} }), CODE, NOW);
+    const d = draftRow(close, { sales: [dead, live], purchases: [], state: { OPEN: { byKey: {} } } });
+    ok(!d.skip && d.amends === "s395", "M2: a close naming a cancelled row's rid drafts against the live row its key names: " + J([d.skip, d.amends]));
+    const revive = draftRow({ ...close, payload: { ...close.payload, fields: { cancelled: false, cancelledOn: null } } }, { sales: [dead, live], purchases: [], state: { OPEN: { byKey: {} } } });
+    ok(revive.amends === "s390" || /s390/.test(revive.skip || ""), "M2: a revival still names the cancelled row by its rid: " + J([revive.skip, revive.amends]));
+    /* M3: a rid whose row is gone keeps the key's guard in rowRoom */
+    const W = world(), way = [{ at: "x1", payload: { kind: "Fulfilment", cash: 30, orderKey: key(110) } }];
+    const room = await rowRoom(W.D1, "SELL", way, book([row({ rid: "s395", cash: 20 })]));
+    const r = room(key(110), { at: "x2", payload: { rid: "s999" } });
+    ok(r && r.on === 30 && r.left === 60, "M3: a stale rid reads the key's row and what is on its way to it: " + J(r));
+    /* L5: Received's double-pay guard reads money on its way at the stamped row's key */
+    const o5 = order({ rid: "s395", status: "ready", paid: 0, moved: 0, total: 120, ledgerKey: key(110), payments: [{ at: "2026-11-19T01:00:00.000Z", amount: 120, claim: "waiting" }] });
+    const ix5 = rowIndex([row({ rid: "s395", total: 120, cash: 0 })]);
+    const got = S.receivedTap(o5, NOW, { amount: 120 }, { queued: [], shut: new Set(), onRows: { [key(120)]: 50 }, rej: null, room: null, rowKey: (x) => S.rowKeyFor(x, ix5) });
+    ok(got.status === 409 && /sent against their account is booked on this order's row/.test(got.error || ""), "L5: money sent against the account to a stamped order's row still holds a claim that would pay it twice: " + J(got));
+    /* L6: the order's own row, by its rid, is never its own twin */
+    const own = row({ rid: "s395", total: 120 }), twin = row({ rid: "s397", total: 120 }), o6 = order({ rid: "s395", ledgerKey: key(110) });
+    ok(S.keyClash({ sales: [own] }, o6, key(120)) === null && S.keyClash({ sales: [own, twin] }, o6, key(120)) === twin, "L6: keyClash passes over the order's own row and still finds another");
+    /* L7: the minute's check stamps only when clean with nothing waiting, and keeps no stamp at TIEOUT_KEY */
+    const W7 = world(); W7.draft("2026-11-18T14:00:00.568Z", A); W7.draft("2026-11-18T15:00:00.000Z", B, { committed: null });
+    const two = () => [order(), order({ id: B, total: 50, paid: 0, qty: 5, moved: 5, ledgerKey: key(50), status: "ready", queued: { ack: "2026-11-18T15:00:00.000Z" } })];
+    const sales7 = [row({ rid: "s395" }), row({ rid: "s396", total: 50, cash: 50, qty: 5, deliveredQty: 5 })];
+    const E7 = envOf(W7, two()), k7 = await O.tieOutKept(E7.env, book(sales7), NOW), kept = JSON.parse(E7.env.SALT_QUEUE.m.get(O.TIEOUT_KEY));
+    ok(k7.tie.clean && k7.tie.waiting.length === 1 && k7.st === null && !E7.orders[0].rid, "L7: a clean check with an order waiting stamps nothing: " + J([k7.tie.waiting.length, k7.st]));
+    ok(!("stamp" in kept), "L7: and the check kept at TIEOUT_KEY carries no stamp");
+    const W8 = world(); W8.draft("2026-11-18T14:00:00.568Z", A);
+    const E8 = envOf(W8, [order()]), k8 = await O.tieOutKept(E8.env, book([row({ rid: "s395" })]), NOW);
+    ok(k8.st && k8.st.stamped === 1 && E8.orders[0].rid === "s395" && !("stamp" in JSON.parse(E8.env.SALT_QUEUE.m.get(O.TIEOUT_KEY))), "L7: with nothing waiting it stamps, and still keeps no stamp: " + J(k8.st));
+    /* L8: a dry backfill lets go of no stale yes; the minute's check does */
+    const W9 = world(); W9.draft("2026-11-18T14:00:00.568Z", A);
+    W9.db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run("y1", A, "u1", "move", "h", "{}", null, "waiting", "2026-11-18T16:00:00.000Z");
+    const E9 = envOf(W9, [order()]), status = () => W9.db.prepare("SELECT status FROM preapproval WHERE id='y1'").get().status;
+    await deskRidStamp(E9.env, {}, book([row({ rid: "s395" })]), NOW);
+    const afterDry = status();
+    await tieOut(E9.env, book([row({ rid: "s395" })]), NOW);
+    ok(afterDry === "waiting" && status() === "void", "L8: a dry backfill writes nothing, where the minute's check lets the stale yes go: " + J([afterDry, status()]));
+  }
 }

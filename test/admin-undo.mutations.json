@@ -640,5 +640,17 @@
   "file": "stmt/owner.js",
   "find": "go.classList.toggle('amb-pill--danger',q.plain!==true); go.classList.toggle('amb-pill--accent',q.plain===true);",
   "replace": "go.classList.toggle('amb-pill--danger',q.plain!==true);"
+ },
+ {
+ "name": "M4: the order's card finds its row by key alone",
+ "file": "src/worker.js",
+ "find": "f = o ? rowFor(o, rowIndex(book.sales)) : null",
+ "replace": "f = o ? rowFor({ ...o, rid: null }, rowIndex(book.sales)) : null"
+ },
+ {
+ "name": "M4: the row's History finds its order by key alone",
+ "file": "src/worker.js",
+ "find": "rowFor(o, ix).k === key",
+ "replace": "rowFor({ ...o, rid: null }, ix).k === key"
  }
 ]
