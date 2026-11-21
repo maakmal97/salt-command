@@ -1,11 +1,11 @@
 /* test/outbox-narrow.mjs: ITEM 4 OF THE LEDGER SIMPLIFICATION (21 Nov 2026, docs/plan-ledger-simplify.html). The outbox's forced pass tells only the orders its booked rows
- * name (src/outbox.js namesOf and onlyOf, src/orders.js onlyOrders and tellSite's `only`), and the regular pass stays the net. Each check red under its own mutation
+ * name (src/outbox.js namesOf and onlyOf, src/orders.js onlyOrders and tellSite's only), and the regular pass stays the net. Each check red under its own mutation
  * (test/outbox-narrow.mutations.json):
- *   1  the drain reads each live draft's order, rids and amends and hands them on as `only`; a draft that names nothing runs the whole pass
+ *   1  the drain reads each live draft's order, rids and amends and hands them on as only; a draft that names nothing runs the whole pass
  *   2  onlyOrders: by id, by rid, by key, by an amendment's row, and every order of a named row's owner but the cancelled and declined; nothing resolved is the whole pass
  *   3  tellSite: a forced pass tells its own order and no other, a second order of the owner its credit, a finished order of the owner its row; an order the narrowed pass
  *      missed is told by the regular pass; a narrowing that resolves to nobody runs whole
- *   4  the follow: a collision outside `only` still blocks a follow, an order outside `only` is not followed by the forced pass but is by the regular one, and a group
+ *   4  the follow: a collision outside only still blocks a follow, an order outside only is not followed by the forced pass but is by the regular one, and a group
  *      member is still held out of the singles */
 const T = (n) => "2031-01-0" + n;
 
@@ -62,7 +62,7 @@ export async function run({ ok }) {
     { id: "o10", code: "ZZ1-AAA", status: "done", ledgerKey: "ZZ1-AAA|" + T(3) + "|100" },
     { id: "o11", code: "ZZ2-BBB", status: "ready", ledgerKey: "ZZ2-BBB|" + T(5) + "|40" }];
   const ids = (spec) => [...(onlyOrders(ord, sales, spec) || [])].sort().join();
-  ok(ids({ ids: ["o3"] }) === "o3" && ids({ rids: ["s003"] }) === "o11,o3,o7", "an order the entry names is in, and no other: " + ids({ ids: ["o3"] }));
+  ok(ids({ ids: ["o3"] }) === "o11,o3" && ids({ rids: ["s003"] }) === "o11,o3,o7", "an order the entry names is in with its owner's other orders, before any rid is written, and no other: " + ids({ ids: ["o3"] }));
   ok(ids({ rids: ["s001"] }) === "o1,o10", "a named row brings every order of its owner but the cancelled and declined, a finished one included: " + ids({ rids: ["s001"] }));
   ok(ids({ rids: ["s006"] }) === "o8", "an order whose rid is a named row's is in, though no code names it: " + ids({ rids: ["s006"] }));
   ok(ids({ amends: ["ZZ2-BBB|" + T(1) + "|90"] }) === "o11,o3,o7", "an amendment's row named by key brings the orders on that key and its owner's: " + ids({ amends: ["ZZ2-BBB|" + T(1) + "|90"] }));
@@ -109,13 +109,19 @@ export async function run({ ok }) {
     .concat(collide ? [{ id: "o7", u: "u3", status: "ready", product: "salt", qty: 1, total: 100, ledgerKey: nk }] : []);
   const AM = [{ amends: "s001", oid: "o1" }, { amends: "s003", oid: "o9" }];
   const C = siteWorld("v1300", followOrders(true), AM), c = await tellSite(C.env, undefined, book, { force: true, only: { ids: ["o1"] } });
-  ok(C.orders[0].ledgerKey === old && !c.followed, "a key another order outside `only` already names still blocks the follow: " + JSON.stringify({ c, key: C.orders[0].ledgerKey }));
+  ok(C.orders[0].ledgerKey === old && !c.followed, "a key another order outside only already names still blocks the follow: " + JSON.stringify({ c, key: C.orders[0].ledgerKey }));
   const G = siteWorld("v1300", followOrders(false), AM), g = await tellSite(G.env, undefined, book, { force: true, only: { ids: ["o1"] } });
   ok(g.followed === 1 && G.orders[0].ledgerKey === nk && G.orders[1].ledgerKey === "ZZ2-BBB|" + T(1) + "|999",
-    "a forced pass follows its own order to its row and leaves an order outside `only` where it is: " + JSON.stringify({ g, keys: G.orders.map((o) => o.ledgerKey) }));
+    "a forced pass follows its own order to its row and leaves an order outside only where it is: " + JSON.stringify({ g, keys: G.orders.map((o) => o.ledgerKey) }));
   const GR = siteWorld("v1200", G.orders, AM), gr = await tellSite(GR.env, undefined, book);
   ok(gr.followed === 1 && GR.orders[1].ledgerKey === "ZZ2-BBB|" + T(1) + "|90", "and the regular pass follows the one left out: " + JSON.stringify({ gr, keys: GR.orders.map((o) => o.ledgerKey) }));
-  /* a group: two done orders of 1 unit for RM 8 on one key no row holds, their one row the sum (s218's pair, test/book-outbox.mjs); `only` names one member */
+  /* review, 21 Nov 2026: two movers to one key, one outside only (a cancelled order of the owner whose amendment names the same row): the mover outside is still weighed */
+  const M = siteWorld("v1300", [followOrders(false)[0], { id: "o12", u: "u1", status: "cancelled", product: "salt", qty: 1, total: 100, ledgerKey: "ZZ1-AAA|" + T(1) + "|286" }],
+    [{ amends: "s001", oid: "o1" }, { amends: "s001", oid: "o12" }]);
+  const mv = await tellSite(M.env, undefined, book, { force: true, only: { ids: ["o1"] } });
+  ok(!mv.followed && M.orders[0].ledgerKey === old && M.orders[1].ledgerKey === "ZZ1-AAA|" + T(1) + "|286",
+    "a mover outside only still counts against a key: two orders moving to one row, neither moves: " + JSON.stringify({ mv, keys: M.orders.map((o) => o.ledgerKey) }));
+  /* a group: two done orders of 1 unit for RM 8 on one key no row holds, their one row the sum (s218's pair, test/book-outbox.mjs); only names one member */
   const pairKey = "ZZ1-AAA|" + T(1) + "|8";
   const pairWorld = () => {
     const q = kv({ "orders:told": "v1300", "stmt-users": JSON.stringify({ u1: "ZZ1-AAA" }) });
@@ -132,5 +138,5 @@ export async function run({ ok }) {
   };
   const sumBook = async () => ({ sales: [{ rid: "s001", customer: "ZZ1-AAA", date: T(1), qty: 2, total: 16, mod: "total 8 to 16; qty 1 to 2" }], version: "v1300" });
   const P = pairWorld(), p = await tellSite(P.env, undefined, sumBook, { force: true, only: { ids: ["pa"] } });
-  ok(!p.followed && P.orders.every((o) => o.ledgerKey === pairKey), "a group member named alone in `only` is still held out of the singles: the group is weighed over every order: " + JSON.stringify({ p, keys: P.orders.map((o) => o.ledgerKey) }));
+  ok(!p.followed && P.orders.every((o) => o.ledgerKey === pairKey), "a group member named alone in only is still held out of the singles: the group is weighed over every order: " + JSON.stringify({ p, keys: P.orders.map((o) => o.ledgerKey) }));
 }

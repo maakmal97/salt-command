@@ -80,8 +80,8 @@
  {
   "name": "the forced pass follows every single order",
   "file": "src/orders.js",
-  "find": "sharing.has(o.id) || (only && !only.has(o.id))) continue;",
-  "replace": "sharing.has(o.id)) continue;"
+  "find": "    if (only && !shared && !only.has(o.id)) continue;   /* item 4 (review, 21 Nov 2026)",
+  "replace": "    /* item 4 (review, 21 Nov 2026)"
  },
  {
   "name": "a collision is weighed against the orders in only alone",
@@ -90,9 +90,21 @@
   "replace": "const free = followFree(only ? orders.filter((o) => only.has(o.id)) : orders, plan, idx.rows, idx.ended);"
  },
  {
-  "name": "the groups are built over only",
+  "name": "a group member the forced pass reaches is moved alone (the old group-over-only mutation is equivalent once a named order brings its owner)",
   "file": "src/orders.js",
-  "find": "if (!k || !o.code || o.test || o.forFriend || o.status !== \"done\" || ridLive(o, idx)) continue;",
-  "replace": "if (!k || !o.code || o.test || o.forFriend || o.status !== \"done\" || ridLive(o, idx) || (only && !only.has(o.id))) continue;"
+  "find": "if (solo) { for (const o of os) sharing.add(o.id); continue; }",
+  "replace": "if (solo) continue;"
+ },
+ {
+  "name": "the plan is built over only, so a mover outside it is not weighed",
+  "file": "src/orders.js",
+  "find": "    if (!k || !o.code || sharing.has(o.id)) continue;   /* item 4: the plan",
+  "replace": "    if (!k || !o.code || sharing.has(o.id) || (only && !only.has(o.id))) continue;   /* item 4: the plan"
+ },
+ {
+  "name": "an order named by id brings no owner",
+  "file": "src/orders.js",
+  "find": "  for (const o of orders || []) if (o && ids.has(o.id) && o.code) codes.add(o.code);",
+  "replace": "  for (const o of []) if (o && ids.has(o.id) && o.code) codes.add(o.code);"
  }
 ]
