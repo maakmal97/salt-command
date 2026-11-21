@@ -1,0 +1,168 @@
+<div class="amb-shell" data-mood="lagoon"><main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh"><span class="amb-chip amb-chip--glass">Plan, 21 Nov 2026</span>
+<h1 class="amb-hero__title">Six simplifications, now every sale has an order</h1>
+<p class="amb-hero__sub">Your words of 21 Nov 2026: "Plan all six, with Opus and Fable both creating the plan and peer reviewing each other". Nothing here is built. Each item is one or more versions of salt-command, in the order at the foot, and each waits on your answers to the Asks.</p>
+<p class="amb-hero__time">salt-command at v1556. Opus drafted items 1, 2, 4 and 6 and Fable drafted 3 and 5. Each reviewed the other's part against the code, the author applied every finding, and the reviewer checked the changes twice. Every finding is closed.</p></header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#where">Where the ledger moves</a></li>
+<li><a class="amb-contents__link" href="#six">The six at a glance</a></li>
+<li><a class="amb-contents__link" href="#i1">1. Retire the re-key pass</a></li>
+<li><a class="amb-contents__link" href="#i2">2. Every sale has its order</a></li>
+<li><a class="amb-contents__link" href="#i3">3. Follow every order by rid</a></li>
+<li><a class="amb-contents__link" href="#i4">4. Tell only the orders a row names</a></li>
+<li><a class="amb-contents__link" href="#i5">5. Remove the fold and the mirror</a></li>
+<li><a class="amb-contents__link" href="#i6">6. Drop the Desk's own overlay</a></li>
+<li><a class="amb-contents__link" href="#order">The order of versions</a></li>
+<li><a class="amb-contents__link" href="#keep">What stays, and what was rejected</a></li>
+<li><a class="amb-contents__link" href="#review">How the plan was checked</a></li>
+<li><a class="amb-contents__link" href="#asks">Asks</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="where"><h2 class="amb-section">Where the ledger moves <span class="amb-section__note">the premise, checked</span></h2>
+<div class="amb-prose">
+<p>The ledger moves only in the <strong>Book</strong>, the Durable Object inside the Desk Worker, the source of truth since the flip of 10 Nov 2026. The statements Worker (Salt Counter and Salt Admin) starts most sale moves through its order book. It writes no ledger row, and it has no wire to the Book at all.</p>
+<p>What changed on 21 Nov 2026 is what the code may assume: all 219 settled older sales are now site orders, so code written for a sale that might have no order can go.</p>
+</div>
+<div class="amb-stack"><p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> <code>BOOK</code> is bound in <code>wrangler.jsonc</code> only, never in <code>wrangler.stmt.jsonc</code>.</p></div>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><caption>Every road that writes the Book</caption>
+<thead><tr><th scope="col">Road</th><th scope="col">Where</th><th scope="col">Starts from</th></tr></thead><tbody>
+<tr><th scope="row">Your Approve</th><td data-label="Where"><code>decideDraft</code>, src/worker.js</td><td data-label="Starts from">any draft</td></tr>
+<tr><th scope="row">The one-tap yes</th><td data-label="Where"><code>applyPre</code>, src/drafter.js</td><td data-label="Starts from">the order book only</td></tr>
+<tr><th scope="row">The minute net</th><td data-label="Where"><code>bookNet</code>, src/worker.js</td><td data-label="Starts from">any draft</td></tr>
+<tr><th scope="row">A reject voids its entry</th><td data-label="Where"><code>voidEntries</code>, src/book-tap.js</td><td data-label="Starts from">any draft</td></tr>
+<tr><th scope="row">The import load</th><td data-label="Where"><code>/book/load?import=1</code></td><td data-label="Starts from">the laptop</td></tr>
+<tr><th scope="row">Export, notes, compaction</th><td data-label="Where"><code>/book/derived</code>, <code>/book/notes</code>, <code>/book/compact</code></td><td data-label="Starts from">CI</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> From the routes, by Fable. From the order book: Accept, claims, Received, cash, handover, close, cancel, amend. Not from it: purchases, counts, loans, gifts, Add ID, their %, market, edits, corrections, undo, reward and loyalty rows.</p>
+</div></section>
+
+<section class="amb-sec" id="six"><h2 class="amb-section">The six at a glance</h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Item</th><th scope="col">What goes</th><th scope="col">Size</th><th scope="col">Main risk</th></tr></thead><tbody>
+<tr><th scope="row">1. Re-key pass</th><td data-label="What goes">A one-off key migration still run every minute</td><td data-label="Size">Small</td><td data-label="Main risk">Low: an old key is still read rightly</td></tr>
+<tr><th scope="row">2. Every sale has its order</th><td data-label="What goes">The open sale road with no order, behind a switch</td><td data-label="Size">Medium to large</td><td data-label="Main risk">Money: no sale while the Counter is down, unless the switch is on</td></tr>
+<tr><th scope="row">3. Follow by rid</th><td data-label="What goes">Matching an order to its row by day and total</td><td data-label="Size">Large, then medium</td><td data-label="Main risk">Money: a wrong rid points a payment at the wrong row</td></tr>
+<tr><th scope="row">4. Tell only the named orders</th><td data-label="What goes">A second whole pass after every tap</td><td data-label="Size">Medium</td><td data-label="Main risk">Low: a missed order waits a minute</td></tr>
+<tr><th scope="row">5. Fold and mirror</th><td data-label="What goes">The fold tools, the frozen mirror and the way back to git</td><td data-label="Size">Large</td><td data-label="Main risk">Data: the rehearsed way back ends</td></tr>
+<tr><th scope="row">6. The Desk's overlay</th><td data-label="What goes">The page's own replay of queued trades</td><td data-label="Size">Medium, mostly tests</td><td data-label="Main risk">Display only</td></tr>
+</tbody></table>
+</div></section>
+
+<section class="amb-sec" id="i1"><h2 class="amb-section">1. Retire the re-key pass <span class="amb-section__note">Opus</span></h2>
+<div class="amb-prose">
+<p><strong>What goes.</strong> The minute's call to <code>rekeyOrders</code> (src/worker.js:3031), the function and its KV mark <code>orders:keyed</code> (src/orders.js:2783). <code>ledgerKeyOf</code> stays as the reader, so an old-shape key in a queued entry or a draft is still read rightly. The gain is less code, not less load: the pass costs one KV read a minute once its mark is set.</p>
+<p><strong>Before building.</strong> The mark reads <code>product</code>; over <code>GET /orders?all=1</code> no non-salt order holds a three-part key (yours to run, it needs the write key); no queued draft or yes holds one.</p>
+<p><strong>The version.</strong> Two commits, the full suite. New checks: an oil order with an old key is still drafted against its own row, and a tick writes no mark. Section "V4a 3" retires; "V4a 2" and "V4a 6" are re-aimed.</p>
+<p><strong>Way back.</strong> Revert the commit.</p>
+</div></section>
+
+<section class="amb-sec" id="i2"><h2 class="amb-section">2. Every sale has its order <span class="amb-section__note">Opus</span></h2>
+<div class="amb-prose">
+<p><strong>The rule.</strong> Every live customer sale is named by at least one live site order, or by a shared group whose sums equal the row (the s218 and s219 shape). A row no order names is listed on the Ledger check, apart from a named list: s182, s235 and s236 (owing) and s234 (their trip), each leaving the list when it settles.</p>
+<p><strong>Not a fault, its own list.</strong> The Ledger check shows these as <code>orderless</code>, outside its faults. The import still needs a clean Ledger check, so a fault would have blocked the very import that cures it (Fable's first high finding).</p>
+<p><strong>First, a table.</strong> Every road that mints a sale (Accept, the import, Salt Admin's sale, redeem, partner and edit, a trip's split and join, the offset, the reward and loyalty units, a hand fold) is listed with whether it makes an order, is excluded, or counts as orderless. Nothing is refused until that table is filed.</p>
+<p><strong>The recovery road.</strong> A sale with no order is refused ("Order for them"), unless a new one-row D1 switch <code>sale_recovery</code> is on. Such a sale carries a <code>noOrder</code> flag on its card and stays on the list until it is imported.</p>
+<p><strong>The version.</strong> Six commits, the full suite. One check per exclusion reason; the s395 shape counts as named; a shared group counts as named; an orderless row leaves the Ledger check clean and can still be imported; the refusal and the switch.</p>
+<p><strong>Way back.</strong> Turn the switch on, or revert.</p>
+</div></section>
+
+<section class="amb-sec" id="i3"><h2 class="amb-section">3. Follow every order by rid <span class="amb-section__note">Fable</span></h2>
+<div class="amb-prose">
+<p><strong>Why.</strong> Today an order finds its row by <code>party|date|total</code>. When two sales share that key, or a Correction moves it, the order can lose its row: that was the v1551 incident. The imported orders already follow by rid; this makes it every order's road.</p>
+<p><strong>Version A, additive.</strong></p>
+<ul>
+<li>One reader, <code>rowFor</code>, rid first and the key as a counted fallback. Every place that now reads a row by key goes through it: the follow, the return leg, the Ledger check, the reconcile, the money on its way, Accept's preview, the import and the claim allocation.</li>
+<li>The rid is stamped from the row the follow resolves, never from the Accept draft, and never onto a cancelled row. It is stamped only while the Ledger check is clean, and only once the draft is booked.</li>
+<li>On the Counter the rid is set once, moved only by a mark naming both rids, and never shown to a customer.</li>
+<li>A backfill tool, dry first, for older orders.</li>
+<li>Before building: every sale on the Book has a rid, and a trip's split, join and compaction keep rids.</li>
+<li>Cut from the tip after item 2 lands, since both edit the Ledger check.</li>
+</ul>
+<p><strong>Version B, a week later.</strong> After seven days in which no order that should carry a rid fell back to its key (accepted, its row on the book, not a test account), the key roads go: <code>strayRow</code>, <code>followFree</code>, <code>sharedOk</code> and the shared-key cases. Rule 5's wording follows.</p>
+<p><strong>Way back.</strong> Version A adds a road and removes none. <code>rowRoom</code> and <code>payFault</code> are untouched.</p>
+</div></section>
+
+<section class="amb-sec" id="i4"><h2 class="amb-section">4. Tell only the orders a row names <span class="amb-section__note">Opus</span></h2>
+<div class="amb-prose">
+<p><strong>Now.</strong> After every tap, the outbox runs a whole forced pass over every order, and the regular minute pass then runs whole again, because every tap moves the Book's revision. That is two whole passes a tap.</p>
+<p><strong>Before building.</strong> Both switches, <code>book_outbox</code> and <code>book_tap</code>, read on.</p>
+<p><strong>The change.</strong> The forced pass is limited to the orders the booked rows name: the entry's own order, a claim's orders, those whose rid or key matches the row, and every order of the row's customer but the cancelled and declined. That last set covers credit, an account claim, and a finished order an amendment reopens. Shared groups are built over all orders before the limit, and a key collision is still weighed against everyone. An empty list runs the whole pass, never nothing.</p>
+<p><strong>The net stays.</strong> The regular pass is unchanged and still runs on every revision move. The forced pass never moves the told mark, so undo and reward rows keep their net.</p>
+<p><strong>The version.</strong> Three commits, the full suite, after item 3A. Checks: a tap tells its own order and no other; an empty list runs whole; a collision outside the list still blocks a follow; a second order of the customer hears its credit; a missed order is told by the regular pass.</p>
+<p><strong>Way back.</strong> Revert, or switch <code>book_outbox</code> off.</p>
+</div></section>
+
+<section class="amb-sec" id="i5"><h2 class="amb-section">5. Remove the fold and the mirror <span class="amb-section__note">Fable</span></h2>
+<div class="amb-prose">
+<p><strong>Why.</strong> Since the flip the tap is the only writer in fact. The fold, the frozen D1 mirror and the way back to git as the source are still in the code, kept as the rehearsed way back. This makes the tap the only writer in code too, and git stays the daily export.</p>
+<p><strong>A correction to the first list.</strong> The tap's <code>fallback</code> kind stays: it means "approve now, the minute net books it", nothing to do with the fold. Only <code>foldOnly</code>, <code>folded</code> and <code>fresh</code> go.</p>
+<p><strong>Three versions, each with the full suite.</strong></p>
+<ul>
+<li><strong>5a, the workflow:</strong> every step that reads the source mode is made unconditional, the fold steps go, and <code>flip.mjs</code> and its gate go in this version. A hand dispatch then proves the export, the roster export and the publish still run.</li>
+<li><strong>5b, the Worker:</strong> the source is hard-wired. A Book that does not answer is <code>BookDown</code>, never the mirror.</li>
+<li><strong>5c, the tools:</strong> first the four roster helpers move out of <code>fold.mjs</code>, because the live roster export imports them. Then the fold tools go, about 25 test files are re-aimed to <code>applyInto</code>, and rules 1 and 8 are reworded, their numbers kept.</li>
+</ul>
+<p><strong>Before building.</strong> No tap fallback since 10 Nov 2026; no approved row waiting; a sealed export opened this week; the recovery test green.</p>
+<p><strong>What stays:</strong> <code>applyInto</code>, <code>noteFallback</code>, <code>booksync</code>, the export, <code>/book/load?import=1</code>, point-in-time recovery.</p>
+<p><strong>Way back.</strong> From 5a on, recovery is the sealed export, an import load, or point-in-time recovery. The rehearsed flip back ends at 5a, so any waiting month comes before it.</p>
+</div></section>
+
+<section class="amb-sec" id="i6"><h2 class="amb-section">6. Drop the Desk's own overlay <span class="amb-section__note">Opus</span></h2>
+<div class="amb-prose">
+<p><strong>Why.</strong> The Desk page replays this browser's own queued trades over its book (<code>ovNew</code>, <code>ovAmend</code>). Since 28 Oct 2026 the page swaps in the Book's own view, and the page builds no trade of its own, so the replay is a second applier with nothing to do.</p>
+<p><strong>The change.</strong> The two branches and their helpers go. A stale queued trade then shows in the queue panel and counts in no figure, as an unsent one does now. The count, price, redeem and loan kinds are left for a later look.</p>
+<p><strong>Before building.</strong> Confirm the Desk amends an order through <code>/orders</code>, never the queue, and that no device holds a queued new or amend entry.</p>
+<p><strong>The version.</strong> The full suite, mostly tests: about 35 places that drive the overlay are re-aimed. New check: a queued new sale changes no figure and is listed in the panel.</p>
+<p><strong>Way back.</strong> Revert.</p>
+</div>
+<div class="amb-stack"><p class="amb-basis"><span class="amb-claim amb-claim--assumption">Assumption</span> That nothing else reads the overlay. Opus traced it strongly but not to the end; the build's first step is that trace.</p></div>
+</section>
+
+<section class="amb-sec" id="order"><h2 class="amb-section">The order of versions <span class="amb-section__note">agreed by both</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step"><span class="amb-step__title">1. Retire the re-key pass</span><span class="amb-step__text">The smallest, and it clears src/orders.js for the next ones.</span></li>
+<li class="amb-step"><span class="amb-step__title">2. Every sale has its order</span><span class="amb-step__text">Needs the Ledger check clean, and leaves <code>strayRow</code> whole for 3B.</span></li>
+<li class="amb-step"><span class="amb-step__title">3A. Follow by rid, additive</span><span class="amb-step__text">Cut after 2 lands; then your backfill, dry first.</span></li>
+<li class="amb-step"><span class="amb-step__title">4 and 6, beside each other</span><span class="amb-step__text">Built in two worktrees, landed in turn, the second rebuilt on the first.</span></li>
+<li class="amb-step"><span class="amb-step__title">3B. The key roads go</span><span class="amb-step__text">After seven clean days.</span></li>
+<li class="amb-step"><span class="amb-step__title">5a, 5b, 5c</span><span class="amb-step__text">Last, on your word that the flip is permanent; 5c after 6.</span></li>
+</ol>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Items 1, 2, 3 and 4 all edit src/orders.js, so they go in series; items 1, 6 and 5c all edit test/verify.mjs. Every version rewrites the changelog and the built page, so parallel work lands one version at a time.</p>
+</div></section>
+
+<section class="amb-sec" id="keep"><h2 class="amb-section">What stays, and what was rejected</h2>
+<div class="amb-prose">
+<p><strong>Guards that stay through all six:</strong> <code>rowRoom</code> and <code>payFault</code> on every road that books money; the Book first and D1 second; the one-tap digest, so what is approved is the row; a return leg that only ever raises; a clean Ledger check before any import; the sealed daily export.</p>
+<p><strong>Rejected: the order book as the one record.</strong> The Book deriving from the Counter's order book would put cost and margin behind the customers' door, copy the engine into <code>stmt/</code> where two engines drift (rule 1), and reverse your answer of 25 Oct 2026 that orders and the book stay two objects. Half the entry kinds have no order anyway.</p>
+<p><strong>Rejected: merging the approval roads.</strong> They already share one booking (<code>bookTap</code>).</p>
+</div></section>
+
+<section class="amb-sec" id="review"><h2 class="amb-section">How the plan was checked</h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Review</th><th scope="col">Found</th><th scope="col">Outcome</th></tr></thead><tbody>
+<tr><th scope="row">Fable on items 1, 2, 4, 6</th><td data-label="Found">2 high, 6 medium, 4 low; then 1 low</td><td data-label="Outcome">All applied and re-checked closed</td></tr>
+<tr><th scope="row">Opus on items 3, 5</th><td data-label="Found">2 high, 4 medium, 4 low; then 2 medium, 1 low; then 1 low</td><td data-label="Outcome">All applied and re-checked closed; the last (flip.mjs goes in 5a) applied on this page</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> The highs: an orderless fault would have blocked the import that cures it; the stray-row branch item 2 meant to delete is the Amend ID re-key case; the live roster export imports four helpers from the fold; item 3 had moved only one of about nine readers to the rid.</p>
+</div></section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">Asks <span class="amb-section__note">ten, each with a recommendation</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step"><span class="amb-step__title">A. Item 1: keep the old-key reader in ledgerKeyOf?</span><span class="amb-step__text">Recommended: keep it. It is one line, and the Counter's copy would have to move with it.</span></li>
+<li class="amb-step"><span class="amb-step__title">B. Item 2: a recovery road behind a switch, or none?</span><span class="amb-step__text">Recommended: keep it behind <code>sale_recovery</code>, off, for a Counter outage.</span></li>
+<li class="amb-step"><span class="amb-step__title">C. Item 2: the exclusion list in code or in the book?</span><span class="amb-step__text">Recommended: in code, beside the rule it serves.</span></li>
+<li class="amb-step"><span class="amb-step__title">D. Item 3: two versions a week apart?</span><span class="amb-step__text">Recommended: yes, so the fallback count proves the rid road first.</span></li>
+<li class="amb-step"><span class="amb-step__title">E. Item 3: the backfill run by you, dry first?</span><span class="amb-step__text">Recommended: yes; it needs the write key, as the import did.</span></li>
+<li class="amb-step"><span class="amb-step__title">F. Item 3: a shared group stamped with its one rid?</span><span class="amb-step__text">Recommended: yes; a group becomes "orders with one rid".</span></li>
+<li class="amb-step"><span class="amb-step__title">G. Item 5: is the flip of 10 Nov 2026 permanent?</span><span class="amb-step__text">Yours alone. Without a yes, item 5 is not built.</span></li>
+<li class="amb-step"><span class="amb-step__title">H. Item 5: wait a month before 5a?</span><span class="amb-step__text">Recommended: yes. 5a ends the rehearsed way back, so nothing of item 5 ships in that month.</span></li>
+<li class="amb-step"><span class="amb-step__title">I. Item 5: drop the unbuilt model-written notes?</span><span class="amb-step__text">Recommended: yes; a plain line is written with the day's export.</span></li>
+<li class="amb-step"><span class="amb-step__title">J. Item 6: remove the other overlay kinds in the same version?</span><span class="amb-step__text">Recommended: no; trace them first.</span></li>
+</ol></div>
+</section>
+
+</div></div>
+</main></div>
