@@ -174,10 +174,11 @@ export function claimOrderFlight(sales, orders, u, by = {}, off = new Set()) {
   const cash = {}, ready = [];
   const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
   const done = new Set(orders.filter((o) => o.u === u && o.status === "done").map((o) => o.id));
-  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
+  const byRid = new Map();
+  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); if (s && s.rid) byRid.set(s.rid, s); }
   for (const o of orders) {
     if (o.u !== u || !o.ledgerKey || off.has(o.id) || ["cancelled", "declined"].includes(o.status)) continue;
-    const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
+    const lk = rowKeyFor(o, { byRid });   /* V4a: the row's key as the book names it, whether or not the pass has reached the order; item 3A: by its rid first */
     if (o.status === "ready") ready.push(lk);
     add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.credit || 0) + (+o.claimed || 0) - (cash[lk] || 0));   /* 27 Oct 2026: the row's cash holds their credit too (Fable) */
   }
@@ -208,7 +209,7 @@ export function amendEntry(order, code, figs, was, now, mode) {
   return {
     at: at.toISOString(), type: "SELL", party: books, qty: figs.qty, total: figs.total, status: "Amendment",
     raw: "Amended " + books + ", order " + order.id + ": " + said.join(", "),
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: ridFor(order),
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date: klDate(at), qty: 0, total: 0, cash: 0, kg: 0,
       fields,
@@ -279,6 +280,41 @@ export const partyOnBook = (order, code) => (order && order.forFriend ? bucketFo
    re-keyed them was retired on 21 Nov 2026) never
    names a salt twin's row by the old shape */
 export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.ledgerKey, order && order.product) || null;
+/* 21 Nov 2026 (item 3, version A, docs/plan-ledger-simplify.html): EVERY ORDER FOLLOWS ITS ROW BY RID. The one reader of an order's row: the row its
+   `rid` names, while that row is live and of the order's own book, and its key the row's key AS IT STANDS, so a Correction that moved the key moves no
+   order off its row; else, as before, the row its key names (`byKey`, rowIndex's). A rid naming a cancelled row falls back to the key, so a row he
+   cancelled and booked again reads as it always did (Opus's M1: a rid moves only by a mark naming the old and the new). `idx` is { byKey, byRid }
+   (Maps); `tally`, when given, is a Map of reader to the ids of the orders read by key that should have named their row by rid (accepted, not a
+   test, not ended, their row on the book), which the seven days before version B count. ADDITIVE: an order with no rid reads exactly as before. */
+export const ridLive = (o, idx) => {
+  const r = o && typeof o.rid === "string" && o.rid && idx && idx.byRid ? idx.byRid.get(o.rid) : null;
+  return r && !r.cancelled && (r.product || "salt") === ((o && o.product) || "salt") ? r : null;
+};
+export function rowFor(o, idx, tally, reader) {
+  const r = ridLive(o, idx);
+  if (r) return { row: r, k: POSITION_ENGINE.ovKey(r), by: "rid" };
+  const k = ledgerKeyOf(o), row = k && idx && idx.byKey ? idx.byKey.get(k) || null : null;
+  if (tally && row && o && !o.test && !["cancelled", "declined", "placed"].includes(o.status)) {
+    const l = tally.get(reader || "?") || new Set();
+    tally.set(reader || "?", l.add(o.id));
+  }
+  return { row, k, by: "key" };
+}
+/* the key an order's row is read by, for a reader that holds key-indexed figures (the open rows, money on its way): the rid's row's key when live, else its own */
+export const rowKeyFor = (o, idx) => rowFor(o, idx).k;
+/* the one live row a tap reads for an order: its rid's, else the first live row its key names, as before */
+export function orderRow(book, o) {
+  const sales = (book && book.sales) || [], byRid = new Map();
+  if (o && o.rid) for (const s of sales) if (s && s.rid === o.rid) byRid.set(s.rid, s);
+  const r = ridLive(o, { byRid });
+  if (r) return r;
+  const k = ledgerKeyOf(o);
+  return sales.find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === k);
+}
+/* rowRoom reads a row by the rid an entry names: a tap with no entry of its own names the order's */
+const ridOwn = (o) => (ridFor(o) ? { at: "", payload: { rid: ridFor(o) } } : null);
+/* the rid a stage entry carries, so the drafter finds the row by rid first (findRow), as the fold does */
+const ridFor = (o) => (o && typeof o.rid === "string" && /^[a-z]\d{1,6}$/i.test(o.rid) ? o.rid : null);
 /* 19 Nov 2026 (the tie-out's "two rows share its key", s395): A ROW'S NEW NAME IS NEVER ANOTHER ROW'S. An amendment, a close or an early
    handover's redate moves the key its row is named by (party, day, goods and delivery, book), and the book names one row a key: where the
    moved key is already another row's (live or ended, as Accept reads a twin), both rows stick, every later stage of both is refused and
@@ -343,7 +379,7 @@ export function payEntry(order, code, amount, now, cash) {
   return {
     at: at.toISOString(), type: "SELL", party: books, qty: 0, total: rm, status: "Payment", by: cash ? "desk" : "customer",
     raw: "Payment of RM " + rm + " on " + books + ", order " + order.id + ", by " + method,
-    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: ridFor(order),
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: rm, kg: 0,
       note: (cash ? "Cash received at the handover, recorded on the desk, order " + order.id : "Paid on the statements site, order " + order.id + ", by " + method) + "." }
@@ -371,7 +407,7 @@ export function handoverEntry(order, code, units, now) {
   return Object.assign({
     at: at.toISOString(), type: "SELL", party: books, qty: moved, total: 0, status: "Handover",
     raw: moved + " unit " + how + " to " + books + ", order " + order.id + ", on " + date,
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: ridFor(order),
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       fields: Object.assign({ deliveredQty: moved, deliveredOn: date, handover: how }, was ? { date } : {}),
@@ -405,7 +441,7 @@ export function closeEntry(order, code, now) {
   return Object.assign({
     at: at.toISOString(), type: "SELL", party: books, qty, total: goods, status: "Close",
     raw: "Closed at " + qty + " unit " + how + " to " + books + " for RM " + goods + ", order " + order.id + ", of " + was + " ordered",
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: ridFor(order),
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       fields: Object.assign({ qty, total: goods, deliveredQty: +(+order.moved || 0).toFixed(3), deliveredOn: date, handover: how }, from ? { date } : {}),
@@ -430,7 +466,7 @@ export function cancelEntry(order, code, why, now) {
   return {
     at: at.toISOString(), type: "SELL", party: books, qty: 0, total: 0, status: "Cancellation",
     raw: "Cancellation on " + books + ", order " + order.id + ", recorded " + date,
-    payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: books, rid: null,
+    payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: books, rid: ridFor(order),
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       note: "Withdrawn on the statements site by " + (why === "desk" ? "the desk" : "the customer") + ", order " + order.id + "." }
@@ -805,14 +841,14 @@ export function restateTap(o, at, body, ctx) {
     out = outsideBand(figs.total, fl, band);
     if (out && !ro.why && !undoing) { const r = bandRefusal(out, fl, figs.qty); return Object.assign({ status: r.status, error: r.error, outside: r.outside }, r.underFloor ? { underFloor: true } : {}); }
     {
-      const marked = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+      const marked = orderRow(book, o);
       /* a row not on the book yet (its pending row still on its way) may carry a mark this read cannot see, so it is cleared all the same */
       mark = out ? (ro.why ? markOf(out, ro.why) : undefined) : (!marked || marked.oneOff ? null : undefined);
     }
   }
   /* money on its way to the row (a claim against the account, cash, a payment typed on the desk) is measured once it lands:
      the refund is read off the row as it stands when each entry folds, so the figure waits for that money */
-  const r = room ? room(ledgerKeyOf(o), null) : null;
+  const r = room ? room(ledgerKeyOf(o), ridOwn(o)) : null;
   if (r && r.on > 0.004) {
     const paidRow = +(was.total + was.delivery - r.owes).toFixed(2);
     if (owed < paidRow + r.on - 0.004) return { status: 409, error: "the row has " + rm(paidRow) + " paid and " + rm(r.on) + " more on its way, so it cannot come to " + rm(owed) + " until that lands" };
@@ -824,7 +860,7 @@ export function restateTap(o, at, body, ctx) {
      until a handover (its `handover`), and the delivery it carries is already the one asked, so a Correction would change nothing and the drafter refuses
      it. The site takes it at the tap, told as changed, and no row is queued */
   if (wayMoves && !(body && body.undo !== undefined) && !((+o.moved || 0) > 0.0004)) {
-    const row = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+    const row = orderRow(book, o);
     if (row && Math.abs(+row.qty - figs.qty) < 0.0004 && Math.abs(+row.total - figs.total) < 0.004 && Math.abs((+row.delivery || 0) - figs.delivery) < 0.004 && !row.handover && !row.trip)
       return { siteOnly: true, site: { restate: Object.assign({}, figs, { mode, tell: true }) }, shown: { was: Object.assign({ mode: o.mode || null }, was), mode } };
   }
@@ -837,7 +873,7 @@ export function restateTap(o, at, body, ctx) {
   let undone = null;
   if (body && body.undo !== undefined) {
     if (wayMoves) return { status: 409, error: "an undo puts back figures, never the way" };
-    const row = book && (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+    const row = book && orderRow(book, o);
     const u = !Number.isInteger(body.undo) ? { fault: "it names no step" } : row ? POSITION_ENGINE.undoOf(row, body.undo) : { fault: "the order's row is not on the book" };
     if (u.fault) return { status: 409, error: "the undo was refused: " + u.fault };
     if (u.kind !== "terms" || Object.keys(u.fields).some((k) => !["qty", "total", "delivery", "cost", "unpriced"].includes(k))) return { status: 409, error: "that change on a site order is undone by hand" };
@@ -888,11 +924,11 @@ export function lowerTap(o, at, body, ctx) {
   const told = o.queued || {};
   if (nowPaid > (+told.paid || 0) + 0.004 || nowMoved > (+told.moved || 0) + 0.0004) return { status: 409, error: "the order has a move the book has not heard yet: wait for it to land" };
   if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
-  const row = (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+  const row = orderRow(book, o);
   if (!row) return { status: 409, error: "the order's row is not on the book yet: wait for it to land" };
   if (Math.abs(rowPaidFor(o, row) - nowPaid) > 0.004 || Math.abs(rowOut(row) - nowMoved) > 0.0004)
     return { status: 409, error: "the order and its row do not agree yet: wait for the Desk to catch up, then try again" };
-  const r = room ? room(ledgerKeyOf(o), null) : null;
+  const r = room ? room(ledgerKeyOf(o), ridOwn(o)) : null;
   if (r && r.on > 0.004) return { status: 409, error: "money is already on its way to this row: decide it before taking any back" };
   if (earlier.some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
     return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
@@ -921,7 +957,7 @@ export function lowerTap(o, at, body, ctx) {
   const entry = {
     at: atD.toISOString(), type: "SELL", party: books, qty: +o.qty, total: +o.total, status: "Amendment",
     raw: "Lowered " + books + ", order " + o.id + ": " + said.join(", "),
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: ridFor(o),
       orderKey: ledgerKeyOf(o), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date: klDate(atD), qty: 0, total: 0, cash: 0, kg: 0, fields, expect,
       note: "Taken back after Accept for order " + o.id + ": " + said.join(", ") + ". His reason: " + ro.why + "." },
