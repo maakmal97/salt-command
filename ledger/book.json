@@ -657,7 +657,9 @@
     {"amend":[{"cash":0,"date":"2026-11-20","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":8,"date":"2026-11-20","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":2.95,"date":"2026-11-20","kg":1,"kind":"Correction","note":"corrected on 2026-11-20: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":8,"cost":2.95,"customer":"CK4-SEN","date":"2026-11-20","deliveredOn":"2026-11-20","deliveredQty":1,"handover":"collected","mod":"corrected on 2026-11-20: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-21. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-20","product":"rice","qty":1,"rid":"s405","road":"site","total":8},
     {"amend":[{"cash":0,"date":"2026-11-20","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":190,"date":"2026-11-20","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":106,"date":"2026-11-20","kg":2,"kind":"Correction","note":"corrected on 2026-11-20: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":190,"cost":106,"customer":"CZ5-TM","date":"2026-11-20","deliveredOn":"2026-11-20","deliveredQty":2,"handover":"collected","listQty":2,"listRM":190,"mod":"corrected on 2026-11-20: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-21. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-20","qty":2,"rid":"s406","road":"site","total":190},
     {"amend":[{"cash":0,"date":"2026-11-20","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"cost":132.5,"date":"2026-11-20","kg":2.5,"kind":"Correction","note":"corrected on 2026-11-20: deliveredQty 0 to 2.5; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":0,"date":"2026-11-20","kg":0,"kind":"Correction","note":"corrected on 2026-11-20: total 260 to 230; delivery (unset) to 0","was":{"delivery":null,"total":260}},{"cash":230,"date":"2026-11-20","kg":0,"kind":"Fulfilment"}],"cash":230,"cost":132.5,"customer":"CE4-CHE","date":"2026-11-20","deliveredOn":"2026-11-20","deliveredQty":2.5,"delivery":0,"handover":"collected","listQty":2.5,"listRM":260,"mod":"corrected on 2026-11-20: deliveredQty 0 to 2.5; deliveredOn (unset) to 2026-11-20; handover (unset) to collected, then corrected on 2026-11-20: total 260 to 230; delivery (unset) to 0","note":"Booked when it was approved and written into this book by the export of 2026-11-21. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-20","qty":2.5,"rid":"s407","road":"site","total":230},
-    {"amend":[{"cash":0,"date":"2026-11-20","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"cost":29.5,"date":"2026-11-20","kg":10,"kind":"Correction","note":"corrected on 2026-11-20: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":60,"date":"2026-11-20","kg":0,"kind":"Fulfilment"}],"cash":60,"cost":29.5,"customer":"CE4-CHE","date":"2026-11-20","deliveredOn":"2026-11-20","deliveredQty":10,"handover":"collected","mod":"corrected on 2026-11-20: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-21. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-20","product":"rice","qty":10,"rid":"s408","road":"site","total":60}
+    {"amend":[{"cash":0,"date":"2026-11-20","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"cost":29.5,"date":"2026-11-20","kg":10,"kind":"Correction","note":"corrected on 2026-11-20: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":60,"date":"2026-11-20","kg":0,"kind":"Fulfilment"}],"cash":60,"cost":29.5,"customer":"CE4-CHE","date":"2026-11-20","deliveredOn":"2026-11-20","deliveredQty":10,"handover":"collected","mod":"corrected on 2026-11-20: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-20; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-21. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-20","product":"rice","qty":10,"rid":"s408","road":"site","total":60},
+    {"amend":[{"cash":0,"date":"2026-11-21","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":160,"date":"2026-11-21","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":72.3,"date":"2026-11-21","kg":10,"kind":"Correction","note":"corrected on 2026-11-21: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-21; handover (unset) to delivered","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":160,"cost":72.3,"customer":"CI5-PER","date":"2026-11-21","deliveredOn":"2026-11-21","deliveredQty":10,"delivery":30,"handover":"delivered","mod":"corrected on 2026-11-21: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-21; handover (unset) to delivered","note":"Booked when it was approved and written into this book by the export of 2026-11-22. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-21","product":"oil","qty":10,"rid":"s409","road":"site","total":130},
+    {"amend":[{"cash":0,"date":"2026-11-21","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":90,"date":"2026-11-21","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":26.5,"date":"2026-11-21","kg":0.5,"kind":"Correction","note":"corrected on 2026-11-21: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-11-21; handover (unset) to delivered","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":90,"cost":26.5,"customer":"CI5-PER","date":"2026-11-21","deliveredOn":"2026-11-21","deliveredQty":0.5,"handover":"delivered","listQty":0.5,"listRM":90,"mod":"corrected on 2026-11-21: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-11-21; handover (unset) to delivered","note":"Booked when it was approved and written into this book by the export of 2026-11-22. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-21","qty":0.5,"rid":"s410","road":"site","total":90}
   ],
   "selfUseLog": [
     {"date":"2026-08-23","kg":6.8,"note":"Self use, the 20 in his 20:80; dated at the count.","product":"oil","why":"personal"},
@@ -1448,7 +1450,7 @@
     "oil": {
       "costPerKg": 7.666666666666667,
       "qty": 5,
-      "stated": 35
+      "stated": 25
     },
     "rice": {
       "costPerKg": null,
@@ -1461,7 +1463,7 @@
       "stated": null
     }
   },
-  "QUEUE_COMMITTED": "2026-11-20T13:41:41.413Z",
+  "QUEUE_COMMITTED": "2026-11-21T07:36:12.560Z",
   "QUOTES": {
     "candy": {
       "kind": "live quote",
@@ -1613,7 +1615,7 @@
       "upTo": "s408"
     }
   },
-  "STATED_STOCK": 22,
+  "STATED_STOCK": 21.5,
   "TIER_OF": {
     "CA2-SEN": {
       "salt": -0.8
