@@ -37455,7 +37455,6 @@ await (async () => {
   const U = "qw7r-t2zx", CODE = "ZQ5-FIC", realLog = console.log;
   const stand = (store, counter, ledger) => {
     const skv = new KV(), dkv = new KV(), asked = [];
-    dkv.m.set("orders:keyed", "product");   /* V4a: a store the one-time re-key has run on, as every store is a minute after that version */
     const senv = Object.assign({ STMT: skv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: H.orderBook({}).ns, ORDER_STORE: store } : {});
     const denv = Object.assign({ SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async (url, init) => {
       const u = new URL(url);
@@ -45968,7 +45967,7 @@ section("V4a 2: an order of another book finds its own row at every stage beside
 await (async () => {
   /* Driven through both Workers over the real schema. Each party holds a salt order and an oil order on one day for one
      figure, so the key before V4a named both rows alike; the oil order is then marked with that key, as an Accept before
-     V4a wrote it and as every order of another book on the site carries until the minute's one-time pass (rekeyOrders).
+     V4a wrote it and as every order of another book on the site carries with no pass to re-key it (rekeyOrders, retired 21 Nov 2026).
      Every stage is taken on it so keyed, then again on fresh parties after the pass: each row a stage makes must amend the
      oil row by its rid, never the salt twin's, and every road that reads the key must read the oil row. Codes and
      usernames invented. */
@@ -45976,7 +45975,7 @@ await (async () => {
   try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the stages were not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
-  const { reconcileOrders, deskPass, rekeyOrders, tellSite, ackOnApproval, rejectedOnOrder, closedKey } = await import("../src/orders.js");
+  const { reconcileOrders, deskPass, tellSite, ackOnApproval, rejectedOnOrder, closedKey } = await import("../src/orders.js");
   const { runDrafter } = await import("../src/drafter.js");
   const { applyAmend } = await import("../tools/fold.mjs");
   const PE = (await import("../engine/position.mjs")).default;
@@ -46033,7 +46032,7 @@ await (async () => {
     return { u, s, l, rs, rl, keys, ok: as.ok && al.ok, err: [as.err, al.err].filter(Boolean) };
   };
 
-  for (const when of ["before", "after"]) {
+  for (const when of ["before"]) {   /* the "after the pass" half retired with rekeyOrders, 21 Nov 2026 */
     const K = WHO.slice(when === "before" ? 0 : 7), tag = when === "before" ? "Keyed as before V4a" : "After the pass";
     const A = await pair(K[0], 2, 240), X = await pair(K[1], 1, 130), Q = await pair(K[2], 1, 120, true), T = await pair(K[4], 1, 150), G = await pair(K[5], 1, 160);
     /* K[3]: salt orders landed, and oil orders beside them agreed on the site's old road, whose pending rows still wait */
@@ -46054,13 +46053,6 @@ await (async () => {
         + JSON.stringify({ keys: A.keys, err: A.err }));
       ok(wk.every(([k, r]) => k === r && /\|oil$/.test(k)),
         "and the reconcile's acknowledgement, the site's older road, marks an oil order with its pending row's key, product and all: " + JSON.stringify(wk));
-    } else {
-      const was = await Promise.all([A, X, Q, T, G].map(async (p) => [await keyOf(p.l.id), await keyOf(p.s.id)]));
-      const rk = await rekeyOrders(denv), again = await rekeyOrders(denv);
-      const now = await Promise.all([A, X, Q, T, G].map(async (p) => [await keyOf(p.l.id), await keyOf(p.s.id)]));
-      ok(rk.ok && rk.rekeyed >= 7 && !rk.failed && again.rekeyed === 0 && (await dkv.get("orders:keyed")) === "product"
-        && [A, X, Q, T, G].every((p, i) => was[i][0] === OLD(p.rl) && now[i][0] === OLD(p.rl) + "|oil" && was[i][1] === OLD(p.rs) && now[i][1] === was[i][1]),
-        "the minute's one-time pass gives every oil order its key with the product and leaves every salt key as it was to the character: " + JSON.stringify({ rk, again, now: now.slice(0, 2) }));
     }
 
     /* COLLECTED */
@@ -46167,71 +46159,6 @@ await (async () => {
   }
 })();
 
-section("V4a 3: the minute re-keys the orders once, before anything reads a key, asks the site nothing more after, and leaves a refusal to the next minute");
-await (async () => {
-  /* The pass is driven through the schedule itself over the real site Worker, the binding writing down every request, as
-     Fold 5.6 drives the minute. A salt order and an oil order carry the key an Accept wrote before V4a, one key for both.
-     Usernames and codes invented. */
-  const { placeOrder, deskMove } = await import("../stmt/orders.js");
-  const stmtW = (await import("../stmt/worker.js")).default;
-  const deskW = (await import("../src/worker.js")).default;
-  const U = "v4ak-mmmm", CODE = "CV9-KZ", OLDK = CODE + "|2026-09-20|120", realLog = console.log;
-  const stand = (refuse) => {
-    const skv = new KV(), dkv = new KV(), asked = [];
-    let left = refuse || 0;
-    const senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
-    const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async (url, init) => {
-      const u = new URL(url), said = ((init && init.method) || "GET") + " " + u.pathname + u.search;
-      asked.push(said);
-      if (left > 0 && said.startsWith("POST /desk/orders/")) { left--; return new Response(JSON.stringify({ ok: false, error: "busy" }), { status: 503 }); }
-      return stmtW.fetch(new Request(url, init), senv);
-    } } };
-    return { dkv, senv, denv, asked };
-  };
-  const tick = async (denv, iso) => {
-    const w = [], logs = [];
-    console.log = (...x) => logs.push(x.join(" "));
-    try { await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse(iso) }, denv, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
-    finally { console.log = realLog; }
-    return logs;
-  };
-  const agreed = async (S, product) => {
-    await S.dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
-    const o = (await placeOrder(S.senv, U, { product, qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
-    await deskMove(S.senv, U, o.id, { status: "acknowledged", mode: "collect" });
-    await deskMove(S.senv, U, o.id, { mark: { ledgerKey: OLDK, ack: "2026-09-20T01:00:00.000Z" } });
-    return o;
-  };
-  const keyOn = async (S, id) => {
-    const r = await stmtW.fetch(new Request("https://stmt/desk/orders?all=1", { headers: { "X-Stmt-Desk": "desk-key" } }), S.senv);
-    return ((await r.json()).orders.find((x) => x.id === id) || {}).ledgerKey;
-  };
-  const LIST = "GET /desk/orders?all=1";
-
-  /* ---- 1. ONCE, FIRST, AND NEVER AGAIN ---- */
-  const S = stand();
-  const s = await agreed(S, "salt"), l = await agreed(S, "oil");
-  const logs1 = await tick(S.denv, "2026-09-28T02:07:00Z");
-  const first = S.asked.slice(), k1 = { s: await keyOn(S, s.id), l: await keyOn(S, l.id) };
-  const markAt = first.findIndex((a) => a.startsWith("POST /desk/orders/") && a.endsWith("/" + l.id)), readAt = first.indexOf("GET /desk/orders/last?work=1");
-  S.asked.length = 0;
-  await tick(S.denv, "2026-09-28T02:08:00Z");
-  ok(k1.l === OLDK + "|oil" && k1.s === OLDK && first[0] === LIST && first.filter((a) => a === LIST).length === 1 && markAt > 0 && readAt > markAt
-    && !S.asked.includes(LIST) && (await S.dkv.get("orders:keyed")) === "product",
-    "the first minute after V4a lists every order once, before anything else it asks, and gives the oil order its key with the product ahead of the minute's read, "
-    + "the salt key as it was; the next minute lists nothing more: " + JSON.stringify({ k1, first, second: S.asked, logs1 }));
-
-  /* ---- 2. A REFUSAL IS TRIED AGAIN ---- */
-  const R = stand(1);
-  const rl = await agreed(R, "oil");
-  const logs2 = await tick(R.denv, "2026-09-28T02:07:00Z");
-  const kr1 = await keyOn(R, rl.id), mark1 = await R.dkv.get("orders:keyed");
-  await tick(R.denv, "2026-09-28T02:08:00Z");
-  const kr2 = await keyOn(R, rl.id), mark2 = await R.dkv.get("orders:keyed");
-  ok(kr1 === OLDK && mark1 === null && logs2.some((x) => /orders rekey: .*failed/.test(x)) && kr2 === OLDK + "|oil" && mark2 === "product",
-    "a site that would not take the key leaves the pass unmarked and says so, and the next minute gives it: " + JSON.stringify({ kr1, mark1, kr2, mark2, logs2: logs2.filter((x) => /rekey/.test(x)) }));
-})();
-
 section("V4a 4: the desk keys another book's row with its product: the open orders it seeds keep a salt order and its oil twin apart, and the Workbench names each by the engine's key");
 await (async () => {
   /* On the real master, with invented rows pushed onto its book: a salt order, an oil order whose goods and carriage come
@@ -46316,7 +46243,7 @@ await (async () => {
   } finally { try { rm(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ } }
 })();
 
-section("V4a 6: a claim against the account takes an oil order at Ready by its row's key as the book keys it now, before the pass and after it, never the salt row beside it");
+section("V4a 6: a claim against the account takes an oil order at Ready by its row's key as the book keys it now, keyed as before V4a, never the salt row beside it");
 await (async () => {
   /* Landing V4a on V2 (28 Sep 2026). V2's inFlight names the claimant's orders at Ready for the engine's claimAlloc, which
      matches them to rows by ovKey. An oil order agreed before V4a holds its key without the tail until the minute's pass
@@ -46328,7 +46255,6 @@ await (async () => {
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so an oil order at Ready was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
   const { withPending } = await import("../src/drafter.js");
-  const { rekeyOrders } = await import("../src/orders.js");
   const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
   const H = await import("../test/orderbook-harness.mjs");
   const E = (await import("../engine/position.mjs")).default;
@@ -46381,10 +46307,6 @@ await (async () => {
   ok(!made.error && E.ovKey(salt) === OLD && (await siteOf(oO.id)).status === "ready" && (await siteOf(oO.id)).ledgerKey === OLD
     && before === '200 [["s51",180,100]] left 0',
     "keyed as before V4a, the oil order at Ready is drawn on its own row, owing its goods, and the salt row its old key also names, agreed and not Ready, is not: " + before);
-  const rk = await rekeyOrders(denv), after = await drawn();
-  ok(rk.ok && (await siteOf(oO.id)).ledgerKey === OLD + "|oil" && (await siteOf(oS.id)).ledgerKey === OLD && after === before,
-    "and after the pass, which tails the oil order's key and leaves the salt order's as it was to the character, the account's money goes the same way: "
-    + JSON.stringify({ rk, oil: (await siteOf(oO.id)).ledgerKey, salt: (await siteOf(oS.id)).ledgerKey, after }));
 })();
 
 section("F14 (28 Sep 2026): a Maps or Waze link is read on the device in ten shapes and more, and a host that is not a map is not read");
@@ -51441,6 +51363,11 @@ await (async () => {
 section("20 Nov 2026: Salt Admin's They owe is the Desk's standing, and its card says what their page still shows");
 await (async () => {
   await (await import("./admin-live-owed.mjs")).run({ ok, pageWork });
+})();
+
+section("21 Nov 2026: the per-minute rekeyOrders is retired and ledgerKeyOf stays the reader");
+await (async () => {
+  await (await import("./retire-rekey.mjs")).run({ ok });
 })();
 
 section("Salt Admin Customers P4: This customer and the associate reward by the account's code, behind both locks (26 Oct 2026)");

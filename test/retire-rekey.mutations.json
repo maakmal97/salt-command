@@ -1,0 +1,20 @@
+[
+ {
+  "name": "R1: the minute lists every order again",
+  "file": "src/worker.js",
+  "find": "        const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;\n",
+  "replace": "        const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;\n        try { await listOrders(env, true); } catch (e) { /* mutation */ }\n"
+ },
+ {
+  "name": "R1: the minute writes the store's mark again",
+  "file": "src/worker.js",
+  "find": "        const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;\n",
+  "replace": "        const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;\n        await env.SALT_QUEUE.put(\"orders:keyed\", \"product\");\n"
+ },
+ {
+  "name": "R2: ledgerKeyOf returns the raw key",
+  "file": "engine/stages.mjs",
+  "find": "export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.ledgerKey, order && order.product) || null;",
+  "replace": "export const ledgerKeyOf = (order) => (order && order.ledgerKey) || null;"
+ }
+]
