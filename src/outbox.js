@@ -1,10 +1,11 @@
 /* src/outbox.js: S6 OF THE BOOK PLAN, A BOOKED ROW TELLS ITS ORDER AT ONCE (28 Oct 2026; Fable's review of the same day applied). SHIPPED OFF behind the D1 flag `book_outbox` (migrations/0020).
    The Book writes a row of its outbox in the tap's own transaction for every sale or amendment it books (src/book.js). This is the Desk's side: with the flag on, after a tap and in the minute cron,
-   it reads the pending rows, drops the ones whose drafts were rejected, and for the rest runs ONE forced pass of the return leg (src/orders.js tellSite, `force`): every order is told what the
+   it reads the pending rows, drops the ones whose drafts were rejected, and for the rest runs ONE forced pass of the return leg (src/orders.js tellSite, `force`): since 21 Nov 2026
+   (item 4) only the orders those drafts name (`only`: their own orders, their rows' orders and every live or finished order of those rows' owners; a draft naming none runs the whole pass) are told what the
    ledger says, by the leg's own state messages (raise-only, idempotent), so a row drained twice, or a pass that ran for another row, tells nothing twice. A clean pass marks the rows it covered
    sent; a pass with a refusal marks none, counts the try, and the next minute tries again. A row whose draft is still pending in D1 (the tap booked, the approval's batch has not landed) is left
    alone, never sent and never dropped. What it does NOT do: retire the regular return leg, which still runs when a fold changes the version and is the net for everything no tap booked (a
-   hand fold, rwd, a phone's undo). No retry is silent: a pass that keeps failing is the tie-out's return-leg fault, as before. Nothing here imports the Worker. */
+   hand fold, rwd, a phone's undo) and for any order the narrowed pass left out, since every tap moves the Book's revision and so runs it within the minute. No retry is silent: a pass that keeps failing is the tie-out's return-leg fault, as before. Nothing here imports the Worker. */
 import { BOOK_NAME } from "./book.js";
 import { nsOf } from "./book-read.js";
 import { tellSite } from "./orders.js";
@@ -24,6 +25,28 @@ async function ask(db, path, method, body) {
   } catch (e) { return null; }
 }
 
+/* 21 Nov 2026 (item 4, docs/plan-ledger-simplify.html): WHAT A LIVE DRAFT NAMES, so the forced pass tells only those orders (orders.js onlyOrders): the order its entry
+   names (an order's own stage, a claim of theirs), the rows the Book minted for it (`row.rids`, written beside the approval) and the row its amendment names
+   (`amends`, a rid or a key). A draft that names none of them, or will not parse, names everybody: the drain then runs the whole forced pass, as before. */
+function namesOf(r) {
+  let e = null, row = null;
+  try { e = JSON.parse(r.entry || "null"); } catch (x) { e = null; }
+  try { row = JSON.parse(r.row || "null"); } catch (x) { row = null; }
+  const ids = [e && e.orderId, e && e.payload && e.payload.orderId].filter((x) => typeof x === "string" && x);
+  const rids = (row && Array.isArray(row.rids) ? row.rids : []).filter((x) => typeof x === "string" && x);
+  const amends = typeof r.amends === "string" && r.amends ? [r.amends] : [];
+  return ids.length || rids.length || amends.length ? { ids, rids, amends } : null;
+}
+function onlyOf(live, named) {
+  const ids = new Set(), rids = new Set(), amends = new Set();
+  for (const r of live) {
+    const n = named.get(r.draft_id);
+    if (!n) return null;   /* one draft that names nobody: the whole pass */
+    n.ids.forEach((x) => ids.add(x)); n.rids.forEach((x) => rids.add(x)); n.amends.forEach((x) => amends.add(x));
+  }
+  return { ids: [...ids], rids: [...rids], amends: [...amends] };
+}
+
 /** One drain. `tell` and `mirror` are the suite's to replace. Answers counts only. */
 const MARK_MAX = 500, STUCK_MS = 10 * 60000;
 /* the marks in lists of at most 500 (the Book's verbs refuse more), every answer checked: a mark that did not land is said, never assumed */
@@ -41,11 +64,11 @@ export async function drainOutbox(env, { tell = tellSite, mirror = null, now = D
   const pending = a.body.pending || [];
   if (!pending.length) return { ok: true, pending: 0 };
   /* what each draft is in D1: approved is live, rejected or missing is dead (nothing booked will tell an order), pending is not yet decided */
-  const ids = [...new Set(pending.map((r) => r.draft_id))], status = new Map();
+  const ids = [...new Set(pending.map((r) => r.draft_id))], status = new Map(), named = new Map();
   for (let i = 0; i < ids.length; i += 50) {
     const part = ids.slice(i, i + 50);
-    const rs = await db.prepare("SELECT id, status, committed_at FROM draft WHERE id IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).all();
-    for (const r of rs.results || []) status.set(r.id, r.committed_at ? "committed" : r.status);
+    const rs = await db.prepare("SELECT id, status, committed_at, entry, row, amends FROM draft WHERE id IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).all();
+    for (const r of rs.results || []) { status.set(r.id, r.committed_at ? "committed" : r.status); named.set(r.id, namesOf(r)); }
   }
   /* approved and not yet folded is live; folded (the regular pass told the orders at that fold), rejected or missing is dead; pending is not decided yet */
   const live = pending.filter((r) => status.get(r.draft_id) === "approved");
@@ -55,7 +78,8 @@ export async function drainOutbox(env, { tell = tellSite, mirror = null, now = D
   if (dead.length && !await mark(db, "outbox/done", dead.map((r) => r.seq))) out.markFailed = true;
   if (!live.length) return out;
   let res;
-  try { res = await tell(env, undefined, mirror || bookOnce(db), { force: true }); }
+  const only = onlyOf(live, named);
+  try { res = await tell(env, undefined, mirror || bookOnce(db), Object.assign({ force: true }, only ? { only } : {})); }
   catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }
   const clean = !!res && res.ok !== false && !(res.failed && res.failed.length);
   if (clean) { if (!await mark(db, "outbox/done", live.map((r) => r.seq))) return Object.assign(out, { ok: false, markFailed: true }); return Object.assign(out, { sent: live.length, told: res.told || 0 }); }
