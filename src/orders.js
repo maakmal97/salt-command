@@ -29,7 +29,7 @@ import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
-import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor, importPlan } from "../engine/stages.mjs";
+import { rewardCrossOf, rewardReading, loyalReading, rwdOf, withCredit, rowPaidFor, importPlan, orderlessSales } from "../engine/stages.mjs";
 import { creditFor } from "./credit.js";
 import { TEST_USERS } from "../stmt/testusers.js";
 import { reasonOf, outsideBand, bandRefusal, markOf, markOk } from "../engine/oneoff.mjs";
@@ -2526,6 +2526,15 @@ const sayKey = (k, o) => {
   return "the book has no sale for this order: it looked for one of " + sayRM(fig) + " on " + sayDay(p[1])
     + (Number.isFinite(fig) && Math.abs(fig - now) > 0.004 ? ", and the order now says " + sayRM(now) : "");
 };
+/* 21 Nov 2026 (item 2, every sale has its order): A SALE NO ORDER NAMES, said as he knows it (code, book, size, total, day) and what cures it. Its own list
+   beside the differences, never one of them: deskImport's clean gate reads faults and waiting alone, so the import that cures one is never blocked. */
+export function rowWho(s) {
+  const book = String((s && s.product) || "salt"), q = +(+(s && s.qty) || 0).toFixed(3);
+  return [(s && s.customer) || "a sale with no customer", book.charAt(0).toUpperCase() + book.slice(1), q + (q === 1 ? " unit" : " units"),
+    sayRM((+(s && s.total) || 0) + (+(s && s.delivery) || 0)), "sold " + sayDay(s && s.date)].join(", ");
+}
+export const ORDERLESS_SAY = "no site order names this sale: once it is paid and handed over in full it is brought in as an older sale's order";
+export const orderlessOf = (book, orders, idx) => orderlessSales(book, orders, idx).map((s) => ({ ...(s.rid ? { rid: s.rid } : {}), who: rowWho(s), what: [ORDERLESS_SAY] }));
 export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
@@ -2620,7 +2629,7 @@ export async function tieOut(env, mirror, now = new Date()) {
     }
     else faults.push(item);
   }
-  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting };
+  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };
 }
 /* one item an order, its sentences in the order they were found: three lines about one order read as three faults (iewwkq), and the bar counted three */
 export function oneAnOrder(items) {

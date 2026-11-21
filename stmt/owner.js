@@ -2392,7 +2392,8 @@ export const OWNER_JS = `
     else{
       root.appendChild(el('p',t.clean?'amb-field__hint':'amb-field__hint amb-neg msg bad',(t.clean?'Every site order matches its row on the book':(t.faults.length===1?'One difference':t.faults.length+' differences')+' between the orders and the book')
         +', '+t.orders+(t.orders===1?' order':' orders')+' checked against '+tieBook(t.v)+' at '+fmtWhen(t.at)+'.'));
-      [['faults','Differences'],['waiting','Waiting on a move under Approve']].forEach(function(g){
+      /* 21 Nov 2026 (item 2): a sale no order names is its own list, never a difference, so the bar's count and Check now's clean leave it out */
+      [['faults','Differences'],['waiting','Waiting on a move under Approve'],['orderless','Sales no order names']].forEach(function(g){
         if(!(t[g[0]]||[]).length) return;
         root.appendChild(el('h3','amb-settings__head',g[1]));
         t[g[0]].forEach(function(f){ root.appendChild(el('p','amb-field__hint maker-facts',tieLine(f))); });
