@@ -110,8 +110,8 @@
  {
   "name": "the drain's pass is not forced",
   "file": "src/outbox.js",
-  "find": "await tell(env, undefined, mirror || bookOnce(db), { force: true });",
-  "replace": "await tell(env, undefined, mirror || bookOnce(db), {});"
+  "find": "await tell(env, undefined, mirror || bookOnce(db), Object.assign({ force: true }, only ? { only } : {}));",
+  "replace": "await tell(env, undefined, mirror || bookOnce(db), Object.assign({}, only ? { only } : {}));"
  },
  {
   "name": "a failed pass marks the rows sent",
@@ -236,8 +236,8 @@
  {
   "name": "the forced pass follows no row again",
   "file": "src/orders.js",
-  "find": "  const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });",
-  "replace": "  const fr = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });"
+  "find": "  const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force, only });",
+  "replace": "  const fr = opts.force ? { followed: 0, failed: [] } : await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force, only });"
  },
  {
   "name": "a key the site refuses fails the forced pass",

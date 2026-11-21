@@ -2242,7 +2242,28 @@ export function followFree(orders, plan, rows, gone) {
     return (live.get(p.nk) || 0) === n && (!past || !!(rows && gone && rows.get(p.nk) === 1 && gone.has(p.nk)));
   };
 }
-async function followRows(env, orders, idx, at, { solo = false } = {}) {
+/* 21 Nov 2026 (item 4, docs/plan-ledger-simplify.html): THE ORDERS A BOOKED ROW NAMES, for the outbox's forced pass (src/outbox.js), which then tells those alone.
+   `spec` is what the drain read off its live drafts: `ids` the orders their entries name (an order's own stage, a claim's order), `rids` the rows the Book
+   minted for them, `amends` the rows their amendments name (a rid, or a key for an entry before rids). An order is in when its id is named, its rid or its key
+   (ledgerKeyOf, the rekey kept) is a named row's, or it is any order but a cancelled or declined one of a named row's owner code: credit only lowers, an
+   account claim pays several rows, and a finished order an amendment or an undo reopens takes its row's states. Nothing resolved answers null, and the
+   caller runs the whole pass: a narrowing that names nobody never tells nobody. The regular pass is the net for anything this leaves out. */
+export function onlyOrders(orders, sales, spec) {
+  if (!spec) return null;
+  const E = POSITION_ENGINE, ids = new Set(spec.ids || []), rids = new Set(), keys = new Set(), codes = new Set(), byRid = new Map(), byKey = new Map();
+  for (const s of sales || []) { if (!s) continue; if (s.rid) byRid.set(s.rid, s); const k = E.ovKey(s); byKey.set(k, (byKey.get(k) || []).concat([s])); }
+  const take = (s) => { if (s.rid) rids.add(s.rid); keys.add(E.ovKey(s)); const c = E.ownerCode(s.customer); if (c) codes.add(c); };
+  for (const r of spec.rids || []) { const s = byRid.get(r); if (s) take(s); else rids.add(r); }
+  for (const a of spec.amends || []) { if (!a) continue; const s = byRid.get(a); if (s) { take(s); continue; } keys.add(a); for (const x of byKey.get(a) || []) take(x); }
+  const out = new Set();
+  for (const o of orders || []) {
+    if (!o || !o.id) continue;
+    const k = ledgerKeyOf(o);
+    if (ids.has(o.id) || (o.rid && rids.has(o.rid)) || (k && keys.has(k)) || (o.code && codes.has(o.code) && !endedOrder(o))) out.add(o.id);
+  }
+  return out.size ? out : null;
+}
+async function followRows(env, orders, idx, at, { solo = false, only = null } = {}) {
   const plan = [], failed = [], amended = new Map(), miss = new Set();
   for (const o of orders) if (o.code && ledgerKeyOf(o) && !ridLive(o, idx) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);   /* item 3A: a live rid names its row already */
   try {
@@ -2271,7 +2292,7 @@ async function followRows(env, orders, idx, at, { solo = false } = {}) {
   }
   for (const o of orders) {
     const k = ledgerKeyOf(o);
-    if (!k || !o.code || sharing.has(o.id)) continue;
+    if (!k || !o.code || sharing.has(o.id) || (only && !only.has(o.id))) continue;   /* item 4: the groups above are weighed over every order, the singles over `only` */
     /* item 3A: AN ORDER WHOSE RID NAMES A LIVE ROW FOLLOWS THAT ROW, as an older sale's order does (rowOf), its key whatever a Correction made it; a close or
        re-date on its way holds it as before. Else the key's row, then the roads below, unchanged */
     const byRid = ridLive(o, idx);
@@ -2373,7 +2394,9 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
      would split for good, and a tapped row had not landed in git. 17 Nov 2026 (his word): with the Book the source a tapped row is on the book read here, and an amendment names
      its row by rid (AMENDS), so the forced pass follows single orders now (`solo`) and leaves the groups to the regular pass. What it could not follow is the regular pass's to
      try again and report (TOLD_FAILED), never a fault of the outbox's rows, which would then wait on it */
-  const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });
+  /* item 4: a forced pass with `only` (the orders its booked rows name, onlyOrders) tells those alone; followFree, the keys named and the fixes waiting are still read off every order */
+  const only = opts.force && opts.only ? onlyOrders(r.orders, sales, opts.only) : null;
+  const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force, only });
   const followed = fr.followed, failed = opts.force ? [] : fr.failed;
   /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
   const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows, byRid));
@@ -2382,6 +2405,7 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   let told = 0;
   const named = namedKeys(r.orders, ix);
   for (const o of r.orders) {
+    if (only && !only.has(o.id)) continue;
     if (!o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const { row, k } = rowFor(o, ix, tally, "return leg");   /* V4a: never a salt twin's row by the old shape; item 3A: by its rid first */
     if (!row) continue;
@@ -2475,7 +2499,7 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   /* 17 Oct 2026: and what held it, for the tie-out to name (Fable's review): the stall is then an order's, not the return leg's */
   if (!opts.force) try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED, JSON.stringify({ v, at: new Date().toISOString(), failed: failed.slice(0, 20) })); else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}
   const ridFallback = [...tally.values()].reduce((n, l) => n + l.size, 0);   /* item 3A: orders read by key that should name their row by rid, counted */
-  return Object.assign({ ok: true, told, v }, opts.force ? { forced: true } : {}, followed ? { followed } : {}, ridFallback ? { ridFallback } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
+  return Object.assign({ ok: true, told, v }, opts.force ? { forced: true } : {}, only ? { only: only.size } : {}, followed ? { followed } : {}, ridFallback ? { ridFallback } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
     failed.length ? { failed } : {});
 }
 
