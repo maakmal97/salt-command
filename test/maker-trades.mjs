@@ -35,10 +35,14 @@ const book = () => ({ version: "trade-fixture", sales: [], purchases: [],
     roster: ["CX1-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED", "CA1-ZED", "CA1-ZED-R"], associates: ["AX1-ZED", "CA1-ZED"] },
   pricing: { v: "trade-fixture", byProduct: { salt: { stockCost: 40 }, oil: { stockCost: 8 } } } });
 
-export function world() {
+/* 21 Nov 2026 (item 2, every sale has its order): Salt Admin's sale is the recovery road now, taken only with `recovery: true` while D1 sale_recovery
+   is on. These checks hold that road's machinery to account, so the world turns the switch on and a sale it posts asks for recovery, unless `strict`
+   (test/sale-has-order.mjs), which leaves both as they ship. */
+export function world({ strict = false } = {}) {
   const sqlite = new DatabaseSync(":memory:"), b = book();
   for (const f of readdirSync(new URL("../migrations/", import.meta.url)).filter((s) => /^[0-9]+_.*[.]sql$/.test(s)).sort())
     sqlite.exec(readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8"));
+  if (!strict) sqlite.exec("UPDATE sale_recovery SET mode='on' WHERE one=1");
   for (const [k, v] of Object.entries({ ...b.state, PRICING: b.pricing }))
     sqlite.prepare("INSERT INTO state(key,doc) VALUES (?,?)").run(k, JSON.stringify(v));
   sqlite.exec("INSERT INTO snapshot(one,v,stamped) VALUES (1,'trade-fixture',NULL)");
@@ -56,9 +60,11 @@ export function world() {
   const counter = { COUNTER_MAKER_KEY: key, DESK_MAKER: { fetch(request) {
     calls.push(new URL(request.url).pathname); return worker.fetch(request, desk, { waitUntil() {} });
   } } };
+  const asks = (p, value) => !strict && /\/inputs\/sale$/.test(p) && value && typeof value === "object" && !Array.isArray(value) && !("recovery" in value)
+    ? { ...value, recovery: true } : value;
   const call = (p, value, identity = { email: "maakmal97@icloud.com" }) =>
     handleMaker(new Request("https://counter.test" + p, value === undefined ? {} : {
-      method: "POST", body: JSON.stringify(value) }), counter, p, identity);
+      method: "POST", body: JSON.stringify(asks(p, value)) }), counter, p, identity);
   const drafts = () => sqlite.prepare("SELECT * FROM draft ORDER BY id").all().map((r) =>
     ({ ...r, row: JSON.parse(r.row), entry: JSON.parse(r.entry), flags: JSON.parse(r.flags) }));
   return { sqlite, b, kv, map, puts, desk, calls, call, drafts };

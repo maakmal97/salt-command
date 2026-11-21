@@ -12,6 +12,7 @@ export async function run({ ok, pageWork }) {
   const sqlite = new DatabaseSync(":memory:");
   for (const file of readdirSync(new URL("../migrations/", import.meta.url)).filter((f) => /^[0-9]+_.*[.]sql$/.test(f)).sort())
     sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
+  sqlite.exec("UPDATE sale_recovery SET mode='on' WHERE one=1");   /* 21 Nov 2026 (item 2): Salt Admin's sale is the recovery road, switched on here */
   const bound = (st, args) => ({
     run() { return { meta: { changes: Number(st.run(...args).changes) } }; },
     first() { return st.get(...args) || null; }, all() { return { results: st.all(...args) }; }
@@ -134,7 +135,7 @@ export async function run({ ok, pageWork }) {
       /* 03 Nov 2026 (his decision: Record records no new sale; rule 1): the form offers the confirmed code as Who (above) but records a purchase now, so the sale the form used to send
          for it (one unit at 130, nothing paid or handed over, no delivery) is posted to the sale route through the page's own fetch, the real bridge and Worker answering */
       const sold = await blank.dom.window.fetch("/all/maker/inputs/sale", { method: "POST", body: JSON.stringify({ at: new Date().toISOString(), product: "salt",
-        party: "CT11-TBC", date: new Date().toISOString().slice(0, 10), qty: 1, total: 130, cash: 0, movedUnits: 0, handover: null, delivery: 0 }) });
+        party: "CT11-TBC", date: new Date().toISOString().slice(0, 10), qty: 1, total: 130, cash: 0, movedUnits: 0, handover: null, delivery: 0, recovery: true }) });
       if (sold.status !== 200) throw new Error("The confirmed-ID trade was refused: " + sold.status);
       if (!await blank.work.quiet()) throw new Error("The confirmed-ID trade did not settle.");
     }

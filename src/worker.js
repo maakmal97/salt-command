@@ -106,6 +106,11 @@ const locked = () => new Response(LOCKED_HTML, {
   }
 });
 
+/* 21 Nov 2026 (item 2): the recovery road's switch (migrations/0025), 'off' when the row or the table cannot be read */
+export async function saleRecoveryOn(db) {
+  try { const r = await db.prepare("SELECT mode FROM sale_recovery WHERE one=1").first(); return !!(r && r.mode === "on"); } catch (e) { return false; }
+}
+export const SALE_ORDER_FOR_THEM = "A new sale is a site order: open their account under Customers, then Order for them.";
 const QKEY = (device) => "q:" + device;
 const VKEY = "vault";                 // the encrypted name vault, ciphertext only
 const AKEY = "vault-addr";            // F14: the places envelope, ciphertext only, read and written with the key
@@ -1305,6 +1310,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const previous = await makerRequestRead(env.SALT_LEDGER, body.at, operation, fingerprint);
     if (previous?.pending) return resumeMakerInput(env, previous.pending, fingerprint);
     if (previous) return json(previous.response || { ok: false, error: previous.error }, previous.response ? 200 : 409);
+    /* 21 Nov 2026 (item 2, every sale has its order): A NEW SALE IS A SITE ORDER, so this road takes one only as recovery: sent with
+       `recovery: true` while D1 sale_recovery is on (migrations/0025, shipped off). A retry of a request already taken resumes above. */
+    if (operation === "sale") {
+      if (body.recovery !== true || !await saleRecoveryOn(env.SALT_LEDGER))
+        return json({ ok: false, error: SALE_ORDER_FOR_THEM }, 409);
+      delete body.recovery;
+    }
     let appointmentPlan = null;
     if (operation === "appoint-existing") {
       if (Object.keys(body).length !== 3 || !Object.hasOwn(body, "code") || !Object.hasOwn(body, "kind")
