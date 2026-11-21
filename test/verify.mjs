@@ -50663,6 +50663,11 @@ await (async () => {
   await (await import("./sale-has-order.mjs")).run({ ok, pageWork });
 })();
 
+section("21 Nov 2026: every order follows its row by rid, version A: the rid first, the key as before, the stamp only on a clean book");
+await (async () => {
+  await (await import("./order-rid-follow.mjs")).run({ ok });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });

@@ -1,0 +1,188 @@
+[
+{
+"name": "R1: a live rid is never read first",
+"file": "engine/stages.mjs",
+"find": "  if (r) return { row: r, k: POSITION_ENGINE.ovKey(r), by: \"rid\" };",
+"replace": "  if (false) return { row: r, k: POSITION_ENGINE.ovKey(r), by: \"rid\" };"
+},
+{
+"name": "R1, R6: a rid naming a cancelled row is read as the order's row",
+"file": "engine/stages.mjs",
+"find": "return r && !r.cancelled && (r.product || \"salt\")",
+"replace": "return r && (r.product || \"salt\")"
+},
+{
+"name": "R1: a rid naming another book's row is taken",
+"file": "engine/stages.mjs",
+"find": "return r && !r.cancelled && (r.product || \"salt\") === ((o && o.product) || \"salt\") ? r : null;",
+"replace": "return r && !r.cancelled ? r : null;"
+},
+{
+"name": "R1: a placed order is counted as owing a rid",
+"file": "engine/stages.mjs",
+"find": "!o.test && ![\"cancelled\", \"declined\", \"placed\"].includes(o.status)",
+"replace": "!o.test && ![\"cancelled\", \"declined\"].includes(o.status)"
+},
+{
+"name": "R2: a reader looks the row up by key alone again",
+"file": "src/orders.js",
+"find": "    const { row, k } = rowFor(o, ix, tally, \"return leg\");",
+"replace": "    const { row, k } = rowFor(o, ix, tally, \"return leg\"); void byKey.get(ledgerKeyOf(o));"
+},
+{
+"name": "R3: a fresh stamp moves a rid the order holds",
+"file": "stmt/orders.js",
+"find": "      if (order.rid && order.rid !== m.rid && m.ridWas !== order.rid) return { error: \"the order names another row already\", status: 409 };\n",
+"replace": ""
+},
+{
+"name": "R3: a move naming the wrong rid is taken",
+"file": "stmt/orders.js",
+"find": "order.rid !== m.rid && m.ridWas !== order.rid) return",
+"replace": "order.rid !== m.rid && m.ridWas === undefined) return"
+},
+{
+"name": "R3: any string is taken for a row's rid",
+"file": "stmt/orders.js",
+"find": "export const ROW_RID_RE = /^[a-z][0-9]{1,6}$/;",
+"replace": "export const ROW_RID_RE = /^.+$/;"
+},
+{
+"name": "R3: the order book overwrites a rid on replay",
+"file": "stmt/orders.js",
+"find": "if (typeof m.rid === \"string\" && (!order.rid || order.rid === m.ridWas)) order.rid = m.rid;",
+"replace": "if (typeof m.rid === \"string\") order.rid = m.rid;"
+},
+{
+"name": "R4: the customer's view carries the rid",
+"file": "stmt/orders.js",
+"find": "export const CUSTOMER_FIELDS = [\"id\", \"u\",",
+"replace": "export const CUSTOMER_FIELDS = [\"id\", \"rid\", \"u\","
+},
+{
+"name": "R5: the follow ignores the rid",
+"file": "src/orders.js",
+"find": "    const byRid = ridLive(o, idx);",
+"replace": "    const byRid = null;"
+},
+{
+"name": "R5: the return leg reads by key alone",
+"file": "src/orders.js",
+"find": "    const { row, k } = rowFor(o, ix, tally, \"return leg\");",
+"replace": "    const { row, k } = rowFor({ ...o, rid: null }, ix, tally, \"return leg\");"
+},
+{
+"name": "R5: the tie-out reads by key alone",
+"file": "src/orders.js",
+"find": "const f = rowFor(o, ix, tally, \"tie-out\")",
+"replace": "const f = rowFor({ ...o, rid: null }, ix, tally, \"tie-out\")"
+},
+{
+"name": "R5: a stale yes is read by key alone",
+"file": "src/orders.js",
+"find": "!o.ledgerKey) return false;\n  const { row, k } = rowFor(o, { byKey, byRid });",
+"replace": "!o.ledgerKey) return false;\n  const { row, k } = rowFor(o, { byKey });"
+},
+{
+"name": "R5: an undo is read by key alone",
+"file": "src/orders.js",
+"find": "includes(o.status)) continue;\n    const { row, k } = rowFor(o, { byKey, byRid });",
+"replace": "includes(o.status)) continue;\n    const { row, k } = rowFor(o, { byKey });"
+},
+{
+"name": "R7: the stamp does not wait for the Accept row to land",
+"file": "src/orders.js",
+"find": "    if (!ack || !ack.landed || ack.status !== \"approved\") continue;",
+"replace": "    if (!ack) continue;"
+},
+{
+"name": "R7: the stamp is taken while the check has a fault",
+"file": "src/orders.js",
+"find": "...(faults.length ? {} : { stamp: await stampable(",
+"replace": "...({ stamp: await stampable("
+},
+{
+"name": "R7: an order read by rid is offered a stamp again",
+"file": "src/orders.js",
+"find": "if (!diff.length && !ended && row && f.by === \"key\" && !row.cancelled",
+"replace": "if (!diff.length && !ended && row && !row.cancelled"
+},
+{
+"name": "R7: a rid naming a cancelled row is overwritten with no ridWas",
+"file": "src/orders.js",
+"find": "    out.push(Object.assign({ u: o.u, id: o.id, rid }, o.rid ? { ridWas: o.rid } : {}));",
+"replace": "    out.push({ u: o.u, id: o.id, rid });"
+},
+{
+"name": "R7: a rid naming no live row is never listed",
+"file": "src/orders.js",
+"find": "else if (!ended && o.rid && f.by === \"key\" && !isImported(o)) staleRid.push(",
+"replace": "else if (false) staleRid.push("
+},
+{
+"name": "R7: the fallback is never counted",
+"file": "src/orders.js",
+"find": "ridFallback: { count: ridFallback.length,",
+"replace": "ridFallback: { count: 0,"
+},
+{
+"name": "R7: the stamp never reaches the Counter",
+"file": "src/orders.js",
+"find": "    const b = await answerOf(await markOrder(env, s.u, s.id, Object.assign({ rid: s.rid }, s.ridWas ? { ridWas: s.ridWas } : {})));",
+"replace": "    const b = { order: { rid: s.rid }, why: \"\" };"
+},
+{
+"name": "R8: a stage entry carries no rid",
+"file": "engine/stages.mjs",
+"find": "const ridFor = (o) => (o && typeof o.rid === \"string\" && /^[a-z]\\d{1,6}$/i.test(o.rid) ? o.rid : null);",
+"replace": "const ridFor = (o) => null;"
+},
+{
+"name": "R8: rowRoom reads money on its way at the tap's key only",
+"file": "src/orders.js",
+"find": "const sk = POSITION_ENGINE.ovKey(s), here =",
+"replace": "const sk = key, here ="
+},
+{
+"name": "R8: a claim takes the order's own key",
+"file": "engine/stages.mjs",
+"find": "    const lk = rowKeyFor(o, { byRid });",
+"replace": "    const lk = ledgerKeyOf(o);"
+},
+{
+"name": "R9: the backfill is never dry",
+"file": "src/orders.js",
+"find": "  if (dry) return { ...base, stamp };",
+"replace": ""
+},
+{
+"name": "R9: the backfill runs on an unclean tie-out",
+"file": "src/orders.js",
+"find": "return no(409, \"the book and the orders do not agree yet (\" + tie.faults.length + \" fault\" + (tie.faults.length === 1 ? \"\" : \"s\") + \", \" + tie.waiting.length + \" waiting), so nothing is stamped\");",
+"replace": "{}"
+},
+{
+"name": "R9: the backfill reads nothing back",
+"file": "src/orders.js",
+"find": "differ = stamp.filter((x) => !byId.get(x.id) || byId.get(x.id).rid !== x.rid)",
+"replace": "differ = stamp.filter((x) => true)"
+},
+{
+"name": "R9: the laptop tool runs when not told to",
+"file": "tools/orders-rid.mjs",
+"find": "  if (!run) { report(dry, false).forEach(say); return { ok: true, answer: dry }; }\n",
+"replace": ""
+},
+{
+"name": "R9: the laptop tool says no stale rid",
+"file": "tools/orders-rid.mjs",
+"find": "(a.staleRid || []).length + \" naming",
+"replace": "0 + \" naming"
+},
+{
+"name": "R9: the laptop tool never stamps",
+"file": "tools/orders-rid.mjs",
+"find": "  const got = await c.stamp(false);",
+"replace": "  const got = dry;"
+}
+]
