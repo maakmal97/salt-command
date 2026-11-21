@@ -74,13 +74,13 @@
   {
     "name": "any row at a named key is named",
     "file": "engine/stages.mjs",
-    "find": "    if (keys.has(k) && byKey.get(k) === s) continue;",
+    "find": "    if (keys.has(k) && (byKey.get(k) === s || liveAt.get(k) === 1)) continue;",
     "replace": "    if (keys.has(k)) continue;"
   },
   {
     "name": "a key names nothing",
     "file": "engine/stages.mjs",
-    "find": "    if (keys.has(k) && byKey.get(k) === s) continue;",
+    "find": "    if (keys.has(k) && (byKey.get(k) === s || liveAt.get(k) === 1)) continue;",
     "replace": ""
   },
   {
@@ -90,27 +90,21 @@
     "replace": "  const keys = new Set(live.filter((o) => o.ledgerKey).map(ledgerKeyOf).filter((k, i, a) => a.indexOf(k) === a.lastIndexOf(k)));"
   },
   {
-    "name": "rowIndex takes the newest row at a key, cancelled or not",
-    "file": "src/orders.js",
-    "find": "    if (l.length > 1 && live.length === 1 && live[0].road === \"site\") { byKey.set(k, live[0]); rows.set(k, 1); }",
-    "replace": "    if (false) { byKey.set(k, live[0]); rows.set(k, 1); }"
-  },
-  {
     "name": "an orderless row makes the tie-out unclean",
     "file": "src/orders.js",
-    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };",
-    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length && !orderlessOf(book, r.orders, { byKey }).length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };"
+    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };",
+    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length && !orderlessSafe(book, r.orders, byKey).length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };"
   },
   {
     "name": "an orderless row is a fault",
     "file": "src/orders.js",
-    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };",
-    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults.concat(orderlessOf(book, r.orders, { byKey }))), waiting, orderless: [] };"
+    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };",
+    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults.concat(orderlessSafe(book, r.orders, byKey))), waiting, orderless: [] };"
   },
   {
     "name": "the tie-out lists nothing",
     "file": "src/orders.js",
-    "find": "waiting, orderless: orderlessOf(book, r.orders, { byKey }) };",
+    "find": "waiting, orderless: orderlessSafe(book, r.orders, byKey) };",
     "replace": "waiting, orderless: [] };"
   },
   {
@@ -208,5 +202,35 @@
     "file": "stmt/owner.js",
     "find": "root.appendChild(el('p',t.clean?'amb-field__hint':'amb-field__hint amb-neg msg bad',(t.clean?",
     "replace": "root.appendChild(el('p',t.clean&&!(t.orderless||[]).length?'amb-field__hint':'amb-field__hint amb-neg msg bad',(t.clean&&!(t.orderless||[]).length?"
+  },
+  {
+    "name": "a key's one live row beside a cancelled twin is not its row",
+    "file": "engine/stages.mjs",
+    "find": "    if (keys.has(k) && (byKey.get(k) === s || liveAt.get(k) === 1)) continue;",
+    "replace": "    if (keys.has(k) && byKey.get(k) === s) continue;"
+  },
+  {
+    "name": "a cancelled twin counts as live",
+    "file": "engine/stages.mjs",
+    "find": "if (s && typeof s === \"object\" && !s.cancelled) { const k",
+    "replace": "if (s && typeof s === \"object\") { const k"
+  },
+  {
+    "name": "a reading that throws blocks the tie-out",
+    "file": "src/orders.js",
+    "find": "{ try { return orderlessOf(book, orders, { byKey }); } catch (e) { return []; } };",
+    "replace": "orderlessOf(book, orders, { byKey });"
+  },
+  {
+    "name": "a refused sale is kept to retry forever",
+    "file": "stmt/owner.js",
+    "find": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();return;}",
+    "replace": ""
+  },
+  {
+    "name": "any refusal of a sale clears it",
+    "file": "stmt/owner.js",
+    "find": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();return;}",
+    "replace": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'){makerClear(saved.path);gone();return;}"
   }
 ]

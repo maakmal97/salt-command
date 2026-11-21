@@ -13,6 +13,8 @@
  *   R2  with recovery and the switch on it is taken, and its card carries the noOrder flag, frozen in the draft; an order's draft carries none
  *   R3  the switch reads off when its table is missing
  *   P1  Salt Admin draws the list under its own head, and the Ledger check's count leaves it out
+ *   P2  an unsent sale Salt Admin kept is cleared when the Desk refuses it as Order for them, and kept on any other refusal
+ *   N4  (with N1 to N3) a key's one live row is named whatever cancelled twin follows it; T3 (with T1, T2) a row the reading cannot read lists nothing
  * Every assertion is red under its own mutation (test/sale-has-order.mutations.json). Invented codes only. */
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
@@ -82,6 +84,13 @@ export async function run({ ok, pageWork }) {
     ok(got.length === 0, "N3: a shared group, two live orders naming one row, names it: " + J(got));
   }
 
+  /* N4 */
+  {
+    const live = row("s561", { road: "hand" }), dead = Object.assign({}, live, { rid: "s562", cancelled: true });
+    const got = list([live, dead], [order("e1", { ledgerKey: keyOf(live) })]);
+    ok(got.length === 0, "N4: a hand row with a cancelled twin after it is still its key's one live row, named by the order: " + J(got));
+  }
+
   /* the tie-out's and the import's world, as test/order-import-route.mjs builds it */
   const { buildSeed } = await import("../tools/d1.mjs");
   const db0 = () => {
@@ -105,10 +114,17 @@ export async function run({ ok, pageWork }) {
   {
     const named = row("s541", { road: "site" }), loose = row("s542", { date: "2026-11-05", total: 100, delivery: 0, cash: 100, qty: 1 });
     const t = await tieOut(envOf([order("d1", { ledgerKey: keyOf(named) })]), bookOf([named, loose]), NOW);
-    ok(t.ok && t.clean === true && t.faults.length === 0 && t.waiting.length === 0, "T1: an orderless row leaves the tie-out clean, with no fault and nothing waiting: " + J({ clean: t.clean, f: t.faults, w: t.waiting }));
+    ok(t.ok && t.clean === true && (t.faults || []).length === 0 && (t.waiting || []).length === 0, "T1: an orderless row leaves the tie-out clean, with no fault and nothing waiting: " + J({ clean: t.clean, f: t.faults, w: t.waiting }));
     ok(J(t.orderless) === J([{ rid: "s542", who: CODE + ", Salt, 1 unit, RM 100, sold 05 Nov 2026", what: [ORDERLESS_SAY] }]),
       "T1: the orderless row is listed by who it is and what cures it: " + J(t.orderless));
-    ok(!/\||\brows?\b|\bkeys?\b|ledgerKey/.test(ORDERLESS_SAY + t.orderless[0].who), "T1: its words are plain: " + ORDERLESS_SAY);
+    const first = (t.orderless || [])[0] || {};
+    ok(!!first.who && !/\||\brows?\b|\bkeys?\b|ledgerKey/.test(ORDERLESS_SAY + first.who), "T1: its words are plain: " + ORDERLESS_SAY + " / " + J(first));
+  }
+  /* T3 */
+  {
+    const bad = { customer: CODE, date: "2026-11-06", product: "salt", total: 10, delivery: 0, rid: "s571", get qty() { throw new Error("unreadable"); } };
+    let t; try { t = await tieOut(envOf([]), bookOf([bad]), NOW); } catch (e) { t = { thrown: String(e) }; }
+    ok(t.ok === true && Array.isArray(t.orderless) && t.orderless.length === 0 && t.clean === true, "T3: a row the reading cannot read lists nothing and the tie-out still answers: " + J(t));
   }
   /* T2 */
   {
@@ -141,7 +157,7 @@ export async function run({ ok, pageWork }) {
       ok(d.status === 200 && jd.ok && mine.length === 1 && mine[0].flags.includes(NO_ORDER_FLAG) && !("recovery" in mine[0].entry.payload),
         "R2: with recovery and the switch on the sale is taken, its draft's flags carry noOrder: " + J({ s: d.status, jd, f: mine[0] && mine[0].flags }));
       const site = draftRow({ at: "2099-10-05T01:05:00.000Z", orderId: "20991005010500-abcdef", type: "SELL", party: "CX1-ZED", qty: 1, total: 130,
-        payload: Object.assign({}, mine[0].entry.payload) }, wd.b);
+        payload: Object.assign({}, mine[0] ? mine[0].entry.payload : { mode: "new", direction: "SELL", party: "CX1-ZED", product: "salt", date: "2099-10-05", qty: 1, total: 130, cash: 0, kg: 0 }) }, wd.b);
       ok(site && !site.skip && Array.isArray(site.flags) && !site.flags.includes(NO_ORDER_FLAG), "R2: a site order's draft of the same sale carries no noOrder flag: " + J(site && (site.skip || site.flags)));
     } finally { wd.sqlite.close(); }
   }
@@ -168,5 +184,23 @@ export async function run({ ok, pageWork }) {
       const n = [...p.d.querySelectorAll("[data-ledger-n]")];
       ok(n.every((c) => c.hidden && !c.textContent), "P1: the Ledger check's count leaves the orderless sale out: " + J(n.map((c) => [c.hidden, c.textContent])));
     } catch (e) { ok(false, "P1 stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  }
+  /* P2 */
+  if (pageWork) {
+    const { richOwnerPage, enter } = await import("./maker-act.mjs");
+    const KEEP = "saltMakerPending:/all/maker/inputs/sale";
+    const kept = { path: "/all/maker/inputs/sale", body: { at: "2026-11-20T06:00:00.000Z", product: "salt", party: "CX2-ZED", date: "2026-11-20", qty: 5, total: 58, cash: 0, movedUnits: 0, handover: null, delivery: 0 } };
+    for (const [words, gone] of [[SALE_ORDER_FOR_THEM, true], ["That input is already being recorded. Retry the original request.", false]]) {
+      const p = await richOwnerPage({ pageWork, retained: [[KEEP, J(kept)]] });
+      try {
+        await p.work.quiet();
+        p.refuse["/all/maker/inputs/sale"] = words;
+        enter(p.d, "record"); await p.work.quiet();
+        const go = p.d.querySelector('#makerInputs section.unsent[data-key="sale"] [data-act="record.retained.retry"]');
+        if (go) { go.click(); await p.work.quiet(); }
+        const left = p.w.localStorage.getItem(KEEP);
+        ok(!!go && (gone ? left === null : left !== null), "P2: an unsent sale refused " + (gone ? "as Order for them is cleared" : "for another reason is kept") + ": " + J({ go: !!go, left: !!left }));
+      } catch (e) { ok(false, "P2 stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+    }
   }
 }
