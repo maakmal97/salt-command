@@ -2534,6 +2534,8 @@ export function rowWho(s) {
     sayRM((+(s && s.total) || 0) + (+(s && s.delivery) || 0)), "sold " + sayDay(s && s.date)].join(", ");
 }
 export const ORDERLESS_SAY = "no site order names this sale: once it is paid and handed over in full it is brought in as an older sale's order";
+/* a reading never blocks the tie-out, and so never the import that cures one (Fable, 21 Nov 2026): a row it cannot read lists nothing */
+const orderlessSafe = (book, orders, byKey) => { try { return orderlessOf(book, orders, { byKey }); } catch (e) { return []; } };
 export const orderlessOf = (book, orders, idx) => orderlessSales(book, orders, idx).map((s) => ({ ...(s.rid ? { rid: s.rid } : {}), who: rowWho(s), what: [ORDERLESS_SAY] }));
 export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
@@ -2629,7 +2631,7 @@ export async function tieOut(env, mirror, now = new Date()) {
     }
     else faults.push(item);
   }
-  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessOf(book, r.orders, { byKey }) };
+  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };
 }
 /* one item an order, its sentences in the order they were found: three lines about one order read as three faults (iewwkq), and the bar counted three */
 export function oneAnOrder(items) {
