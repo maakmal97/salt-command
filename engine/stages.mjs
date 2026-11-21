@@ -288,7 +288,8 @@ export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.led
    test, not ended, their row on the book), which the seven days before version B count. ADDITIVE: an order with no rid reads exactly as before. */
 export const ridLive = (o, idx) => {
   const r = o && typeof o.rid === "string" && o.rid && idx && idx.byRid ? idx.byRid.get(o.rid) : null;
-  return r && !r.cancelled && (r.product || "salt") === ((o && o.product) || "salt") ? r : null;
+  /* Fable's M1: and of the order's own account, its code or their bucket: a row moved to another party never takes this order's moves */
+  return r && !r.cancelled && (r.product || "salt") === ((o && o.product) || "salt") && !!o.code && POSITION_ENGINE.ownerCode(r.customer) === o.code ? r : null;
 };
 export function rowFor(o, idx, tally, reader) {
   const r = ridLive(o, idx);
@@ -322,7 +323,8 @@ const ridFor = (o) => (o && typeof o.rid === "string" && /^[a-z]\d{1,6}$/i.test(
 export function keyClash(book, o, key) {
   const own = ledgerKeyOf(o);
   if (!key || !own || key === own) return null;
-  return ((book && book.sales) || []).find((s) => s && POSITION_ENGINE.ovKey(s) === key) || null;
+  /* item 3A (Fable's L6): the order's own row, named by its rid, is never its own twin */
+  return ((book && book.sales) || []).find((s) => s && POSITION_ENGINE.ovKey(s) === key && !(o.rid && s.rid === o.rid)) || null;
 }
 const clashError = (row, what) => ({ status: 409, twin: true, error: "a sale of theirs on the book" + (row.rid ? ", " + row.rid + "," : "")
   + " is on that day at that figure, and the book keeps one row of it a day: " + what });
@@ -675,7 +677,7 @@ export function receivedTap(o, at, body, ctx) {
       if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
       if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
       /* S6 fix: money sent against the account, booked on this order's row and not folded yet, may be this very money */
-      const onRow = onRows[ledgerKeyOf(o)] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2);
+      const onRow = onRows[(ctx.rowKey || ledgerKeyOf)(o)] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.credit || 0)).toFixed(2);
       if (onRow > 0.004 && p.amount > due - onRow + 0.004) return { status: 409, error: "RM " + onRow.toFixed(2) + " sent against their account is booked on this order's row and not folded yet, so this claim would pay it twice: answer it once the fold lands" };
       const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
       const own = Object.assign({}, queued.find((e) => e.at === p.queued) || claimEntry(o, p));

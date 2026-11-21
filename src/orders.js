@@ -1087,7 +1087,7 @@ export async function receivedOrder(env, id, body, by, now, mirror) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
-  let queued = [], shut = new Set(), onRows = {}, way = null, hold = null;
+  let queued = [], shut = new Set(), onRows = {}, way = null, hold = null, rix = null;
   if (env.SALT_LEDGER) {
     const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
     queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
@@ -1098,12 +1098,13 @@ export async function receivedOrder(env, id, body, by, now, mirror) {
     /* S3: the book first, and the payments on their way are those ITS bound leaves out; the room reads the same book */
     hold = mirror || bookOnce(env.SALT_LEDGER);
     const b0 = await hold().catch(() => null);
+    rix = rowIndex((b0 && b0.sales) || []);   /* Fable's L5: the order's row by its rid first, so money on its way to a moved key still holds a second payment */
     /* a book that could not be read leaves the bound to be looked up (undefined), as before S3 */
     way = await paysOnWay(env.SALT_LEDGER, "SELL", b0 ? boundOf(b0) : undefined);   /* read once: the claims' rows and the room both take it */
     onRows = await acctInFlight(env.SALT_LEDGER, null, way);
   }
   const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way, hold || mirror) : null;
-  return stageTap(env, id, body, by, now, "pay", (o, at) => receivedTap(o, at, body, { queued, shut, onRows, rej, room }), mirror);
+  return stageTap(env, id, body, by, now, "pay", (o, at) => receivedTap(o, at, body, { queued, shut, onRows, rej, room, rowKey: (x) => rowKeyFor(x, rix || rowIndex([])) }), mirror);
 }
 
 /* ---- NOT FOUND (S6 11.14, his decision D7) ---------------------------------------------------------------------
@@ -1241,7 +1242,7 @@ export async function rowRoom(db, direction = "SELL", onWay, mirror) {
   return Object.assign((key, own) => {
     const matches = key ? byKey.get(key) || [] : [];
     const rid = own && own.payload && own.payload.rid;
-    const s = rid ? byRid.get(rid) : matches.length === 1 ? matches[0] : null;
+    const s = (rid && byRid.get(rid)) || (matches.length === 1 ? matches[0] : null);   /* Fable's M3: a rid whose row is gone keeps the key's guard */
     if (!s) return null;
     const paid = (row) => isSale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row);
     /* item 3A: a row found by its rid is read with what is on its way to its key as it stands, and to the key the tap named if that is another */
@@ -2581,6 +2582,7 @@ export async function tieOut(env, mirror, now = new Date(), opts = {}) {
     for (const y of old) {
       const o = r.orders.find((x) => x && x.id === y.order_id);
       if (o && yesHeld(y, o, byKey, n, byRid)) {
+        if (opts.readOnly) continue;   /* item 3A (Fable's L8): a dry backfill reads, and lets go of nothing */
         await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='void', decided_at=?1, shown=json_set(CASE WHEN json_valid(shown) THEN shown ELSE '{}' END,'$.retired',?2) WHERE id=?3 AND status='waiting' AND entry_at IS NULL")
           .bind(at, "the book holds its " + y.stage + " already", y.id).run();
         continue;
@@ -2675,7 +2677,7 @@ export async function deskRidStamp(env, b, mirror, now = new Date()) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return no(503, "the book is not configured");
   const dry = !(b && b.dry === false);
   mirror = mirror || bookOnce(env.SALT_LEDGER);
-  const tie = await tieOut(env, mirror, now, { stampAll: true });
+  const tie = await tieOut(env, mirror, now, { stampAll: true, readOnly: dry });
   if (!tie.ok) return no(409, "the tie-out could not be read (" + (tie.error || "no reason given") + "), so nothing is stamped");
   if (!tie.clean || tie.waiting.length) return no(409, "the book and the orders do not agree yet (" + tie.faults.length + " fault" + (tie.faults.length === 1 ? "" : "s") + ", " + tie.waiting.length + " waiting), so nothing is stamped");
   const stamp = tie.stamp || [], base = { ok: true, dry, fallback: tie.ridFallback.count, staleRid: tie.staleRid };
@@ -2685,6 +2687,15 @@ export async function deskRidStamp(env, b, mirror, now = new Date()) {
   if (!r.ok) return { ...base, ...st, stamp, readBack: "the site's orders could not be read back: " + (r.error || "") };
   const byId = new Map(r.orders.map((o) => [o.id, o])), differ = stamp.filter((x) => !byId.get(x.id) || byId.get(x.id).rid !== x.rid).map((x) => x.id);
   return { ...base, ...st, stamp, differ };
+}
+/** The minute's tie-out, kept at TIEOUT_KEY with no `stamp` in it, and (item 3A, Fable's L7) its stamps sent only when it is clean with nothing waiting,
+    as the backfill. { tie, st }: st is stampRids' answer, or null when nothing was stamped. */
+export async function tieOutKept(env, mirror, now = new Date()) {
+  const tie = await tieOut(env, mirror, now), stamp = tie.stamp;
+  delete tie.stamp;
+  await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));
+  const st = tie.ok && tie.clean && !(tie.waiting || []).length && stamp && stamp.length ? await stampRids(env, stamp) : null;
+  return { tie, st };
 }
 /** Each stamp the tie-out found, sent as a mark: { stamped, failed[] }. The Counter takes a rid once, or moved from the rid a mark names. */
 export async function stampRids(env, list) {

@@ -30,7 +30,7 @@ import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } f
 import { klDate, readRuns, exportLanded, chainBusy, askPace, askVerdict, exportReason } from "./day-export.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { deskImport, deskUnimport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, stampRids, deskRidStamp, TIEOUT_KEY, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, rowFor, rowIndex, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
+import { deskImport, deskUnimport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, tieOutKept, deskRidStamp, TIEOUT_KEY, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, rowFor, rowIndex, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -3061,11 +3061,8 @@ export default {
           const age = Date.now() - Date.parse(last && last.at || 0);
           const due = !last || !last.ok || (snapV && snapV.v && last.v !== snapV.v) || age > 6 * 3600000 || (!last.clean && age > 5 * 60000);
           if (due) {
-            const tie = await tieOut(env, mirror);
-            /* 21 Nov 2026 (item 3A): a clean check stamps each order it tied out by key with its row's rid (stampRids), never kept with the check itself */
-            const stamp = tie.stamp; delete tie.stamp;
-            await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));
-            if (tie.ok && tie.clean && stamp && stamp.length) { const st = await stampRids(env, stamp); console.log("orders rid stamp: " + JSON.stringify(st)); }
+            const { tie, st } = await tieOutKept(env, mirror);   /* item 3A: kept, and a clean check with nothing waiting stamps */
+            if (st) console.log("orders rid stamp: " + JSON.stringify(st));
             if (!tie.ok || !tie.clean) console.log("orders tie-out: " + JSON.stringify(tie));
           }
         } catch (e) { console.log("orders tie-out FAILED: " + String((e && e.stack) || e)); }

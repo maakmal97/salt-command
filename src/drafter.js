@@ -827,7 +827,10 @@ export function draftRow(entry, book) {
     if (kind === "Correction") {
       const fields = (pay.fields && typeof pay.fields === "object" && !Array.isArray(pay.fields)) ? pay.fields : null;
       if (!fields) return { skip: "this correction carries no fields to set" };
-      const found = findRow(book, pay.rid || pay.orderKey);
+      let found = findRow(book, pay.rid || pay.orderKey);
+      /* 21 Nov 2026 (item 3A, Fable's M2): an entry carries its order's rid; where that row is cancelled and this is no revival, the key it was queued under
+         names the row, as it did before entries carried a rid (and as a Fulfilment's target falls back below) */
+      if (pay.rid && pay.orderKey && found.row && found.row.cancelled && !reviving(fields)) { const byKey = findRow(book, pay.orderKey); if (byKey.row) found = byKey; }
       if (found.err) return { skip: found.err };
       const target = found.row;
       const isSale = found.collection === "sales";
