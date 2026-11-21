@@ -2245,7 +2245,7 @@ export function followFree(orders, plan, rows, gone) {
 /* 21 Nov 2026 (item 4, docs/plan-ledger-simplify.html): THE ORDERS A BOOKED ROW NAMES, for the outbox's forced pass (src/outbox.js), which then tells those alone.
    `spec` is what the drain read off its live drafts: `ids` the orders their entries name (an order's own stage, a claim's order), `rids` the rows the Book
    minted for them, `amends` the rows their amendments name (a rid, or a key for an entry before rids). An order is in when its id is named, its rid or its key
-   (ledgerKeyOf, the rekey kept) is a named row's, or it is any order but a cancelled or declined one of a named row's owner code: credit only lowers, an
+   (ledgerKeyOf, the rekey kept) is a named row's, or it is any order but a cancelled or declined one of a named row's or a named order's owner code: credit only lowers, an
    account claim pays several rows, and a finished order an amendment or an undo reopens takes its row's states. Nothing resolved answers null, and the
    caller runs the whole pass: a narrowing that names nobody never tells nobody. The regular pass is the net for anything this leaves out. */
 export function onlyOrders(orders, sales, spec) {
@@ -2254,6 +2254,7 @@ export function onlyOrders(orders, sales, spec) {
   for (const s of sales || []) { if (!s) continue; if (s.rid) byRid.set(s.rid, s); const k = E.ovKey(s); byKey.set(k, (byKey.get(k) || []).concat([s])); }
   const take = (s) => { if (s.rid) rids.add(s.rid); keys.add(E.ovKey(s)); const c = E.ownerCode(s.customer); if (c) codes.add(c); };
   for (const r of spec.rids || []) { const s = byRid.get(r); if (s) take(s); else rids.add(r); }
+  for (const o of orders || []) if (o && ids.has(o.id) && o.code) codes.add(o.code);   /* an order named by id brings its owner: the outbox row is written before row.rids */
   for (const a of spec.amends || []) { if (!a) continue; const s = byRid.get(a); if (s) { take(s); continue; } keys.add(a); for (const x of byKey.get(a) || []) take(x); }
   const out = new Set();
   for (const o of orders || []) {
@@ -2292,7 +2293,7 @@ async function followRows(env, orders, idx, at, { solo = false, only = null } = 
   }
   for (const o of orders) {
     const k = ledgerKeyOf(o);
-    if (!k || !o.code || sharing.has(o.id) || (only && !only.has(o.id))) continue;   /* item 4: the groups above are weighed over every order, the singles over `only` */
+    if (!k || !o.code || sharing.has(o.id)) continue;   /* item 4: the plan is built over every order, so followFree weighs every mover; `only` is applied as it is carried out, below */
     /* item 3A: AN ORDER WHOSE RID NAMES A LIVE ROW FOLLOWS THAT ROW, as an older sale's order does (rowOf), its key whatever a Correction made it; a close or
        re-date on its way holds it as before. Else the key's row, then the roads below, unchanged */
     const byRid = ridLive(o, idx);
@@ -2311,6 +2312,7 @@ async function followRows(env, orders, idx, at, { solo = false, only = null } = 
   };
   for (const { o, k, nk, friend, party, shared } of plan) {
     if (shared && broke.has(k)) continue;
+    if (only && !shared && !only.has(o.id)) continue;   /* item 4 (review, 21 Nov 2026): a mover outside `only` is weighed above and moved by the regular pass */
     if (nk !== k && !free({ o, nk }, shared ? groups.get(k).length : 1)) continue;
     if (!!o.forFriend !== friend) {
       const b = await answerOf(await markOrder(env, o.u, o.id, { forFriend: friend }));
