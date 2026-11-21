@@ -62,8 +62,8 @@
 {
 "name":"an order's differences are three items again",
 "file":"src/orders.js",
-"find":"faults: oneAnOrder(faults), waiting };",
-"replace":"faults, waiting };"
+"find":"faults: oneAnOrder(faults), waiting, orderless:",
+"replace":"faults, waiting, orderless:"
 },
 {
 "name":"who drops the word ordered",
@@ -170,8 +170,8 @@
 {
 "name":"one unit is plural",
 "file":"src/orders.js",
-"find":"q + (q === 1 ? \" unit\" : \" units\")",
-"replace":"q + \" units\""
+"find":"book.slice(1), q + (q === 1 ? \" unit\" : \" units\"), sayRM((+o.total",
+"replace":"book.slice(1), q + \" units\", sayRM((+o.total"
 },
 {
 "name":"who's total leaves out the delivery",
