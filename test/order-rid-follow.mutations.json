@@ -224,8 +224,8 @@
 {
 "name": "L7: the minute's check keeps its stamp at TIEOUT_KEY",
 "file": "src/orders.js",
-"find": "  delete tie.stamp;\n  await env.SALT_QUEUE.put(TIEOUT_KEY",
-"replace": "  await env.SALT_QUEUE.put(TIEOUT_KEY"
+"find": "  delete tie.stamp; delete tie.ridFallbackAll;\n  await env.SALT_QUEUE.put(TIEOUT_KEY",
+"replace": "  delete tie.ridFallbackAll;\n  await env.SALT_QUEUE.put(TIEOUT_KEY"
 },
 {
 "name": "L8: a dry backfill lets go of a stale yes",

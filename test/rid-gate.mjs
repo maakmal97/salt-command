@@ -20,7 +20,7 @@ const CODE = "ZZ1-AAA", DAY = "2026-11-18";
 const key = (total, delivery = 0, customer = CODE, product = "oil") => POSITION_ENGINE.ovKey({ customer, date: DAY, total, delivery, product });
 const row = (over) => Object.assign({ customer: CODE, date: DAY, product: "oil", qty: 10, total: 110, delivery: 0, cash: 110, deliveredQty: 10, road: "site", rev: "R2" }, over || {});
 const AT = (n) => "2026-11-18T14:00:0" + n + ".000Z";
-const mk = (n, total = 110 + n) => ({ id: "2026111813592" + n + "-aaaaaa", u: "u1", code: CODE, status: "done", mode: "deliver", product: "oil", forFriend: false, qty: 10, total, delivery: 0, paid: total, moved: 10,
+const mk = (n, total = 110 + n) => ({ id: "20261118" + "13592" + n + "-aaaaaa", u: "u1", code: CODE, status: "done", mode: "deliver", product: "oil", forFriend: false, qty: 10, total, delivery: 0, paid: total, moved: 10,
   at: "2026-11-18T13:59:22.294Z", ledgerKey: key(total), queued: { ack: AT(n), paid: total, moved: 10 }, history: [], payments: [] });
 const T0 = new Date("2026-11-20T03:00:00.000Z"), MIN = 60000, DAYMS = 86400000;
 
