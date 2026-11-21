@@ -2738,6 +2738,7 @@ export const OWNER_JS = `
         if(!makerGeo.pendingOk(record,makerPublicWord))throw new Error('This saved entry cannot be sent. Discard it.');
         localStorage.setItem('saltMakerPending:'+record.path,JSON.stringify(record));
       }
+      var UNSENT_SALE_GONE='Not kept: a new sale is placed with Order for them, on their account under Customers.';   /* 21 Nov 2026 (item 2, Fable): said when Resend clears a refused sale */
       function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);unsentPaint();}
       /* ---- THE UNSENT ENTRIES (PHASE 4c, 12 Oct 2026, the plan's retained-send words) -------------------------------------------------
          An entry that left this page and was not confirmed is kept on this phone, whole, until the Desk confirms it or he discards it (makerSave, above). He should not
@@ -2841,7 +2842,7 @@ export const OWNER_JS = `
               if(saved.body.pair||saved.body.vault||saved.body.addrVault)makerVaultRefresh();
             }catch(error){
               /* 21 Nov 2026 (item 2, Fable): a sale the Desk refuses as no site order (Order for them) is never taken by sending it again, so it is not kept to retry */
-              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();return;}
+              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();var said=amb.node(amb.notice(UNSENT_SALE_GONE));said.setAttribute('role','status');said.setAttribute('data-unsent-said','');parent.appendChild(said);return;}
               refusal(status,error);shut(true);}
           };
           ['Resend','Update and send','Discard'].forEach(function(label,index){

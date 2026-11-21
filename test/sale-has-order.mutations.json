@@ -224,13 +224,25 @@
   {
     "name": "a refused sale is kept to retry forever",
     "file": "stmt/owner.js",
-    "find": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();return;}",
+    "find": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();var said=amb.node(amb.notice(UNSENT_SALE_GONE));said.setAttribute('role','status');said.setAttribute('data-unsent-said','');parent.appendChild(said);return;}",
     "replace": ""
   },
   {
     "name": "any refusal of a sale clears it",
     "file": "stmt/owner.js",
-    "find": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();return;}",
-    "replace": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'){makerClear(saved.path);gone();return;}"
+    "find": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();var said=amb.node(amb.notice(UNSENT_SALE_GONE));said.setAttribute('role','status');said.setAttribute('data-unsent-said','');parent.appendChild(said);return;}",
+    "replace": "              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'){makerClear(saved.path);gone();var said=amb.node(amb.notice(UNSENT_SALE_GONE));said.setAttribute('role','status');said.setAttribute('data-unsent-said','');parent.appendChild(said);return;}"
+  },
+  {
+    "name": "clearing it says nothing",
+    "file": "stmt/owner.js",
+    "find": "var said=amb.node(amb.notice(UNSENT_SALE_GONE));said.setAttribute('role','status');said.setAttribute('data-unsent-said','');parent.appendChild(said);",
+    "replace": ""
+  },
+  {
+    "name": "the line is not spoken",
+    "file": "stmt/owner.js",
+    "find": "said.setAttribute('role','status');said.setAttribute('data-unsent-said','')",
+    "replace": "said.setAttribute('data-unsent-said','')"
   }
 ]

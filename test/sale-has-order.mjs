@@ -199,6 +199,9 @@ export async function run({ ok, pageWork }) {
         const go = p.d.querySelector('#makerInputs section.unsent[data-key="sale"] [data-act="record.retained.retry"]');
         if (go) { go.click(); await p.work.quiet(); }
         const left = p.w.localStorage.getItem(KEEP);
+        const said = [...p.d.querySelectorAll("#makerInputs [data-unsent-said]")].map((x) => x.textContent.trim());
+        ok(gone ? said.length === 1 && /^Not kept: a new sale is placed with Order for them/.test(said[0]) && p.d.querySelector("#makerInputs [data-unsent-said]").getAttribute("role") === "status" : said.length === 0,
+          "P2: " + (gone ? "clearing it is said in one line" : "keeping it says no such line") + ": " + J(said));
         ok(!!go && (gone ? left === null : left !== null), "P2: an unsent sale refused " + (gone ? "as Order for them is cleared" : "for another reason is kept") + ": " + J({ go: !!go, left: !!left }));
       } catch (e) { ok(false, "P2 stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
     }
