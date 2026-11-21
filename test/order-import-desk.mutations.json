@@ -2,14 +2,14 @@
  {
   "name": "followRows reads an imported order's row by key, not rid",
   "file": "src/orders.js",
-  "find": "const row = !isImported(o) && idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);",
-  "replace": "const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);"
+  "find": "const byRid = ridLive(o, idx);\n    const row = byRid ? (await closeOnItsWay(env, o, at) ? null : byRid) : !isImported(o) && idx.rows.get(k) ? rowFor(o, idx).row",
+  "replace": "const byRid = null;\n    const row = byRid ? (await closeOnItsWay(env, o, at) ? null : byRid) : idx.rows.get(k) ? idx.byKey.get(k)"
  },
  {
   "name": "rowOf looks for an imported order's row by rid no more",
   "file": "src/orders.js",
-  "find": "if (isImported(o)) { const r = idx.byRid.get(o.rid); return r && (r.product || \"salt\") === product ? r : null; }",
-  "replace": "if (false) { return null; }"
+  "find": "const byRid = ridLive(o, idx);\n    const row = byRid ? (await closeOnItsWay(env, o, at) ? null : byRid) : !isImported(o) && idx.rows.get(k) ? rowFor(o, idx).row : await rowOf(env, o, k, idx, amended, at);",
+  "replace": "const byRid = isImported(o) ? null : ridLive(o, idx);\n    const row = byRid ? (await closeOnItsWay(env, o, at) ? null : byRid) : !isImported(o) && idx.rows.get(k) ? rowFor(o, idx).row : isImported(o) ? null : await rowOf(env, o, k, idx, amended, at);"
  },
  {
   "name": "undoFixes sends an imported order's past undo (belt)",
@@ -44,8 +44,8 @@
  {
   "name": "the tie-out asks the drafts for an imported order's ack",
   "file": "src/orders.js",
-  "find": "const ack = await ackFate(env, o, bound);",
-  "replace": "const ack = await fate(env, o.queued && o.queued.ack, bound);"
+  "find": "      const ack = await ackFate(env, o, bound);\n      /* its pending row rejected",
+  "replace": "      const ack = await fate(env, o.queued && o.queued.ack, bound);\n      /* its pending row rejected"
  },
  {
   "name": "isImported reads any order with a rid",

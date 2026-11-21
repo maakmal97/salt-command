@@ -92,20 +92,20 @@
   {
     "name": "an orderless row makes the tie-out unclean",
     "file": "src/orders.js",
-    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };",
-    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length && !orderlessSafe(book, r.orders, byKey).length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };"
+    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey),",
+    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length && !orderlessSafe(book, r.orders, byKey).length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey),"
   },
   {
     "name": "an orderless row is a fault",
     "file": "src/orders.js",
-    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };",
-    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults.concat(orderlessSafe(book, r.orders, byKey))), waiting, orderless: [] };"
+    "find": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey),",
+    "replace": "  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults.concat(orderlessSafe(book, r.orders, byKey))), waiting, orderless: [],"
   },
   {
     "name": "the tie-out lists nothing",
     "file": "src/orders.js",
-    "find": "waiting, orderless: orderlessSafe(book, r.orders, byKey) };",
-    "replace": "waiting, orderless: [] };"
+    "find": "waiting, orderless: orderlessSafe(book, r.orders, byKey),",
+    "replace": "waiting, orderless: [],"
   },
   {
     "name": "the import's gate counts the orderless",

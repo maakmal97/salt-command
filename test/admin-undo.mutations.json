@@ -230,7 +230,7 @@
  {
   "name": "the undo's context finds no site order",
   "file": "src/worker.js",
-  "find": "&& ledgerKeyOf(o) === key);",
+  "find": "&& rowFor(o, ix).k === key);",
   "replace": "&& false);"
  },
  {

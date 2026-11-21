@@ -2,7 +2,7 @@
 {
 "name": "the tie-out never lets a held yes go",
 "file": "src/orders.js",
-"find": "      if (o && yesHeld(y, o, byKey, n)) {",
+"find": "      if (o && yesHeld(y, o, byKey, n, byRid)) {",
 "replace": "      if (false) {"
 },
 {
@@ -32,7 +32,7 @@
 {
 "name": "the tie-out reads the old index",
 "file": "src/orders.js",
-"find": "  const { byKey, rows: n, ended: endedByKey } = rowIndex(book.sales);",
-"replace": "  const byKey = new Map(), n = new Map(), endedByKey = new Map();\n  for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }"
+"find": "  const { byKey, rows: n, ended: endedByKey, byRid } = rowIndex(book.sales), ix = { byKey, byRid },",
+"replace": "  const byKey = new Map(), n = new Map(), endedByKey = new Map(), byRid = new Map(), ix = { byKey, byRid };\n  for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }\n  const"
 }
 ]

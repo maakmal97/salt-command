@@ -80,14 +80,14 @@
 {
 "name":"a tap on an order with no sale is told to tap again",
 "file":"src/orders.js",
-"find":"what: [k && !byKey.get(k) ? tap + \" is held, not lost",
+"find":"what: [f && f.k && !f.row ? tap + \" is held, not lost",
 "replace":"what: [false ? tap + \" is held, not lost"
 },
 {
 "name":"a tap's day is the UTC day",
 "file":"src/orders.js",
-"find":"\" you tapped on \" + sayDay(klDate(new Date(y.at))), k = ",
-"replace":"\" you tapped on \" + sayDay(String(y.at)), k = "
+"find":"\" you tapped on \" + sayDay(klDate(new Date(y.at))), f = ",
+"replace":"\" you tapped on \" + sayDay(String(y.at)), f = "
 },
 {
 "name":"a tap is named by the desk's stage word",
