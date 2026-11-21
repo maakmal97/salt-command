@@ -1,0 +1,98 @@
+[
+ {
+  "name": "the drain hands on no narrowing",
+  "file": "src/outbox.js",
+  "find": "Object.assign({ force: true }, only ? { only } : {})",
+  "replace": "Object.assign({ force: true }, {})"
+ },
+ {
+  "name": "a draft that names nothing is passed over instead of running the whole pass",
+  "file": "src/outbox.js",
+  "find": "    if (!n) return null;   /* one draft that names nobody: the whole pass */",
+  "replace": "    if (!n) continue;"
+ },
+ {
+  "name": "the drain drops the rows the Book minted",
+  "file": "src/outbox.js",
+  "find": "const rids = (row && Array.isArray(row.rids) ? row.rids : [])",
+  "replace": "const rids = ([])"
+ },
+ {
+  "name": "the drain drops the amended row",
+  "file": "src/outbox.js",
+  "find": "const amends = typeof r.amends === \"string\" && r.amends ? [r.amends] : [];",
+  "replace": "const amends = [];"
+ },
+ {
+  "name": "the owner's other orders are left out",
+  "file": "src/orders.js",
+  "find": " || (o.code && codes.has(o.code) && !endedOrder(o))) out.add(o.id);",
+  "replace": ") out.add(o.id);"
+ },
+ {
+  "name": "the owner's cancelled and declined orders are taken in",
+  "file": "src/orders.js",
+  "find": " || (o.code && codes.has(o.code) && !endedOrder(o))) out.add(o.id);",
+  "replace": " || (o.code && codes.has(o.code))) out.add(o.id);"
+ },
+ {
+  "name": "an order is not matched by its rid",
+  "file": "src/orders.js",
+  "find": "if (ids.has(o.id) || (o.rid && rids.has(o.rid)) ||",
+  "replace": "if (ids.has(o.id) ||"
+ },
+ {
+  "name": "an order is not matched by its key",
+  "file": "src/orders.js",
+  "find": " || (k && keys.has(k)) || (o.code",
+  "replace": " || (o.code"
+ },
+ {
+  "name": "an amendment's row named by key brings no row",
+  "file": "src/orders.js",
+  "find": "keys.add(a); for (const x of byKey.get(a) || []) take(x); }",
+  "replace": "keys.add(a); }"
+ },
+ {
+  "name": "an amendment's row named by rid is not taken",
+  "file": "src/orders.js",
+  "find": "const s = byRid.get(a); if (s) { take(s); continue; }",
+  "replace": "const s = byRid.get(a); if (s) { continue; }"
+ },
+ {
+  "name": "a narrowing that resolves to nobody tells nobody",
+  "file": "src/orders.js",
+  "find": "  return out.size ? out : null;\n}",
+  "replace": "  return out;\n}"
+ },
+ {
+  "name": "the forced pass tells every order",
+  "file": "src/orders.js",
+  "find": "    if (only && !only.has(o.id)) continue;\n    if (!o.ledgerKey",
+  "replace": "    if (!o.ledgerKey"
+ },
+ {
+  "name": "the regular pass is narrowed too",
+  "file": "src/orders.js",
+  "find": "const only = opts.force && opts.only ? onlyOrders(",
+  "replace": "const only = opts.only ? onlyOrders("
+ },
+ {
+  "name": "the forced pass follows every single order",
+  "file": "src/orders.js",
+  "find": "sharing.has(o.id) || (only && !only.has(o.id))) continue;",
+  "replace": "sharing.has(o.id)) continue;"
+ },
+ {
+  "name": "a collision is weighed against the orders in only alone",
+  "file": "src/orders.js",
+  "find": "const free = followFree(orders, plan, idx.rows, idx.ended);",
+  "replace": "const free = followFree(only ? orders.filter((o) => only.has(o.id)) : orders, plan, idx.rows, idx.ended);"
+ },
+ {
+  "name": "the groups are built over only",
+  "file": "src/orders.js",
+  "find": "if (!k || !o.code || o.test || o.forFriend || o.status !== \"done\" || ridLive(o, idx)) continue;",
+  "replace": "if (!k || !o.code || o.test || o.forFriend || o.status !== \"done\" || ridLive(o, idx) || (only && !only.has(o.id))) continue;"
+ }
+]

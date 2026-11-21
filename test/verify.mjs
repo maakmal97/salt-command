@@ -50668,6 +50668,11 @@ await (async () => {
   await (await import("./order-rid-follow.mjs")).run({ ok });
 })();
 
+section("21 Nov 2026: the outbox's forced pass tells only the orders its booked rows name, and the regular pass stays the net");
+await (async () => {
+  await (await import("./outbox-narrow.mjs")).run({ ok });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });
