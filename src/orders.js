@@ -2675,11 +2675,11 @@ async function stampable(env, cands, bound, max = STAMP_MAX) {
 export async function deskRidStamp(env, b, mirror, now = new Date()) {
   const no = (status, error) => ({ ok: false, status, error });
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return no(503, "the book is not configured");
-  const dry = !(b && b.dry === false);
+  const dry = !b || b.dry !== false;   /* dry unless asked for false, as the import */
   mirror = mirror || bookOnce(env.SALT_LEDGER);
   const tie = await tieOut(env, mirror, now, { stampAll: true, readOnly: dry });
   if (!tie.ok) return no(409, "the tie-out could not be read (" + (tie.error || "no reason given") + "), so nothing is stamped");
-  if (!tie.clean || tie.waiting.length) return no(409, "the book and the orders do not agree yet (" + tie.faults.length + " fault" + (tie.faults.length === 1 ? "" : "s") + ", " + tie.waiting.length + " waiting), so nothing is stamped");
+  if (tie.waiting.length || !tie.clean) return no(409, "the book and the orders do not agree yet (" + tie.faults.length + " fault" + (tie.faults.length === 1 ? "" : "s") + ", " + tie.waiting.length + " waiting), so nothing is stamped");
   const stamp = tie.stamp || [], base = { ok: true, dry, fallback: tie.ridFallback.count, staleRid: tie.staleRid };
   if (dry) return { ...base, stamp };
   const st = await stampRids(env, stamp);
