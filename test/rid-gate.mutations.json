@@ -1,0 +1,17 @@
+[
+{"name":"G1: the first pass keeps no since of its own","file":"src/orders.js","find":"const healthy = !why, since = healthy ? (prior && prior.since) || tie.at : tie.at;","replace":"const healthy = !why, since = healthy ? (prior && prior.since) || \"2026-01-01T00:00:00.000Z\" : tie.at;"},
+{"name":"G1: last holds no ids","file":"src/orders.js","find":"last: cur.slice(0, RIDGATE_LAST),","replace":"last: [],"},
+{"name":"G2: a repeated id is not a repeat","file":"src/orders.js","find":"repeat = cur.filter((id) => was.has(id)).length,","replace":"repeat = 0,"},
+{"name":"G2: a reset keeps the old since","file":"src/orders.js","find":"since = healthy ? (prior && prior.since) || tie.at : tie.at;","replace":"since = (prior && prior.since) || tie.at;"},
+{"name":"G2: a healthy pass moves since every time","file":"src/orders.js","find":"since = healthy ? (prior && prior.since) || tie.at : tie.at;","replace":"since = tie.at;"},
+{"name":"G2: a reset prints nothing","file":"src/orders.js","find":"    if (!healthy) console.log(\"orders rid gate reset: \"","replace":"    if (false) console.log(\"orders rid gate reset: \""},
+{"name":"G3: a stale rid is no reset","file":"src/orders.js","find":"stale ? stale + \" order(s) name a row no longer live (staleRid)\" : \"\"","replace":"\"\""},
+{"name":"G3: an unclean tie-out is no reset","file":"src/orders.js","find":"[!tie.clean ? \"the tie-out was not clean\" : \"\",","replace":"[\"\","},
+{"name":"G4: the transient list is stored","file":"src/orders.js","find":"delete tie.stamp; delete tie.ridFallbackAll;","replace":"delete tie.stamp;"},
+{"name":"G4: last is not capped","file":"src/orders.js","find":"RIDGATE_LAST = 500","replace":"RIDGATE_LAST = 5000"},
+{"name":"G5: a failed read of the record stops the record","file":"src/orders.js","find":"catch (e) { prior = null; }","replace":"catch (e) { throw e; }"},
+{"name":"G5: a failed write of the record breaks the pass","file":"src/orders.js","find":"  } catch (e) { console.log(\"orders rid gate not kept: \" + (e && e.message || e)); }","replace":"  } catch (e) { throw e; }"},
+{"name":"G6: a run of 6 days is due","file":"src/orders.js","find":"RIDGATE_DAYS = 7,","replace":"RIDGATE_DAYS = 6,"},
+{"name":"G6: a run of 7 days is not due","file":"src/orders.js","find":"if (at - since < RIDGATE_DAYS * 86400000)","replace":"if (at - since <= RIDGATE_DAYS * 86400000 + 120000)"},
+{"name":"G6: a stale record is due","file":"src/orders.js","find":"if (t - at >= RIDGATE_FRESH_MS)","replace":"if (false)"}
+]

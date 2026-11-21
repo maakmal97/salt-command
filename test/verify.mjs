@@ -50668,6 +50668,11 @@ await (async () => {
   await (await import("./order-rid-follow.mjs")).run({ ok });
 })();
 
+section("21 Nov 2026: the rid gate: a record of the healthy run of kept tie-outs, which item 3B waits on for seven days");
+await (async () => {
+  await (await import("./rid-gate.mjs")).run({ ok });
+})();
+
 section("21 Nov 2026: the outbox's forced pass tells only the orders its booked rows name, and the regular pass stays the net");
 await (async () => {
   await (await import("./outbox-narrow.mjs")).run({ ok });

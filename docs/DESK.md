@@ -1139,6 +1139,12 @@ Additive: the key stays the road for an order with no rid, and nothing is remove
   order-to-row lookups. `rowRoom` reads a row found by rid with what is on its way to its own key. The suite holds no `byKey.get(ledgerKeyOf(`.
 - **The fallback is counted** for accepted live orders whose row is on the book, test accounts left out: the tie-out's `ridFallback` (count and
   the first 20 orders, kept with the check at KV `orders:tieout`), the return leg's `ridFallback` in its result. Version B waits for it to be nought.
+- **The gate record** (21 Nov 2026, the rid-gate version): that count is one pass's snapshot and includes what the pass is about to stamp, so KV `orders:ridgate`
+  (`RIDGATE_KEY`) keeps the run. Each kept tie-out that is ok writes `{v, at, since, count, repeat, stale, clean, last, why?}`: `last` the full fallback ids (at most 500),
+  `repeat` those also in the prior `last` (a pass did not heal them), `stale` the `staleRid` length. A pass is healthy when it is clean with no repeat and no stale:
+  `since` then stays, else it moves to `at` and `why` says which (one console line, `orders rid gate reset`). A tie-out that could not read the site or the book writes
+  nothing, and a record not refreshed for 6.5 hours is stale. A failed read or write of the record never breaks the check or its stamps. **Version 3B is due when
+  `ridGateDue(rec, now)` (`src/orders.js`) says so: `at` under 6.5 hours old and `at - since` 7 days or more**; the run on 30 Nov 2026 reads the record and mirrors that helper.
 - **Every stage entry carries the order's `rid`** (`payload.rid`), so the drafter's `findRow` and a Fulfilment's target find the row by rid first.
   A Correction naming a rid whose row was cancelled, and no revival, is drafted against the row its key names, as before (Fable's M2), and a
   Fulfilment's target falls back the same way; such orders are still listed by the backfill and the tie-out (`staleRid`). A rid's row must be

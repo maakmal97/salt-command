@@ -2675,7 +2675,7 @@ export async function tieOut(env, mirror, now = new Date(), opts = {}) {
   }
   const ridFallback = [...new Set([...tally.values()].flatMap((l) => [...l]))];
   return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey),
-    ridFallback: { count: ridFallback.length, orders: ridFallback.slice(0, 20) }, staleRid, ...(faults.length ? {} : { stamp: await stampable(env, stamp, bound, opts.stampAll ? Infinity : STAMP_MAX) }) };
+    ridFallback: { count: ridFallback.length, orders: ridFallback.slice(0, 20) }, ridFallbackAll: ridFallback, staleRid, ...(faults.length ? {} : { stamp: await stampable(env, stamp, bound, opts.stampAll ? Infinity : STAMP_MAX) }) };
 }
 /* 21 Nov 2026 (item 3A, Opus's M1 on Fable's plan): THE STAMP. A rid is written onto an order only from the row the follow resolves (its key's one row, of its
    own code), never from the Accept draft; only while the tie-out it came from is clean; never onto a cancelled row; and only once the order's own pending row
@@ -2717,11 +2717,40 @@ export async function deskRidStamp(env, b, mirror, now = new Date()) {
 /** The minute's tie-out, kept at TIEOUT_KEY with no `stamp` in it, and (item 3A, Fable's L7) its stamps sent only when it is clean with nothing waiting,
     as the backfill. { tie, st }: st is stampRids' answer, or null when nothing was stamped. */
 export async function tieOutKept(env, mirror, now = new Date()) {
-  const tie = await tieOut(env, mirror, now), stamp = tie.stamp;
-  delete tie.stamp;
+  const tie = await tieOut(env, mirror, now), stamp = tie.stamp, all = tie.ridFallbackAll;
+  delete tie.stamp; delete tie.ridFallbackAll;
   await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));
   const st = tie.ok && tie.clean && !(tie.waiting || []).length && stamp && stamp.length ? await stampRids(env, stamp) : null;
+  if (tie.ok) await keepRidGate(env, tie, all || []);
   return { tie, st };
+}
+/* 21 Nov 2026 (item 3B's gate, his answer D: two versions a week apart): THE RECORD AT RIDGATE_KEY. Item 3A's count is a snapshot of one pass and includes what
+ * that pass is about to stamp, so it says nothing of a week. This keeps the run of kept tie-outs that were healthy: `since` is the moment the run began, `last`
+ * the orders that fell back this pass (at most 500), `repeat` those that fell back on the pass before too (a pass did not heal them), `stale` the orders whose rid
+ * names a row no longer live. A pass is healthy when the tie-out is ok and clean with no repeat and no stale; any other pass resets `since` and says why.
+ * A failed read or write of the record never breaks the tie-out or its stamps. */
+export const RIDGATE_KEY = "orders:ridgate", RIDGATE_DAYS = 7, RIDGATE_FRESH_MS = 6.5 * 3600000, RIDGATE_LAST = 500;
+async function keepRidGate(env, tie, cur) {
+  try {
+    let prior = null;
+    try { prior = await env.SALT_QUEUE.get(RIDGATE_KEY, "json"); } catch (e) { prior = null; }
+    const was = new Set(prior && Array.isArray(prior.last) ? prior.last : []), repeat = cur.filter((id) => was.has(id)).length, stale = (tie.staleRid || []).length;
+    const why = [!tie.clean ? "the tie-out was not clean" : "", repeat ? repeat + " order(s) fell back on two kept tie-outs running" : "", stale ? stale + " order(s) name a row no longer live (staleRid)" : ""].filter(Boolean).join("; ");
+    const healthy = !why, since = healthy ? (prior && prior.since) || tie.at : tie.at;
+    const rec = { v: 1, at: tie.at, since, count: cur.length, repeat, stale, clean: !!tie.clean, last: cur.slice(0, RIDGATE_LAST), ...(why ? { why } : {}) };
+    if (!healthy) console.log("orders rid gate reset: " + JSON.stringify({ at: tie.at, repeat, stale, clean: !!tie.clean }));
+    await env.SALT_QUEUE.put(RIDGATE_KEY, JSON.stringify(rec));
+  } catch (e) { console.log("orders rid gate not kept: " + (e && e.message || e)); }
+}
+/** Item 3B is due when the record is fresh (under 6.5 hours old) and its healthy run is 7 days or more: { due, since, why }. The run mirrors this. */
+export function ridGateDue(rec, now = new Date()) {
+  const t = now instanceof Date ? now.getTime() : Number(now);
+  if (!rec || typeof rec !== "object" || !rec.at || !rec.since) return { due: false, since: null, why: "no record yet" };
+  const at = Date.parse(rec.at), since = Date.parse(rec.since);
+  if (!Number.isFinite(at) || !Number.isFinite(since)) return { due: false, since: rec.since, why: "the record's moments cannot be read" };
+  if (t - at >= RIDGATE_FRESH_MS) return { due: false, since: rec.since, why: "the record is stale: the minute's tie-out has not kept it for " + Math.floor((t - at) / 3600000) + " hours" };
+  if (at - since < RIDGATE_DAYS * 86400000) return { due: false, since: rec.since, why: "the healthy run is " + ((at - since) / 86400000).toFixed(1) + " days, under " + RIDGATE_DAYS + (rec.why ? "; last reset: " + rec.why : "") };
+  return { due: true, since: rec.since, why: "" };
 }
 /** Each stamp the tie-out found, sent as a mark: { stamped, failed[] }. The Counter takes a rid once, or moved from the rid a mark names. */
 export async function stampRids(env, list) {
