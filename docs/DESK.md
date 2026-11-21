@@ -1100,6 +1100,33 @@ drafter's pass, its dry run and `tools/drafts.mjs --from-queue` refuse a new sal
 Salt Admin". An older entry still drafts (the watermark's rule); a purchase, a gift, a redemption and a change to a booked row go on as before;
 `draftRow`, the law, is unchanged. The road `desk` stays on the rows it already holds.
 
+### Every road that mints a sale, and its order (21 Nov 2026, item 2 of `docs/plan-ledger-simplify.html`, step 0)
+
+A sale row is minted where the fold or the Book's tap appends to `sales` (`engine/apply.mjs` `bookItem`'s `row.rid = nextRid(...)`, and the reward
+and loyalty units' own `nextRid` calls); everything else changes a row already booked. Each road, and how its row is named by an order:
+
+| Road | Mints a sale? | Its order |
+|---|---|---|
+| Accept of a site order (the customer's Place, or his Order for them) | yes, `road: "site"`, the entry's `orderId` | **order**: the order names the row by its key (`ledgerKey`), followed as `rowIndex` reads a key |
+| The older-sales import (`deskImport`, `tools/orders-import.mjs`) | no: it makes the ORDER for a row already booked | **order**: the imported order names the row by `rid` |
+| Salt Admin's `sale` (`makerTradeBatch` for `sale`, with or without a cover) | yes, `road: "admin"`, a `makerRequest` and no `orderId` | **orderless**: refused from 21 Nov 2026 ("Order for them") unless `recovery: true` and D1 `sale_recovery` is on; such a row carries the drafter's `noOrder` flag and is listed until it is imported |
+| Salt Admin's `gift` and `redeem` | yes, `goodwill: true` | **excluded**: a gift or a redemption is no customer's order (importOf's "a reward or loyalty unit the fold raised") |
+| Salt Admin's `partner` and `edit` | no: a roster row and a market `edit` row | none needed |
+| A trip's split (`trip-pay`) and join (`trip-join`), the rebate offset, `ledger-amend`, an undo | no: Corrections on booked rows | the row's own order, as before; a Correction that revives a cancelled row makes it live again, and it is listed if no live order names it |
+| The reward unit and the loyalty unit the fold raises (`rewardOf`, `loyal`, `road: "fold"`) | yes, `goodwill: true` | **excluded** |
+| A hand fold (`road: "hand"`) | yes, by hand | **orderless** unless an order names it or it is on the known list; settled, it is imported |
+| The Desk's or the laptop's raw queue (`/queue`, `tools/drafts.mjs --from-queue`) | no new sale from 04 Nov 2026 (`queueSaleFault`); an older stamped entry still drafts | an older entry drafts with `noOrder` and is listed |
+| A cancelled or written-off sale | (any road) | **excluded**: nothing more is owed or moved on it |
+
+The reading is the engine's `orderlessSales` (`engine/stages.mjs`): a live customer row is named when a live order (not cancelled or declined,
+not a test account's) carries its `rid`, or names its key and the row is that key's row as `rowIndex` reads it (the one live site row at a key
+whose twins are cancelled, s395's shape; several orders naming one row is a shared group, whose sums the tie-out checks). A row importOf refuses
+for a reason in `ORDER_NOT_NEEDED` needs no order. `ORDERLESS_KNOWN` names the rows known to have none yet, each with its reason: s182, s235 and
+s236 (CN3-WM, still owing), s234 (a line of a trip whose other line an order names), and s053 and s208 (two live sales of one key, which no order
+can tell apart). A rid leaves the list in a version once it is imported. The tie-out returns the rest as `orderless`, its own list outside `faults`,
+`waiting` and `clean`, so `deskImport`'s clean gate still passes and a settled orderless row can be imported; Salt Admin's Ledger check draws it
+under "Sales no order names".
+
 ## Every conclusion's path: Show, then act (9 Nov 2026, his word and his answer "Show, then act")
 
 Every conclusion on the Desk (a To do row, a Noticed card) and every ledger row has one shape. **Show** opens exactly what it names, on the Desk:
