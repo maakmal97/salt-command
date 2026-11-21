@@ -14,8 +14,8 @@
 {
 "name": "R1: a rid naming another book's row is taken",
 "file": "engine/stages.mjs",
-"find": "return r && !r.cancelled && (r.product || \"salt\") === ((o && o.product) || \"salt\") ? r : null;",
-"replace": "return r && !r.cancelled ? r : null;"
+"find": "&& (r.product || \"salt\") === ((o && o.product) || \"salt\") && !!o.code",
+"replace": "&& !!o.code"
 },
 {
 "name": "R1: a placed order is counted as owing a rid",
