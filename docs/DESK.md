@@ -1139,11 +1139,14 @@ Additive: the key stays the road for an order with no rid, and nothing is remove
 - **The fallback is counted** for accepted live orders whose row is on the book, test accounts left out: the tie-out's `ridFallback` (count and
   the first 20 orders, kept with the check at KV `orders:tieout`), the return leg's `ridFallback` in its result. Version B waits for it to be nought.
 - **Every stage entry carries the order's `rid`** (`payload.rid`), so the drafter's `findRow` and a Fulfilment's target find the row by rid first.
-  Known gap: a Correction (a close, an amendment, a cancellation) naming a rid whose row was cancelled is refused at drafting where the key's live
-  row was taken before; such orders are listed by the backfill (`staleRid`) and on the tie-out.
+  A Correction naming a rid whose row was cancelled, and no revival, is drafted against the row its key names, as before (Fable's M2), and a
+  Fulfilment's target falls back the same way; such orders are still listed by the backfill and the tie-out (`staleRid`). A rid's row must be
+  the order's own party (`ridLive`), `rowRoom` and Received's double-pay guard keep the key's reading for a stale rid, and `keyClash` passes over
+  the order's own row.
 - **The stamp** (Opus's M1): the minute's tie-out, when clean, offers each order it tied out by key with that row's rid (`stamp`), only for a live
-  row of the order's own code, one row at its key, once the order's Accept row has landed (approved and committed), at most 40 a pass;
-  `stampRids` sends each as a mark and the stored check keeps no `stamp`. Orders sharing one row each take its one rid (his answer F). Never from
+  row of the order's own code, one row at its key, once the order's Accept row has landed (approved and committed), at most 40 a pass, and
+  only with nothing waiting (`tieOutKept`, which keeps the check at KV `orders:tieout` with no `stamp` and sends each as a mark through `stampRids`).
+  A dry backfill runs the check read only: it lets go of no stale yes. Orders sharing one row each take its one rid (his answer F). Never from
   the Accept draft, never onto a cancelled row, never while the check has a fault.
 - **The Counter takes a rid once** (`decideDesk`'s mark, `ROW_RID_RE`, a letter and its number): a second rid only by a mark naming the first as
   `ridWas`, refused 409 otherwise; a replay over a moved order changes nothing. `rid` is never in `CUSTOMER_FIELDS`.
