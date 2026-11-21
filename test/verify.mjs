@@ -2042,7 +2042,7 @@ await (async () => {
   ok(amend.row && amend.row.customer === "CC9-OKR" && amend.row.total === 90,
     "the row it carries is the TARGET as it stands, not a row to append");
   ok(/SETTLES the order in full/.test(amend.flags.join(" ")), "settling the whole order is flagged as such");
-  ok(/ovAmend/.test(amend.reasoning), "and the reasoning says plainly that the desk applies it, not the drafter");
+  ok(/NOT recomputed here: the Book applies it/.test(amend.reasoning) && !/ovAmend/.test(amend.reasoning), "and the reasoning says plainly that the Book applies it, not the drafter");
 
   /* A MODIFICATION IS MECHANICAL TOO, FROM 24 Aug 2026: the phone's Restate form sends newQty
      and newTotal against a tapped order, so what changed is a figure rather than free text, and

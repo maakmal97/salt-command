@@ -168,7 +168,7 @@ export function findRow(book, ref) {
  * figure drift". READING THE ENGINE SHOWED THAT WAS WRONG: txPaid is (cash + settledRM) read
  * straight off the row, so the `amend` trail is a NARRATIVE beside the figure and never its
  * source. Setting cash directly is a correction; adding to it is a movement. Both legitimately
- * write the same field, which is exactly what ovAmend already does.
+ * write the same field, which is exactly what the fold's applyAmend does.
  *
  * A field absent from the patch is left alone; a field set to null is CLEARED, which is how a
  * wrong attribution or a stray date comes off a row rather than being overwritten with another
@@ -183,8 +183,8 @@ export function findRow(book, ref) {
  *   status        DERIVED on a purchase from cash against total. Recomputed after every change.
  * Every one of those is computed or structural. Everything a person typed is editable. */
 /* READ FROM THE ENGINE, re-exported here so the fold and the tests can reach them by the
-   name they already use. One table, three consumers: this drafter, tools/fold.mjs and the
-   desk's own ovAmend, which gets it inlined with the rest of the engine. */
+   name they already use. One table, read by this drafter and tools/fold.mjs (the desk's ovAmend read it too,
+   until 21 Nov 2026). */
 export const CORRECT_NUM_POS = POSITION_ENGINE.CORRECT_NUM_POS;
 export const CORRECT_NUM_NN = POSITION_ENGINE.CORRECT_NUM_NN;
 export const CORRECT_DATE = POSITION_ENGINE.CORRECT_DATE;
@@ -801,7 +801,7 @@ export function draftRow(entry, book) {
    * the gate. It does now. Linked and Rewarded stay refused: neither has a phone form that
    * captures a figure to check, only a judgement about which other row or which award applies.
    *
-   * IT DOES NOT COMPUTE THE RESULT, and that is the important restraint. ovAmend in the master
+   * IT DOES NOT COMPUTE THE RESULT, and that is the important restraint. The fold's applyAmend
    * is layered, careful logic: a pending lot that stops being pending, a partial receipt, the
    * inTransit flag that exists so a deposit cannot walk a whole lot into the cost basis. A
    * second copy of it here would drift from the first the day either changed. So what is
@@ -1027,7 +1027,7 @@ export function draftRow(entry, book) {
         `Modification against ${t.p}'s ${isSale ? "order" : "lot"} of ${round(t.q)} unit for RM ${round(t.t)}${t.d ? ` agreed ${t.d}` : ", pending and undated"}.`,
         `Restates it to ${round(newQty)} unit for RM ${round(newTotal)}, RM ${round(rate)}/unit.`,
         (isSale && priced.cost != null) ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${round((newTotal - priced.cost * newQty) / newTotal * 100, 1)}% margin on the new terms.` : "",
-        "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a modification does rather than two.",
+        "The row itself is NOT recomputed here: the Book applies it when it is approved, so there is one definition of what a modification does rather than two.",
       ].filter(Boolean).join(" ");
 
       /* Shaped like a row so the Approve panel needs no special case for what it shows: the
@@ -1110,7 +1110,7 @@ export function draftRow(entry, book) {
       isMove
         ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweUnits)} unit outstanding. ${left}`
         : left,
-      "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+      "The row itself is NOT recomputed here: the Book applies it when it is approved, so there is one definition of what a fulfilment does rather than two.",
     ].join(" ");
 
     return {
