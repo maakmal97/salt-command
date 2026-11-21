@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="3452f9c03e7f8631";
+var SALT_BUILD_ID="7f8ea2d36885fc63";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12590,7 +12590,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1557","d":"21 Nov 2026","t":"THE MINUTE NO LONGER RE-KEYS ORDERS","n":["<b>ONE PASS LESS.</b> The one-time pass that gave an older order its book tail has run and its mark read done, so the Desk&#39;s minute no longer reads it or asks the site for the list of every order on its account.","<b>THE KEY IS STILL READ RIGHT.</b> An order that holds the old shape of a row&#39;s key is still named to its own row, never a salt twin&#39;s, as every stage and the return leg read it. Nothing a customer or the book shows moves."]}];
+const evolution=[{"v":"v1558","d":"21 Nov 2026","t":"A QUEUED TRADE WAITS ON THE BOOK","n":["<b>ONE APPLIER.</b> The Desk no longer replays a sale, a lot or an amendment it holds in its queue over the figures: it shows the Book&#39;s own view, so a trade counts once the Book holds it, and the fold applies every amendment.","<b>SAID WHERE IT WAITS.</b> A queued trade stays in the queue panel, and the bar over the figures says how many wait on the Book and count in no figure. A count, a loss or a loan is shown as before."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this

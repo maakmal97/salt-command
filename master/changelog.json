@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1558",
+  "d": "21 Nov 2026",
+  "t": "A QUEUED TRADE WAITS ON THE BOOK",
+  "n": [
+   "<b>ONE APPLIER.</b> The Desk no longer replays a sale, a lot or an amendment it holds in its queue over the figures: it shows the Book&#39;s own view, so a trade counts once the Book holds it, and the fold applies every amendment.",
+   "<b>SAID WHERE IT WAITS.</b> A queued trade stays in the queue panel, and the bar over the figures says how many wait on the Book and count in no figure. A count, a loss or a loan is shown as before."
+  ]
+ },
+ {
   "v": "v1557",
   "d": "21 Nov 2026",
   "t": "THE MINUTE NO LONGER RE-KEYS ORDERS",
