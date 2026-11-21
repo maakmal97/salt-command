@@ -1011,3 +1011,37 @@ export function importPlan(book, ctx) {
   orders.sort((a, b) => String(a.id).localeCompare(String(b.id)));
   return { orders, refused };
 }
+
+/* ---- EVERY SALE HAS ITS ORDER (21 Nov 2026, item 2 of docs/plan-ledger-simplify.html; the roads: docs/DESK.md "Every road that mints a sale") ------
+ * PURE. A live customer row is named when a live order (not cancelled or declined, not a test account's) carries its rid, or names its key and the
+ * row is that key's row as the tie-out's rowIndex reads it (`idx.byKey`: the one live site row at a key whose twins are cancelled, s395's shape);
+ * several orders naming one row are a shared group, whose sums the tie-out checks. A row importOf refuses for a reason in ORDER_NOT_NEEDED needs no
+ * order; ORDERLESS_KNOWN names the rows known to have none yet, each with its reason (his answer C: in code, beside the rule). The rest is
+ * returned, rows as they stand: a reading for the Ledger check, never a fault, so the import that cures one is never blocked. */
+export const ORDER_NOT_NEEDED = Object.freeze(["a purchase", "a sale with no customer", "a reward or loyalty unit the fold raised", "cancelled", "written off",
+  "no size or goods to carry"]);
+export const ORDERLESS_KNOWN = Object.freeze({
+  s053: "two live sales of one day and figure, which no order can tell apart (with s208)",
+  s208: "two live sales of one day and figure, which no order can tell apart (with s053)",
+  s182: "CN3-WM, still owing: imported once it is settled",
+  s235: "CN3-WM, still owing: imported once it is settled",
+  s236: "CN3-WM, still owing: imported once it is settled",
+  s234: "a line of a trip whose other line an order already names"
+});
+export function orderlessSales(book, orders, idx) {
+  const E = POSITION_ENGINE, live = (orders || []).filter((o) => o && !o.test && !["cancelled", "declined"].includes(o.status));
+  const rids = new Set(live.filter((o) => o.rid).map((o) => String(o.rid)));
+  const keys = new Set(live.filter((o) => o.ledgerKey).map(ledgerKeyOf));
+  const byKey = (idx && idx.byKey) || new Map(), out = [];
+  for (const s of (book && book.sales) || []) {
+    if (!s || typeof s !== "object") continue;
+    const why = importOf(s, {}).refused;
+    if (why && ORDER_NOT_NEEDED.includes(why)) continue;
+    if (s.rid && rids.has(String(s.rid))) continue;
+    const k = E.ovKey(s);
+    if (keys.has(k) && byKey.get(k) === s) continue;
+    if (s.rid && Object.hasOwn(ORDERLESS_KNOWN, s.rid)) continue;
+    out.push(s);
+  }
+  return out;
+}
