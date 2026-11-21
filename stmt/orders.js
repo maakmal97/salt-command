@@ -716,6 +716,8 @@ export const hasUnpaidAdvance = (orders) => (orders || []).some(
    placement's and a payment's id is filed at rid: as well, so a retry either way lands once. */
 export const RID_RE = /^[A-Za-z0-9_-]{16,64}$/;
 export const RID_TTL = 86400;
+/* item 3A: a row's rid on the book (tools/rid.mjs mints s001 and on), never a request id (RID_RE) */
+export const ROW_RID_RE = /^[a-z][0-9]{1,6}$/;
 export const RID_KEY = (u, rid) => "rid:" + u + ":" + rid;
 export const ridOf = (body) => (body && typeof body.rid === "string" && RID_RE.test(body.rid) ? body.rid : "");
 async function repeatOf(env, u, rid, id) {
@@ -988,6 +990,15 @@ export function decideDesk(order, body, at) {
   if (body && body.mark) {
     const m = body.mark, c = {};
     if (typeof m.ledgerKey === "string" && m.ledgerKey) c.ledgerKey = m.ledgerKey;
+    /* 21 Nov 2026 (item 3A, docs/plan-ledger-simplify.html): THE ROW'S RID, SET ONCE. The desk stamps the rid of the row the order follows; a rid the
+       order holds moves only by a mark naming it as `ridWas` beside the new one, never by a fresh stamp, so a stale pass never points an order at another row */
+    if (m.rid !== undefined) {
+      if (typeof m.rid !== "string" || !ROW_RID_RE.test(m.rid) || (m.ridWas !== undefined && (typeof m.ridWas !== "string" || !ROW_RID_RE.test(m.ridWas))))
+        return { error: "a row's rid is a letter and its number", status: 400 };
+      if (order.rid && order.rid !== m.rid && m.ridWas !== order.rid) return { error: "the order names another row already", status: 409 };
+      if (!order.rid && m.ridWas !== undefined) return { error: "the order names no row to move from", status: 409 };
+      if (order.rid !== m.rid) { c.rid = m.rid; if (m.ridWas !== undefined) c.ridWas = m.ridWas; }
+    }
     /* 28 Sep 2026: AN ORDER FOLLOWS ITS ROW. A row moved between the associate's own code and their resale bucket takes
        its key with it and the side it books to, which the page pairs To pay now by: the desk states both (tellSite) */
     if (typeof m.forFriend === "boolean") c.forFriend = m.forFriend;
@@ -1487,6 +1498,8 @@ export function applyEvent(order, ev) {
     const m = ev.mark, q = Object.assign({}, order.queued || {});
     if (m.reviewed === true) { order.reviewed = true; order.reviewedAt = at; }
     if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
+    /* item 3A: set once, or moved from the rid it names (decideDesk weighed it; a replay over a moved order changes nothing) */
+    if (typeof m.rid === "string" && (!order.rid || order.rid === m.ridWas)) order.rid = m.rid;
     if (typeof m.forFriend === "boolean") order.forFriend = m.forFriend;
     if (m.rwd === "given") order.rwd = "given"; else if (m.rwd === null && order.rwd === "cross") delete order.rwd;   /* given is terminal */
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
