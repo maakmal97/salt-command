@@ -30,7 +30,7 @@ import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } f
 import { klDate, readRuns, exportLanded, chainBusy, askPace, askVerdict, exportReason } from "./day-export.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { deskImport, deskUnimport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
+import { deskImport, deskUnimport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, stampRids, deskRidStamp, TIEOUT_KEY, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, rowFor, rowIndex, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -893,7 +893,8 @@ async function undoContext(env, book, rid) {
     if (!listed.ok) siteError = true;
     else {
       const key = POSITION_ENGINE.ovKey(found);
-      const hits = listed.orders.filter((o) => o && !["declined", "cancelled"].includes(o.status) && ledgerKeyOf(o) === key);
+      const ix = rowIndex(book.sales);   /* item 3A: an order's row by its rid first */
+      const hits = listed.orders.filter((o) => o && !["declined", "cancelled"].includes(o.status) && rowFor(o, ix).k === key);
       if (hits.length > 1) siteError = true; else order = hits[0] || null;
     }
   }
@@ -1191,6 +1192,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     let tieout = null;
     try {
       tieout = m === "POST" ? await tieOut(env) : await env.SALT_QUEUE.get(TIEOUT_KEY, "json");
+      if (tieout) delete tieout.stamp;   /* item 3A: the minute pass alone stamps */
       if (m === "POST" && tieout) await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tieout));
     } catch (e) { tieout = { ok: false, error: "the tie-out could not be read" }; }
     return ledger.error ? json({ ok: false, error: ledger.error }, 503) : json({ ok: true, version: book.version, ...ledger, tieout });
@@ -1242,8 +1244,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       if (typeof body.order !== "string" || !/^[0-9]{14}-[a-z0-9]{1,8}$/.test(body.order)) return json({ ok: false, error: "Choose an order." }, 400);
       const listed = await listOrders(env, true);
       if (!listed.ok) return json({ ok: false, error: "The site's orders could not be read." }, 503);
-      const o = listed.orders.find((x) => x && x.id === body.order), k = o && ledgerKeyOf(o);
-      const hits = k ? (book.sales || []).filter((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === k) : [];
+      const o = listed.orders.find((x) => x && x.id === body.order), f = o ? rowFor(o, rowIndex(book.sales)) : null, k = f && f.k;   /* item 3A: by its rid first */
+      const hits = f && f.by === "rid" ? [f.row] : k ? (book.sales || []).filter((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === k) : [];
       if (hits.length !== 1) return json({ ok: false, error: hits.length ? "That order's key names two rows: undo it by hand." : "That order has no row on the book yet." }, 409);
       rid = hits[0].rid;
     }
@@ -3060,7 +3062,10 @@ export default {
           const due = !last || !last.ok || (snapV && snapV.v && last.v !== snapV.v) || age > 6 * 3600000 || (!last.clean && age > 5 * 60000);
           if (due) {
             const tie = await tieOut(env, mirror);
+            /* 21 Nov 2026 (item 3A): a clean check stamps each order it tied out by key with its row's rid (stampRids), never kept with the check itself */
+            const stamp = tie.stamp; delete tie.stamp;
             await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));
+            if (tie.ok && tie.clean && stamp && stamp.length) { const st = await stampRids(env, stamp); console.log("orders rid stamp: " + JSON.stringify(st)); }
             if (!tie.ok || !tie.clean) console.log("orders tie-out: " + JSON.stringify(tie));
           }
         } catch (e) { console.log("orders tie-out FAILED: " + String((e && e.stack) || e)); }
@@ -3410,6 +3415,16 @@ export default {
       let r;
       try { r = await deskImport(env, b); } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
       if (r.ok && r.dry === false) await liveTell(env, ctx, "orders");
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* 21 Nov 2026 (item 3A): THE RID BACKFILL (tools/orders-rid.mjs), behind the write key; dry by default, refused whole unless the tie-out is clean */
+    if (p === "/orders/rid") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      let r;
+      try { r = await deskRidStamp(env, b); } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      if (r.ok && r.dry === false && r.stamped) await liveTell(env, ctx, "orders");
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     if (p === "/orders/unimport") {

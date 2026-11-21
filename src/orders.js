@@ -36,9 +36,9 @@ import { reasonOf, outsideBand, bandRefusal, markOf, markOk } from "../engine/on
 import { expectFault } from "../engine/expect.mjs";
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, siteTwins, twinCandidates, klDate, onFault, dayOf, onLive, tripOf, tripLines, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, lowerTap, pastRoom, againRoomOrder, claimRows, claimOrderFlight, claimEntry,
-  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
+  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut, rowFor, ridLive, rowKeyFor } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
-  amendEntry, stageAt, advanceOf, claimOrderFlight } from "../engine/stages.mjs";
+  amendEntry, stageAt, advanceOf, claimOrderFlight, rowFor } from "../engine/stages.mjs";
 
 const DEVICE = "orders";
 /* ONE KEY AN ENTRY (fold 2.1, 26 Sep 2026). q:orders was one blob that three roads (the minute's reconcile, a tap's
@@ -417,7 +417,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror, why) 
     const lead = lines[0];
     let leadHere = lead.id === o.id || lead.status === "placed";
     if (!leadHere) leadHere = (await pendingDay(env, lead)) === rowDay
-      || (!!lead.ledgerKey && (book.sales || []).some((s) => s && !s.cancelled && s.date === rowDay && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(lead)));
+      || (!!lead.ledgerKey && (book.sales || []).some((s) => s && !s.cancelled && s.date === rowDay && POSITION_ENGINE.ovKey(s) === rowKeyFor(lead, rowIndex(book.sales))));   /* item 3A: by its rid first */
     /* Fable's review: a line that cannot join the trip (its first line's row is another day's) is a delivery of its own, and its charge is taken */
     if (oneDay && leadHere && lead.id !== o.id && (+agreed.delivery || 0) > 0.004)
       return { ok: false, status: 409, error: "this sheet's one delivery rides its first order, " + lead.id.slice(-6) + ": agree this line at no delivery" };
@@ -636,7 +636,7 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   /* 17 Oct 2026 (Fable's review): a rejected pending row whose order has its row on the book by another road (s218's pair, on s219) is agreed already:
      Accept again would book a second row beside it, or follow its old yes onto the rejected one */
   if (o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && await rejectedOf(db, id, "ack")) {
-    const b = mirror ? await mirror().catch(() => null) : null, k = ledgerKeyOf(o);
+    const b = mirror ? await mirror().catch(() => null) : null, k = b ? rowKeyFor(o, rowIndex(b.sales)) : ledgerKeyOf(o);   /* item 3A: by its rid first */
     if (b && (b.sales || []).some((s) => !s.cancelled && POSITION_ENGINE.ovKey(s) === k)) return { ok: false, status: 409, error: "its row is on the book already, so there is nothing to accept again" };
   }
   let live = await livePre(db, id, "ack");
@@ -1244,7 +1244,9 @@ export async function rowRoom(db, direction = "SELL", onWay, mirror) {
     const s = rid ? byRid.get(rid) : matches.length === 1 ? matches[0] : null;
     if (!s) return null;
     const paid = (row) => isSale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row);
-    const way = +((on[key] || []).filter((e) => (!own || e.at !== own.at)
+    /* item 3A: a row found by its rid is read with what is on its way to its key as it stands, and to the key the tap named if that is another */
+    const sk = POSITION_ENGINE.ovKey(s), here = (on[sk] || []).concat(key && key !== sk ? on[key] || [] : []);
+    const way = +(here.filter((e) => (!own || e.at !== own.at)
       && (!e.payload.rid || e.payload.rid === s.rid)).reduce((n, e) => {
       const p = e.payload;
       return n + (p.kind === "Correction" ? Math.max(0, paid({ ...s, ...p.fields }) - paid(s)) : +p.cash);
@@ -1296,7 +1298,8 @@ async function inFlight(env, db, c, sales, at) {
     add(keyOf(e.payload), e.payload.cash);
   }
   const wait = (await heldPays(db)).filter((p) => done.has(p.e.orderId)).map((p) => ({ id: p.at, k: keyOf(p.e.payload), rm: p.e.payload.cash }));
-  for (const o of done.values()) for (const p of o.payments || []) if (p && p.claim === "received" && p.queued) wait.push({ id: p.queued, k: ledgerKeyOf(o), rm: p.amount });
+  const ix = rowIndex(sales);
+  for (const o of done.values()) for (const p of o.payments || []) if (p && p.claim === "received" && p.queued) wait.push({ id: p.queued, k: rowKeyFor(o, ix), rm: p.amount });   /* item 3A: by its rid first */
   const drafted = await draftedOf(db, wait.map((w) => w.id).filter(Boolean));
   for (const w of wait) if (!w.id || !drafted.has(w.id)) add(w.k, w.rm);
   return claimOrderFlight(sales, all.orders, c.u, by, await offBook(db, all.orders.filter((o) => o.u === c.u && o.ledgerKey && !done.has(o.id))));
@@ -1563,7 +1566,7 @@ export async function againOrder(env, id, body, by, now, mirror) {
       /* a site order's own row is no proof of another's cash: rows are told apart by key, the keys of every site order's row being known */
       const all = await listOrders(env, true), offs = await offBook(db, all.ok ? all.orders : []);
       /* an order with no row on the book has no row of its own: the hand row that covers it may bear its key */
-      const own = new Set((all.ok ? all.orders : []).filter((x) => !offs.has(x.id)).map((x) => ledgerKeyOf(x)).filter(Boolean));
+      const ix = rowIndex((book && book.sales) || []), own = new Set((all.ok ? all.orders : []).filter((x) => !offs.has(x.id)).map((x) => rowKeyFor(x, ix)).filter(Boolean));   /* item 3A: by its rid first */
       const cands = ((book && book.sales) || []).filter((r) => r && r.rid && !r.cancelled && !own.has(POSITION_ENGINE.ovKey(r)) && r.customer === party
         && (r.product || "salt") === (o.product || "salt") && String(r.date || "") >= day);
       /* and one hand row proves the cash of as many orders as it holds: what other orders were covered against it is spoken for */
@@ -1878,6 +1881,7 @@ export async function reconcileOrders(env, read, mirror, only = null) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
   const book = mirror ? await mirror().catch(() => null) : null;
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
+  const rix = rowIndex((book && book.sales) || []), keyOn = (o) => rowKeyFor(o, rix);   /* item 3A: an order's row by its rid first, its key as the open rows name it */
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [], retiredIds = [];
   const STAGE_WORD = { claim: "payment they say they sent", pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
@@ -1886,7 +1890,7 @@ export async function reconcileOrders(env, read, mirror, only = null) {
   const shares = async (k, order) => {
     const at = onBook && onBook[k];
     if (!at || typeof at.q !== "number" || Math.abs(at.q - (+order.qty || 0)) < 0.0005) return false;
-    if (!allNamed) { const all = await listOrders(env, true).catch(() => ({ ok: false })); allNamed = all.ok ? namedKeys(all.orders) : "unread"; }
+    if (!allNamed) { const all = await listOrders(env, true).catch(() => ({ ok: false })); allNamed = all.ok ? namedKeys(all.orders, rix) : "unread"; }
     return allNamed === "unread" || allNamed.get(k) > 1;   /* unread: it waits a minute, never risks the row */
   };
   for (const o of owing) {
@@ -1908,7 +1912,7 @@ export async function reconcileOrders(env, read, mirror, only = null) {
          and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
       const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
       if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004 || (+order.claimed || 0) > 0.004)
-        && !(onBook && onBook[ledgerKeyOf(order)]) && (await dropAck(env, q.ack, now)) === "dropped") {
+        && !(onBook && onBook[keyOn(order)]) && (await dropAck(env, q.ack, now)) === "dropped") {
         mark.cancel = stageAt(order, "cancel", now).toISOString();
         state = { state: "queued", why: "withdrawn by the customer while its pending row waited under Approve: the row was dropped, so nothing reaches the book" };
         dropped.push(o.id);
@@ -1923,12 +1927,12 @@ export async function reconcileOrders(env, read, mirror, only = null) {
            and on the order's card, until the Counter is the new one. */
         if (job === "pay") { retired = true; continue; }
         /* a row orders share takes no stage of one of them: each would restate it to that order's figures alone (Fable's review) */
-        if (job !== "ack" && await shares(ledgerKeyOf(order), order)) {
+        if (job !== "ack" && await shares(keyOn(order), order)) {
           waiting.push(o.id);
           state = { state: "waiting", why: "it shares its row on the book with another order, so its " + (STAGE_WORD[job] || job) + " is made on the row itself, under Record" };
           break;
         }
-        if (job !== "ack" && !(onBook && onBook[ledgerKeyOf(order)])) {
+        if (job !== "ack" && !(onBook && onBook[keyOn(order)])) {
           waiting.push(o.id);
           /* A REJECTED ROW STAYS SAID (24 Sep 2026): a row he rejected never reaches the book, so every
              later stage waits here, and "approve it under Approve" would send him to a row he has already
@@ -2239,7 +2243,7 @@ export function followFree(orders, plan, rows, gone) {
 }
 async function followRows(env, orders, idx, at, { solo = false } = {}) {
   const plan = [], failed = [], amended = new Map(), miss = new Set();
-  for (const o of orders) if (o.code && ledgerKeyOf(o) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);
+  for (const o of orders) if (o.code && ledgerKeyOf(o) && !ridLive(o, idx) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);   /* item 3A: a live rid names its row already */
   try {
     if (miss.size) for (const r of (await env.SALT_LEDGER.prepare(AMENDS).bind('%"orderId":%').all()).results || [])
       if (miss.has(r.oid)) amended.set(r.oid, (amended.get(r.oid) || new Set()).add(r.amends));
@@ -2251,7 +2255,7 @@ async function followRows(env, orders, idx, at, { solo = false } = {}) {
   const groups = new Map(), sharing = new Set();
   for (const o of orders) {
     const k = ledgerKeyOf(o);
-    if (!k || !o.code || o.test || o.forFriend || o.status !== "done") continue;   /* completed only: every stage queues one order's figures (Fable's review) */
+    if (!k || !o.code || o.test || o.forFriend || o.status !== "done" || ridLive(o, idx)) continue;   /* completed only: every stage queues one order's figures (Fable's review); item 3A: one whose rid names a live row is never lost */
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(o);
   }
@@ -2267,7 +2271,10 @@ async function followRows(env, orders, idx, at, { solo = false } = {}) {
   for (const o of orders) {
     const k = ledgerKeyOf(o);
     if (!k || !o.code || sharing.has(o.id)) continue;
-    const row = !isImported(o) && idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended, at);
+    /* item 3A: AN ORDER WHOSE RID NAMES A LIVE ROW FOLLOWS THAT ROW, as an older sale's order does (rowOf), its key whatever a Correction made it; a close or
+       re-date on its way holds it as before. Else the key's row, then the roads below, unchanged */
+    const byRid = ridLive(o, idx);
+    const row = byRid ? (await closeOnItsWay(env, o, at) ? null : byRid) : !isImported(o) && idx.rows.get(k) ? rowFor(o, idx).row : await rowOf(env, o, k, idx, amended, at);
     if (!row || POSITION_ENGINE.ownerCode(row.customer) !== o.code) continue;
     const nk = POSITION_ENGINE.ovKey(row), friend = POSITION_ENGINE.isBucket(row.customer);
     if (nk !== k || !!o.forFriend !== friend) plan.push({ o, k, nk, friend, party: row.customer });
@@ -2359,7 +2366,7 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   const sales = (book && book.sales) || [];
   if (!sales.length) return { ok: true, told: 0, v };
-  const { byKey, rows, byRid, ended } = rowIndex(sales);
+  const { byKey, rows, byRid, ended } = rowIndex(sales), ix = { byKey, byRid }, tally = new Map();
   const at = boundOf(book);   /* the flight checks take the bound of THIS book */
   /* S6 (Fable, 28 Oct 2026): a forced pass left `followRows` to the regular pass, since a shared group moved onto its row by two passes at once, one of which fails on a member,
      would split for good, and a tapped row had not landed in git. 17 Nov 2026 (his word): with the Book the source a tapped row is on the book read here, and an amendment names
@@ -2368,18 +2375,18 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   const fr = await followRows(env, r.orders, { byKey, rows, byRid, ended }, at, { solo: !!opts.force });
   const followed = fr.followed, failed = opts.force ? [] : fr.failed;
   /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
-  const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows));
+  const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows, byRid));
   const fixedDone = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {};
   const fixWaits = new Set(allFixes.filter((f) => !fixedDone[f.id]).map((f) => f.order));
   let told = 0;
-  const named = namedKeys(r.orders);
+  const named = namedKeys(r.orders, ix);
   for (const o of r.orders) {
     if (!o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
-    const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
+    const { row, k } = rowFor(o, ix, tally, "return leg");   /* V4a: never a salt twin's row by the old shape; item 3A: by its rid first */
     if (!row) continue;
     /* 17 Oct 2026 (Fable's review): a key two live orders name is neither's row: one re-dated away and another landed under its old key */
-    if (named.get(ledgerKeyOf(o)) > 1) continue;
-    const sole = rows.get(ledgerKeyOf(o)) === 1;   /* a key two rows share names neither: byKey keeps one of the twins */
+    if (named.get(k) > 1) continue;
+    const sole = rows.get(k) === 1;   /* a key two rows share names neither: byKey keeps one of the twins */
     /* 17 Oct 2026, HIS FLOW: what the book ended, the order ends: a row cancelled there cancels its order, and a write-off marks it written off
        (or undone, clears it), once nothing of the order's own is on its way to the row */
     /* a cancel of a row with goods out (a hand fold) is not the order's: the site would refuse it for good, so it is never sent (Fable's review) */
@@ -2466,7 +2473,8 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
   if (!failed.length && !opts.force) await env.SALT_QUEUE.put(TOLD_MARK, v);
   /* 17 Oct 2026: and what held it, for the tie-out to name (Fable's review): the stall is then an order's, not the return leg's */
   if (!opts.force) try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED, JSON.stringify({ v, at: new Date().toISOString(), failed: failed.slice(0, 20) })); else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}
-  return Object.assign({ ok: true, told, v }, opts.force ? { forced: true } : {}, followed ? { followed } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
+  const ridFallback = [...tally.values()].reduce((n, l) => n + l.size, 0);   /* item 3A: orders read by key that should name their row by rid, counted */
+  return Object.assign({ ok: true, told, v }, opts.force ? { forced: true } : {}, followed ? { followed } : {}, ridFallback ? { ridFallback } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
     failed.length ? { failed } : {});
 }
 
@@ -2479,9 +2487,9 @@ export async function tellSite(env, fixes, mirror, opts = {}) {
 export const TIEOUT_KEY = "orders:tieout";
 const TOLD_FAILED = "orders:toldFailed";
 /* how many live orders name each key: a key two of them name is neither's row */
-const namedKeys = (orders) => {
+const namedKeys = (orders, idx) => {
   const n = new Map();
-  for (const o of orders || []) { if (!o || o.test || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue; const k = ledgerKeyOf(o); n.set(k, (n.get(k) || 0) + 1); }
+  for (const o of orders || []) { if (!o || o.test || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue; const k = idx ? rowFor(o, idx).k : ledgerKeyOf(o); n.set(k, (n.get(k) || 0) + 1); }   /* item 3A: the key its row stands at, by its rid first */
   return n;
 };
 const TIEOUT_STALL_MS = 15 * 60000;
@@ -2501,9 +2509,9 @@ export function rowIndex(sales) {
   return { byKey, rows, byRid, ended };
 }
 /* a stale yes of a handover or a payment whose order and its one row agree on that stage's figure: nothing of it is owed (the tie-out lets it go) */
-export function yesHeld(y, o, byKey, n) {
+export function yesHeld(y, o, byKey, n, byRid) {
   if (!y || !o || !["move", "pay"].includes(y.stage) || !o.ledgerKey) return false;
-  const k = ledgerKeyOf(o), row = byKey.get(k);
+  const { row, k } = rowFor(o, { byKey, byRid });   /* item 3A: by its rid first */
   if (!row || (n.get(k) || 0) !== 1) return false;
   if (y.stage === "move") return Math.abs(rowOut(row) - (+(+o.moved || 0).toFixed(3))) < 0.0004;
   return Math.abs(+POSITION_ENGINE.txPaid(row).toFixed(2) - +((+o.paid || 0) + (+o.credit || 0)).toFixed(2)) < 0.005;
@@ -2537,7 +2545,7 @@ export const ORDERLESS_SAY = "no site order names this sale: once it is paid and
 /* a reading never blocks the tie-out, and so never the import that cures one (Fable, 21 Nov 2026): a row it cannot read lists nothing */
 const orderlessSafe = (book, orders, byKey) => { try { return orderlessOf(book, orders, { byKey }); } catch (e) { return []; } };
 export const orderlessOf = (book, orders, idx) => orderlessSales(book, orders, idx).map((s) => ({ ...(s.rid ? { rid: s.rid } : {}), who: rowWho(s), what: [ORDERLESS_SAY] }));
-export async function tieOut(env, mirror, now = new Date()) {
+export async function tieOut(env, mirror, now = new Date(), opts = {}) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
   try { snap = await snapshotWithSource(env.SALT_LEDGER, "v, at"); } catch (e) { snap = null; }
@@ -2563,8 +2571,8 @@ export async function tieOut(env, mirror, now = new Date()) {
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   if (!book || !book.sales) return { at, v, ok: false, error: "the book could not be read" };
   const bound = boundOf(book);   /* the flight checks take the bound of THIS book */
-  const { byKey, rows: n, ended: endedByKey } = rowIndex(book.sales);
-  const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders);
+  const { byKey, rows: n, ended: endedByKey, byRid } = rowIndex(book.sales), ix = { byKey, byRid }, tally = new Map(), stamp = [], staleRid = [];
+  const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders, ix);
   /* A YES OLDER THAN A DAY THAT NO ROW SPENT holds nothing. 19 Nov 2026 (ssdngq): one whose move the book holds all the same (its row drafted
      without it, under Approve, or a later move of the same stage carrying it) is spent by the book: it is let go, said in the yes itself, and
      never named again. One whose order and row still differ on that stage's figure is named, as before: the move may still be owed. */
@@ -2572,22 +2580,23 @@ export async function tieOut(env, mirror, now = new Date()) {
     const old = (await env.SALT_LEDGER.prepare("SELECT id, order_id, stage, at FROM preapproval WHERE status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NULL AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
     for (const y of old) {
       const o = r.orders.find((x) => x && x.id === y.order_id);
-      if (o && yesHeld(y, o, byKey, n)) {
+      if (o && yesHeld(y, o, byKey, n, byRid)) {
         await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='void', decided_at=?1, shown=json_set(CASE WHEN json_valid(shown) THEN shown ELSE '{}' END,'$.retired',?2) WHERE id=?3 AND status='waiting' AND entry_at IS NULL")
           .bind(at, "the book holds its " + y.stage + " already", y.id).run();
         continue;
       }
       /* 20 Nov 2026 (iewwkq): with no sale on the book for its order the tap is not lost, it is held for that sale (deskPass, the reconcile), so "tap it again" was the wrong advice */
-      const tap = "the " + (TAP_WORD[y.stage] || y.stage) + " you tapped on " + sayDay(klDate(new Date(y.at))), k = o && o.ledgerKey ? ledgerKeyOf(o) : null;
-      faults.push({ order: y.order_id, who: tieWho(o), what: [k && !byKey.get(k) ? tap + " is held, not lost: it is booked once the book has this order's sale"
+      const tap = "the " + (TAP_WORD[y.stage] || y.stage) + " you tapped on " + sayDay(klDate(new Date(y.at))), f = o && o.ledgerKey ? rowFor(o, ix) : null;
+      faults.push({ order: y.order_id, who: tieWho(o), what: [f && f.k && !f.row ? tap + " is held, not lost: it is booked once the book has this order's sale"
         : tap + " never reached Approve, so the book does not hold it: tap it again on the order if it is still owed"] });
     }
   } catch (e) { /* the yeses are read again next pass */ }
   /* a row several live orders name is their sum (17 Oct 2026, s219): each is read against it with the others */
   const sums = new Map();
   for (const o of r.orders) {
-    if (o.test || !o.ledgerKey || ["cancelled", "declined"].includes(o.status) || !(named.get(ledgerKeyOf(o)) > 1)) continue;
-    const k = ledgerKeyOf(o), g = sums.get(k) || { n: 0, qty: 0, total: 0, delivery: 0, paid: 0, moved: 0, off: 0 };
+    const k = o.test || !o.ledgerKey ? null : rowFor(o, ix).k;
+    if (!k || ["cancelled", "declined"].includes(o.status) || !(named.get(k) > 1)) continue;
+    const g = sums.get(k) || { n: 0, qty: 0, total: 0, delivery: 0, paid: 0, moved: 0, off: 0 };
     for (const f of ["qty", "total", "delivery", "paid", "moved", "credit"]) g[f] = (g[f] || 0) + (+o[f] || 0);
     g.n++; if (o.writtenOff) g.off++;
     sums.set(k, g);
@@ -2595,9 +2604,9 @@ export async function tieOut(env, mirror, now = new Date()) {
   let orders = 0;
   for (const o of r.orders) {
     if (o.test || !o.ledgerKey || !ROWED_ON_SITE.concat(["cancelled", "declined"]).includes(o.status)) continue;
-    const k = ledgerKeyOf(o), ended = ["cancelled", "declined"].includes(o.status);
-    const yielded = ended && endedByKey.has(k) && !byKey.get(k).cancelled;   /* its cancelled row gave the key to a live one (rowIndex) */
-    const row = yielded ? endedByKey.get(k) : byKey.get(k);
+    const f = rowFor(o, ix, tally, "tie-out"), k = f.k, ended = ["cancelled", "declined"].includes(o.status);   /* item 3A: by its rid first */
+    const yielded = ended && f.by === "key" && endedByKey.has(k) && !byKey.get(k).cancelled;   /* its cancelled row gave the key to a live one (rowIndex) */
+    const row = yielded ? endedByKey.get(k) : f.row;
     if (ended && !row) continue;   /* withdrawn before its row landed, or its row dropped: nothing to tie */
     orders++;
     const diff = [];
@@ -2618,6 +2627,11 @@ export async function tieOut(env, mirror, now = new Date()) {
         if (Math.abs(moved - f3(fig.moved)) > 0.0004) diff.push("handed over " + f3(fig.moved) + " " + on + ", " + moved + " " + bk);
       }
     }
+    /* item 3A (M1): an order that ties out with its row, read by key, is a candidate for that row's rid; stampRids takes it only while the whole check is clean */
+    if (!diff.length && !ended && row && f.by === "key" && !row.cancelled && STAMP_RID_RE.test(String(row.rid || "")) && (n.get(k) || 0) === 1
+      && POSITION_ENGINE.ownerCode(row.customer) === o.code) stamp.push({ o, rid: row.rid });
+    /* and an order whose rid names a row no longer live (cancelled, or another book's) with no live row to move to: its stages naming that rid are refused at drafting, so it is listed (staleRid) */
+    else if (!ended && o.rid && f.by === "key" && !isImported(o)) staleRid.push({ order: o.id, who: tieWho(o), rid: o.rid });
     if (!diff.length) continue;
     const item = { order: o.id, who: tieWho(o), ...(row && row.rid ? { rid: row.rid } : {}), what: diff };
     /* a claim of theirs waiting holds the order on purpose: his Received or Not found is owed, so it is waiting, said so (Fable's review) */
@@ -2631,7 +2645,56 @@ export async function tieOut(env, mirror, now = new Date()) {
     }
     else faults.push(item);
   }
-  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey) };
+  const ridFallback = [...new Set([...tally.values()].flatMap((l) => [...l]))];
+  return { at, v, told, ok: true, orders, clean: !faults.length, faults: oneAnOrder(faults), waiting, orderless: orderlessSafe(book, r.orders, byKey),
+    ridFallback: { count: ridFallback.length, orders: ridFallback.slice(0, 20) }, staleRid, ...(faults.length ? {} : { stamp: await stampable(env, stamp, bound, opts.stampAll ? Infinity : STAMP_MAX) }) };
+}
+/* 21 Nov 2026 (item 3A, Opus's M1 on Fable's plan): THE STAMP. A rid is written onto an order only from the row the follow resolves (its key's one row, of its
+   own code), never from the Accept draft; only while the tie-out it came from is clean; never onto a cancelled row; and only once the order's own pending row
+   has landed on the book, the draft booked, so a row that differs from his yes is never named. An order whose rid names a cancelled row moves to the live row
+   only by a mark naming both (ridWas). Orders sharing one row each take its one rid (his answer F). At most STAMP_MAX a pass; the backfill
+   (tools/orders-rid.mjs) is the road for the rest. */
+export const STAMP_RID_RE = /^[a-z][0-9]{1,6}$/;
+const STAMP_MAX = 40;
+async function stampable(env, cands, bound, max = STAMP_MAX) {
+  const out = [];
+  for (const { o, rid } of cands) {
+    if (out.length >= max) break;
+    if (!o.u || !o.id || o.test || !ROWED_ON_SITE.includes(o.status)) continue;
+    const ack = await ackFate(env, o, bound);
+    if (!ack || !ack.landed || ack.status !== "approved") continue;
+    out.push(Object.assign({ u: o.u, id: o.id, rid }, o.rid ? { ridWas: o.rid } : {}));
+  }
+  return out;
+}
+/** 21 Nov 2026 (item 3A, his answer E): THE BACKFILL, the Desk half of tools/orders-rid.mjs. Dry by default: every order the clean tie-out would stamp, with no cap,
+    and every order whose rid names a row no longer live (staleRid). `dry: false` stamps them and reads every one back. Refused whole unless the tie-out is clean
+    with nothing waiting, as the import is. */
+export async function deskRidStamp(env, b, mirror, now = new Date()) {
+  const no = (status, error) => ({ ok: false, status, error });
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE) return no(503, "the book is not configured");
+  const dry = !(b && b.dry === false);
+  mirror = mirror || bookOnce(env.SALT_LEDGER);
+  const tie = await tieOut(env, mirror, now, { stampAll: true });
+  if (!tie.ok) return no(409, "the tie-out could not be read (" + (tie.error || "no reason given") + "), so nothing is stamped");
+  if (!tie.clean || tie.waiting.length) return no(409, "the book and the orders do not agree yet (" + tie.faults.length + " fault" + (tie.faults.length === 1 ? "" : "s") + ", " + tie.waiting.length + " waiting), so nothing is stamped");
+  const stamp = tie.stamp || [], base = { ok: true, dry, fallback: tie.ridFallback.count, staleRid: tie.staleRid };
+  if (dry) return { ...base, stamp };
+  const st = await stampRids(env, stamp);
+  const r = await listOrders(env, true);
+  if (!r.ok) return { ...base, ...st, stamp, readBack: "the site's orders could not be read back: " + (r.error || "") };
+  const byId = new Map(r.orders.map((o) => [o.id, o])), differ = stamp.filter((x) => !byId.get(x.id) || byId.get(x.id).rid !== x.rid).map((x) => x.id);
+  return { ...base, ...st, stamp, differ };
+}
+/** Each stamp the tie-out found, sent as a mark: { stamped, failed[] }. The Counter takes a rid once, or moved from the rid a mark names. */
+export async function stampRids(env, list) {
+  let stamped = 0; const failed = [];
+  for (const s of list || []) {
+    if (!s || !STAMP_RID_RE.test(String(s.rid || "")) || (s.ridWas !== undefined && !STAMP_RID_RE.test(String(s.ridWas)))) continue;
+    const b = await answerOf(await markOrder(env, s.u, s.id, Object.assign({ rid: s.rid }, s.ridWas ? { ridWas: s.ridWas } : {})));
+    if (b.order && b.order.rid === s.rid) stamped++; else failed.push({ id: s.id, why: "the site would not take its row's rid" + b.why });
+  }
+  return { stamped, failed };
 }
 /* one item an order, its sentences in the order they were found: three lines about one order read as three faults (iewwkq), and the bar counted three */
 export function oneAnOrder(items) {
@@ -2674,11 +2737,11 @@ const undoId = (row, i) => ("un-" + String(row.rid).toLowerCase() + "-" + i).sli
 const isUndoStep = (a) => !!a && a.undoes != null && !!a.took;
 /** 20 Nov 2026 (order import): every undo id a row's past steps would make, for the import route to write into KV `orders:fixed` before an older sale's order lands, so none is ever sent to it. */
 export const importFixedIds = (row) => (row && row.rid ? (row.amend || []).flatMap((a, i) => (isUndoStep(a) && /^[a-z0-9-]{1,40}$/.test(undoId(row, i)) ? [undoId(row, i)] : [])) : []);
-export function undoFixes(orders, byKey, rows) {
+export function undoFixes(orders, byKey, rows, byRid) {
   const out = [];
   for (const o of orders || []) {
     if (!o || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
-    const k = ledgerKeyOf(o), row = byKey.get(k);
+    const { row, k } = rowFor(o, { byKey, byRid });   /* item 3A: by its rid first */
     if (!row || row.cancelled || !row.rid || (rows.get(k) || 0) > 1) continue;
     const cut = isImported(o) ? klDate(new Date(o.importedAt || o.at)) : null;   /* belt and braces: an older sale's order is never told an undo dated on or before the moment it was imported (its day when none is kept) */
     (row.amend || []).forEach((a, i) => {
