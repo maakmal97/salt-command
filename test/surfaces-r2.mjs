@@ -1,8 +1,7 @@
 /* test/surfaces-r2.mjs (1 Nov 2026, the surfaces pass's next pass, his word "Yes, next pass"): faults the round 2 audit confirmed
  * on the Desk and on Salt Admin, each driven in the page as served. Each check is red under its own mutation
  * (test/surfaces-r2.mutations.json).
- *   D1  a queued Cancellation the Desk's overlay declines (a sale that has delivered, a lot that has arrived) leaves the row's trail
- *       as it was, as the Default branch does; it wrote the Cancellation step first, so History drew a closed line
+ *   D1  retired 21 Nov 2026 with the Desk's ovAmend (the Desk replays no queued trade; the fold's gate stands)
  *   D2  To do's cash act reads the credit an Accept spent: an order its credit covers owes nothing, as Salt Admin and the Counter say
  *   D3  a tap on a rail tab's count opens that tab (the count had no data-s, so the tap did nothing)
  *   D4  an Analysis link to a ledger row opens the older fold and clears the filters, so a row older than seven days is reached
@@ -22,15 +21,6 @@ export async function run({ ok, pageWork }) {
   const { w } = await openMaster(process.env.SALT_MASTER || undefined);
   try {
     w.eval("setProd('salt');recompute();if(!HTMLElement.prototype.scrollIntoView)HTMLElement.prototype.scrollIntoView=function(){};");
-    /* D1 */
-    w.eval("sales.push({rid:'r2-cxs',date:'2026-10-01',customer:'CY2-NIL',qty:2,total:200,cost:100,cash:0,deliveredQty:1});"
-      + "purchases.push({rid:'r2-cxb',date:'2026-10-01',supplier:'SY2-NIL',qty:5,total:250,cash:250,receivedQty:5,status:'paid'});recompute();provNotes=[];");
-    w.eval("ovAmend({kind:'Cancellation',date:'2026-10-06',direction:'SELL',rid:'r2-cxs'},{at:'x1'});ovAmend({kind:'Cancellation',date:'2026-10-06',direction:'BUY',rid:'r2-cxb'},{at:'x2'});");
-    const d1 = JSON.parse(String(w.eval("JSON.stringify({s:sales.find(function(r){return r.rid==='r2-cxs';}),b:purchases.find(function(r){return r.rid==='r2-cxb';}),n:provNotes})")));
-    const cx = (r) => ((r && r.amend) || []).filter((a) => a.kind === "Cancellation").length;
-    ok(cx(d1.s) === 0 && cx(d1.b) === 0 && !d1.s.cancelled && !d1.b.cancelled && d1.n.filter((x) => /was not applied/.test(x)).length === 2,
-      "D1: a cancellation the overlay declines leaves no Cancellation step on the sale's or the lot's trail: " + J({ sale: d1.s.amend, lot: d1.b.amend, notes: d1.n }));
-
     /* D2 */
     const acts = (o) => JSON.parse(String(w.eval("JSON.stringify((function(){ORD_OPEN=" + J([o]) + ";AP_DRAFTS=[];return ordActs().map(function(a){return a.kind;});})())")));
     const handed = { id: "20261101090000-r2cr", u: "abcd-efgh", code: "CY2-NIL", status: "ready", mode: "collect", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0,

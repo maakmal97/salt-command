@@ -5506,22 +5506,7 @@ await (async () => {
           "and the panel does not offer Defaulted on a landed lot (" + dChips2.join(" / ") + ")");
       }
     }
-
-    /* AND THE DESK, because the fold half alone rode this section green: ovAmend mirrors applyAmend
-       and gained the same guard, and asserting only one engine is how v413 shipped a fold fixed and
-       a desk left, which is what made v414 necessary. */
-    const { openMaster: omB } = await import("../tools/payload.mjs");
-    const { w: wB } = await omB();
-    wB.eval("setProd('salt');recompute();");
-    const liveRid = JSON.parse(wB.eval("JSON.stringify((sales.find(function(s){return s.cancelled&&s.rid;})||{}).rid||null)"));
-    if (liveRid) {
-      wB.eval("ovAmend({kind:'Fulfilment',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(liveRid) + ",cash:10,kg:1},{at:'b1'})");
-      const after = JSON.parse(wB.eval("JSON.stringify(sales.find(function(s){return s.rid===" + JSON.stringify(liveRid) + ";}))"));
-      ok(!((+after.deliveredQty || 0) > 0.009 && after.cancelled),
-        "the desk does not move goods onto an already-cancelled row either");
-      ok(/already cancelled/.test(wB.eval("JSON.stringify(provNotes.slice(-1))")),
-        "and records why rather than declining in silence");
-    } else skipData("no cancelled row on the book to drive the desk half with");
+    /* 21 Nov 2026: the desk's half went with ovAmend; applyAmend is the one applier, asserted above */
   }
 
   const c2 = lot({ status: "paid", receivedQty: null, inTransit: false });
@@ -5624,61 +5609,37 @@ await (async () => {
   applyAmend(f2, { kind: "Modification", date: "2026-09-01", newQty: 12, newTotal: 300 }, "BUY", null);
   ok(f2.status === "paid", "a lot carrying an explicit cash figure is measured against the new total");
 
-  /* the desk must give the same answer as the fold, which is the whole reason ovAmend exists */
-  /* v442: THIS MATCHED THE SOURCE FOR TWO LITERALS, which is one of the two forms round ten ruled
-     out, and it could not tell a working capture from a deleted one that happened to leave the
-     text behind. It DRIVES the desk now, on the state the fault needs: a lot booked status "paid"
-     with NO cash field, which is how every settled historical lot is stored. poCash reads that as
-     meaning the row TOTAL, so a capture taken after the write returns the NEW total and a price
-     correction reads as already paid at any figure. */
-  const { openMaster: om16 } = await import("../tools/payload.mjs");
-  const { w: w16 } = await om16();
-  w16.eval("setProd('salt');recompute();");
+  /* v442, on the state the fault needs: a lot booked status "paid" with NO cash field, which is how every settled
+     historical lot is stored. poCash reads that as meaning the row TOTAL, so a capture taken after the write returns the
+     NEW total and a price correction reads as already paid at any figure. 21 Nov 2026: the fold alone, ovAmend is gone. */
   const settled16 = { rid: "q1", date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
-  w16.eval("purchases.push(" + JSON.stringify(settled16) + ");");
-  w16.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'BUY',rid:'q1',fields:{total:900}},{at:'x'})");
-  const q1 = JSON.parse(w16.eval("JSON.stringify(purchases.find(function(p){return p.rid==='q1';}))"));
-  ok(+q1.total === 900, `the correction sets the total (${q1.total})`);
-  ok(q1.status === "partial",
-    `and the lot reads partial, because RM 500 was paid against a new RM 900 (${q1.status}). A capture taken after the write reads paid at any figure.`);
   const f16 = Object.assign({}, settled16);
   applyAmend(f16, { kind: "Correction", date: "2026-09-01", fields: { total: 900 } }, "BUY", null);
-  ok(f16.status === q1.status, `and the fold says the same word (${f16.status} against ${q1.status}), which is the whole reason ovAmend exists`);
+  ok(+f16.total === 900, `the correction sets the total (${f16.total})`);
+  ok(f16.status === "partial",
+    `and the lot reads partial, because RM 500 was paid against a new RM 900 (${f16.status}). A capture taken after the write reads paid at any figure.`);
 })();
 
-section("A4: a lot Default is dated and trailed, and a defaulted lot takes no money or units, in the fold and on the desk");
+section("A4: a lot Default is dated and trailed, and a defaulted lot takes no money or units, in the fold");
 await (async () => {
+  /* 21 Nov 2026: the desk's half went with ovAmend; the fold's applyAmend is the one applier */
   const { applyAmend } = await import("../tools/fold.mjs");
-  const { openMaster: omA4 } = await import("../tools/payload.mjs");
-  const { w: wA4 } = await omA4();
-  try {
-    const lotOf = (rid) => ({ rid, date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", cash: 100, receivedQty: 0, inTransit: true, status: "partial" });
-    const fold = lotOf("a4d");
-    applyAmend(fold, { kind: "Default", date: "2026-09-02", cash: 0, kg: 0 }, "BUY", null);
-    wA4.eval("purchases.push(" + JSON.stringify(lotOf("a4d")) + ");");
-    wA4.eval("ovAmend({kind:'Default',date:'2026-09-02',direction:'BUY',rid:'a4d'},{at:'a4'})");
-    const desk = JSON.parse(wA4.eval("JSON.stringify(purchases.find(function(p){return p.rid==='a4d';}))"));
-    const trail = (r) => (r.amend || []).filter((x) => x.kind === "Default").map((x) => x.date + "/" + x.cash + "/" + x.kg).join();
-    ok(fold.defaulted === true && fold.defaultedOn === "2026-09-02" && trail(fold) === "2026-09-02/0/0",
-      "A4: the fold dates a lot's default and leaves its step in the trail");
-    ok(desk.defaulted === true && desk.defaultedOn === fold.defaultedOn && trail(desk) === trail(fold),
-      "A4: and the desk's ovAmend writes the same date and step");
-    let foldRefused = 0;
-    for (const pay of [{ kind: "Payment", cash: 10, kg: 0 }, { kind: "Receipt", cash: 0, kg: 1 }])
-      try { applyAmend(Object.assign({}, fold), Object.assign({ date: "2026-09-03" }, pay), "BUY", null); } catch (e) { if (/already a supplier default/.test(e.message)) foldRefused++; }
-    wA4.eval("ovAmend({kind:'Payment',date:'2026-09-03',direction:'BUY',rid:'a4d',cash:10,kg:0},{at:'a5'})");
-    const after = JSON.parse(wA4.eval("JSON.stringify(purchases.find(function(p){return p.rid==='a4d';}))"));
-    ok(foldRefused === 2 && after.cash === 100 && trail(after) === trail(desk) && (after.amend || []).length === (desk.amend || []).length,
-      "A4: a defaulted lot refuses a payment and a receipt in the fold, and the desk declines them without moving it");
-    /* a Correction that reverts the default clears its date, in the fold and on the desk */
-    const revive = { kind: "Correction", date: "2026-09-04", fields: { defaulted: false } };
-    const foldRev = Object.assign({}, fold, { amend: (fold.amend || []).slice() });
-    applyAmend(foldRev, revive, "BUY", null);
-    wA4.eval("ovAmend({kind:'Correction',date:'2026-09-04',direction:'BUY',rid:'a4d',fields:{defaulted:false}},{at:'a6'})");
-    const deskRev = JSON.parse(wA4.eval("JSON.stringify(purchases.find(function(p){return p.rid==='a4d';}))"));
-    ok(foldRev.defaulted === undefined && foldRev.defaultedOn === undefined && deskRev.defaulted === undefined && deskRev.defaultedOn === undefined,
-      "A4: a Correction that reverts a default clears its date, in the fold and on the desk");
-  } finally { wA4.close(); }
+  const lotOf = (rid) => ({ rid, date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", cash: 100, receivedQty: 0, inTransit: true, status: "partial" });
+  const fold = lotOf("a4d");
+  applyAmend(fold, { kind: "Default", date: "2026-09-02", cash: 0, kg: 0 }, "BUY", null);
+  const trail = (r) => (r.amend || []).filter((x) => x.kind === "Default").map((x) => x.date + "/" + x.cash + "/" + x.kg).join();
+  ok(fold.defaulted === true && fold.defaultedOn === "2026-09-02" && trail(fold) === "2026-09-02/0/0",
+    "A4: the fold dates a lot's default and leaves its step in the trail");
+  let foldRefused = 0;
+  for (const pay of [{ kind: "Payment", cash: 10, kg: 0 }, { kind: "Receipt", cash: 0, kg: 1 }])
+    try { applyAmend(Object.assign({}, fold), Object.assign({ date: "2026-09-03" }, pay), "BUY", null); } catch (e) { if (/already a supplier default/.test(e.message)) foldRefused++; }
+  ok(foldRefused === 2, "A4: a defaulted lot refuses a payment and a receipt in the fold");
+  /* a Correction that reverts the default clears its date */
+  const revive = { kind: "Correction", date: "2026-09-04", fields: { defaulted: false } };
+  const foldRev = Object.assign({}, fold, { amend: (fold.amend || []).slice() });
+  applyAmend(foldRev, revive, "BUY", null);
+  ok(foldRev.defaulted === undefined && foldRev.defaultedOn === undefined,
+    "A4: a Correction that reverts a default clears its date in the fold");
 })();
 
 
@@ -5771,19 +5732,7 @@ await (async () => {
   const untouched = JSON.parse(w3.eval("JSON.stringify((sales.find(s=>!s.cancelled&&s.rid&&txEffDeliv(s)<=0.009&&txPaid(s)<=0.009)||{}).rid||null)"))
     || w3.eval("sales.push({customer:'CY2-NIL',qty:2.5,total:230,cost:50,cash:0,deliveredQty:0,rid:'fx-untouched'});recompute();'fx-untouched'");
   ok(!!delivered && !!untouched, "the book carries a delivered sale, and an untouched one or a fixture standing in for it");
-
-  if (delivered) {
-    w3.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(delivered) + "},{at:'t1'})");
-    const row = JSON.parse(w3.eval("JSON.stringify(sales.find(s=>s.rid===" + JSON.stringify(delivered) + "))"));
-    ok(row.cancelled !== true, "the overlay does not cancel a delivered sale, as the fold does not");
-    ok(/not applied/.test(w3.eval("JSON.stringify(provNotes.slice(-1))")),
-      "and it records WHY rather than failing silently");
-  }
-  if (untouched) {
-    w3.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(untouched) + "},{at:'t2'})");
-    const row = JSON.parse(w3.eval("JSON.stringify(sales.find(s=>s.rid===" + JSON.stringify(untouched) + "))"));
-    ok(row.cancelled === true, "while an untouched sale still cancels, so the gate is not a full stop");
-  }
+  /* 21 Nov 2026: the overlay's half (ovAmend declining a cancellation) went with it; the fold's gate is asserted in its own sections */
 
   /* the Workbench pane, driven rather than grepped */
   if (delivered) {
@@ -5817,23 +5766,12 @@ await (async () => {
 })();
 
 
-section("v420: the desk and the fold leave a row in the same state");
+section("v420: the fold leaves a row in a stated state for every kind it has a branch for");
 await (async () => {
-  /* ROUND NINE, TWIN CLASS 8. ovAmend is written to BE applyAmend: the repo says in three places
-     that a desk and a fold disagreeing about what an edit does is two books. It had drifted. The
-     fold makes five writes in its SELL tail and the desk made two, so the overlay previewed an
-     order paid in full with no paid-on date, and a first movement on an undated row left it
-     undated on screen and dated in the book.
-     THIS IS A DIFFERENTIAL, not three named assertions, and that is the point: the same row and
-     the same amendment go through BOTH engines and the results must be identical. It cannot be
-     defeated by a comment, its inputs are not computed by either engine, and it covers writes
-     nobody thought to name. It earned that immediately: it caught a FOURTH drift I had not fixed,
-     the trail seed saying "as booked" where the fold says "as booked, pending and undated". */
-  const { openMaster: om5 } = await import("../tools/payload.mjs");
+  /* ROUND NINE, TWIN CLASS 8 was a differential of the desk's ovAmend against the fold's applyAmend. 21 Nov 2026: ovAmend is gone
+     (the Desk takes the Book's own view, book_page), so applyAmend is the one applier and this keeps the fold's half: every kind,
+     every seed, and a restated handover or receipt seeded as the row arrived. */
   const { applyAmend: fold5 } = await import("../tools/fold.mjs");
-  const { readFileSync: rf5, writeFileSync: wf5, unlinkSync: rm5 } = await import("node:fs");
-  const { execSync: ex5 } = await import("node:child_process");
-  const { join: j5 } = await import("node:path");
 
   const SALES = [
     { rid: "t101", date: null, qty: 2, total: 200, customer: "CN3-WM" },
@@ -5866,52 +5804,24 @@ await (async () => {
     { kind: "Correction", fields: { receivedQty: 8 } },
   ];
 
-  const bk5 = JSON.parse(rf5(FROZEN_BOOK, "utf8"));
-  bk5.sales = bk5.sales.concat(SALES.map((r) => Object.assign({}, r)));
-  bk5.purchases = bk5.purchases.concat(LOTS.map((r) => Object.assign({}, r)));
-  /* a folder of its own: two runs of this section side by side (section.mjs's mutations) shared test/.v420.* and read each other's master */
-  const T5 = (await import("node:fs")).mkdtempSync(j5((await import("node:os")).tmpdir(), "salt-v420-"));
-  const B5 = j5(T5, "v420.json"), M5 = j5(T5, "v420.html");
-  wf5(B5, JSON.stringify(bk5, null, 1));
-  wf5(M5, rf5(process.env.SALT_MASTER || FROZEN_MASTER, "utf8"));   /* the run's master, so a mutation reaches it */
-  ex5("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B5, SALT_MASTER: M5 }, stdio: "pipe" });
-
-  const strip = (r) => { const o = JSON.parse(JSON.stringify(r)); delete o._prov; return o; };
-  const { w: wq } = await om5(M5);
-  wq.eval("setProd('salt');recompute();");
-  let compared = 0; const differed = [], moved = {};
+  let compared = 0; const moved = {};
   for (const [rows, dir] of [[SALES, "SELL"], [LOTS, "BUY"]]) {
     for (const seed of rows) {
       for (const am of AMENDS) {
         const pay = Object.assign({ date: "2026-09-01" }, am);
         const fr = JSON.parse(JSON.stringify(seed));
-        /* 1 Nov 2026: a refusal lands nothing (the batch stays staged), so its state is the row as it was, and the desk must decline
-           leaving it so; this compared the fold's row half written before its throw, which pinned the desk's declined Cancellation step */
-        let refused = false;
-        try { fold5(fr, pay, dir, null); } catch (e) { refused = true; }
-        /* ONE window for the whole matrix, with the row put back to the seed before each pair.
-           It used to open a fresh master per pair, which is what kept the table at four. */
-        const arr = dir === "BUY" ? "purchases" : "sales";
-        wq.eval("(function(){var i=" + arr + ".findIndex(function(r){return r.rid===" + JSON.stringify(seed.rid) + ";});" + arr + "[i]=" + JSON.stringify(seed) + ";})()");
-        wq.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: dir, rid: seed.rid }, pay)) + ",{at:'x'})");
-        const dr = JSON.parse(wq.eval("JSON.stringify(" + arr + ".find(r=>r.rid===" + JSON.stringify(seed.rid) + "))"));
+        try { fold5(fr, pay, dir, null); } catch (e) { /* a refusal lands nothing */ }
         compared++;
         if (am.fields && (am.fields.deliveredQty || am.fields.receivedQty)) moved[seed.rid + (am.fields.deliveredQty ? ".d" : ".r")] = (fr.amend || []).map((x) => x.kind + ":" + x.kg).join();
-        const a = JSON.stringify(strip(refused ? seed : fr)), b = JSON.stringify(strip(dr));
-        if (a !== b) differed.push(seed.rid + " " + dir + " cash " + am.cash + " kg " + am.kg + " | fold " + a.slice(0, 150) + " | desk " + b.slice(0, 150));
       }
     }
   }
-  ok(compared === 72, "seventy-two row-and-amendment pairs were put through both engines (" + compared + "), five kinds against six seeds");
+  ok(compared === 72, "seventy-two row-and-amendment pairs were put through the fold (" + compared + "), five kinds against six seeds");
   ok(moved["t103.d"] === "Fulfilment:0,Correction:2" && moved["t102.d"] === "Fulfilment:1,Correction:1" && moved["t203.r"] === "Fulfilment:10,Correction:-2",
     "and a restated handover or receipt is seeded as the row arrived, its step carrying the units it moved, a lot with no receivedQty "
     + "read as received: " + JSON.stringify(moved));
   ok(new Set(AMENDS.map((a) => a.kind)).size === 5,
-    "and the five are every kind applyAmend has a branch for, so the sentence below is about all of them");
-  ok(differed.length === 0,
-    "the desk and the fold leave every one in the same state -- " + differed.slice(0, 2).join(" || "));
-  for (const f of [B5, M5]) { try { rm5(f); } catch (e) { /* best effort */ } }
-  try { (await import("node:fs")).rmSync(T5, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+    "and the five are every kind applyAmend has a branch for");
 })();
 
 
@@ -6406,7 +6316,7 @@ await (async () => {
 })();
 
 
-section("v436: one ruler decides whether a correction is legal, and all four readers read it");
+section("v436: one ruler decides whether a correction is legal, and every reader reads it");
 await (async () => {
   /* ROUND TEN, MATERIAL. FOUR readers decide this and only two ever held a rule. The drafter
      refused at the gate; tools/fold.mjs refused again in --plan with a rule of its own; applyAmend
@@ -6415,29 +6325,12 @@ await (async () => {
      edit the desk had just shown as applied. A desk and a fold that disagree about what an edit
      does is two books.
      THE CHECK IS AN IDENTITY ACROSS ALL FOUR ROADS, not four separate assertions, because the
-     fault was never that one reader was wrong: it was that they disagreed. */
-  const { openMaster: om9 } = await import("../tools/payload.mjs");
+     fault was never that one reader was wrong: it was that they disagreed.
+     21 Nov 2026: the desk's ovAmend is gone (the Desk takes the Book's own view), so three roads remain. */
   const { applyAmend: aa9 } = await import("../tools/fold.mjs");
   const { checkCorrection: cc9 } = await import("../src/drafter.js");
   const { default: PE9 } = await import("../engine/position.mjs");
   const bk9 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-  const { w: w9 } = await om9();
-  w9.eval("setProd('salt');recompute();");
-
-  /* ovAmend stamps _prov on the row BEFORE it reaches any branch, so a whole-row comparison reads
-     a clean refusal as an application. The first version of this probe did exactly that and
-     reported a working guard as a gap. */
-  const bare9 = (j) => { const o = JSON.parse(j); delete o._prov; return JSON.stringify(o); };
-  const deskSays = (rid, fields) => {
-    const F = JSON.stringify(rid);
-    const before = bare9(w9.eval("JSON.stringify(sales.find(function(s){return s.rid===" + F + ";}))"));
-    const n0 = +w9.eval("provNotes.length");
-    w9.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'SELL',rid:" + F + ",fields:" + JSON.stringify(fields) + "},{at:'v436'})");
-    const after = bare9(w9.eval("JSON.stringify(sales.find(function(s){return s.rid===" + F + ";}))"));
-    const n1 = +w9.eval("provNotes.length");
-    w9.eval("(function(){var i=sales.findIndex(function(s){return s.rid===" + F + ";});sales[i]=" + before + ";})()");
-    return after !== before ? "applied" : (n1 > n0 ? "REFUSE" : "no-op");
-  };
   const foldSays = (row, fields) => {
     try { aa9(JSON.parse(JSON.stringify(row)), { kind: "Correction", date: "2026-09-01", fields }, row.supplier !== undefined ? "BUY" : "SELL", null); return "applied"; }
     catch (e) { return "REFUSE"; }
@@ -6446,21 +6339,19 @@ await (async () => {
   const delivered = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) > 0.009);
   /* v464: same fixture as v419's, for the same reason; it is pushed into the book copy and the desk alike */
   const clean = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) <= 0.009)
-    || (() => { const fx = {customer:"CY2-NIL",qty:2.5,total:230,cost:50,cash:0,deliveredQty:0,rid:"fx-untouched"}; bk9.sales.push(fx); w9.eval("sales.push(" + JSON.stringify(fx) + ");recompute();"); return fx; })();
+    || (() => { const fx = {customer:"CY2-NIL",qty:2.5,total:230,cost:50,cash:0,deliveredQty:0,rid:"fx-untouched"}; bk9.sales.push(fx); return fx; })();
   ok(!!delivered && !!clean, "the book carries a delivered order, and an untouched one or a fixture standing in for it");
 
-  /* THE REFUSAL, down all four roads at once */
+  /* THE REFUSAL, down every road at once */
   const CAN = { cancelled: true };
   ok(PE9.correctionFaults(delivered, CAN, true).length > 0, "the engine refuses cancelling a delivered order by Correction");
   ok(cc9(CAN, bk9, delivered, true).errs.length > 0, "and so does the drafter, which is the gate a phone edit meets");
   ok(foldSays(delivered, CAN) === "REFUSE", "and so does the fold's applyAmend, which is what writes the book");
-  ok(deskSays(delivered.rid, CAN) === "REFUSE", "and so does the desk's ovAmend, which is what the owner is shown (it applied it at v435)");
 
   /* THE SAME IDENTITY ON THE PERMISSION, so the gate is a rule and not a wall */
   ok(PE9.correctionFaults(clean, CAN, true).length === 0, "an order with nothing moved against it may still be cancelled by Correction");
   ok(cc9(CAN, bk9, clean, true).errs.length === 0, "the drafter allows it");
   ok(foldSays(clean, CAN) === "applied", "the fold applies it");
-  ok(deskSays(clean.rid, CAN) === "applied", "and the desk previews it as applied");
 
   /* THE RULER MEASURES THE ROW, NOT THE FLAG IT IS SETTING. poRecvUnits and txEffDeliv both answer
      nothing for a cancelled row, and this gate looks at the state the correction WOULD leave, which
@@ -6619,81 +6510,62 @@ await (async () => {
 })();
 
 
-section("v439: the desk restates a row, and every claim it writes is one its own strip can read");
+section("v439: the fold restates a row, and every claim it writes is one the desk's strip can read");
 await (async () => {
-  /* ROUND TEN. ovAmend had NO Modification branch and applyAmend has had one since v358. A
-     Modification carries newQty and newTotal and moves no cash and no goods, so it fell through to
-     the movement path and applied a movement of nothing. On a lot that left the row untouched. On
-     an ORDER it was worse than nothing: the trail seeding at the foot of that path appended a
-     Modification step, so the desk drew a row whose trail asserted a restatement WHILE ITS QUANTITY
-     AND TOTAL STILL READ THE OLD FIGURES. A row asserting a change it did not make is the one thing
-     a ledger must never do, which is v383's own sentence about the same shape.
-     THE DIFFERENTIAL BESIDE THIS ONE now drives all five kinds and proves the two roads agree. It
-     cannot prove they agree on something READABLE, so that is here: the mod line is a contract that
-     modClaims parses, and the desk was writing one line that broke it. */
+  /* ROUND TEN. ovAmend had NO Modification branch and applyAmend has had one since v358; the desk drew a row whose trail asserted a
+     restatement WHILE ITS QUANTITY AND TOTAL STILL READ THE OLD FIGURES. 21 Nov 2026: ovAmend is gone (the Desk takes the Book's own
+     view), so the restatement is the fold's applyAmend alone, and what is left here is that it restates, and that every claim it writes
+     is one the desk's modClaims can read. */
   const { openMaster: omB } = await import("../tools/payload.mjs");
-  const { readFileSync: rfB, writeFileSync: wfB, unlinkSync: rmB } = await import("node:fs");
-  const { execSync: exB } = await import("node:child_process");
-  const { join: jB } = await import("node:path");
-
+  const { applyAmend: aaB } = await import("../tools/fold.mjs");
   const seed = { rid: "y1", date: null, qty: 2, total: 200, customer: "CN3-WM", unpriced: true };
   const lot = { rid: "y2", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0, cash: 100 };
   const settled = { rid: "y3", date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
-  const bkB = JSON.parse(rfB(FROZEN_BOOK, "utf8"));
-  bkB.sales = bkB.sales.concat([Object.assign({}, seed)]);
-  bkB.purchases = bkB.purchases.concat([Object.assign({}, lot), Object.assign({}, settled)]);
-  const BB = jB(REPO, "test", ".v439.json"), MB = jB(REPO, "test", ".v439.html");
-  wfB(BB, JSON.stringify(bkB, null, 1));
-  wfB(MB, rfB(FROZEN_MASTER, "utf8"));
-  exB("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BB, SALT_MASTER: MB }, stdio: "pipe" });
-  const { w: wB } = await omB(MB);
-  wB.eval("setProd('salt');recompute();");
+  const cp = (o) => JSON.parse(JSON.stringify(o));
 
   /* THE ORDER: restated, and the trail no longer claims what the figures deny */
-  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'SELL',rid:'y1',newQty:4,newTotal:400},{at:'x'})");
-  const y1 = JSON.parse(wB.eval("JSON.stringify(sales.find(function(r){return r.rid==='y1';}))"));
-  ok(+y1.qty === 4 && +y1.total === 400, `the order is restated to 4 unit / RM 400 (${y1.qty} / ${y1.total}), where it used to read 2 / 200 with a Modification step beside it`);
+  const y1 = cp(seed);
+  aaB(y1, { kind: "Modification", date: "2026-09-01", newQty: 4, newTotal: 400 }, "SELL", null);
+  ok(+y1.qty === 4 && +y1.total === 400, `the order is restated to 4 unit / RM 400 (${y1.qty} / ${y1.total})`);
   ok((y1.amend || []).some((a) => a.kind === "Modification"), "the trail records the restatement");
   ok(/restated on 2026-09-01 from 2 unit \/ RM200 to 4 unit \/ RM400/.test(y1.mod || ""), `and mod says so in the fold's words (${y1.mod})`);
   ok(!y1.unpriced, "and a restatement to a real total clears unpriced, as it has in the fold since v358");
 
-  /* THE LOT: the branch that used to leave the row entirely untouched */
-  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'BUY',rid:'y2',newQty:3,newTotal:100},{at:'x'})");
-  const y2 = JSON.parse(wB.eval("JSON.stringify(purchases.find(function(r){return r.rid==='y2';}))"));
+  /* THE LOT */
+  const y2 = cp(lot);
+  aaB(y2, { kind: "Modification", date: "2026-09-01", newQty: 3, newTotal: 100 }, "BUY", null);
   ok(+y2.qty === 3 && +y2.total === 100, `the lot is restated to 3 unit / RM 100 (${y2.qty} / ${y2.total})`);
-  /* THE STATUS MUST COME FROM WHAT WAS ALREADY PAID, NOT FROM THE NEW TOTAL, and the state that
-     proves it is a lot booked status:"paid" with NO cash field, which is how every settled
-     historical lot is stored. poCash reads that as meaning the row TOTAL, so asking it after the
-     write returns the NEW total and the lot reads fully paid at any price. The first version of
-     this check used a lot carrying an explicit cash figure, where poCash is unaffected by the
-     total and the mutation was neutral: the assertion could not fail, and the mutation said so. */
-  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'BUY',rid:'y3',newQty:20,newTotal:900},{at:'x'})");
-  const y3 = JSON.parse(wB.eval("JSON.stringify(purchases.find(function(r){return r.rid==='y3';}))"));
+  /* THE STATUS COMES FROM WHAT WAS ALREADY PAID, NOT FROM THE NEW TOTAL, on a lot booked status:"paid" with NO cash field,
+     which is how every settled historical lot is stored */
+  const y3 = cp(settled);
+  aaB(y3, { kind: "Modification", date: "2026-09-01", newQty: 20, newTotal: 900 }, "BUY", null);
   ok(+y3.qty === 20 && +y3.total === 900, `a settled lot restated upward carries the new figures (${y3.qty} / ${y3.total})`);
   ok(y3.status === "partial", `and reads partial, because RM 500 was paid against a new RM 900 (${y3.status})`);
   ok(y2.status === "paid", `while a lot restated down to what it had already paid reads paid (${y2.status})`);
 
-  /* A RESTATEMENT CARRYING NO FIGURES IS DECLINED RATHER THAN APPLIED */
-  const n0 = +wB.eval("provNotes.length");
-  const was = wB.eval("JSON.stringify(sales.find(function(r){return r.rid==='y1';}))");
-  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'SELL',rid:'y1',newQty:0,newTotal:0},{at:'x'})");
-  ok(wB.eval("JSON.stringify(sales.find(function(r){return r.rid==='y1';}))") === was, "a restatement to nothing leaves the row alone");
-  ok(+wB.eval("provNotes.length") > n0, "and says why, rather than failing quietly");
+  /* A RESTATEMENT CARRYING NO FIGURES IS REFUSED RATHER THAN APPLIED, by the fold's plan, which every batch passes before a row is written */
+  const { plan: planB } = await import("../tools/fold.mjs");
+  const bookB = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  bookB.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+  bookB.sales.push(cp(seed));
+  const pB = planB(bookB, { ok: true, count: 1, approved: [{ id: "m439", collection: "sales", amends: "y1", amendKind: "Modification", row: cp(seed),
+    entry: { at: "2026-09-01T10:00:00.000Z", payload: { mode: "amend", direction: "SELL", rid: "y1", kind: "Modification", date: "2026-09-01", newQty: 0, newTotal: 0 } } }] }, null);
+  ok(pB.refused.length === 1 && /no valid new quantity and total/.test(pB.refused[0].why) && pB.items.length === 0,
+    "a restatement to nothing is refused, and says why: " + JSON.stringify(pB.refused.length ? pB.refused : pB.items.map((i) => i.does)));
 
-  /* EVERY CLAIM THE DESK WRITES MUST BE ONE modClaims CAN READ. The unpriced line was pushed as
-     free prose, so the strip on the desk's own Ledger rendered a corrected row's claim as
-     `unreadable`, which is the one verdict a claim checker must not reach on its own output. The
-     differential cannot catch this: two roads agreeing on an unreadable sentence still agree. */
-  wB.eval("(function(){var i=sales.findIndex(function(r){return r.rid==='y1';});sales[i]=" + JSON.stringify(seed) + ";})()");
-  wB.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'SELL',rid:'y1',fields:{total:640}},{at:'x'})");
-  const claims = JSON.parse(wB.eval("JSON.stringify(modClaims(Object.assign({type:'SELL'},sales.find(function(r){return r.rid==='y1';})),'SELL'))"));
-  const flat = [].concat(...(Array.isArray(claims) ? claims : [claims]).map((c) => c && c.rows ? c.rows : [c])).filter(Boolean);
-  ok(flat.length > 0, `the strip reads claims off the corrected row at all (${flat.length})`);
-  ok(!flat.some((c) => c.verdict === "unreadable"),
-    "and none of them is unreadable -- " + JSON.stringify(flat.filter((c) => c.verdict === "unreadable")).slice(0, 140));
-  ok(flat.some((c) => c.field === "unpriced"),
-    "including the unpriced line the fold writes a reason onto, which is the one that broke the shape");
-  for (const x of [BB, MB]) { try { rmB(x); } catch (e) { /* best effort */ } }
+  /* EVERY CLAIM THE FOLD WRITES MUST BE ONE THE DESK'S modClaims CAN READ */
+  const yc = cp(seed);
+  aaB(yc, { kind: "Correction", date: "2026-09-01", fields: { total: 640 } }, "SELL", null);
+  const { w: wB } = await omB();
+  try {
+    const claims = JSON.parse(wB.eval("JSON.stringify(modClaims(Object.assign({type:'SELL'}," + JSON.stringify(yc) + "),'SELL'))"));
+    const flat = [].concat(...(Array.isArray(claims) ? claims : [claims]).map((c) => c && c.rows ? c.rows : [c])).filter(Boolean);
+    ok(flat.length > 0, `the strip reads claims off the corrected row at all (${flat.length})`);
+    ok(!flat.some((c) => c.verdict === "unreadable"),
+      "and none of them is unreadable -- " + JSON.stringify(flat.filter((c) => c.verdict === "unreadable")).slice(0, 140));
+    ok(flat.some((c) => c.field === "unpriced"),
+      "including the unpriced line the fold writes a reason onto, which is the one that broke the shape");
+  } finally { try { wB.close(); } catch (e) { /* best effort */ } }
 })();
 
 
@@ -6875,24 +6747,15 @@ await (async () => {
     ok(rec && rec.rid === "z9" && rec.amount === 230, `naming the row and the money (${JSON.stringify(rec)})`);
   }
 
-  /* THE DESK ROAD, and the reset that a withdrawn entry needs */
+  /* THE DESK'S RESET. 21 Nov 2026: the desk previews no cancellation now (ovAmend is gone), but the overlay pass still rebuilds
+     the refunds from the committed copy, so a payable nothing in the book holds never stands on the desk. It is the same fault
+     v354 fixed for the price board, one line above it in applyOverlay. */
   {
     const { openMaster: omE } = await import("../tools/payload.mjs");
     const { w: wE } = await omE();
     wE.eval("setProd('salt');recompute();");
     const committed = +wE.eval("customerRefunds.length");
-    const out0 = +wE.eval("+customerRefunds.filter(function(r){return !r.paidOn;}).reduce(function(a,r){return a+ +r.amount;},0).toFixed(2)");
-    /* v464: s119 is delivered now and its cancellation is rightly refused, so a paid, undelivered fixture carries the check */
-    wE.eval("sales.push({rid:'fx-refund',customer:'CY2-NIL',qty:2.5,total:230,cost:50,cash:230,deliveredQty:0});recompute();");
-    wE.eval("ovAmend({kind:'Cancellation',date:'2026-09-02',direction:'SELL',rid:'fx-refund'},{at:'r1'})");
-    ok(+wE.eval("customerRefunds.length") === committed + 1, "a previewed cancellation books the payable on the desk too");
-    ok(/refund payable/.test(String(wE.eval("provNotes.join(' | ')"))), "and says so in the provenance rather than appearing unexplained");
-    const out1 = +wE.eval("+customerRefunds.filter(function(r){return !r.paidOn;}).reduce(function(a,r){return a+ +r.amount;},0).toFixed(2)");
-    ok(Math.abs(out1 - (out0 + 230)) < 0.011, `refunds outstanding rises by the RM 230 (RM ${out0} to RM ${out1})`);
-
-    /* THE WITHDRAWAL. This list was the only one of the six the overlay touched that was not being
-       rebuilt, so without the reset the preview would keep a refund the queue no longer has. It is
-       the same fault v354 fixed for the price board, one line above it in applyOverlay. */
+    wE.eval("customerRefunds.push({party:'CY2-NIL',rid:'fx-refund',amount:230,since:'2026-09-02'});");
     wE.eval("applyOverlay();");
     ok(+wE.eval("customerRefunds.length") === committed,
       `and an empty queue takes it away again (${wE.eval("customerRefunds.length")} against the committed ${committed})`);
@@ -7154,21 +7017,11 @@ await (async () => {
   aa9(sale9, { kind: "Correction", date: "2026-09-01", fields: { note: "x" } }, "SELL", null);
   const sseed = (sale9.amend || [])[0] || {};
   ok(Math.abs(sseed.cash - 400) < 0.01 && Math.abs(sseed.kg - 4) < 0.01, `and a sale settled partly in kind still seeds with txPaid, cash and kind together: RM ${sseed.cash}, ${sseed.kg} unit`);
-  const { openMaster: om9 } = await import("../tools/payload.mjs");
-  const { w: w9 } = await om9();
-  w9.eval("setProd('salt');recompute();");
-  const p9 = JSON.parse(w9.eval("JSON.stringify((purchases.find(function(p){return p.status==='paid'&&p.cash==null&&!(p.amend&&p.amend.length)&&!p.cancelled&&!p.defaulted&&p.rid;})||{}).rid||null)"));
-  if (p9) {
-    w9.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'BUY',rid:" + JSON.stringify(p9) + ",fields:{note:'x'}},{at:'t9'})");
-    const d9 = JSON.parse(w9.eval("JSON.stringify(((purchases.find(function(p){return p.rid===" + JSON.stringify(p9) + ";})||{}).amend||[])[0]||{})"));
-    const want = JSON.parse(w9.eval("JSON.stringify((function(p){return {cash:poCash(p),kg:poRecvUnits(p)};})(purchases.find(function(p){return p.rid===" + JSON.stringify(p9) + ";})))"));
-    ok(Math.abs(d9.cash - want.cash) < 0.01 && Math.abs(d9.kg - want.kg) < 0.01 && want.cash > 0.009 && want.kg > 0.009,
-      `the desk seeds ${p9} the same way: RM ${d9.cash} of ${want.cash}, ${d9.kg} of ${want.kg} unit`);
-  } else skipData("no paid lot without a trail on the book to drive the desk half with");
+  /* 21 Nov 2026: the desk's half (ovAmend's seed) went with ovAmend; the fold is the one applier */
 })();
 
 
-section("v450: a lot keeps a trail, on the fold and on the desk");
+section("v450: a lot keeps a trail in the fold");
 await (async () => {
   /* Both engines returned from their BUY branches before the seed and the step, so a lot restated
      or fulfilled through the fold carried no trail, and the one lot with a step (p016) had it written
@@ -7189,22 +7042,7 @@ await (async () => {
   const B = lotB.amend || [];
   ok(B.length === 2 && B[0].cash === 500 && B[0].kg === 10 && B[1].kind === "Modification" && B[1].cash === 0 && B[1].kg === 0,
     `a restatement on a lot leaves a Modification step after the row as booked: ${JSON.stringify(B)}`);
-  /* the desk, against the fold, on the book's own lots: same row, same amendment, same trail */
-  const { openMaster: om0 } = await import("../tools/payload.mjs");
-  const { w: w0 } = await om0();
-  w0.eval("setProd('salt');recompute();");
-  const lots0 = JSON.parse(w0.eval("JSON.stringify(purchases.filter(function(p){return p.rid&&!p.cancelled&&!p.defaulted&&!p.pending&&!(p.amend&&p.amend.length);}).slice(0,2))"));
-  const TRIALS = [{ kind: "Fulfilment", date: "2026-09-01", cash: 100, kg: 0 }, { kind: "Modification", date: "2026-09-01", newQty: 12, newTotal: 900 }];
-  if (lots0.length === 2) {
-    lots0.forEach((lot, i) => {
-      const pay = TRIALS[i];
-      const clone = JSON.parse(JSON.stringify(lot));
-      aa0(clone, pay, "BUY", null);
-      w0.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: "BUY", rid: lot.rid }, pay)) + ",{at:'t0'})");
-      const deskA = JSON.parse(w0.eval("JSON.stringify((purchases.find(function(p){return p.rid===" + JSON.stringify(lot.rid) + ";})||{}).amend||[])"));
-      ok(deskA.length === 2 && JSON.stringify(deskA) === JSON.stringify(clone.amend), `${lot.rid} ${pay.kind}: the desk writes the trail the fold writes (${JSON.stringify(deskA)})`);
-    });
-  } else skipData("fewer than two trail-less lots on the book to drive the desk with");
+  /* 21 Nov 2026: the desk-against-fold half went with ovAmend */
   /* p016, the one lot that already carried a step */
   const { readFileSync: rf0 } = await import("node:fs");
   const { join: j0 } = await import("node:path");
@@ -14124,23 +13962,17 @@ await (async () => {
   ok(rowC11.customer === "CX9-AS" && !rowC11.rev,
     "clearing the R2 on a bucket row with no buyer returns it to the associate's own code, never to the bucket as a buyer of its own");
 
-  /* THE DESK: its queue branch books a queued R2 the same way, its preview applies the same correction, the
-     ledger line names the associate, and a resale's replay twin is looked for in the bucket */
+  /* THE DESK: the ledger line names the associate, and a resale's replay twin is looked for in the bucket. 21 Nov 2026: the
+     desk's queue branch (ovNew) and its preview (ovAmend) went with the overlay; the fold's correction is asserted here alone. */
+  const seed11 = Object.assign({}, bk11.sales[1], { rid: "sy611", customer: "CS6-BS", downstream: "CS6-BS-R" });
+  const fold11 = JSON.parse(JSON.stringify(seed11));
+  aa11(fold11, { kind: "Correction", date: "2026-09-13", fields: { downstream: null } }, "SELL", null);
+  ok(fold11.customer === "CS6-BS-R" && !fold11.downstream && fold11.rev === "R2",
+    "the fold moves a cleared downstream into the associate's bucket: " + JSON.stringify([fold11.customer, fold11.downstream || null, fold11.rev]));
   const { openMaster: om11 } = await import("../tools/payload.mjs");
   const { w: w11 } = await om11();
   try {
     w11.eval("setProd('salt');recompute();");
-    const prov11 = JSON.parse(String(w11.eval("(function(){var n=sales.length;ovNew({mode:'new',direction:'SELL',party:'CS6-BS',assoc:'CS6-BS',stream:'R2',downstream:null,date:'2026-09-10',qty:1,total:130,cash:130,kg:1},{at:'t611'});var r=sales[sales.length-1];return JSON.stringify({grew:sales.length===n+1,c:r.customer,rev:r.rev,d:r.downstream||null});})()")));
-    ok(prov11.grew && prov11.c === "CS6-BS-R" && prov11.rev === "R2" && prov11.d === null,
-      "the desk's queue branch books a queued R2 into the associate's bucket, as the drafter does: " + JSON.stringify(prov11));
-    const seed11 = Object.assign({}, bk11.sales[1], { rid: "sy611", customer: "CS6-BS", downstream: "CS6-BS-R" });
-    w11.eval("sales.push(" + JSON.stringify(seed11) + ");");
-    w11.eval("ovAmend({kind:'Correction',date:'2026-09-13',direction:'SELL',rid:'sy611',fields:{downstream:null}},{at:'c611'})");
-    const desk11 = JSON.parse(String(w11.eval("JSON.stringify(sales.find(function(r){return r.rid==='sy611';}))")));
-    const fold11 = JSON.parse(JSON.stringify(seed11));
-    aa11(fold11, { kind: "Correction", date: "2026-09-13", fields: { downstream: null } }, "SELL", null);
-    ok(desk11.customer === "CS6-BS-R" && !desk11.downstream && desk11.customer === fold11.customer && (desk11.downstream || null) === (fold11.downstream || null) && desk11.rev === fold11.rev,
-      "the desk's preview applies that correction exactly as the fold does: " + JSON.stringify({ desk: [desk11.customer, desk11.downstream || null], fold: [fold11.customer, fold11.downstream || null] }));
     const lab11 = (r) => String(w11.eval("ledAttr(" + JSON.stringify(r) + ")"));
     const vis11 = (h) => h.replace(/<[^>]+>/g, "").replace(/&middot;/g, "·").trim();
     const inB11 = lab11({ customer: "CS6-BS-R", rev: "R2" }), onCode11 = lab11({ customer: "CS6-BS", rev: "R2", downstream: "CS6-BS-R" }), named11 = lab11({ customer: "CS6-BS-R", rev: "R2", downstream: "CM4-MK" });
@@ -29596,7 +29428,7 @@ await (async () => {
   applyAmend(b, { kind: "Fulfilment", date: "2026-09-19", cash: 420, kg: 0 }, "SELL", null);
   ok(b.paidOn === "2026-09-19", "with no delivery RM420 is still paid in full: " + b.paidOn);
 
-  /* ---- the engine's open-order shape, which the drafter reads off the mirror; and the desk's own applier ---- */
+  /* ---- the engine's open-order shape, which the drafter reads off the mirror (the desk's own applier, ovAmend, went on 21 Nov 2026) ---- */
   const lr = (r) => JSON.parse(JSON.stringify(E.ledgerRow(r, "S", "salt")));
   const open = lr({ rid: "sZ1", customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, delivery: 15, cash: 420, deliveredQty: 5 });
   ok(open.oweRM === 15 && open.st !== "done" && open.t === 420,
@@ -29606,15 +29438,6 @@ await (async () => {
   ok(openPaid.oweRM === undefined && openPaid.st === "done", "RM435 on it is done: " + JSON.stringify(openPaid));
   const plain = lr({ rid: "sZ3", customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, cash: 420, deliveredQty: 5 });
   ok(plain.st === "done" && plain.dv === undefined, "and a row with no delivery is as it was: " + JSON.stringify(plain));
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w } = await openMaster();
-  w.eval("sales.push({rid:'sZ9',customer:'CZ9-DV',date:'2026-09-19',qty:5,total:420,delivery:15,cash:0,deliveredQty:5});");
-  w.eval("ovAmend({direction:'SELL',rid:'sZ9',kind:'Fulfilment',cash:420,kg:0,date:'2026-09-19'},{at:'2026-09-19T12:00:00.000Z'});");
-  const d1 = JSON.parse(w.eval("JSON.stringify(sales.filter(function(r){return r.rid==='sZ9';})[0])"));
-  ok(d1.cash === 420 && d1.paidOn === undefined, "the desk's own applier stamps no paidOn on RM420 of RM435: " + JSON.stringify({ cash: d1.cash, paidOn: d1.paidOn }));
-  w.eval("ovAmend({direction:'SELL',rid:'sZ9',kind:'Fulfilment',cash:15,kg:0,date:'2026-09-20'},{at:'2026-09-20T12:00:00.000Z'});");
-  const d2 = JSON.parse(w.eval("JSON.stringify(sales.filter(function(r){return r.rid==='sZ9';})[0])"));
-  ok(d2.cash === 435 && d2.paidOn === "2026-09-20", "and stamps it when the delivery is paid too: " + JSON.stringify({ cash: d2.cash, paidOn: d2.paidOn }));
   /* the Workbench's outstanding line reads the form's own inputs, so this one is a source pin: the sale branch
      reads txOwed and no longer the goods alone, while the lot branch beside it still reads a lot's total */
   const m = readFileSync(FROZEN_MASTER, "utf8");

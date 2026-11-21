@@ -1,7 +1,7 @@
 /* test/close-refund.mjs: a close at what was handed over, or an amendment of an agreed order, under what the customer has
    paid opens a refund for the difference (06 Oct 2026). The engine's refundOnOverpay beside refundOnCancel, read off the
    row; the drafter's card says what opens; the fold books one customerRefunds row for the difference and the rest on a
-   later cancellation; the desk's overlay previews the same payable and lets it go with the entry. Invented codes only. */
+   later cancellation. Invented codes only. */
 import { FROZEN_MASTER } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -109,30 +109,5 @@ export async function run({ ok }) {
       "cash corrected down to RM 250 raises no second refund, withdraws none, and the fold names the RM 50 no longer owed: " + JSON.stringify({ rows, moves: r2.moves }));
     ok(PE.refundStale([{ rid: "z", amount: 200, paidOn: "2026-10-07" }], mk({ rid: "z", cash: 250, total: 100 })) === 0, "a refund already returned is never called stale");
   }
-
-  /* THE DESK'S OVERLAY: the same payable previewed from the queue, said in the provenance, and gone with the entry */
-  {
-    const { w } = await openMaster();
-    try {
-      w.eval("setProd('salt');recompute();");
-      const committed = +w.eval("customerRefunds.length");
-      w.eval("sales.push({rid:'fx-over',customer:'CY2-NIL',qty:3,total:300,cost:150,cash:300,deliveredQty:0});recompute();");
-      w.eval("ovAmend({kind:'Correction',date:'2026-10-06',direction:'SELL',rid:'fx-over',fields:" + JSON.stringify(closeFields) + "},{at:'r1'})");
-      const got = JSON.parse(String(w.eval("JSON.stringify(customerRefunds.slice(" + committed + "))")));
-      ok(got.length === 1 && got[0].rid === "fx-over" && got[0].amount === 200 && !got[0].paidOn && /paid past what the row comes to/.test(String(w.eval("provNotes.join(' | ')"))),
-        "a previewed close under what they paid books the RM 200 payable on the desk too, and says so in the provenance: " + JSON.stringify(got));
-      w.eval("sales.push({rid:'fx-pay',customer:'CY2-NIL',qty:3,total:300,cost:150,cash:0,deliveredQty:0});recompute();");
-      w.eval("ovAmend({kind:'Fulfilment',date:'2026-10-06',direction:'SELL',rid:'fx-pay',cash:320,kg:0},{at:'r2'})");
-      const paid = JSON.parse(String(w.eval("JSON.stringify(customerRefunds.slice(" + committed + "))")));
-      ok(paid.length === 2 && paid[1].rid === "fx-pay" && paid[1].amount === 20, "and a previewed payment over the row books the RM 20 past it: " + JSON.stringify(paid));
-      w.eval("sales.push({rid:'fx-stale',customer:'CY2-NIL',qty:1,total:100,cost:50,cash:300,deliveredQty:1});customerRefunds.push({party:'CY2-NIL',rid:'fx-stale',amount:200,since:'2026-10-06'});recompute();");
-      w.eval("ovAmend({kind:'Correction',date:'2026-10-06',direction:'SELL',rid:'fx-stale',fields:{cash:250}},{at:'r3'})");
-      ok(/STALE refund on fx-stale: .*50.* no longer owed/.test(String(w.eval("provNotes.join(' | ')"))), "the desk's overlay names the stale refund too: " + String(w.eval("provNotes.join(' | ')")).slice(-200));
-      w.eval("applyOverlay();");
-      ok(+w.eval("customerRefunds.length") === committed, "an empty queue takes both away again");
-    } finally {
-      await new Promise((r) => setTimeout(r, 200));
-      try { w.close(); } catch (e) { /* best effort */ }
-    }
-  }
+  /* 21 Nov 2026: the desk's overlay half (ovAmend previewing the payable) went with ovAmend; the fold books it, above */
 }

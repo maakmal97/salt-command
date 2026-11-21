@@ -1,17 +1,5 @@
 [
  {
-  "name": "D1: the sale's declined cancellation is written to the trail first again",
-  "file": "master/salt_command.html",
-  "find": "  if(p.kind==='Cancellation'&&txEffDeliv(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a row')+' was not applied: '+units(txEffDeliv(row))+' has already been delivered');return;}\n  /* seed the trail",
-  "replace": "  /* seed the trail"
- },
- {
-  "name": "D1: the lot's declined cancellation is written to the trail first again",
-  "file": "master/salt_command.html",
-  "find": "    if(p.kind==='Cancellation'&&poRecvUnits(row)>0.009){provNotes.push('a cancellation on '+(row.rid||'a lot')+' was not applied: '+units(poRecvUnits(row))+' has already been received');return;}\n",
-  "replace": ""
- },
- {
   "name": "D2: To do's ordDue reads no credit again",
   "file": "master/salt_command.html",
   "find": "-(+o.paid||0)-(+o.credit||0)).toFixed(2);",
