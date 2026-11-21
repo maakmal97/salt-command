@@ -75,7 +75,7 @@ export function diffOrder(want, got) {
 export const line = (r) => (r.rid + "  " + r.verdict + (r.verdict === "import" ? (r.id ? "  " + r.id + (r.ok === true ? (r.again ? "  (already there)" : "  ok") : "  FAILED: " + (r.why || "")) : r.order ? "  " + r.order.id : "") : "  " + (r.why || "")));
 
 const salesRids = (file) => { const b = JSON.parse(readFileSync(file, "utf8")); return (b.sales || []).filter((s) => s && s.rid && s.customer).map((s) => ({ rid: s.rid, trip: s.trip || null })); };
-function outside() {
+export function outside() {
   const gh = spawnSync("gh", ["run", "list", "--limit", "30", "--json", "status,workflowName"], { cwd: REPO, shell: true, encoding: "utf8" });
   let runs = null; try { if (gh.status === 0) runs = JSON.parse(gh.stdout); } catch (e) { runs = null; }
   const dr = spawnSync("node", ["tools/drafts.mjs", "--approved"], { cwd: REPO, shell: true, encoding: "utf8" });
