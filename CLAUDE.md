@@ -70,7 +70,9 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      the Desk; a completed order too, which opens again at Ready when the change leaves it owing (his answer of 17 Oct
      2026); the Floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
      ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
-     books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
+     books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip). **Every sale has its
+     order** (21 Nov 2026, docs/DESK.md "Every road that mints a sale"): a new sale is a site order; Salt Admin's `sale` is recovery only,
+     with D1 `sale_recovery` on, its card marked `noOrder`; the tie-out lists a row no order names as `orderless`, never a fault.
    - **SALT'S PRICE IS THE MEDIAN PRICE AND THEIR %** (his decisions of 05, 18 and 21 Oct 2026). **It was named the Set Price until
      10 Nov 2026 (his word): every word he reads says Median Price, a customer reads neither, and the identifiers stay** (`T2`,
      `ladderRow`, `TIER_RULE`, `PRICE_SET`, `drift`). **A stranger is quoted +30% on salt's band** (his word of 11 Nov 2026, "Always start a
