@@ -2839,7 +2839,10 @@ export const OWNER_JS = `
               if(!answer||answer.ok!==true)throw new Error('The Desk did not confirm. Nothing is lost; tap Send again.');
               makerClear(saved.path);gone();await loadMaker();
               if(saved.body.pair||saved.body.vault||saved.body.addrVault)makerVaultRefresh();
-            }catch(error){refusal(status,error);shut(true);}
+            }catch(error){
+              /* 21 Nov 2026 (item 2, Fable): a sale the Desk refuses as no site order (Order for them) is never taken by sending it again, so it is not kept to retry */
+              if(error.status===409&&saved&&saved.path==='/all/maker/inputs/sale'&&/Order for them/.test(String(error.raw||error.message||''))){makerClear(saved.path);gone();return;}
+              refusal(status,error);shut(true);}
           };
           ['Resend','Update and send','Discard'].forEach(function(label,index){
             var act=['record.retained.retry','record.retained.review','record.retained.cancel'][index], button=index?aAct(aBtn(label,'',act),index===2):aPill(label,act,undefined,true);
