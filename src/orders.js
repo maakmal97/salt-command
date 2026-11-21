@@ -2780,31 +2780,6 @@ export async function deskUnimport(env, b) {
   if (!m.ok || !j.ok || !Array.isArray(j.results)) return no(502, "the site would not take them back: " + (j.error || "http " + m.status));
   return { ok: true, results: j.results };
 }
-/* ---- V4a: A KEY WRITTEN BEFORE THE PRODUCT WAS IN IT (28 Sep 2026) -----------------------------------------------
- * The row key names the product on every book but salt (the engine's ovKey), and an order acknowledged before that
- * carries the old key as its ledgerKey: on salt it is the same key, on any other book it lacks the tail. ONCE, on the
- * minute's first pass after the version that brought it and ahead of every other step, each such order is marked with
- * its key as the engine gives it now (ledgerKeyOf: the tail and nothing else), a finished order too, so nothing on the
- * site names a row by the old shape. The mark on this store moves only when every order took its key; until then the
- * next minute tries again, and every road here reads the key through ledgerKeyOf meanwhile. It costs the first minute
- * one more question to the site, and no minute after it. */
-const KEYED_MARK = "orders:keyed";
-export async function rekeyOrders(env) {
-  if (!env.SALT_QUEUE || !env.STMT_SITE) return { ok: true, rekeyed: 0 };
-  if ((await env.SALT_QUEUE.get(KEYED_MARK)) === "product") return { ok: true, rekeyed: 0 };
-  const r = await listOrders(env, true);
-  if (!r.ok) return { ok: false, error: r.error };
-  let rekeyed = 0; const failed = [];
-  for (const o of r.orders) {
-    const nk = ledgerKeyOf(o);
-    if (!o.ledgerKey || nk === o.ledgerKey) continue;
-    const m = await markOrder(env, o.u, o.id, { ledgerKey: nk });
-    if (m && m.ok) rekeyed++;
-    else failed.push({ id: o.id, why: "the site would not take the key" + (m ? " (http " + m.status + ")" : "") });
-  }
-  if (!failed.length) await env.SALT_QUEUE.put(KEYED_MARK, "product");
-  return Object.assign({ ok: true, rekeyed }, failed.length ? { failed } : {});
-}
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
  *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge.

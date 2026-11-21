@@ -30,7 +30,7 @@ import { runBackup, backupAlarm, runBookExport, bookExportAlarm, BACKUP_CRON } f
 import { klDate, readRuns, exportLanded, chainBusy, askPace, askVerdict, exportReason } from "./day-export.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { deskImport, deskUnimport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
+import { deskImport, deskUnimport, listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, tellWaiting, lowerOrder, bulletinRelay, expectedRelay, quotesRelay, calendarRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON, tellAdmin } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerCustomerReading, makerRewardReadingOf, makerCustomerReadingOf } from "./maker-inputs.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerEdit, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerStock, makerUndo, makerRows, openRefunds, makerRewardReading, makerDriftPreview } from "./maker-inputs.js";
@@ -3028,12 +3028,6 @@ export default {
         /* 06 Oct 2026: THE MINUTE'S ONE READ OF THE MIRROR (bookOnce), read on the first step that needs it and never on a
            quiet minute, shared by the return leg, the reconcile, the desk pass and both drafter passes */
         const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;
-        /* V4a: an order acknowledged before the row key named the product takes the key as it is now, once, before
-           anything this minute reads its key */
-        try {
-          const rk = await rekeyOrders(env);
-          if (!rk.ok || rk.rekeyed || rk.failed) console.log("orders rekey: " + JSON.stringify(rk));
-        } catch (e) { console.log("orders rekey FAILED: " + String((e && e.stack) || e)); }
         /* v764: what the book already holds, back the other way, before the read of what the orders owe:
            an order brought level here owes nothing for the reconcile to queue. A cheap read of the book's
            version on a quiet minute; the site is asked only after a fold. */

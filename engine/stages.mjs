@@ -275,7 +275,8 @@ export const dayOf = (order, at) => (onLive(order, at) ? order.on : klDate(at));
 export const bucketFor = (code) => POSITION_ENGINE.bookR2({}, "customer", code, null).customer;
 export const partyOnBook = (order, code) => (order && order.forFriend ? bucketFor(code) : code);
 /* V4a: THE KEY AN ORDER NAMES ITS ROW BY, for every stage it builds and every road here that looks the row up: its own
-   ledgerKey, given the product's tail if it was written before V4a, so an order rekeyOrders has not reached yet never
+   ledgerKey, given the product's tail if it was written before V4a, so an order still holding the old shape (the per-minute pass that
+   re-keyed them was retired on 21 Nov 2026) never
    names a salt twin's row by the old shape */
 export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.ledgerKey, order && order.product) || null;
 /* 19 Nov 2026 (the tie-out's "two rows share its key", s395): A ROW'S NEW NAME IS NEVER ANOTHER ROW'S. An amendment, a close or an early
