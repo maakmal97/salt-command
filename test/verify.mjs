@@ -50652,6 +50652,11 @@ await (async () => {
   await (await import("./order-import-route.mjs")).run({ ok });
 })();
 
+section("21 Nov 2026: the Desk replays no queued trade: a sale or an amendment counts in no figure until the Book holds it");
+await (async () => {
+  await (await import("./drop-overlay.mjs")).run({ ok });
+})();
+
 section("17 Nov 2026: the way is amendable, collect to deliver with its charge, on one Correction");
 await (async () => {
   await (await import("./amend-way.mjs")).run({ ok });

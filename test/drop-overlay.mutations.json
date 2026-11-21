@@ -1,0 +1,42 @@
+[
+ {
+  "name": "X1: the queued new SELL is booked onto the desk's rows again",
+  "find": "      if(p.mode==='new'||p.mode==='amend'){provTrades++;return;}",
+  "replace": "      if(p.mode==='new'){sales.push({date:p.date,customer:p.party,qty:+p.qty,total:+p.total,cash:+p.cash||0,deliveredQty:+p.kg||0,_prov:q.at});provTrades++;return;}\n      else if(p.mode==='amend'){provTrades++;return;}"
+ },
+ {
+  "name": "X2: the queued Correction is written onto its row again",
+  "find": "      if(p.mode==='new'||p.mode==='amend'){provTrades++;return;}",
+  "replace": "      if(p.mode==='amend'){const r=sales.find(x=>x.rid===p.rid);if(r&&p.fields)Object.assign(r,p.fields);provTrades++;return;}\n      else if(p.mode==='new'){provTrades++;return;}"
+ },
+ {
+  "name": "X3: a queued trade is not counted as waiting",
+  "find": "      if(p.mode==='new'||p.mode==='amend'){provTrades++;return;}",
+  "replace": "      if(p.mode==='new'||p.mode==='amend'){return;}"
+ },
+ {
+  "name": "X4: a queued count is taken for a trade",
+  "find": "      if(p.mode==='new'||p.mode==='amend'){provTrades++;return;}",
+  "replace": "      if(p.mode==='new'||p.mode==='amend'||p.mode==='count'){provTrades++;return;}"
+ },
+ {
+  "name": "X5: the bar says nothing of the queued trades",
+  "find": "+(provTrades?(provCount?' ':'')+'<b>'+provTrades+'</b> queued trade'",
+  "replace": "+(false?(provCount?' ':'')+'<b>'+provTrades+'</b> queued trade'"
+ },
+ {
+  "name": "X6: the queue panel says every entry is in the figures again",
+  "find": "A count, a loss or a loan is in every figure on the desk until it is committed to the ledger; a queued trade counts in no figure until the Book holds it.",
+  "replace": "These are already folded into every figure on the desk until they are committed to the ledger."
+ },
+ {
+  "name": "X7: a second applier is back on the page",
+  "find": "const provOf=t=>t._prov||",
+  "replace": "function ovAmend(p,q){}\nconst provOf=t=>t._prov||"
+ },
+ {
+  "name": "X8: the trade count is not reset between passes",
+  "find": "  statedStockBy={};provCount=0;provNotes=[];provRM=0;provTrades=0;provUnsent=0;unsentAts=new Set();",
+  "replace": "  statedStockBy={};provCount=0;provNotes=[];provRM=0;provUnsent=0;unsentAts=new Set();"
+ }
+]
