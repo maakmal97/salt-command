@@ -51,8 +51,8 @@
  },
  {
   "name": "C1.1 the glance is back on Rules",
-  "find": "  ${boundaryPanel(bnd,risks)}",
-  "replace": "  <h2>Position at a glance</h2>${boundaryPanel(bnd,risks)}"
+  "find": "  ${boundaryPanel(bnd)}",
+  "replace": "  <h2>Position at a glance</h2>${boundaryPanel(bnd)}"
  },
  {
   "name": "C1.2 the Money at stake chart is back",
