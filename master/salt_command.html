@@ -12387,7 +12387,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1562","d":"21 Nov 2026","t":"A RECORD OF THE ORDER CHECK'S HEALTHY RUN","n":["<b>THE ORDER CHECK KEEPS ITS RUN.</b> Each minute&#39;s check that orders name their rows now keeps a record of how long it has run healthy: clean, with no order falling back to its key twice running and none naming a row no longer live. Nothing a customer or the desk reads changes.","<b>IT GATES THE NEXT STEP.</b> Removing the old key roads waits for seven healthy days; the record says when they are up, and a pass that is not healthy starts the count again, saying why."]}];
+const evolution=[{"v":"v1563","d":"22 Nov 2026","t":"ONE HEAD FOR EVERY PLACE ON SALT ADMIN","n":["<b>EVERY PLACE OPENS THE SAME WAY.</b> Its title, with no gap kept above it; then its parts in one sliding row; then one status row, the same on every place and every width: Live and the time, the shop&#39;s state, Supply tight while it is, Ledger and Approve. Then the place&#39;s headline. The + is gone: Record is one tap in the dock.","<b>NEEDS YOU HAS PARTS.</b> To do, Pending and FYI, each counted. The kinds, and the filters on Customers, are a Show menu at the head of their lists, no longer a row of pills.","<b>NOTHING ELSE MOVES.</b> No route, request, price or booking changed, and every tap does what it did. It carries Ambient 0.7.32, whose new parts make the head."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12549,7 +12549,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Nov 2026, 19:38 KL';
+const LAST_UPDATED='22 Nov 2026, 17:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
