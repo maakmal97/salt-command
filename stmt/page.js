@@ -218,7 +218,6 @@ const wd = (k, px) => fillHtml(EN[k], slotsAt(px || 22), "en");
 const wt = (tag, attrs, k, px) => "<" + tag + (attrs ? " " + attrs : "") + ' data-w="' + k + '"' + (px ? ' data-gs="' + px + '"' : "") + ">" + wd(k, px) + "</" + tag + ">";
 const wl = (k) => ' aria-label="' + esc(EN[k]) + '" data-wl="' + k + '"';
 /* whose account it is: the username is a slot, filled by the script (data-who) */
-const whoAs = () => '<span data-whoas data-w="who.as">' + fillHtml(EN["who.as"], Object.assign(slotsAt(22), { u: '<span class="mono" data-who></span>' }), "en") + "</span>";
 
 /* 16 Nov 2026, THE MOVE TO AMBIENT (place D): every Sheet of the Counter's account is the system's, a native dialog with the shell's mood and a close circle;
    the page's script shows and hides it (sheetUp, sheetDown: `hidden` stays the page's own word for shut, as it was with the scrim), and its own back-stack
@@ -345,10 +344,12 @@ function vaultSheet() {
    two parts; Ambient has no bell glyph yet, so the circle draws its info glyph until one is added (asked of Ambient). The ids and the words are kept.
    16 Nov 2026, Ambient 0.7.3: the circle draws Ambient's bell, and the call is the app bar's own call (amb-pill--bar), first, its words two
    ("Turn on", bell.short) and its name the whole sentence (bell.call); it is hidden once notifications are on, so the bell stands alone. */
+/* 22 Nov 2026 (the place head): the bell and its call end the status row, so no room is kept over the title for an app bar */
 function bellBox() {
-  return '<div id="bellBox" class="amb-appbar__group" hidden>'
-    + wt("button", 'type="button" class="amb-pill amb-pill--bar" id="bellCall"' + wl("bell.call"), "bell.short")
-    + '<button type="button" class="amb-circle" id="bell"' + wl("bell.off") + ">" + AMB.glyph("bell") + "</button></div>";
+  /* the reviewer's findings of 22 Nov 2026: one control at a time, the call with the bell's glyph while they are off, the plain bell once on */
+  return '<div id="bellBox" class="amb-status__end" hidden>'
+    + '<button type="button" class="amb-pill amb-pill--quiet" id="bellCall"' + wl("bell.call") + ">" + AMB.glyph("bell", "sm") + wt("span", "", "bell.short") + "</button>"
+    + '<button type="button" class="amb-circle amb-circle--plain" id="bell"' + wl("bell.on") + " hidden>" + AMB.glyph("bell") + "</button></div>";
 }
 /* refused on this phone: its own Settings steps, and the bell to tap again once they are on */
 function bellSheet() {
@@ -638,12 +639,13 @@ function guestPage(mood, hero, inner, nonce, title) {
    that changes is never read out unasked. Drawn at first paint with the notice's lines; the open or closed line waits for /hours. */
 function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  /* 16 Nov 2026, THE MOVE TO AMBIENT: the card is one notice. Whether the Counter is open is its title and the line under it follows, then his
+  /* 16 Nov 2026, THE MOVE TO AMBIENT: the card is one notice (22 Nov 2026: whether the Counter is open moved to the head's status row; the card keeps what it means). Whether the Counter is open is its title and the line under it follows, then his
      notice, a line at a time, with Pause. The clock is the hero's own time line now, so the card does not say the time twice. */
   return '<div id="today" class="amb-notice"' + (lines.length ? "" : " hidden") + wl("today.aria") + ">" + AMB.glyph("info")
-    + '<span><span id="todayOpen" class="amb-notice__title" hidden></span><span id="todayLine" class="hblock" hidden></span>'
+    + '<span><span id="todayLine" class="hblock" hidden></span>'
     + '<span id="bull" class="hnote hblock"' + (lines.length ? "" : " hidden") + ">" + wt("span", 'class="amb-notice__title"', "bull.h")
     + '<span class="hlines">' + lines.map((l, i) => '<span class="hline"' + (i ? " hidden" : "") + ">" + esc(l) + "</span>").join("") + "</span>"
+    /* 22 Nov 2026 (the place head): whether the Counter is open is the head's status row now; the card keeps what that means for an order */
     + wt("button", 'type="button" class="amb-pill amb-pill--quiet amb-pill--sm hpause" aria-pressed="false" hidden' + wl("bull.pause"), "bull.pause") + "</span></span></div>";
 }
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
@@ -946,14 +948,24 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
     /* plan version 7 (Fable's review): Full statement on his View as them and Order as them too, the owner page being theirs read in his hands */
     + fullSheet()
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, Home first. 15 Nov 2026, THE MOVE TO AMBIENT: one Ambient shell, always Lagoon for now (the
-       heat reaches the Counter only after Fable's review, and a customer sees the mood alone, never told); the app bar holds the bell; the
+       heat reaches the Counter only after Fable's review, and a customer sees the mood alone, never told); no app bar since 22 Nov 2026, the bell ending the head's status row; the
        screen opens on the place's hero, its name the title, whose account it is under it and the time under that; then his read-only line
        on View as them and Order as them, or a lapsed session's, each a notice with its one quiet pill; then the places; then one dock. */
     + '<div id="tabs" class="amb-shell amb-shell--rail amb-shell--page amb-shell--work" data-mood="lagoon" hidden>'
-    + '<div class="amb-appbar"><span></span>' + (owner ? "<span></span>" : bellBox()) + "</div>"
     + '<main class="amb-screen amb-screen--docked">'
-    + '<header class="amb-hero amb-hero--compact amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home")
-    + '<p class="amb-hero__sub" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'   /* 17 Nov 2026 (Fable's review): no bare clock in a hero of the Counter */
+    /* 22 Nov 2026, THE PLACE HEAD (his answers of 22 Nov 2026, docs/plan-place-head.html): the place's title alone, then its head: Orders' four views as
+       row 1 on Orders alone (oTabsPaint, oTabsShow), and on every place the status row: open or closed and when that changes (todayDraw), who is signed
+       in, then the bell. A customer is never shown a bare clock or Live (Fable's review of 17 Nov 2026). From 960px Ambient stands the row in the bar's
+       row, beside the title (0.7.33, his word of 22 Nov 2026) */
+    + '<header class="amb-hero amb-hero--compact amb-hero--title amb-mesh">' + wt("h1", 'class="amb-hero__title" id="placeT"', "place.home") + "</header>"
+    /* the reviewer's findings of 22 Nov 2026: Orders' four views are drawn here once, hidden but on Orders (and on a phone while an order is open), their
+       counts and the one pressed repainted in place (oTabsPaint); when it next opens or closes is its own span (#cWhen), kept on every phone, its day in
+       the C17 shape (stamp); the person glyph, then "Signed in as", a word a phone does without, then the username */
+    + '<div class="amb-head" id="cHead"><div class="amb-segment amb-segment--tabs amb-segment--slide otabs" role="group"' + wl("ord.tabs") + ' hidden>'
+    + [["all", "ord.tab.all"], ["open", "ord.tab.open"], ["pay", "ord.tab.pay"], ["done", "ord.tab.done"]].map(([k, w], i) => '<button type="button" class="amb-segment__opt" data-otab="' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + wt("span", "", w) + ' <span class="amb-segment__count"></span></button>').join("") + "</div>"
+    + '<div class="amb-status" role="group"' + wl("head.status") + '><span class="amb-status__state" id="cOpen" hidden></span><span class="amb-status__time" id="cWhen" hidden></span>'
+    + '<span class="amb-status__text" data-wholine>' + AMB.glyph("person", "sm") + wt("span", 'class="amb-status__word"', "who.lead") + ' <span class="mono" data-whoname></span></span>'
+    + (owner ? "" : bellBox()) + "</div></div>"
     + '<div id="barw" class="amb-stack" hidden>'
     /* S9 9.5: on his page an account is viewed, never signed into, so the line says whose it is and that it is read only, and its one
        control takes him back to that account on Accounts. A customer's Log out is This device's, on Account (S7 7.1) */
@@ -1138,7 +1150,7 @@ const CLIENT_JS = `
     [].forEach.call(box.querySelectorAll('.hline'),function(p,i){ p.hidden=!bullAll&&i!==bullAt; });
   }
   /* the card stands only while it has something to say: the hours read, or a notice */
-  function todayShow(){ var t=document.getElementById('today'), o=document.getElementById('todayOpen'), b=document.getElementById('bull'); if(t&&o&&b) t.hidden=o.hidden&&b.hidden; }
+  function todayShow(){ var t=document.getElementById('today'), o=document.getElementById('todayLine'), b=document.getElementById('bull'); if(t&&o&&b) t.hidden=o.hidden&&b.hidden; }
   function bullTurn(){ var n=(BULL.lines||[]).length; if(bullHeld||n<2) return; bullAt=(bullAt+1)%n; bullShow(); }
   function bullDraw(b){
     BULL=b||{lines:[]};
@@ -1167,16 +1179,20 @@ const CLIENT_JS = `
   function hhmm(iso){ try{ var k=klBits(iso); return k.hour+':'+k.minute; }catch(e){ return ''; } }
   function sameDay(iso){ try{ var a=klBits(iso), b=klBits(new Date().toISOString()); return a.day===b.day&&a.month===b.month&&a.year===b.year; }catch(e){ return false; } }
   function todayDraw(){
-    var chip=document.getElementById('todayOpen'), line=document.getElementById('todayLine'); if(!chip||!line) return;
+    var chip=document.getElementById('cOpen'), line=document.getElementById('todayLine'); if(!chip||!line) return;
     var h=counterHours, known=!!h&&!hoursError&&typeof h.open==='boolean';
     chip.hidden=!known; line.hidden=!known; todayShow();
+    var wn0=document.getElementById('cWhen'); if(!known&&wn0){ wn0.textContent=''; wn0.hidden=true; }
     if(!known){ chip.textContent=''; line.textContent=''; return; }
-    chip.textContent=tw(h.open?'today.open':'today.closed');
-    line.textContent='';
-    var at=h.open?h.nextChange:h.nextOpen, lead=el('span');
-    if(at) lead.textContent=h.open?tw(sameDay(at)?'today.until':'today.untilOn',{t:hhmm(at), d:stamp(at)}):tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)});
-    if(lead.textContent){ line.appendChild(lead); line.appendChild(document.createTextNode(' ')); }
-    line.appendChild(document.createTextNode(tw(h.open?'today.openB':'today.closedB')));
+    /* 22 Nov 2026 (the place head): open or closed is the status row's chip on every place, a dot and its word, the gain's colour while open, and when that changes
+       stands beside it in #cWhen, which every phone keeps; the Today card keeps what it means for an order */
+    var at=h.open?h.nextChange:h.nextOpen;
+    chip.className='amb-status__state'+(h.open?' amb-status__state--pos':'');
+    chip.textContent=''; chip.appendChild(el('span','amb-chip__dot'));
+    chip.appendChild(el('span','amb-status__label',tw(h.open?'today.open':'today.closed')));
+    /* the reviewer's findings of 22 Nov 2026: when it changes stands in its own span, which every phone draws: until 22:00, or opens 25 Nov 2026, 09:00 (C17, stamp) */
+    var wn=document.getElementById('cWhen'); if(wn){ wn.textContent=at?tw(h.open?(sameDay(at)?'head.until':'head.untilOn'):(sameDay(at)?'head.opens':'head.opensOn'),{t:hhmm(at), d:stamp(at)}):''; wn.hidden=!wn.textContent; }
+    line.textContent=tw(h.open?'today.openB':'today.closedB');
   }
   /* the test account asks on its session, and is answered the fixture's notice while none of his is set (stmt/testfix.js) */
   var TESTS=__TEST_USERS__;
@@ -2036,6 +2052,7 @@ const CLIENT_JS = `
     parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; AMF.pick=null; mfnote.textContent='';
     pPrices.textContent=''; spl().textContent=''; drawHome();
+    counterHours=null; hoursError=false; todayDraw(); oTabsPaint();   /* 22 Nov 2026: the head forgets the last account's state and counts */
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
     keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
@@ -2176,6 +2193,7 @@ const CLIENT_JS = `
     var hp=pHome.parentNode; if(hp&&hp.classList.contains('amb-place')) hp.hidden=pHome.hidden;
     liveShow();
     placeTitle();
+    oTabsShow();
     if(tapped&&(!location.hash||placeOf(location.hash))){
       var p=PLACES.filter(function(x){ return x[0]===t; })[0];
       try{ history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
@@ -2195,7 +2213,7 @@ const CLIENT_JS = `
      when this phone keeps them signed in */
   function placeTitle(){
     setW(document.getElementById('placeT'),tab==='home'?(fresh()?'home.welcome':hail()):'place.'+tab);
-    document.getElementById('cstay').textContent=tab==='home'&&keptMine()?'. '+tw('home.stay'):'';
+    /* 22 Nov 2026 (the place head, the re-check): that this phone keeps them signed in is no longer said under the title; This device under Account says it */
   }
   /* an account with nothing on it yet: no statement, and no order */
   function fresh(){ return !!bundle&&!bundle.statements.length&&!orders.length; }
@@ -2412,7 +2430,7 @@ const CLIENT_JS = `
     if(bellBoxEl.hidden) return;
     var on=pushOn(), k=on?'bell.on':'bell.off';
     bellBoxEl.classList.toggle('cbell--off',!on);
-    bellCall.hidden=on; bellCall.disabled=bellBusy;
+    bellCall.hidden=on; bellCall.disabled=bellBusy; bellEl.hidden=!on;   /* one control at a time (22 Nov 2026) */
     bellEl.setAttribute('data-wl',k); bellEl.setAttribute('aria-label',tw(k));
   }
   async function bellTap(){
@@ -2434,7 +2452,7 @@ const CLIENT_JS = `
   function closeBell(){
     if(!bellSheetEl||bellSheetEl.hidden) return;
     sheetDown(bellSheetEl); behind(); bkDrop('bell');
-    focusBack(bellEl);
+    focusBack(bellEl.hidden?bellCall:bellEl);   /* 22 Nov 2026: while they are off the bell itself is hidden, so focus returns to the call */
   }
   if(bellBoxEl){
     bellEl.addEventListener('click', bellTap);
@@ -2513,7 +2531,7 @@ const CLIENT_JS = `
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false; drawKeep(); drawBell();
     /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
-    [].forEach.call(tabs.querySelectorAll('[data-whoas]'),function(x){ setW(x,'who.as',{u:'<span class="mono" data-who>'+esch(user)+'</span>'}); });
+    [].forEach.call(tabs.querySelectorAll('[data-whoname]'),function(x){ if(x.textContent!==user) x.textContent=user; });   /* 22 Nov 2026: the status row's username */
     [].forEach.call(tabs.querySelectorAll('[data-wholine]'),function(x){ x.hidden=view; });
     /* v706: Rewards (the card, until S7) is an associate's alone, and nobody else is shown the place at all. It waited on
        a sealed card as well, so an associate the publish had not yet written one for had no way to
@@ -4432,20 +4450,34 @@ const CLIENT_JS = `
     if(paid<=0.004&&(o.status==='declined'||o.status==='cancelled')) return tw('why.nothingPaid');
     return '';
   }
-  /* the four ways to look at them, the system's Filters: each counted, exactly one pressed */
+  /* the four ways to look at them, each counted, exactly one pressed: since 22 Nov 2026 (the place head) the head's first row, a sliding segment drawn once (oTabsPaint) */
   var OTABS=[['all','ord.tab.all'],['open','ord.tab.open'],['pay','ord.tab.pay'],['done','ord.tab.done']];
   function oOf(k){ return k==='open'?orders.filter(function(o){ return !oClosed(o); }):k==='pay'?orders.filter(oOwes):k==='done'?orders.filter(oClosed):orders.slice(); }
-  function oTabs(){
-    var cur=draft.oTab||'all', row=el('div','amb-segment amb-segment--wrap amb-segment--tabs otabs'); row.setAttribute('role','group'); row.setAttribute('aria-label',tw('ord.tabs'));
-    OTABS.forEach(function(t){
-      var b=el('button','amb-segment__opt',tw(t[1])+' '); b.type='button';
-      b.setAttribute('data-otab',t[0]); b.setAttribute('aria-pressed',t[0]===cur?'true':'false');
-      b.appendChild(el('span','amb-segment__count',String(oOf(t[0]).length)));
-      b.addEventListener('click',function(){ draft.oTab=t[0]; oDraw(); var n=pOrder.querySelector('[data-otab="'+t[0]+'"]'); if(n) try{ n.focus({preventScroll:true}); }catch(e){} });
-      row.appendChild(b);
-    });
-    return row;
+  /* 22 Nov 2026 (the place head, the reviewer's findings): the four views stand in the head as its first row, drawn once, shown on Orders alone and, on a
+     phone, not over an open order; each list draw repaints their counts and the one pressed where they stand, so the focus and the slide stay put. A view
+     with nothing in it is dimmed, All never; before the orders are read their counts are blank */
+  function oTabsShow(){
+    var row=document.querySelector('#cHead > .otabs'); if(!row) return;
+    var h=tab!=='order'||(pOrder.classList.contains('o-open')&&!oWide()); if(row.hidden!==h) row.hidden=h;
   }
+  function oTabsPaint(){
+    var row=document.querySelector('#cHead > .otabs'); if(!row) return;
+    var cur=draft.oTab||'all';
+    [].forEach.call(row.querySelectorAll('[data-otab]'),function(b){
+      var k=b.getAttribute('data-otab'), n=oOf(k).length, c=b.querySelector('.amb-segment__count'), v=String(n), p=k===cur?'true':'false', dim=k!=='all'&&!n;
+      if(c&&c.textContent!==v) c.textContent=v;
+      if(b.getAttribute('aria-pressed')!==p) b.setAttribute('aria-pressed',p);
+      if((b.getAttribute('aria-disabled')==='true')!==dim){ if(dim) b.setAttribute('aria-disabled','true'); else b.removeAttribute('aria-disabled'); }
+    });
+    oTabsShow();
+  }
+  (function(){
+    var row=document.querySelector('#cHead > .otabs'); if(!row) return;
+    row.addEventListener('click',function(ev){
+      var b=ev.target.closest('[data-otab]'); if(!b||b.getAttribute('aria-disabled')==='true') return;
+      draft.oTab=b.getAttribute('data-otab'); oDraw();
+    });
+  })();
   /* an empty view: one sentence, its heading and what it says, and the one way on */
   function oEmpty(k){
     var box=el('div','oempty'); box.appendChild(el('p','amb-empty',tw('ord.empty.'+k+'.t')+'. '+tw('ord.empty.'+k+'.b')));
@@ -4553,10 +4585,11 @@ const CLIENT_JS = `
       /* 18 Nov 2026: a statement withheld is said, never read as a customer with no orders (the none state is a new customer's alone) */
       var lb0=oHeld();
       if(e0) box.appendChild(e0); else if(!ordersFailed) box.appendChild(lb0?unreadNode(lb0,lb0==='acct.unread'?retryAccount:null):oEmpty('none'));
+      oTabsPaint();
       return box;
     }
     var B=oBuckets();
-    box.appendChild(oTabs());
+    oTabsPaint();
     var owing=orders.filter(oOwes).reduce(function(s,o){ return s+oToPay(o); },0);
     if(owing>0.004) box.appendChild(el('p','onote ocol__pay',tw('ord.col.toPay',{rm:rm(owing)})));
     var k=draft.oTab||'all';
@@ -5250,6 +5283,7 @@ const CLIENT_JS = `
     if(oTopEl&&!none) col.appendChild(oTopEl);
     col.appendChild(el('h2','amb-section',tw('ord.yours'))); col.appendChild(oList(id));
     if(open&&!wide) col.hidden=true;
+    oTabsShow();   /* 22 Nov 2026: on a phone the views stand down while an order is open, as its list does */
     /* the record's foot is the one main action beside an open order: New order then stands quiet */
     var nbq=oTopEl&&oTopEl.querySelector('#oNew'); if(nbq) nbq.classList.toggle('amb-pill--quiet',wide&&!!o);
     spl().appendChild(col);
@@ -6531,7 +6565,7 @@ const CLIENT_JS = `
     else if(JSON.stringify(thread)!==thWas) thAfter();   /* Step 7: a line on the thread, with no order moved */
   }
   async function loadCounterHours(){
-    if(!session&&!act) return;
+    if(!session&&!act&&!view) return;
     var before=JSON.stringify([counterHours,hoursError]);
     try{
       var response=await fetch('/hours',{cache:'no-store',redirect:'manual'});
@@ -7034,7 +7068,7 @@ const CLIENT_JS = `
   }
   async function follow(stale){
     if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); liveStart(); if(TESTS.indexOf(user)>=0) bullRead(); }
-    else if(view){ await loadView(user); if(act) await loadCounterHours(); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it; v1377: Order as them reads the Counter's hours as theirs does */
+    else if(view){ await loadView(user); await loadCounterHours(); if(stale()) return false; }   /* 22 Nov 2026: View as them reads them too, so its status says open or closed */   /* stmt/owner.js: his route alone carries it; v1377: Order as them reads the Counter's hours as theirs does */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     payNumLoad();   /* Phase 7b: the numbers the pay sheet shows, ready before it opens; asked on a session alone */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */

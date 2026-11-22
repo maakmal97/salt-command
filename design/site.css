@@ -387,7 +387,7 @@ tr.is-off .stm-size, tr.is-off .stm-fig { color: var(--amb-ink-3); text-decorati
 .odecide__part > .amb-section:first-child { padding-top: 0; }
 .ostagerows:not(:has(> .amb-settings__list > li > :not([hidden]))), .oclaims:not(:has(> .amb-settings__list > li > :not([hidden]))),
 .ordend:not(:has(> .amb-settings__list > li > :not([hidden]))), .oagainrows:not(:has(> .amb-settings__list > li > :not([hidden]))),
-.ocashrows:not(:has(> .amb-settings__list > li > :not([hidden]))), .orecord:not(:has(> .amb-settings__list > li > :not([hidden]))),
+.ocashrows:not(:has(> .amb-settings__list > li > :not([hidden]))),
 .omsgs__rows:not(:has(> .amb-settings__list > li > :not([hidden]))) { display: none; }
 .oagree, .maker-quote, .undohist__body, .undolist, .tripline, .triplines { display: grid; gap: var(--amb-space-3); min-width: 0; }
 .maker-quote:empty { display: none; }
