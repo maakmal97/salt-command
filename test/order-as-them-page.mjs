@@ -132,6 +132,17 @@ export async function run({ ok, pageWork }) {
     ok(!p.d.getElementById("oNew") && /Read only/.test(lead(p)), "B5 View as them stays read only: no New order, the read-only line: " + lead(p));
   } catch (e) { ok(false, "View as them stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
+  /* B5b (22 Nov 2026, the place head, the reviewer's findings): View as them reads the Counter's hours too, so its status row says open or closed and when
+     that changes, never an empty row */
+  const at22 = new Date(); at22.setUTCHours(14, 0, 0, 0);
+  p = await richOwnerPage({ pageWork, extra: (route) => route === "/hours" ? { ok: true, open: true, source: "weekly", nextChange: at22.toISOString() } : extra(route) });
+  try {
+    await openAs(p, "acct.view-as");
+    const co = p.d.getElementById("cOpen"), cw = p.d.getElementById("cWhen");
+    ok(p.wire.some((w) => w.startsWith("/hours")) && !!co && !co.hidden && /^Open$/.test(co.textContent.trim()) && !!cw && !cw.hidden && /^until \d\d:\d\d$/.test(cw.textContent),
+      "B5b View as them reads the hours, and its status row says Open and until when: " + JSON.stringify([co && co.textContent, cw && cw.textContent, p.wire.filter((w) => /hours/.test(w))]));
+  } catch (e) { ok(false, "View as them's hours stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
   /* B9: an Order for them whose open was refused leaves nothing behind: an account then opened at the door is read only */
   p = await richOwnerPage({ pageWork, extra });
   try {

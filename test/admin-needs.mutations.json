@@ -374,8 +374,8 @@
  {
   "name": "All is not selected at first",
   "file": "stmt/page.js",
-  "find": "'\" aria-pressed=\"' + (i ? \"false\" : \"true\")",
-  "replace": "'\" aria-pressed=\"' + \"false\""
+  "find": "'\" aria-pressed=\"' + (i ? \"false\" : \"true\") + '\">' + AMB.glyph(\"check\")",
+  "replace": "'\" aria-pressed=\"' + \"false\" + '\">' + AMB.glyph(\"check\")"
  },
  {
   "name": "a lapse leaves the 30-second read running",

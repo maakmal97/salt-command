@@ -26,8 +26,8 @@
  {
   "name": "the Counter's Orders tabs are filters again",
   "file": "stmt/page.js",
-  "find": "'amb-segment amb-segment--wrap amb-segment--tabs otabs'",
-  "replace": "'amb-segment amb-segment--wrap otabs'"
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide otabs\" role=\"group\"",
+  "replace": "<div class=\"amb-segment amb-segment--wrap otabs\" role=\"group\""
  },
  {
   "name": "tabs are drawn in any shell",

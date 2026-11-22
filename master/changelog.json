@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1564",
+  "d": "22 Nov 2026",
+  "t": "ONE HEAD ON SALT COUNTER, AND THE STATUS IN THE BAR ON A LAPTOP",
+  "n": [
+   "<b>SALT COUNTER OPENS AS SALT ADMIN DOES.</b> The title with no gap above it; on Orders its four views, All, Open, To pay and Done, in one sliding row; then one status row on every place: open or closed and when that changes, who is signed in, and the bell, now one control at a time.",
+   "<b>ON A LAPTOP THE STATUS SHARES THE TITLE&#39;S ROW.</b> From 960px, on Salt Admin and Salt Counter alike, the status stands at the end of the title&#39;s row and the parts are the one row under it (his word). It carries Ambient 0.7.33.",
+   "<b>FIXED ON THE WAY.</b> On a phone the views stand down over an open order; View as them says open or closed; from 960px the New order pane shows again. No route, request, price or booking changed."
+  ]
+ },
+ {
   "v": "v1563",
   "d": "22 Nov 2026",
   "t": "ONE HEAD FOR EVERY PLACE ON SALT ADMIN",

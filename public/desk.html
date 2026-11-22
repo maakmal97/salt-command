@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="dde96e9e5e925863";
+var SALT_BUILD_ID="65725ed4b6bac4a2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12592,7 +12592,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1563","d":"22 Nov 2026","t":"ONE HEAD FOR EVERY PLACE ON SALT ADMIN","n":["<b>EVERY PLACE OPENS THE SAME WAY.</b> Its title, with no gap kept above it; then its parts in one sliding row; then one status row, the same on every place and every width: Live and the time, the shop&#39;s state, Supply tight while it is, Ledger and Approve. Then the place&#39;s headline. The + is gone: Record is one tap in the dock.","<b>NEEDS YOU HAS PARTS.</b> To do, Pending and FYI, each counted. The kinds, and the filters on Customers, are a Show menu at the head of their lists, no longer a row of pills.","<b>NOTHING ELSE MOVES.</b> No route, request, price or booking changed, and every tap does what it did. It carries Ambient 0.7.32, whose new parts make the head."]}];
+const evolution=[{"v":"v1564","d":"22 Nov 2026","t":"ONE HEAD ON SALT COUNTER, AND THE STATUS IN THE BAR ON A LAPTOP","n":["<b>SALT COUNTER OPENS AS SALT ADMIN DOES.</b> The title with no gap above it; on Orders its four views, All, Open, To pay and Done, in one sliding row; then one status row on every place: open or closed and when that changes, who is signed in, and the bell, now one control at a time.","<b>ON A LAPTOP THE STATUS SHARES THE TITLE&#39;S ROW.</b> From 960px, on Salt Admin and Salt Counter alike, the status stands at the end of the title&#39;s row and the parts are the one row under it (his word). It carries Ambient 0.7.33.","<b>FIXED ON THE WAY.</b> On a phone the views stand down over an open order; View as them says open or closed; from 960px the New order pane shows again. No route, request, price or booking changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12754,7 +12754,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Nov 2026, 17:28 KL';
+const LAST_UPDATED='22 Nov 2026, 19:04 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

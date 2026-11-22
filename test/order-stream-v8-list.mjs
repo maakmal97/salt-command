@@ -128,8 +128,8 @@ export async function run({ ok, pageWork }) {
     sel.value = monthOf(d45); sel.dispatchEvent(new p.w.Event("change", { bubbles: true }));
     const n45 = earlierRows(p).filter((r) => r.getAttribute("data-m") === monthOf(d45)).length;
     ok(shown() === n45 + 1 && n45 === 3, "7b the Month select filters Earlier to its month (an undated line shows whatever is chosen): " + shown());
-    /* a poll's redraw keeps the open fold and the month */
-    p.d.querySelector('#pOrder [data-otab="open"]').click(); p.d.querySelector('#pOrder [data-otab="all"]').click(); await p.settle();
+    /* a poll's redraw keeps the open fold and the month. 22 Nov 2026 (the place head): the views a click redraws on stand in the head (#cHead), not in the list */
+    p.d.querySelector('#cHead > .otabs [data-otab="open"]').click(); p.d.querySelector('#cHead > .otabs [data-otab="all"]').click(); await p.settle();
     const sel2 = p.d.querySelector("#pOrder [data-earlier] select[data-mf-select]");
     ok(fold(p).getAttribute("aria-expanded") === "true" && sel2 && sel2.value === monthOf(d45), "7b a redraw keeps Earlier open and its month");
     fold(p).click(); await p.settle();

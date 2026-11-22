@@ -425,6 +425,8 @@ button.amb-status__state:hover { background: var(--amb-well); }
 .amb-status__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .amb-status__time { flex: none; min-width: 5ch; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-variant-numeric: tabular-nums; }
 /* a line of the status that is not a time (who is signed in): it gives way first too, ending in an ellipsis */
+.amb-status:not(:has(> :not([hidden]))) { display: none; }   /* a row with nothing to say takes no room (0.7.33) */
+.amb-status__text > .amb-icon { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
 .amb-status__text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .amb-status__end { display: flex; flex: none; align-items: center; gap: var(--amb-space-2); margin-left: auto; }
 .amb-status__end > .amb-pill { min-width: var(--amb-tap); min-height: var(--amb-tap); padding-inline: var(--amb-space-3); font-size: var(--amb-text-footnote); }
@@ -2012,6 +2014,12 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
    first where the panes are narrow. Narrower than 960px nothing changes: the hero is the stack on the mesh, the
    dock the bar, the tabs the segment. ---- */
 @container amb (min-width: 960px) {
+  /* 0.7.33, the owner's word of 22 Nov 2026 ("on laptop, the third row should be in the first row"): a place head's status stands in the bar's
+     row, at its end, one tap tall, the title at its start; the head below it is the parts alone. The status is lifted out of the head by the bar's
+     own measures (the bar's foot room, its hairline and the gap under it), so it sits on the title's line wherever the bar stands, and it gives
+     the title room by its label, which ends in an ellipsis first */
+  .amb-shell--work .amb-head { position: relative; }
+  .amb-shell--work .amb-head > .amb-status { position: absolute; right: var(--amb-space-4); bottom: calc(100% + var(--amb-space-4) + var(--amb-space-2) + 1px); max-width: calc(100% - 2 * var(--amb-space-4) - 12rem); min-height: var(--amb-tap); }
   .amb-shell--work .amb-hero--compact { position: relative; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 0 var(--amb-space-4); margin: 0 var(--amb-bar-r) var(--amb-space-4) var(--amb-bar-l); padding: calc(var(--amb-safe-top) + var(--amb-space-2)) 0 var(--amb-space-2); border-bottom: 1px solid var(--amb-line); background-image: none; text-align: start; }
   /* the bar's sides are the content's own: a stack's inset, or over panes the edge their cards stand on (below) */
   .amb-shell--work .amb-hero--compact { --amb-bar-l: var(--amb-space-4); --amb-bar-r: var(--amb-space-4); }
@@ -2057,6 +2065,8 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
     /* 0.7.27: a plain split's outer columns start and end on the same edge */
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) > .amb-stack:first-child { padding-left: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))); }
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) > .amb-stack:last-child { padding-right: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
+    /* 0.7.33: the lifted status keeps the bar's end, which is the panes' edge here */
+    .amb-shell--work .amb-head > .amb-status { right: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
     .amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-head, .amb-lead):not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }
   }

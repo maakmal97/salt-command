@@ -112,8 +112,11 @@ export async function run({ ok, pageWork }) {
     const cd = new JSDOM(landingPage("abcd-efgh", "nct", null)).window.document, hero = cd.querySelector("#tabs > main > header.amb-hero");
     ok(!!hero && hero.querySelector("h1.amb-hero__title#placeT") && !/Salt Counter/.test(hero.textContent) && !cd.querySelector(".crtitle, .salt-rail, .chead"),
       "the customer's place is named by its hero's title, which names no app, and no rail carries a name over it");
-    ok(cd.querySelectorAll("#tabs [data-whoas]").length === 1 && !!cd.querySelector("#tabs > main > header.amb-hero > .amb-hero__sub[data-wholine] [data-whoas]") && !cd.querySelector("[data-whorail]"),
-      "whose account it is stands once, the line under the place's title, at every width");
+    /* 22 Nov 2026 (the place head): the hero is the title alone; whose account it is stands in the status row of the head beside it, once, at every width: the word Signed in as
+       (a status word a phone drops) after the person glyph, and the username after it, filled when the account opens (the reviewer's findings of the same day) */
+    ok(cd.querySelectorAll("#tabs [data-whoname]").length === 1 && !!cd.querySelector("#tabs > main > #cHead.amb-head > .amb-status > .amb-status__text[data-wholine] > svg.amb-icon--sm + .amb-status__word + [data-whoname]") && !cd.querySelector("#cHead [data-whoas]") && !cd.querySelector("[data-whorail]")
+      && hero.children.length === 1 && !hero.querySelector(".amb-hero__sub") && hero.nextElementSibling === cd.getElementById("cHead"),
+      "whose account it is stands once, in the status row under the place's title, at every width, and the hero holds the title alone");
     ok(!own.some(([s]) => /\.oplace|\.olistcol|\.oscreen/.test(s)) && landingPage("abcd-efgh", "nct", null).includes('id="oPanes" class="amb-split amb-split--panes"'),
       "and Orders is the system's split of panes, the page writing no rule for the list or the open order (16 Nov 2026, the move to Ambient: the second pane holds New order while none is open)");
   }

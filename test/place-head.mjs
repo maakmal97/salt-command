@@ -69,10 +69,34 @@ export async function run({ ok, pageWork }) {
     "each choice keeps its act, one is pressed, and its word is the pill's");
   ok(!d.querySelector(".amb-segment--wrap[data-place], .amb-segment--wrap .aparts, .nchips"), "no filter is drawn as a row of pills where parts stand");
   dom.window.close();
+  /* H8 (the Counter, his answer 3): the customer's places open with the title alone, then the head: Orders' views as row 1 on Orders alone (drawn by the
+     page's script, test/counter-orders-cards.mjs), and on every place the status row, open or closed, who is signed in, and the bell at its end */
+  const cdom = new JSDOM(landingPage("abcd-efgh", "pheadc", null)), cd = cdom.window.document, tabs = cd.getElementById("tabs");
+  const chero = tabs && tabs.querySelector(".amb-screen > header.amb-hero"), chead = chero && chero.nextElementSibling, cst = chead && chead.querySelector(":scope > .amb-status");
+  ok(!!tabs && !tabs.querySelector(":scope > .amb-appbar") && chero.classList.contains("amb-hero--title") && chero.children.length === 1 && chero.children[0].id === "placeT",
+    "the Counter's places keep no app bar and open with the title alone");
+  ok(!!chead && chead.id === "cHead" && chead.classList.contains("amb-head") && chead.lastElementChild === cst
+    /* the reviewer's findings of 22 Nov 2026: the time is its own span a phone keeps, "Signed in as" a word a phone drops, the bell one control at a time */
+    && cst.children[0].matches("span.amb-status__state#cOpen[hidden]") && cst.children[1].matches("span.amb-status__time#cWhen[hidden]") && cst.children[2].matches("span.amb-status__text[data-wholine]")
+    && cst.children[2].firstElementChild.matches("svg.amb-icon") && cst.children[2].children[1].matches("span.amb-status__word") && /^Signed in as\s*$/.test(cst.children[2].children[1].textContent) && cst.children[2].children[2].matches("span.mono[data-whoname]")
+    && cst.children[3].matches("div#bellBox.amb-status__end[hidden]") && !!cst.querySelector("#bellCall.amb-pill.amb-pill--quiet svg") && !!cst.querySelector("#bell.amb-circle.amb-circle--plain[hidden]"),
+    "then its head: the status row, open or closed, when that changes, who is signed in, and the bell, one control at a time, at its end");
+  const views = chead.firstElementChild;
+  ok(views.matches("div.amb-segment.amb-segment--tabs.amb-segment--slide.otabs[hidden]") && !views.classList.contains("amb-segment--wrap") && [...views.querySelectorAll("[data-otab]")].map((b) => b.getAttribute("data-otab")).join() === "all,open,pay,done"
+    /* the re-check of 22 Nov 2026: nothing is said under the title (the stay line went), so the head is followed by the place itself */
+    && !cd.querySelector("#oPanes .otabs") && !cd.getElementById("cstay") && !cd.getElementById("todayOpen") && !!cd.querySelector("#today #todayLine"),
+    "Orders' views are drawn once as the head's first row, sliding, never wrapping, hidden but on Orders; nothing is said under the title; open or closed left the Today card");
+  cdom.window.close();
+  const vdom = new JSDOM(owner), vst = vdom.window.document.querySelector("#tabs #cHead > .amb-status");
+  ok(!!vst && !vst.querySelector("#bellBox") && !vdom.window.document.querySelector("#tabs > .amb-appbar"), "viewed as them from Salt Admin, the same head with no bell");
+  vdom.window.close();
   /* H6 */
   ok(css.includes(".amb-head { display: grid; grid-auto-rows: minmax(var(--amb-head-row), 1fr); gap: var(--amb-space-2);") && /--amb-head-row: calc\(var\(--amb-tap\) \+ 8px\);/.test(css),
     "the head's two rows are one height, a segment's, and grow together");
   ok(css.includes(".nlist > .ngroup[hidden] { display: none; }"), "a group of a part not shown stands in the page, hidden");
+  /* his word of 22 Nov 2026, "on laptop, the third row should be in the first row": from 960px the status stands in the bar's row, at its end (Ambient 0.7.33) */
+  ok(/@container amb \(min-width: 960px\) \{[^@]*\.amb-shell--work \.amb-head > \.amb-status \{ position: absolute; right: var\(--amb-space-4\); bottom: calc\(100% \+ var\(--amb-space-4\) \+ var\(--amb-space-2\) \+ 1px\);/.test(css) &&css.includes(".amb-shell--work .amb-head { position: relative; }"),
+    "from 960px the status stands in the bar's row, at its end beside the title, lifted by the bar's own measures; a phone keeps it as row 2");
   ok(css.includes(".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4)); padding-bottom: var(--amb-space-4); }"), "the title's hero keeps no room for an app bar's circles");
   ok(css.includes(".amb-segment--slide { flex-wrap: nowrap; overflow-x: auto;") && (css.match(/overflow-x:\s*(auto|scroll)/g) || []).length === 1,
     "a sliding segment is the one box that scrolls sideways");
