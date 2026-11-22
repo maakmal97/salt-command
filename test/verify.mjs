@@ -51049,6 +51049,11 @@ await (async () => {
   await (await import("./work-bar.mjs")).run({ ok, pageWork });
 })();
 
+section("22 Nov 2026: one head for every place: the title alone, then the parts sliding and the status, the same on every place, then the headline; filters as menus at the head of their lists");
+await (async () => {
+  await (await import("./place-head.mjs")).run({ ok, pageWork });
+})();
+
 section("18 Nov 2026: the reconcile's pay job is retired, the Counter lists none and the Desk books none, his Received is the one road");
 await (async () => {
   await (await import("./pay-job-retired.mjs")).run({ ok });

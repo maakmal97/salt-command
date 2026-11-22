@@ -1,0 +1,218 @@
+[
+ {
+  "name": "the hero carries a line again",
+  "file": "stmt/page.js",
+  "find": "'<header class=\"amb-hero amb-hero--compact amb-hero--title amb-mesh\"><h1 class=\"amb-hero__title\">' + esc(title) + \"</h1></header>\"",
+  "replace": "'<header class=\"amb-hero amb-hero--compact amb-hero--title amb-mesh\"><h1 class=\"amb-hero__title\">' + esc(title) + \"</h1><p class=\\\"amb-hero__sub\\\"></p></header>\""
+ },
+ {
+  "name": "the headline stands between the title and the head",
+  "file": "stmt/page.js",
+  "find": "aHero(\"Needs you\") + aHead(",
+  "replace": "aHero(\"Needs you\") + aLead(\"nX\") + aHead("
+ },
+ {
+  "name": "a head drops its parts",
+  "file": "stmt/page.js",
+  "find": "return '<div class=\"amb-head\">' + (parts || \"\")",
+  "replace": "return '<div class=\"amb-head\">' + \"\""
+ },
+ {
+  "name": "Orders' parts stop sliding",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\"",
+  "replace": "'<div class=\"amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\""
+ },
+ {
+  "name": "the other places' parts wrap",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "'<div class=\"amb-segment amb-segment--tabs amb-segment--slide amb-segment--wrap aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
+ },
+ {
+  "name": "Needs you loses Pending",
+  "file": "stmt/page.js",
+  "find": "needs: [[\"todo\", \"To do\"], [\"pending\", \"Pending\"], [\"fyi\", \"FYI\"]],",
+  "replace": "needs: [[\"todo\", \"To do\"], [\"fyi\", \"FYI\"]],"
+ },
+ {
+  "name": "Orders' status has no Ledger or Approve",
+  "file": "stmt/page.js",
+  "find": "aHero(\"Orders\") + aHead(adminParts(\"orders\", test), { acts: !test })",
+  "replace": "aHero(\"Orders\") + aHead(adminParts(\"orders\", test), { acts: false })"
+ },
+ {
+  "name": "Supply tight is a plain chip",
+  "file": "stmt/page.js",
+  "find": "'<span class=\"amb-status__flag\" data-heat title=\"Supply tight\" hidden>",
+  "replace": "'<span class=\"amb-chip\" data-heat title=\"Supply tight\" hidden>"
+ },
+ {
+  "name": "Approve is drawn hidden",
+  "file": "stmt/page.js",
+  "find": "' data-approve data-act=\"bar.approve\">Approve",
+  "replace": "' data-approve data-act=\"bar.approve\" hidden>Approve"
+ },
+ {
+  "name": "the shop's state is for wide screens alone",
+  "file": "stmt/page.js",
+  "find": "' data-barhours data-act=\"bar.hours\" hidden></button>'",
+  "replace": "' data-barhours data-wide data-act=\"bar.hours\" hidden></button>'"
+ },
+ {
+  "name": "every place carries the bar's ids",
+  "file": "stmt/page.js",
+  "find": "'<span class=\"amb-status__live abarlive\" data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\")",
+  "replace": "'<span class=\"amb-status__live abarlive\" data-barlive' + ' id=\"aBarLive\"'"
+ },
+ {
+  "name": "the app bar comes back",
+  "file": "stmt/page.js",
+  "find": "? '<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work adm\" data-mood=\"lagoon\">'",
+  "replace": "? '<div id=\"roster\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work adm\" data-mood=\"lagoon\"><div class=\"amb-appbar\"></div>'"
+ },
+ {
+  "name": "a filter's menu stands open",
+  "file": "stmt/page.js",
+  "find": "'\" role=\"group\" aria-label=\"' + label + '\" hidden>'",
+  "replace": "'\" role=\"group\" aria-label=\"' + label + '\">'"
+ },
+ {
+  "name": "the kinds' menu is away from the list",
+  "file": "stmt/page.js",
+  "find": "+ '</div><div id=\"nlist\" class=\"nlist\"></div>'",
+  "replace": "+ '</div><p></p><div id=\"nlist\" class=\"nlist\"></div>'"
+ },
+ {
+  "name": "the accounts' menu leaves the find field",
+  "file": "stmt/page.js",
+  "find": "data-act=\"acct.find\"></div>' + aFilter(\"afil\", \"Show\", ADMIN_FILTERS, \"data-f\", \"acct.filter\", \"\", true) + '</div>'",
+  "replace": "data-act=\"acct.find\"></div></div>' + aFilter(\"afil\", \"Show\", ADMIN_FILTERS, \"data-f\", \"acct.filter\", \"\", true)"
+ },
+ {
+  "name": "the accounts' menu opens off the screen",
+  "file": "stmt/page.js",
+  "find": "aFilter(\"afil\", \"Show\", ADMIN_FILTERS, \"data-f\", \"acct.filter\", \"\", true)",
+  "replace": "aFilter(\"afil\", \"Show\", ADMIN_FILTERS, \"data-f\", \"acct.filter\", \"\", false)"
+ },
+ {
+  "name": "a kind outlives its part",
+  "file": "stmt/owner.js",
+  "find": "if(needPartLast!==(partNow||'todo')&&nKind!=='all'&&typeof kindMark==='function'){ nKind='all'; kindMark(); }",
+  "replace": ""
+ },
+ {
+  "name": "a kind's act loses its dot",
+  "file": "stmt/page.js",
+  "find": "(act === \"need.kind\" ? \".\" : \"-\")",
+  "replace": "\"-\""
+ },
+ {
+  "name": "the kinds are a row of pills again",
+  "file": "stmt/page.js",
+  "find": "+ '<div class=\"amb-stack\" id=\"nFailBox\" hidden>",
+  "replace": "+ '<div class=\"amb-segment amb-segment--wrap nchips\"></div><div class=\"amb-stack\" id=\"nFailBox\" hidden>"
+ },
+ {
+  "name": "the head's rows are not one height",
+  "file": "stmt/statement-css.js",
+  "find": "grid-auto-rows: minmax(var(--amb-head-row), 1fr)",
+  "replace": "grid-auto-rows: auto"
+ },
+ {
+  "name": "the title keeps room for the app bar",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4));",
+  "replace": ".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-tap) + var(--amb-space-6));"
+ },
+ {
+  "name": "a second box scrolls sideways",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-head > * { min-width: 0; }",
+  "replace": ".amb-head > * { min-width: 0; overflow-x: auto; }"
+ },
+ {
+  "name": "the parts are capped on a tablet",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-head > .amb-segment { max-width: none; }",
+  "replace": ".amb-head > .amb-segment { max-width: 30rem; }"
+ },
+ {
+  "name": "a part shows every group",
+  "file": "stmt/owner.js",
+  "find": "box.hidden=s[0]!==sev;",
+  "replace": "box.hidden=false;"
+ },
+ {
+  "name": "a hidden group still shows",
+  "file": "stmt/statement-css.js",
+  "find": ".nlist > .ngroup[hidden] { display: none; }",
+  "replace": ".nlist > .ngroup[hidden] { opacity: 1; }"
+ },
+ {
+  "name": "a part's count says something else",
+  "file": "stmt/owner.js",
+  "find": "if(c){ if(c.textContent!==v) c.textContent=v; if(c.hidden!==!v) c.hidden=!v; }",
+  "replace": "if(c){ c.textContent='x'; c.hidden=false; }"
+ },
+ {
+  "name": "taking a part draws nothing",
+  "file": "stmt/owner.js",
+  "find": "if(moved2&&!fresh&&typeof drawNeeds==='function') drawNeeds(); }",
+  "replace": "}"
+ },
+ {
+  "name": "the kinds narrow nothing",
+  "file": "stmt/owner.js",
+  "find": "shown=all.filter(function(i){ return nKind==='all'||i.kind===nKind; });",
+  "replace": "shown=all;"
+ },
+ {
+  "name": "Approve's count says something else",
+  "file": "stmt/owner.js",
+  "find": "var c=apBtn.querySelector('[data-approve-n]'), v=String(rows||0);",
+  "replace": "var c=apBtn.querySelector('[data-approve-n]'), v='';"
+ },
+ {
+  "name": "Ledger's word always goes on a phone",
+  "file": "stmt/owner.js",
+  "find": "wd.classList.toggle('amb-status__word', !!(known&&(t.clean||n)))",
+  "replace": "wd.classList.toggle('amb-status__word', true)"
+ },
+ {
+  "name": "Ledger's word never goes",
+  "file": "stmt/owner.js",
+  "find": "wd.classList.toggle('amb-status__word', !!(known&&(t.clean||n)))",
+  "replace": "wd.classList.toggle('amb-status__word', false)"
+ },
+ {
+  "name": "Live is a chip whose word a phone loses",
+  "file": "stmt/owner.js",
+  "find": "lv.innerHTML='<span class=\"amb-chip__dot\"></span>'+(on?'Live':'Offline');",
+  "replace": "lv.innerHTML='<span class=\"amb-chip__dot\"></span><span class=\"amb-status__word\">'+(on?'Live':'Offline')+'</span>';"
+ },
+ {
+  "name": "the state has no label to give way",
+  "file": "stmt/owner.js",
+  "find": "var hl=document.createElement('span'); hl.className='amb-status__label';",
+  "replace": "var hl=document.createElement('span'); hl.className='';"
+ },
+ {
+  "name": "the time gives way",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-status__time { flex: none;",
+  "replace": ".amb-status__time { flex: 0 1 auto;"
+ },
+ {
+  "name": "Supply tight is hidden on Settings",
+  "file": "stmt/owner.js",
+  "find": "if(c.hidden===tight) c.hidden=!tight;",
+  "replace": "if(c.hidden===(m==='flare')) c.hidden=m!=='flare';"
+ },
+ {
+  "name": "Approve with nothing waiting is not greyed",
+  "file": "stmt/owner.js",
+  "find": "c.toggleAttribute('data-zero',!rows);",
+  "replace": "c.toggleAttribute('data-zero',false);"
+ }
+]
