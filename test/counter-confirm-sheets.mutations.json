@@ -336,10 +336,10 @@
   "replace": "return true; }],"
  },
  {
-  "name": "a 44px coin draws his letter again (17 Nov 2026, shape alone at 44px)",
+  "name": "the Sheet's 44px coin loses his letter (22 Nov 2026, the letter inside the shape)",
   "file": "stmt/page.js",
-  "find": "if(L&&L.l&&size!=='md') t.appendChild",
-  "replace": "if(L&&L.l) t.appendChild"
+  "find": "if(L&&L.l&&size!=='sm'&&!(size==='md'&&L.l.length>2)){",
+  "replace": "if(false){"
  },
  {
   "name": "18 Nov 2026: the action that commits reads as plain text again",

@@ -82,7 +82,7 @@ export async function run({ ok }) {
     const live = narrow.d.querySelector("#hLive, [data-live].amb-mini") || narrow.d.querySelector(".amb-mini[data-live]");
     const mini = narrow.d.querySelector(".amb-mini[data-live]"), th = mini && mini.querySelector(".amb-thumb");
     ok(!!live && !!th && th.classList.contains("amb-thumb--md") && !th.classList.contains("amb-thumb--sm"),
-      "the mini bar's coin is the 44px thumb, which draws the shape alone: no letter is cut at its edge");
+      "the mini bar's coin is the 44px thumb, never the 36px (22 Nov 2026: its letter stands inside the shape, so none is cut at the coin's edge)");
 
     /* ---- 9: one measure in one column, and a list takes the stack's edge */
     const at = SITE_CSS.indexOf("@container amb (max-width: 959px) {" + String.fromCharCode(10) + "  #pHome > .amb-stack"), narrowCss = at < 0 ? "" : SITE_CSS.slice(at, SITE_CSS.indexOf(String.fromCharCode(10) + "}", at));

@@ -15,21 +15,36 @@ export async function run({ ok, pageWork }) {
   const pages = [];
   try {
     const list = K.LIST(); list.products[0].supply = { light: "yellow", by: K.kl(5) }; list.products[1].supply = { light: "green" };
-    const p = await K.open({ ok, pageWork, list, orders: [K.ord("o1", "placed", K.ago(2), { qty: 2.5, total: 250 })] }); pages.push(p);
+    /* 22 Nov 2026: a book of three letters too, so the twins are compared on a coin whose letters are sized by their class */
+    list.products.push({ product: "gas", unit: "unit", basis: "board", sizes: [{ q: 1, price: 20 }] });
+    const p = await K.open({ ok, pageWork, list, orders: [K.ord("o1", "placed", K.ago(2), { qty: 2.5, total: 250 }), K.done("o2", K.ago(3), { product: "gas", qty: 1, total: 20 })] }); pages.push(p);
     const head = (shape) => [...p.d.querySelectorAll("#pPrices .pane > h2.pmark")].find((h) => (h.getAttribute("aria-label") || "").startsWith(shape));
     const hs = head("Cube"), ho = head("Droplet");
     const cs = hs && hs.querySelector(".amb-thumb"), co = ho && ho.querySelector(".amb-thumb");
     ok(!!cs && cs.classList.contains("amb-thumb--mark") && cs.classList.contains("amb-thumb--ring") && cs.classList.contains("amb-thumb--md") && cs.classList.contains("amb-kind-1") && !!co && co.classList.contains("amb-kind-2"),
       "10b a book's head on Order is a medium mark thumb, its hue by the book's index: " + (cs ? cs.outerHTML.slice(0, 120) : "none"));
-    /* 17 Nov 2026, his answer "Shape alone at 44px": the head's thumb is the 44px coin, so it holds the book's own shape and no letter */
-    ok(!!cs && !!cs.querySelector("svg.amb-thumb__shape path") && !cs.querySelector(".amb-thumb__word") && !!co.querySelector("svg.amb-thumb__shape path")
+    /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026): the head's thumb is the 44px coin, the book's own shape with his letter inside it */
+    const inOf = (c) => (c.querySelector("svg.amb-thumb__shape > text.amb-thumb__letter") || { textContent: "" }).textContent;
+    ok(!!cs && !!cs.querySelector("svg.amb-thumb__shape path") && inOf(cs) === P.PLET.salt && inOf(co) === P.PLET.oil && !p.d.querySelector(".amb-thumb__word") && !!co.querySelector("svg.amb-thumb__shape path")
       && cs.querySelector("svg.amb-thumb__shape path").getAttribute("d") !== co.querySelector("svg.amb-thumb__shape path").getAttribute("d"),
-      "10b the thumb holds the book's own shape, alone at 44px (his answer of 17 Nov 2026)");
+      "10b the thumb holds the book's own shape, his letter inside it at 44px, and no word stands under any shape (his word of 22 Nov 2026)");
     /* and his letter stands on every coin of 56px and over the page draws (the default 56px and lg 72px), the Ring bare */
     const big = [...p.d.querySelectorAll(".amb-thumb--mark:not(.amb-thumb--md):not(.amb-thumb--sm)")];
-    const ringOf = (c) => /A8\.6 8\.6/.test(c.querySelector("path").getAttribute("d")), wordOf = (c) => (c.querySelector(".amb-thumb__word") || { textContent: "" }).textContent;
+    const ringOf = (c) => /A8\.6 8\.6/.test(c.querySelector("path").getAttribute("d")), wordOf = inOf;
     ok(big.some((c) => !ringOf(c)) && big.every((c) => (ringOf(c) ? wordOf(c) === "" : Object.values(P.PLET).includes(wordOf(c)))),
-      "10b every coin of 56px and over carries his letter, the Ring bare (his answer of 17 Nov 2026): " + big.length);
+      "10b every coin of 56px and over carries his letter inside its shape, the Ring bare: " + big.length);
+    /* 22 Nov 2026: THE TWINS DRAW ONE COIN. Every coin on the page (the script's markThumb) holds the very svg the markup's markThumbHtml gives for its
+       book and size, the letter, its class and its place included; and Ambient's floor leaves two cases the shape alone, a 36px coin and three letters at 44px. */
+    const KEYS = Object.keys(P.PSYM).filter((x) => x !== "_"), sizeOf = (c) => (["sm", "md", "lg"].find((z) => c.classList.contains("amb-thumb--" + z)) || "");
+    const bookOf = (c) => KEYS[+(([...c.classList].find((x) => /^amb-kind-\d$/.test(x)) || "").slice(9)) - 1];
+    const svgOf = (html) => new JSDOM("<body>" + html + "</body>").window.document.querySelector("svg").innerHTML;
+    const drawn = [...p.d.querySelectorAll(".amb-thumb--mark")].filter((c) => bookOf(c)), apart = drawn.filter((c) => c.querySelector("svg").innerHTML !== svgOf(P.markThumbHtml(bookOf(c), sizeOf(c))));
+    ok(drawn.length >= 4 && new Set(drawn.map(sizeOf)).size >= 2 && drawn.some((c) => bookOf(c) === "gas" && !!c.querySelector("text.amb-thumb__letter--3")) && drawn.some((c) => bookOf(c) === "gas" && sizeOf(c) === "md" && !c.querySelector("text")) && !apart.length,
+      "10b every coin the page draws is the markup's own for its book and size, letter and all: " + JSON.stringify([drawn.map((c) => bookOf(c) + ":" + sizeOf(c)).join(" "), apart.slice(0, 2).map((c) => c.outerHTML.slice(0, 200))]));
+    const lt = (book, size) => { const x = new JSDOM("<body>" + P.markThumbHtml(book, size) + "</body>").window.document.querySelector("text"); return x ? [x.textContent, x.getAttribute("class"), x.getAttribute("x"), x.getAttribute("y")].concat(x.getAttribute("textLength") ? [x.getAttribute("textLength"), x.getAttribute("lengthAdjust")] : []).join("|") : ""; };
+    const rule = [lt("gas"), lt("gas", "lg"), lt("gas", "md"), lt("gas", "sm"), lt("salt", "sm"), lt("salt", "md"), lt("oil", "md"), lt("tin")];
+    ok(JSON.stringify(rule) === JSON.stringify(["POP|amb-thumb__letter amb-thumb__letter--3|12|12|13.5|spacingAndGlyphs", "POP|amb-thumb__letter amb-thumb__letter--3|12|12|13.5|spacingAndGlyphs", "", "", "", "I|amb-thumb__letter|12|12", "G|amb-thumb__letter|12|13.4", ""]),
+      "10b three letters stand from 56px and are the shape alone at 44px, every 36px coin and the Ring are bare, a letter is sized by its class and centred, lower in the droplet, three held to 13.5 on the grid: " + JSON.stringify(rule));
     ok(cs.getAttribute("aria-hidden") === "true" && /^Cube/.test(hs.getAttribute("aria-label")) && !hs.querySelector("svg.psym"),
       "10b the thumb is hidden from a reader and the head names the shape; the old mark is gone from the head");
     ok(attrsOf(p.d.getElementById("pPrices")).every((v) => !WORDS.some((w) => new RegExp("(^|[^a-z])" + w + "([^a-z]|$)").test(v))) && [...p.d.querySelectorAll("#pPrices .amb-thumb")].every((c) => [...c.classList].every((k) => /^amb-(thumb|thumb--(ring|mark|sm|md|lg)|kind-[1-6])$/.test(k))),
@@ -67,8 +82,8 @@ export async function run({ ok, pageWork }) {
     const gc = [...g.querySelectorAll("h2.amb-settings__head .amb-thumb--mark.amb-thumb--ring")], kindOf = (k) => Object.keys(P.PSYM).filter((x) => x !== "_").indexOf(k) + 1;
     ok(gc.length === 2 && gc[0].classList.contains("amb-kind-" + kindOf("rice")) && gc[1].classList.contains("amb-kind-" + kindOf("gas")) && !g.querySelector("svg.psym, .salt-coin"),
       "10b the guest board's heads are mark thumbs, by the book's index");
-    ok((gc[0].querySelector(".amb-thumb__word") || {}).textContent === P.PLET.rice && (gc[1].querySelector(".amb-thumb__word") || {}).textContent === P.PLET.gas && gc[0].querySelectorAll("svg path").length === 1,
-      "10b each carries its book's letter or letters beside its shape");
+    ok((gc[0].querySelector("svg.amb-thumb__shape > text.amb-thumb__letter") || {}).textContent === P.PLET.rice && (gc[1].querySelector("svg.amb-thumb__shape > text.amb-thumb__letter") || {}).textContent === P.PLET.gas && gc[0].querySelectorAll("svg path").length === 1,
+      "10b each carries its book's letter or letters inside its shape (22 Nov 2026)");
     const css = [...g.querySelectorAll("style")].map((s) => s.textContent).join("");
     const land = P.landingPage("abcd-efgh", "n10", null);
     ok([1, 2, 3, 4, 5, 6].every((n) => css.includes(".amb-kind-" + n) && land.includes(".amb-kind-" + n)),

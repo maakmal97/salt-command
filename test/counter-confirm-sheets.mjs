@@ -130,9 +130,9 @@ export async function run({ ok }) {
 /* 16 Nov 2026, the move to Ambient (place D): the Sheet restates the order as the system's Row: its mark thumb, the size, its state and day, its figure */
     const say = t(sh), rowAt = (e) => e.querySelector(".amb-row"), rowId = (r) => t(r.querySelector(".amb-vh")) + " " + t(r.querySelector(".amb-row__title"));
     const mt = sh.querySelector(".amb-thumb--mark");
-    /* 17 Nov 2026, his answer "Shape alone at 44px": the row's thumb is the 44px coin, the shape alone */
-    ok(!!mt && rowId(rowAt(sh)) === "Cube 2.5 units" && mt.classList.contains("amb-thumb--md") && !mt.querySelector(".amb-thumb__word") && mt.getAttribute("aria-hidden") === "true" && !sh.querySelector(".mtile, .salt-coin, svg.psym"),
-      "the Sheet restates the order by its 44px mark thumb, the shape alone, the shape and the size read aloud and the size drawn once (no shape word drawn, 12 Oct 2026): " + JSON.stringify(t(rowAt(sh))));
+    /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026): the row's thumb is the 44px coin, his letter inside its shape */
+    ok(!!mt && rowId(rowAt(sh)) === "Cube 2.5 units" && mt.classList.contains("amb-thumb--md") && t(mt.querySelector("svg.amb-thumb__shape > text.amb-thumb__letter")) === "I" && !mt.querySelector(".amb-thumb__word") && mt.getAttribute("aria-hidden") === "true" && !sh.querySelector(".mtile, .salt-coin, svg.psym"),
+      "the Sheet restates the order by its 44px mark thumb, his letter inside the shape, the shape and the size read aloud and the size drawn once (no shape word drawn, 12 Oct 2026): " + JSON.stringify(t(rowAt(sh))));
     ok(t(sh.querySelector(".amb-row__amount")) === money(270) && /^Placed . Placed /.test(t(sh.querySelector(".amb-row__sub"))),
       "and by its word and its figure and the day it was placed: " + JSON.stringify([t(sh.querySelector(".amb-row__sub")), t(sh.querySelector(".amb-row__amount"))]));
     ok(say.includes(W.EN["yn.orderLost"]) && say.includes(W.EN["yn.orderNone"]) && !say.includes("refunded"),

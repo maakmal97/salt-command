@@ -23683,7 +23683,13 @@ await (async () => {
   const MARK8 = ".amb-thumb--mark", IN8 = (scope) => scope + " " + MARK8, THUMBPX8 = { sm: 36, md: 44, lg: 72 };
   const census8 = (root) => [...root.querySelectorAll(MARK8)].map((s) => ({
     px: THUMBPX8[[...s.classList].map((c) => /^amb-thumb--(sm|md|lg)$/.exec(c)).filter(Boolean).map((m) => m[1])[0]] || 56,
-    ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll(".amb-thumb__word")].map((t) => t.textContent).join("") }));
+    ring: RING8.test(s.querySelector("path").getAttribute("d")), kind: +(([...s.classList].find((c) => /^amb-kind-\d$/.test(c)) || "").slice(9)) || 0,
+    /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026): the letter is a text of the shape's own svg, and no word stands under the shape */
+    lets: [...s.querySelectorAll("svg.amb-thumb__shape > text.amb-thumb__letter")].map((t) => t.textContent).join(""), word: !!s.querySelector(".amb-thumb__word") }));
+  /* the letter a coin must carry: none on the Ring, at 36px, or for three letters at 44px (Ambient's 12px floor); else its book's own, by the hue's index */
+  const LET8 = (await import("../stmt/page.js")).PLET, KEYS8 = Object.keys((await import("../stmt/page.js")).PSYM).filter((k) => k !== "_");
+  const want8 = (m) => { const l = m.ring ? "" : LET8[KEYS8[m.kind - 1]] || ""; return m.px === 36 || (m.px === 44 && l.length > 2) ? "" : l; };
+  const off8 = (m) => m.px < 20 || m.word || m.lets !== want8(m);
   /* a card's mark: its holder shows, beside the thumb, one figure in words and no shape word (the shape word is .amb-vh, read aloud only) */
   const shapes8 = /^[\d,]+(\.\d+)?units?$/;
   const holder8 = (s) => s.closest(".mtile, button, li, td, .amb-row, .amb-setting, .stm-q") || s.parentNode;
@@ -23697,10 +23703,10 @@ await (async () => {
       && D8.querySelector(IN8("#pOrder [data-row]")) && D8.querySelector(IN8("#pHome [data-hagain]")));
     /* 16 Nov 2026, the move to Ambient: a book's head on Prices is the mark thumb (the one drawing of a mark standing alone), its letter the thumb's word */
     const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector(".amb-thumb--mark");
-      return [h.getAttribute("aria-label"), (s.querySelector(".amb-thumb__word") || { textContent: "" }).textContent, [...s.classList].filter((c) => /^amb-thumb--(sm|md|lg)$/.test(c)).map((c) => c.slice(11))[0] || ""].join(":"); });
-    /* 17 Nov 2026, his answer "Shape alone at 44px": a book's head on Prices is a 44px coin, so it draws the shape alone, no letter */
-    ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube::md", "Droplet::md", "Lozenge::md", "Capsule::md", "Ring::md"]),
-      "Prices draws each book's head as its 44px mark thumb, the shape alone (his answer of 17 Nov 2026), priced and not yet priced alike, named by its shape: " + JSON.stringify(heads8));
+      return [h.getAttribute("aria-label"), (s.querySelector("svg.amb-thumb__shape > text.amb-thumb__letter") || { textContent: "" }).textContent, [...s.classList].filter((c) => /^amb-thumb--(sm|md|lg)$/.test(c)).map((c) => c.slice(11))[0] || ""].join(":"); });
+    /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026): a book's head on Prices is a 44px coin, his letter inside its shape */
+    ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube:I:md", "Droplet:G:md", "Lozenge:E:md", "Capsule:V:md", "Ring::md"]),
+      "Prices draws each book's head as its 44px mark thumb, his letter inside the shape (his word of 22 Nov 2026), priced and not yet priced alike, named by its shape, the Ring bare: " + JSON.stringify(heads8));
     /* the thumbs carry the hue of each book by its index (the Ring, a book with no mark, none) */
     const kinds8 = [...D8.querySelectorAll("#pPrices h2.pmark .amb-thumb--mark")].map((s) => ([...s.classList].find((c) => /^amb-kind-\d$/.test(c)) || ""));
     ok(JSON.stringify(kinds8) === JSON.stringify(["amb-kind-1", "amb-kind-2", "amb-kind-3", "amb-kind-4", ""]), "and each head's thumb carries its book's hue by its index, the Ring none: " + JSON.stringify(kinds8));
@@ -23735,12 +23741,13 @@ await (async () => {
     all8.push(...census8(D8.getElementById("pPrices")), ...census8(D8.getElementById("pCard")));
     /* 17 Nov 2026, his answer "Shape alone at 44px": a 44px coin (amb-thumb--md) is the shape alone, Ambient's own rule hiding its word; his letter is on every
        coin of 56px and over. So a 44px coin is not asked for a letter here, the carried rule that hides it is pinned, and a lettered coin of 56px or over must stand. */
-    const bad8 = all8.filter((m) => m.px < 20 || (m.ring || m.px === 44 ? m.lets !== "" : m.lets.length !== 1));
+    /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026) */
+    const bad8 = all8.filter(off8);
     const { AMB_CSS: AC8, SITE_CSS: SC8 } = await import("../stmt/statement-css.js");
-    ok(all8.length >= 12 && !bad8.length && all8.some((m) => m.ring) && all8.some((m) => !m.ring && m.px >= 56 && m.lets.length === 1),
-      "every mark the page draws of 56px and over carries its letter, the Ring none, and none is under 20px: " + JSON.stringify({ marks: all8.length, bad: bad8.slice(0, 4) }));
-    ok(AC8.includes(".amb-thumb--md > .amb-thumb__word { display: none; }") && !/amb-thumb__word[^{]*\{[^}]*display/.test(SC8),
-      "a 44px coin is the shape alone (his answer of 17 Nov 2026): the carried Ambient rule hides its word, and the page's own layer never shows it again");
+    ok(all8.length >= 12 && !bad8.length && all8.some((m) => m.ring) && all8.some((m) => !m.ring && m.px >= 56 && m.lets.length === 1) && all8.some((m) => !m.ring && m.px === 44 && m.lets.length === 1),
+      "every coin the page draws carries its book's letter inside its shape, at 44px as at 56px, the Ring none, no word under a shape, and none is under 20px: " + JSON.stringify({ marks: all8.length, bad: bad8.slice(0, 4) }));
+    ok(AC8.includes(".amb-thumb__letter { fill: var(--amb-surface);") && !AC8.includes("amb-thumb__word") && !/amb-thumb__(word|letter)/.test(SC8),
+      "the letter is cut out in the coin's ground by the carried Ambient rule, whose word under the shape is gone, and the page's own layer never restyles it");
     const cards8 = { again: home8.again, homeRows: home8.rows, row: row8, screen: screen8, check: check8 };
     const loose8 = Object.entries(cards8).filter(([, l]) => !l.length || !l.every(inCard8)).map(([k]) => k);
     ok(!loose8.length && !checkRows8.length && choice8.length >= 3,
@@ -23762,9 +23769,9 @@ await (async () => {
     "the guest board draws its five books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
   /* 17 Nov 2026, the move to Ambient (the third red fix): the board is Ambient's and draws the letter as the thumb's word in the device's own face (15 Nov 2026), so its
      styles carry the thumb's word rule and its policy admits no face beyond its own */
-  ok(/\.amb-thumb__word\s*\{[^}]*font-weight:\s*800/.test(gcss8) && /\.amb-thumb--mark\s*\{/.test(gcss8) && !/font-family: 'Geist Mono'/.test(gcss8)
+  ok(/\.amb-thumb__letter\s*\{[^}]*font-weight:\s*700/.test(gcss8) && /\.amb-thumb--mark\s*\{/.test(gcss8) && !/font-family: 'Geist Mono'/.test(gcss8)
     && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
-    "and the board's own styles carry the letter's thumb word rule, whose face is the device's, and its policy lets its own files load");
+    "and the board's own styles carry the thumb's letter rule (22 Nov 2026: the letter inside the shape), whose face is the device's, and its policy lets its own files load");
 
   /* ---- the live statement: its marks are cards, lettered, none under 20px; an archive draws none ---- */
   const MS8 = await import("../tools/make_statements.mjs");
@@ -23779,7 +23786,7 @@ await (async () => {
     sm8s.push(...census8(sd));
     loose8s.push(...[...sd.querySelectorAll(MARK8)].filter((s) => !inCard8(s)).map(() => p));
   }
-  const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring || m.px === 44 ? m.lets !== "" : m.lets.length !== 1));   /* 17 Nov 2026: a 44px coin is the shape alone (his answer) */
+  const sbad8 = sm8s.filter(off8);   /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026) */
   ok(docs8 > 3 && sm8s.length > docs8 && !sbad8.length && !loose8s.length,
     "the live statement's every mark is a card, lettered and none under 20px, its size under it and no shape word drawn: " + JSON.stringify({ docs8, marks: sm8s.length, bad: sbad8.slice(0, 3), loose: loose8s.length }));
   /* a new issue's table keeps its mark beside the size, lettered, and raised from the 13px it had to 20 */
@@ -41975,7 +41982,8 @@ await (async () => {
     const h = d.getElementById("payHead"), inv = h.querySelector(".hinv");
     /* Step 1a.2's pins bind the invoice: a mark's width and its letter, as F8 counts them. On Home the mark is Ambient's thumb, its size the system's and its letter its word */
     const marks = (root) => [...root.querySelectorAll("svg.psym:not(.glyph)")].map((s) => +s.getAttribute("width") + ":" + [...s.querySelectorAll("text.plet")].map((x) => x.textContent).join(""));
-    const homeMarks = [...h.querySelectorAll(".amb-thumb--mark")].map((m) => "20:" + t(m.querySelector(".amb-thumb__word")));
+    /* 22 Nov 2026, his word (the letter inside the shape on every coin, Ambient 0.7.34; it retires the 44px coin as the shape alone, his answer of 17 Nov 2026) */
+    const homeMarks = [...h.querySelectorAll(".amb-thumb--mark")].map((m) => "20:" + t(m.querySelector("svg.amb-thumb__shape > text.amb-thumb__letter")));
     /* Phase 7a (11 Oct 2026): the Total and its one Pay stand in the foot above the bar; the lines stay in the head */
     const foot = d.getElementById("homeFoot");
     const home = { tile: [".amb-stat__label", ".amb-stat__value", ".amb-stat__note"].map((q) => t(h.querySelector(q))), rows: inv ? rowsOf(inv) : [],
