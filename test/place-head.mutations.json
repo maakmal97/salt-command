@@ -214,5 +214,65 @@
   "file": "stmt/owner.js",
   "find": "c.toggleAttribute('data-zero',!rows);",
   "replace": "c.toggleAttribute('data-zero',false);"
+ },
+ {
+  "name": "the Counter keeps an app bar",
+  "file": "stmt/page.js",
+  "find": "+ '<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work\" data-mood=\"lagoon\" hidden>'",
+  "replace": "+ '<div id=\"tabs\" class=\"amb-shell amb-shell--rail amb-shell--page amb-shell--work\" data-mood=\"lagoon\" hidden><div class=\"amb-appbar\"></div>'"
+ },
+ {
+  "name": "the Counter's hero keeps a line",
+  "file": "stmt/page.js",
+  "find": "wt(\"h1\", 'class=\"amb-hero__title\" id=\"placeT\"', \"place.home\") + \"</header>\"",
+  "replace": "wt(\"h1\", 'class=\"amb-hero__title\" id=\"placeT\"', \"place.home\") + '<p class=\"amb-hero__sub\"></p></header>'"
+ },
+ {
+  "name": "the bell is the app bar's group again",
+  "file": "stmt/page.js",
+  "find": "'<div id=\"bellBox\" class=\"amb-status__end\" hidden>'",
+  "replace": "'<div id=\"bellBox\" class=\"amb-appbar__group\" hidden>'"
+ },
+ {
+  "name": "who is signed in is not the status's text",
+  "file": "stmt/page.js",
+  "find": "'<span class=\"amb-status__text\" data-wholine>'",
+  "replace": "'<span class=\"amb-status__time\" data-wholine>'"
+ },
+ {
+  "name": "open or closed is the Today card's again",
+  "file": "stmt/page.js",
+  "find": "'<span><span id=\"todayLine\" class=\"hblock\" hidden></span>'",
+  "replace": "'<span><span id=\"todayOpen\" hidden></span><span id=\"todayLine\" class=\"hblock\" hidden></span>'"
+ },
+ {
+  "name": "Orders' views wrap",
+  "file": "stmt/page.js",
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide otabs\" role=\"group\"'",
+  "replace": "<div class=\"amb-segment amb-segment--wrap amb-segment--tabs otabs\" role=\"group\"'"
+ },
+ {
+  "name": "his view as them rings a bell",
+  "file": "stmt/page.js",
+  "find": "+ (owner ? \"\" : bellBox()) + \"</div></div>\"",
+  "replace": "+ bellBox() + \"</div></div>\""
+ },
+ {
+  "name": "the status stays a row of its own on a laptop",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-shell--work .amb-head > .amb-status { position: absolute;",
+  "replace": ".amb-shell--work .amb-head > .amb-status { position: static;"
+ },
+ {
+  "name": "the username loses its glyph",
+  "file": "stmt/page.js",
+  "find": "data-wholine>' + AMB.glyph(\"person\", \"sm\") + wt(\"span\", 'class=\"amb-status__word\"', \"who.lead\")",
+  "replace": "data-wholine>' + wt(\"span\", 'class=\"amb-status__word\"', \"who.lead\")"
+ },
+ {
+  "name": "the stay line comes back under the title",
+  "file": "stmt/page.js",
+  "find": "+ (owner ? \"\" : bellBox()) + \"</div></div>\"",
+  "replace": "+ (owner ? \"\" : bellBox()) + \"</div></div><p class=\\\"amb-lead\\\" id=\\\"cstay\\\" hidden></p>\""
  }
 ]

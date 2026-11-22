@@ -32,7 +32,9 @@ export async function run({ ok, pageWork }) {
   const filters = [d0.getElementById("nKinds"), d0.getElementById("afil")];
   ok(filters.every((f) => f && f.classList.contains("amb-filter__menu") && !f.classList.contains("amb-segment") && !f.classList.contains("amb-segment--tabs") && !f.classList.contains("amb-segment--wrap") && !f.closest(".aparts")),
     "Needs you's kinds and Customers' filters are pull-down menus, neither tabs nor a row of pills, so the two never look alike: " + JSON.stringify(filters.map((f) => f && f.className)));
-  ok(customer.split("'amb-segment amb-segment--wrap amb-segment--tabs otabs'").length === 2, "the Counter's Orders tabs ask to be tabs too");
+  /* 22 Nov 2026 (the place head): the Counter's Orders tabs slide on one row too, never wrap, and are the head's first row (#cHead), static markup drawn once, hidden but on Orders (the reviewer's findings of the same day) */
+  ok(customer.split('<div class="amb-segment amb-segment--tabs amb-segment--slide otabs" role="group"').length === 2 && !/amb-segment--wrap[^"]*otabs|otabs[^"]*amb-segment--wrap/.test(customer),
+    "the Counter's Orders tabs ask to be tabs too and slide on one row, none wrapping (test/counter-orders-cards.mjs proves them standing in its head)");
   /* T2 */
   const first = css.indexOf(".amb-segment--tabs"), open = css.lastIndexOf("@container amb", first);
   ok(first > 0 && css.startsWith("@container amb (min-width: 960px) {", open) && !/(^|[ ,}])\.amb-segment--tabs/.test(css.slice(first + 1).replace(/\.amb-shell--work \.amb-segment--tabs/g, "")),

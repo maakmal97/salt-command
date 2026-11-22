@@ -68,8 +68,8 @@
  {
   "name": "the bar is drawn on a tablet",
   "file": "stmt/statement-css.js",
-  "find": "\\n@container amb (min-width: 960px) {\\n  .amb-shell--work .amb-hero--compact { position: relative;",
-  "replace": "\\n@container amb (min-width: 720px) {\\n  .amb-shell--work .amb-hero--compact { position: relative;"
+  "find": "\\n@container amb (min-width: 960px) {\\n  /* 0.7.33, the owner's word of 22 Nov 2026 ",
+  "replace": "\\n@container amb (min-width: 720px) {\\n  /* 0.7.33, the owner's word of 22 Nov 2026 "
  },
  {
   "name": "the rail has a foot again",

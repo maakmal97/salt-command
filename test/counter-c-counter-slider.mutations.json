@@ -90,21 +90,21 @@
   "replace": ""
  },
  {
-  "name": "the Orders tabs are not the system Filters",
+  "name": "the Orders tabs are not the system's tabs (22 Nov 2026: slide, in the head)",
   "file": "stmt/page.js",
-  "find": "'amb-segment amb-segment--wrap amb-segment--tabs otabs'",
-  "replace": "'salt-segment otabs'"
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide otabs\" role=\"group\"",
+  "replace": "<div class=\"salt-segment otabs\" role=\"group\""
  },
  {
-  "name": "a tap does not press the tab",
+  "name": "the paint presses no view (22 Nov 2026: the views are repainted in place, Ambient's own script presses a tapped one)",
   "file": "stmt/page.js",
-  "find": "b.setAttribute('aria-pressed',t[0]===cur?'true':'false');",
-  "replace": "b.setAttribute('aria-pressed','false');"
+  "find": "p=k===cur?'true':'false',",
+  "replace": "p='false',"
  },
  {
   "name": "the counts lose their class",
   "file": "stmt/page.js",
-  "find": "b.appendChild(el('span','amb-segment__count',String(oOf(t[0]).length)));",
-  "replace": "b.appendChild(el('span','x',String(oOf(t[0]).length)));"
+  "find": " <span class=\"amb-segment__count\"></span></button>').join(\"\")",
+  "replace": " <span class=\"x\"></span></button>').join(\"\")"
  }
 ]

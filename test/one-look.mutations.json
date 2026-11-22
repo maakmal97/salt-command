@@ -154,5 +154,11 @@
   "file": "master/salt_command.html",
   "find": ".ledsum,.updbox{\n  background:var(--salt-glass);border:1px solid var(--salt-line);\n  box-shadow:inset 0 1px 0 var(--salt-highlight);}",
   "replace": ".ledsum,.updbox{\n  background:var(--salt-glass);border:1px solid var(--salt-line);\n  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}"
+ },
+ {
+  "name": "O6.1 the Counter keeps an app bar over its title",
+  "file": "stmt/page.js",
+  "find": "data-mood=\"lagoon\" hidden>'\n    + '<main class=\"amb-screen amb-screen--docked\">'",
+  "replace": "data-mood=\"lagoon\" hidden>'\n    + '<div class=\"amb-appbar\"><span></span></div><main class=\"amb-screen amb-screen--docked\">'"
  }
 ]

@@ -8,7 +8,7 @@
  * (test/counter-c-counter-slider.mutations.json, tools/section.mjs).
  *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
  *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
- *   3  the Orders tabs are the system's four counted Filters (16 Nov 2026), and a tap presses the chosen one and lets the others go
+ *   3  the Orders tabs are the system's four counted tabs (16 Nov 2026), in the head, sliding and never wrapping (22 Nov 2026), and a tap presses the chosen one and lets the others go
  *   4  (16 Nov 2026, the move to Ambient) Salt Admin's Record and Customers strips are Ambient's Segment, the part entered the option pressed, a hidden option never the one pressed\n *   5  the strips that do not fit stay pills: the stages' arrows, Orders' second strip, the months; the kinds, Shop's and Orders' parts are Ambient's Segments, counted where they carry a count (16 Nov 2026)\n *   6  no rule of the page lowers a slider's option under 44px */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
@@ -45,14 +45,17 @@ export async function run({ ok, pageWork }) {
     ok(!!devList && J(devLabels) === J(["Notifications"]) && !!pushRow && (pushRow.querySelector(".amb-setting__value") || {}).textContent === "Not here"
       && /cannot receive notifications/.test(A.d.getElementById("devNote").textContent),
       "This device is a list of settings, Notifications (Tide theme gone, 15 Nov 2026, the move to Ambient); with none on this browser its row says Not here and the line under the list says why: " + J(devLabels));
-    const row = () => A.d.querySelector("#pOrder .otabs");
-    /* 16 Nov 2026, the move to Ambient: the Orders tabs are the system's counted Filters (amb-segment--wrap, aria-pressed), no slider and no thumb */
+    /* 22 Nov 2026 (the place head): the Orders tabs stand in the head, its first row, not in the list, and slide on one row (amb-segment--slide) where they once wrapped */
+    const row = () => A.d.querySelector("#cHead > .otabs");
+    /* 16 Nov 2026, the move to Ambient: the Orders tabs are the system's counted tabs (amb-segment--tabs, aria-pressed), no slider and no thumb */
     const on = () => [...row().querySelectorAll("button")].map((b) => (b.getAttribute("aria-pressed") === "true" ? 1 : 0)).join("");
-    ok(row() && row().classList.contains("amb-segment") && row().classList.contains("amb-segment--wrap") && !row().classList.contains("salt-segment") && on() === "1000"
+    ok(row() && row().classList.contains("amb-segment") && row().classList.contains("amb-segment--tabs") && row().classList.contains("amb-segment--slide") && !row().classList.contains("amb-segment--wrap") && !row().classList.contains("salt-segment") && !A.d.querySelector("#pOrder .otabs") && on() === "1000"
       && row().querySelectorAll(".amb-segment__count").length === 4 && [...row().querySelectorAll("button")].every((b) => b.classList.contains("amb-segment__opt")),
-      "the Orders tabs are the system's four Filters, each with its count, All pressed: " + on());
-    row().querySelector('[data-otab="pay"]').click(); await A.settle();
-    ok(on() === "0010", "a tap on To pay presses it and lets go of All: " + on());
+      "the Orders tabs are the head's four sliding tabs, each with its count, All pressed: " + on());
+    const row0 = row(), pay0 = row().querySelector('[data-otab="pay"]');
+    pay0.click(); await A.settle();
+    /* 22 Nov 2026 (the place head, the reviewer's findings): the tabs are drawn once and repainted where they stand, so a tap leaves the very row and button in place */
+    ok(on() === "0010" && row() === row0 && row().querySelector('[data-otab="pay"]') === pay0, "a tap on To pay presses it and lets go of All, the row and the button the very nodes they were: " + on());
     const mf = A.d.getElementById("mfil");
     ok(mf && mf.classList.contains("mfil") && !mf.classList.contains("amb-segment") && !mf.querySelector(".amb-segment, .salt-tabs, .salt-segment"), "the months are a select (the system's Select, 16 Nov 2026), never a strip of pills");
 

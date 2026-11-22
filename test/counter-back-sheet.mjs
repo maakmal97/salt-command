@@ -188,8 +188,9 @@ export async function run({ ok, pageWork }) {
     {
       const Bl = await open({ standalone: true });
       await until(() => !Bl.d.getElementById("bellBox").hidden);
-      const bell = Bl.d.getElementById("bell"); bell.focus(); bell.click();
-      kinds.push(["the bell", Bl, () => shown(Bl, "bellSheet"), () => Bl.d.activeElement === Bl.d.getElementById("bell")]);
+      /* 22 Nov 2026 (the place head): the bell is one control at a time, so while they are off the call is what opens the sheet, and the focus comes back to it */
+      const bell = Bl.d.getElementById("bellCall"); bell.focus(); bell.click();
+      kinds.push(["the bell", Bl, () => shown(Bl, "bellSheet"), () => Bl.d.activeElement === Bl.d.getElementById("bellCall")]);
     }
     {
       const Y = await open({ orders: [A, B, Cc, D, E, F] });
@@ -231,7 +232,7 @@ export async function run({ ok, pageWork }) {
       const Lt = await open({ look: false }); await until(() => shown(Lt, "lookSheet")); Lt.d.querySelector("#lookSheet [data-look]").click();
       ownRes.push(["the look choice, a choice", true, await until(() => !shown(Lt, "lookSheet") && stateIs(Lt, 0))]);
       }
-      const Bl = await open({ standalone: true }); await until(() => !Bl.d.getElementById("bellBox").hidden); Bl.d.getElementById("bell").click(); const upB = stateIs(Bl, 1); Bl.d.getElementById("bellDone").click();
+      const Bl = await open({ standalone: true }); await until(() => !Bl.d.getElementById("bellBox").hidden); Bl.d.getElementById("bellCall").click(); const upB = stateIs(Bl, 1); Bl.d.getElementById("bellDone").click();
       ownRes.push(["the bell, Done", upB, await until(() => !shown(Bl, "bellSheet") && stateIs(Bl, 0))]);
       const So = await open({ orders: [A], fast: true }); So.st.down = true; await until(() => shown(So, "outSheet"), 300); await until(() => stateIs(So, 1)); const upS = stateIs(So, 1); So.d.getElementById("outX").click();
       ownRes.push(["the signed-out Sheet, its orb", upS, await until(() => !shown(So, "outSheet") && stateIs(So, 0))]);
@@ -258,7 +259,7 @@ export async function run({ ok, pageWork }) {
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); Lk.d.getElementById("lookX").click(); await until(() => stateIs(Lk, 0));
       await goBack(Lk); leaveRes.push(["the look choice", await until(() => stateIs(Lk, null))]);
       }
-      const Bl = await open({ standalone: true }); await until(() => !Bl.d.getElementById("bellBox").hidden); Bl.d.getElementById("bell").click(); Bl.d.getElementById("bellDone").click(); await until(() => stateIs(Bl, 0));
+      const Bl = await open({ standalone: true }); await until(() => !Bl.d.getElementById("bellBox").hidden); Bl.d.getElementById("bellCall").click(); Bl.d.getElementById("bellDone").click(); await until(() => stateIs(Bl, 0));
       await goBack(Bl); leaveRes.push(["the bell", await until(() => stateIs(Bl, null))]);
       const Q = await open({ orders: [A, B, Cc, D, E, F] }); const cb = await openLimit(Q); cb.click(); await until(() => Q.d.getElementById("ynSheet"));
       Q.d.getElementById("ynX").click(); await until(() => stateIs(Q, 1)); Q.d.querySelector("#osheet [data-k=\"close\"]").click(); await until(() => stateIs(Q, 0));

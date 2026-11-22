@@ -15628,14 +15628,18 @@ await (async () => {
       "Place answers in the sheet, Order placed, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
     ok(!/notification|buzz/i.test(sh().textContent) && !bellBox.hidden && bellBox.classList.contains("cbell--off") && !call.hidden
       /* 16 Nov 2026, the move to Ambient (0.7.3): the call is the app bar's own, two words seen and the whole sentence its name */
-      && call.textContent === "Turn on" && call.getAttribute("aria-label") === "Turn on notifications" && call.classList.contains("amb-pill--bar")
+      /* 22 Nov 2026 (the place head): the bell and its call end the status row (the app bar is gone), the call a quiet pill; the reviewer's findings of the same day: ONE control at a
+         time, the call carrying the bell's own glyph while they are off and the plain bell, hidden then, standing alone once they are on */
+      && call.textContent === "Turn on" && call.getAttribute("aria-label") === "Turn on notifications" && call.classList.contains("amb-pill--quiet") && !call.classList.contains("amb-pill--bar")
+      && !!call.querySelector("svg.amb-icon--sm use[href='#amb-bell']") && bell.hidden && bell.classList.contains("amb-circle--plain")
+      && bellBox.classList.contains("amb-status__end") && !!bellBox.closest("#cHead > .amb-status") && !d.querySelector("#tabs > .amb-appbar")
       && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
-      "Sent asks nothing about notifications; the bell is marked with its call beside it, and drawing them asks the browser nothing: " + st.asked);
+      "Sent asks nothing about notifications; while they are off only the call shows, with the bell's glyph, and drawing them asks the browser nothing: " + st.asked);
     call.click();
     for (let i = 0; i < 100 && !(st.subscribed.length && call.hidden); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && call.hidden && !bellBox.hidden
+    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && call.hidden && !bellBox.hidden && !bell.hidden
       && !bellBox.classList.contains("cbell--off") && bell.getAttribute("aria-label") === "Notifications",
-      "the call's tap asks once and the phone is subscribed; the call goes and the bell stays, plain: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
+      "the call's tap asks once and the phone is subscribed; the call goes and the bell alone shows, plain: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
     d.getElementById("oSee").click();
     const scr = d.querySelector("#pOrder .oscreen");
     ok(!sh() && !d.getElementById("pOrder").hidden && !!scr && scr.getAttribute("data-order") === placed.id,
@@ -22332,9 +22336,11 @@ await (async () => {
        is a quiet pill, 44px by Ambient's --amb-tap */
     const W = dom.window, D = W.document, barw = D.getElementById("barw");
     const served = D.documentElement.outerHTML;
-    ok(barw.classList.contains("amb-stack") && barw.parentElement.matches("#tabs > main.amb-screen") && barw.previousElementSibling.matches("header.amb-hero")
+    /* 22 Nov 2026 (the place head): the stack stands under the place's head (#cHead, the status row), which stands under the hero, the title alone */
+    /* the reviewer's findings of 22 Nov 2026: Home's "this phone stays signed in" line (#cstay) is gone, so nothing stands between the head and the stack */
+    ok(barw.classList.contains("amb-stack") && barw.parentElement.matches("#tabs > main.amb-screen") && barw.previousElementSibling.matches("div.amb-head#cHead") && barw.previousElementSibling.previousElementSibling.matches("header.amb-hero") && !D.getElementById("cstay")
       && D.getElementById("lapse").classList.contains("amb-notice--warn") && !/#barw\{position:sticky/.test(served),
-      "the lapse line is a warning notice in a stack under the place's hero, in the screen that scrolls, no sticky bar of the page's own");
+      "the lapse line is a warning notice in a stack under the place's head, in the screen that scrolls, no sticky bar of the page's own");
     ok(/viewport-fit=cover/.test(served) && D.getElementById("lapseGo").classList.contains("amb-pill") && D.getElementById("lapseGo").classList.contains("amb-pill--quiet"),
       "and its one control, Continue, is Ambient's quiet pill, 44px by its own measure, on a page drawn under the status bar");
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
@@ -40116,8 +40122,9 @@ await (async () => {
   try {
     const { W, D } = a, head = () => D.getElementById("placeT").textContent;
     ok(shown(D) === "pHome" && current(D) === "tab:home" && /^Good (morning|afternoon|evening)$/.test(head())
-      && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u,
-      "signed in, Home opens first, marked on the tab bar, greeted, with the username once, in the header (the rail's foot that repeated it went on 18 Oct 2026): "
+      /* 22 Nov 2026 (the place head): the username stands once, in the head's status row (data-whoname), no longer under the title */
+      && [...D.querySelectorAll("#tabs [data-whoname]")].map((x) => x.textContent).join(",") === u && !D.querySelector("#tabs [data-who]"),
+      "signed in, Home opens first, marked on the tab bar, greeted, with the username once, in the head's status row (the rail's foot that repeated it went on 18 Oct 2026): "
       + JSON.stringify([shown(D), current(D), head()]));
     /* S7 merge: Home's To pay now is stage 6's (#payHead), its Pay #payNow */
     /* the words, not the drawing: a mark's letter (Step 1a.2) is aria-hidden */
@@ -40195,8 +40202,9 @@ await (async () => {
   ok(!/100vw - 64px/.test(css), "the orders place no longer breaks out of a 620px column to stand wide: the column is wide itself");
   const D = new JD72(page, { url: "https://site.test/" }).window.document;
   const kids = [...D.getElementById("tabs").children].map((n) => n.tagName.toLowerCase() + "." + n.className.split(" ")[0]).join(" ");
-  ok(kids === "div.amb-appbar main.amb-screen div.amb-dock" && D.querySelectorAll("#pHome.amb-split > .amb-stack").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
-    "the markup it lays out: the app bar, the screen and the dock; Home's two columns; This device beside the statement: " + kids);
+  /* 22 Nov 2026 (the place head): the Counter's shell has no app bar (the bell ends the status row, his answer 3), so it is the screen and the dock */
+  ok(kids === "main.amb-screen div.amb-dock" && D.querySelectorAll("#pHome.amb-split > .amb-stack").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
+    "the markup it lays out: the screen and the dock, no app bar; Home's two columns; This device beside the statement: " + kids);
   /* Prices, driven: the books stand in their grid */
   const u = "abcd-efgh", pass = "fixture-pass-72", ck = await C72.contentKey("test-secret", u);
   const body = { ok: true, wrap: await C72.wrapKey(pass, ck), session: "",

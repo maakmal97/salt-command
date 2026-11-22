@@ -8,7 +8,10 @@
  *   1  rotating: one line on, the next after a tick, a dot a line, Pause named and 44px by the recipe, holding it, and saying Play
  *   2  reduced motion: every line, no timer, no dots, no Pause
  *   3  no live region anywhere in the card
- *   4  the open or closed line, off /hours: Open until a time today, Closed and when it opens, nothing while unread */
+ *   4  the open or closed chip and its time, off /hours: Open and until a time today, Closed and when it opens, nothing while unread, forgotten at Log out
+ * 22 Nov 2026 (the place head, with the reviewer's findings of the same day): the chip is the status row's (#cOpen, under the title on every place), a dot and its
+ * word alone; when it changes is its own span beside it (#cWhen: until 22:00, opens Tue 09:00, opens 2 Dec), which a phone keeps; "Signed in as" is the word a phone drops.
+ * The Today card keeps only what it means for an order (#todayLine) and stands while that or the notice has something to say. */
 import { webcrypto } from "node:crypto";
 
 export async function run({ ok }) {
@@ -92,22 +95,58 @@ export async function run({ ok }) {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       await until(() => d.querySelector("#pPrices .pmark"));
-      if (hours) await until(() => !d.getElementById("todayOpen").hidden);
+      if (hours) await until(() => !d.getElementById("cOpen").hidden);   /* 22 Nov 2026 (the place head): the chip stands once the hours are read */
       else await new Promise((r) => setTimeout(r, 200));
       return d;
     };
+    /* 22 Nov 2026 (the place head, the reviewer's findings): the chip (#cOpen) is a dot and its word alone, Open or Closed; when it changes is its own span beside it
+       (#cWhen, a time, never a word a phone drops): until 22:00 or opens 08:00 on the same day, else the C17 date and time, until 25 Nov 2026, 09:00 (the page's stamp, a
+       three-letter month of its own: toLocaleDateString says Sept, so the expected text is built from a table of months here) */
+    const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const stampOf = (iso) => { const q = {}; new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso)).forEach((x) => { q[x.type] = x.value; }); return q.day + " " + MON[+q.month - 1] + " " + q.year + ", " + q.hour + ":" + q.minute; };
+    const whenOf = (verb, iso) => verb + " " + (sameDay(iso) ? hm(iso) : stampOf(iso));
+    const SHAPE = /^(until|opens) (\d\d:\d\d|\d\d [A-Z][a-z]{2} \d{4}, \d\d:\d\d)$/;
     const soon = new Date(Date.now() + 20 * 60e3).toISOString();
     const dO = await signed({ ok: true, open: true, nextChange: soon, nextOpen: null });
-    const wantO = sameDay(soon) ? "Until " + hm(soon) + ". Order now and we confirm it today." : null;
-    ok(t(dO.getElementById("todayOpen")) === "Open" && dO.getElementById("todayOpen").classList.contains("amb-notice__title")
-      && (wantO ? t(dO.getElementById("todayLine")) === wantO : /^Until \d\d \w{3} \d{4}, \d\d:\d\d\. Order now/.test(t(dO.getElementById("todayLine")))),
-      "while it is open the card says Open and until when, off /hours: " + t(dO.getElementById("todayLine")));
+    const chO = dO.getElementById("cOpen"), wO = dO.getElementById("cWhen");
+    ok(chO.classList.contains("amb-status__state") && chO.classList.contains("amb-status__state--pos") && !!chO.closest("#cHead .amb-status") && !!chO.querySelector(".amb-chip__dot")
+      && t(chO.querySelector(".amb-status__label")) === "Open" && t(chO) === "Open" && !chO.querySelector(".amb-status__word")
+      && t(dO.getElementById("todayLine")) === "Order now and we confirm it today." && !dO.getElementById("today").hidden,
+      "while it is open the status row's chip says Open alone, in the gain's colour, off /hours, and the card says what it means for an order: " + t(chO) + " | " + t(dO.getElementById("todayLine")));
+    ok(!wO.hidden && wO.classList.contains("amb-status__time") && !wO.classList.contains("amb-status__word") && wO.previousElementSibling === chO && wO.parentNode === chO.parentNode
+      && t(wO) === whenOf("until", soon) && SHAPE.test(t(wO)),
+      "and when it closes stands beside it in a span of its own, until 22:00: " + t(wO));
     const later = new Date(Date.now() + 3 * 864e5).toISOString();
     const dC = await signed({ ok: true, open: false, nextChange: later, nextOpen: later });
-    ok(t(dC.getElementById("todayOpen")) === "Closed" && /^Opens \d\d \w{3} \d{4}, \d\d:\d\d\. You can still order; we confirm it then\.$/.test(t(dC.getElementById("todayLine"))),
-      "while it is closed the card says Closed and when it opens: " + t(dC.getElementById("todayLine")));
+    const chC = dC.getElementById("cOpen");
+    ok(!chC.classList.contains("amb-status__state--pos") && t(chC) === "Closed" && !chC.querySelector(".amb-status__word") && !dC.getElementById("cWhen").hidden
+      && t(dC.getElementById("cWhen")) === "opens " + stampOf(later) && SHAPE.test(t(dC.getElementById("cWhen")))
+      && t(dC.getElementById("todayLine")) === "You can still order; we confirm it then.",
+      "while it is closed the chip says Closed and its own span when it opens, the date and time past today, and the card says it can still be ordered: " + t(chC) + " | " + t(dC.getElementById("cWhen")));
+    const dS = await signed({ ok: true, open: false, nextChange: soon, nextOpen: soon });
+    ok(t(dS.getElementById("cOpen")) === "Closed" && t(dS.getElementById("cWhen")) === whenOf("opens", soon) && SHAPE.test(t(dS.getElementById("cWhen"))),
+      "closed and opening later today it says opens 08:00 in the same span: " + t(dS.getElementById("cWhen")));
+    const far = new Date(Date.now() + 10 * 864e5).toISOString();
+    const dF = await signed({ ok: true, open: true, nextChange: far, nextOpen: null }), dG = await signed({ ok: true, open: false, nextChange: far, nextOpen: far });
+    ok(t(dF.getElementById("cWhen")) === "until " + stampOf(far) && t(dG.getElementById("cWhen")) === "opens " + stampOf(far) && SHAPE.test(t(dF.getElementById("cWhen"))) && SHAPE.test(t(dG.getElementById("cWhen"))),
+      "and ten days on it says the same date and time, in the page's own three-letter month: " + JSON.stringify([t(dF.getElementById("cWhen")), t(dG.getElementById("cWhen"))]));
     const dN = await signed(null);
-    ok(dN.getElementById("todayOpen").hidden && dN.getElementById("todayLine").hidden, "and while the hours are not read it says neither");
+    ok(dN.getElementById("cOpen").hidden && dN.getElementById("cWhen").hidden && dN.getElementById("todayLine").hidden && t(dN.getElementById("cOpen")) === "" && t(dN.getElementById("cWhen")) === "",
+      "and while the hours are not read it says neither, the chip and its time hidden and empty");
+    /* a phone keeps the time and does without "Signed in as" (Ambient's rule below 480px hides what is a status word); the username stays. jsdom lays nothing out, so the rule is read as served */
+    const who = dO.querySelector("#cHead .amb-status__text[data-wholine]");
+    ok(css.replace(/\s+/g, " ").includes("@container amb (max-width: 479.98px) { .amb-status .amb-status__word {") && !!who && who.children[1].classList.contains("amb-status__word") && /^Signed in as\s*$/.test(who.children[1].textContent)
+      && who.lastElementChild.hasAttribute("data-whoname") && !who.lastElementChild.classList.contains("amb-status__word") && who.lastElementChild.textContent === u && !wO.classList.contains("amb-status__word")
+      && who.children[0].matches("svg.amb-icon--sm") && !!who.children[0].querySelector("use[href='#amb-person']") && who.children.length === 3 && !who.querySelector("svg").closest(".amb-status__word"),
+      "a phone drops the word Signed in as, which is a status word Ambient hides under 480px, and keeps the person glyph, the username and the time, which are not: " + t(who));
+    /* View as them reads the hours too (his answer, 22 Nov 2026) is Salt Admin's flow; here a customer's Log out forgets them: the chip and its time stand down with the account */
+    dO.getElementById("lock").click(); dO.getElementById("lock").click();
+    ok(await until(() => dO.getElementById("cOpen").hidden), "Log out lets the status row forget the last account's hours: " + t(dO.getElementById("cOpen")));
+    ok(dO.getElementById("cWhen").hidden && t(dO.getElementById("cWhen")) === "" && t(dO.getElementById("cOpen")) === "", "the chip, and its time, are hidden and empty again after Log out");
+    /* the hero is the title alone and the status row sits beside it under no app bar; a customer is shown no bare clock there (Fable's review of 17 Nov 2026) */
+    ok(dO.querySelectorAll("#tabs > .amb-appbar").length === 0 && !!dO.querySelector("#tabs > .amb-screen > .amb-hero.amb-hero--title > #placeT") && dO.querySelectorAll("#tabs > .amb-screen > .amb-hero > *").length === 1
+      && !!dO.querySelector("#tabs > .amb-screen > #cHead.amb-head > .amb-status") && !dO.querySelector("#cHead [data-clock]") && !dO.querySelector("#today #cOpen"),
+      "the hero holds the title alone, no app bar stands over it, and the chip is the status row's, not the card's");
   } catch (e) { ok(false, "counter-today stopped on an error: " + (e && e.stack)); }
   finally { wins.forEach((w) => w.close()); }
 }

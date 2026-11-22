@@ -98,22 +98,21 @@ export async function run({ ok }) {
     const amb = flat(AMB_CSS), tok = flat(AMB_TOKENS + AMB_CSS), site = flat(SITE_CSS);
     const shellOf = (html, id) => { const d = new JSDOM(html, { virtualConsole: new VirtualConsole() }).window.document, g = d.getElementById(id); return { d, g, kids: g ? [...g.children].map((k) => k.tagName.toLowerCase() + "." + [...k.classList].join(".")) : [] }; };
     const A = shellOf(landingPage("", "ol-nonce", { master: "fixture-master", accounts: [] }), "roster"), C = shellOf(landingPage("0000-0000", "ol-nonce"), "tabs");
-    const work = (x) => !!x.g && x.g.matches(".amb-shell.amb-shell--rail") && x.kids[0] === "div.amb-appbar" && /^main\.amb-screen\.amb-screen--docked/.test(x.kids[1]) && /^div\.amb-dock/.test(x.kids[2] || "");
-    /* 22 Nov 2026 (the place head): Salt Admin keeps no app bar (the + is gone), so its shell is the screen that scrolls and the dock; the Counter keeps its bell's bar for now */
+    /* 22 Nov 2026 (the place head): Salt Admin keeps no app bar (the + is gone) and the Counter keeps none either (its bell ends the status row, his answer 3), so each shell is the screen that scrolls and the dock */
     const workBare = (x) => !!x.g && x.g.matches(".amb-shell.amb-shell--rail.amb-shell--work") && !x.d.querySelector("#" + x.g.id + " > .amb-appbar") && /^main\.amb-screen\.amb-screen--docked/.test(x.kids[0]) && /^div\.amb-dock/.test(x.kids[1] || "");
-    ok(workBare(A) && /\.amb-shell--rail > \.amb-appbar \{ left: calc\(var\(--amb-rail-w\) \+ var\(--amb-dock-inset\) \+ var\(--amb-rail-gap\)\); \}/.test(amb)
+    ok(workBare(A) && workBare(C) && /\.amb-shell--rail > \.amb-appbar \{ left: calc\(var\(--amb-rail-w\) \+ var\(--amb-dock-inset\) \+ var\(--amb-rail-gap\)\); \}/.test(amb)
       && !/(\.amb-appbar|\.amb-screen|\.amb-dock)[^{,]*\{[^}]*(left|right|inset|position|top|bottom|padding|margin|width)\s*:/.test(site),
-      "O6.1 Salt Admin is Ambient's work screen with no app bar since the place head (a bar, where a shell has one, stands beside the rail, not across it); the site's layer restates none of it: " + J(A.kids));
+      "O6.1 Salt Admin and the Counter are Ambient's work screens with no app bar since the place head (a bar, where a shell has one, stands beside the rail, not across it); the site's layer restates none of it: " + J([A.kids, C.kids]));
     ok(/--amb-rail-foot: 24px;/.test(tok) && /\.amb-shell--rail > \.amb-dock \{ inset: calc\(var\(--amb-dock-inset\) \+ var\(--amb-safe-top\)\) auto calc\(var\(--amb-rail-foot\) \+ var\(--amb-safe-bottom\)\)/.test(amb)
       && /--amb-pane-room: 20px;/.test(tok) && !/--amb-rail-foot|--amb-pane-room|--amb-dock-inset/.test(site),
       "O6.2 what scrolls runs to the screen's foot with 20px of room at a pane's sides, the rail 24px above the foot, by Ambient's tokens alone");
-    /* 22 Nov 2026 (the place head): with a bar the cap is the bar's middle (the Counter); with none it keeps only the safe area clear (Salt Admin), Ambient 0.7.32's cap() marking it once it scrolls */
-    ok(workBare(A) && work(C) && AMB_JS.includes('shell.toggleAttribute("data-amb-moved", moved)') && AMB_JS.includes('shell.toggleAttribute("data-amb-moved", off)')
+    /* 22 Nov 2026 (the place head): with a bar the cap is the bar's middle; with none, as on Salt Admin and the Counter now, it keeps only the safe area clear, Ambient 0.7.32's cap() marking it once it scrolls */
+    ok(workBare(A) && workBare(C) && AMB_JS.includes('shell.toggleAttribute("data-amb-moved", moved)') && AMB_JS.includes('shell.toggleAttribute("data-amb-moved", off)')
       && /\.amb-shell\[data-amb-moved\]:has\(> \.amb-appbar\) > \.amb-screen--docked \{ clip-path: inset\(calc\(var\(--amb-bar-h\) - var\(--amb-tap\) \/ 2\) 0 0 0\); \}/.test(amb)
       && /\.amb-shell\[data-amb-moved\]:not\(:has\(> \.amb-appbar\)\) > \.amb-screen--docked \{ clip-path: inset\(var\(--amb-safe-top\) 0 0 0\); \}/.test(amb)
       && [A, C].every((x) => [...x.d.querySelectorAll("script")].some((s) => s.textContent.includes('toggleAttribute("data-amb-moved"'))) && !/data-amb-moved|clip-path|salt-stuck/.test(site),
       "O7 on Salt Admin and the Counter, once the screen has moved the shell is marked and what scrolls is drawn from the bar's middle down, or with no bar from the safe area down, Ambient's cap, not the page's");
-    ok(work(C) && /--amb-rail-gap: 20px;/.test(tok) && /\.amb-shell--rail > \.amb-screen \{ --amb-inset-l: calc\(var\(--amb-rail-w\) \+ var\(--amb-dock-inset\) \+ var\(--amb-rail-gap\)/.test(amb) && !/--amb-inset-l|--amb-rail-gap/.test(site),
+    ok(workBare(C) && /--amb-rail-gap: 20px;/.test(tok) && /\.amb-shell--rail > \.amb-screen \{ --amb-inset-l: calc\(var\(--amb-rail-w\) \+ var\(--amb-dock-inset\) \+ var\(--amb-rail-gap\)/.test(amb) && !/--amb-inset-l|--amb-rail-gap/.test(site),
       "O8 the Counter's rail stands 20px from its column, as Salt Admin's, by Ambient's --amb-rail-gap: " + J(C.kids));
   }
 }

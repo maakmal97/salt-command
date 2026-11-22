@@ -116,8 +116,8 @@
  {
   "name": "the hero carries a bare clock again",
   "file": "stmt/page.js",
-  "find": "<span id=\"cstay\"></span></p></header>'",
-  "replace": "<span id=\"cstay\"></span></p><p class=\"amb-hero__time\" data-clock></p></header>'"
+  "find": "wt(\"h1\", 'class=\"amb-hero__title\" id=\"placeT\"', \"place.home\") + \"</header>\"",
+  "replace": "wt(\"h1\", 'class=\"amb-hero__title\" id=\"placeT\"', \"place.home\") + '<p class=\"amb-hero__time\" data-clock></p></header>'"
  },
  {
   "name": "Salt Admin's status row loses its clock",
