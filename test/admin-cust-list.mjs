@@ -7,7 +7,8 @@
  *   3  the figure is what they owe, and a refund he owes back is in ember
  *   4  the one way follows the state, each keeping its act: Message for money owed, Send for a sign-in to send, Show for no account, Open for the rest
  *   5  a tap on the row's text opens the account; a tap on its way does not
- *   6  the filters are a text tab row: No account in place of No account yet, a count beside each word, the chosen one selected, an empty one dimmed
+ *   6  the filters are a pull-down menu beside the find field (22 Nov 2026, the place head): No account in place of No account yet, a count beside each word, the chosen one
+ *      pressed and named on the pill, an empty one dimmed
  *   7  an Insight leads, one sentence: what is owed and how much of it is late, what he owes back, the sign-ins waiting
  * Drawn by the maker harness (test/maker-act.mjs). */
 import { richOwnerPage, byAct, enter } from "./maker-act.mjs";
@@ -66,15 +67,21 @@ export async function run({ ok, pageWork }) {
     ok(notOpened && !d.getElementById("aopen").hidden && !!d.querySelector('#aopen [data-acct="unop-acct"]'),
       "a tap on the row's text opens the account, a tap on its way does not");
     /* 6 */
-    const tabs = [...d.querySelectorAll("#afil button[data-f]")];
-    const said = tabs.map((b) => b.firstChild.textContent + ":" + t(b.querySelector(".amb-segment__count")) + (b.getAttribute("aria-disabled") === "true" ? ":off" : ""));
-    ok(tabs.every((b) => b.classList.contains("amb-segment__opt")) && d.getElementById("afil").classList.contains("amb-segment--wrap") && d.getElementById("afil").getAttribute("role") === "group"
+    /* 22 Nov 2026 (the place head): the filters are Ambient's pull-down menu beside the find field (div.afind: the Search, then div.amb-filter.amb-filter--end), its menu #afil, its choices each a tick,
+       its word and its count; no strip of tabs */
+    const tabs = [...d.querySelectorAll("#afil button[data-f]")], afind = d.querySelector("#rlist .afhead > .afind"), fil = afind && afind.querySelector(":scope > div.amb-filter.amb-filter--end"), fbtn = fil && fil.querySelector(":scope > button.amb-filter__btn");
+    const said = tabs.map((b) => t(b.querySelector(".amb-filter__word")) + ":" + t(b.querySelector(".amb-segment__count")) + (b.getAttribute("aria-disabled") === "true" ? ":off" : ""));
+    ok(!!afind && afind.children.length === 2 && afind.firstElementChild.classList.contains("amb-search") && afind.lastElementChild === fil && !!fbtn && fbtn.getAttribute("data-act") === "acct.filter.menu" && fbtn.getAttribute("aria-controls") === "afil" && t(fbtn) === "Show All"
+      && d.getElementById("afil").matches("div.amb-filter__menu[role=group]") && !d.getElementById("afil").classList.contains("amb-segment--wrap") && !d.getElementById("afil").classList.contains("amb-segment")
+      && tabs.every((b) => b.classList.contains("amb-filter__opt") && /^acct\.filter-/.test(b.getAttribute("data-act")) && b.firstElementChild.tagName.toLowerCase() === "svg" && b.lastElementChild.classList.contains("amb-segment__count"))
       && J(said) === J(["All:8", "Not sent:1", "Not opened:3", "They owe:2", "Locked out:1", "No account:1"]) && tabs[0].getAttribute("aria-pressed") === "true" && !!d.querySelector("#oAccts .amb-search > input#rq.amb-input"),
-      "the filters are Ambient's counted wrapping segment, each with its count, No account in place of No account yet, All chosen; the find field is Ambient's Search: " + J(said));
+      "the filters are Ambient's pull-down menu beside the find field, each choice with its count, No account in place of No account yet, All chosen; the find field is Ambient's Search: " + J(said));
+    await click(fbtn);
+    const menuOpened = !d.getElementById("afil").hidden && fbtn.getAttribute("aria-expanded") === "true";
     await click(tabs[3]);
-    ok(tabs[3].getAttribute("aria-pressed") === "true" && tabs[0].getAttribute("aria-pressed") === "false"
+    ok(menuOpened && d.getElementById("afil").hidden && tabs[3].getAttribute("aria-pressed") === "true" && tabs[0].getAttribute("aria-pressed") === "false" && t(fbtn.querySelector(".amb-filter__value")) === "They owe"
       && J([...d.querySelectorAll("#rlist [data-u]")].map((c) => t(c.querySelector(".acode")))) === J(["CX1-ZED", "CX6-ZED"]),
-      "a filter chosen is pressed and narrows the rows");
+      "a filter chosen is pressed, shuts the menu, is named on the pill and narrows the rows");
     await click(tabs[0]);
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();

@@ -96,15 +96,39 @@
   "replace": "    wrap.hidden=true;"
  },
  {
-  "name": "the parts are not Ambient segment",
+  "name": "the parts are not Ambient segment (22 Nov 2026, the place head: the customers' parts still draw, as a plain group)",
   "file": "stmt/page.js",
-  "find": "p === \"shop\" || p === \"record\" || p === \"customers\"",
-  "replace": "p === \"shop\" || p === \"record\""
+  "find": "'<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "'<div class=\"aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "a row text carries no act",
   "file": "stmt/owner.js",
   "find": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button';",
   "replace": "    var open=actOn(el('button','amb-row__main arow__open'),'acct.open','a:'+a.username); open.type='button'; open.removeAttribute('data-act');"
+ },
+ {
+  "name": "6 the accounts' filters are a Segment, not Ambient's menu (22 Nov 2026, the place head)",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"amb-filter__menu\" id=\"' + id + '\"",
+  "replace": "'<div class=\"amb-segment\" id=\"' + id + '\""
+ },
+ {
+  "name": "6 the accounts' filter does not stand at the end of the find row (22 Nov 2026, the place head)",
+  "file": "stmt/page.js",
+  "find": "aFilter(\"afil\", \"Show\", ADMIN_FILTERS, \"data-f\", \"acct.filter\", \"\", true)",
+  "replace": "aFilter(\"afil\", \"Show\", ADMIN_FILTERS, \"data-f\", \"acct.filter\", \"\", false)"
+ },
+ {
+  "name": "6 the accounts' filter pill has no menu act (22 Nov 2026, the place head)",
+  "file": "stmt/page.js",
+  "find": "aria-controls=\"' + id + '\" data-act=\"' + act + '.menu\">'",
+  "replace": "aria-controls=\"' + id + '\" data-act=\"' + act + '.x\">'"
+ },
+ {
+  "name": "6 the filter stands before the find field (22 Nov 2026, the place head)",
+  "file": "stmt/page.js",
+  "find": "'<div class=\"afind\"><div class=\"amb-search\">'",
+  "replace": "'<div class=\"afind\"><div class=\"amb-filter\"></div><div class=\"amb-search\">'"
  }
 ]

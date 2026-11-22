@@ -1,9 +1,9 @@
 /* test/admin-places.mjs: SALT ADMIN'S FIVE PLACES (11 Oct 2026, his decision; docs/STATEMENTS.md "His places").
  *
- * Needs you, Orders, Customers, Record and Shop; "Maker" is retired on screen. Every place but Needs you has a strip of parts, and
- * the page shows only the part he is in. What is proved here, each check red under its own mutation (test/admin-places.mutations.json):
+ * Needs you, Orders, Customers, Record and Shop; "Maker" is retired on screen. Every place has a strip of parts (22 Nov 2026, the place head: Needs you
+ * gained To do, Pending and FYI), and the page shows only the part he is in. What is proved here, each check red under its own mutation (test/admin-places.mutations.json):
  *   1  the five places, in both bars, in his words
- *   2  the strips: which parts, in which order, as the system's tabs, each with its act; none on Needs you
+ *   2  the strips: which parts, in which order, as the system's tabs sliding on one row, each with its act; Needs you's too
  *   3  the tabs follow him: the place and the part he is in are the ones marked
  *   4  what each part shows: the sections and the forms it names, and nothing of another part
  *   5  Orders by stage: a row in the stage the order stands at, a closed order a row in Closed, an empty part saying so
@@ -19,6 +19,8 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Settings"];
 const PARTS = {
+  /* 22 Nov 2026 (the place head): Needs you has parts, its groups, and opens on To do */
+  needs: [["todo", "To do"], ["pending", "Pending"], ["fyi", "FYI"]],
   /* 2 Nov 2026 (Orders on the canvas): the Segment draws the first four; Approve is reached by the bar. 18 Nov 2026 (his answer D): so is Ledger check, Payments is entered by its
      address, and Group orders is a part of Settings */
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["ledger", "Ledger check"]],
@@ -30,7 +32,7 @@ const PARTS = {
 const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderList", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
   "oCards", "oLedger", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook", "makerMarket", "makerCalendar"];
 const SHOWS = {
-  needs: "mHome",
+  needs: "mHome", "needs/todo": "mHome", "needs/pending": "mHome", "needs/fyi": "mHome",   /* 22 Nov 2026 (the place head): a part of Needs you draws its group in the one list, so the sections that show are the place's alone */
   "orders/todo": "oOrders makerOrderList makerReview", "orders/open": "oOrders makerOrderList makerReview",
   "orders/done": "oOrders makerOrderList makerReview", "orders/ended": "oOrders makerOrderList makerReview", "orders/payments": "oOrders makerClaims",
   "orders/approve": "oOrders makerDrafts makerQueueReview", "orders/ledger": "oOrders oLedger",
@@ -101,28 +103,37 @@ export async function run({ ok, pageWork }) {
     const stripsOf = (place) => strips.filter((s) => s.getAttribute("data-place") === place);
     const form = (place) => { const s = stripsOf(place); return s.length ? s.flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent + ":" + b.getAttribute("data-act")) : null; };
     const wantParts = (place) => (place === "orders" ? PARTS[place].slice(0, 4) : PARTS[place]).map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
-    ok(strips.length === 4 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
-      "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
+    /* 22 Nov 2026 (the place head): Needs you has a strip too, five in all, each in its place's head */
+    ok(strips.length === 5 && PLACES.every((m) => same(form(m), wantParts(m))),
+      "Needs you, Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(PLACES.map(form)));
     /* 20 Oct 2026 (Counter Batch C): Customers' parts are the system's slider (26 Oct 2026, the tight one); Record's three left it on 25 Oct 2026 (his Ask A) */
     /* 25 Oct 2026 (Salt Admin Shop, Orders and Record): Shop's four, Orders' two rows and Record's three are the Nav bar's text tabs, as Needs you's kinds */
     /* 2 Nov 2026: Orders' four parts are one Segment, as Customers' */
     /* 16 Nov 2026, the move to Ambient (places G and I, end pass): every strip, Orders' four, Customers', Record's three and Shop's six, is Ambient's Segment, a group of pressed buttons, not a tablist */
     const recipe = () => ["amb-segment", "amb-segment__opt"];
     const ambStrip = () => true;
-    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.getAttribute("role") === (ambStrip(s) ? "group" : "tablist") && s.getAttribute("aria-label")
+    /* 22 Nov 2026 (the place head): a strip is a sliding segment of tabs in its place's head, never wrapping, and Needs you has one now */
+    ok(strips.every((s) => s.classList.contains(recipe(s)[0]) && s.classList.contains("amb-segment--slide") && !s.classList.contains("amb-segment--wrap") && s.parentNode.classList.contains("amb-head")
+      && s.getAttribute("role") === (ambStrip(s) ? "group" : "tablist") && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains(recipe(s)[1]) && (ambStrip(s) ? !b.hasAttribute("role") : b.getAttribute("role") === "tab")))
-      && !d.querySelector("#mHome .aparts"),
-    "a strip is Ambient's Segment, a group of pressed buttons, and Needs you has none");
+      && d.querySelectorAll("#mHome .aparts").length === 1,
+    "a strip is Ambient's Segment, a sliding group of pressed buttons in its place's head, none wrapping, and Needs you has one");
 
     /* 3. THE TABS FOLLOW HIM */
-    ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
+    ok(p.where() === "needs needs/todo", "the page opens on Needs you, on its first part, To do: " + p.where());   /* 22 Nov 2026 (the place head): Needs you has parts, so it opens on one */
     await p.tap("nav.orders");
     ok(p.where() === "orders orders/todo", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
     await p.tap("part.orders.open");
     const pills = stripsOf("orders").flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("aria-pressed")).join();   /* 16 Nov 2026: a Segment's option is pressed, not selected */
     ok(p.where() === "orders orders/open" && pills === "false,true,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
+    /* 22 Nov 2026 (the place head): its mutation, a tap on the place he is in going back to its first part, was noticed by no check, before this one; Needs you, which has parts now, is asked too */
+    await p.tap("nav.orders");
+    ok(p.where() === "orders orders/open", "a tap on the place he is in leaves him on the part he is on: " + p.where());
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/todo", "and a place he comes back to opens on its first part again: " + p.where());
+    await p.tap("nav.needs"); await p.tap("part.needs.pending"); await p.tap("nav.needs");
+    ok(p.where() === "needs needs/pending", "a tap on Needs you while he is on Pending leaves him there: " + p.where());
+    await p.tap("part.needs.todo");
     const counts = [...d.querySelectorAll(".amb-tabbar [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
     ok(counts.some((c) => c === "customers=2") && !counts.some((c) => /^shop=/.test(c)),
       "Customers carries the threads asked and the guest links waiting, and Shop has none (the counts are proved in test/admin-needs.mjs): " + JSON.stringify(counts));
@@ -130,7 +141,7 @@ export async function run({ ok, pageWork }) {
     /* 4. WHAT EACH PART SHOWS */
     const seen = {};
     seen.needs = (await p.tap("nav.needs"), p.visible());
-    for (const place of PLACES.slice(1)) {
+    for (const place of PLACES) {
       await p.tap("nav." + place);
       for (const [part] of PARTS[place]) { await p.tap("part." + place + "." + part); seen[place + "/" + part] = p.visible(); }
     }
@@ -182,7 +193,7 @@ export async function run({ ok, pageWork }) {
     const go = async (hash) => { const e = fires(w, "hashchange"); w.location.hash = hash; await e; await p.work.quiet(); return p.where(); };
     await p.tap("nav.shop");
     const addresses = { "#maker": "orders orders/todo", "#more": "shop shop/hours", "#accounts": "customers customers/accounts",
-      "#links": "customers customers/links", "#cards": "customers customers/associates", "#needs": "needs", "#orders/ready": "orders orders/open",
+      "#links": "customers customers/links", "#cards": "customers customers/associates", "#needs": "needs needs/todo", "#needs/pending": "needs needs/pending", "#needs/fyi": "needs needs/fyi", "#orders/ready": "orders orders/open",
       "#record/pricing": "record record/pricing", "#record/approve": "orders orders/approve", "#customers/messages": "customers customers/messages", "#orders/nowhere": "orders orders/todo" };
     const got = {};
     for (const hash of Object.keys(addresses)) got[hash] = await go(hash);
@@ -210,7 +221,7 @@ export async function run({ ok, pageWork }) {
       const travel = async (dir) => { const from = q.w.location.href; q.w.history[dir](); for (let i = 0; i < 300 && q.w.location.href === from; i++) await new Promise((r) => setTimeout(r, 10)); await q.work.quiet(); return q.where() + " " + q.w.location.hash; };
       const back1 = await travel("back"), back2 = await travel("back"), back3 = await travel("back"), fwd = await travel("forward");
       ok(same(trail, ["#orders", "#orders/open", "#shop"]) && back1 === "orders orders/open #orders/open" && back2 === "orders orders/todo #orders"
-        && back3 === "needs " && fwd === "orders orders/todo #orders",
+        && back3 === "needs needs/todo " && fwd === "orders orders/todo #orders",
       "a tap writes the place's address, and Back and Forward move between places: " + JSON.stringify([trail, back1, back2, back3, fwd]));
     } finally { q.w.close(); }
 
@@ -220,6 +231,7 @@ export async function run({ ok, pageWork }) {
       const entry = [];
       const step = async (act, want) => { const got = await r.tap(act); entry.push([act, got, want]); return got; };
       await step("nav.needs", reads());
+      for (const part of ["pending", "fyi", "todo"]) await step("part.needs." + part, reads());   /* 22 Nov 2026 (the place head): a part of Needs you redraws what the place already read */
       await step("nav.shop", reads("hours", "points"));
       await step("part.shop.notice", reads("bulletin"));
       await step("part.shop.group", reads("pools"));

@@ -108,10 +108,10 @@
   "replace": ""
  },
  {
-  "name": "Shop's parts do not wrap",
+  "name": "Shop's parts wrap (22 Nov 2026: they slide on one row)",
   "file": "stmt/page.js",
-  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\")",
-  "replace": "\"\""
+  "find": "amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment--tabs amb-segment--slide amb-segment--wrap aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "a part is not pressed",

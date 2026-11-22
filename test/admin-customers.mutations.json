@@ -46,5 +46,11 @@
     "file": "stmt/owner.js",
     "find": "if(pick){ pick.value=repayWant;",
     "replace": "if(pick){"
+  },
+  {
+    "name": "B an account filter's choice is not an option of the menu (22 Nov 2026, the place head)",
+    "file": "stmt/page.js",
+    "find": "class=\"amb-filter__opt' + (cls ? \" \" + cls : \"\") + '\" '",
+    "replace": "class=\"x' + (cls ? \" \" + cls : \"\") + '\" '"
   }
 ]

@@ -1,7 +1,8 @@
 /* test/admin-needs.mjs: NEEDS YOU, THE RANKED INBOX (11 Oct 2026, Phase 1b; docs/STATEMENTS.md "His places"; re-aimed 22 Oct 2026 to the redesigned page, his canvas Needs you).
  *
- * Every thing that waits on him is one card of the system's Action recipe, in a group under one word (To do, Pending, FYI; never folded, no count), money first and then
- * the oldest, read again every 5 seconds while it is showing. What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
+ * Every thing that waits on him is one card of the system's Action recipe, in a group (To do, Pending, FYI; never folded), money first and then
+ * the oldest, read again every 5 seconds while it is showing. 22 Nov 2026 (the place head): the three groups are Needs you's parts, each a tab of the place's head
+ * with the count of its cards, a group has no heading of its own, and only the part he is in shows (the others carry hidden). What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
  *   1  the cards: which kind of thing is in which group (his own work is To do; Pending is money owed past term and an offer waiting on their yes; FYI the hours and the
  *      notice), with its kind word and age, who by code, the book's typed tag, the figure and the one pill; what the card says in full is its title's aria-label
  *   2  the ranking: To do before Pending before FYI, the cards with money first and the largest sum first, then the rest oldest first and no age last; practice items apart
@@ -10,7 +11,8 @@
  *   5  Open: each kind goes to its own place and part, and opens the thing it is about
  *   6  the one filled pill: only where the page already has that exact action as one tap, through the same function and the same question; no card in Needs you books
  *      money; a second choice (Record payment) stands in the opened card from 860px, not on the resting card
- *   7  the kind tabs: filters only, reading nothing, a kind with nothing disabled and never hidden, each with its count
+ *   7  the kinds, a pull-down menu at the head of the list (22 Nov 2026): filters only, reading nothing, a kind with nothing disabled and never hidden, each with its count
+ *      of the cards of the part shown
  *   8  a read that failed is said, never taken for nothing waiting
  *  10  the verb first: each card's title says what to do, then who, in full to a reader; the card's main button is on the card and reaches the same function as the
  *      full card's; a money tap asks once on the card and Cancel sends nothing; practice accounts are one folded line at the foot, "Practice: N"
@@ -32,6 +34,7 @@ const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
 const klDay = (iso) => new Date(Date.parse(iso) + 8 * 3600000).toISOString().slice(0, 10);
 const MADE_20H = klDay(ago(20)) === klDay(new Date(NOW).toISOString()) ? /^Made \d\d:\d\d$/ : /^Made \d\d \w{3} \d{4}$/;
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threads: "/all/maker/threads", hours: "/all/maker/hours", bulletin: "/all/maker/bulletin",
   sheet: "/all/sheet", links: "/all/refs", pools: "/all/maker/pools", inputs: "/all/maker/inputs" };
 
@@ -191,11 +194,24 @@ export async function run({ ok, pageWork }) {
       "To do comes before Pending and Pending before FYI: " + JSON.stringify(order2));
     ok(same(p.keys("now"), NOW_KEYS), "within To do the cards with money come first, the largest sum first (the two RM 100 orders by age), then the rest oldest first, none with no age before one with: " + JSON.stringify(p.keys("now")));
     ok(same(p.keys("soon"), SOON_KEYS), "within Pending the larger sum first: " + JSON.stringify(p.keys("soon")));
+    /* 22 Nov 2026 (the place head): a group has no heading, its word is its part's tab; every group is drawn and the part he is in alone shows, the rest hidden, the practice line last */
     const heads = [...d.querySelectorAll("#nlist .nsev")];
-    ok(heads.map((h) => h.textContent).join() === "To do,Pending,FYI,Practice: 3" && heads.slice(0, 3).every((h) => h.tagName === "H2" && !/[0-9]/.test(h.textContent) && h.getAttribute("data-sev"))
-      && same([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.getAttribute("aria-label"), g.firstElementChild === g.querySelector("h2.nsev")]), [["now", "To do", true], ["soon", "Pending", true], ["watch", "FYI", true]])
+    ok(heads.map((h) => h.textContent).join() === "Practice: 3" && !d.querySelector("#nlist h2, #nlist .ngroup .nsev, #nlist .ngroup h2")
+      && same([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.getAttribute("aria-label"), g.hidden, !g.querySelector("h2, .amb-section")]), [["now", "To do", false, true], ["soon", "Pending", true, true], ["watch", "FYI", true, true]])
       && same([...d.querySelectorAll("#nlist > details")].map((x) => x.getAttribute("data-sev")), ["practice"]) && !d.querySelector("#nlist [data-act='need.fold.soon'], #nlist [data-act='need.fold.watch']"),
-    "each group is a section headed by its one word, To do, Pending, FYI, with no count and never folded, and the practice line stands last: " + heads.map((h) => h.textContent).join());
+    "each group is a section with no heading and no count, To do showing and Pending and FYI hidden behind their tabs, never folded, and the practice line stands last: " + heads.map((h) => h.textContent).join());
+    /* the parts are the three groups: To do, Pending, FYI, each a tab of the head with the count of its cards (practice apart), To do pressed on entering */
+    const partTabs = [...d.querySelectorAll('#mHome .aparts[data-place="needs"] [data-part]')];
+    ok(same(partTabs.map((b) => [b.getAttribute("data-part"), b.getAttribute("data-act"), b.firstChild.textContent.trim(), b.querySelector(".amb-segment__count").textContent, b.getAttribute("aria-pressed")]),
+      [["todo", "part.needs.todo", "To do", "17", "true"], ["pending", "part.needs.pending", "Pending", "2", "false"], ["fyi", "part.needs.fyi", "FYI", "2", "false"]]),
+    "the head's parts are To do, Pending and FYI, each with the count of its cards, practice apart, To do pressed on entering: " + partTabs.map((b) => b.textContent + (b.getAttribute("aria-pressed") === "true" ? "*" : "")).join());
+    d.defaultView.location.hash = "#needs/pending"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
+    ok(same([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.hidden]), [["now", true], ["soon", false], ["watch", true]]) && p.where() === "needs/pending",
+      "a tap on Pending (or its address, #needs/pending) shows Pending alone: " + JSON.stringify([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.hidden])));
+    d.defaultView.location.hash = "#needs/fyi"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
+    ok(same([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.hidden]), [["now", true], ["soon", true], ["watch", false]]) && p.where() === "needs/fyi",
+      "and on FYI (#needs/fyi) FYI alone: " + JSON.stringify([...d.querySelectorAll("#nlist > section.ngroup")].map((g) => [g.getAttribute("data-sev"), g.hidden])));
+    d.defaultView.location.hash = "#needs"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
 
     /* 3. PRACTICE (the lead is one Insight of what waits on his tap, and says nothing of practice) */
     const practice = p.cards().filter((c) => c.hasAttribute("data-practice"));
@@ -212,8 +228,9 @@ export async function run({ ok, pageWork }) {
       "and the line opens them in place, and stays open through a redraw");
     d.querySelector('#nlist > details[data-sev="practice"]').open = false; d.querySelector('#nlist > details[data-sev="practice"]').dispatchEvent(new p.w.Event("toggle"));
     const lead = d.getElementById("nCount");
-    /* 15 Nov 2026, the move to Ambient: the lead is the line under Needs you's title in its hero */
-    ok(p.todo() === 17 && lead.classList.contains("amb-hero__sub") && !!lead.closest("#mHome > header.amb-hero")
+    /* 22 Nov 2026 (the place head): the lead is the headline under the head (its parts, then its status), a p.amb-lead, no longer the hero's line */
+    ok(p.todo() === 17 && lead.tagName === "P" && lead.className === "amb-lead" && lead.previousElementSibling.matches("div.amb-head") && lead.previousElementSibling.previousElementSibling.matches("#mHome > header.amb-hero")
+      && !d.querySelector("#mHome .amb-hero__sub")
       && lead.textContent.startsWith("RM 1,000 waits on your tap now: RM 600 to confirm, RM 400 to agree.") && !/to do now|soon/.test(lead.textContent),
     "the lead is one Insight of the money that waits on his tap now, summed off the payment and the placed-order cards of To do (RM 530 + 50 + 20 to confirm, RM 200 + 100 + 100 to agree), no practice item in it: " + lead.textContent);
 
@@ -288,8 +305,8 @@ export async function run({ ok, pageWork }) {
     ok(p.cards().every((c) => !p.buttons(c).includes("Open") || c.getAttribute("data-need").startsWith("u:")) && !d.querySelector("#nlist button[data-act='need.open']:not(.need-tap)")
       && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("h3.amb-task__title > button.need-tap") && c.querySelector(".need-tap .need-who")),
     "a card has no Open button of its own (the unsent entry's pill is named Open, its act need.unsent): its title is the one tap (data-act need.open), and the card's own action stays beside it");
-    ok(!d.querySelector("#nlist details[data-sev=soon], #nlist details[data-sev=watch]") && !d.querySelector("#nlist h2.nsev[data-act]"),
-      "Pending and FYI are never folded, and no group heading has a tap");
+    ok(!d.querySelector("#nlist details[data-sev=soon], #nlist details[data-sev=watch]") && !d.querySelector("#nlist .ngroup [data-act^='need.fold'], #nlist h2[data-act]"),
+      "Pending and FYI are never folded, and a group has no heading to tap (22 Nov 2026: its part's tab is the way to it)");
   } finally { p.w.close(); }
 
   /* 1c. THE SECOND CHOICE AND THE WHY STAND IN THE OPENED CARD, from 860px: a tap opens it beside the list */
@@ -317,45 +334,56 @@ export async function run({ ok, pageWork }) {
   /* 7. THE KIND CHIPS */
   p = await open(state());
   try {
-    const d = p.d, chips = [...d.querySelectorAll(".nchips button")];
-    ok(chips.map((b) => b.firstChild.textContent.trim()).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("amb-segment__opt") && b.classList.contains("nkopt") && b.hasAttribute("aria-pressed"))
-      && chips[0].getAttribute("aria-pressed") === "true" && d.querySelector("div.amb-segment.amb-segment--wrap.nchips").getAttribute("role") === "group" && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
-    "the kinds are All, Orders, Payments, Messages, Rows and Accounts, Ambient's counted filters (a wrapped Segment), each with its act, All pressed, and no Jump to beside them");
-    ok(same(chips.map((b) => b.querySelector(".nkopt__n").textContent), ["19", "7", "4", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
-      "each kind carries its count of cards, practice and Watch apart (19 in all: 17 To do, 2 Pending; Watch is not counted, Ambient 0.7.5): " + chips.map((b) => b.textContent).join());
+    /* 22 Nov 2026 (the place head): the kinds are Ambient's pull-down filter at the head of the list (div.nkinds > div.amb-filter), its menu #nKinds; they count the cards of the part shown (To do on entering) */
+    const d = p.d, chips = [...d.querySelectorAll("#nKinds button[data-chip]")], pill = d.querySelector("div.nkinds > div.amb-filter > button.amb-filter__btn");
+    ok(chips.map((b) => t(b.querySelector(".amb-filter__word"))).join() === "All,Orders,Payments,Messages,Rows,Accounts" && chips.every((b) => /^need[.]kind[.]/.test(b.getAttribute("data-act")) && b.classList.contains("amb-filter__opt") && b.classList.contains("nkopt") && b.hasAttribute("aria-pressed"))
+      && chips[0].getAttribute("aria-pressed") === "true" && d.getElementById("nKinds").matches("div.amb-filter__menu[role=group]") && !!pill && pill.getAttribute("data-act") === "need.kind.menu" && pill.getAttribute("aria-controls") === "nKinds" && t(pill) === "Show All"
+      && !d.querySelector(".nchips") && !d.getElementById("nJump") && !d.getElementById("nJumpMenu") && !d.querySelector("[data-act^='need.jump']"),
+    "the kinds are All, Orders, Payments, Messages, Rows and Accounts, the choices of Ambient's pull-down filter (a pill reading Show and the kind, a menu of six), each with its act, All pressed, and no Jump to beside them");
+    ok(same(chips.map((b) => b.querySelector(".nkopt__n").textContent), ["17", "6", "3", "1", "3", "4"]) && chips.every((b) => b.querySelector(".amb-segment__count")),
+      "each kind carries its count of the cards of To do, the part shown, practice apart (17 in all: 6 orders, 3 payments, 1 message, 3 rows, 4 accounts): " + chips.map((b) => b.textContent).join());
     p.reads.length = 0;
-    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip"));
+    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll("#nKinds button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip"));
     ok(same(visible(d), KO), "with a card of every kind, every kind is on: " + visible(d));
     const kinds = {};
     for (const k of ["orders", "payments", "messages", "rows", "accounts"]) {
       await p.tap("need.kind." + k);
-      kinds[k] = [...new Set(p.cards().map((c) => c.getAttribute("data-kind")))].join();
+      kinds[k] = [...new Set(shownCards().map((c) => c.getAttribute("data-kind")))].join();
       if (kinds[k] !== k) kinds[k] = "BAD " + kinds[k];
     }
-    ok(Object.values(kinds).every((v) => !v.startsWith("BAD")), "each chip shows its own kind of card and no other: " + JSON.stringify(kinds));
+    ok(Object.values(kinds).every((v) => !v.startsWith("BAD")), "each choice shows its own kind of card and no other: " + JSON.stringify(kinds));
     ok(p.reads.length === 0 && p.posts.length === 0, "and filtering reads and sends nothing: " + JSON.stringify(p.reads));
     await p.tap("need.kind.rows");
-    ok([...d.querySelectorAll(".nchips button")].map((b) => b.getAttribute("aria-pressed")).join() === "false,false,false,false,true,false", "the kind he tapped is the one pressed");
-    /* the recipe draws the chosen Nav link from its --active class (the page sets it with aria-selected), so the mark is only as good as that selector */
-    const SELECTED = '.amb-segment--wrap > .amb-segment__opt[aria-pressed="true"]';
-    ok(AMB_CSS.includes(SELECTED) && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
-      "and it alone is the one Ambient draws as the chosen filter, so it looks different from the other five");
+    ok([...d.querySelectorAll("#nKinds button")].map((b) => b.getAttribute("aria-pressed")).join() === "false,false,false,false,true,false" && t(pill) === "Show Rows", "the kind he tapped is the one pressed, and the pill names it");
+    /* the filter draws its chosen choice ticked from aria-pressed, so the mark is only as good as that selector */
+    const SELECTED = '.amb-filter__opt[aria-pressed="true"]';
+    ok(AMB_CSS.includes(SELECTED + " > .amb-icon { visibility: visible; }") && same([...d.querySelectorAll("#nKinds button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
+      "and it alone is the one Ambient draws ticked, so it looks different from the other five");
     await p.tap("need.kind.all");
-    ok(p.cards().length === 12 + 10 + 2, "All shows every card again, Watch among them: " + p.cards().length);
+    ok(p.cards().length === 12 + 10 + 2 && shownCards().length === 17, "All shows every card of To do again, the other parts still drawn and hidden: " + JSON.stringify([p.cards().length, shownCards().length]));
     await p.tap("need.kind.orders");
-    ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".amb-tabbar").needs, "17"), "FYI shows under All only, and a filter changes no count");
+    ok(shownCards().every((c) => c.getAttribute("data-sev") === "now") && same(p.counts(".amb-tabbar").needs, "17") && same(partTabs0(d), ["17", "2", "2"]), "a filter shows the cards of To do alone and changes no count, the parts' nor the bar's");
+    /* the cards of the part shown: those in a group not hidden, the practice fold apart */
+    function shownCards() { return [...d.querySelectorAll("#nlist > section.ngroup:not([hidden]) [data-need]")]; }
+    await p.tap("need.kind.all");
+    d.defaultView.location.hash = "#needs/fyi"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
+    ok(same(chips.map((b) => [b.getAttribute("data-chip"), b.querySelector(".nkopt__n").textContent, b.getAttribute("aria-pressed")]), [["all", "2", "true"], ["orders", "", "false"], ["payments", "", "false"], ["messages", "", "false"], ["rows", "0", "false"], ["accounts", "0", "false"]])
+      && same(shownCards().map((c) => c.getAttribute("data-need")), WATCH_KEYS),
+    "on FYI the kinds count FYI's cards: its two cards are of no menu kind, so All says 2, a kind holding practice cards alone says no figure (never a 0 beside cards), a kind with nothing says 0, and the filter is All again: " + chips.map((b) => b.textContent).join());
+    d.defaultView.location.hash = "#needs"; await new Promise((r) => setTimeout(r, 20)); await p.work.quiet();
   } finally { p.w.close(); }
+  function partTabs0(dd) { return [...dd.querySelectorAll('#mHome .aparts[data-place="needs"] .amb-segment__count')].map((c) => c.textContent); }
 
   /* 7b. A KIND WITH NOTHING IN IT IS OFF, NEVER HIDDEN */
   p = await open(state(), { threads: (j) => { j.threads = []; return j; } });
   try {
-    const d = p.d, kinds = new Set(p.cards().map((c) => c.getAttribute("data-kind")));
-    const tabs = [...d.querySelectorAll(".nchips button")];
+    const d = p.d, kinds = new Set(p.cards().filter((c) => c.getAttribute("data-sev") === "now").map((c) => c.getAttribute("data-kind")));
+    const tabs = [...d.querySelectorAll("#nKinds button")];
     ok(!kinds.has("messages") && same(visible2(d), ["all", ...["orders", "payments", "messages", "rows", "accounts"].filter((k) => kinds.has(k))]) && !visible2(d).includes("messages")
       && tabs.length === 6 && tabs.every((b) => !b.hidden) && tabs.find((b) => b.getAttribute("data-chip") === "messages").getAttribute("aria-disabled") === "true" && tabs.every((b) => !b.disabled),
-    "with no message waiting the Messages tab is disabled and still drawn, and each other kind present stays on: " + visible2(d));
+    "with no message waiting the Messages choice is disabled and still drawn, and each other kind present in To do stays on: " + visible2(d));
   } finally { p.w.close(); }
-  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip")); }
+  function visible2(dd) { return [...dd.querySelectorAll("#nKinds button")].filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.getAttribute("data-chip")); }
 
   /* 8. A READ THAT FAILED IS SAID */
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.threads] });
@@ -364,8 +392,9 @@ export async function run({ ok, pageWork }) {
     /* plan 1 (15 Oct 2026): the failed read leads the page, above the title, in plain words with a Retry */
     /* 15 Nov 2026, the move to Ambient: the place's hero opens it, and the failed read is the first thing after it */
     /* 16 Nov 2026 (place F): it stands first in the head's stack, under the hero */
+    /* 22 Nov 2026 (the place head): and it stands under the headline, the head and the title above it */
     const lead = [...home.querySelector(":scope > .amb-stack:not(#unsentBar)").children].find((n) => !n.hidden);
-    ok(fail && !fail.hidden && lead === fail && fail.getAttribute("role") === "alert" && /^Couldn't read orders and rows and messages[.]/.test(fail.textContent)
+    ok(fail && !fail.hidden && lead === fail && !!(d.getElementById("nCount").compareDocumentPosition(fail) & 4) && fail.getAttribute("role") === "alert" && /^Couldn't read orders and rows and messages[.]/.test(fail.textContent)
       && byAct(fail, "need.retry") && byAct(fail, "need.retry").textContent === "Retry" && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
     "a failed read is the first thing on the page, \"Couldn't read orders and rows and messages.\" with a Retry, and the cards of what could be read stand: " + (fail && fail.textContent) + " | " + line);
     ok(!/Nothing needs you/.test(line) && !/could be read/.test(line) && /on your tap now/.test(line), "and the lead never says nothing needs him, and does not repeat what the banner says: " + line);

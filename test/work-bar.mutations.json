@@ -2,26 +2,26 @@
  {
   "name": "Orders' parts are a segment again",
   "file": "stmt/page.js",
-  "find": "amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\"",
-  "replace": "amb-segment aparts\" role=\"group\" aria-label=\"Orders\""
+  "find": "amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\"",
+  "replace": "amb-segment amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\""
  },
  {
   "name": "the other places' parts are segments again",
   "file": "stmt/page.js",
-  "find": "' amb-segment--tabs aparts\"",
-  "replace": "' aparts\""
+  "find": "amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
-  "name": "Needs you's kinds are drawn as tabs",
+  "name": "the filters' menus are drawn as tabs",
   "file": "stmt/page.js",
-  "find": "amb-segment amb-segment--wrap nchips",
-  "replace": "amb-segment amb-segment--wrap amb-segment--tabs nchips"
+  "find": "<div class=\"amb-filter__menu\" id=\"' + id + '\"",
+  "replace": "<div class=\"amb-filter__menu amb-segment amb-segment--tabs\" id=\"' + id + '\""
  },
  {
-  "name": "Customers' filters are drawn as tabs",
+  "name": "the filters' menus are a wrapping row of pills again",
   "file": "stmt/page.js",
-  "find": "amb-segment amb-segment--wrap afil",
-  "replace": "amb-segment amb-segment--wrap amb-segment--tabs afil"
+  "find": "<div class=\"amb-filter__menu\" id=\"' + id + '\"",
+  "replace": "<div class=\"amb-filter__menu amb-segment amb-segment--wrap\" id=\"' + id + '\""
  },
  {
   "name": "the Counter's Orders tabs are filters again",
@@ -54,22 +54,22 @@
   "replace": "height: 2px; background: var(--amb-line); }"
  },
  {
-  "name": "only Orders' hero carries the two moves",
+  "name": "only Needs you's status row ends in the two moves",
   "file": "stmt/page.js",
-  "find": "(o.acts ? '<div class=\"amb-cluster\"'",
-  "replace": "(o.acts && o.approve ? '<div class=\"amb-cluster\"'"
+  "find": "(o.acts ? '<div class=\"amb-status__end\">'",
+  "replace": "(o.acts && o.live ? '<div class=\"amb-status__end\">'"
  },
  {
-  "name": "every hero's moves show on a phone",
+  "name": "the two moves show on a wide screen alone again",
   "file": "stmt/page.js",
-  "find": "(o.approve ? \"\" : \" data-wide\") + '>'",
-  "replace": "'>'"
+  "find": "'<div class=\"amb-status__end\">'",
+  "replace": "'<div class=\"amb-status__end\" data-wide>'"
  },
  {
-  "name": "Approve stands off Orders before any row waits",
+  "name": "Approve is drawn hidden",
   "file": "stmt/page.js",
-  "find": "(o.approve ? ' id=\"aApprove\"' : \" hidden\")",
-  "replace": "(o.approve ? ' id=\"aApprove\"' : \"\")"
+  "find": "' data-approve data-act=\"bar.approve\">Approve<span",
+  "replace": "' data-approve data-act=\"bar.approve\" hidden>Approve<span"
  },
  {
   "name": "the tick shows before the check is read",
@@ -80,8 +80,8 @@
  {
   "name": "the test surface carries the two moves",
   "file": "stmt/page.js",
-  "find": "{ heat: true, live: true, hours: true, acts: !test }",
-  "replace": "{ heat: true, live: true, hours: true, acts: true }"
+  "find": "aHead(adminParts(\"needs\", test), { live: true, acts: !test })",
+  "replace": "aHead(adminParts(\"needs\", test), { live: true, acts: true })"
  },
  {
   "name": "Payments is a stage of Orders' strip",
@@ -162,16 +162,16 @@
   "replace": "    drawTieout(j.tieout);\n  }"
  },
  {
-  "name": "Approve never shows off Orders",
+  "name": "Approve is hidden while nothing waits",
   "file": "stmt/owner.js",
-  "find": "      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;\n",
-  "replace": ""
+  "find": "if(c){ if(c.textContent!==v) c.textContent=v; c.toggleAttribute('data-zero',!rows); }",
+  "replace": "if(c){ if(c.textContent!==v) c.textContent=v; c.toggleAttribute('data-zero',!rows); } apBtn.hidden=!rows;"
  },
  {
-  "name": "Approve shows off Orders with nothing waiting",
+  "name": "a zero count is not greyed",
   "file": "stmt/owner.js",
-  "find": "      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;",
-  "replace": "      if(!apBtn.id) apBtn.hidden=false;"
+  "find": "c.toggleAttribute('data-zero',!rows)",
+  "replace": "c.toggleAttribute('data-zero',false)"
  },
  {
   "name": "only Orders' Approve is wired",
@@ -204,10 +204,10 @@
   "replace": "if(PARTS.orders){ if(!TESTING)"
  },
  {
-  "name": "the indicator has no kept width",
+  "name": "the indicator has no tap width",
   "file": "stmt/statement-css.js",
-  "find": ".adm .aled { min-width: calc(var(--amb-tap) * 3.5); }",
-  "replace": ".adm .aled { }"
+  "find": ".amb-status__end > .amb-pill { min-width: var(--amb-tap); min-height: var(--amb-tap);",
+  "replace": ".amb-status__end > .amb-pill { min-height: var(--amb-tap);"
  },
  {
   "name": "the indicator is a plain button, not pressed or unpressed",
@@ -216,10 +216,10 @@
   "replace": "data-ledger data-act=\"bar.ledger\" aria-label"
  },
  {
-  "name": "the tabs' stack keeps its margin over panes",
+  "name": "the tabs' stack margin rule is back",
   "file": "stmt/statement-css.js",
-  "find": ".adm .amb-stack:has(> .aparts) { margin-top: 0; }",
-  "replace": ".adm .amb-stack:has(> .aparts) { }"
+  "find": ".nlist > .ngroup[hidden] { display: none; }",
+  "replace": ".nlist > .ngroup[hidden] { display: none; } .adm .amb-stack:has(> .aparts) { margin-top: 0; }"
  },
  {
   "name": "the indicator is never pressed",
@@ -240,10 +240,10 @@
   "replace": ".amb-shell--work .amb-hero--compact { x---amb-bar-l: calc(var(--amb-pane-room) - m"
  },
  {
-  "name": "T9 and so does every block of a screen",
+  "name": "T9 and so does every block of a screen, the head and the headline among them",
   "file": "stmt/statement-css.js",
-  "find": ".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { padding-inli",
-  "replace": ".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { x-padding-inli"
+  "find": ".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-head, .amb-lead):not(.amb-split) { padding-inli",
+  "replace": ".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-head, .amb-lead):not(.amb-split) { x-padding-inli"
  },
  {
   "name": "T9 the bar's title and its line share a baseline",
@@ -252,10 +252,10 @@
   "replace": ".amb-shell--work .amb-hero--compact > :is(.amb-hero__title, .amb-hero__sub) { x-align-self: "
  },
  {
-  "name": "T9 a negative count edges its indicator (the selector 0.7.24 broke)",
+  "name": "T9 a negative count edges its indicator in the status row's end (the selector 0.7.24 broke)",
   "file": "stmt/statement-css.js",
-  "find": ".amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { border-color",
-  "replace": ".amb-shell--work .amb-hero--compact > .amb-cluster > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { x-border-color"
+  "find": ".amb-status__end > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { border-color",
+  "replace": ".amb-status__end > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { x-border-color"
  },
  {
   "name": "T9 no block of a screen adds a margin of its own, so every part starts on one line",
@@ -282,15 +282,45 @@
   "replace": ":is(.amb-field, .amb-form, .amb-settings, .amb-pill:not(.amb-pill--sm)) { x-max-width: 3"
  },
  {
-  "name": "T9 a bar keeps no room for a + its place does not show",
+  "name": "T9 a title's hero keeps room on its right for a + that is gone",
   "file": "stmt/statement-css.js",
-  "find": ".amb-shell--work:has(> .amb-appbar .amb-circle) .amb-hero--compact { padding-right",
-  "replace": ".amb-shell--work:has(> .amb-appbar .amb-circle) .amb-hero--compact { x-padding-right"
+  "find": ".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4)); padding-bottom: var(--amb-space-4); }",
+  "replace": ".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4)); padding-bottom: var(--amb-space-4); padding-right: calc(var(--amb-tap) + var(--amb-space-3)); }"
  },
  {
   "name": "T9 the Counter's Account keeps its own inset",
   "file": "stmt/statement-css.js",
   "find": "#acct.amb-stack { padding-inline: 0; }",
   "replace": "#acct.amb-stack { }"
+ },
+ {
+  "name": "a place's parts wrap again (Orders)",
+  "file": "stmt/page.js",
+  "find": "amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\"",
+  "replace": "amb-segment amb-segment--tabs amb-segment--slide amb-segment--wrap aparts\" role=\"group\" aria-label=\"Orders\""
+ },
+ {
+  "name": "a place's parts wrap again (the other places, Settings among them)",
+  "file": "stmt/page.js",
+  "find": "amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment amb-segment--tabs amb-segment--slide amb-segment--wrap aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
+ },
+ {
+  "name": "the tabs' foot has a margin of its own again",
+  "file": "stmt/statement-css.js",
+  "find": ".nlist > .ngroup[hidden] { display: none; }",
+  "replace": ".nlist > .ngroup[hidden] { display: none; } .adm .aparts { margin-bottom: var(--amb-space-4); }"
+ },
+ {
+  "name": "the unsent banner's margin override is back",
+  "file": "stmt/statement-css.js",
+  "find": ".nlist > .ngroup[hidden] { display: none; }",
+  "replace": ".nlist > .ngroup[hidden] { display: none; } .adm #unsentBar:not([hidden]) { margin-top: 0; }"
+ },
+ {
+  "name": "the head has no gap between its rows",
+  "file": "stmt/statement-css.js",
+  "find": ".amb-head { display: grid; grid-auto-rows: minmax(var(--amb-head-row), 1fr); gap: var(--amb-space-2);",
+  "replace": ".amb-head { display: grid; grid-auto-rows: minmax(var(--amb-head-row), 1fr); gap: 0;"
  }
 ]

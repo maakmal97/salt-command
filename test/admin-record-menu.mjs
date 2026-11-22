@@ -1,6 +1,7 @@
 /* test/admin-record-menu.mjs: SALT ADMIN RECORD, P1, THE PARTS AND THE MENU (25 Oct 2026; his canvas Salt Admin Record and his Asks A and B). What is proved here,
  * each check red under its own mutation (test/admin-record-menu.mutations.json):
  *   1  Record's parts are the system's Nav bar, a text tab row of three (Entry, Customers, Pricing), never a slider or pills; the part open is the selected tab
+ *      (22 Nov 2026, the place head: the row is a sliding segment, the head's first row, and never wraps)
  *   2  beside a part's word, the count of the entries waiting unsent on this phone in that part, and none beside a part with none
  *   3  (27 Oct 2026, his answers: forms, menus and words in the language of Shop's This device) a form's row is a settings row in a settings list: its name, three
  *      words at most, then a count where the read that drew the menu holds one (the loans to repay, the rewards held, the cancelled orders that can come back, the
@@ -24,12 +25,13 @@ export async function run({ ok, pageWork }) {
     enter(d, "record"); await quiet();
     /* 1 */
     /* 16 Nov 2026, the move to Ambient (place I): Record's parts are Ambient's Segment of three, a part pressed, the unsent count its segment count */
+    /* 22 Nov 2026 (the place head): the segment stands in the place's head (div.amb-head), its first row, and slides on one row where it was a stack's child that could wrap */
     const strip = d.querySelector('.aparts[data-place="record"]'), nav = strip && strip.parentElement;
     const tabs = strip ? [...strip.querySelectorAll("button[data-part]")] : [];
-    ok(!!nav && nav.classList.contains("amb-stack") && strip.classList.contains("amb-segment") && !strip.classList.contains("amb-segment--wrap") && strip.getAttribute("role") === "group"
+    ok(!!nav && nav.classList.contains("amb-head") && strip.classList.contains("amb-segment") && strip.classList.contains("amb-segment--slide") && !strip.classList.contains("amb-segment--wrap") && strip.getAttribute("role") === "group"
       && J(tabs.map((b) => b.firstChild.textContent)) === J(["Entry", "Customers", "Pricing"])
       && tabs.every((b) => b.classList.contains("amb-segment__opt") && !b.hasAttribute("role") && !/salt-/.test(b.className)),
-      "Record's parts are Ambient's Segment of three, never a slider, pills or tabs: " + J(tabs.map(t)));
+      "Record's parts are Ambient's Segment of three, sliding on one row in the head, never a slider, wrapping pills or a stack's child: " + J(tabs.map(t)));
     byAct(d, "part.record.pricing").click(); await quiet();
     const pressed1 = tabs.map((b) => b.getAttribute("aria-pressed"));
     byAct(d, "nav.needs").click(); await quiet(); byAct(d, "nav.record").click(); await quiet();   /* back to Record opens its first part: the page presses it, Ambient's script only presses what is tapped */

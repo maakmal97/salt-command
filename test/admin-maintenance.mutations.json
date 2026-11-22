@@ -31,7 +31,7 @@
  {"name":"it reads the time in UTC, not Kuala Lumpur","file":"stmt/owner.js","find":"var when=Date.parse(until.value+'+08:00');\n        if(!Number.isFinite(when)){ hoursSaid('now','Choose when it is back.')","replace":"var when=Date.parse(until.value+'Z');\n        if(!Number.isFinite(when)){ hoursSaid('now','Choose when it is back.')"},
  {"name":"filed, the grey line does not say what it does","file":"stmt/owner.js","find":"'Customers cannot sign in and see Under maintenance at the door, back '+w+'. Anyone already in can change nothing. It lifts","replace":"'Back '+w+'. It lifts"},
  {"name":"off sends nothing","file":"stmt/owner.js","find":"refs('/all/maker/maintenance',{off:true})","replace":"Promise.resolve({maint:null})"},
- {"name":"the bar's chip does not say Maintenance","file":"stmt/owner.js","find":"txt='Maintenance'+(mw?' to '+mw:'');","replace":"txt='Open'+(mw?' to '+mw:'');"},
+ {"name":"the status row's state does not say Maintenance","file":"stmt/owner.js","find":"txt='Maintenance'; when=mw?' to '+mw:'';","replace":"txt='Open'; when=mw?' to '+mw:'';"},
  {"name":"Needs you carries no card","file":"stmt/owner.js","find":"    if(maintUntil()) L.push(maintNeed(maintUntil()));\n","replace":""},
  {"name":"the cron wakes customers under his switch","file":"stmt/worker.js","find":"paused = paused || !!maintOf(await env.STMT.get(MAINT_KEY, \"json\"), now.getTime());","replace":"paused = paused || false;"},
  {"name":"the cron wakes customers under MAINTENANCE_UNTIL","file":"stmt/worker.js","find":"let paused = Date.parse(String(env.MAINTENANCE_UNTIL || \"\").trim()) > now.getTime();","replace":"let paused = false;"},

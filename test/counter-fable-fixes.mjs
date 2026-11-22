@@ -131,7 +131,9 @@ export async function run({ ok }) {
     ok(narrow.d.querySelectorAll("#tabs header.amb-hero").length === 1 && narrow.d.querySelectorAll("#tabs .amb-hero__time, #tabs [data-clock]").length === 0,
       "the Counter's hero carries no bare clock: the time is not drawn there");
     const own = new JSDOM(P.landingPage("", "n17b", { master: "", accounts: [] })).window.document;
-    ok(own.querySelectorAll('header.amb-hero .amb-hero__time [data-clock]').length >= 5, "Salt Admin's heroes keep theirs, beside the live line");
+    /* 22 Nov 2026 (the place head): Salt Admin's clock is the time of each place's status row, after its live line; a hero holds the title alone */
+    ok(own.querySelectorAll('.amb-head > .amb-status > .amb-status__live + .amb-status__time[data-clock]').length >= 5 && own.querySelectorAll('header.amb-hero [data-clock], .amb-hero__time').length === 0,
+      "Salt Admin's places keep theirs, in the status row beside the live line, and no hero holds a time line");
 
     /* ---- 4: the open order's Pay is its one foot and its last part; the message box stands in the flow before it */
     tab(narrow, "order"); await until(() => narrow.d.querySelector('#pOrder [data-row="' + READY.id + '"]'));

@@ -18,10 +18,10 @@
   "replace": "if(placeNow!=='needs'&&placeNow!=='orders'){ needsWatch(); return; }"
  },
  {
-  "name": "the line under the title is drawn on every tick",
+  "name": "the line under the title is drawn on every tick, its own guard gone (22 Nov 2026, the place head)",
   "file": "stmt/owner.js",
   "find": "if(!tick||needSig()!==sig0) redrawLead();",
-  "replace": "redrawLead();"
+  "replace": "nCount.removeAttribute('data-sig'); redrawLead();"
  },
  {
   "name": "the signature never moves, so a cleared failure is never drawn",
@@ -80,7 +80,7 @@
  {
   "name": "every tick rewrites the hours",
   "file": "stmt/owner.js",
-  "find": "      if(hb.getAttribute('data-txt')!==txt+tone){",
+  "find": "      if(hb.getAttribute('data-txt')!==txt+when+tone){",
   "replace": "      if(true){"
  },
  {

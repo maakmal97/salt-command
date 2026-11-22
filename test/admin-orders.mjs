@@ -2,7 +2,8 @@
  *
  * Every part of Orders is a list of rows (the system's Inbox row), a row opens that order's card, today's card with every control and
  * request it had, beside the list from 860px and in its place below it; a customer's question on an order is a To do card on Needs you;
- * the 5-second read is silent while an account is viewed as them; one orb opens Record's menu of entries, and Record's forms are a menu of
+ * the 5-second read is silent while an account is viewed as them; Record's dock button opens Record's menu of entries (22 Nov 2026, the place head: the one orb, the +, is
+ * retired), and Record's forms are a menu of
  * named rows with one form shown at a time. What is proved here, each check red under its own mutation (test/admin-orders.mutations.json):
  *   1  the rows: which orders in which part, each row the mark, who by code, the units, the figure and the age, and nothing read for them
  *   2  a row opens its card: one card, for that order alone, with the controls and the request it had, and a way back
@@ -144,8 +145,10 @@ export async function run({ ok, pageWork }) {
     "Orders draws one Segment of four, To do, Open, Done and Ended, each a part with its act: " + JSON.stringify(tabs.map((b) => b.getAttribute("data-part"))));
     /* 18 Nov 2026 (his answer D): the More group is split up. Ledger check is the bar's, Group orders a part of Settings, and Payments they sent is entered by its address */
     const more = [...d.querySelectorAll(".amore__list > li > button, #oOrders .amb-setting[data-part]")];
-    ok(more.length === 0 && !!d.querySelector('#oOrders > header [data-act="bar.ledger"]') && !!d.querySelector('.aparts[data-place="shop"] [data-act="part.shop.group"]'),
-    "and no More group stands at the foot: Ledger check is in the bar and Group orders a part of Settings: " + more.length);
+    /* 22 Nov 2026 (the place head): Ledger check moved from the hero's cluster to the end of the head's status row, so the truth it names is the head's, not the header's */
+    ok(more.length === 0 && !!d.querySelector('#oOrders > .amb-head > .amb-status > .amb-status__end [data-act="bar.ledger"]') && !d.querySelector('#oOrders > header [data-act="bar.ledger"]')
+      && !!d.querySelector('.aparts[data-place="shop"] [data-act="part.shop.group"]'),
+    "and no More group stands at the foot: Ledger check is in the head's status row and Group orders a part of Settings: " + more.length);
     const reach = [];
     for (const part of ["approve", "payments", "group", "ledger", "ended", "open", "todo"]) { await p.tap("part.orders." + part); const w = p.where(), to = part === "group" ? "shop/group" : "orders/" + part; if (w !== to) reach.push(part + ">" + w); if (part === "group") await p.tap("nav.orders"); }
     ok(reach.length === 0, "and every part is still reached, Approve and Ledger check by the bar, Payments at its address, Group orders under Settings: " + JSON.stringify(reach));
@@ -452,32 +455,32 @@ export async function run({ ok, pageWork }) {
     } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 
-  /* 7. THE + ORB opens Record's menu of entries */
+  /* 7. RECORD'S DOCK BUTTON opens Record's menu of entries. 22 Nov 2026 (the place head, his word: the + is retired): the orb that did it is gone from his page, with its app bar,
+     so the one tap is Record's own button in the dock and the rail, which stands on every place */
   p = await open();
   try {
-    const d = p.d, add = d.getElementById("oAdd"), { at, top } = ownerCss();
-    /* 15 Nov 2026, the move to Ambient: the + is the New entry circle in the shell's app bar, the orb's id and act kept */
-    ok(!!add && add.tagName === "BUTTON" && add.classList.contains("amb-circle") && !!add.closest("#roster > .amb-appbar > .amb-appbar__group") && add.getAttribute("data-act") === "nav.add" && add.getAttribute("aria-label") === "Record an entry"
-      && !!add.querySelector("svg") && d.getElementById("roster").contains(add) && !add.hasAttribute("data-m") && !add.hasAttribute("data-part") && byAct(d, "nav.add") === add,
-    "one + orb stands on Salt Admin, found by its act and named by a label: " + (add && add.outerHTML.slice(0, 200)));
+    const d = p.d, rec = d.querySelector('#roster .amb-tabbar .place[data-m="record"]'), { at, top } = ownerCss();
+    ok(!d.getElementById("oAdd") && !byAct(d, "nav.add") && !d.querySelector("#roster > .amb-appbar") && !!rec && rec.tagName === "BUTTON" && rec.getAttribute("data-act") === "nav.record"
+      && rec.getAttribute("aria-label") === "Record" && !!rec.querySelector("svg") && byAct(d, "nav.record") === rec,
+    "no + orb stands on Salt Admin: Record is one button in the dock, found by its act and named by a label: " + (rec && rec.outerHTML.slice(0, 200)));
     const there = [];
-    for (const place of ["needs", "orders", "customers", "shop"]) { await p.tap("nav." + place); there.push(shown(add)); }
-    ok(there.length === 4 && there.every(Boolean), "it stands on Needs you, Orders, Customers and Shop: " + there.join());
+    for (const place of ["needs", "orders", "customers", "shop"]) { await p.tap("nav." + place); there.push(shown(rec)); }
+    ok(there.length === 4 && there.every(Boolean), "it stands on Needs you, Orders, Customers and Settings: " + there.join());
     await p.tap("nav.record");
-    ok(!shown(add), "and not on Record, where the parts are one tap away");
+    ok(shown(rec) && rec.getAttribute("aria-current") === "page", "and on Record it is the place he is in, marked");
     await p.tap("nav.needs");
     p.posts.length = 0;
-    await p.tap("nav.add");
-    ok(p.where() === "record/entry" && same(p.menu(), MENU.entry) && p.formsOpen().length === 0 && !shown(add) && p.posts.length === 0 && p.reads.includes(ROUTES.inputs),
-      "it opens Record on Entry, the menu of entries with no form open, sending nothing: " + p.where() + " " + JSON.stringify(p.menu()));
+    await p.tap("nav.record");
+    ok(p.where() === "record/entry" && same(p.menu(), MENU.entry) && p.formsOpen().length === 0 && p.posts.length === 0 && p.reads.includes(ROUTES.inputs),
+      "a tap on it opens Record on Entry, the menu of entries with no form open, sending nothing: " + p.where() + " " + JSON.stringify(p.menu()));
     await p.tap("record.form", "gift");
-    await p.tap("nav.shop"); await p.tap("nav.add");
+    await p.tap("nav.shop"); await p.tap("nav.record");
     ok(p.where() === "record/entry" && p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "and a form left open comes back as the menu: " + p.where() + JSON.stringify([p.formsOpen(), p.menu()]));
-    /* 15 Nov 2026, the move to Ambient: Ambient places the app bar's circle (it floats over the screen at every width, so no corner, no room kept
-       for it and no rail button of its own); the page's own layer no longer positions it, and the one + is the circle's */
+    /* 15 Nov 2026, the move to Ambient: Ambient placed the app bar's circle; 22 Nov 2026 (the place head): there is none to place, so the page's layer holds no rule of one,
+       no rail button of its own, and no act of a + anywhere */
     const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "";
-    ok(!orb && !wide && !d.getElementById("oAddRail") && !byAct(d, "rail.add") && d.querySelectorAll('[data-act="nav.add"]').length === 1,
-      "the circle is Ambient's to place, at every width, and is the one +: the page's layer sets none of it, and the rail's + is gone: " + [orb, wide].join(" "));
+    ok(!orb && !wide && !d.getElementById("oAddRail") && !byAct(d, "rail.add") && d.querySelectorAll('[data-act="nav.add"]').length === 0,
+      "no rule of the page's layer places a +, the rail has none, and no control carries the retired act: " + [orb, wide].join(" "));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 8. RECORD'S FORMS ARE A MENU: a row for each form, one form at a time, the form itself moved and never drawn again */

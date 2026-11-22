@@ -5,11 +5,13 @@
  * What is proved here, each check red under its own mutation (test/work-shell.mutations.json):
  *   W1  both shells carry Ambient's working shell, and the carried Ambient holds its rules from 960px (the hero a bar on the page ground with a hairline,
  *       the mesh a strip, the time line shown at the end, the rail's tab bar grown to the foot, the panes' queue up to 440px); under 960px none is written
- *   W2  the rail has no foot, and every place's hero carries the status: the live word, the clock and the shop's state as a control; a phone shows the
- *       state on Needs you alone (the others carry data-wide, which stands down under 960px)
+ *   W2  the rail has no foot, and every place's head carries the status: the live word, the clock and the shop's state as a control; on every width
+ *       (22 Nov 2026: no place carries data-wide any more)
  *   W3  every bar says one thing: Live or Offline, and Open, Closed or Paused to its next change
- *   W4  the chip is a 44px control in every bar, and a tap on any of them goes to Shop hours
- * Geometry is measured in Chromium (the session's shots at 390, 1000, 1180, 1440, 1536 and 1920); jsdom lays nothing out, so these read markup, rules and state. */
+ *   W4  the state is a 44px control in every bar, and a tap on any of them goes to Shop hours
+ * Geometry is measured in Chromium (the session's shots at 390, 1000, 1180, 1440, 1536 and 1920); jsdom lays nothing out, so these read markup, rules and state.
+ * 22 Nov 2026 (the place head, his answers of 22 Nov 2026; Ambient 0.7.32): the status left the hero for the head's second row, the same on every place and width, and in a
+ * working shell from 960px the bar holds the title alone. W2 to W4 are re-aimed to the row (amb-status), the dot and word of Ambient's own parts. */
 import { JSDOM } from "jsdom";
 import { landingPage, SITE_STYLE } from "../stmt/page.js";
 
@@ -21,7 +23,9 @@ export async function run({ ok }) {
   /* W1 */
   ok(/<div id="roster" class="amb-shell amb-shell--rail amb-shell--page amb-shell--work adm"/.test(owner) && /<div id="tabs" class="amb-shell amb-shell--rail amb-shell--page amb-shell--work"/.test(customer),
     "Salt Admin's shell and the Counter's each carry Ambient's working shell");
-  const first = css.indexOf(".amb-shell--work"), open = css.lastIndexOf("@container amb", first);
+  /* 22 Nov 2026 (the place head): Ambient 0.7.32 carries two rules for a working shell at every width (the screen's scroll margin and its panes' gap), neither of which draws
+     the bar, so the first rule that does, the hero's, is the one that must stand inside the 960px container */
+  const first = css.indexOf(".amb-shell--work .amb-hero--compact { position: relative;"), open = css.lastIndexOf("@container amb", first);
   const at960 = css.split("@container amb (min-width: 960px) {").filter((b) => /\.amb-shell--work /.test(b)).join(" ");
   const bar = (at960.match(/\.amb-shell--work \.amb-hero--compact \{ ([^}]*)\}/) || [])[1] || "";
   ok(/position: relative; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start;/.test(bar) && /border-bottom: 1px solid var\(--amb-line\);/.test(bar)
@@ -29,9 +33,12 @@ export async function run({ ok }) {
     "from 960px the working shell's hero is a bar on the page's own ground, one row closed by a hairline, its sides the content's: " + bar.slice(0, 80));
   ok(/\.amb-shell--work \.amb-hero--compact::before \{ content: ""; position: absolute; top: 0;[^}]*height: var\(--amb-space-1\); background-image: linear-gradient\(to right, var\(--amb-mesh-1\), var\(--amb-mesh-3\), var\(--amb-mesh-2\)\); \}/.test(at960),
     "and the mesh is a 4px strip along the top edge, behind nothing that is read");
-  ok(/\.amb-shell--work \.amb-hero--compact > \.amb-hero__time \{ margin-left: auto;/.test(at960) && /\.amb-shell--work \.amb-hero--compact > \.amb-hero__time ~ \.amb-cluster \{ margin-left: 0; \}/.test(at960)
-    && !/amb-hero__time \{ display: none; \}/.test(css),
-    "its time line stands at the bar's end, before its actions, and no rule hides it");
+  /* 22 Nov 2026 (the place head): no hero draws a time line or a cluster any more, so what stood at the bar's end is the head's status row, and the bar holds the title alone; the title
+     is a row at the tap's height at the bar's start, and the head, its parts and its status, takes the content's own sides as a stack does */
+  ok(/\.amb-shell--work \.amb-hero--compact > \.amb-hero__title \{ display: flex; align-items: center; min-height: var\(--amb-tap\); font-size: var\(--amb-text-title2\); \}/.test(at960)
+    && /\.amb-shell--work :is\(\.amb-screen, \.amb-place\) > :is\([^)]*\.amb-head[^)]*\):not\(\.amb-split\) \{ padding-inline:/.test(at960)
+    && !/amb-hero__time/.test(owner.replace(/<style[^>]*>[\s\S]*?<\/style>/g, "").replace(/<script[^>]*>[\s\S]*?<\/script>/g, "")),
+    "from 960px the bar holds the title alone: it stands at the bar's start, a row at the tap's height, the head under it takes the content's own sides, and no hero draws a time line");
   ok(/\.amb-shell--work\.amb-shell--rail > \.amb-dock > \.amb-tabbar \{ flex: 1 1 auto; \}/.test(at960), "its rail's tab bar grows to the screen's foot");
   ok(/\.amb-shell--work :is\(\.amb-screen, \.amb-place\) > \.amb-split--panes \{ grid-template-columns: minmax\(280px, min\(440px, 40%\)\) minmax\(0, 1fr\); \}/.test(at960),
     "and its panes give the queue up to 440px, the queue giving way first");
@@ -41,12 +48,14 @@ export async function run({ ok }) {
   const dom0 = new JSDOM(owner), d0 = dom0.window.document, heroes = [...d0.querySelectorAll("#roster .amb-place > header.amb-hero")];
   ok(!/amb-tabbar__foot|aRailHours|arailtime/.test(owner + customer) && d0.querySelector("#roster > .amb-dock > nav.amb-tabbar").lastElementChild.matches("button.amb-tab"),
     "the rail has no foot: its tab bar ends in a place, and no page carries the foot or its rules");
-  const chips = heroes.map((h) => h.querySelector(":scope > button[data-barhours][data-act='bar.hours'][hidden]"));
-  ok(heroes.length === 5 && heroes.every((h) => !!h.querySelector(":scope > p.amb-hero__time > [data-barlive]") && !!h.querySelector(":scope > p.amb-hero__time > [data-clock]")) && chips.every(Boolean),
-    "every place's hero carries the status: the live word and the clock in one line, then the shop's state, a button hidden until it has a word: " + heroes.length);
-  ok(chips.filter((c) => c && !c.hasAttribute("data-wide")).length === 1 && d0.querySelector("#mHome > header > #aBarHours") === chips.find((c) => c && !c.hasAttribute("data-wide"))
-    && /@container amb \(max-width: 959\.98px\) \{ \[data-wide\] \{ display: none; \} \}/.test(css) && !/#aBarHours \{ display: none; \}/.test(css),
-    "a phone shows the state on Needs you alone: the other four carry data-wide, which stands down under 960px, and nothing hides Needs you's from 960px");
+  /* 22 Nov 2026 (the place head): each place's hero holds its title alone and its head follows it; the status is the head's second row, whose three first children say Live, the time and the state */
+  const heads = heroes.map((h) => h.nextElementSibling), chips = heads.map((h) => h && h.querySelector(":scope > div.amb-status > button.amb-status__state[data-barhours][data-act='bar.hours'][hidden]"));
+  ok(heroes.length === 5 && heroes.every((h) => h.matches(".amb-hero--title") && h.children.length === 1 && h.firstElementChild.matches("h1.amb-hero__title")) && heads.every((h) => !!h && h.matches("div.amb-head"))
+    && heads.every((h) => !!h.querySelector(":scope > div.amb-status > span.amb-status__live[data-barlive] + span.amb-status__time[data-clock]")) && chips.every(Boolean),
+    "every place's head carries the status under its title: the live word and the clock, then the shop's state, a button hidden until it has a word, and the hero holds the title alone: " + heroes.length);
+  ok(chips.every(Boolean) && !d0.querySelector("[data-wide]") && d0.querySelectorAll('[id="aBarHours"]').length === 1 && d0.querySelector("#mHome > .amb-head > .amb-status > #aBarHours") === chips[0]
+    && !/data-wide/.test(css) && !/#aBarHours \{ display: none; \}|\[data-barhours\] \{ display: none; \}/.test(css),
+    "the state is on every place at every width: no place carries data-wide, nothing hides it under or over 960px, and Needs you's alone holds its id");
   dom0.window.close();
   /* W3, W4 */
   let status = { open: true, source: "schedule", nextChange: new Date(Date.now() + 3600000).toISOString(), nextOpen: null }, mode = "ok";
@@ -64,25 +73,27 @@ export async function run({ ok }) {
     await wait();
     const D = dom.window.document, all = [...D.querySelectorAll("#roster [data-barhours]")], hero = D.getElementById("aBarHours"), lives = [...D.querySelectorAll("#roster [data-barlive]")];
     const same = () => all.every((c) => c.textContent === hero.textContent && c.hidden === hero.hidden && c.className === hero.className && c.getAttribute("aria-label") === hero.getAttribute("aria-label"));
-    ok(lives.length === 5 && lives.every((l) => l.className === "abarlive on" && l.textContent === "Live"), "every bar reads Live while his reads reach the Counter: " + JSON.stringify(lives.map((l) => l.textContent)));
-    ok(all.length === 5 && !hero.hidden && /^Open to /.test(hero.textContent) && same() && hero.classList.contains("amb-chip") && !!hero.querySelector(".amb-chip__dot"),
+    /* 22 Nov 2026 (the place head): the live line and the state are Ambient's amb-status parts, a dot and its word each, in the same words in every place */
+    ok(lives.length === 5 && lives.every((l) => l.className === "amb-status__live abarlive on" && l.textContent === "Live" && l.firstElementChild.classList.contains("amb-chip__dot")), "every bar reads Live while his reads reach the Counter: " + JSON.stringify(lives.map((l) => l.textContent)));
+    ok(all.length === 5 && !hero.hidden && /^Open to /.test(hero.textContent) && same() && hero.classList.contains("amb-status__state") && !hero.classList.contains("amb-chip") && !!hero.querySelector(".amb-chip__dot"),
       "and the shop's state in the same words in every place: " + JSON.stringify(all.map((c) => [c.hidden, c.textContent])));
     status = { open: false, source: "manual", nextChange: new Date(Date.now() + 3600000).toISOString(), nextOpen: new Date(Date.now() + 3600000).toISOString() };
     await again();
-    ok(/^Paused to /.test(hero.textContent) && same() && all.every((c) => c.classList.contains("ashop--paused")), "each follows when the shop is paused: " + JSON.stringify(all.map((c) => [c.textContent, c.className])));
+    ok(/^Paused to /.test(hero.textContent) && same() && all.every((c) => c.classList.contains("ashop--paused") && c.classList.contains("amb-status__state--warn")), "each follows when the shop is paused: " + JSON.stringify(all.map((c) => [c.textContent, c.className])));
     mode = "down";
     await again();
-    ok(lives.every((l) => l.className === "abarlive off" && l.textContent === "Offline"), "and each reads Offline once his read cannot reach the Counter: " + lives.map((l) => l.textContent));
+    ok(lives.every((l) => l.className === "amb-status__live abarlive amb-status__live--off off" && l.textContent === "Offline"), "and each reads Offline once his read cannot reach the Counter: " + lives.map((l) => l.textContent));
     mode = "ok";
     status = { open: true, source: "schedule", nextChange: new Date(Date.now() - 1000).toISOString(), nextOpen: null };
     await again();
     ok(all.every((c) => c.hidden && c.textContent === ""), "a state whose moment has passed is drawn in none: " + JSON.stringify(all.map((c) => [c.hidden, c.textContent])));
     /* W4 */
-    ok(/\[data-barhours\] \{ min-height: var\(--amb-tap\); min-width: var\(--amb-tap\); \}/.test(css), "the chip is a 44px control in every bar");
+    /* 22 Nov 2026 (the place head): the 44px is Ambient's rule for the status state, so the page's layer sets none of its own */
+    ok(/\.amb-status__state \{[^}]*min-height: var\(--amb-tap\);/.test(css) && !/\[data-barhours\] \{/.test(css), "the state is a 44px control in every bar, Ambient's rule and none of the page's");
     status = { open: true, source: "schedule", nextChange: new Date(Date.now() + 3600000).toISOString(), nextOpen: null };
     await again();
-    D.querySelector("#oCustomers > header [data-barhours]").click(); await wait();
+    D.querySelector("#oCustomers > .amb-head [data-barhours]").click(); await wait();
     const cur = D.querySelector('button[data-m][aria-current="page"]'), hours = D.querySelector('.aparts[data-place="shop"] [data-part="hours"]');
-    ok(!!cur && cur.getAttribute("data-m") === "shop" && hours.getAttribute("aria-pressed") === "true", "and a tap on Customers' chip goes to Shop hours: " + (cur && cur.getAttribute("data-m")));
+    ok(!!cur && cur.getAttribute("data-m") === "shop" && hours.getAttribute("aria-pressed") === "true", "and a tap on Customers' state goes to Shop hours: " + (cur && cur.getAttribute("data-m")));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
 }

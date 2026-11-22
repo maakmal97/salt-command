@@ -1,7 +1,8 @@
 /* test/admin-needs-groups.mjs: SALT ADMIN NEEDS YOU, P4 (22 Oct 2026; his canvas Needs you and his names). What is proved here, each check red under its
  * own mutation (test/admin-needs-groups.mutations.json):
- *   1  the cards stand in three groups, To do, Pending and FYI, in that order, each a section with its one word for a heading, always open, no count
- *      and no fold; a practice card stays in its own folded line at the foot
+ *   1  the cards stand in three groups, To do, Pending and FYI, in that order, each a section named by its one word, always open, no count and no fold;
+ *      22 Nov 2026 (the place head): a group has no heading, its word is its part's tab, and only the part he is in shows, the others hidden; a practice card
+ *      stays in its own folded line at the foot
  *   2  his own work is To do (a payment, an order, a message, an account, a link, an entry, goods paid for and not handed over, a step to send again);
  *      Pending is the customer's (money owed past its term, an offer of his waiting on their yes); FYI is what needs nothing (a notice, an override)
  *   3  within a group money comes first, the largest sum first, then the cards with no sum, the oldest first
@@ -23,10 +24,16 @@ export async function run({ ok, pageWork }) {
     await click(byAct(d, "nav.needs"));
     /* 1 */
     const groups = [...d.querySelectorAll("#nlist > *")].filter((g) => g.matches("section, details"));
-    const heads = groups.map((g) => [g.tagName, g.getAttribute("data-sev"), t(g.querySelector(":scope > .nsev")), g.getAttribute("aria-label")]);
-    ok(J(heads.filter((h) => h[1] !== "practice")) === J([["SECTION", "now", "To do", "To do"], ["SECTION", "soon", "Pending", "Pending"], ["SECTION", "watch", "FYI", "FYI"]])
-      && groups.every((g) => g.querySelector(":scope > .nsev").tagName === (g.tagName === "SECTION" ? "H2" : "SUMMARY")) && !d.querySelector('#nlist details[data-sev="soon"], #nlist details[data-sev="watch"]'),
-      "three groups, To do, Pending and FYI, each a section headed by its one word with no count, none folded: " + J(heads));
+    /* 22 Nov 2026 (the place head): no heading stands in a group (the h2.nsev is gone; only the practice fold keeps its summary); every group is drawn and the part he is in alone shows */
+    const heads = groups.map((g) => [g.tagName, g.getAttribute("data-sev"), g.getAttribute("aria-label"), g.hidden, !!g.querySelector("h2, .nsev")]);
+    ok(J(heads.filter((h) => h[1] !== "practice")) === J([["SECTION", "now", "To do", false, false], ["SECTION", "soon", "Pending", true, false], ["SECTION", "watch", "FYI", true, false]])
+      && groups.every((g) => (g.tagName === "SECTION" ? !g.querySelector("h2, .nsev") : !!g.querySelector(":scope > summary.nsev"))) && !d.querySelector('#nlist details[data-sev="soon"], #nlist details[data-sev="watch"]'),
+      "three groups, To do, Pending and FYI, each a section named by its word with no heading and no count, none folded, To do showing and the others hidden: " + J(heads));
+    const shownGroups = () => J([...d.querySelectorAll("#nlist > section.ngroup")].filter((g) => !g.hidden).map((g) => g.getAttribute("data-sev")));
+    await click(byAct(d, "part.needs.pending")); const onPending = shownGroups();
+    await click(byAct(d, "part.needs.fyi")); const onFyi = shownGroups();
+    await click(byAct(d, "part.needs.todo")); const onTodo = shownGroups();
+    ok(onPending === J(["soon"]) && onFyi === J(["watch"]) && onTodo === J(["now"]), "and a part's tab shows its group alone: " + J([onPending, onFyi, onTodo]));
     /* 2 */
     const sevOf = (key) => { const c = d.querySelector('#nlist [data-need="' + key + '"]'); return c ? c.closest("[data-sev]").getAttribute("data-sev") : null; };
     const want = { "p:ord-a1": "now", "o:ord-p1": "now", "m:abcd-efgh": "now", "s": "now", "l:w1": "now", "x:0": "now", "q:q-2": "now", "a:ord-a2": "now", "n:jkmn-pqrs": "now",

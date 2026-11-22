@@ -130,5 +130,11 @@
     "file": "stmt/owner.js",
     "find": "&&!(sv&&!sv.hidden)",
     "replace": ""
+  },
+  {
+    "name": "6 the kinds' filter is dropped from the queue's pane (22 Nov 2026, the place head)",
+    "file": "stmt/page.js",
+    "find": "+ '<div class=\"nkinds\">' + aFilter(\"nKinds\", \"Show\", ADMIN_KINDS, \"data-chip\", \"need.kind\", \"nkopt\") + '</div><div id=\"nlist\" class=\"nlist\"></div>'",
+    "replace": "+ '<div id=\"nlist\" class=\"nlist\"></div>'"
   }
 ]

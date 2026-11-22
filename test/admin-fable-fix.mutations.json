@@ -90,10 +90,10 @@
   "replace": "aPill(f.move,'order.move',e.id,true)"
  },
  {
-  "name": "the hero's Approve is a filled pill",
+  "name": "the head's Approve is a filled pill (22 Nov 2026, the place head)",
   "file": "stmt/page.js",
-  "find": "class=\"amb-pill amb-pill--quiet\"' + (o.approve ? ' id=\"aApprove\"'",
-  "replace": "class=\"amb-pill\"' + (o.approve ? ' id=\"aApprove\"'"
+  "find": "class=\"amb-pill amb-pill--quiet\"' + (o.live ? ' id=\"aApprove\"'",
+  "replace": "class=\"amb-pill\"' + (o.live ? ' id=\"aApprove\"'"
  },
  {
   "name": "Needs you's empty pane is a bare line again",
@@ -114,10 +114,10 @@
   "replace": "pane.appendChild(el('p','amb-prose rnone recnone','Choose a form to open it here.'));"
  },
  {
-  "name": "the hours chip is no 44px hit area",
+  "name": "the hours chip (Ambient's status state) is no 44px hit area (22 Nov 2026, the place head)",
   "file": "stmt/statement-css.js",
-  "find": "[data-barhours] { min-height: var(--amb-tap); min-width: var(--amb-tap); }",
-  "replace": "[data-barhours] { }"
+  "find": "gap: 6px; min-width: var(--amb-tap); min-height: var(--amb-tap); margin: 0; padding: 0 var(--amb-space-1);",
+  "replace": "gap: 6px; min-width: 0; min-height: 0; margin: 0; padding: 0 var(--amb-space-1);"
  },
  {
   "name": "what stands before the split keeps its own inset",

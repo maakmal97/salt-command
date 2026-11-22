@@ -2,8 +2,8 @@
  {
   "name": "Record's parts are a wrapping row of pills again",
   "file": "stmt/page.js",
-  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\")",
-  "replace": "\" amb-segment--wrap\""
+  "find": "amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment--tabs amb-segment--slide amb-segment--wrap aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "the tab tapped is not marked",
@@ -82,5 +82,11 @@
   "file": "stmt/statement-css.js",
   "find": ".mfig:empty { display: none; }",
   "replace": ".formrow { min-height: 44px; }"
+ },
+ {
+  "name": "Record's parts no longer slide",
+  "file": "stmt/page.js",
+  "find": "amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment--tabs aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  }
 ]

@@ -36,10 +36,28 @@
   "replace": "apSay='Approve';"
  },
  {
-  "name": "Approve leaves Orders' hero",
+  "name": "Approve is hidden on every place but Needs you's",
   "file": "stmt/page.js",
-  "find": "aHero(\"Orders\", '<p class=\"amb-hero__sub\" id=\"makerReviewStatus\">Reading.</p>', { heat: true, acts: !test, approve: true })",
-  "replace": "aHero(\"Orders\", '<p class=\"amb-hero__sub\" id=\"makerReviewStatus\">Reading.</p>', { heat: true }) + '<button type=\"button\" class=\"amb-pill\" id=\"aApprove\" data-approve data-act=\"bar.approve\">Approve</button>'"
+  "find": "<button type=\"button\" class=\"amb-pill amb-pill--quiet\"' + (o.live ? ' id=\"aApprove\"' : \"\") + ' data-approve data-act=\"bar.approve\">Approve",
+  "replace": "<button type=\"button\" class=\"amb-pill amb-pill--quiet\"' + (o.live ? ' id=\"aApprove\"' : \" hidden\") + ' data-approve data-act=\"bar.approve\">Approve"
+ },
+ {
+  "name": "Approve is hidden again while nothing waits",
+  "file": "stmt/owner.js",
+  "find": "      if(apBtn.getAttribute('aria-label')!==apSay) apBtn.setAttribute('aria-label',apSay);\n",
+  "replace": "      if(apBtn.getAttribute('aria-label')!==apSay) apBtn.setAttribute('aria-label',apSay);\n      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;\n"
+ },
+ {
+  "name": "Approve never says its count",
+  "file": "stmt/owner.js",
+  "find": "if(c){ if(c.textContent!==v) c.textContent=v; c.toggleAttribute('data-zero',!rows); }",
+  "replace": "if(c){ c.toggleAttribute('data-zero',!rows); }"
+ },
+ {
+  "name": "Approve's 0 is not greyed",
+  "file": "stmt/owner.js",
+  "find": "c.toggleAttribute('data-zero',!rows); }",
+  "replace": "c.toggleAttribute('data-zero',false); }"
  },
  {
   "name": "Approve opens Orders' first part",

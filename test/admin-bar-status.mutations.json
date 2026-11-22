@@ -2,14 +2,14 @@
  {
   "name": "the bar never reads Live",
   "file": "stmt/owner.js",
-  "find": "lv.innerHTML='<span>'+(on?'Live':'Offline')+'</span>';",
-  "replace": "lv.innerHTML='<span>Offline</span>';"
+  "find": "lv.innerHTML='<span class=\"amb-chip__dot\"></span>'+(on?'Live':'Offline');",
+  "replace": "lv.innerHTML='<span class=\"amb-chip__dot\"></span>Offline';"
  },
  {
   "name": "the dot is never lit",
   "file": "stmt/owner.js",
-  "find": "lv.className='abarlive '+(on?'on':'off');",
-  "replace": "lv.className='abarlive off';"
+  "find": "lv.className='amb-status__live abarlive '+(on?'on':'amb-status__live--off off');",
+  "replace": "lv.className='amb-status__live abarlive amb-status__live--off off';"
  },
  {
   "name": "the hours are never shown",
@@ -20,8 +20,8 @@
  {
   "name": "open says no time",
   "file": "stmt/owner.js",
-  "find": "txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');",
-  "replace": "txt=(h.open?'Open':paused?'Paused':'Closed');"
+  "find": "txt=(h.open?'Open':paused?'Paused':'Closed'); when=w?' to '+w:'';",
+  "replace": "txt=(h.open?'Open':paused?'Paused':'Closed'); when='';"
  },
  {
   "name": "a read that cannot go stays Live",
@@ -62,13 +62,13 @@
  {
   "name": "the hours are words, not a control",
   "file": "stmt/page.js",
-  "find": "'<button type=\"button\" class=\"amb-chip amb-chip--glass\"' + (o.hours ? ' id=\"aBarHours\"' : \" data-wide\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
-  "replace": "'<span class=\"amb-chip amb-chip--glass\"' + (o.hours ? ' id=\"aBarHours\"' : \" data-wide\") + ' data-barhours data-act=\"bar.hours\" hidden></span>'"
+  "find": "'<button type=\"button\" class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
+  "replace": "'<span class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></span>'"
  },
  {
   "name": "the chip is not named with its tap",
   "file": "stmt/owner.js",
-  "find": "        hb.setAttribute('aria-label',txt+'. Tap to change');",
+  "find": "        hb.setAttribute('aria-label',txt+when+'. Tap to change');",
   "replace": ""
  },
  {
@@ -80,8 +80,8 @@
  {
   "name": "the chip says until",
   "file": "stmt/owner.js",
-  "find": "txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');",
-  "replace": "txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' until '+w:'');"
+  "find": "when=w?' to '+w:'';",
+  "replace": "when=w?' until '+w:'';"
  },
  {
   "name": "an override is never Paused",
@@ -96,10 +96,10 @@
   "replace": "tone='';"
  },
  {
-  "name": "the chip stands outside the brand row",
+  "name": "the state stands before the clock in the status row",
   "file": "stmt/page.js",
-  "find": "'<p class=\"amb-hero__time\"><span class=\"abarlive\" data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\") + '></span><span class=\"clk\" data-clock></span></p>'",
-  "replace": "'<p class=\"amb-hero__time\"><span class=\"abarlive\" data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\") + '></span><span class=\"clk\" data-clock></span>' + (o.hours ? '<button type=\"button\" class=\"amb-chip amb-chip--glass\" id=\"aBarHours\" data-act=\"bar.hours\" hidden></button>' : \"\") + '</p>'"
+  "find": "<span class=\"amb-status__time clk\" data-clock></span>'\n    + '<button type=\"button\" class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
+  "replace": "<button type=\"button\" class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></button><span class=\"amb-status__time clk\" data-clock></span>'"
  },
  {
   "name": "another day is its date",
@@ -114,10 +114,10 @@
   "replace": "hb.innerHTML='';"
  },
  {
-  "name": "the chip is not glass",
+  "name": "the state is not Ambient's status state",
   "file": "stmt/owner.js",
-  "find": "hb.className='amb-chip amb-chip--glass ashop'+tone;",
-  "replace": "hb.className='amb-chip ashop'+tone;"
+  "find": "hb.className='amb-status__state ashop'+tone+",
+  "replace": "hb.className='ashop'+tone+"
  },
  {
   "name": "the page styles the chip again",
@@ -126,9 +126,21 @@
   "replace": ".ahelp { grid-column: 2; } .adm .ashop{min-height:44px}"
  },
  {
-  "name": "the live line leaves the hero",
+  "name": "the live line is not Needs you's own",
   "file": "stmt/page.js",
-  "find": "aHero(\"Needs you\", '<p class=\"amb-hero__sub\" id=\"nCount\">Reading what needs you.</p>', { heat: true, live: true, hours: true, acts: !test })",
-  "replace": "aHero(\"Needs you\", '<p class=\"amb-hero__sub\" id=\"nCount\">Reading what needs you.</p>', { heat: true, hours: true, acts: !test }) + '<span class=\"abarlive\" data-barlive id=\"aBarLive\"></span>'"
+  "find": "<span class=\"amb-status__live abarlive\" data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\") + '></span>",
+  "replace": "<span class=\"amb-status__live abarlive\" data-barlive' + '></span>"
+ },
+ {
+  "name": "a paused state takes no warning dot",
+  "file": "stmt/owner.js",
+  "find": "(tone===' ashop--paused'?' amb-status__state--warn':tone?'':' amb-status__state--pos')",
+  "replace": "(tone?'':' amb-status__state--pos')"
+ },
+ {
+  "name": "the moment is not a word of its own",
+  "file": "stmt/owner.js",
+  "find": "hw.className='amb-status__word';",
+  "replace": "hw.className='';"
  }
 ]

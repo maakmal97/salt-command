@@ -186,10 +186,10 @@
   "replace": "function(card){}));"
  },
  {
-  "name": "a chip filters nothing",
+  "name": "a kind filters nothing (22 Nov 2026, the place head)",
   "file": "stmt/owner.js",
-  "find": "shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });",
-  "replace": "shown=items;"
+  "find": "shown=all.filter(function(i){ return nKind==='all'||i.kind===nKind; });",
+  "replace": "shown=all;"
  },
  {
   "name": "a chip reads",
@@ -198,10 +198,10 @@
   "replace": "if(k){ if(k.getAttribute('aria-disabled')!=='true') nPick(k.getAttribute('data-chip')); readNeeds(true); return; }"
  },
  {
-  "name": "a chip has no act",
+  "name": "a kind's choice has no act (22 Nov 2026, the place head)",
   "file": "stmt/page.js",
-  "find": "'\" data-act=\"need.kind.' + k + '\" aria-pressed=\"'",
-  "replace": "'\" aria-pressed=\"'"
+  "find": "'\" data-act=\"' + act + (act === \"need.kind\" ? \".\" : \"-\") + k",
+  "replace": "'\" data-x=\"' + k"
  },
  {
   "name": "a failed read does not lead the page",
@@ -360,16 +360,16 @@
   "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');\n    if(age){ kd.appendChild(document.createTextNode(' \\u00b7 '))"
  },
  {
-  "name": "the kinds are not a group",
+  "name": "the kinds' menu is not a group (22 Nov 2026, the place head)",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-segment amb-segment--wrap nchips\" role=\"group\"",
-  "replace": "<div class=\"amb-segment amb-segment--wrap nchips\" role=\"list\""
+  "find": "id=\"' + id + '\" role=\"group\" aria-label=\"' + label + '\" hidden>'",
+  "replace": "id=\"' + id + '\" role=\"list\" aria-label=\"' + label + '\" hidden>'"
  },
  {
-  "name": "a chip is not an option of the Segment",
+  "name": "a kind's choice is not an option of the filter (22 Nov 2026, the place head)",
   "file": "stmt/page.js",
-  "find": "class=\"amb-segment__opt nkopt\" data-chip=\"",
-  "replace": "class=\"nkopt\" data-chip=\""
+  "find": "class=\"amb-filter__opt' + (cls ? \" \" + cls : \"\") + '\" '",
+  "replace": "class=\"x' + (cls ? \" \" + cls : \"\") + '\" '"
  },
  {
   "name": "All is not selected at first",
@@ -408,10 +408,10 @@
   "replace": "title=el('h3','amb-task__title'), tp=el('span','need-title')"
  },
  {
-  "name": "a group heading carries a count",
+  "name": "a group stands under a heading with a count (22 Nov 2026, the place head)",
   "file": "stmt/owner.js",
-  "find": "var h=el('h2','amb-section nsev', s[1]);",
-  "replace": "var h=el('h2','amb-section nsev', s[1]+': '+group.length);"
+  "find": "      nlist.appendChild(box);",
+  "replace": "      nlist.appendChild(box); box.appendChild(el('h2','amb-section nsev', s[1]+': '+group.length));"
  },
  {
   "name": "the practice fold he opened shuts on a redraw",
@@ -450,10 +450,10 @@
   "replace": "if(sheet&&!sheetBusy)"
  },
  {
-  "name": "something stands between the title and the banner",
+  "name": "something stands before the banner, under the headline (22 Nov 2026, the place head)",
   "file": "stmt/page.js",
-  "find": "        + '<div id=\"nFail\" class=\"amb-notice amb-notice--warn nfail\" role=\"alert\" hidden></div>'",
-  "replace": "        + '<p class=\"nfirst\">A line before the banner.</p><div id=\"nFail\" class=\"amb-notice amb-notice--warn nfail\" role=\"alert\" hidden></div>'"
+  "find": "<div class=\"amb-stack\" id=\"nFailBox\" hidden><div id=\"nFail\" class=\"amb-notice amb-notice--warn nfail\" role=\"alert\" hidden></div></div>",
+  "replace": "<div class=\"amb-stack\" id=\"nFailBox\" hidden><p class=\"nfirst\">A line before the banner.</p><div id=\"nFail\" class=\"amb-notice amb-notice--warn nfail\" role=\"alert\" hidden></div></div>"
  },
  {
   "name": "one bad key blanks the review",
@@ -774,10 +774,10 @@
   "replace": ":['','Open']"
  },
  {
-  "name": "Watch is counted",
+  "name": "the kinds count every part's cards, not the part shown's (22 Nov 2026, the place head)",
   "file": "stmt/owner.js",
-  "find": "if(i.practice||i.sev==='watch') return; n.all++;",
-  "replace": "if(i.practice) return; n.all++;"
+  "find": "    drawKindCounts(items);",
+  "replace": "    drawKindCounts(all);"
  },
  {
   "name": "an empty kind is disabled, not aria-disabled",
@@ -796,5 +796,29 @@
   "file": "stmt/owner.js",
   "find": "b.addEventListener('click', function(){ owedGo(first,'[data-amend]'); }); c._add(b);",
   "replace": "b.addEventListener('click', function(){ owedGo(first,'[data-sect=\"money\"]'); }); c._add(b);"
+ },
+ {
+  "name": "every group shows at once (22 Nov 2026, the place head)",
+  "file": "stmt/owner.js",
+  "find": "box.hidden=s[0]!==sev;",
+  "replace": "box.hidden=false;"
+ },
+ {
+  "name": "a part's tab carries no count (22 Nov 2026, the place head)",
+  "file": "stmt/owner.js",
+  "find": "if(c){ if(c.textContent!==v) c.textContent=v; if(c.hidden!==!v) c.hidden=!v; }",
+  "replace": "if(c){ c.textContent=''; c.hidden=true; }"
+ },
+ {
+  "name": "Pending shows To do's group (22 Nov 2026, the place head)",
+  "file": "stmt/owner.js",
+  "find": "var NEED_PART={todo:'now', pending:'soon', fyi:'watch'};",
+  "replace": "var NEED_PART={todo:'now', pending:'now', fyi:'watch'};"
+ },
+ {
+  "name": "the headline is the hero's line again (22 Nov 2026, the place head)",
+  "file": "stmt/page.js",
+  "find": "const aLead = (id) => '<p class=\"amb-lead\" id=\"'",
+  "replace": "const aLead = (id) => '<p class=\"amb-hero__sub\" id=\"'"
  }
 ]

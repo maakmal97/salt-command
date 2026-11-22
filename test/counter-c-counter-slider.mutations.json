@@ -26,26 +26,26 @@
  {
   "name": "Record's strip is a salt-ds slider (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\"",
-  "replace": "<div class=\"salt-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\""
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "<div class=\"salt-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "Customers has no strip (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "p === \"shop\" || p === \"record\" || p === \"customers\"\n  ?",
-  "replace": "p === \"shop\" || p === \"record\"\n  ?"
+  "find": "p === \"shop\" || p === \"record\" || p === \"customers\" || p === \"needs\"\n  ?",
+  "replace": "p === \"shop\" || p === \"record\" || p === \"needs\"\n  ?"
  },
  {
-  "name": "Shop's parts do not wrap (16 Nov 2026)",
+  "name": "Shop's parts wrap (16 Nov 2026; 22 Nov 2026: they slide on one row)",
   "file": "stmt/page.js",
-  "find": "(p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\"",
-  "replace": "\"\" + ' amb-segment--tabs aparts\""
+  "find": "amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment--tabs amb-segment--slide amb-segment--wrap aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "Orders' parts are a salt-ds slider (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
-  "replace": "<div class=\"salt-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
+  "replace": "<div class=\"salt-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
  },
  {
   "name": "a hidden option is the one pressed (16 Nov 2026)",
@@ -54,10 +54,10 @@
   "replace": "var on=b.parentNode.getAttribute('data-place')===placeNow&&(b.getAttribute('data-part')===partNow||b.hidden);\n      b.setAttribute('aria-selected'"
  },
  {
-  "name": "the kinds are no wrapping Segment (16 Nov 2026)",
+  "name": "the kinds' menu is a wrapping Segment (16 Nov 2026; 22 Nov 2026: a menu)",
   "file": "stmt/page.js",
-  "find": "'<div class=\"amb-segment amb-segment--wrap nchips\"",
-  "replace": "'<div class=\"amb-segment nchips\""
+  "find": "<div class=\"amb-filter__menu\" id=\"' + id + '\"",
+  "replace": "<div class=\"amb-filter__menu amb-segment amb-segment--wrap\" id=\"' + id + '\""
  },
  {
   "name": "the months become a slider",
@@ -68,8 +68,8 @@
  {
   "name": "Orders' parts lose their counts (16 Nov 2026)",
   "file": "stmt/page.js",
-  "find": "ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class=\"amb-segment__count\" hidden></span></button>').join(\"\") + \"</div></div>\";",
-  "replace": "ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '</button>').join(\"\") + \"</div></div>\";"
+  "find": "[0][1] + '<span class=\"amb-segment__count\" hidden></span></button>').join(\"\")",
+  "replace": "[0][1] + '</button>').join(\"\")"
  },
  {
   "name": "This device is no settings list",

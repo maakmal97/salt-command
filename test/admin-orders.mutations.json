@@ -228,40 +228,40 @@
   "replace": "    if(roster.hidden&&placeNow==='needs') return;\n"
  },
  {
-  "name": "the orb opens the wrong part of Record",
+  "name": "Record's dock button opens the wrong part",
   "file": "stmt/owner.js",
-  "find": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
-  "replace": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','customers',{fresh:true,push:true}); });"
+  "find": "var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened)",
+  "replace": "var mm=b.getAttribute('data-m'); if(mm==='record'&&placeNow!=='record'){ showPlace('record','customers',{fresh:true,push:true}); return; } if(mm==='orders'&&placeNow==='orders'&&ordOpened)"
  },
  {
-  "name": "the orb opens nothing",
+  "name": "Record's dock button opens nothing",
   "file": "stmt/owner.js",
-  "find": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
-  "replace": "  if(oAdd) oAdd.addEventListener('click', function(){});"
+  "find": "var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened)",
+  "replace": "var mm=b.getAttribute('data-m'); if(mm==='record'&&placeNow!=='record') return; if(mm==='orders'&&placeNow==='orders'&&ordOpened)"
  },
  {
-  "name": "the orb stays on Record",
+  "name": "Record's dock button is not marked where he is",
   "file": "stmt/owner.js",
-  "find": "function(add){ add.hidden=placeNow==='record'; });",
-  "replace": "function(add){ add.hidden=false; });"
+  "find": "if(b.getAttribute('data-m')===placeNow&&(!b.getAttribute('data-p')||b.getAttribute('data-p')===partNow)) b.setAttribute('aria-current','page');",
+  "replace": "if(b.getAttribute('data-m')===placeNow&&b.getAttribute('data-m')!=='record'&&(!b.getAttribute('data-p')||b.getAttribute('data-p')===partNow)) b.setAttribute('aria-current','page');"
  },
  {
-  "name": "the orb is gone from Orders",
+  "name": "Record's dock button is hidden on Orders",
   "file": "stmt/owner.js",
-  "find": "function(add){ add.hidden=placeNow==='record'; });",
-  "replace": "function(add){ add.hidden=placeNow==='record'||placeNow==='orders'; });"
+  "find": "else b.removeAttribute('aria-current'); });",
+  "replace": "else b.removeAttribute('aria-current'); if(b.getAttribute('data-m')==='record') b.hidden=placeNow==='orders'; });"
  },
  {
-  "name": "the orb has no act",
+  "name": "Record's dock button has no act",
   "file": "stmt/page.js",
-  "find": "id=\"oAdd\" data-act=\"nav.add\" aria-label",
-  "replace": "id=\"oAdd\" aria-label"
+  "find": "' data-act=\"nav.' + (p || m) + '\" aria-label=\"",
+  "replace": "(m === \"record\" ? ' data-x=\"nav.' : ' data-act=\"nav.') + (p || m) + '\" aria-label=\""
  },
  {
-  "name": "the orb has no name",
+  "name": "Record's dock button has no name",
   "file": "stmt/page.js",
-  "find": "data-act=\"nav.add\" aria-label=\"Record an entry\">",
-  "replace": "data-act=\"nav.add\">"
+  "find": "'\" aria-label=\"' + w + '\" data-word=\"'",
+  "replace": "'\" ' + (m === \"record\" ? \"\" : 'aria-label=\"' + w + '\" ') + 'data-word=\"'"
  },
  {
   "name": "a form is shown at the menu",
@@ -404,8 +404,8 @@
  {
   "name": "the owner's script names a customer function second in a var list",
   "file": "stmt/owner.js",
-  "find": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null;",
-  "replace": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null, oFind=null;"
+  "find": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null, needPartLast='todo';",
+  "replace": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null, needPartLast='todo', oFind=null;"
  },
  {
   "name": "the owner's pay ways overwrite the customer's again",
@@ -600,10 +600,10 @@
   "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
  },
  {
-  "name": "Ledger check leaves Orders' bar (18 Nov 2026: the More group is split up)",
+  "name": "Ledger check leaves Orders' status row (22 Nov 2026: the place head; 18 Nov 2026: the More group is split up)",
   "file": "stmt/page.js",
-  "find": "(o.acts ? '<div class=\"amb-cluster\"'",
-  "replace": "(o.acts && !o.approve ? '<div class=\"amb-cluster\"'"
+  "find": "(o.acts ? '<div class=\"amb-status__end\">'",
+  "replace": "(o.acts && o.live ? '<div class=\"amb-status__end\">'"
  },
  {
   "name": "Ended is not in the Segment",
@@ -662,14 +662,14 @@
  {
   "name": "the rail's + comes back",
   "file": "stmt/page.js",
-  "find": "'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"",
-  "replace": "'<button type=\"button\" data-act=\"rail.add\" id=\"oAddRail\"></button><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\""
+  "find": "adm\" data-mood=\"lagoon\">'",
+  "replace": "adm\" data-mood=\"lagoon\"><button type=\"button\" data-act=\"rail.add\" id=\"oAddRail\"></button>'"
  },
  {
-  "name": "the + is not in the app bar",
+  "name": "the + comes back in an app bar",
   "file": "stmt/page.js",
-  "find": "        + '<div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\">'\n        + (test ? \"\" : '<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\">' + AMB.glyph(\"plus\") + \"</button>\")\n        + \"</div></div>\"",
-  "replace": "        + '<div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\">'\n        + \"</div></div>\"\n        + (test ? \"\" : '<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\">' + AMB.glyph(\"plus\") + \"</button>\")"
+  "find": "adm\" data-mood=\"lagoon\">'",
+  "replace": "adm\" data-mood=\"lagoon\"><div class=\"amb-appbar\"><span></span><div class=\"amb-appbar__group\"><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\"></button></div></div>'"
  },
  {
   "name": "V3: the card has no units field",

@@ -1,6 +1,6 @@
 [
  {"name":"the Counter's hero carries a bare clock again","file":"stmt/page.js","find":"<span id=\"cstay\"></span></p></header>'","replace":"<span id=\"cstay\"></span></p><p class=\"amb-hero__time\" data-clock></p></header>'"},
  {"name":"the clock is not painted again on a return","file":"stmt/page.js","find":"[].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=t; });","replace":"[].forEach.call(document.querySelectorAll('[data-clock]:empty'),function(n){ if(!n.textContent&&!n.hasAttribute('data-once')){ n.textContent=t; n.setAttribute('data-once',''); } });"},
- {"name":"his heroes carry no clock","file":"stmt/page.js","find":"'<p class=\"amb-hero__time\"><span class=\"abarlive\" data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\") + '></span><span class=\"clk\" data-clock></span></p>'","replace":"'<p class=\"amb-hero__time\"><span class=\"abarlive\" data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\") + '></span></p>'"},
+ {"name":"his status rows carry no clock","file":"stmt/page.js","find":"<span class=\"amb-status__time clk\" data-clock></span>","replace":"<span class=\"amb-status__time clk\"></span>"},
  {"name":"every hero holds the live line's id","file":"stmt/page.js","find":"data-barlive' + (o.live ? ' id=\"aBarLive\"' : \"\") + '>","replace":"data-barlive id=\"aBarLive\">"}
 ]

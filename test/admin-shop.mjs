@@ -252,9 +252,10 @@ export async function run({ ok, pageWork }) {
   try {
     await tb.tap("nav.shop"); await tb.tap("part.shop.hours");
     const strip = tb.d.querySelector('.aparts[data-place="shop"]'), tabs = strip ? [...strip.querySelectorAll("button")] : [];
-    ok(!!strip && strip.classList.contains("amb-segment") && strip.classList.contains("amb-segment--wrap") && strip.parentElement.classList.contains("amb-stack") && tabs.length === 7 && tabs.every((b) => b.classList.contains("amb-segment__opt") && !/salt-/.test(b.className))
+    /* 22 Nov 2026 (the place head): Settings' seven parts slide on one row in the place's head (div.amb-head) and never wrap; they wrapped inside a stack until then */
+    ok(!!strip && strip.classList.contains("amb-segment") && strip.classList.contains("amb-segment--slide") && !strip.classList.contains("amb-segment--wrap") && strip.parentElement.classList.contains("amb-head") && tabs.length === 7 && tabs.every((b) => b.classList.contains("amb-segment__opt") && !/salt-/.test(b.className))
       && JSON.stringify(tabs.map((b) => t(b) + ":" + b.getAttribute("aria-pressed"))) === JSON.stringify(["Hours:true", "Market:false", "Calendar:false", "Notice:false", "Group orders:false", "Practice:false", "This device:false"]),
-      "Shop's seven parts (Market since 11 Nov 2026, Calendar since 13 Nov 2026, Group orders since 18 Nov 2026) are Ambient's wrapping Segment, Hours pressed: " + tabs.map((b) => t(b) + ":" + b.getAttribute("aria-pressed")).join());
+      "Shop's seven parts (Market since 11 Nov 2026, Calendar since 13 Nov 2026, Group orders since 18 Nov 2026) are Ambient's sliding Segment in the head, never wrapping, Hours pressed: " + tabs.map((b) => t(b) + ":" + b.getAttribute("aria-pressed")).join());
     await tb.tap("part.shop.notice"); await tb.tap("nav.needs"); await tb.tap("nav.shop");
     ok(JSON.stringify([...strip.querySelectorAll("button")].map((b) => b.getAttribute("aria-pressed"))) === JSON.stringify(["true", "false", "false", "false", "false", "false", "false"]), "coming back to Shop opens Hours and presses it, the page pressing what Ambient's script does not");
     ok(["makerPointsTitle", "mHelpH"].every((id) => tb.d.getElementById(id).classList.contains("amb-section")), "Collection points and Help head their sections as every section does");

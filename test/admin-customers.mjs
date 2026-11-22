@@ -1,6 +1,6 @@
 /* test/admin-customers.mjs: CUSTOMERS AS ROWS (the layout rework, 14 Oct 2026). Each check is red under its own mutation (test/admin-customers.mutations.json).
  *   A  an account row is a settings row (2 Nov 2026, his Customers canvas; Needs you's card from 25 Oct): its state and age, its one way as a lit ghost, its sum; the row's text is the tap
- *   B  a filter with no account in its state is dimmed and cannot be chosen
+ *   B  a filter with no account in its state is dimmed and cannot be chosen (22 Nov 2026, the place head: the filters are the choices of a pull-down menu beside the find field)
  *   C  a guest link is one row: its address, QR and moves are inside a shut details, opened by its summary; a withdrawn link says so in a pill
  *   D  an associate's code is its own element beside its marks, its counts a ledger
  *   E  an account's card lists its loans with the date, what was lent, repaid and left, and Repayment opens Record's form with that loan chosen; their reward stands there */
@@ -32,7 +32,9 @@ export async function run({ ok, pageWork }) {
     const quiet = cards().find((r) => /CX4-ZED/.test(r.textContent));
     ok(!!quiet && quiet.querySelectorAll(".amb-chip").length === 0 && quiet.querySelectorAll(".salt-pill").length === 0, "an account with nothing to say has no pill: " + (quiet && quiet.textContent));
     const none = d.querySelector('#afil button[data-f="none"]'), locks = d.querySelector('#afil button[data-f="locked"]');
-    ok(!!none && none.getAttribute("aria-disabled") !== "true" && !!locks && locks.getAttribute("aria-disabled") !== "true" && none.classList.contains("amb-segment__opt"), "a filter can be chosen while an account is in its state");
+    ok(!!none && none.getAttribute("aria-disabled") !== "true" && !!locks && locks.getAttribute("aria-disabled") !== "true" && none.classList.contains("amb-filter__opt") && !none.classList.contains("amb-segment__opt"),
+      /* 22 Nov 2026 (the place head): the filters are the choices of a pull-down menu (#afil), no longer options of a segment */
+      "a filter can be chosen while an account is in its state");
 
     const q = await richOwnerPage({ pageWork, sheetAnswer: (j) => ({ ...j, accounts: j.accounts.filter((a) => !a.locked && a.account !== false) }) });
     try { await q.work.quiet(); enter(q.d, "customers", "accounts"); await q.work.quiet();

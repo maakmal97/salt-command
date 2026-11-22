@@ -14,8 +14,8 @@
  {
   "name": "the Segment is a plain group again",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-stack\"><div class=\"amb-segment amb-segment--tabs aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
-  "replace": "<div class=\"amb-stack\"><div class=\"amb-stack aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">",
+  "replace": "<div class=\"amb-stack aparts\" role=\"group\" aria-label=\"Orders\" data-place=\"orders\">"
  },
  {
   "name": "a part carries no count",

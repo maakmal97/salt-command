@@ -42,16 +42,16 @@
   "replace": "height: var(--amb-space-8); background-image: linear-gradient(to right, var(--amb-mesh-1)"
  },
  {
-  "name": "the time line is not at the bar's end",
+  "name": "the title is not a row at the tap's height",
   "file": "stmt/statement-css.js",
-  "find": ".amb-shell--work .amb-hero--compact > .amb-hero__time { margin-left: auto;",
-  "replace": ".amb-shell--work .amb-hero--compact > .amb-hero__time { margin-left: 0;"
+  "find": ".amb-shell--work .amb-hero--compact > .amb-hero__title { display: flex; align-items: center; min-height: var(--amb-tap);",
+  "replace": ".amb-shell--work .amb-hero--compact > .amb-hero__title { display: flex; align-items: center; min-height: 0;"
  },
  {
-  "name": "the actions part from the time line",
+  "name": "the head leaves the content's own sides",
   "file": "stmt/statement-css.js",
-  "find": ".amb-shell--work .amb-hero--compact > .amb-hero__time ~ .amb-cluster { margin-left: 0; }",
-  "replace": ".amb-shell--work .amb-hero--compact > .amb-hero__time ~ .amb-cluster { margin-left: auto; }"
+  "find": ".amb-tiles, .amb-form, .amb-head, .amb-lead):not(.amb-split) { padding-inline:",
+  "replace": ".amb-tiles, .amb-form, .amb-lead):not(.amb-split) { padding-inline:"
  },
  {
   "name": "the rail stops short of the foot",
@@ -78,46 +78,46 @@
   "replace": "          + '<div class=\"amb-tabbar__foot\"></div>' /* 18 Nov 2026 (Ambient 0.7.20, his answer B): the rail runs to the screen's foot and holds the places alone;"
  },
  {
-  "name": "only Needs you's hero carries the shop's state",
+  "name": "only Needs you's status row carries the shop's state",
   "file": "stmt/page.js",
-  "find": "    + '<button type=\"button\" class=\"amb-chip amb-chip--glass\"' + (o.hours ? ' id=\"aBarHours\"' : \" data-wide\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
-  "replace": "    + (o.hours ? '<button type=\"button\" class=\"amb-chip amb-chip--glass\" id=\"aBarHours\" data-barhours data-act=\"bar.hours\" hidden></button>' : \"\")"
+  "find": "'<button type=\"button\" class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
+  "replace": "(o.live ? '<button type=\"button\" class=\"amb-status__state ashop\" id=\"aBarHours\" data-barhours data-act=\"bar.hours\" hidden></button>' : \"\")"
  },
  {
   "name": "the shop's state is not a control",
   "file": "stmt/page.js",
-  "find": "'<button type=\"button\" class=\"amb-chip amb-chip--glass\"' + (o.hours",
-  "replace": "'<span class=\"amb-chip amb-chip--glass\"' + (o.hours"
+  "find": "'<button type=\"button\" class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></button>'",
+  "replace": "'<span class=\"amb-status__state ashop\"' + (o.live ? ' id=\"aBarHours\"' : \"\") + ' data-barhours data-act=\"bar.hours\" hidden></span>'"
  },
  {
-  "name": "every hero's chip shows on a phone",
+  "name": "a place's state is marked for the wide page alone again",
   "file": "stmt/page.js",
-  "find": ": \" data-wide\") + ' data-barhours",
-  "replace": ": \"\") + ' data-barhours"
+  "find": "(o.live ? ' id=\"aBarHours\"' : \"\")",
+  "replace": "(o.live ? ' id=\"aBarHours\"' : \" data-wide\")"
  },
  {
   "name": "the live word is never filled",
   "file": "stmt/page.js",
-  "find": "'<p class=\"amb-hero__time\"><span class=\"abarlive\" data-barlive' + (o.live",
-  "replace": "'<p class=\"amb-hero__time\"><span class=\"abarlive\"' + (o.live"
+  "find": "<span class=\"amb-status__live abarlive\" data-barlive' + (o.live",
+  "replace": "<span class=\"amb-status__live abarlive\"' + (o.live"
  },
  {
-  "name": "what a bar adds for the wide page shows on a phone",
+  "name": "a phone's status row hides the shop's state",
   "file": "stmt/statement-css.js",
-  "find": "@container amb (max-width: 959.98px) { [data-wide] { display: none; } }",
-  "replace": ""
+  "find": ".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4)); padding-bottom: var(--amb-space-4); }",
+  "replace": ".amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4)); padding-bottom: var(--amb-space-4); } @container amb (max-width: 959.98px) { [data-barhours] { display: none; } }"
  },
  {
   "name": "only Needs you's chip is filled",
   "file": "stmt/owner.js",
-  "find": "    [].forEach.call(document.querySelectorAll('[data-barhours]'), function(hb){\n      if(hb.getAttribute('data-txt')!==txt+tone){",
-  "replace": "    [].forEach.call(document.querySelectorAll('#aBarHours'), function(hb){\n      if(hb.getAttribute('data-txt')!==txt+tone){"
+  "find": "    [].forEach.call(document.querySelectorAll('[data-barhours]'), function(hb){\n      if(hb.getAttribute('data-txt')!==txt+when+tone){",
+  "replace": "    [].forEach.call(document.querySelectorAll('#aBarHours'), function(hb){\n      if(hb.getAttribute('data-txt')!==txt+when+tone){"
  },
  {
-  "name": "the chip never takes the state's words",
+  "name": "the state never takes the shop's words",
   "file": "stmt/owner.js",
-  "find": "        hb.appendChild(document.createTextNode(txt));",
-  "replace": "        hb.appendChild(document.createTextNode('Open'));"
+  "find": "hl.className='amb-status__label'; hl.textContent=txt;",
+  "replace": "hl.className='amb-status__label'; hl.textContent='Open';"
  },
  {
   "name": "the chip stays once its moment has passed",
@@ -128,19 +128,25 @@
  {
   "name": "a paused shop reads as an open one",
   "file": "stmt/owner.js",
-  "find": "hb.className='amb-chip amb-chip--glass ashop'+tone;",
-  "replace": "hb.className='amb-chip amb-chip--glass ashop';"
+  "find": "hb.className='amb-status__state ashop'+tone+(",
+  "replace": "hb.className='amb-status__state ashop'+("
  },
  {
-  "name": "the chip is under 44px",
+  "name": "the state is under 44px",
   "file": "stmt/statement-css.js",
-  "find": "[data-barhours] { min-height: var(--amb-tap); min-width: var(--amb-tap); }",
-  "replace": "[data-barhours] { }"
+  "find": "min-height: var(--amb-tap); margin: 0; padding: 0 var(--amb-space-1); border: 0;",
+  "replace": "min-height: 0; margin: 0; padding: 0 var(--amb-space-1); border: 0;"
  },
  {
   "name": "a tap on another place's chip goes nowhere",
   "file": "stmt/owner.js",
   "find": "  [].forEach.call(document.querySelectorAll('[data-barhours]'), function(hb){ hb.addEventListener('click',function(){",
   "replace": "  [].forEach.call(document.querySelectorAll('#aBarHours'), function(hb){ hb.addEventListener('click',function(){"
+ },
+ {
+  "name": "a place's hero holds more than its title",
+  "file": "stmt/page.js",
+  "find": "esc(title) + \"</h1></header>\"",
+  "replace": "esc(title) + \"</h1><p class=\\\"amb-hero__time\\\"></p></header>\""
  }
 ]

@@ -6,10 +6,10 @@
   "replace": "var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']]"
  },
  {
-  "name": "a group heading carries its count",
+  "name": "a group stands under a heading with its count (22 Nov 2026, the place head)",
   "file": "stmt/owner.js",
-  "find": "var h=el('h2','amb-section nsev', s[1]);",
-  "replace": "var h=el('h2','amb-section nsev', s[1]+' · '+group.length);"
+  "find": "      nlist.appendChild(box);",
+  "replace": "      nlist.appendChild(box); box.appendChild(el('h2','amb-section nsev', s[1]+' · '+group.length));"
  },
  {
   "name": "Pending folds again",
@@ -124,5 +124,17 @@
   "file": "stmt/owner.js",
   "find": "'that Withdraw was answered already, and a newer offer of yours is open':'Your newer offer is still open, so tap Withdraw again.',",
   "replace": ""
+ },
+ {
+  "name": "every group shows at once (22 Nov 2026, the place head)",
+  "file": "stmt/owner.js",
+  "find": "box.hidden=s[0]!==sev;",
+  "replace": "box.hidden=false;"
+ },
+ {
+  "name": "a part's tab shows the wrong group (22 Nov 2026, the place head)",
+  "file": "stmt/owner.js",
+  "find": "var NEED_PART={todo:'now', pending:'soon', fyi:'watch'};",
+  "replace": "var NEED_PART={todo:'now', pending:'watch', fyi:'soon'};"
  }
 ]

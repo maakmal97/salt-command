@@ -38,14 +38,14 @@
  {
   "name": "a strip is no longer Ambient's Segment",
   "file": "stmt/page.js",
-  "find": "<div class=\"amb-segment' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\" role=\"group\"",
-  "replace": "<div class=\"amb-segmen' + (p === \"shop\" ? \" amb-segment--wrap\" : \"\") + ' amb-segment--tabs aparts\" role=\"group\""
+  "find": "<div class=\"amb-segment amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "<div class=\"amb-segmen amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "a strip is no group",
   "file": "stmt/page.js",
-  "find": "' amb-segment--tabs aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
-  "replace": "' amb-segment--tabs aparts\" aria-label=\"' + ADMIN_PLACES"
+  "find": "amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment--slide aparts\" aria-label=\"' + ADMIN_PLACES"
  },
  {
   "name": "a part's option is a tab",
@@ -382,5 +382,23 @@
   "file": "stmt/page.js",
   "find": "class=\"amb-segment__opt\" data-part=\"' + k + '\" data-act=\"part.orders.",
   "replace": "class=\"amb-pill\" data-part=\"' + k + '\" data-act=\"part.orders."
+ },
+ {
+  "name": "a strip no longer slides",
+  "file": "stmt/page.js",
+  "find": "amb-segment--tabs amb-segment--slide aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES",
+  "replace": "amb-segment--tabs aparts\" role=\"group\" aria-label=\"' + ADMIN_PLACES"
+ },
+ {
+  "name": "Needs you has no strip",
+  "file": "stmt/page.js",
+  "find": "p === \"shop\" || p === \"record\" || p === \"customers\" || p === \"needs\"",
+  "replace": "p === \"shop\" || p === \"record\" || p === \"customers\""
+ },
+ {
+  "name": "Needs you loses its FYI part",
+  "file": "stmt/page.js",
+  "find": "needs: [[\"todo\", \"To do\"], [\"pending\", \"Pending\"], [\"fyi\", \"FYI\"]],",
+  "replace": "needs: [[\"todo\", \"To do\"], [\"pending\", \"Pending\"]],"
  }
 ]

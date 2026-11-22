@@ -40,16 +40,18 @@ export async function run({ ok, pageWork }) {
 
     /* A3 */
     const needsSplit = d.querySelector("#mHome .nsplit"), first = needsSplit && needsSplit.children[0];
-    ok(!!first && first.firstElementChild.id === "nGlanceBox" && first.children[1].id === "nlist" && !!d.querySelector("#nGlanceBox > h2.amb-section")
+    /* 22 Nov 2026 (the place head): the kinds' pull-down stands between the glance and the list it narrows */
+    ok(!!first && first.firstElementChild.id === "nGlanceBox" && first.children[1].matches(".nkinds") && first.children[2].id === "nlist" && !!d.querySelector("#nGlanceBox > h2.amb-section")
       && !!d.querySelector("#nGlanceBox > #nGlance.amb-tiles") && !d.querySelector("#mHome > .amb-stack #nGlance"),
     "Needs you's glance is the first group of the queue's pane, under its own section head, and no longer stands before the split");
     ok(/\.nglancebox > \.amb-tiles \{ padding-inline: 0; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/.test(css) && /\.nglancebox > \.amb-tiles > \.nkpi--owed \{ grid-column: 1 \/ -1; \}/.test(css),
       "the glance is two tiles across and Receivables spans both");
     enter(d, "customers", "accounts"); await p.work.quiet();
     const rl = d.getElementById("rlist"), find = d.getElementById("rq"), afind = d.querySelector("#oAccts .afind");
-    ok(!!rl.querySelector(":scope > .afhead > #alead") && !!rl.querySelector(":scope > .afhead > .amb-search > #rq") && !!rl.querySelector(":scope > .afhead > #scount")
-      && !!afind.querySelector("#afil") && !afind.querySelector("#rq, #alead, #scount"),
-    "Customers' summary notice, find field and sent count head the first pane; only the filters stand before the split");
+    /* 22 Nov 2026 (the place head): the filters are a pull-down beside the find field, in the pane's head; nothing stands before the split */
+    ok(!!rl.querySelector(":scope > .afhead > #alead") && !!rl.querySelector(":scope > .afhead > .afind > .amb-search > #rq") && !!rl.querySelector(":scope > .afhead > #scount")
+      && !!afind && afind.closest("#rlist") === rl && !!afind.querySelector("#afil") && !afind.querySelector("#alead, #scount") && !d.querySelector("#oAccts > .amb-stack"),
+    "Customers' summary notice, the find field with the filters' pull-down beside it, and the sent count head the first pane; nothing stands before the split");
     find.value = "cx1"; find.dispatchEvent(new d.defaultView.Event("input", { bubbles: true })); await p.work.quiet();
     ok(d.getElementById("rq") === find && !!rl.querySelector(":scope > .afhead") && rl.querySelectorAll("#rlist [data-u]").length >= 1,
       "a draw of the list keeps the pane's head and the find field, and draws the groups afresh");
@@ -74,10 +76,12 @@ export async function run({ ok, pageWork }) {
     ok(!d.querySelector("#nopen:not([hidden])") && d.getElementById("aopen").hidden && !d.querySelector("#makerFormGrid.open"), "and nothing opens by itself in any of them");
 
     /* A6 */
-    ok(/\[data-barhours\] \{ min-height: var\(--amb-tap\); min-width: var\(--amb-tap\); \}/.test(css), "the hours chip is a 44px hit area");
+    /* 22 Nov 2026 (the place head): the shop's state is Ambient's amb-status__state, a quiet button a tap wide and tall; the layer writes no rule for it */
+    ok(/\.amb-status__state \{[^}]*min-width: var\(--amb-tap\);[^}]*min-height: var\(--amb-tap\);/.test(css) && !/\[data-barhours\] \{/.test(css), "the shop's state is a 44px hit area, by Ambient's own rule");
     /* 18 Nov 2026 (Ambient 0.7.22): the rule is Ambient's, for any stack before shown panes in a working shell, and the site's layer writes none */
-    ok(css.includes(".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }")
-      && ["#unsentBar", "#nFail", ".aparts", ".afind"].every((id) => { const n = d.querySelector(id), st = n && (n.matches(".amb-stack") ? n : n.parentElement); return !!st && st.matches(".amb-stack") && st.parentElement.matches(".amb-screen, .amb-place"); }),
+    /* 22 Nov 2026 (the place head): the rule now lists the head and the headline too, and what stands before the split is the head, the failed read and the unsent banner */
+    ok(css.includes(".amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-head, .amb-lead):not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }")
+      && !!d.querySelector("#mHome > .amb-head") && ["#unsentBar", "#nFail"].every((id) => { const n = d.querySelector(id), st = n && (n.matches(".amb-stack") ? n : n.parentElement); return !!st && st.matches(".amb-stack") && st.parentElement.matches(".amb-screen, .amb-place"); }),
       "from 960px what stands before the split takes the panes' own edge");
     ok(/\.amb-split--panes > \.amb-stack:last-child \.amb-settings, \.amb-split--panes > \.amb-stack:last-child \.amb-foot > \.amb-pill \{ max-width: none; \}/.test(css),
       "the second pane's group and the foot take the pane's width");

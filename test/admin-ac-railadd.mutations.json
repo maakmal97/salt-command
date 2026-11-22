@@ -1,21 +1,21 @@
 [
  {
-  "name": "the + is not a circle",
+  "name": "the + comes back as a circle in an app bar",
   "file": "stmt/page.js",
-  "find": "'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"",
-  "replace": "'<button type=\"button\" class=\"amb-pill\" id=\"oAdd\" data-act=\"nav.add\""
+  "find": "adm\" data-mood=\"lagoon\">'",
+  "replace": "adm\" data-mood=\"lagoon\"><div class=\"amb-appbar\"><div class=\"amb-appbar__group\"><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\" aria-label=\"Record an entry\"></button></div></div>'"
  },
  {
-  "name": "the + draws another glyph",
+  "name": "an app bar comes back with nothing in it",
   "file": "stmt/page.js",
-  "find": "aria-label=\"Record an entry\">' + AMB.glyph(\"plus\")",
-  "replace": "aria-label=\"Record an entry\">' + AMB.glyph(\"edit\")"
+  "find": "adm\" data-mood=\"lagoon\">'",
+  "replace": "adm\" data-mood=\"lagoon\"><div class=\"amb-appbar\"></div>'"
  },
  {
   "name": "the rail's + comes back",
   "file": "stmt/page.js",
-  "find": "'<button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\"",
-  "replace": "'<button type=\"button\" id=\"oAddRail\" data-act=\"rail.add\"></button><button type=\"button\" class=\"amb-circle\" id=\"oAdd\" data-act=\"nav.add\""
+  "find": "adm\" data-mood=\"lagoon\">'",
+  "replace": "adm\" data-mood=\"lagoon\"><button type=\"button\" id=\"oAddRail\" data-act=\"rail.add\"></button>'"
  },
  {
   "name": "the page places the + again",
@@ -24,15 +24,27 @@
   "replace": ".ahelp { grid-column: 2; } .adm #oAdd{position:fixed;right:16px}"
  },
  {
-  "name": "the + stands on Record",
-  "file": "stmt/owner.js",
-  "find": "    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=placeNow==='record'; });",
-  "replace": "    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=false; });"
+  "name": "the orb comes back as a pill with the retired act",
+  "file": "stmt/page.js",
+  "find": "adm\" data-mood=\"lagoon\">'",
+  "replace": "adm\" data-mood=\"lagoon\"><button type=\"button\" class=\"amb-pill\" id=\"oAdd\" data-act=\"nav.add\"></button>'"
  },
  {
-  "name": "the + opens Shop",
+  "name": "a tap on Record in the dock opens Settings",
   "file": "stmt/owner.js",
-  "find": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
-  "replace": "  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('shop','',{fresh:true,push:true}); });"
+  "find": "var mm=b.getAttribute('data-m'); if(mm==='orders'&&placeNow==='orders'&&ordOpened)",
+  "replace": "var mm=b.getAttribute('data-m'); if(mm==='record') mm='shop'; if(mm==='orders'&&placeNow==='orders'&&ordOpened)"
+ },
+ {
+  "name": "Record opens on a part that is not Entry",
+  "file": "stmt/page.js",
+  "find": "record: [[\"entry\", \"Entry\"]",
+  "replace": "record: [[\"customers\", \"Customers\"], [\"entry\", \"Entry\"]"
+ },
+ {
+  "name": "Record's dock button names another act",
+  "file": "stmt/page.js",
+  "find": "' data-act=\"nav.' + (p || m) + '\" aria-label=\"' + w + '\" data-word=\"' + w + '\">'",
+  "replace": "' data-act=\"nav.' + (p || m) + (m === \"record\" ? \"x\" : \"\") + '\" aria-label=\"' + w + '\" data-word=\"' + w + '\">'"
  }
 ]

@@ -83,7 +83,8 @@ export async function run({ ok, pageWork }) {
     ok(/ 2 books are low on stock\.$/.test(lead) && !/need stock/.test(lead), "two books low and none out or promised past the shelf are said once: " + lead);
     const delta = t(d.querySelector('#nGlance [data-glance="owed"] .amb-tile__delta'));
     ok(/^RM [\d,.]+ paid of RM [\d,.]+ agreed$/.test(delta), "Receivables' line says what the paid is of, the agreed orders: " + delta);
-    const chips = [...d.querySelectorAll(".nchips button")].map((b) => [b.getAttribute("data-chip"), t(b.querySelector(".nkopt__n")), b.getAttribute("aria-disabled") === "true"]);
+    /* 22 Nov 2026 (the place head): the kinds are the Show pull-down's choices, counting the part shown (To do) */
+    const chips = [...d.querySelectorAll("#nKinds button[data-chip]")].map((b) => [b.getAttribute("data-chip"), t(b.querySelector(".nkopt__n")), b.getAttribute("aria-disabled") === "true"]);
     ok(chips.length > 1 && chips.every((c) => (c[2] ? c[1] === "0" : c[1] !== "0")), "a kind that is not dimmed never carries a 0, and a dimmed one says 0: " + JSON.stringify(chips));
   } finally { p.w.close(); }
   /* R4: nothing on his tap, cards under Pending */
@@ -95,9 +96,14 @@ export async function run({ ok, pageWork }) {
     const d = quiet.d; byAct(d, "nav.needs").click(); await quiet.work.quiet();
     const lead = t(d.getElementById("nCount")), cards = [...d.querySelectorAll("#nlist .amb-section, #nlist h2, #nlist h3")].map(t);
     ok(/^1 pending\. Nothing waits on your tap now\./.test(lead) && !/Nothing needs you/.test(lead), "with an offer waiting on their yes under Pending and nothing to do, the lead counts it: " + lead + " " + JSON.stringify(cards) + t(d.getElementById("nlist")).slice(0, 400));
-    const kinds = [...d.querySelectorAll(".nchips button")].map((b) => [b.getAttribute("data-chip"), t(b.querySelector(".nkopt__n")), b.getAttribute("aria-disabled") === "true"]);
-    ok(kinds.some((c) => !c[2] && c[1] === "" && c[0] !== "all") && kinds.every((c) => (c[2] ? c[1] === "0" : c[1] !== "0")),
-      "and a kind holding an FYI card alone is not dimmed and says no figure: " + JSON.stringify(kinds));
+    /* 22 Nov 2026 (the place head): a kind counts the part shown, so an FYI card is counted on FYI: there its kind is on, with its figure, and on To do,
+       with nothing to do, every kind but All is dimmed at 0 */
+    const kindsOf = () => [...d.querySelectorAll("#nKinds button[data-chip]")].map((b) => [b.getAttribute("data-chip"), t(b.querySelector(".nkopt__n")), b.getAttribute("aria-disabled") === "true"]);
+    const onTodo = kindsOf();
+    byAct(d, "part.needs.fyi").click(); await quiet.work.quiet();
+    const onFyi = kindsOf();
+    ok(onTodo.every((c) => c[0] === "all" ? !c[2] : (c[2] && c[1] === "0")) && onFyi.some((c) => !c[2] && /^[1-9]/.test(c[1]) && c[0] !== "all") && onFyi.every((c) => (c[2] ? c[1] === "0" : c[1] !== "0")),
+      "and a kind holding an FYI card is on, with its figure, on FYI, while To do with nothing to do dims every kind but All: " + JSON.stringify([onTodo, onFyi]));
   } finally { quiet.w.close(); }
   /* R8 */
   const css = SITE_CSS.replace(/\s+/g, " ");

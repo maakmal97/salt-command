@@ -98,10 +98,11 @@ export async function run({ ok, pageWork }) {
     firstPart.hidden = false;
     /* 22 Oct 2026 (canvas Needs you): Needs you's kinds left the pills for the Nav bar's text tabs (test/admin-ac-glance.mjs), so they are neither pills nor the slider */
     /* 25 Oct 2026 (Salt Admin Shop and Orders): Shop's parts and Orders' two rows left the pills for the Nav bar's text tabs too */
-    const kinds = d.querySelector(".nchips"), navs = ['.aparts[data-place="shop"]'].map((s) => [s, d.querySelector(s)]);
-    const navOk = navs.map(([s, g]) => [s, ambSeg(g) && g.classList.contains("amb-segment--wrap")]);
-    ok(ambSeg(kinds) && kinds.classList.contains("amb-segment--wrap") && [...kinds.querySelectorAll(".amb-segment__count")].length > 0 && navOk.every((x) => x[1]),
-      "the kinds (counted) and Shop's parts are Ambient's wrapping Segments, never the slider: " + J(navOk));
+    /* 22 Nov 2026 (the place head): Settings' parts slide on one row and never wrap, and Needs you's kinds left the navigation for a pull-down menu of counted choices (#nKinds), so neither is a wrapping Segment */
+    const kinds = d.getElementById("nKinds"), navs = ['.aparts[data-place="shop"]'].map((s) => [s, d.querySelector(s)]);
+    const navOk = navs.map(([s, g]) => [s, ambSeg(g) && g.classList.contains("amb-segment--slide") && !g.classList.contains("amb-segment--wrap")]);
+    ok(!!kinds && kinds.classList.contains("amb-filter__menu") && !/salt-|amb-segment/.test(kinds.className) && [...kinds.querySelectorAll(".amb-segment__count")].length > 0 && navOk.every((x) => x[1]),
+      "the kinds (counted) are a pull-down menu and Settings' parts Ambient's sliding Segment, never wrapping and never the slider: " + J(navOk));
     const ordSeg = d.querySelector('.aparts[data-place="orders"]');
     ok(ambSeg(ordSeg) && [...ordSeg.querySelectorAll("button")].length >= 4 && [...ordSeg.querySelectorAll(".amb-segment__count")].length >= 4,
       "and Orders' parts are Ambient's Segment, each counted");

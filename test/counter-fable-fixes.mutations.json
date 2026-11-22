@@ -120,10 +120,10 @@
   "replace": "<span id=\"cstay\"></span></p><p class=\"amb-hero__time\" data-clock></p></header>'"
  },
  {
-  "name": "Salt Admin's hero loses its clock",
+  "name": "Salt Admin's status row loses its clock",
   "file": "stmt/page.js",
-  "find": "<span class=\"clk\" data-clock></span></p>'",
-  "replace": "<span class=\"clk\"></span></p>'"
+  "find": "<span class=\"amb-status__time clk\" data-clock></span>",
+  "replace": "<span class=\"amb-status__time clk\"></span>"
  },
  {
   "name": "the order's foot is no longer last",
