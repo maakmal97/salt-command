@@ -1835,22 +1835,28 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
 }
 
 /* A ringed thumb that holds an app's own mark: the shape the app supplies as path data, filled in the ink
-   (the ring carries the kind's hue; the shape stays in the ink, so a set of marks reads even), and under
-   it a word of one to four letters, never under 12px. Three sizes: 44px in a row or a card, where the word
-   is dropped and the shape stands alone (its name stands beside it in ink); 56px, the default; and 72px
-   for a start tile. The sizes are any thumb's, in order: amb-thumb--sm 36px, amb-thumb--md 44px, the default
-   56px, amb-thumb--lg 72px. A 44px mark always has its name beside it: two shapes can be near twins. */
+   (the ring carries the kind's hue; the shape stays in the ink, so a set of marks reads even), and INSIDE
+   the shape its letter, cut out in the thumb's ground (0.7.34, the owner's word of 22 Nov 2026: a word under
+   the shape left the shape too small, so the letter went inside and the shape took the thumb). The letter
+   is a <text> of the shape's own svg, on its 24 grid: one letter at 10, two at 9 (amb-thumb__letter--2),
+   three at 7.2 (amb-thumb__letter--3), so none is drawn under 12px: one or two from 44px, three from 56px,
+   none at 36px. The sizes are any thumb's, in order: amb-thumb--sm 36px, amb-thumb--md 44px (a row or a
+   card), the default 56px, amb-thumb--lg 72px (a start tile). */
 .amb-thumb--md { width: 44px; height: 44px; }
 .amb-thumb--lg { width: 72px; height: 72px; }
 /* a row led by a 44px thumb starts its hairline where its text does, 12px past the thumb */
 .amb-row:has(> .amb-thumb--md) { --amb-hairline-inset: 56px; }
-.amb-thumb--mark { align-content: center; gap: 2px; }
-.amb-thumb__shape { display: block; width: 26px; height: 26px; fill: currentColor; stroke: none; }
-.amb-thumb__word { display: block; font-size: var(--amb-text-caption); font-weight: 800; line-height: 1; letter-spacing: .02em; color: var(--amb-ink); white-space: nowrap; }
-.amb-thumb--md > .amb-thumb__word { display: none; }
-.amb-thumb--md > .amb-thumb__shape { width: 24px; height: 24px; }
-.amb-thumb--lg > .amb-thumb__shape { width: 36px; height: 36px; }
-.amb-thumb--lg > .amb-thumb__word { font-size: var(--amb-text-footnote); }
+.amb-thumb--mark { align-content: center; }
+.amb-thumb__shape { display: block; width: 40px; height: 40px; fill: currentColor; stroke: none; }
+/* the review's three (22 Nov 2026): 700, since 800 falls to a Black or Heavy face on some devices and fills a small letter in; the capitals
+   centred by a shift of their own half height (.35em), since `central` is the middle of a face's ascent and descent, which differs by face;
+   and three letters held to 13.5 on the grid by the text's own textLength, so a wider face never reaches the shape's edge */
+.amb-thumb__letter { fill: var(--amb-surface); font-size: 10px; font-weight: 700; text-anchor: middle; transform: translateY(.35em); }
+.amb-thumb__letter--2 { font-size: 9px; }
+.amb-thumb__letter--3 { font-size: 7.2px; }
+.amb-thumb--sm > .amb-thumb__shape { width: 24px; height: 24px; }
+.amb-thumb--md > .amb-thumb__shape { width: 32px; height: 32px; }
+.amb-thumb--lg > .amb-thumb__shape { width: 52px; height: 52px; }
 
 /* A week of open hours: a row a day, Mon to Sun and then any dated days, each its name, a bar of the day's
    24 hours and the day's hours in words under it. The bar is an inline SVG in hours (viewBox 0 0 24 1), so a
