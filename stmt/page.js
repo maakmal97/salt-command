@@ -567,27 +567,30 @@ export function ambKit(esc, books) {
   };
 }
 export const AMB = ambKit(esc, Object.keys(PSYM));
-/* Salt Admin's place opens with this hero: its name the title, its lead line under it, then the time and the live line (barDraw). heat draws the
-   mood's chip, hidden until salt's supply is tight (moodSet); hours marks Needs you's hours chip, the one a phone shows; acts draws the bar's two moves, Ledger check and Approve
-   (not on the test surface), and approve marks Orders' own, the ones a phone shows. */
-function aHero(title, sub, o) {
-  o = o || {};
-  return '<header class="amb-hero amb-hero--compact amb-mesh">'
-    + (o.heat ? '<span class="amb-chip amb-chip--glass" data-heat hidden>Supply tight</span>' : "")
-    + '<h1 class="amb-hero__title">' + esc(title) + "</h1>" + (sub || "")
-    + '<p class="amb-hero__time"><span class="abarlive" data-barlive' + (o.live ? ' id="aBarLive"' : "") + '></span><span class="clk" data-clock></span></p>'
-    /* 18 Nov 2026 (Ambient 0.7.20, his answer B): the status is the bar's, in every place: the live word and the time, then the shop's state (data-barhours, barDraw fills each).
-       A phone keeps the chip on Needs you alone: the others carry data-wide, shown from 960px (design/site.css) */
-    + '<button type="button" class="amb-chip amb-chip--glass"' + (o.hours ? ' id="aBarHours"' : " data-wide") + ' data-barhours data-act="bar.hours" hidden></button>'
-    /* 18 Nov 2026 (his answer D): EVERY PLACE'S BAR CARRIES LEDGER CHECK AND APPROVE. Ledger check says the Desk's last check of every site order against its row (ledgerPaint in
-       stmt/owner.js: a tick while they agree, the count of differences while they do not) and opens the part its row in Orders' More list opened; Approve stands on Orders always, as
-       it did, and on the other places while rows wait (barLive). A phone keeps both on Orders alone (data-wide). Its act is the bar's of 21 Oct 2026. */
-    + (o.acts ? '<div class="amb-cluster"' + (o.approve ? "" : " data-wide") + '>'
-      + '<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar.ledger" aria-pressed="false" aria-label="Ledger check">' + '<span class="aled__ok" data-ledger-ok hidden>' + AMB.glyph("check", "sm") + "</span>"
-      + '<span>Ledger</span><span class="amb-chip amb-chip--neg" data-ledger-n hidden></span></button>'
-      + '<button type="button" class="amb-pill amb-pill--quiet"' + (o.approve ? ' id="aApprove"' : " hidden") + ' data-approve data-act="bar.approve">Approve</button></div>' : "")
-    + "</header>";
+/* 22 Nov 2026, THE PLACE HEAD (his answers of 22 Nov 2026, docs/plan-place-head.html; Ambient 0.7.32): every place of Salt Admin opens the same way on
+   every screen. Its title alone (aHero: no room kept over it, the + gone), then its head (aHead): row 1 its parts, a sliding segment; row 2 its status, the
+   same on every place, a dot and a word each: Live and the time (barDraw), the shop's state (data-barhours, a tap to Settings > Hours), Supply tight while
+   it is (moodSet, on every place), and at its end Ledger (a tick, or the count of differences: ledgerPaint) and Approve with the rows that wait, 0 greyed
+   (barLive), never hidden. Then the place's headline (aLead), what its hero's line said. Under 480px a phone does without when the state next changes,
+   Supply tight's word (its dot stays) and Ledger's word once its tick or count says it; each control keeps its name. The test surface draws no Ledger and
+   no Approve. live marks Needs you's, the ones barDraw reads (the reviewer's findings of 22 Nov 2026, applied). */
+function aHero(title) {
+  return '<header class="amb-hero amb-hero--compact amb-hero--title amb-mesh"><h1 class="amb-hero__title">' + esc(title) + "</h1></header>";
 }
+function aHead(parts, o) {
+  o = o || {};
+  return '<div class="amb-head">' + (parts || "")
+    + '<div class="amb-status" role="group" aria-label="Status">'
+    + '<span class="amb-status__live abarlive" data-barlive' + (o.live ? ' id="aBarLive"' : "") + '></span><span class="amb-status__time clk" data-clock></span>'
+    + '<button type="button" class="amb-status__state ashop"' + (o.live ? ' id="aBarHours"' : "") + ' data-barhours data-act="bar.hours" hidden></button>'
+    + '<span class="amb-status__flag" data-heat title="Supply tight" hidden><span class="amb-chip__dot"></span><span class="amb-status__word">Supply tight</span></span>'
+    + (o.acts ? '<div class="amb-status__end">'
+      + '<button type="button" class="amb-pill amb-pill--quiet aled" data-ledger data-act="bar.ledger" aria-pressed="false" aria-label="Ledger check">' + '<span class="aled__ok" data-ledger-ok hidden>' + AMB.glyph("check", "sm") + "</span>"
+      + '<span class="aled__word">Ledger</span><span class="amb-chip amb-chip--neg" data-ledger-n hidden></span></button>'
+      + '<button type="button" class="amb-pill amb-pill--quiet"' + (o.live ? ' id="aApprove"' : "") + ' data-approve data-act="bar.approve">Approve<span class="amb-segment__count" data-approve-n data-zero>0</span></button></div>' : "")
+    + "</div></div>";
+}
+const aLead = (id) => '<p class="amb-lead" id="' + id + '">Reading.</p>';
 /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026: light and dark follow each device). ONE HEAD FOR EVERY PAGE THE SITE SERVES:
    no data-theme on the root, so Ambient follows the device; the page says it is drawn for both schemes, and the browser bar takes Lagoon's
    base in each (AMB_THEME, read out of the carried tokens by tools/stmt-style.mjs, never typed). The Night and Tide head script, its store
@@ -656,6 +659,7 @@ const TEST_PARTS = { orders: ["todo", "open", "done", "ended", "payments"], cust
 const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
   + ' data-act="nav.' + (p || m) + '" aria-label="' + w + '" data-word="' + w + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
+  needs: [["todo", "To do"], ["pending", "Pending"], ["fyi", "FYI"]],
   orders: [["todo", "To do"], ["open", "Open"], ["done", "Done"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments they sent"], ["ledger", "Ledger check"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
@@ -670,22 +674,28 @@ const ADMIN_ORDER_STAGES = ["todo", "open", "done", "ended"];
 /* 16 Nov 2026, the move to Ambient (place G): the four stages are Ambient's Segment, each with its count, one with none dimmed (aria-disabled, the count 0: stmt/owner.js paintOrdCounts);
    the More group of rows under the list went on 18 Nov 2026 (above) */
 /* 18 Nov 2026 (Ambient 0.7.20, his answer A): a place's parts are underlined tabs across the content from 960px (amb-segment--tabs), so they never read as the filter pills under them; a phone keeps the segment */
-const ordSegment = () => '<div class="amb-stack"><div class="amb-segment amb-segment--tabs aparts" role="group" aria-label="Orders" data-place="orders">'
+/* 22 Nov 2026 (the place head): the segment is the head's first row, sliding where more than fit, never wrapping */
+const ordSegment = () => '<div class="amb-segment amb-segment--tabs amb-segment--slide aparts" role="group" aria-label="Orders" data-place="orders">'
   + ADMIN_ORDER_STAGES.map((k) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.orders.' + k + '" aria-pressed="' + (k === "todo" ? "true" : "false") + '">'
-    + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class="amb-segment__count" hidden></span></button>').join("") + "</div></div>";
-const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
+    + ADMIN_PARTS.orders.filter((x) => x[0] === k)[0][1] + '<span class="amb-segment__count" hidden></span></button>').join("") + "</div>";
+const adminParts = (p, test) => test && !TEST_PARTS[p] && p !== "needs" ? ""
   : p === "orders"
   ? ordSegment()
   /* 25 Oct 2026 (his Shop canvas): Shop's four parts are a text tab row on the nav recipe, as Needs you's kinds; the acts, ids and aria-selected as every strip's */
   /* 16 Nov 2026, the move to Ambient (place I): Record's three parts and Shop's six are Ambient's Segment (three or four, one row; six, wrapping), a part pressed not selected, the count of what
      waits unsent beside Record's; the acts, ids and addresses as every strip's */
-  : p === "shop" || p === "record" || p === "customers"
-  ? '<div class="amb-stack"><div class="amb-segment' + (p === "shop" ? " amb-segment--wrap" : "") + ' amb-segment--tabs aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
-    + ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
-    + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div></div>"
+  : p === "shop" || p === "record" || p === "customers" || p === "needs"
+  ? '<div class="amb-segment amb-segment--tabs amb-segment--slide aparts" role="group" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
+    + ADMIN_PARTS[p].filter(([k]) => !test || !TEST_PARTS[p] || TEST_PARTS[p].includes(k)).map(([k, w]) => '<button type="button" class="amb-segment__opt" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-pressed="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + (p === "record" || p === "needs" ? '<span class="amb-segment__count" hidden></span>' : "") + "</button>").join("") + "</div>"
   : "";
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
+/* 22 Nov 2026 (the place head): a list's filter, Ambient's pull-down menu; each choice keeps its act and its key, its count painted by the owner's script */
+const aFilter = (id, label, opts, key, act, cls, endward) => '<div class="amb-filter' + (endward ? " amb-filter--end" : "") + '"><button type="button" class="amb-pill amb-pill--quiet amb-pill--sm amb-filter__btn" aria-expanded="false" aria-controls="' + id + '" data-act="' + act + '.menu">'
+  + label + ' <span class="amb-filter__value">' + opts[0][1] + "</span>" + AMB.glyph("chevron") + "</button>"
+  + '<div class="amb-filter__menu" id="' + id + '" role="group" aria-label="' + label + '" hidden>' + opts.map(([k, w], i) => '<button type="button" class="amb-filter__opt' + (cls ? " " + cls : "") + '" ' + key + '="' + k + '" data-act="' + act + (act === "need.kind" ? "." : "-") + k
+    + '" aria-pressed="' + (i ? "false" : "true") + '">' + AMB.glyph("check") + '<span class="amb-filter__word">' + w + '</span><span class="amb-segment__count' + (cls ? " " + cls + "__n" : "") + '"></span></button>').join("") + "</div></div>";
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account"]];
 /* 15 Nov 2026, the move to Ambient (0.7.2): each place is an Ambient glyph and its word on the tab bar */
 const ADMIN_GLYPH = { needs: "inbox", orders: "doc", customers: "people", record: "edit", shop: "store" };
@@ -740,16 +750,13 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + SITE_STYLE + PAGE_CSS + "</style></head>" + BODY_OPEN
     + (owner
-      /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026): HIS PAGE IS ONE AMBIENT SHELL. The app bar holds the New entry circle
-         (the + orb's id and act, shown where it was shown); the screen holds each place as before, each opening with its compact hero, the
-         place's name its title, its lead line under it and the time and the live line (barDraw) under that; one dock of the five places,
+      /* 15 NOV 2026, THE MOVE TO AMBIENT (his answers of 14 Nov 2026): HIS PAGE IS ONE AMBIENT SHELL, with no app bar since 22 Nov 2026 (the place
+         head: the + is gone, Record is one tap in the dock); the screen holds each place as before, each opening with its title alone, then its
+         head (the parts, then the status) and its headline (aHero, aHead, aLead above); one dock of the five places,
          which Ambient stands up as the rail from 960px. The mood is the market's heat off STOCK (moodSet in stmt/owner.js): Flare and Supply
          tight while salt's supply is tight, Lagoon otherwise, Slate on Shop. .adm stays on the root, where every older rule of his page is
          scoped until its place is redrawn. */
       ? '<div id="roster" class="amb-shell amb-shell--rail amb-shell--page amb-shell--work adm" data-mood="lagoon">'
-        + '<div class="amb-appbar"><span></span><div class="amb-appbar__group">'
-        + (test ? "" : '<button type="button" class="amb-circle" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + AMB.glyph("plus") + "</button>")
-        + "</div></div>"
         + '<main class="amb-screen amb-screen--docked">'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" class="amb-stack" hidden></div>'
@@ -760,20 +767,18 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         /* 16 Nov 2026, the move to Ambient (0.7.8, nested places): each place is an amb-place, and so is a place's body and each part that holds a split
            with filters before it, so the shown chain reaches the split and its two panes take the screen and scroll apart; a split that is itself a part
            (Orders' stages, Shop's hours) is never an amb-place. The parts segment stays before the body (his call, asked) */
-        + '<div id="mHome" class="amb-place" data-in="needs">' + aHero("Needs you", '<p class="amb-hero__sub" id="nCount">Reading what needs you.</p>', { heat: true, live: true, hours: true, acts: !test })
+        + '<div id="mHome" class="amb-place" data-in="needs">' + aHero("Needs you") + aHead(adminParts("needs", test), { live: true, acts: !test }) + aLead("nCount")
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         /* 16 Nov 2026 (the move to Ambient, place F): the head is one stack: a read that failed (Ambient's warning Notice) and the kinds (counted filters, one chosen); the glance (Ambient's tiles, each a link
            to Orders: Ready, To approve, Receivables with its meter) heads the queue's pane (17 Nov 2026). Under the head the queue and the open card, two columns from
            960px, the card's one main action the foot of its column (stmt/owner.js needPane, nFoot); Stock by book under both, a table that stacks on a phone. */
-        + '<div class="amb-stack">'
-        + '<div id="nFail" class="amb-notice amb-notice--warn nfail" role="alert" hidden></div>'
-        + '<div class="amb-segment amb-segment--wrap nchips" role="group" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="amb-segment__opt nkopt" data-chip="' + k
-          + '" data-act="need.kind.' + k + '" aria-pressed="' + (i ? "false" : "true") + '">' + w + ' <span class="amb-segment__count nkopt__n"></span></button>').join("") + "</div>"
-        + "</div>"
+        + '<div class="amb-stack" id="nFailBox" hidden><div id="nFail" class="amb-notice amb-notice--warn nfail" role="alert" hidden></div></div>'
         /* 16 Nov 2026 (0.7.8): the queue and the card are panes; Stock by book closes the queue's pane, since only hidden places may follow a split */
         /* 17 Nov 2026 (Fable's review, item 3): the glance is the queue's first group, under its own section head, two tiles across and Receivables across both */
         + '<div class="amb-split amb-split--panes nsplit"><div class="amb-stack"><div class="nglancebox" id="nGlanceBox" hidden><h2 class="amb-section">At a glance</h2>'
-        + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section></div><div id="nlist" class="nlist"></div>'
+        + '<section id="nGlance" class="amb-tiles nglance" aria-label="At a glance" hidden></section></div>'
+        /* 22 Nov 2026 (the place head): the kinds narrow the list, so their menu stands at its head, never in the head of the place */
+        + '<div class="nkinds">' + aFilter("nKinds", "Show", ADMIN_KINDS, "data-chip", "need.kind", "nkopt") + '</div><div id="nlist" class="nlist"></div>'
         + '<section id="nStock" class="amb-stack nstock" aria-label="Stock by book" hidden></section></div>'
         + '<div class="amb-stack" id="nrecord"><div id="nopen" class="nopen" aria-label="The open card" hidden></div><div class="amb-settings rnone panenone"><h3 class="amb-settings__head">No card open</h3><ul class="amb-settings__list"><li><div class="amb-setting"><span class="amb-setting__name">Choose a card to see it in full.</span></div></li></ul></div></div></div>'
         + "</div>"
@@ -781,8 +786,7 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace amb-place" data-in="orders" hidden>'
-        + aHero("Orders", '<p class="amb-hero__sub" id="makerReviewStatus">Reading.</p>', { heat: true, acts: !test, approve: true })
-        + adminParts("orders", test)
+        + aHero("Orders") + aHead(adminParts("orders", test), { acts: !test }) + aLead("makerReviewStatus")
         + '<div class="abody amb-place">'
         /* 16 Nov 2026, the move to Ambient (place G): the orders are two panes, the queue (its groups, then More) and the record, which ends in its one main action as its foot;
            from 960px they stand side by side, below it the open order takes the list's place and has its way back */
@@ -808,23 +812,18 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace amb-place" data-in="customers" hidden>'
-        + aHero("Customers", '<p class="amb-hero__sub" id="mFoot"></p>', { heat: true, acts: !test })   /* the count of accounts, the rail's foot until 15 Nov 2026 */
-        + adminParts("customers", test)
+        + aHero("Customers") + aHead(adminParts("customers", test), { acts: !test }) + aLead("mFoot")   /* the count of accounts, the rail's foot until 15 Nov 2026 */
         + '<div class="abody amb-place">'
         + '<div id="oAccts" class="amb-place" data-in="customers.accounts">'
         /* 16 Nov 2026, the move to Ambient (place H): a notice leads, money first, then the find field and the filters, counted, as Ambient's Search and Filters; the accounts are
            rows in the first pane and the open account the second, which holds its one main action at its foot */
         /* 17 Nov 2026, the move to Ambient (Fable's review, item 3): only the filters stand before the split; the summary notice, the find field and the sent count head the first pane */
-        + '<div class="amb-stack afind">'
-        + '<div class="amb-segment amb-segment--wrap afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="amb-segment__opt" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w
-          + '<span class="amb-segment__count"></span></button>').join("") + "</div>"
-        + "</div>"
+        /* 22 Nov 2026 (the place head): the filters narrow the accounts, so their menu stands beside the find field at the head of the list */
         + '<div class="amb-split amb-split--panes asplit"><div id="rlist" class="amb-stack alist"><div class="afhead">'
         + '<div class="amb-notice alead" id="alead" hidden>' + AMB.glyph("info") + '<span id="aleadT"></span></div>'
-        + '<div class="amb-search">' + AMB.glyph("search", "sm")
+        + '<div class="afind"><div class="amb-search">' + AMB.glyph("search", "sm")
         + '<input class="amb-input mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
-        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>'
+        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find"></div>' + aFilter("afil", "Show", ADMIN_FILTERS, "data-f", "acct.filter", "", true) + '</div>'
         + '<p class="amb-field__hint" id="scount"></p></div></div><div id="aside" class="amb-stack">'
         + '<div class="amb-settings" id="anone"><h3 class="amb-settings__head">No account open</h3><ul class="amb-settings__list"><li><div class="amb-setting"><span class="amb-setting__name">Choose an account.</span></div></li></ul></div><div id="aopen" hidden></div></div></div>'
         + "</div>"
@@ -859,17 +858,15 @@ export function landingPage(user, nonce, owner, bulletin, test, maint) {
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         /* 17 Nov 2026, the move to Ambient (Fable's review, items 1 and 2): Record is a chain of places like the others, so its hero rests as Needs you's does and its forms' two panes take the screen */
         + '<div id="oRecord" class="aplace amb-place" data-in="record" hidden>'
-        + aHero("Record", "", { acts: !test })
+        + aHero("Record") + aHead(adminParts("record", test), { acts: !test })
         + '<p class="amb-vh">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
-        + adminParts("record", test)
         + '<div class="abody amb-place">'
         + '<section id="makerInputs" class="amb-place" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace amb-place" data-in="shop" hidden>'
-        + aHero("Settings", "", { acts: !test })
+        + aHero("Settings") + aHead(adminParts("shop", test), { acts: !test })
         + '<p class="amb-vh">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
-        + adminParts("shop", test)
         + '<div class="abody amb-place">'
         /* 25 Oct 2026 (his Shop canvas, his yes): FOR NOW FIRST, where the bar's hours chip lands, then the week; 26 Oct 2026 (his word): every part of Hours a group of settings.
            16 Nov 2026, the move to Ambient (place I): Hours is Ambient's panes, Now, the week of spans, the points and Help in the first stack, the open day in the second, its one foot Done */

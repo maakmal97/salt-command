@@ -6,8 +6,6 @@
 /* ---- The kit: the head and the shell ---- */
 /* the shell is the screen: the body holds one shell at a time (the door, Salt Admin's roster, the customer's places, the ended page) */
 body.amb { min-height: 100dvh; }
-/* his hero's time line: the live word, then the clock, a step apart */
-#roster .abarlive:not(:empty) { margin-inline-end: var(--amb-space-2); }
 
 /* ---- Admin: Needs you, Approve and the unsent bar (place F) ---- */
 /* the head's tiles sit in a stack, which already carries the gutter; a tile that is a link stays plain */
@@ -19,13 +17,14 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .nfail > span { flex: 1 1 auto; min-width: 0; }
 /* the banner stands under the hero with the stack's gutter, and the kinds use the page's width */
 #unsentBar:not([hidden]) { margin-block: var(--amb-space-4); }
-.nchips { max-width: none; }
 .apparty .amb-chip { text-transform: none; }
 .nfail > .amb-pill, .unsent-note > .amb-pill { margin-inline-start: auto; flex: none; }
 .unsent-note > span { flex: 1 1 auto; min-width: 0; }
 /* the list: a group a word, a card a task; the whole card is its title's tap, the ways above it */
 .nlist { display: grid; gap: var(--amb-pane-gap); }
 .nlist > .ngroup, .nlist > .nfold, .nopen, #nrecord { display: grid; gap: var(--amb-pane-gap); }
+/* 22 Nov 2026 (the place head): a group of a part not shown stands in the page, hidden */
+.nlist > .ngroup[hidden] { display: none; }
 .apstack { display: grid; gap: var(--amb-space-3); }
 .nlist > .nfold > summary { display: flex; align-items: center; min-height: var(--amb-tap); cursor: pointer; }
 .ntask { position: relative; }
@@ -71,11 +70,12 @@ a.amb-tile:focus-visible { outline: 2px solid var(--amb-accent); outline-offset:
 .nglancebox > .amb-tiles > .nkpi--owed { grid-column: 1 / -1; }
 /* the find, notice and count head the accounts' first pane as part of its stack (item 3) */
 .afhead { display: contents; }
-/* the bar's hours chip is a control: a 44px hit area (item 11) */
-[data-barhours] { min-height: var(--amb-tap); min-width: var(--amb-tap); }
-/* 18 Nov 2026 (Ambient 0.7.20, his answers B and D): from 960px every place's bar says the shop's state and carries Ledger check and Approve; a phone keeps what its hero
-   held (the chip on Needs you, Approve and Ledger check on Orders), so what a bar adds for the wide page carries data-wide and stands down under 960px */
-@container amb (max-width: 959.98px) { [data-wide] { display: none; } }
+/* 22 Nov 2026 (the place head): Approve with nothing waiting says 0, greyed */
+[data-approve-n][data-zero] { color: var(--amb-ink-3); }
+/* 22 Nov 2026 (the place head, his answers of 22 Nov 2026): every place's status row says the same on every width, so nothing carries a wide-only mark.
+   The accounts' filter stands beside the find field, which takes the rest of the line */
+.afind { display: flex; align-items: center; gap: var(--amb-space-2); }
+.afind > .amb-search { flex: 1 1 12rem; min-width: 0; }
 /* from 960px, where the panes take the screen: what stands before the split (the unsent notice, the parts, the filters) takes the panes' own edge, so the notice, the
    filters and the queue's first card start on one line (item 16), and the second pane's group and the foot take the pane's width (item 15) */
 @container amb (min-width: 960px) {
@@ -528,8 +528,6 @@ body.ended > *:not(#aEnded) { display: none; }
 .adm .rnone { color: var(--amb-ink-2); font-size: var(--amb-text-footnote); margin: 14px 0 0; }
 .adm .osettled { color: var(--amb-pos); }
 .adm .aplace { min-width: 0; }
-.adm .aparts { margin: 0 0 20px; }
-.adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin: 0 0 16px; }
 .adm .abody:not(.amb-place) { display: flex; flex-direction: column; gap: var(--amb-pane-gap); }
 .adm .aplace input { max-width: 100%; }
 .adm .maker-input.unsent { display: flex; flex-direction: column; gap: 10px; margin: 0 0 10px; }
@@ -560,9 +558,6 @@ body.ended > *:not(#aEnded) { display: none; }
 /* Fable's review (18 Nov 2026): from 960px the pill keeps one width whatever it says, so the status beside it stands still; and one margin of each pair is nought,
    so a place's tabs stand on one line whether the screen is a column of panes (margins add) or a page (they collapse) */
 @container amb (min-width: 960px) {
-  .adm .aled { min-width: calc(var(--amb-tap) * 3.5); }
-  .adm #unsentBar:not([hidden]) { margin-top: 0; }
-  .adm .amb-stack:has(> .aparts) { margin-top: 0; }
   /* 18 Nov 2026 (his word: one skeleton for every place and tab). Under the tabs every part starts on one line: no block adds a margin of its own between the
      blocks of a screen, a part with no panes keeps the panes' top room, and the first thing in a pane or a part stands at its top, a heading with no room over it.
      A form, a group of settings and a button on a part with no panes keep one measure, the settings group's own */
@@ -581,7 +576,6 @@ body.ended > *:not(#aEnded) { display: none; }
   .adm:has(.aplace) .amb-split--panes .amb-list { margin-inline: 0; }
   .adm .abody > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) :is(.amb-field, .amb-form, .amb-settings, .amb-pill:not(.amb-pill--sm)) { max-width: 36rem; justify-self: start; }
   .adm .abody > .amb-stack:not(:has(~ .amb-split--panes:not([hidden]))) :is(.amb-field, .amb-form, .amb-settings, .amb-pill--block) { width: 100%; }
-  .adm .aparts, .adm .aparts[data-place="orders"], .adm .aparts[data-place="customers"] { margin-bottom: var(--amb-space-4); }
 }
 /* 18 Nov 2026: the Counter's Account stands on its bar's edges, as Home's columns do by Ambient's rule, where Ambient gives the room to the work */
 @container amb (min-width: 960px) { @media (min-height: 640px) { #acct.amb-stack { padding-inline: 0; } } }

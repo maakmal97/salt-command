@@ -46,7 +46,7 @@ export const OWNER_JS = `
   /* the test surface (his answers of 18 Oct 2026): true on Salt Admin under /all/test alone, where it reads the example orders, their
      payments and chats, and nothing else (no account list, links, inputs, notice or book) */
   var TESTING=/*__TESTING__*/false;
-  var placeNow='needs', partNow='', PARTS={}, fOpen=null;
+  var placeNow='needs', partNow='', PARTS={}, fOpen=null, needPartLast='todo';
   [].forEach.call(document.querySelectorAll('.aparts'), function(strip){
     /* PARTS is a place's parts in the order its strip draws them */
     var pl=strip.getAttribute('data-place'); PARTS[pl]=(PARTS[pl]||[]).concat([].map.call(strip.querySelectorAll('[data-part]'), function(b){ return b.getAttribute('data-part'); }));
@@ -136,9 +136,8 @@ export const OWNER_JS = `
     placeNow=place; partNow=part;
     /* the order whose card is open is closed by leaving the place or the part (Phase 1c) */
     if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
-    /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
+    /* so is the form open on Record: leaving the part or the place closes it (22 Nov 2026: the + orb is gone, Record is one tap in the dock and the rail) */
     if(moved2) fOpen=null;
-    [].forEach.call(document.querySelectorAll('#oAdd'), function(add){ add.hidden=placeNow==='record'; });
     if(!inChat()) stopMakerChat();
     /* the picture is let go when Waiting on you is left; the one unlock is the page's and stays (PHASE 4b), going only with the lock */
     if(!inClaims()) makerSlipClose();
@@ -150,11 +149,13 @@ export const OWNER_JS = `
       var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;
       b.setAttribute('aria-selected', on?'true':'false');
       if(b.classList.contains('amb-segment__opt')){ b.setAttribute('aria-pressed', on?'true':'false'); b.removeAttribute('aria-selected'); }   /* 16 Nov 2026 (Ambient): Record's and Shop's parts are a Segment, pressed not selected */
-      /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
-      var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
+      /* 22 Nov 2026: a strip that slides brings the part he is in into view by Ambient's own script (amb-segment--slide) */ });
     ordSegPaint();
     sweep();
     moodSet();
+    /* 22 Nov 2026 (the place head): Needs you's parts, To do, Pending and FYI, are its groups; a part taken draws its list again */
+    /* a kind is chosen within a part: taking another part shows All again, so a kind of To do never empties Pending or FYI */
+    if(placeNow==='needs'){ if(needPartLast!==(partNow||'todo')&&nKind!=='all'&&typeof kindMark==='function'){ nKind='all'; kindMark(); } needPartLast=partNow||'todo'; if(moved2&&!fresh&&typeof drawNeeds==='function') drawNeeds(); }   /* entering it reads and draws it (PLACE_READ) */
     if(placeNow==='orders'&&moved2&&makerData) paintOrdStatus();
     say('');
     unsentPaint();
@@ -1528,28 +1529,31 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('[data-barlive]'), function(lv){
       if(lv.getAttribute('data-on')===String(on)) return;
       lv.setAttribute('data-on',String(on));
-      lv.className='abarlive '+(on?'on':'off');
+      /* 22 Nov 2026 (the place head): a dot and its word in the status row on every width, the gain's colour while live and the loss's while not */
+      lv.className='amb-status__live abarlive '+(on?'on':'amb-status__live--off off');
       lv.title=on?'Online: the Counter answered his last read.':'Offline: this device cannot reach the Counter just now.';
-      lv.innerHTML='<span>'+(on?'Live':'Offline')+'</span>';
+      lv.innerHTML='<span class="amb-chip__dot"></span>'+(on?'Live':'Offline');
     });
-    var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='', tone='';
+    var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='', tone='', when='';
     if(h&&typeof h.open==='boolean'&&!(at&&Date.parse(at)<=Date.now())){
       /* 22 Oct 2026 (canvas Needs you): Open, Closed, or Paused for a shop shut by his override for now, each to its next change */
       var w=at?barWhen(at):'', paused=!h.open&&h.source==='manual';
       tone=h.open?'':paused?' ashop--paused':' ashop--closed';
-      txt=(h.open?'Open':paused?'Paused':'Closed')+(w?' to '+w:'');
+      txt=(h.open?'Open':paused?'Paused':'Closed'); when=w?' to '+w:'';
     }
     /* 17 Nov 2026: under his maintenance switch the chip says so, to when it lifts */
-    var mu=maintUntil(); if(mu){ var mw=barWhen(mu); tone=' ashop--paused'; txt='Maintenance'+(mw?' to '+mw:''); }
+    var mu=maintUntil(); if(mu){ var mw=barWhen(mu); tone=' ashop--paused'; txt='Maintenance'; when=mw?' to '+mw:''; }
     /* the glowing dot and the words, named with what a tap does */
     /* 15 Nov 2026: a glass chip in Needs you's hero, its dot for something live; Open, Closed or Paused said in its word, the mesh carrying no colour of state */
     /* 18 Nov 2026 (his answer B): every place's bar carries the chip (data-barhours), one status wherever he is; Needs you's is the one a phone shows */
     [].forEach.call(document.querySelectorAll('[data-barhours]'), function(hb){
-      if(hb.getAttribute('data-txt')!==txt+tone){
-        hb.setAttribute('data-txt',txt+tone); hb.className='amb-chip amb-chip--glass ashop'+tone;
+      if(hb.getAttribute('data-txt')!==txt+when+tone){
+        /* 22 Nov 2026 (the place head): when it next changes is a word of the status a phone does without, under 480px */
+        hb.setAttribute('data-txt',txt+when+tone); hb.className='amb-status__state ashop'+tone+(tone===' ashop--paused'?' amb-status__state--warn':tone?'':' amb-status__state--pos');
         hb.innerHTML='<span class="amb-chip__dot"></span>';
-        hb.appendChild(document.createTextNode(txt));
-        hb.setAttribute('aria-label',txt+'. Tap to change');
+        var hl=document.createElement('span'); hl.className='amb-status__label'; hl.textContent=txt; hb.appendChild(hl);
+        if(when){ var hw=document.createElement('span'); hw.className='amb-status__word'; hw.textContent=when; hl.appendChild(hw); }
+        hb.setAttribute('aria-label',txt+when+'. Tap to change');
       }
       if(hb.hidden===!!txt) hb.hidden=!txt;
     });
@@ -2365,6 +2369,8 @@ export const OWNER_JS = `
       var ok=b.querySelector('[data-ledger-ok]'), c=b.querySelector('[data-ledger-n]');
       if(ok&&ok.hidden!==!(known&&t.clean)) ok.hidden=!(known&&t.clean);
       if(c){ var v=n?String(n):''; if(c.textContent!==v) c.textContent=v; if(c.hidden!==!n) c.hidden=!n; }
+      /* 22 Nov 2026 (the place head): its word is one a phone does without only once the tick or the count says it */
+      var wd=b.querySelector('.aled__word'); if(wd) wd.classList.toggle('amb-status__word', !!(known&&(t.clean||n)));
       if(b.getAttribute('aria-label')!==say){ b.setAttribute('aria-label',say); b.title=say; }
     });
   }
@@ -2773,7 +2779,8 @@ export const OWNER_JS = `
           var list=unsentList(), n=list.length;
           bar.textContent=''; bar.hidden=!n;
           /* 16 Nov 2026 (the move to Ambient): the banner stands under the hero of the place he is in, as Ambient's Notice does */
-          var hostId={needs:'mHome',orders:'oOrders',customers:'oCustomers',record:'oRecord',shop:'oShop'}[placeNow], host=hostId&&document.getElementById(hostId), hero=host&&host.querySelector(':scope > .amb-hero');
+          /* 22 Nov 2026 (the place head): under the head and its headline, so nothing stands between the title and the head */
+          var hostId={needs:'mHome',orders:'oOrders',customers:'oCustomers',record:'oRecord',shop:'oShop'}[placeNow], host=hostId&&document.getElementById(hostId), hero=host&&(host.querySelector(':scope > .amb-lead')||host.querySelector(':scope > .amb-head')||host.querySelector(':scope > .amb-hero'));
           if(hero&&bar.previousElementSibling!==hero) hero.parentNode.insertBefore(bar, hero.nextSibling);
           if(!n) return;
           var one=n===1, c=bannerCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
@@ -8368,12 +8375,12 @@ export const OWNER_JS = `
      this reads what it read and draws nothing but Approve's name in Orders' hero; drawCounts still calls it, and it answers the figures. */
   function barLive(rows){
     var n={approve:rows}; ['needs','orders','customers'].forEach(function(k){ var c=document.querySelector('[data-count="'+k+'"]'); n[k]=+(c&&c.textContent)||0; });
-    /* Orders' Approve, in its hero, names the rows that wait */
-    /* 18 Nov 2026 (his answer D): every place's bar carries Approve; Orders' own always stands, the others only while rows wait */
+    /* 22 Nov 2026 (the place head): every place's status ends in Approve, never hidden, the rows that wait beside its word */
     var apSay=rows?'Approve, '+rows+' to approve':'Approve';
     [].forEach.call(document.querySelectorAll('[data-approve]'), function(apBtn){
       if(apBtn.getAttribute('aria-label')!==apSay) apBtn.setAttribute('aria-label',apSay);
-      if(!apBtn.id&&apBtn.hidden!==!rows) apBtn.hidden=!rows;
+      var c=apBtn.querySelector('[data-approve-n]'), v=String(rows||0);
+      if(c){ if(c.textContent!==v) c.textContent=v; c.toggleAttribute('data-zero',!rows); }
     });
     return n;
   }
@@ -8386,6 +8393,7 @@ export const OWNER_JS = `
   function drawFail(bad){
     if(!nFail) return;
     if(nFail.hidden!==!bad.length) nFail.hidden=!bad.length;   /* R4: written only when it differs, as the stock's tick redraws the lead */
+    if(nFail.parentNode&&nFail.parentNode.hidden!==!bad.length) nFail.parentNode.hidden=!bad.length;   /* 22 Nov 2026: its box takes no room while it is shut */
     if(!bad.length) return;
     if(!nRetry){
       nFail.textContent=''; nFail.appendChild(amb.node(amb.glyph('info'))); nFail.appendChild(el('span','nfail__what'));
@@ -8432,27 +8440,39 @@ export const OWNER_JS = `
     nCount.setAttribute('data-sig',sig); nCount.textContent='';
     parts.forEach(function(p,k){ if(k) nCount.appendChild(document.createTextNode(' ')); if(p[0]) nCount.appendChild(el('b',null,p[0])); nCount.appendChild(document.createTextNode(p[1])); });
   }
+  /* 22 Nov 2026 (the place head): Needs you's parts are its groups, To do, Pending and FYI (SEVS), the part he is in the one drawn */
+  var NEED_PART={todo:'now', pending:'soon', fyi:'watch'};
+  /* the part last open, so a read while he is on another place keeps what he chose there */
+  function needSev(){ return NEED_PART[needPartLast]||'now'; }
+  function needPartCounts(items){
+    var n={now:0, soon:0, watch:0}, ready=needsReady();
+    items.forEach(function(i){ if(!i.practice&&Object.prototype.hasOwnProperty.call(n,i.sev)) n[i.sev]++; });
+    [].forEach.call(document.querySelectorAll('.aparts[data-place="needs"] [data-part]'), function(b){
+      var c=b.querySelector('.amb-segment__count'), v=ready&&n[NEED_PART[b.getAttribute('data-part')]]?String(n[NEED_PART[b.getAttribute('data-part')]]):'';
+      if(c){ if(c.textContent!==v) c.textContent=v; if(c.hidden!==!v) c.hidden=!v; }
+    });
+  }
   function drawNeeds(){
     if(!nlist) return;
-    var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
-    drawCounts(items); drawLead(items); drawGlanceAll();
+    /* every group is drawn and the part he is in alone shows, so a card is always in the page and a tab changes nothing but what shows */
+    var sev=needSev(), all=needItems(), items=all.filter(function(i){ return i.practice||i.sev===sev; }), shown=all.filter(function(i){ return nKind==='all'||i.kind===nKind; });
+    drawCounts(all); drawLead(all); drawGlanceAll(); needPartCounts(all);
     /* a kind whose cards have gone leaves him on All (drawKindCounts dims it) */
     if(needsReady()){
       var have={}; items.forEach(function(i){ have[i.kind]=1; });
-      if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; kindMark(); }
+      if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=all; kindMark(); }
     }
     drawKindCounts(items);
-    needLast=items;
+    needLast=all;
     nlist.textContent='';
     var practiceList=shown.filter(function(i){ return i.practice; }); shown=shown.filter(function(i){ return !i.practice; });
-    if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));
+    if(!shown.some(function(i){ return !i.practice&&i.sev===sev; })&&needsReady()) nlist.appendChild(el('p','rnone',nKind!=='all'||needsBad().length?'Nothing here.':sev==='now'?'Nothing needs you.':sev==='soon'?'Nothing pending.':'Nothing to note.'));
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
-      /* 22 Oct 2026 (his comment, "doesn't have to be collapsible"): every group stands open under its one word, with no count */
-      var box=el('section','ngroup'); box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]);
-      var h=el('h2','amb-section nsev', s[1]); h.setAttribute('data-sev', s[0]);
-      box.appendChild(h); nlist.appendChild(box);
+      /* 22 Oct 2026 (his comment, "doesn't have to be collapsible"): every group stands open, with no count. 22 Nov 2026: one group at a time, its word the part's tab */
+      var box=el('section','ngroup'); box.setAttribute('data-sev', s[0]); box.setAttribute('aria-label', s[1]); box.hidden=s[0]!==sev;
+      nlist.appendChild(box);
       group.forEach(function(i){ box.appendChild(i.make()); });
     });
     /* 17 Oct 2026: practice accounts leave Now, Soon and Watch for one folded line at the foot, which opens them in place */
@@ -8469,8 +8489,8 @@ export const OWNER_JS = `
      22 Oct 2026 (canvas Needs you): the count stands beside the word on its tab, and a kind with nothing at all is dimmed and cannot be chosen. */
   function drawKindCounts(items){
     var n={all:0}, have={all:1}, ready=needsReady();
-    items.forEach(function(i){ have[i.kind]=1; if(i.practice||i.sev==='watch') return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });
-    [].forEach.call(document.querySelectorAll('.nchips button'), function(b){
+    items.forEach(function(i){ have[i.kind]=1; if(i.practice) return; n.all++; n[i.kind]=(n[i.kind]||0)+1; });   /* 22 Nov 2026: the items of the part he is in, FYI's counted on FYI */
+    [].forEach.call(document.querySelectorAll('#nKinds button[data-chip]'), function(b){
       var k=b.getAttribute('data-chip'), c=b.querySelector('.nkopt__n');
       if(!c){ c=el('span','amb-segment__count nkopt__n'); b.appendChild(c); }
       var said=ready&&(n[k]||!have[k])?String(n[k]||0):'';   /* 18 Nov 2026: a kind holding FYI cards alone says no figure, never a 0 beside cards */
@@ -8481,7 +8501,7 @@ export const OWNER_JS = `
   }
   /* the chosen kind's tab: selected, and the Nav bar's active link */
   function kindMark(){
-    [].forEach.call(document.querySelectorAll('.nchips button'), function(x){
+    [].forEach.call(document.querySelectorAll('#nKinds button[data-chip]'), function(x){
       var on=x.getAttribute('data-chip')===nKind; x.setAttribute('aria-pressed', on?'true':'false');
     });
   }
@@ -8528,7 +8548,8 @@ export const OWNER_JS = `
     var r=document.getElementById('roster'); if(!r) return;
     var b=glanceStock&&glanceStock.books, tight=!!(b&&b.salt&&b.salt.heat==='tight'), m=placeNow==='shop'?'slate':tight?'flare':'lagoon';
     if(window.Ambient&&window.Ambient.mood) window.Ambient.mood(m, r); else r.setAttribute('data-mood', m);
-    [].forEach.call(r.querySelectorAll('[data-heat]'), function(c){ if(c.hidden===(m==='flare')) c.hidden=m!=='flare'; });
+    /* 22 Nov 2026 (the place head): the status is the same on every place, so Supply tight is said on Settings too, where the mood stays Slate */
+    [].forEach.call(r.querySelectorAll('[data-heat]'), function(c){ if(c.hidden===tight) c.hidden=!tight; });
   }
   /* 21 Oct 2026 (canvas V62, his word "stock count, stock expected dates should be here"): THE STOCK, the Desk's figures (the master measures them at each
      version, GET /all/maker/stock), the day the next lot is expected his own from Stock. Read once a page open; a failed read is asked again five minutes on.
@@ -8969,9 +8990,6 @@ export const OWNER_JS = `
     if(t&&aOpen&&tp.getAttribute('data-place')==='customers'&&t.getAttribute('data-part')==='accounts') openCard(null);
     if(t) showPlace(tp.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});
   });
-  /* the + orb opens Record's menu of entries */
-  var oAdd=document.getElementById('oAdd');
-  if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });
   /* Approve, Orders' one main action (the bar's Approve until 15 Nov 2026) */
   [].forEach.call(document.querySelectorAll('[data-approve]'), function(ap){ ap.addEventListener('click', function(){ showPlace('orders','approve',{fresh:true,push:true}); }); });
   /* Ledger check, in every place's bar (18 Nov 2026): the part its row in Orders' More list opened */

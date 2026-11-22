@@ -1993,7 +1993,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
   untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
   The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and below 860px goes while a form
-  is open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
+  is open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (retired 22 Nov 2026 by the place head, his word: Record is one tap in the dock and the rail; it was `nav.add`, `#oAdd`, the system's raised
   orb) stands over every place but Record, 16px above the App bar on a phone and in the corner from 1080px, under the bar and the sheets; it opens
   Record on Entry, the menu of entries. The room under the last section on a phone is the orb's. No route, body, request id or retained send changed.
   **The form open is a pane** (Phase 4a, 12 Oct 2026, `test/admin-orders.mjs` section 4b, its mutations in `test/admin-orders.mutations.json`): the menu and a
@@ -2842,12 +2842,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `assoc.open-row` | Associates table, the code (key: the code) | Opens that associate's account under Accounts. |
 | `acct.copy-link` | Accounts card for an ID with no account, once the link is shown | Copies the guest price list's link. |
 | `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
-| `acct.filter-all` | Accounts, the filter bar | Shows every account. |
-| `acct.filter-locked` | Accounts, the filter bar | Shows accounts with an address refused. |
-| `acct.filter-none` | Accounts, the filter bar | Shows IDs with no account yet. |
-| `acct.filter-owes` | Accounts, the filter bar | Shows accounts that owe or are owed goods. |
-| `acct.filter-unopened` | Accounts, the filter bar | Shows accounts never opened. |
-| `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
+| `acct.filter.menu` | Show, the pull-down beside the find field at the head of the accounts (22 Nov 2026, the place head) | Opens or shuts the menu of filters. Reads and sends nothing. |
+| `acct.filter-all` | Accounts, the Show menu beside the find field (the filter bar until 22 Nov 2026) | Shows every account. |
+| `acct.filter-locked` | Accounts, the Show menu beside the find field (the filter bar until 22 Nov 2026) | Shows accounts with an address refused. |
+| `acct.filter-none` | Accounts, the Show menu beside the find field (the filter bar until 22 Nov 2026) | Shows IDs with no account yet. |
+| `acct.filter-owes` | Accounts, the Show menu beside the find field (the filter bar until 22 Nov 2026) | Shows accounts that owe or are owed goods. |
+| `acct.filter-unopened` | Accounts, the Show menu beside the find field (the filter bar until 22 Nov 2026) | Shows accounts never opened. |
+| `acct.filter-unsent` | Accounts, the Show menu beside the find field (the filter bar until 22 Nov 2026) | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
 | `acct.message` | Accounts row for money owed (key: the username) | Opens their thread under Messages. |
 | `acct.open` | Accounts, the row's text or the table's code, one each (key: a: and the username) | Opens that account's card. |
@@ -2942,7 +2943,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `vault.switch` | Shop, This device, Show names | On asks for the password in the one Sheet; off locks names, places and slips again. |
 | `alerts.switch` | Shop, This device | Notifications on or off; it presses Turn on or Turn off, which stay hidden. |
 | `more.test-page` | Shop, Practice, while all three are made | The row that opens the test surface, `/all/test`. |
-| `nav.add` | New entry, the + circle in the shell's app bar (15 Nov 2026, the move to Ambient; it was the orb below 1080px and the rail's `rail.add` above), on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `nav.customers` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Customers, on its Accounts. |
 | `nav.needs` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Needs you. |
 | `nav.orders` | The tab bar of his places, which stands up as the rail from 960px (one act each, drawn once since 15 Nov 2026) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
@@ -2971,12 +2971,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.glance.ready` | The glance at the head of Needs you | Opens Orders at Ready: the orders ready with goods still to hand over, counted on the tile. Reads nothing of its own. |
 | `need.glance.owed` | The glance at the head of Needs you | Opens Orders. The tile sums what the agreed orders still owe, goods and delivery less what is paid. Reads nothing of its own. |
 | `need.glance.approve` | The glance at the head of Needs you | Opens Orders > Approve. The tile counts the cards waiting there (a trip or an order's moves one card). Reads nothing of its own. |
-| `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |
-| `need.kind.all` | The chips under Needs you's title | Shows every card again. Reads nothing. |
-| `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |
-| `need.kind.orders` | The chips under Needs you's title | Shows only the orders. Reads nothing. |
-| `need.kind.payments` | The chips under Needs you's title | Shows only the payments they say they sent. Reads nothing. |
-| `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows, the entries that did not get through and the entries kept unsent on this phone. Reads nothing. |
+| `need.kind.menu` | Show, the pull-down at the head of Needs you's list (22 Nov 2026, the place head) | Opens or shuts the menu of kinds. Reads and sends nothing. |
+| `need.kind.accounts` | Show, the menu at the head of Needs you's list (the chips under its title until 22 Nov 2026) | Shows only the cards about accounts and guest links. Reads nothing. |
+| `need.kind.all` | Show, the menu at the head of Needs you's list (the chips under its title until 22 Nov 2026) | Shows every card again. Reads nothing. |
+| `need.kind.messages` | Show, the menu at the head of Needs you's list (the chips under its title until 22 Nov 2026) | Shows only the messages asked. Reads nothing. |
+| `need.kind.orders` | Show, the menu at the head of Needs you's list (the chips under its title until 22 Nov 2026) | Shows only the orders. Reads nothing. |
+| `need.kind.payments` | Show, the menu at the head of Needs you's list (the chips under its title until 22 Nov 2026) | Shows only the payments they say they sent. Reads nothing. |
+| `need.kind.rows` | Show, the menu at the head of Needs you's list (the chips under its title until 22 Nov 2026) | Shows only the Desk rows, the entries that did not get through and the entries kept unsent on this phone. Reads nothing. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.owed-hand` | Needs you card for goods paid for and not handed over (key: the row's rid) | Opens that site order's card at its handover, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
 | `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
@@ -3068,6 +3069,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
 | `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
+| `part.needs.todo` | The head under Needs you (tab: To do, with its count; 22 Nov 2026, the place head, his answer 1) | Shows the To do group: his own work. Reads nothing; the address is `#needs`. |
+| `part.needs.pending` | The head under Needs you (tab: Pending, with its count) | Shows the Pending group: what the customer owes or must answer. Reads nothing; address `#needs/pending`. |
+| `part.needs.fyi` | The head under Needs you (tab: FYI, with its count) | Shows the FYI group: notices with nothing to tap. Reads nothing; address `#needs/fyi`. |
 | `part.orders.todo` | The Segment under Orders (tab: To do, with its count) | Shows every order that waits on him: a placed one, a payment they say they sent, a stage he rejected, a question of theirs, a request to send again. |
 | `part.orders.open` | The Segment under Orders (tab: Open) | Shows the live orders that wait on nothing, Agreed, Ready and Out or paid each under its own head, and every row of the book at its stage. |
 | `part.orders.done` | The Segment under Orders (tab: Done) | Shows the orders handed over and closed, a month to a head. |
