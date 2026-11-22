@@ -320,9 +320,13 @@ keep theirs; one list with filters; History newest first; nothing opens by itsel
   0.7.15: the stepper over values, the week of spans, the mark thumb, the rating, tab counts, the disclosure row, the toast, the savebar,
   panes that scroll on their own), never drawn here.
 - **The coin.** A mark standing alone is Ambient's mark thumb (`markThumb`, `markThumbHtml`), ringed in the book's hue (`amb-kind-N`, N the
-  book's index in `PSYM` less `_`). His answer of 17 Nov 2026: a 44px coin (`amb-thumb--md`) is the shape alone and draws no word; his
-  letter is on every coin of 56px and over and on every plain mark of 20px and over. The year card reads an older line's book by its shape
-  when no letter is drawn (`yearMark`).
+  book's index in `PSYM` less `_`). His word of 22 Nov 2026 ("the letter inside the glyphs could work too", then "Every coin size"; Ambient
+  0.7.34): his letter stands INSIDE the shape, a `text.amb-thumb__letter` on the shape's 24 grid cut out in the coin's ground, and the shape
+  takes the coin (24, 32, 40 and 52px in the 36, 44, 56 and 72px coins); no word stands under a shape. It retires his answer of 17 Nov 2026,
+  the 44px coin as the shape alone. Ambient draws no letter under 12px, so two cases stay the shape alone: every 36px coin, and three
+  letters (POP) at 44px. The one rule is `coinLetter` in `stmt/page.js`, the page's `markThumb` its twin, the suite holding the two to one
+  svg; the letter's middle is the grid's but in the droplet (`COIN_CY`). A plain mark of 20px and over keeps its letter as before. The year
+  card reads an older line's book by its shape when no letter is drawn (`yearMark`).
 - **The toast.** Ambient's one toast (`[data-amb-toast]`, a popover) stands after the Counter's shell, as Ambient's guide places it, never
   inside a shell that hides; Copy link answers in it.
 - **The live statement.** Drawn in Ambient (`tools/make_statements.mjs`); a sealed issue is never written again, and a same-date re-run over a
