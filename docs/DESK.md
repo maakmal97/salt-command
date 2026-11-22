@@ -1267,3 +1267,314 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
     60 days' realised price a unit and today's replacement cost. Demand and buying cost move the second column only; running
     costs come off both. An estimate: no season, no price change, no lot timing.
 - A prose block added to Financials or Receivables carries an id, or the render sweep (`stripMethod`) may delete it.
+
+## Moved from CLAUDE.md, 19 Nov 2026: Hard rules, 5. Copy and price
+
+   - **COGS is the latest purchase: its quote plus its trip freight, over its units** (the
+     engine's `latestCogs`, `COST_RULE` kind `latestCogs` on every book, his rule of 05 Oct 2026).
+     **The Floor is COGS times the size, the ORDER TOTAL rounded up to the next RM 5** (the engine's
+     `floorTotal`, his decision of 18 Oct 2026), one per size and nothing else: no leak, no delivery, no
+     time. **Salt's Floor also carries the non-revenue salt, re-measured only at a count, a recorded loss or a landed lot** (his decision of
+     10 Nov 2026 and his answer H, built 11 Nov; `RULES.nrsFloor`, the snapshot engine's `nrsShare` over `nrsAnchor`: what was handed
+     over, given or written off on or after that day waits for the next, so trading moves no Floor): COGS times 1 plus the share, the count shortfall, gifts and rewards with reward cover, and
+     written off, over the units paid for, a unit settled in kind being paid for. **The Median Price stays struck on
+     the COGS Floor** (`floorBase`, his answer "Floor first, Set and Ceiling to be determined"), so the Floor and the partner's
+     price move with the share, and with them a salt discount, which is a place between the Median and that Floor; all three stand still between two measures. `costTotal` is the exact cost, for the readers that measure cost and not price (the price
+     band's segment floor, the floor-per-unit chart); COGS of goods sold, stock value, `afterLeak` and
+     `refundOnOverpay` do not read the Floor. The leak is measured and printed beside the Floor as
+     information only (`afterLeak`, on a book losing `RULES.leakInfoFrom` or more). **The Ceiling is 3
+     times the COGS Floor on every book but salt** (`ceilingX`). **Salt's Ceiling is a curve on the supplier's price for a 12.5-unit
+     lot, never COGS** (his decision of 10 Nov 2026, `TIER_RULE.salt.band.ceiling`, the engine's `bandCeiling`): the typed anchor
+     (`supplier`, RM 700 for 12.5 units, RM 56 a unit) over `per` scales `rates`, RM 200 a unit at half a unit sliding in the log of
+     size to RM 100 at 12.5 and RM 83.93 at 100, flat beyond; the order total goes DOWN to RM 5 and is never under the Floor. **It moves
+     only when he retypes the supplier's price**: a COGS near or past it leaves the Ceiling holding the Median (on RM 56, from about
+     RM 52.60 a unit at the largest sizes and RM 62.65 at 12.5 units). A sale carries `delivery`, typed per
+     row or offered from distance at `RULES.delivery`, his figure winning, and a lot `freight`,
+     typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
+     delivery, the engine's `txOwed`**; nothing reads the total less the cash. **Everything on an agreed order is
+     amendable after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the delivery charge,
+     each a Correction for approval (`restateOrder`, stage `amend`, status `Amendment`) from Salt Admin and from
+     the Desk; a completed order too, which opens again at Ready when the change leaves it owing (his answer of 17 Oct
+     2026); the Floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
+     ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
+     books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip). **Every sale has its
+     order** (21 Nov 2026, docs/DESK.md "Every road that mints a sale"): a new sale is a site order; Salt Admin's `sale` is recovery only,
+     with D1 `sale_recovery` on, its card marked `noOrder`; the tie-out lists a row no order names as `orderless`, never a fault.
+   - **SALT'S PRICE IS THE MEDIAN PRICE AND THEIR %** (his decisions of 05, 18 and 21 Oct 2026). **It was named the Set Price until
+     10 Nov 2026 (his word): every word he reads says Median Price, a customer reads neither, and the identifiers stay** (`T2`,
+     `ladderRow`, `TIER_RULE`, `PRICE_SET`, `drift`). **A stranger is quoted +30% on salt's band** (his word of 11 Nov 2026, "Always start a
+     stranger at +30%": the guest board, `tools/pricelist.mjs` `guestBoard`, and a new ID that names no figure, `TIER_RULE.salt.start`), and a customer pays less only on a negative % of his: per size the Floor times a
+     multiple (3 at half a unit, 2.4 at 1, 2.004 at 6.25, 1.596 at 12.5, sliding in the log of size, flat
+     above 12.5; `TIER_RULE.salt.points`; 1.2 times the old 2.5, 2, 1.67, 1.33 by his word of 10 Nov 2026, RM 120 at 1 unit; the
+     price band's version 1 moved none of it). The grid runs half a unit to 25 in quarters and is walked smallest
+     first (the engine's `driftWalk`, read through `driftAt`, `quoteAt` and `quoteGrid`): the rate is the
+     lesser of the last and this size's multiple on the EXACT rate, never compounded, so the quoted rate may rise
+     by under RM 5 a unit between quarters; the price goes down to RM 5; it is lifted so the ringgit margin over
+     the Floor never falls below the largest margin of a smaller size; and it is held between the Floor and the
+     Ceiling. **THE MEDIAN MOVES WITH THE MARKET, BOUNDED, SAID AND SWITCHED BY HIM** (the price band's version 2, his answer B and his answers of
+     11 Nov 2026; `TIER_RULE.salt.market`, the snapshot engine's `marketWalk` and `marketOf`, read by `driftWalk` as `P.market`): each day the
+     Median goes to a place on the band, from supply alone (one plain cover at the start of the day: +15 at 3 days or fewer, +5 to 7, 0 to
+     14, -10 past it), held -15 to +20, 5 points a day at most towards it, a stand-down for 7 days when margin a day falls two weeks running
+     while it is up; the pace is said and NEVER priced (`acts` false: no measured basis); each day read off the book as it stood when the
+     day began, so trading moves no price until tomorrow; nought before `since`, the day it shipped (13 Nov 2026, v1514). **Their % rides on the moved Median**
+     (his answer): -100% stays the Floor, +100% the Ceiling, a partner the Floor. **His switch and his Median points are the book's `MARKET`
+     document, written only by an `edit` he approves** (Salt Admin, `makerMarket`, the drafter's `marketEditRow`, the fold and the tap):
+     off is the plain Median from that day, on climbs from nought, a point is a multiple of the COGS Floor at a size (`withPoints`, `ruleFor`),
+     one outside the band asked once and marked. **THE PRICE TEST** (the price band's version 3, his answer G and his answer of 13 Nov 2026; `TIER_RULE.salt.test`, the snapshot engine's `testOf`, read by `driftWalk` as `P.test`): from Monday 16 Nov 2026 for eight weeks, 1 unit ALONE moves RM 5 up in its even weeks and RM 5 down in its odd, riding on the day's Median, every other size and the walk's state untouched, held between the Floor and the Ceiling, a partner the Floor, nought with his switch off; said on the Desk and Salt Admin, and the evidence leaves its sales out. The win-back at his Accept (`winBack`, `winBackOf`: a lapsed regular, 10 points under their place, never under -80%, never a write-off) is a suggestion his Use fills. The 90-day reading SUGGESTS a point (10 sales or more, RM 5 or more off); nothing
+     re-anchors by itself. The evidence (the suggestion, the reading) reads the plain Median (`policy(C, p, true)`). The suite's frozen book
+     holds the switch off. **Row zero of `ladderRow` is the Median Price and is load bearing** (phone, mirror and suite read
+     `[0]`; the code stays `T2`); choose a row by code, never by index. `PRICE_SET` is cleared and the drafter
+     refuses a new one; the one figure he sets at Accept, on one order, is that row's total, which `PRICE_SET`
+     never records.
+   - **THEIR % is his and nothing else's, ON EVERY BOOK** (`TIER_OF[code][book]`; 0 is the Median Price or the board; his decisions
+     of 21 and 22 Oct and 10 Nov 2026). **The range is the book's own, read off its rule** (the engine's `liftRange`, `driftOk(v, rule)`,
+     `rangeSay`): **salt's runs -1 to +1 on the band, a stated board's -0.3 to +0.3** (`LIFT_MIN`, `LIFT_MAX`). **ON SALT A % IS A
+     PLACE BETWEEN THREE POSTS** (the price band, version 1, 10 Nov 2026; the engine's `bandTop`, read back by `bandPct`): -100% is
+     the Floor, what a partner pays, 0% the Median Price and +100% the Ceiling, in even percentage steps, the Median as quoted times
+     (Ceiling over Median) to the % above nought and (Floor over Median) to it below, inside the walk, down to RM 5, a lift never
+     under the Median, held between the Floor and the Ceiling. **A salt figure travels as unit `band`; `pct` naming salt is the form
+     before the band** (`unitOf`, `unitOk`): refused at Salt Admin's inputs, flagged by the drafter and dropped by the fold with a
+     note, never read as a %. **The switch's carry-over is booked and gone** (the list he approved, `docs/plan-salt-price-band-carry.html`; his Approve of 11 Nov 2026 booked the
+     15 places): the book holds each carried customer's place on the band, read as it stands, and no table or reader of one is in the rule or the engine. The old curve (`driftMultiple` over a rule's `ends`) stays in the engine
+     for a rule that carries `ends`; none does. **Everyone held 0% at the band's switch; a new ID that names no figure starts at +30%**
+     (his word of 11 Nov 2026, the fold's `fresh` start in `engine/apply.mjs`, only for an Add ID stamped from `TIER_RULE.salt.startFrom`, the moment v1514 shipped; a figure he picks, nought included, stands). He sets it on the customer's own card under Salt Admin's
+     Customers (moved from Record, his yes of 25 Oct 2026), a whole % by a slider in steps of 5 between the ends the catalog gives
+     (`driftMin`, `driftMax`, sent with `driftUnit`; Ambient's `amb-slider`, his word of 18 Nov 2026), its prices shown live off the Desk before it goes to Approve
+     (`makerDriftPreview`, any whole %), or sets at Add ID on the same slider, a switch off for Not set, a preset's name said where it rests on one
+     (Median Price at 0; a board's run -30% to +30%); it is queued, folded as `tierset`, and a null clears it. **Nothing automatic
+     prices a customer but the bounded market move above**: the engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
+     `suggestPct`) SUGGESTS a % he may take with Use the suggestion: on salt the median PLACE on the band of their
+     last five salt sales (`bandPct` at each sale's own size, never under nought) plus a share for a write-off (30%), a long late
+     or 14 days overdue (20%) or a late (10%), LESS a good record's discount (`suggest.good`, 30%, times `autoDrift`'s good score,
+     only with nothing late, overdue or written off; his answer of 21 Oct 2026), to the nearest 5%, held to the book's range, and
+     nought under `minSettled` settled rows. The fold refuses a `tierset` or Add ID
+     figure stamped before `RULES.liftSince`, which was in the old drift unit.
+   - **Oil, candy and rice are `fixed` boards**, his typed rungs held between the Floor and the Ceiling, the price for
+     everybody at 0%; each carries `pct`, so it takes Their % (`pctBook`): `shares` are what -30% (80% of the board at
+     the smallest rung, 90% at the largest) and +30% (120%, 109%) make of it, sliding in the log of size (the engine's
+     `shareAt`, salt's proportions until he sets others). The suggestion, the reward and the loyalty unit stay salt's,
+     and `tieredBooks` still names salt alone. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
+     `levelAt` or proposal, and no standing guest link per level. `TIER_RULE`, `fiveTiers`, `TIER_OF`, the
+     `tierset` collection and the `T2` row code stay as identifiers. **NRV on a book with a Median Price is the Median
+     Price**, what a stranger is quoted, never the Ceiling nor a customer's discount. A cheap book put on a derived
+     ladder inverts under the RM 5 rounding: check the rate law first.
+   - **A customer's price is the Median Price moved by their %, or the price he sets on one order when he acknowledges
+     it, never under the Floor; the board is never repriced by it** (`total` on the preview and Accept, the
+     site keeping `asked`). **A figure he types under the Floor, on any book, or over salt's Ceiling, is asked once, then stands as a marked one-off** (his
+     answer D of 10 Nov 2026, `engine/oneoff.mjs`; every book under its Floor by his word of 17 Nov 2026): a goods total under the Floor or over the Ceiling at its size, at Accept, in an
+     offer or in an amendment of an agreed order, is refused 409 with `outside`, saying by how much and the ringgit it gives away;
+     sent again with his reason (`oneOff`, one line of 3 to 120 characters) it goes through as any Accept or amendment does and the
+     ROW carries `oneOff: {why, side, by}`, which the evidence leaves out (the drafter's `aPriceSomeonePaid`, the snapshot's
+     `suggestOf`, the Desk's price readers); an amendment back inside the band takes the mark off, and an undo puts back the one it
+     replaced. **The reason is his alone and reaches the ledger row, so it names nobody**; no customer reads it. A book with no band
+     has no Ceiling to ask about; Correct a row still refuses under the Floor on every book. What they paid before never lowers it (the cap retired on his decision of
+     27 Sep 2026). **A product with neither a Median Price nor a board is not priced.** One rule, the engine's
+     `cardPrice`: the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
+     reads the snapshot's `cards`, and `lift` for a grid point off the board.
+   - **A partner pays the Floor** (his decisions of 06 and 18 Oct 2026): a party in the book's `partners` is quoted the
+     Floor itself, the RM 5 round-up included, at every size on every book, through the engine's `quoteAt` and
+     `quoteGrid` with `d` of `'partner'`; the drafter's `floorFor(q).floor` and the snapshot's `floors[q]` are the same
+     figure. A partner has no % to set: the Their % card names them and sets nothing, and a test that
+     walks every customer leaves them out. A partner is an associate: set from the card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
+   - **AN ASSOCIATE'S REWARD STEPS WITH LANDED COST** (his rules of 20 Oct 2026, salt only): one unit per `times` (10) units' COGS of
+     margin on their own buying and resale, counted once an order is PAID IN FULL (the engine's `rewardWalk`), over the stated openings of the
+     switch (`REWARD_OPEN` in the book, written once by `tools/reward-open.mjs`; `REWARD.stated.salt.associate.since`), so nothing they held moved;
+     the step is the crossing day's, or the lesser promised at Accept (`rwdStep`). **The fold raises the unit** as its own row at that day's landed
+     cost (goodwill and rebate, `rewardOf` the order that crossed, counted cancelled or not), handed over with that order or their next salt
+     handover, its unit in the roll; a payment undone flags it STALE, never withdrawn. A customer reads one word on an order (`rwd`: "cross",
+     "given"), never a figure; the ringgit, net of what he gave under their price (`listRM`, the drafter's stamp), is his alone on Salt Admin
+     (`rewardReading`). **From the switch a customer redeems nothing** (`inputResource`, the one refusal) and what they hold stands; no basis is
+     built (his answer to the loyalty plan's Ask 4, reversing Ask 7's basis). Nothing prices from any of it. Detail: `docs/DESK.md`.
+   - **A CUSTOMER'S LOYALTY UNIT COUNTS UNITS AT THEIR PRICE** (his rule of 20 Oct 2026, salt only): one unit at cost per `every` (20) salt units
+     bought at or above their own price (`listRM` over `listQty`), counted once PAID IN FULL, from `REWARD.stated.salt.loyal.since`, everyone at nought
+     (the engine's `loyaltyWalk`). **A late payment pauses it** until three payments on time in a row, **a write-off for good** (dated by its own
+     Correction), progress kept. The fold raises the unit as a GIFT row (`loyal`, goodwill, total 0, `rewardOf` the order that reached it) at that
+     day's landed cost, handed over with that order or their next salt handover; Accept says `cross` and marks the row `rwdLoyal`. A customer sees
+     the share of one alone (`card.products[].loyal.next`, `customerCard`); Salt Admin's This customer card pairs it with the suggested %, which
+     stays his tap (Use it sends tier-set for Approve). An associate, a partner, a supplier and a bucket do not walk. Nothing prices from it.
+
+## Moved from CLAUDE.md, 19 Nov 2026: The one surface
+
+**Retired surfaces:** see MEMORY.md. The
+built desk is six destinations (`VIEWS`), thirteen pages: Today (To do, with the Whiteboard folded under it as
+Noticed), Money (Receivables, Financials), Stock (On hand, Next 30 days, Sourcing), Pricing (Pricing, Rules), Network
+(Clients, Associates, Coverage) and Record (Ledger, Analysis). Approve, Site orders and Entries left on 18 Oct 2026 (his
+word): Salt Admin decides them, and the desk still reads the orders and drafts for To do's Waiting on you row, the
+waiting stamp (`ordTell`) and Spots to file on Coverage; this device's alerts sit in the rail beside the theme. Old
+ids remain addresses through `VIEW_ALIAS` (`/desk#enter`, `#orders`, `#approve` land on Money, `#add` and
+`#plans` on Today). **The rail is two levels at
+most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
+feature folded out of sight reads to him as missing: name every part where the eye lands.
+Everything the desk shows, cost and margin included, is served at the desk's URL, behind the Access login. **It installs as
+Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`), and its
+`<title>` is Salt Desk too (his word of 24 Oct 2026; it was Salt Command), the build's anchor. The Counter's tab is
+Salt Counter, Salt Admin's is Salt Admin and QR Command's is QR.
+
+**Notifications: one event, one surface** (his answers of 19 Oct 2026, `docs/plan-notifications.html`). Salt Admin
+wakes him for what waits on his decision (a new order, a customer's line, a claim, a cancellation, their answer to an
+offer, rows to approve), through its own worker `/all/sw.js` and `opush:` subscriptions on the Counter: a customer's
+move rung by the Counter's order book at the move (his answer of 19 Nov 2026, `docs/plan-ring.html`, with guards so the
+Desk never rings it again), everything else and every ring the Counter could not make by the Desk's `wakeAdmin` over
+`/desk/owner-wake`. Salt Desk only informs (folded and live, a fold refused, the suite red,
+a refund held, the morning digest); it rings an order banner itself only while no Salt Admin device answers
+(KV `admin:on`). Salt Counter's customer wakes are unchanged. A new event goes to one of the three, never two.
+
+**Add ID**, **Amend ID** and **Approve** are Salt Admin's; the Desk reads them. A code is derived from the
+name and place (`makerDerivedCode`), never typed or picked, and changes only when they change; Amend ID
+re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
+the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are hand folds.
+
+**Coverage**, the map: districts shaded by a metric over a period, drilled to federal
+constituencies, parties as dots. **Area names show; a party's name never does**, even unlocked.
+Each party's place shows in words (`whereOf`). A place is its locality, then where that is
+(`placeLocality`, `geoWhere`); it is chosen from `placePicks` at Add ID and Amend ID, or worked out from the point
+in their Where field (`localityFor`: its district, then the nearest listed locality within 3 km; his D5 of 17 Nov 2026), and an
+unlisted place is looked up in `geo/gazetteer.json`, built from GeoNames alone, never from the
+directory. The leak checks exempt a directory place only when it IS an official area name
+(`areaNameSet`) or a filed locality (`publishedLocalities`). Detail: `docs/DESK.md`.
+
+**Money he is holding that is somebody else's is Now**: an open `customerRefunds` row is severity
+`now` in `actions()` from the day it is raised. **Nothing closes a refund from the phone, except an Accept spending it as
+credit, closed by the fold** (his word of 27 Oct 2026, `docs/DESK.md` "A refund becomes their credit"): paid out in cash, add
+`paidOn` in `ledger/book.json`, `booksync --sync`, build. **A refund is never the book's money**: money received by book reads
+`bookCash`, the row's cash less its refunds; cash flow keeps the till. **A refund the book no longer owes is flagged, never withdrawn**
+(the engine's `refundStale`, a fold move and a provenance note): he removes the row in `ledger/book.json`.
+
+**A defaulted sale is written off**: `txAdvance` reads nothing owed on it and `txWrittenOff`
+carries it to every reading of what was lost, so no price moves. A new reader of what is owed uses
+`txAdvance`; a new reader of losses must add `txWrittenOff`. A party with a write-off is not
+approached (`approachable`).
+
+**An undo takes back the newest move on a sale and nothing older** (plan 4, his answers of 16 Oct 2026):
+the engine's `undoOf`, read by Salt Admin's History, the drafter and the fold, from a payment or handover
+(a Fulfilment) or a Correction's own `was`; nothing is undone while money is on its way or a move waits on
+the row. The fold marks the step `undone` and the undo's own step `undoes` it: **a new reader of the trail
+passes an `undone` step over**. A site order follows by the order book's undo fix and is told by a banner;
+a change of its terms is undone through `restateOrder`. A refund it strands is said, never closed.
+
+**THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS OF COVER AND NEVER OVER 14**: the engine's
+`restockPlan`, read through `restockFor(prod)` and `reorderFor`, from measured demand only;
+`RULES.reorderUnits` is the fallback for a book with no demand. Never type a mark back in.
+
+**Five books** (salt, oil, candy, rice and gas; gas, opened 27 Oct 2026, took the place of the retired spare; prep, opened the same day, was removed
+entirely on his word of 10 Nov 2026). `node tools/product.mjs` is the one road that opens, re-keys, retires, restores or removes one; it refuses
+to retire a book with rows, to remove one with money on it, or to re-key salt,
+a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`.
+
+## Moved from CLAUDE.md, 19 Nov 2026: The chain: tap to deploy
+
+| Step | Where | When |
+|---|---|---|
+| Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
+| A customer's move tells the Desk | the order book rings Salt Admin, then POSTs the orders moved to `/_internal/maker/nudge`; the Desk runs the order pass on those (`ordersOnce`) | at once on their write; the minute's cron is the net (`docs/STATEMENTS.md` "The desk nudge", "The ring at the move") |
+| Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
+| Approve or reject | D1 `draft`, `POST /drafts/<id>/approve`; Salt Admin's Confirm sends every card ticked in one `decide-many` (his word of 22 Oct 2026), refusals answered with a fix and one dispatch for the batch | on tap; a decided row returns 409 |
+| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); at 00:23, 06:23, 12:23 and 18:23 MYT as the last net |
+| **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
+| Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
+| Publish with nothing to fold | a `stage_only` run of the same job | the desk's minute cron, after a write outside git marks `publish:wanted` (`publishWanted`), and once each Kuala Lumpur day from 00:05 MYT |
+| Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed, unless a full green CI run already proved that tree (rule 8) |
+| Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
+
+- **What is approved is the ROW, not the entry.** The phone leads with cost and margin read from
+  the draft and computes nothing; the drafter's flags do the measuring, and a purchase is never
+  measured with a seller's ruler. A card's flags freeze at drafting. **One tap a stage on a site order
+  (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
+  if the draft equals what he was shown, every field, flag and (for Accept) pricing version, a later stage leaving
+  out the flags that say only how old a snapshot was (`rowFlags`); else it waits under Approve, marked, a claim's row too. Accept moves the order only once its row is approved; a later stage
+  tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
+  drawn as the engine's `claimAlloc` (goods out oldest first, then the orders at Ready, each owing all that is left, V2), each row less the money already on its way to it, and its one Received approves exactly those rows. **A row paid past what it
+  comes to is a refund the fold raises** (06 Oct 2026, the engine's `refundOnOverpay` beside `refundOnCancel`, read off the row as
+  every sale amendment folds and on the desk's overlay): a close at what was handed over or an amendment under what they paid is
+  one tap like any other, and the difference opens as a `customerRefunds` row, Now until `paidOn`. **Cash received past what an order owes
+  is taken** (his word of 27 Oct 2026; goods plus delivery the measure, `cashTap` carrying the excess as `refund`), refused only beside a claim
+  of theirs, on an order owing nothing, with other money on its way to the row, or where the row owes another figure than the order.
+
+- **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
+  forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
+  through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited
+  nothing. A twin of a booked row is put to him at entry; a twin already queued is refused. A loan
+  is a Workbench mode folded into `loans`; settling one is a hand fold.
+- **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING` state key
+  that `tools/book.mjs pricingSnapshot()` derives. It refuses into `refused`: Linked and Rewarded
+  amendments, `linkTo` or `orderCode`, a movement with no date, a product with no cost, a zero or
+  negative figure, a date not in YYYY-MM-DD. **An entry stamped before the watermark that the draft
+  table does not know is drafted, never dropped.**
+- **The fold's judgement is a model's; the fold never WAITS for one.** What a row does, what is
+  refused and what rolls is `fold.mjs`; the model writes only the notes. No key, a call that will
+  not go through, or a reply twice against the house rules all land on `tools/foldnotes.mjs`,
+  which records no judgement and says so in every note. A refusal by `fold.mjs` leaves the batch
+  staged. CI holds the API key and the Cloudflare token, nothing else. **A batch books in EVENT ORDER**
+  (`applyInto` is `applyEntry` over the entries, his answers of 16 Oct 2026): a count stands and only the moves after it change
+  it, a rename applies where it stands, an Add ID books before the trade naming it, a trip books whole or not at all, and the
+  roll note is one a product for the batch.
+
+- **No clock.** `Salt fold (manual backup)` is disabled (id in MEMORY.md): fire it
+  by hand if the Fold step fails. The stage stands down while `master/_to_fold.json` is in HEAD,
+  unless `fold.mjs --replays` says the batch is a replay.
+- **The laptop's queue takes the same road**: `node tools/drafts.mjs --from-queue`. A decided
+  draft keeps its id for good; re-drafting an entry he later calls real, and folding from the
+  laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
+
+## Moved from CLAUDE.md, 19 Nov 2026: Sync and proof
+
+- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`, every sixty while the Desk's live socket is up
+  (the object `live` inside the Book class tells `rev`, `orders` and `drafts` as kinds only, owner only; `docs/DESK.md`); `/rev` is `no-store`
+  and never cached by `sw.js`.
+- **`public/rev.json` id** = sha256 over the patched master, `public/sw.js` and every `src/*.js`,
+  NUL-joined; written by the build only. It omits `public/_headers`, `manifest.webmanifest`,
+  `chart.umd.js` and both wrangler configs, so **deploy a `wrangler.jsonc` change by hand**. **`sw.js`
+  serves the manifest and the icons cache first**: a change to either bumps its `CACHE` in the same
+  version, or an installed desk never reads it.
+- A deploy is decided by ids, never by hashing output (`deployVerdict`): none when live `/rev`
+  serves `rev.json.id`, which is then written to `.deployed.json`, else `rev.json.id` against
+  `.deployed.json.id`. The record is untracked, this checkout's own, and never written unseen.
+- `ci.yml` on push: book in date order, master version in the changelog, tests pass unless
+  cloud-commit tests the same push, `public/` matches the master. `ship-check.yml` daily: repo id
+  against live `/rev`.
+
+## Moved from CLAUDE.md, 19 Nov 2026: Names
+
+Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts `salt_bio.json`
+with `$env:SALT_VAULT_PASS` (never a file) and pushes the ciphertext to the versioned vault pair in D1 (KV only while the Worker's authority is not the pair); the desk auto-locks on
+`visibilitychange`. **The vault is three envelopes under one passphrase; an address or an exact point
+lives only in the second**: names and places, both in the D1 vault pair (KV `vault` and `vault-addr` are recovery material only; a place is `{<code>: {addr, lat, lng,
+src, at}, _base}`), filed at Add ID and Amend ID from a Maps or Waze link read on the device, while
+`PLACED` keeps the locality to 0.01 degrees; and the slip key in `vault-key`, the private half of an
+ECDH P-256 pair every slip is sealed to, its public half in the clear beside it and on the Counter's
+KV `slipkey`. **One unlock opens all three**, the slip key imported non-extractable, and the
+auto-lock clears all three. The laptop's copies are `10_Data\salt_addr.json`, through
+`seed-vault.mjs --addr` and `pull-vault.mjs --addr`, and `10_Data\salt_slipkey.json` (ciphertext),
+through `seed-vault.mjs --slip-key` and `pull-vault.mjs --slip-key`. **No route and no other tool
+writes `vault-key`, and `--slip-key` never over a filed key unasked**: a new key loses every slip
+sealed to the old; a lost one is put back by hand from the copy. **A name and ID is committed every time, like an approved row**: Add ID on the
+phone files the name and place into the vault, encrypted on the device, before the ID is queued.
+**On the laptop run `node tools/pull-vault.mjs` before any seed**; the vault's spelling wins, and
+after a re-key take out the retired codes it brings back. When a fold finds a roster code the
+directory lacks, ask him for the name and the location before the ID commits, then write both to
+`10_Data\salt_bio.json`, seed the vault, and commit the statement username in
+`statements/_users.json` (minted at registration, kept for life). The `-R` buckets are the
+exception. **An account is ready on day one** (D15): the laptop mints a pool of spare accounts
+(`tools/stmt-account.mjs --pool`), the fold binds the next free one at Add ID in `_users.json`, and
+that run's publish opens it; a spare is marked in the clear, listed nowhere and opened by nobody
+until bound. **With none free, the ID has a username but no account and cannot sign in** until
+`tools/update.mjs` mints it (`--mint`, needing `STMT_MASTER`; without it the run names who is stuck
+and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. His own route is the
+`update-names-id` skill, laptop only.
+
+## Moved from CLAUDE.md, 19 Nov 2026: Access, two locks; the write gate
+
+- **`REQUIRE_ACCESS` (current value in MEMORY.md).** One owner Access application gates the Desk's
+  host and the Counter's `/all`, set outside the repo's config; the Worker's own JWT check is the
+  second lock, its team and audience in `wrangler.jsonc`, a change deployed by hand. The Worker verifies the
+  JWT signature, issuer, audience, expiry and exact email from the Access header or cookie; a header
+  alone is not identity. The CI service token passes only `GET /rev`, `POST /push/send` and `POST /book/load` (S2a: the shadow Book's load, which also needs its own key `SALT_BOOK_KEY` or the write key, takes only the book, and answers counts and digests, never a row; S2b: its read-back, which `tools/book-load.mjs` compares with git, the step red on any difference and never blocking the fold), and S2c's `POST /book/pitr` and `GET /book/window` (the recovery test, `tools/book-pitr.mjs` by hand dispatch: the TEST object alone, never the live Book, and a read of the live Book's window; same key); the vault tools send his own token. The Counter's `/all` applies the same verified-email rule, while customer
+  sign-in routes outside `/all` remain unchanged.
+- **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, and so do the reads that carry cost or trade:
+  `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`, and the places' `/vault/addr` and
+  `/geo/expand`.** This is the separate write key; when enabled, the Desk's Access gate also covers
+  its assets, `/rev` and `/queue/ping`. The names vault's ciphertext stays encrypted. Rotate with
+  `npx wrangler secret put SALT_WRITE_KEY` from the
+  repo, then clear `saltWriteKey` from the phone's storage. `drain.mjs` and `seed-vault.mjs` go
+  through wrangler, unaffected. **`wrangler dev` binds the LIVE KV.**
+- Withdraw a queued entry: `node tools/drain.mjs --status`, then `--forget <at>`; a drafted one is rejected under Approve instead.
