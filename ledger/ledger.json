@@ -1,6 +1,6 @@
 {
- "v": "v1562",
- "stamped": "18 Nov 2026, 19:38 KL",
+ "v": "v1565",
+ "stamped": "22 Nov 2026, 19:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,17 +73,17 @@
    "gas": {
     "costPerKg": 50,
     "qty": 0,
-    "stated": 2
+    "stated": 4
    },
    "oil": {
     "costPerKg": 7.666666666666667,
     "qty": 5,
-    "stated": 25
+    "stated": 65
    },
    "rice": {
     "costPerKg": null,
     "qty": 0,
-    "stated": 69
+    "stated": 44
    },
    "salt": {
     "costPerKg": 64,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 21.5,
+  "STATED_STOCK": 4.25,
   "COUNT_ON": {
    "candy": "2026-11-07",
    "gas": "2026-11-02",
@@ -1529,6 +1529,35 @@
     "status": "paid",
     "supplier": "SM4-KEP",
     "total": 69
+   },
+   {
+    "cash": 164,
+    "date": "2026-11-27",
+    "freight": 14,
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-27",
+    "product": "gas",
+    "qty": 3,
+    "receivedOn": "2026-11-27",
+    "receivedQty": 3,
+    "rid": "p059",
+    "status": "paid",
+    "supplier": "SP7-PUD",
+    "total": 150
+   },
+   {
+    "cash": 380,
+    "date": "2026-11-27",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-27",
+    "product": "oil",
+    "qty": 50,
+    "receivedOn": "2026-11-27",
+    "receivedQty": 50,
+    "rid": "p060",
+    "status": "paid",
+    "supplier": "SP7-PUD",
+    "total": 380
    }
   ],
   "sales": [
@@ -14912,8 +14941,16 @@
       "was": {
        "product": "gas"
       }
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Cancellation"
      }
     ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-22",
     "cash": 0,
     "customer": "CJ2-KUC",
     "date": "2026-11-20",
@@ -15273,6 +15310,23 @@
     "total": 60
    },
    {
+    "cash": 0,
+    "cost": 52,
+    "customer": "CZ5-TM",
+    "date": "2026-11-20",
+    "deliveredOn": "2026-11-20",
+    "deliveredQty": 1,
+    "goodwill": true,
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "qty": 1,
+    "rebate": true,
+    "rebateKg": 1,
+    "rid": "s411",
+    "road": "admin",
+    "settledRM": 52,
+    "total": 52
+   },
+   {
     "amend": [
      {
       "cash": 0,
@@ -15363,6 +15417,523 @@
     "rid": "s410",
     "road": "site",
     "total": 90
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 245,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 106,
+      "date": "2026-11-22",
+      "kg": 2,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 245,
+    "cost": 106,
+    "customer": "CH6-WM",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 2,
+    "delivery": 25,
+    "handover": "delivered",
+    "listQty": 2,
+    "listRM": 220,
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "qty": 2,
+    "rid": "s412",
+    "road": "site",
+    "total": 220
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 140,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 59,
+      "date": "2026-11-22",
+      "kg": 20,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 20; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 140,
+    "cost": 59,
+    "customer": "CI5-PER",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 20,
+    "delivery": 20,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 20; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "product": "rice",
+    "qty": 20,
+    "rid": "s413",
+    "road": "site",
+    "total": 120
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 300,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 265,
+      "date": "2026-11-22",
+      "kg": 5,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 5; deliveredOn (unset) to 2026-11-22; handover (unset) to collected",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 125,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 425,
+    "cost": 265,
+    "customer": "CZ5-TM",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 5,
+    "handover": "collected",
+    "listQty": 5,
+    "listRM": 425,
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 5; deliveredOn (unset) to 2026-11-22; handover (unset) to collected",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "qty": 5,
+    "rid": "s414",
+    "road": "site",
+    "rwdRate": 53,
+    "rwdStep": 530,
+    "total": 425
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Cancellation"
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-22",
+    "cash": 0,
+    "customer": "CD4-DAM-R",
+    "date": "2026-11-22",
+    "deliveredQty": 0,
+    "delivery": 15,
+    "listQty": 5,
+    "listRM": 460,
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "qty": 5,
+    "rev": "R2",
+    "rid": "s415",
+    "road": "site",
+    "total": 460
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 275,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 106,
+      "date": "2026-11-22",
+      "kg": 2,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 275,
+    "cost": 106,
+    "customer": "CM4-CHE",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 2,
+    "delivery": 15,
+    "handover": "delivered",
+    "listQty": 2,
+    "listRM": 260,
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "qty": 2,
+    "rid": "s416",
+    "road": "site",
+    "total": 260,
+    "trip": "t7066375262960749"
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 35,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 14.75,
+      "date": "2026-11-22",
+      "kg": 5,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 5; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 35,
+    "cost": 14.75,
+    "customer": "CM4-CHE",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 5,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 5; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "product": "rice",
+    "qty": 5,
+    "rid": "s417",
+    "road": "site",
+    "total": 35,
+    "trip": "t7066375262960749"
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 75,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 50,
+      "date": "2026-11-22",
+      "kg": 1,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 75,
+    "cost": 50,
+    "customer": "CM4-CHE",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 1,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "product": "gas",
+    "qty": 1,
+    "rid": "s418",
+    "road": "site",
+    "total": 75,
+    "trip": "t7066375262960749"
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: total 550 to 560",
+      "was": {
+       "total": 550
+      }
+     },
+     {
+      "cash": 590,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 331.25,
+      "date": "2026-11-22",
+      "kg": 6.25,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 590,
+    "cost": 331.25,
+    "customer": "CD4-DAM-R",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 6.25,
+    "delivery": 30,
+    "handover": "delivered",
+    "listQty": 6.25,
+    "listRM": 570,
+    "mod": "corrected on 2026-11-22: total 550 to 560, then corrected on 2026-11-22: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "qty": 6.25,
+    "rev": "R2",
+    "rid": "s419",
+    "road": "site",
+    "total": 560,
+    "trip": "t9161715387423662"
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: total 130 to 90; delivery (unset) to 0",
+      "was": {
+       "delivery": null,
+       "total": 130
+      }
+     },
+     {
+      "cash": 90,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 72.3,
+      "date": "2026-11-22",
+      "kg": 10,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     }
+    ],
+    "cash": 90,
+    "cost": 72.3,
+    "customer": "CD4-DAM-R",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 10,
+    "delivery": 0,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-22: total 130 to 90; delivery (unset) to 0, then corrected on 2026-11-22: deliveredQty 0 to 10; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "product": "oil",
+    "qty": 10,
+    "rev": "R2",
+    "rid": "s420",
+    "road": "site",
+    "total": 90,
+    "trip": "t9161715387423662"
+   },
+   {
+    "auto": true,
+    "cash": 0,
+    "cost": 53,
+    "customer": "CZ5-TM",
+    "date": "2026-11-22",
+    "deliveredQty": 0,
+    "given": 0,
+    "goodwill": true,
+    "note": "<b>REWARD UNIT: 1 UNIT OF SALT TO CZ5-TM AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM 530 (10 units at RM 53 landed on 2026-11-22) with s414, paid in full. Raised by the fold at RM 53 and settled by the reward, so it is cost and not revenue; it goes with s414's delivery, or with their next salt order where that has gone. RM 0 was given under their own price since the last reward (his information only).",
+    "product": "salt",
+    "qty": 1,
+    "rebate": true,
+    "rebateKg": 1,
+    "rewardOf": "s414",
+    "rid": "s421",
+    "road": "fold",
+    "settledRM": 53,
+    "total": 53
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "cost": 53,
+      "date": "2026-11-22",
+      "kg": 1,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-22: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 150,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 150,
+    "cost": 53,
+    "customer": "CB8-SEG-R",
+    "date": "2026-11-22",
+    "deliveredOn": "2026-11-22",
+    "deliveredQty": 1,
+    "delivery": 25,
+    "handover": "delivered",
+    "listQty": 1,
+    "listRM": 125,
+    "mod": "corrected on 2026-11-22: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-22; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-22",
+    "qty": 1,
+    "rev": "R2",
+    "rid": "s422",
+    "road": "site",
+    "total": 125
+   },
+   {
+    "cash": 0,
+    "customer": "CJ2-KUC",
+    "date": "2026-11-22",
+    "deliveredQty": 0,
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
+    "product": "gas",
+    "qty": 3,
+    "rid": "s423",
+    "road": "site",
+    "total": 225
    }
   ],
   "contacts": [
@@ -15612,7 +16183,11 @@
    "CS5-KLC",
    "CF7-KUC",
    "CB8-SEG-R",
-   "CZ5-TM-R"
+   "CZ5-TM-R",
+   "CD4-DAM-R",
+   "CH6-WM",
+   "CZ6-WM-R",
+   "CM4-CHE"
   ],
   "associates": [
    "CS6-BS",
@@ -15627,7 +16202,9 @@
    "CM4-TO",
    "CA2-SEN",
    "CB8-SEG",
-   "CZ5-TM"
+   "CZ5-TM",
+   "CD4-DAM",
+   "CZ6-WM"
   ],
   "partners": [
    "CM4-TO",
@@ -15778,9 +16355,9 @@
     "Cheras Selatan"
    ],
    "CD4-DAM": [
-    3.07,
-    101.55,
-    "Damansara"
+    3.11,
+    101.61,
+    "Petaling Jaya"
    ],
    "CD7-SEG": [
     3.19,
@@ -15837,6 +16414,11 @@
     101.73,
     "Setapak"
    ],
+   "CH6-WM": [
+    3.21,
+    101.74,
+    "Wangsa Maju"
+   ],
    "CI4-OKR": [
     3.09,
     101.67,
@@ -15871,6 +16453,11 @@
     3.18,
     101.68,
     "Sentul"
+   ],
+   "CM4-CHE": [
+    3.11,
+    101.72,
+    "Cheras"
    ],
    "CM4-MK": [
     3.17,
@@ -16024,6 +16611,9 @@
    "CH6-SET": {
     "salt": -0.14
    },
+   "CH6-WM": {
+    "salt": 0
+   },
    "CI4-OKR": {
     "salt": -0.14
    },
@@ -16038,6 +16628,9 @@
    },
    "CK4-SEN": {
     "salt": -0.19
+   },
+   "CM4-CHE": {
+    "salt": 0.3
    },
    "CM4-MK": {
     "salt": 0.1
@@ -16098,6 +16691,12 @@
     "share": 0.6234,
     "upTo": "s401"
    },
+   "CD4-DAM": {
+    "earned": 0,
+    "on": "2026-11-22",
+    "share": 0.3191,
+    "upTo": "s410"
+   },
    "CE4-AD": {
     "earned": 1,
     "on": "2026-10-20",
@@ -16157,6 +16756,12 @@
     "on": "2026-11-20",
     "share": 0.7468,
     "upTo": "s408"
+   },
+   "CZ6-WM": {
+    "earned": 0,
+    "on": "2026-11-22",
+    "share": 0.317,
+    "upTo": "s411"
    }
   },
   "QUOTES": {
@@ -16289,7 +16894,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-21T07:36:12.560Z",
+  "QUEUE_COMMITTED": "2026-11-22T15:07:16.382Z",
   "MARKET": {},
   "PRICING": {
    "sizes": [
@@ -16316,7 +16921,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "16 customers are past their own habit on salt"
+     "title": "15 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -16326,7 +16931,7 @@
     {
      "id": "cust:cadence:rice",
      "sev": "watch",
-     "title": "3 customers are past their own habit on rice"
+     "title": "2 customers are past their own habit on rice"
     },
     {
      "id": "cust:cadence:gas",
@@ -16356,7 +16961,7 @@
     {
      "id": "promo:revive:oil",
      "sev": "note",
-     "title": "Three messages are worth about RM 242 on oil"
+     "title": "Three messages are worth about RM 212 on oil"
     },
     {
      "id": "dup:CZ5-TM:2026-11-19:2026-11-20:190",
@@ -16419,11 +17024,6 @@
      "title": "CR3-DAM bought the same thing twice in 3 days"
     },
     {
-     "id": "promo:revive:rice",
-     "sev": "note",
-     "title": "Three messages are worth about RM 61 on rice"
-    },
-    {
      "id": "dup:CI5-PER:2026-10-31:2026-11-03:60",
      "sev": "note",
      "title": "CI5-PER bought the same thing twice in 3 days"
@@ -16449,9 +17049,14 @@
      "title": "CA4-DAM bought the same thing twice in 2 days"
     },
     {
+     "id": "promo:revive:rice",
+     "sev": "note",
+     "title": "Two messages are worth about RM 30 on rice"
+    },
+    {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "17 of 56 customers have bought exactly once"
+     "title": "21 of 60 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -16476,7 +17081,7 @@
     {
      "id": "rhythm:holiday:salt",
      "sev": "note",
-     "title": "Next Kuala Lumpur holiday is Christmas Day, 33 days out"
+     "title": "Next Kuala Lumpur holiday is Christmas Day, 32 days out"
     },
     {
      "id": "rhythm:restock:salt",
@@ -16494,10 +17099,10 @@
      "salt": {
       "name": "consistent mid",
       "orders": 23,
-      "tenureDays": 133,
-      "sinceLastDays": 8,
-      "perMonth": 5.26,
-      "unitsPerMonth": 12.36,
+      "tenureDays": 134,
+      "sinceLastDays": 9,
+      "perMonth": 5.22,
+      "unitsPerMonth": 12.27,
       "smallShare": 0.48,
       "bigShare": 0.3,
       "frequent": true,
@@ -16509,10 +17114,10 @@
      "oil": {
       "name": "rare and large",
       "orders": 4,
-      "tenureDays": 108,
-      "sinceLastDays": 67,
-      "perMonth": 1.13,
-      "unitsPerMonth": 19.73,
+      "tenureDays": 109,
+      "sinceLastDays": 68,
+      "perMonth": 1.12,
+      "unitsPerMonth": 19.55,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16524,8 +17129,8 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 8,
-      "sinceLastDays": 8,
+      "tenureDays": 9,
+      "sinceLastDays": 9,
       "perMonth": 1.01,
       "unitsPerMonth": 2.03,
       "smallShare": 0,
@@ -16541,10 +17146,10 @@
      "salt": {
       "name": "consistent mid",
       "orders": 22,
-      "tenureDays": 137,
-      "sinceLastDays": 4,
-      "perMonth": 4.89,
-      "unitsPerMonth": 12.22,
+      "tenureDays": 138,
+      "sinceLastDays": 5,
+      "perMonth": 4.85,
+      "unitsPerMonth": 12.13,
       "smallShare": 0.32,
       "bigShare": 0.23,
       "frequent": true,
@@ -16556,10 +17161,10 @@
      "oil": {
       "name": "rare and large",
       "orders": 7,
-      "tenureDays": 107,
-      "sinceLastDays": 4,
-      "perMonth": 1.99,
-      "unitsPerMonth": 19.91,
+      "tenureDays": 108,
+      "sinceLastDays": 5,
+      "perMonth": 1.97,
+      "unitsPerMonth": 19.73,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16571,10 +17176,10 @@
      "rice": {
       "name": "large and regular",
       "orders": 4,
-      "tenureDays": 50,
-      "sinceLastDays": 6,
-      "perMonth": 2.44,
-      "unitsPerMonth": 18.26,
+      "tenureDays": 51,
+      "sinceLastDays": 7,
+      "perMonth": 2.39,
+      "unitsPerMonth": 17.91,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -16586,8 +17191,8 @@
      "gas": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 6,
-      "sinceLastDays": 6,
+      "tenureDays": 7,
+      "sinceLastDays": 7,
       "perMonth": 1.01,
       "unitsPerMonth": 1.01,
       "smallShare": 1,
@@ -16603,10 +17208,10 @@
      "salt": {
       "name": "large and regular",
       "orders": 11,
-      "tenureDays": 99,
-      "sinceLastDays": 4,
-      "perMonth": 3.38,
-      "unitsPerMonth": 23.83,
+      "tenureDays": 100,
+      "sinceLastDays": 5,
+      "perMonth": 3.35,
+      "unitsPerMonth": 23.59,
       "smallShare": 0.27,
       "bigShare": 0.73,
       "frequent": true,
@@ -16618,8 +17223,8 @@
      "oil": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 6,
-      "sinceLastDays": 6,
+      "tenureDays": 7,
+      "sinceLastDays": 7,
       "perMonth": 1.01,
       "unitsPerMonth": 5.07,
       "smallShare": 0,
@@ -16633,10 +17238,10 @@
      "candy": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 34,
-      "sinceLastDays": 34,
-      "perMonth": 0.9,
-      "unitsPerMonth": 2.69,
+      "tenureDays": 35,
+      "sinceLastDays": 35,
+      "perMonth": 0.87,
+      "unitsPerMonth": 2.61,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16648,10 +17253,10 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 60,
-      "sinceLastDays": 60,
-      "perMonth": 0.51,
-      "unitsPerMonth": 5.07,
+      "tenureDays": 61,
+      "sinceLastDays": 61,
+      "perMonth": 0.5,
+      "unitsPerMonth": 4.99,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16663,8 +17268,8 @@
      "gas": {
       "name": "consistent mid",
       "orders": 2,
-      "tenureDays": 22,
-      "sinceLastDays": 13,
+      "tenureDays": 23,
+      "sinceLastDays": 14,
       "perMonth": 2.03,
       "unitsPerMonth": 3.04,
       "smallShare": 0.5,
@@ -16680,10 +17285,10 @@
      "salt": {
       "name": "consistent mid",
       "orders": 17,
-      "tenureDays": 125,
-      "sinceLastDays": 2,
-      "perMonth": 4.14,
-      "unitsPerMonth": 11.38,
+      "tenureDays": 126,
+      "sinceLastDays": 3,
+      "perMonth": 4.11,
+      "unitsPerMonth": 11.29,
       "smallShare": 0,
       "bigShare": 0.18,
       "frequent": true,
@@ -16695,10 +17300,10 @@
      "oil": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 71,
-      "sinceLastDays": 64,
-      "perMonth": 0.86,
-      "unitsPerMonth": 6.43,
+      "tenureDays": 72,
+      "sinceLastDays": 65,
+      "perMonth": 0.85,
+      "unitsPerMonth": 6.34,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16710,10 +17315,10 @@
      "candy": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 45,
-      "sinceLastDays": 45,
-      "perMonth": 0.68,
-      "unitsPerMonth": 0.68,
+      "tenureDays": 46,
+      "sinceLastDays": 46,
+      "perMonth": 0.66,
+      "unitsPerMonth": 0.66,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -16725,10 +17330,10 @@
      "rice": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 47,
-      "sinceLastDays": 2,
-      "perMonth": 1.94,
-      "unitsPerMonth": 19.43,
+      "tenureDays": 48,
+      "sinceLastDays": 3,
+      "perMonth": 1.9,
+      "unitsPerMonth": 19.03,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16742,10 +17347,10 @@
      "salt": {
       "name": "large and regular",
       "orders": 17,
-      "tenureDays": 122,
-      "sinceLastDays": 7,
-      "perMonth": 4.24,
-      "unitsPerMonth": 10.9,
+      "tenureDays": 123,
+      "sinceLastDays": 8,
+      "perMonth": 4.21,
+      "unitsPerMonth": 10.81,
       "smallShare": 0.06,
       "bigShare": 0.41,
       "frequent": true,
@@ -16759,10 +17364,10 @@
      "salt": {
       "name": "rare and large",
       "orders": 8,
-      "tenureDays": 147,
-      "sinceLastDays": 44,
-      "perMonth": 1.66,
-      "unitsPerMonth": 11.38,
+      "tenureDays": 148,
+      "sinceLastDays": 45,
+      "perMonth": 1.65,
+      "unitsPerMonth": 11.3,
       "smallShare": 0.13,
       "bigShare": 0.88,
       "frequent": false,
@@ -16774,10 +17379,10 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 33,
-      "sinceLastDays": 33,
-      "perMonth": 0.92,
-      "unitsPerMonth": 9.22,
+      "tenureDays": 34,
+      "sinceLastDays": 34,
+      "perMonth": 0.9,
+      "unitsPerMonth": 8.95,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16791,10 +17396,10 @@
      "salt": {
       "name": "large and regular",
       "orders": 9,
-      "tenureDays": 83,
-      "sinceLastDays": 2,
-      "perMonth": 3.3,
-      "unitsPerMonth": 15.31,
+      "tenureDays": 84,
+      "sinceLastDays": 3,
+      "perMonth": 3.26,
+      "unitsPerMonth": 15.13,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -16806,10 +17411,10 @@
      "rice": {
       "name": "consistent mid",
       "orders": 5,
-      "tenureDays": 53,
-      "sinceLastDays": 2,
-      "perMonth": 2.87,
-      "unitsPerMonth": 9.19,
+      "tenureDays": 54,
+      "sinceLastDays": 3,
+      "perMonth": 2.82,
+      "unitsPerMonth": 9.02,
       "smallShare": 0.4,
       "bigShare": 0.2,
       "frequent": true,
@@ -16823,10 +17428,10 @@
      "salt": {
       "name": "rare and large",
       "orders": 4,
-      "tenureDays": 115,
-      "sinceLastDays": 26,
-      "perMonth": 1.06,
-      "unitsPerMonth": 5.29,
+      "tenureDays": 116,
+      "sinceLastDays": 27,
+      "perMonth": 1.05,
+      "unitsPerMonth": 5.25,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16838,10 +17443,10 @@
      "oil": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 88,
-      "sinceLastDays": 25,
-      "perMonth": 1.04,
-      "unitsPerMonth": 13.84,
+      "tenureDays": 89,
+      "sinceLastDays": 26,
+      "perMonth": 1.03,
+      "unitsPerMonth": 13.68,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16853,10 +17458,10 @@
      "candy": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 62,
-      "sinceLastDays": 5,
-      "perMonth": 1.47,
-      "unitsPerMonth": 8.35,
+      "tenureDays": 63,
+      "sinceLastDays": 6,
+      "perMonth": 1.45,
+      "unitsPerMonth": 8.21,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16870,10 +17475,10 @@
      "salt": {
       "name": "consistent mid",
       "orders": 14,
-      "tenureDays": 111,
-      "sinceLastDays": 20,
-      "perMonth": 3.84,
-      "unitsPerMonth": 6.72,
+      "tenureDays": 112,
+      "sinceLastDays": 21,
+      "perMonth": 3.81,
+      "unitsPerMonth": 6.66,
       "smallShare": 0.57,
       "bigShare": 0.07,
       "frequent": true,
@@ -16885,10 +17490,10 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 48,
-      "sinceLastDays": 48,
-      "perMonth": 0.63,
-      "unitsPerMonth": 1.27,
+      "tenureDays": 49,
+      "sinceLastDays": 49,
+      "perMonth": 0.62,
+      "unitsPerMonth": 1.24,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -16902,10 +17507,10 @@
      "salt": {
       "name": "small and often",
       "orders": 24,
-      "tenureDays": 146,
-      "sinceLastDays": 23,
-      "perMonth": 5,
-      "unitsPerMonth": 5.94,
+      "tenureDays": 147,
+      "sinceLastDays": 24,
+      "perMonth": 4.97,
+      "unitsPerMonth": 5.9,
       "smallShare": 0.83,
       "bigShare": 0.04,
       "frequent": true,
@@ -16918,13 +17523,13 @@
     "CZ5-TM": {
      "salt": {
       "name": "consistent mid",
-      "orders": 13,
-      "tenureDays": 64,
-      "sinceLastDays": 2,
-      "perMonth": 6.18,
-      "unitsPerMonth": 9.04,
-      "smallShare": 0.54,
-      "bigShare": 0,
+      "orders": 14,
+      "tenureDays": 65,
+      "sinceLastDays": 1,
+      "perMonth": 6.56,
+      "unitsPerMonth": 11.24,
+      "smallShare": 0.5,
+      "bigShare": 0.07,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -16934,8 +17539,8 @@
      "rice": {
       "name": "large and regular",
       "orders": 2,
-      "tenureDays": 5,
-      "sinceLastDays": 4,
+      "tenureDays": 6,
+      "sinceLastDays": 5,
       "perMonth": 2.03,
       "unitsPerMonth": 7.1,
       "smallShare": 0,
@@ -16951,10 +17556,10 @@
      "salt": {
       "name": "rare and large",
       "orders": 4,
-      "tenureDays": 117,
-      "sinceLastDays": 15,
-      "perMonth": 1.04,
-      "unitsPerMonth": 5.2,
+      "tenureDays": 118,
+      "sinceLastDays": 16,
+      "perMonth": 1.03,
+      "unitsPerMonth": 5.16,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16968,10 +17573,10 @@
      "salt": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 97,
-      "sinceLastDays": 10,
-      "perMonth": 0.94,
-      "unitsPerMonth": 8.79,
+      "tenureDays": 98,
+      "sinceLastDays": 11,
+      "perMonth": 0.93,
+      "unitsPerMonth": 8.7,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -16983,15 +17588,15 @@
     },
     "CC9-OKR": {
      "salt": {
-      "name": "small and often",
+      "name": "small and rare",
       "orders": 9,
-      "tenureDays": 136,
-      "sinceLastDays": 38,
-      "perMonth": 2.01,
-      "unitsPerMonth": 3.19,
+      "tenureDays": 137,
+      "sinceLastDays": 39,
+      "perMonth": 2,
+      "unitsPerMonth": 3.17,
       "smallShare": 0.89,
       "bigShare": 0.11,
-      "frequent": true,
+      "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
@@ -17000,10 +17605,10 @@
      "oil": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 59,
-      "sinceLastDays": 52,
-      "perMonth": 1.03,
-      "unitsPerMonth": 10.32,
+      "tenureDays": 60,
+      "sinceLastDays": 53,
+      "perMonth": 1.01,
+      "unitsPerMonth": 10.15,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17015,10 +17620,10 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 59,
-      "sinceLastDays": 59,
-      "perMonth": 0.52,
-      "unitsPerMonth": 2.06,
+      "tenureDays": 60,
+      "sinceLastDays": 60,
+      "perMonth": 0.51,
+      "unitsPerMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17032,8 +17637,8 @@
      "salt": {
       "name": "small and often",
       "orders": 5,
-      "tenureDays": 22,
-      "sinceLastDays": 1,
+      "tenureDays": 23,
+      "sinceLastDays": 2,
       "perMonth": 5.07,
       "unitsPerMonth": 4.57,
       "smallShare": 1,
@@ -17047,8 +17652,8 @@
      "oil": {
       "name": "large and regular",
       "orders": 4,
-      "tenureDays": 22,
-      "sinceLastDays": 1,
+      "tenureDays": 23,
+      "sinceLastDays": 2,
       "perMonth": 4.06,
       "unitsPerMonth": 40.59,
       "smallShare": 0,
@@ -17062,8 +17667,8 @@
      "candy": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 18,
-      "sinceLastDays": 18,
+      "tenureDays": 19,
+      "sinceLastDays": 19,
       "perMonth": 1.01,
       "unitsPerMonth": 3.04,
       "smallShare": 0,
@@ -17076,11 +17681,11 @@
      },
      "rice": {
       "name": "large and regular",
-      "orders": 2,
-      "tenureDays": 22,
-      "sinceLastDays": 19,
-      "perMonth": 2.03,
-      "unitsPerMonth": 20.29,
+      "orders": 3,
+      "tenureDays": 23,
+      "sinceLastDays": 1,
+      "perMonth": 3.04,
+      "unitsPerMonth": 40.59,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -17094,10 +17699,10 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 131,
-      "sinceLastDays": 131,
+      "tenureDays": 132,
+      "sinceLastDays": 132,
       "perMonth": 0.23,
-      "unitsPerMonth": 2.9,
+      "unitsPerMonth": 2.88,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17111,10 +17716,10 @@
      "salt": {
       "name": "small and often",
       "orders": 12,
-      "tenureDays": 133,
-      "sinceLastDays": 90,
-      "perMonth": 2.75,
-      "unitsPerMonth": 2.06,
+      "tenureDays": 134,
+      "sinceLastDays": 91,
+      "perMonth": 2.73,
+      "unitsPerMonth": 2.04,
       "smallShare": 0.92,
       "bigShare": 0,
       "frequent": true,
@@ -17128,10 +17733,10 @@
      "salt": {
       "name": "occasional mid",
       "orders": 5,
-      "tenureDays": 124,
-      "sinceLastDays": 17,
-      "perMonth": 1.23,
-      "unitsPerMonth": 2.45,
+      "tenureDays": 125,
+      "sinceLastDays": 18,
+      "perMonth": 1.22,
+      "unitsPerMonth": 2.44,
       "smallShare": 0.2,
       "bigShare": 0.2,
       "frequent": false,
@@ -17143,10 +17748,10 @@
      "candy": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 43,
-      "sinceLastDays": 43,
-      "perMonth": 0.71,
-      "unitsPerMonth": 1.42,
+      "tenureDays": 44,
+      "sinceLastDays": 44,
+      "perMonth": 0.69,
+      "unitsPerMonth": 1.38,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -17154,48 +17759,16 @@
       "bigger": false,
       "loyal": false,
       "rare": true
-     }
-    },
-    "CA7-AMP": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 83,
-      "sinceLastDays": 83,
-      "perMonth": 0.37,
-      "unitsPerMonth": 0.37,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": true
-     },
-     "oil": {
-      "name": "rare and large",
-      "orders": 3,
-      "tenureDays": 83,
-      "sinceLastDays": 45,
-      "perMonth": 1.1,
-      "unitsPerMonth": 38.51,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
      }
     },
     "CJ2-KUC": {
      "candy": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 61,
-      "sinceLastDays": 61,
-      "perMonth": 0.5,
-      "unitsPerMonth": 7.98,
+      "tenureDays": 62,
+      "sinceLastDays": 62,
+      "perMonth": 0.49,
+      "unitsPerMonth": 7.86,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17207,10 +17780,74 @@
      "rice": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 48,
-      "sinceLastDays": 7,
-      "perMonth": 1.27,
-      "unitsPerMonth": 12.68,
+      "tenureDays": 49,
+      "sinceLastDays": 8,
+      "perMonth": 1.24,
+      "unitsPerMonth": 12.42,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
+    "CD4-DAM": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 2,
+      "tenureDays": 5,
+      "sinceLastDays": 1,
+      "perMonth": 2.03,
+      "unitsPerMonth": 10.4,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "oil": {
+      "name": "large and regular",
+      "orders": 2,
+      "tenureDays": 5,
+      "sinceLastDays": 1,
+      "perMonth": 2.03,
+      "unitsPerMonth": 20.29,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
+    "CA7-AMP": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 84,
+      "sinceLastDays": 84,
+      "perMonth": 0.36,
+      "unitsPerMonth": 0.36,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true
+     },
+     "oil": {
+      "name": "rare and large",
+      "orders": 3,
+      "tenureDays": 84,
+      "sinceLastDays": 46,
+      "perMonth": 1.09,
+      "unitsPerMonth": 38.05,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17224,10 +17861,10 @@
      "salt": {
       "name": "occasional mid",
       "orders": 4,
-      "tenureDays": 117,
-      "sinceLastDays": 37,
-      "perMonth": 1.04,
-      "unitsPerMonth": 2.6,
+      "tenureDays": 118,
+      "sinceLastDays": 38,
+      "perMonth": 1.03,
+      "unitsPerMonth": 2.58,
       "smallShare": 0.5,
       "bigShare": 0.25,
       "frequent": false,
@@ -17241,10 +17878,10 @@
      "salt": {
       "name": "small and rare",
       "orders": 6,
-      "tenureDays": 93,
-      "sinceLastDays": 15,
-      "perMonth": 1.96,
-      "unitsPerMonth": 3.27,
+      "tenureDays": 94,
+      "sinceLastDays": 16,
+      "perMonth": 1.94,
+      "unitsPerMonth": 3.24,
       "smallShare": 0.67,
       "bigShare": 0.33,
       "frequent": false,
@@ -17258,10 +17895,10 @@
      "salt": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 107,
-      "sinceLastDays": 55,
+      "tenureDays": 108,
+      "sinceLastDays": 56,
       "perMonth": 0.85,
-      "unitsPerMonth": 2.56,
+      "unitsPerMonth": 2.54,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17275,10 +17912,10 @@
      "salt": {
       "name": "occasional mid",
       "orders": 5,
-      "tenureDays": 124,
-      "sinceLastDays": 24,
-      "perMonth": 1.23,
-      "unitsPerMonth": 1.96,
+      "tenureDays": 125,
+      "sinceLastDays": 25,
+      "perMonth": 1.22,
+      "unitsPerMonth": 1.95,
       "smallShare": 0.4,
       "bigShare": 0,
       "frequent": false,
@@ -17290,8 +17927,8 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 24,
-      "sinceLastDays": 24,
+      "tenureDays": 25,
+      "sinceLastDays": 25,
       "perMonth": 1.01,
       "unitsPerMonth": 3.04,
       "smallShare": 0,
@@ -17307,10 +17944,10 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 123,
-      "sinceLastDays": 123,
+      "tenureDays": 124,
+      "sinceLastDays": 124,
       "perMonth": 0.25,
-      "unitsPerMonth": 3.09,
+      "unitsPerMonth": 3.07,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17324,10 +17961,10 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 131,
-      "sinceLastDays": 131,
+      "tenureDays": 132,
+      "sinceLastDays": 132,
       "perMonth": 0.23,
-      "unitsPerMonth": 2.9,
+      "unitsPerMonth": 2.88,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -17341,10 +17978,10 @@
      "salt": {
       "name": "small and rare",
       "orders": 5,
-      "tenureDays": 77,
-      "sinceLastDays": 22,
-      "perMonth": 1.98,
-      "unitsPerMonth": 2.77,
+      "tenureDays": 78,
+      "sinceLastDays": 23,
+      "perMonth": 1.95,
+      "unitsPerMonth": 2.73,
       "smallShare": 0.6,
       "bigShare": 0,
       "frequent": false,
@@ -17356,10 +17993,10 @@
      "rice": {
       "name": "occasional mid",
       "orders": 2,
-      "tenureDays": 55,
-      "sinceLastDays": 48,
-      "perMonth": 1.11,
-      "unitsPerMonth": 1.66,
+      "tenureDays": 56,
+      "sinceLastDays": 49,
+      "perMonth": 1.09,
+      "unitsPerMonth": 1.63,
       "smallShare": 0.5,
       "bigShare": 0,
       "frequent": false,
@@ -17373,8 +18010,8 @@
      "salt": {
       "name": "consistent mid",
       "orders": 2,
-      "tenureDays": 7,
-      "sinceLastDays": 3,
+      "tenureDays": 8,
+      "sinceLastDays": 4,
       "perMonth": 2.03,
       "unitsPerMonth": 3.04,
       "smallShare": 0.5,
@@ -17388,8 +18025,8 @@
      "oil": {
       "name": "large and regular",
       "orders": 2,
-      "tenureDays": 7,
-      "sinceLastDays": 3,
+      "tenureDays": 8,
+      "sinceLastDays": 4,
       "perMonth": 2.03,
       "unitsPerMonth": 25.37,
       "smallShare": 0,
@@ -17403,8 +18040,8 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 6,
-      "sinceLastDays": 6,
+      "tenureDays": 7,
+      "sinceLastDays": 7,
       "perMonth": 1.01,
       "unitsPerMonth": 10.15,
       "smallShare": 0,
@@ -17420,10 +18057,10 @@
      "salt": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 149,
-      "sinceLastDays": 144,
+      "tenureDays": 150,
+      "sinceLastDays": 145,
       "perMonth": 0.61,
-      "unitsPerMonth": 1.43,
+      "unitsPerMonth": 1.42,
       "smallShare": 0.33,
       "bigShare": 0.67,
       "frequent": false,
@@ -17437,10 +18074,10 @@
      "salt": {
       "name": "occasional mid",
       "orders": 3,
-      "tenureDays": 103,
-      "sinceLastDays": 88,
-      "perMonth": 0.89,
-      "unitsPerMonth": 2.22,
+      "tenureDays": 104,
+      "sinceLastDays": 89,
+      "perMonth": 0.88,
+      "unitsPerMonth": 2.2,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -17450,14 +18087,46 @@
       "rare": true
      }
     },
+    "CB8-SEG": {
+     "salt": {
+      "name": "small and often",
+      "orders": 5,
+      "tenureDays": 17,
+      "sinceLastDays": 1,
+      "perMonth": 5.07,
+      "unitsPerMonth": 4.57,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 17,
+      "sinceLastDays": 17,
+      "perMonth": 1.01,
+      "unitsPerMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CF5-WM": {
      "salt": {
       "name": "occasional mid",
       "orders": 3,
-      "tenureDays": 81,
-      "sinceLastDays": 43,
-      "perMonth": 1.13,
-      "unitsPerMonth": 1.88,
+      "tenureDays": 82,
+      "sinceLastDays": 44,
+      "perMonth": 1.11,
+      "unitsPerMonth": 1.86,
       "smallShare": 0.33,
       "bigShare": 0,
       "frequent": false,
@@ -17471,31 +18140,31 @@
      "salt": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 60,
-      "sinceLastDays": 51,
-      "perMonth": 1.01,
-      "unitsPerMonth": 2.79,
+      "tenureDays": 61,
+      "sinceLastDays": 52,
+      "perMonth": 1,
+      "unitsPerMonth": 2.74,
       "smallShare": 0,
       "bigShare": 0.5,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false
+      "rare": true
      }
     },
-    "CB8-SEG": {
+    "CM4-CHE": {
      "salt": {
-      "name": "small and often",
-      "orders": 4,
-      "tenureDays": 16,
-      "sinceLastDays": 2,
-      "perMonth": 4.06,
-      "unitsPerMonth": 3.55,
-      "smallShare": 1,
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 2.03,
+      "smallShare": 0,
       "bigShare": 0,
-      "frequent": true,
-      "small": true,
+      "frequent": false,
+      "small": false,
       "bigger": false,
       "loyal": false,
       "rare": false
@@ -17503,8 +18172,23 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 16,
-      "sinceLastDays": 16,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 5.07,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "gas": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
       "perMonth": 1.01,
       "unitsPerMonth": 1.01,
       "smallShare": 1,
@@ -17516,46 +18200,14 @@
       "rare": false
      }
     },
-    "CD4-DAM": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 4,
-      "sinceLastDays": 4,
-      "perMonth": 1.01,
-      "unitsPerMonth": 4.06,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     },
-     "oil": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 4,
-      "sinceLastDays": 4,
-      "perMonth": 1.01,
-      "unitsPerMonth": 10.15,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
     "CA3-KP": {
      "salt": {
       "name": "small and often",
       "orders": 4,
-      "tenureDays": 35,
-      "sinceLastDays": 17,
-      "perMonth": 3.48,
-      "unitsPerMonth": 2.17,
+      "tenureDays": 36,
+      "sinceLastDays": 18,
+      "perMonth": 3.38,
+      "unitsPerMonth": 2.11,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": true,
@@ -17569,10 +18221,10 @@
      "salt": {
       "name": "small and rare",
       "orders": 3,
-      "tenureDays": 124,
-      "sinceLastDays": 68,
-      "perMonth": 0.74,
-      "unitsPerMonth": 0.74,
+      "tenureDays": 125,
+      "sinceLastDays": 69,
+      "perMonth": 0.73,
+      "unitsPerMonth": 0.73,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -17586,8 +18238,8 @@
      "salt": {
       "name": "small and often",
       "orders": 2,
-      "tenureDays": 6,
-      "sinceLastDays": 2,
+      "tenureDays": 7,
+      "sinceLastDays": 3,
       "perMonth": 2.03,
       "unitsPerMonth": 2.03,
       "smallShare": 1,
@@ -17601,8 +18253,8 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 2,
-      "sinceLastDays": 2,
+      "tenureDays": 3,
+      "sinceLastDays": 3,
       "perMonth": 1.01,
       "unitsPerMonth": 5.07,
       "smallShare": 0,
@@ -17618,10 +18270,10 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 114,
-      "sinceLastDays": 114,
-      "perMonth": 0.27,
-      "unitsPerMonth": 0.67,
+      "tenureDays": 115,
+      "sinceLastDays": 115,
+      "perMonth": 0.26,
+      "unitsPerMonth": 0.66,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -17635,8 +18287,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 100,
-      "sinceLastDays": 100,
+      "tenureDays": 101,
+      "sinceLastDays": 101,
       "perMonth": 0.3,
       "unitsPerMonth": 0.3,
       "smallShare": 1,
@@ -17650,10 +18302,10 @@
      "oil": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 100,
-      "sinceLastDays": 65,
-      "perMonth": 0.61,
-      "unitsPerMonth": 3.35,
+      "tenureDays": 101,
+      "sinceLastDays": 66,
+      "perMonth": 0.6,
+      "unitsPerMonth": 3.32,
       "smallShare": 0.5,
       "bigShare": 0.5,
       "frequent": false,
@@ -17663,12 +18315,29 @@
       "rare": true
      }
     },
+    "CH6-WM": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CA4-SJ": {
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 21,
-      "sinceLastDays": 21,
+      "tenureDays": 22,
+      "sinceLastDays": 22,
       "perMonth": 1.01,
       "unitsPerMonth": 1.52,
       "smallShare": 0,
@@ -17684,10 +18353,10 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 143,
-      "sinceLastDays": 143,
+      "tenureDays": 144,
+      "sinceLastDays": 144,
       "perMonth": 0.21,
-      "unitsPerMonth": 0.43,
+      "unitsPerMonth": 0.42,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -17701,9 +18370,9 @@
      "salt": {
       "name": "small and rare",
       "orders": 2,
-      "tenureDays": 128,
-      "sinceLastDays": 78,
-      "perMonth": 0.48,
+      "tenureDays": 129,
+      "sinceLastDays": 79,
+      "perMonth": 0.47,
       "unitsPerMonth": 0.24,
       "smallShare": 1,
       "bigShare": 0,
@@ -17718,8 +18387,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 19,
-      "sinceLastDays": 19,
+      "tenureDays": 20,
+      "sinceLastDays": 20,
       "perMonth": 1.01,
       "unitsPerMonth": 1.01,
       "smallShare": 1,
@@ -17733,8 +18402,8 @@
      "rice": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 19,
-      "sinceLastDays": 19,
+      "tenureDays": 20,
+      "sinceLastDays": 20,
       "perMonth": 1.01,
       "unitsPerMonth": 5.07,
       "smallShare": 0,
@@ -17750,8 +18419,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 120,
-      "sinceLastDays": 120,
+      "tenureDays": 121,
+      "sinceLastDays": 121,
       "perMonth": 0.25,
       "unitsPerMonth": 0.25,
       "smallShare": 1,
@@ -17767,25 +18436,25 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 30,
-      "sinceLastDays": 30,
-      "perMonth": 1.01,
-      "unitsPerMonth": 1.01,
+      "tenureDays": 31,
+      "sinceLastDays": 31,
+      "perMonth": 0.98,
+      "unitsPerMonth": 0.98,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false
+      "rare": true
      }
     },
     "CR3-PUD": {
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 102,
-      "sinceLastDays": 102,
+      "tenureDays": 103,
+      "sinceLastDays": 103,
       "perMonth": 0.3,
       "unitsPerMonth": 0.3,
       "smallShare": 1,
@@ -17801,8 +18470,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 87,
-      "sinceLastDays": 87,
+      "tenureDays": 88,
+      "sinceLastDays": 88,
       "perMonth": 0.35,
       "unitsPerMonth": 0.35,
       "smallShare": 1,
@@ -17818,10 +18487,10 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 73,
-      "sinceLastDays": 73,
-      "perMonth": 0.42,
-      "unitsPerMonth": 0.42,
+      "tenureDays": 74,
+      "sinceLastDays": 74,
+      "perMonth": 0.41,
+      "unitsPerMonth": 0.41,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -17835,9 +18504,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 65,
-      "sinceLastDays": 65,
-      "perMonth": 0.47,
+      "tenureDays": 66,
+      "sinceLastDays": 66,
+      "perMonth": 0.46,
       "unitsPerMonth": 0.23,
       "smallShare": 1,
       "bigShare": 0,
@@ -17948,8 +18617,8 @@
          "date": "2026-11-19",
          "sup": "SA5-BTR"
         },
-        "days": 108,
-        "sinceLot": 117
+        "days": 109,
+        "sinceLot": 118
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -18014,15 +18683,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3630952380952381
+         "v": 0.37572254335260113
         }
        },
        "attrib": 1,
        "shrinkRate": 0.0897896659400224,
        "avgDel": {
-        "n": 291,
-        "kg": 710.31,
-        "mean": 2.4409
+        "n": 297,
+        "kg": 727.56,
+        "mean": 2.4497
        }
       },
       "policy": {
@@ -18242,9 +18911,10 @@
         50,
         100
        ],
+       "market": 0.05,
        "test": {
         "q": 1,
-        "rm": 5
+        "rm": -5
        }
       }
      },
@@ -18294,7 +18964,7 @@
        "q": 1,
        "prices": [
         65,
-        135
+        125
        ],
        "fixed": false,
        "drift": true
@@ -18384,7 +19054,7 @@
        "q": 12.5,
        "prices": [
         795,
-        1060
+        1065
        ],
        "fixed": false,
        "drift": true
@@ -18393,7 +19063,7 @@
        "q": 25,
        "prices": [
         1590,
-        2110
+        2120
        ],
        "fixed": false,
        "drift": true
@@ -18402,7 +19072,7 @@
        "q": 50,
        "prices": [
         3180,
-        4225
+        4235
        ],
        "fixed": false,
        "drift": true
@@ -18425,7 +19095,7 @@
        ],
        [
         1,
-        115
+        105
        ],
        [
         1.5,
@@ -18461,11 +19131,11 @@
        ],
        [
         25,
-        1990
+        1995
        ],
        [
         50,
-        3980
+        3995
        ],
        [
         100,
@@ -18479,7 +19149,7 @@
        ],
        [
         1,
-        105
+        100
        ],
        [
         1.5,
@@ -18511,15 +19181,15 @@
        ],
        [
         12.5,
-        970
+        975
        ],
        [
         25,
-        1935
+        1940
        ],
        [
         50,
-        3870
+        3880
        ],
        [
         100,
@@ -18587,7 +19257,7 @@
        ],
        [
         1,
-        115
+        105
        ],
        [
         1.5,
@@ -18623,11 +19293,11 @@
        ],
        [
         25,
-        1990
+        1995
        ],
        [
         50,
-        3980
+        3995
        ],
        [
         100,
@@ -18641,7 +19311,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -18673,15 +19343,15 @@
        ],
        [
         12.5,
-        1075
+        1080
        ],
        [
         25,
-        2130
+        2140
        ],
        [
         50,
-        4245
+        4255
        ],
        [
         100,
@@ -18695,7 +19365,7 @@
        ],
        [
         1,
-        115
+        105
        ],
        [
         1.5,
@@ -18731,11 +19401,11 @@
        ],
        [
         25,
-        1990
+        1995
        ],
        [
         50,
-        3980
+        3995
        ],
        [
         100,
@@ -18749,7 +19419,7 @@
        ],
        [
         1,
-        115
+        110
        ],
        [
         1.5,
@@ -18781,15 +19451,15 @@
        ],
        [
         12.5,
-        1000
+        1005
        ],
        [
         25,
-        1995
+        2000
        ],
        [
         50,
-        3990
+        4005
        ],
        [
         100,
@@ -18803,7 +19473,7 @@
        ],
        [
         1,
-        120
+        115
        ],
        [
         1.5,
@@ -18835,15 +19505,15 @@
        ],
        [
         12.5,
-        1020
+        1025
        ],
        [
         25,
-        2035
+        2040
        ],
        [
         50,
-        4070
+        4085
        ],
        [
         100,
@@ -18857,7 +19527,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -18889,15 +19559,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -18911,7 +19581,7 @@
        ],
        [
         1,
-        125
+        115
        ],
        [
         1.5,
@@ -18943,15 +19613,15 @@
        ],
        [
         12.5,
-        1035
+        1040
        ],
        [
         25,
-        2055
+        2065
        ],
        [
         50,
-        4115
+        4130
        ],
        [
         100,
@@ -18965,7 +19635,7 @@
        ],
        [
         1,
-        95
+        90
        ],
        [
         1.5,
@@ -19001,11 +19671,11 @@
        ],
        [
         25,
-        1855
+        1860
        ],
        [
         50,
-        3710
+        3720
        ],
        [
         100,
@@ -19019,7 +19689,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19051,15 +19721,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19127,7 +19797,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19159,15 +19829,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19181,7 +19851,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19213,15 +19883,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19235,7 +19905,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19267,15 +19937,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19289,7 +19959,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19321,15 +19991,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19343,7 +20013,7 @@
        ],
        [
         1,
-        120
+        110
        ],
        [
         1.5,
@@ -19375,73 +20045,19 @@
        ],
        [
         12.5,
-        1015
+        1020
        ],
        [
         25,
-        2025
+        2030
        ],
        [
         50,
-        4050
+        4060
        ],
        [
         100,
         8065
-       ]
-      ],
-      "CA7-AMP": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        135
-       ],
-       [
-        1.5,
-        180
-       ],
-       [
-        2,
-        245
-       ],
-       [
-        2.5,
-        295
-       ],
-       [
-        3,
-        345
-       ],
-       [
-        4,
-        450
-       ],
-       [
-        5,
-        540
-       ],
-       [
-        6.25,
-        670
-       ],
-       [
-        12.5,
-        1060
-       ],
-       [
-        25,
-        2110
-       ],
-       [
-        50,
-        4225
-       ],
-       [
-        100,
-        8390
        ]
       ],
       "CJ2-KUC": [
@@ -19451,7 +20067,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19483,15 +20099,123 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CD4-DAM": [
+       [
+        0.5,
+        65
+       ],
+       [
+        1,
+        100
+       ],
+       [
+        1.5,
+        150
+       ],
+       [
+        2,
+        200
+       ],
+       [
+        2.5,
+        245
+       ],
+       [
+        3,
+        290
+       ],
+       [
+        4,
+        375
+       ],
+       [
+        5,
+        460
+       ],
+       [
+        6.25,
+        570
+       ],
+       [
+        12.5,
+        975
+       ],
+       [
+        25,
+        1940
+       ],
+       [
+        50,
+        3880
+       ],
+       [
+        100,
+        7715
+       ]
+      ],
+      "CA7-AMP": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        180
+       ],
+       [
+        2,
+        245
+       ],
+       [
+        2.5,
+        295
+       ],
+       [
+        3,
+        345
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        5,
+        540
+       ],
+       [
+        6.25,
+        670
+       ],
+       [
+        12.5,
+        1065
+       ],
+       [
+        25,
+        2120
+       ],
+       [
+        50,
+        4235
        ],
        [
         100,
@@ -19505,7 +20229,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19537,15 +20261,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19559,7 +20283,7 @@
        ],
        [
         1,
-        110
+        105
        ],
        [
         1.5,
@@ -19591,15 +20315,15 @@
        ],
        [
         12.5,
-        985
+        990
        ],
        [
         25,
-        1965
+        1970
        ],
        [
         50,
-        3935
+        3945
        ],
        [
         100,
@@ -19613,7 +20337,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19645,15 +20369,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19667,7 +20391,7 @@
        ],
        [
         1,
-        120
+        110
        ],
        [
         1.5,
@@ -19699,15 +20423,15 @@
        ],
        [
         12.5,
-        1015
+        1020
        ],
        [
         25,
-        2025
+        2030
        ],
        [
         50,
-        4050
+        4060
        ],
        [
         100,
@@ -19721,7 +20445,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19753,15 +20477,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19775,7 +20499,7 @@
        ],
        [
         1,
-        95
+        90
        ],
        [
         1.5,
@@ -19811,11 +20535,11 @@
        ],
        [
         25,
-        1855
+        1860
        ],
        [
         50,
-        3710
+        3720
        ],
        [
         100,
@@ -19829,7 +20553,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19861,15 +20585,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19883,7 +20607,7 @@
        ],
        [
         1,
-        145
+        135
        ],
        [
         1.5,
@@ -19915,15 +20639,15 @@
        ],
        [
         12.5,
-        1110
+        1115
        ],
        [
         25,
-        2180
+        2190
        ],
        [
         50,
-        4290
+        4300
        ],
        [
         100,
@@ -19937,7 +20661,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -19969,15 +20693,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -19991,7 +20715,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20023,123 +20747,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
-       ],
-       [
-        100,
-        8390
-       ]
-      ],
-      "CF5-WM": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        135
-       ],
-       [
-        1.5,
-        180
-       ],
-       [
-        2,
-        245
-       ],
-       [
-        2.5,
-        295
-       ],
-       [
-        3,
-        345
-       ],
-       [
-        4,
-        450
-       ],
-       [
-        5,
-        540
-       ],
-       [
-        6.25,
-        670
-       ],
-       [
-        12.5,
-        1060
-       ],
-       [
-        25,
-        2110
-       ],
-       [
-        50,
-        4225
-       ],
-       [
-        100,
-        8390
-       ]
-      ],
-      "CA6-CYB": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        135
-       ],
-       [
-        1.5,
-        180
-       ],
-       [
-        2,
-        245
-       ],
-       [
-        2.5,
-        295
-       ],
-       [
-        3,
-        345
-       ],
-       [
-        4,
-        450
-       ],
-       [
-        5,
-        540
-       ],
-       [
-        6.25,
-        670
-       ],
-       [
-        12.5,
-        1060
-       ],
-       [
-        25,
-        2110
-       ],
-       [
-        50,
-        4225
+        4235
        ],
        [
         100,
@@ -20153,7 +20769,7 @@
        ],
        [
         1,
-        125
+        115
        ],
        [
         1.5,
@@ -20185,83 +20801,29 @@
        ],
        [
         12.5,
-        1025
+        1030
        ],
        [
         25,
-        2045
+        2055
        ],
        [
         50,
-        4095
+        4110
        ],
        [
         100,
         8160
        ]
       ],
-      "CD4-DAM": [
-       [
-        0.5,
-        65
-       ],
-       [
-        1,
-        105
-       ],
-       [
-        1.5,
-        150
-       ],
-       [
-        2,
-        200
-       ],
-       [
-        2.5,
-        245
-       ],
-       [
-        3,
-        290
-       ],
-       [
-        4,
-        375
-       ],
-       [
-        5,
-        460
-       ],
-       [
-        6.25,
-        570
-       ],
-       [
-        12.5,
-        970
-       ],
-       [
-        25,
-        1935
-       ],
-       [
-        50,
-        3870
-       ],
-       [
-        100,
-        7715
-       ]
-      ],
-      "CA3-KP": [
+      "CF5-WM": [
        [
         0.5,
         90
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20293,15 +20855,177 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CA6-CYB": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        180
+       ],
+       [
+        2,
+        245
+       ],
+       [
+        2.5,
+        295
+       ],
+       [
+        3,
+        345
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        5,
+        540
+       ],
+       [
+        6.25,
+        670
+       ],
+       [
+        12.5,
+        1065
+       ],
+       [
+        25,
+        2120
+       ],
+       [
+        50,
+        4235
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CM4-CHE": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        135
+       ],
+       [
+        1.5,
+        195
+       ],
+       [
+        2,
+        260
+       ],
+       [
+        2.5,
+        315
+       ],
+       [
+        3,
+        365
+       ],
+       [
+        4,
+        475
+       ],
+       [
+        5,
+        565
+       ],
+       [
+        6.25,
+        690
+       ],
+       [
+        12.5,
+        1115
+       ],
+       [
+        25,
+        2190
+       ],
+       [
+        50,
+        4300
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CA3-KP": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        180
+       ],
+       [
+        2,
+        245
+       ],
+       [
+        2.5,
+        295
+       ],
+       [
+        3,
+        345
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        5,
+        540
+       ],
+       [
+        6.25,
+        670
+       ],
+       [
+        12.5,
+        1065
+       ],
+       [
+        25,
+        2120
+       ],
+       [
+        50,
+        4235
        ],
        [
         100,
@@ -20315,7 +21039,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20347,15 +21071,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20369,7 +21093,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20401,15 +21125,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20423,7 +21147,7 @@
        ],
        [
         1,
-        150
+        145
        ],
        [
         1.5,
@@ -20455,15 +21179,15 @@
        ],
        [
         12.5,
-        1140
+        1145
        ],
        [
         25,
-        2220
+        2225
        ],
        [
         50,
-        4330
+        4335
        ],
        [
         100,
@@ -20477,7 +21201,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20509,15 +21233,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20531,7 +21255,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20563,15 +21287,69 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CH6-WM": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        125
+       ],
+       [
+        1.5,
+        180
+       ],
+       [
+        2,
+        245
+       ],
+       [
+        2.5,
+        295
+       ],
+       [
+        3,
+        345
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        5,
+        540
+       ],
+       [
+        6.25,
+        670
+       ],
+       [
+        12.5,
+        1065
+       ],
+       [
+        25,
+        2120
+       ],
+       [
+        50,
+        4235
        ],
        [
         100,
@@ -20585,7 +21363,7 @@
        ],
        [
         1,
-        150
+        145
        ],
        [
         1.5,
@@ -20617,15 +21395,15 @@
        ],
        [
         12.5,
-        1145
+        1150
        ],
        [
         25,
-        2230
+        2235
        ],
        [
         50,
-        4335
+        4340
        ],
        [
         100,
@@ -20639,7 +21417,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20671,15 +21449,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20693,7 +21471,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20725,15 +21503,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20747,7 +21525,7 @@
        ],
        [
         1,
-        145
+        135
        ],
        [
         1.5,
@@ -20783,11 +21561,11 @@
        ],
        [
         25,
-        2185
+        2190
        ],
        [
         50,
-        4295
+        4300
        ],
        [
         100,
@@ -20801,7 +21579,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20833,15 +21611,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20855,7 +21633,7 @@
        ],
        [
         1,
-        150
+        145
        ],
        [
         1.5,
@@ -20887,15 +21665,15 @@
        ],
        [
         12.5,
-        1145
+        1150
        ],
        [
         25,
-        2230
+        2235
        ],
        [
         50,
-        4335
+        4340
        ],
        [
         100,
@@ -20909,7 +21687,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20941,15 +21719,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -20963,7 +21741,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -20995,15 +21773,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -21017,7 +21795,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -21049,15 +21827,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -21071,7 +21849,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -21103,15 +21881,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -21125,7 +21903,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -21157,15 +21935,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -21179,7 +21957,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -21211,15 +21989,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -21233,7 +22011,7 @@
        ],
        [
         1,
-        135
+        125
        ],
        [
         1.5,
@@ -21265,15 +22043,15 @@
        ],
        [
         12.5,
-        1060
+        1065
        ],
        [
         25,
-        2110
+        2120
        ],
        [
         50,
-        4225
+        4235
        ],
        [
         100,
@@ -21287,7 +22065,7 @@
        ],
        [
         1,
-        140
+        130
        ],
        [
         1.5,
@@ -21323,11 +22101,11 @@
        ],
        [
         25,
-        2150
+        2155
        ],
        [
         50,
-        4260
+        4270
        ],
        [
         100,
@@ -21341,7 +22119,7 @@
        ],
        [
         1,
-        140
+        135
        ],
        [
         1.5,
@@ -21373,15 +22151,15 @@
        ],
        [
         12.5,
-        1100
+        1105
        ],
        [
         25,
-        2170
+        2175
        ],
        [
         50,
-        4280
+        4285
        ],
        [
         100,
@@ -21412,8 +22190,9 @@
       "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": -0.14,
-      "CA7-AMP": 0,
       "CJ2-KUC": 0,
+      "CD4-DAM": -0.3,
+      "CA7-AMP": 0,
       "CA5-BAN": 0,
       "CM6-PJ": -0.24,
       "CH4-KS": 0,
@@ -21424,16 +22203,17 @@
       "CS5-KLC": 0.3,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CB8-SEG": -0.1,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CB8-SEG": -0.1,
-      "CD4-DAM": -0.3,
+      "CM4-CHE": 0.3,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CF7-KUC": 0,
       "CA5-SEN": 0.46,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CH6-WM": 0,
       "CA4-SJ": 0.49,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -21515,13 +22295,17 @@
        "pct": -0.15,
        "why": "good record"
       },
-      "CA7-AMP": {
-       "pct": 0,
-       "why": "paid 4% over, good record"
-      },
       "CJ2-KUC": {
        "pct": -0.1,
        "why": "good record"
+      },
+      "CD4-DAM": {
+       "pct": -0.2,
+       "why": "good record"
+      },
+      "CA7-AMP": {
+       "pct": 0,
+       "why": "paid 4% over, good record"
       },
       "CA5-BAN": {
        "pct": -0.15,
@@ -21563,6 +22347,10 @@
        "pct": -0.15,
        "why": "good record"
       },
+      "CB8-SEG": {
+       "pct": -0.25,
+       "why": "good record"
+      },
       "CF5-WM": {
        "pct": -0.15,
        "why": "good record"
@@ -21571,13 +22359,9 @@
        "pct": 0,
        "why": ""
       },
-      "CB8-SEG": {
-       "pct": -0.2,
-       "why": "good record"
-      },
-      "CD4-DAM": {
-       "pct": 0,
-       "why": ""
+      "CM4-CHE": {
+       "pct": 0.1,
+       "why": "paid 6% over, good record"
       },
       "CA3-KP": {
        "pct": -0.2,
@@ -21602,6 +22386,10 @@
       "CH4-MAL": {
        "pct": -0.1,
        "why": "good record"
+      },
+      "CH6-WM": {
+       "pct": 0,
+       "why": ""
       },
       "CA4-SJ": {
        "pct": 0,
@@ -21665,10 +22453,10 @@
       }
      },
      "market": {
-      "day": "2026-11-22",
-      "k": 0,
+      "day": "2026-11-23",
+      "k": 0.05,
       "on": true,
-      "why": "Median 0: 7.6 days of cover."
+      "why": "Median +5: 3.4 days of cover; pace 35% above normal, said and not priced."
      },
      "habits": {
       "CJ4-BJ": {
@@ -21676,20 +22464,20 @@
        "gap": 10,
        "usual": 6.25,
        "last": "2026-10-09",
-       "since": 44,
+       "since": 45,
        "next": "2026-10-19",
-       "margin30": 245.4,
+       "margin30": 243.74,
        "owes": 0,
        "warn": {
         "perUnit": 43,
-        "units30": 11.21,
+        "units30": 11.14,
         "bigger": {
          "q": 25,
          "perUnit": 26.6,
-         "less30": 183.84
+         "less30": 182.7
         },
         "tenOff": {
-         "less30": 53.81
+         "less30": 53.47
         }
        }
       },
@@ -21698,20 +22486,20 @@
        "gap": 5,
        "usual": 1,
        "last": "2026-10-30",
-       "since": 23,
+       "since": 24,
        "next": "2026-11-04",
-       "margin30": 235.89,
+       "margin30": 234.29,
        "owes": 70,
        "warn": {
         "perUnit": 67,
-        "units30": 5.86,
+        "units30": 5.82,
         "bigger": {
          "q": 3,
          "perUnit": 55.33,
-         "less30": 68.37
+         "less30": 67.9
         },
         "tenOff": {
-         "less30": 58.6
+         "less30": 58.2
         }
        }
       },
@@ -21720,21 +22508,21 @@
        "gap": 4,
        "usual": 0.5,
        "last": "2026-08-24",
-       "since": 90,
+       "since": 91,
        "next": "2026-08-28",
-       "margin30": 106.35,
+       "margin30": 105.56,
        "owes": 0,
        "writeOff": true,
        "warn": {
         "perUnit": 127,
-        "units30": 2.03,
+        "units30": 2.01,
         "bigger": {
          "q": 1.5,
          "perUnit": 67,
-         "less30": 121.8
+         "less30": 120.6
         },
         "tenOff": {
-         "less30": 40.6
+         "less30": 40.2
         }
        }
       },
@@ -21743,20 +22531,20 @@
        "gap": 8.5,
        "usual": 1,
        "last": "2026-10-15",
-       "since": 38,
+       "since": 39,
        "next": "2026-10-24",
-       "margin30": 102.46,
+       "margin30": 101.72,
        "owes": 0,
        "warn": {
         "perUnit": 77,
-        "units30": 3.14,
+        "units30": 3.12,
         "bigger": {
          "q": 3,
          "perUnit": 62,
-         "less30": 47.1
+         "less30": 46.8
         },
         "tenOff": {
-         "less30": 31.4
+         "less30": 31.2
         }
        }
       },
@@ -21765,20 +22553,20 @@
        "gap": 4,
        "usual": 1.5,
        "last": "2026-11-14",
-       "since": 8,
+       "since": 9,
        "next": "2026-11-18",
-       "margin30": 527.37,
+       "margin30": 523.43,
        "owes": 0,
        "warn": {
         "perUnit": 53.67,
-        "units30": 12.18,
+        "units30": 12.09,
         "bigger": {
          "q": 5,
          "perUnit": 44,
-         "less30": 117.74
+         "less30": 116.87
         },
         "tenOff": {
-         "less30": 81.2
+         "less30": 80.6
         }
        }
       },
@@ -21787,42 +22575,20 @@
        "gap": 3,
        "usual": 1,
        "last": "2026-11-02",
-       "since": 20,
+       "since": 21,
        "next": "2026-11-05",
-       "margin30": 336.81,
+       "margin30": 333.8,
        "owes": 255,
        "warn": {
         "perUnit": 77,
-        "units30": 6.62,
+        "units30": 6.56,
         "bigger": {
          "q": 3,
          "perUnit": 62,
-         "less30": 99.3
+         "less30": 98.4
         },
         "tenOff": {
-         "less30": 66.2
-        }
-       }
-      },
-      "CB8-SEG": {
-       "state": "late",
-       "gap": 1,
-       "usual": 1,
-       "last": "2026-11-20",
-       "since": 2,
-       "next": "2026-11-21",
-       "margin30": 293,
-       "owes": 0,
-       "warn": {
-        "perUnit": 67,
-        "units30": 3.5,
-        "bigger": {
-         "q": 3,
-         "perUnit": 55.33,
-         "less30": 40.83
-        },
-        "tenOff": {
-         "less30": 35
+         "less30": 65.6
         }
        }
       },
@@ -21831,20 +22597,20 @@
        "gap": 6,
        "usual": 0.5,
        "last": "2026-11-05",
-       "since": 17,
+       "since": 18,
        "next": "2026-11-11",
-       "margin30": 180,
+       "margin30": 175,
        "owes": 0,
        "warn": {
         "perUnit": 127,
-        "units30": 2.14,
+        "units30": 2.08,
         "bigger": {
          "q": 1.5,
          "perUnit": 67,
-         "less30": 128.4
+         "less30": 124.8
         },
         "tenOff": {
-         "less30": 42.8
+         "less30": 41.6
         }
        }
       },
@@ -21853,20 +22619,42 @@
        "gap": 14,
        "usual": 1,
        "last": "2026-10-31",
-       "since": 22,
+       "since": 23,
        "next": "2026-11-14",
-       "margin30": 149.22,
+       "margin30": 147.31,
        "owes": 0,
        "warn": {
         "perUnit": 77,
-        "units30": 2.73,
+        "units30": 2.69,
         "bigger": {
          "q": 3,
          "perUnit": 62,
-         "less30": 40.95
+         "less30": 40.35
         },
         "tenOff": {
-         "less30": 27.3
+         "less30": 26.9
+        }
+       }
+      },
+      "CA5-BAN": {
+       "state": "late",
+       "gap": 25,
+       "usual": 1.5,
+       "last": "2026-10-16",
+       "since": 38,
+       "next": "2026-11-10",
+       "margin30": 105,
+       "owes": 0,
+       "warn": {
+        "perUnit": 67,
+        "units30": 2.54,
+        "bigger": {
+         "q": 5,
+         "perUnit": 55,
+         "less30": 30.48
+        },
+        "tenOff": {
+         "less30": 25.4
         }
        }
       },
@@ -21875,17 +22663,17 @@
        "gap": 7,
        "usual": 2,
        "last": "2026-11-15",
-       "since": 7,
+       "since": 8,
        "next": "2026-11-22",
-       "margin30": 524.41,
+       "margin30": 520.15,
        "owes": 180,
        "warn": {
         "perUnit": 69.5,
-        "units30": 10.75,
+        "units30": 10.66,
         "bigger": {
          "q": 6.25,
          "perUnit": 55,
-         "less30": 155.88
+         "less30": 154.57
         },
         "tenOff": {
          "less30": 0
@@ -21897,20 +22685,42 @@
        "gap": 4,
        "usual": 1.5,
        "last": "2026-11-18",
-       "since": 4,
+       "since": 5,
        "next": "2026-11-22",
-       "margin30": 397.66,
+       "margin30": 394.78,
        "owes": 0,
        "warn": {
         "perUnit": 47,
-        "units30": 12.04,
+        "units30": 11.96,
         "bigger": {
          "q": 5,
          "perUnit": 39,
-         "less30": 96.32
+         "less30": 95.68
         },
         "tenOff": {
-         "less30": 80.27
+         "less30": 79.73
+        }
+       }
+      },
+      "CZ4-MK": {
+       "state": "due",
+       "gap": 27,
+       "usual": 5,
+       "last": "2026-10-27",
+       "since": 27,
+       "next": "2026-11-23",
+       "margin30": 203.02,
+       "owes": 0,
+       "warn": {
+        "perUnit": 48,
+        "units30": 5.17,
+        "bigger": {
+         "q": 25,
+         "perUnit": 28.4,
+         "less30": 101.33
+        },
+        "tenOff": {
+         "less30": 25.85
         }
        }
       },
@@ -21919,42 +22729,20 @@
        "gap": 13,
        "usual": 1,
        "last": "2026-11-07",
-       "since": 15,
+       "since": 16,
        "next": "2026-11-20",
-       "margin30": 133.55,
+       "margin30": 132.13,
        "owes": 0,
        "warn": {
         "perUnit": 57,
-        "units30": 3.23,
+        "units30": 3.19,
         "bigger": {
          "q": 3,
          "perUnit": 47,
-         "less30": 32.3
+         "less30": 31.9
         },
         "tenOff": {
-         "less30": 32.3
-        }
-       }
-      },
-      "CA5-BAN": {
-       "state": "due",
-       "gap": 25,
-       "usual": 1.5,
-       "last": "2026-10-16",
-       "since": 37,
-       "next": "2026-11-10",
-       "margin30": 105.9,
-       "owes": 0,
-       "warn": {
-        "perUnit": 67,
-        "units30": 2.56,
-        "bigger": {
-         "q": 5,
-         "perUnit": 55,
-         "less30": 30.72
-        },
-        "tenOff": {
-         "less30": 25.6
+         "less30": 31.9
         }
        }
       },
@@ -21963,20 +22751,20 @@
        "gap": 24,
        "usual": 1.5,
        "last": "2026-10-29",
-       "since": 24,
+       "since": 25,
        "next": "2026-11-22",
-       "margin30": 101.85,
+       "margin30": 101.04,
        "owes": 0,
        "warn": {
         "perUnit": 57,
-        "units30": 1.94,
+        "units30": 1.92,
         "bigger": {
          "q": 5,
          "perUnit": 47,
-         "less30": 19.4
+         "less30": 19.2
         },
         "tenOff": {
-         "less30": 12.93
+         "less30": 12.8
         }
        }
       },
@@ -21985,20 +22773,42 @@
        "gap": 10,
        "usual": 5,
        "last": "2026-11-20",
-       "since": 2,
+       "since": 3,
        "next": "2026-11-30",
-       "margin30": 521.2,
+       "margin30": 515,
        "owes": 0,
        "warn": {
         "perUnit": 44,
-        "units30": 15.09,
+        "units30": 14.91,
         "bigger": {
          "q": 25,
          "perUnit": 26.8,
-         "less30": 259.55
+         "less30": 256.45
         },
         "tenOff": {
-         "less30": 75.45
+         "less30": 74.55
+        }
+       }
+      },
+      "CZ5-TM": {
+       "state": "early",
+       "gap": 4,
+       "usual": 1.5,
+       "last": "2026-11-22",
+       "since": 1,
+       "next": "2026-11-26",
+       "margin30": 452.77,
+       "owes": 0,
+       "warn": {
+        "perUnit": 37,
+        "units30": 11.08,
+        "bigger": {
+         "q": 5,
+         "perUnit": 32,
+         "less30": 55.4
+        },
+        "tenOff": {
+         "less30": 36.93
         }
        }
       },
@@ -22007,42 +22817,42 @@
        "gap": 8,
        "usual": 2.5,
        "last": "2026-11-20",
-       "since": 2,
+       "since": 3,
        "next": "2026-11-28",
-       "margin30": 453.24,
+       "margin30": 449.64,
        "owes": 0,
        "warn": {
         "perUnit": 51,
-        "units30": 11.22,
+        "units30": 11.13,
         "bigger": {
          "q": 12.5,
          "perUnit": 27,
-         "less30": 269.28
+         "less30": 267.12
         },
         "tenOff": {
-         "less30": 67.32
+         "less30": 66.78
         }
        }
       },
-      "CZ5-TM": {
+      "CB8-SEG": {
        "state": "early",
-       "gap": 4.5,
+       "gap": 1.5,
        "usual": 1,
-       "last": "2026-11-20",
-       "since": 2,
-       "next": "2026-11-25",
-       "margin30": 384.84,
+       "last": "2026-11-22",
+       "since": 1,
+       "next": "2026-11-24",
+       "margin30": 365,
        "owes": 0,
        "warn": {
-        "perUnit": 42,
-        "units30": 8.91,
+        "perUnit": 67,
+        "units30": 4.5,
         "bigger": {
          "q": 3,
-         "perUnit": 35.33,
-         "less30": 59.4
+         "perUnit": 55.33,
+         "less30": 52.5
         },
         "tenOff": {
-         "less30": 89.1
+         "less30": 45
         }
        }
       },
@@ -22051,7 +22861,7 @@
        "gap": 4.5,
        "usual": 1,
        "last": "2026-11-21",
-       "since": 1,
+       "since": 2,
        "next": "2026-11-26",
        "margin30": 325.5,
        "owes": 0,
@@ -22068,47 +22878,25 @@
         }
        }
       },
-      "CZ4-MK": {
-       "state": "early",
-       "gap": 27,
-       "usual": 5,
-       "last": "2026-10-27",
-       "since": 26,
-       "next": "2026-11-23",
-       "margin30": 204.78,
-       "owes": 0,
-       "warn": {
-        "perUnit": 48,
-        "units30": 5.22,
-        "bigger": {
-         "q": 25,
-         "perUnit": 28.4,
-         "less30": 102.31
-        },
-        "tenOff": {
-         "less30": 26.1
-        }
-       }
-      },
       "CE4-AD": {
        "state": "early",
        "gap": 38,
        "usual": 5,
        "last": "2026-11-07",
-       "since": 15,
+       "since": 16,
        "next": "2026-12-15",
-       "margin30": 188.46,
+       "margin30": 186.86,
        "owes": 0,
        "warn": {
         "perUnit": 55,
-        "units30": 5.13,
+        "units30": 5.08,
         "bigger": {
          "q": 25,
          "perUnit": 31.4,
-         "less30": 121.07
+         "less30": 119.89
         },
         "tenOff": {
-         "less30": 30.78
+         "less30": 30.48
         }
        }
       },
@@ -22117,112 +22905,112 @@
        "gap": 30,
        "usual": 2,
        "last": "2026-11-05",
-       "since": 17,
+       "since": 18,
        "next": "2026-12-05",
-       "margin30": 105.73,
+       "margin30": 104.88,
        "owes": 0,
        "warn": {
         "perUnit": 57,
-        "units30": 2.42,
+        "units30": 2.4,
         "bigger": {
          "q": 6.25,
          "perUnit": 46.2,
-         "less30": 26.14
+         "less30": 25.92
         },
         "tenOff": {
-         "less30": 18.15
+         "less30": 18
         }
        }
       }
      },
      "test": {
       "q": 1,
-      "rm": 5,
-      "week": 1,
+      "rm": -5,
+      "week": 2,
       "weeks": 8,
       "from": "2026-11-16"
      },
      "buyers": {
       "weeks": [
        {
-        "from": "2026-09-27",
-        "to": "2026-10-04",
+        "from": "2026-09-28",
+        "to": "2026-10-05",
         "count": 0,
         "introduced": 0,
         "back": 0
        },
        {
-        "from": "2026-10-04",
-        "to": "2026-10-11",
+        "from": "2026-10-05",
+        "to": "2026-10-12",
         "count": 0,
         "introduced": 0,
         "back": 0
        },
        {
-        "from": "2026-10-11",
-        "to": "2026-10-18",
-        "count": 0,
-        "introduced": 0,
-        "back": 0
-       },
-       {
-        "from": "2026-10-18",
-        "to": "2026-10-25",
-        "count": 2,
-        "introduced": 0,
-        "back": 1
-       },
-       {
-        "from": "2026-10-25",
-        "to": "2026-11-01",
+        "from": "2026-10-12",
+        "to": "2026-10-19",
         "count": 1,
         "introduced": 0,
         "back": 1
        },
        {
-        "from": "2026-11-01",
-        "to": "2026-11-08",
-        "count": 3,
-        "introduced": 0,
-        "back": 1
-       },
-       {
-        "from": "2026-11-08",
-        "to": "2026-11-15",
-        "count": 0,
+        "from": "2026-10-19",
+        "to": "2026-10-26",
+        "count": 1,
         "introduced": 0,
         "back": 0
        },
        {
-        "from": "2026-11-15",
-        "to": "2026-11-22",
-        "count": 3,
+        "from": "2026-10-26",
+        "to": "2026-11-02",
+        "count": 2,
+        "introduced": 0,
+        "back": 1
+       },
+       {
+        "from": "2026-11-02",
+        "to": "2026-11-09",
+        "count": 2,
+        "introduced": 0,
+        "back": 1
+       },
+       {
+        "from": "2026-11-09",
+        "to": "2026-11-16",
+        "count": 1,
+        "introduced": 0,
+        "back": 1
+       },
+       {
+        "from": "2026-11-16",
+        "to": "2026-11-23",
+        "count": 4,
         "introduced": 0,
         "back": 2
        }
       ],
-      "mean": 1.13,
+      "mean": 1.38,
       "thin": false
      }
     },
     "oil": {
-     "stockCost": 7,
-     "replCost": 7.23,
+     "stockCost": 7.4615,
+     "replCost": 7.6,
      "floors": {
       "10": {
-       "floor": 75
+       "floor": 80
       },
       "20": {
-       "floor": 145
+       "floor": 155
       },
       "30": {
-       "floor": 220
+       "floor": 230
       },
       "40": {
-       "floor": 290
+       "floor": 305
       },
       "50": {
-       "floor": 365
+       "floor": 380
       }
      },
      "inputs": {
@@ -22252,14 +23040,14 @@
          "why": "Locked on the first oil lot, the day it landed."
         },
         "cur": {
-         "qty": 100,
-         "total": 700,
-         "rate": 7,
-         "date": "2026-11-15",
+         "qty": 50,
+         "total": 380,
+         "rate": 7.6,
+         "date": "2026-11-27",
          "sup": "SP7-PUD"
         },
-        "days": 108,
-        "sinceLot": 108
+        "days": 109,
+        "sinceLot": 109
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -22286,16 +23074,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 100,
-        "total": 700,
-        "rate": 7,
-        "date": "2026-11-15",
+        "qty": 50,
+        "total": 380,
+        "rate": 7.6,
+        "date": "2026-11-27",
         "sup": "SP7-PUD"
        },
-       "meanLot": 55,
+       "meanLot": 54.61538461538461,
        "quoteRate": 10,
        "repl": 7.3,
-       "freightRate": 0.34,
+       "freightRate": 0.23,
        "leak": {
         "ratio": 0.6364,
         "leak": 35,
@@ -22309,12 +23097,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p054",
-        "date": "2026-11-15",
-        "quote": 700,
-        "freight": 23,
-        "units": 100,
-        "rate": 7.23
+        "rid": "p060",
+        "date": "2026-11-27",
+        "quote": 380,
+        "freight": 0,
+        "units": 50,
+        "rate": 7.6
        },
        "costBasis": {
         "freightPerTrip": {
@@ -22324,15 +23112,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.5454545454545454
+         "v": 0.5652173913043478
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.30345864661654137,
+       "shrinkRate": 0.28223776223776226,
        "avgDel": {
-        "n": 31,
-        "kg": 411,
-        "mean": 13.2581
+        "n": 32,
+        "kg": 421,
+        "mean": 13.1563
        }
       },
       "policy": {
@@ -22453,7 +23241,7 @@
       {
        "q": 20,
        "prices": [
-        150,
+        160,
         240
        ],
        "fixed": true
@@ -22461,7 +23249,7 @@
       {
        "q": 30,
        "prices": [
-        220,
+        230,
         330
        ],
        "fixed": true
@@ -22469,7 +23257,7 @@
       {
        "q": 40,
        "prices": [
-        290,
+        310,
         400
        ],
        "fixed": true
@@ -22477,7 +23265,7 @@
       {
        "q": 50,
        "prices": [
-        370,
+        380,
         450
        ],
        "fixed": true
@@ -22531,23 +23319,23 @@
       "CM4-TO": [
        [
         10,
-        75
+        80
        ],
        [
         20,
-        145
+        155
        ],
        [
         30,
-        220
+        230
        ],
        [
         40,
-        290
+        305
        ],
        [
         50,
-        365
+        380
        ]
       ],
       "CE4-CHE": [
@@ -22751,23 +23539,23 @@
       "CA2-SEN": [
        [
         10,
-        75
+        80
        ],
        [
         20,
-        145
+        155
        ],
        [
         30,
-        220
+        230
        ],
        [
         40,
-        290
+        305
        ],
        [
         50,
-        365
+        380
        ]
       ],
       "CC9-OKR": [
@@ -22880,7 +23668,7 @@
         450
        ]
       ],
-      "CA7-AMP": [
+      "CJ2-KUC": [
        [
         10,
         130
@@ -22902,7 +23690,29 @@
         450
        ]
       ],
-      "CJ2-KUC": [
+      "CD4-DAM": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
+      "CA7-AMP": [
        [
         10,
         130
@@ -23144,6 +23954,28 @@
         450
        ]
       ],
+      "CB8-SEG": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CF5-WM": [
        [
         10,
@@ -23188,29 +24020,7 @@
         450
        ]
       ],
-      "CB8-SEG": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CD4-DAM": [
+      "CM4-CHE": [
        [
         10,
         130
@@ -23343,6 +24153,28 @@
        ]
       ],
       "CH4-MAL": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
+      "CH6-WM": [
        [
         10,
         130
@@ -23718,8 +24550,9 @@
       "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
-      "CA7-AMP": 0,
       "CJ2-KUC": 0,
+      "CD4-DAM": 0,
+      "CA7-AMP": 0,
       "CA5-BAN": 0,
       "CM6-PJ": 0,
       "CH4-KS": 0,
@@ -23730,16 +24563,17 @@
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CB8-SEG": 0,
-      "CD4-DAM": 0,
+      "CM4-CHE": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CF7-KUC": 0,
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CH6-WM": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -24399,7 +25233,7 @@
         2820
        ]
       ],
-      "CA7-AMP": [
+      "CJ2-KUC": [
        [
         1,
         95
@@ -24421,7 +25255,29 @@
         2820
        ]
       ],
-      "CJ2-KUC": [
+      "CD4-DAM": [
+       [
+        1,
+        95
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        10,
+        940
+       ],
+       [
+        20,
+        1880
+       ],
+       [
+        30,
+        2820
+       ]
+      ],
+      "CA7-AMP": [
        [
         1,
         95
@@ -24663,6 +25519,28 @@
         2820
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        95
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        10,
+        940
+       ],
+       [
+        20,
+        1880
+       ],
+       [
+        30,
+        2820
+       ]
+      ],
       "CF5-WM": [
        [
         1,
@@ -24707,29 +25585,7 @@
         2820
        ]
       ],
-      "CB8-SEG": [
-       [
-        1,
-        95
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        10,
-        940
-       ],
-       [
-        20,
-        1880
-       ],
-       [
-        30,
-        2820
-       ]
-      ],
-      "CD4-DAM": [
+      "CM4-CHE": [
        [
         1,
         95
@@ -24862,6 +25718,28 @@
        ]
       ],
       "CH4-MAL": [
+       [
+        1,
+        95
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        10,
+        940
+       ],
+       [
+        20,
+        1880
+       ],
+       [
+        30,
+        2820
+       ]
+      ],
+      "CH6-WM": [
        [
         1,
         95
@@ -25237,8 +26115,9 @@
       "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
-      "CA7-AMP": 0,
       "CJ2-KUC": 0,
+      "CD4-DAM": 0,
+      "CA7-AMP": 0,
       "CA5-BAN": 0,
       "CM6-PJ": 0,
       "CH4-KS": 0,
@@ -25249,16 +26128,17 @@
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CB8-SEG": 0,
-      "CD4-DAM": 0,
+      "CM4-CHE": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CF7-KUC": 0,
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CH6-WM": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -25350,15 +26230,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2413793103448276
+         "v": 0.2903225806451613
         }
        },
        "attrib": 1,
        "shrinkRate": 0.17666666666666667,
        "avgDel": {
-        "n": 30,
-        "kg": 178,
-        "mean": 5.9333
+        "n": 32,
+        "kg": 203,
+        "mean": 6.3438
        }
       },
       "policy": {
@@ -25731,7 +26611,7 @@
         60
        ]
       ],
-      "CA7-AMP": [
+      "CJ2-KUC": [
        [
         1,
         8
@@ -25745,7 +26625,21 @@
         60
        ]
       ],
-      "CJ2-KUC": [
+      "CD4-DAM": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
+      "CA7-AMP": [
        [
         1,
         8
@@ -25899,6 +26793,20 @@
         60
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CF5-WM": [
        [
         1,
@@ -25927,21 +26835,7 @@
         60
        ]
       ],
-      "CB8-SEG": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CD4-DAM": [
+      "CM4-CHE": [
        [
         1,
         8
@@ -26026,6 +26920,20 @@
        ]
       ],
       "CH4-MAL": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
+      "CH6-WM": [
        [
         1,
         8
@@ -26273,8 +27181,9 @@
       "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
-      "CA7-AMP": 0,
       "CJ2-KUC": 0,
+      "CD4-DAM": 0,
+      "CA7-AMP": 0,
       "CA5-BAN": 0,
       "CM6-PJ": 0,
       "CH4-KS": 0,
@@ -26285,16 +27194,17 @@
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CB8-SEG": 0,
-      "CD4-DAM": 0,
+      "CM4-CHE": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CF7-KUC": 0,
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CH6-WM": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -26315,19 +27225,19 @@
     },
     "gas": {
      "stockCost": 50,
-     "replCost": 50,
+     "replCost": 54.67,
      "floors": {
       "1": {
-       "floor": 50
+       "floor": 55
       },
       "5": {
-       "floor": 250
+       "floor": 275
       },
       "10": {
-       "floor": 500
+       "floor": 550
       },
       "20": {
-       "floor": 1000
+       "floor": 1095
       }
      },
      "inputs": {
@@ -26338,10 +27248,10 @@
         "state": "none",
         "lock": null,
         "cur": {
-         "qty": 2,
-         "total": 100,
+         "qty": 3,
+         "total": 150,
          "rate": 50,
-         "date": "2026-11-15",
+         "date": "2026-11-27",
          "sup": "SP7-PUD"
         }
        },
@@ -26351,16 +27261,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 2,
-        "total": 100,
+        "qty": 3,
+        "total": 150,
         "rate": 50,
-        "date": "2026-11-15",
+        "date": "2026-11-27",
         "sup": "SP7-PUD"
        },
-       "meanLot": 1.5,
-       "quoteRate": 50,
-       "repl": 55,
-       "freightRate": 10,
+       "meanLot": 1.8,
+       "quoteRate": 54.67,
+       "repl": 53.33,
+       "freightRate": 4.6667,
        "leak": {
         "ratio": 0,
         "leak": 0,
@@ -26374,12 +27284,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p055",
-        "date": "2026-11-15",
-        "quote": 100,
-        "freight": 0,
-        "units": 2,
-        "rate": 50
+        "rid": "p059",
+        "date": "2026-11-27",
+        "quote": 150,
+        "freight": 14,
+        "units": 3,
+        "rate": 54.6667
        },
        "costBasis": {
         "freightPerTrip": {
@@ -26389,15 +27299,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.5
         }
        },
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 3,
-        "kg": 4,
-        "mean": 1.3333
+        "n": 4,
+        "kg": 5,
+        "mean": 1.25
        }
       },
       "policy": {
@@ -26488,7 +27398,7 @@
       {
        "q": 1,
        "prices": [
-        50,
+        55,
         75
        ],
        "fixed": true
@@ -26496,7 +27406,7 @@
       {
        "q": 5,
        "prices": [
-        250,
+        275,
         375
        ],
        "fixed": true
@@ -26504,7 +27414,7 @@
       {
        "q": 10,
        "prices": [
-        500,
+        550,
         750
        ],
        "fixed": true
@@ -26512,7 +27422,7 @@
       {
        "q": 20,
        "prices": [
-        1000,
+        1095,
         1500
        ],
        "fixed": true
@@ -26558,19 +27468,19 @@
       "CM4-TO": [
        [
         1,
-        50
+        55
        ],
        [
         5,
-        250
+        275
        ],
        [
         10,
-        500
+        550
        ],
        [
         20,
-        1000
+        1095
        ]
       ],
       "CE4-CHE": [
@@ -26738,19 +27648,19 @@
       "CA2-SEN": [
        [
         1,
-        50
+        55
        ],
        [
         5,
-        250
+        275
        ],
        [
         10,
-        500
+        550
        ],
        [
         20,
-        1000
+        1095
        ]
       ],
       "CC9-OKR": [
@@ -26843,7 +27753,7 @@
         1500
        ]
       ],
-      "CA7-AMP": [
+      "CJ2-KUC": [
        [
         1,
         75
@@ -26861,7 +27771,25 @@
         1500
        ]
       ],
-      "CJ2-KUC": [
+      "CD4-DAM": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
+      "CA7-AMP": [
        [
         1,
         75
@@ -27059,6 +27987,24 @@
         1500
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CF5-WM": [
        [
         1,
@@ -27095,25 +28041,7 @@
         1500
        ]
       ],
-      "CB8-SEG": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
-      "CD4-DAM": [
+      "CM4-CHE": [
        [
         1,
         75
@@ -27222,6 +28150,24 @@
        ]
       ],
       "CH4-MAL": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
+      "CH6-WM": [
        [
         1,
         75
@@ -27533,8 +28479,9 @@
       "CM6-HCM": 0,
       "CA4-DAM": 0,
       "CI4-OKR": 0,
-      "CA7-AMP": 0,
       "CJ2-KUC": 0,
+      "CD4-DAM": 0,
+      "CA7-AMP": 0,
       "CA5-BAN": 0,
       "CM6-PJ": 0,
       "CH4-KS": 0,
@@ -27545,16 +28492,17 @@
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
+      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
-      "CB8-SEG": 0,
-      "CD4-DAM": 0,
+      "CM4-CHE": 0,
       "CA3-KP": 0,
       "CZ6-WM": 0,
       "CF7-KUC": 0,
       "CA5-SEN": 0,
       "CJ4-OKR": 0,
       "CH4-MAL": 0,
+      "CH6-WM": 0,
       "CA4-SJ": 0,
       "CN5-TAI": 0,
       "CH5-KLC": 0,
@@ -27574,26 +28522,44 @@
      "suggest": null
     }
    },
-   "v": "v1562"
+   "v": "v1565"
   },
   "OPEN": {
-   "at": "2026-11-21T16:05:54.470Z",
-   "count": 9,
+   "at": "2026-11-22T16:06:07.646Z",
+   "count": 10,
    "byKey": {
-    "CJ2-KUC|2026-11-20|165|candy": {
-     "d": "2026-11-20",
+    "CZ5-TM|2026-11-22|53": {
+     "d": "2026-11-22",
+     "p": "CZ5-TM",
+     "dir": "S",
+     "q": 1,
+     "t": 53,
+     "cash": 53,
+     "mv": 0,
+     "st": "oweStock",
+     "oweUnits": 1,
+     "rid": "s421",
+     "cashRaw": 0,
+     "rebate": true,
+     "goodwill": true,
+     "settledRM": 53,
+     "rebateKg": 1,
+     "key": "CZ5-TM|2026-11-22|53"
+    },
+    "CJ2-KUC|2026-11-22|225|gas": {
+     "d": "2026-11-22",
      "p": "CJ2-KUC",
      "dir": "S",
      "q": 3,
-     "t": 165,
+     "t": 225,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 165,
+     "oweRM": 225,
      "oweUnits": 3,
-     "pr": "candy",
-     "rid": "s401",
-     "key": "CJ2-KUC|2026-11-20|165|candy"
+     "pr": "gas",
+     "rid": "s423",
+     "key": "CJ2-KUC|2026-11-22|225|gas"
     },
     "CM4-MK|2026-11-15|180": {
      "d": "2026-11-15",
@@ -27610,7 +28576,7 @@
      "deliveredOn": "2026-11-15",
      "handover": "delivered",
      "key": "CM4-MK|2026-11-15|180",
-     "age": 7,
+     "age": 8,
      "exp": 0
     },
     "CR3-DAM|2026-10-30|70": {
@@ -27627,7 +28593,7 @@
      "deliveredOn": "2026-11-01",
      "handover": "collected",
      "key": "CR3-DAM|2026-10-30|70",
-     "age": 21,
+     "age": 22,
      "exp": 0
     },
     "CN3-WM|2026-10-05|130": {
@@ -27645,7 +28611,7 @@
      "handover": "collected",
      "trip": "t1792153122763",
      "key": "CN3-WM|2026-10-05|130",
-     "age": 48,
+     "age": 49,
      "exp": 0
     },
     "CN3-WM|2026-10-05|15|rice": {
@@ -27664,7 +28630,7 @@
      "handover": "collected",
      "trip": "t1792153122763",
      "key": "CN3-WM|2026-10-05|15|rice",
-     "age": 48,
+     "age": 49,
      "exp": 0
     },
     "CN3-WM|2026-09-19|250": {
@@ -27681,7 +28647,7 @@
      "deliveredOn": "2026-09-19",
      "handover": "collected",
      "key": "CN3-WM|2026-09-19|250",
-     "age": 64,
+     "age": 65,
      "exp": 0
     },
     "CA4-DAM|2026-09-02|160": {
@@ -27734,22 +28700,22 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 21.5,
-     "free": 21.5,
-     "owedOut": 0,
-     "coverDays": 4.4,
-     "rate": 4.59,
+     "onHand": 4.25,
+     "free": 3.25,
+     "owedOut": 1,
+     "coverDays": 0.6,
+     "rate": 5.12,
      "owedToYou": 490,
-     "promised": 0,
+     "promised": 1,
      "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 25,
-     "free": 25,
+     "onHand": 65,
+     "free": 65,
      "owedOut": 0,
-     "coverDays": 5.5,
-     "rate": 4.56,
+     "coverDays": 15.2,
+     "rate": 4.8,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -27760,31 +28726,31 @@
      "free": 0,
      "owedOut": 0,
      "coverDays": 0,
-     "rate": 0.44,
+     "rate": 0.28,
      "owedToYou": 0,
-     "promised": 3,
-     "short": 3
+     "promised": 0,
+     "short": 0
     },
     "rice": {
      "name": "Rice",
-     "onHand": 69,
-     "free": 69,
+     "onHand": 44,
+     "free": 44,
      "owedOut": 0,
-     "coverDays": 17.5,
-     "rate": 3.48,
+     "coverDays": 9,
+     "rate": 4.51,
      "owedToYou": 15,
      "promised": 0,
      "short": 0
     },
     "gas": {
      "name": "Gas",
-     "onHand": 2,
-     "free": 2,
+     "onHand": 4,
+     "free": 4,
      "owedOut": 0,
-     "coverDays": 13.3,
-     "rate": 0.13,
+     "coverDays": 11.5,
+     "rate": 0.36,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 3,
      "short": 0
     }
    },
@@ -27795,7 +28761,7 @@
     "rice": "2026-11-18",
     "salt": "2026-11-18"
    },
-   "v": "v1562"
+   "v": "v1565"
   },
   "TERMS": {
    "ceiling": 250,
@@ -27803,7 +28769,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1562"
+   "v": "v1565"
   },
   "REWARD": {
    "stated": {
@@ -27821,58 +28787,58 @@
      }
     }
    },
-   "v": "v1562"
+   "v": "v1565"
   },
   "STOCK": {
-   "today": "2026-11-22",
+   "today": "2026-11-23",
    "books": {
     "salt": {
-     "shelf": 21.5,
-     "free": 21.5,
-     "commit": 0,
-     "light": "yellow",
-     "coverDays": 4.4,
+     "shelf": 4.25,
+     "free": 3.25,
+     "commit": 1,
+     "light": "amber",
+     "coverDays": 0.6,
      "transit": 0,
-     "heat": "neutral"
+     "heat": "tight"
     },
     "oil": {
-     "shelf": 25,
-     "free": 25,
+     "shelf": 65,
+     "free": 65,
      "commit": 0,
-     "light": "yellow",
-     "coverDays": 5.5,
+     "light": "green",
+     "coverDays": 15.2,
      "transit": 0,
      "heat": "neutral"
     },
     "candy": {
      "shelf": 0,
      "free": 0,
-     "commit": 3,
+     "commit": 0,
      "light": "red",
      "coverDays": 0,
      "transit": 0,
      "heat": "neutral"
     },
     "rice": {
-     "shelf": 69,
-     "free": 69,
+     "shelf": 44,
+     "free": 44,
      "commit": 0,
      "light": "green",
-     "coverDays": 17.5,
+     "coverDays": 9,
      "transit": 0,
      "heat": "neutral"
     },
     "gas": {
-     "shelf": 2,
-     "free": 2,
-     "commit": 0,
+     "shelf": 4,
+     "free": 4,
+     "commit": 3,
      "light": "green",
-     "coverDays": 13.3,
+     "coverDays": 11.5,
      "transit": 0,
      "heat": "neutral"
     }
    },
-   "v": "v1562"
+   "v": "v1565"
   }
  }
 }

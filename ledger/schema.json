@@ -1,61 +1,61 @@
 {
-  "v": "v1562",
-  "derivedFrom": "ac7b7e71890fd48b",
+  "v": "v1565",
+  "derivedFrom": "4f6848b47b64cb85",
   "tables": {
     "sales": {
-      "rows": 409,
+      "rows": 422,
       "fields": {
         "agreedOn": {
           "present": 6,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "amend": {
-          "present": 269,
-          "of": 409,
+          "present": 279,
+          "of": 422,
           "optional": true,
           "types": [
             "array"
           ]
         },
         "auto": {
-          "present": 2,
-          "of": 409,
+          "present": 3,
+          "of": 422,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "cancelled": {
-          "present": 43,
-          "of": 409,
+          "present": 45,
+          "of": 422,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "cancelledOn": {
-          "present": 39,
-          "of": 409,
+          "present": 41,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "cash": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "cost": {
-          "present": 370,
-          "of": 409,
+          "present": 381,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
@@ -63,7 +63,7 @@
         },
         "coverRM": {
           "present": 3,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
@@ -71,7 +71,7 @@
         },
         "coverUnits": {
           "present": 3,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
@@ -79,23 +79,23 @@
         },
         "credit": {
           "present": 1,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "customer": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "date": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "string"
@@ -103,31 +103,31 @@
         },
         "defaulted": {
           "present": 2,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "deliveredOn": {
-          "present": 332,
-          "of": 409,
+          "present": 342,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "deliveredQty": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "delivery": {
-          "present": 105,
-          "of": 409,
+          "present": 112,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
@@ -135,63 +135,63 @@
         },
         "downstream": {
           "present": 1,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "given": {
-          "present": 2,
-          "of": 409,
+          "present": 3,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "goodwill": {
-          "present": 17,
-          "of": 409,
+          "present": 19,
+          "of": 422,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "handover": {
-          "present": 238,
-          "of": 409,
+          "present": 247,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "listQty": {
-          "present": 83,
-          "of": 409,
+          "present": 89,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "listRM": {
-          "present": 83,
-          "of": 409,
+          "present": 89,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "mod": {
-          "present": 197,
-          "of": 409,
+          "present": 206,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "note": {
-          "present": 357,
-          "of": 409,
+          "present": 370,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
@@ -199,7 +199,7 @@
         },
         "oneOff": {
           "present": 3,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "object"
@@ -207,15 +207,15 @@
         },
         "orderCode": {
           "present": 1,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "paidOn": {
-          "present": 300,
-          "of": 409,
+          "present": 309,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
@@ -223,39 +223,39 @@
         },
         "paidSplit": {
           "present": 1,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "array"
           ]
         },
         "product": {
-          "present": 85,
-          "of": 409,
+          "present": 91,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "qty": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "rebate": {
-          "present": 25,
-          "of": 409,
+          "present": 27,
+          "of": 422,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "rebateKg": {
-          "present": 19,
-          "of": 409,
+          "present": 21,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
@@ -263,7 +263,7 @@
         },
         "ref": {
           "present": 14,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
@@ -271,55 +271,55 @@
         },
         "refKg": {
           "present": 14,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "rev": {
-          "present": 54,
-          "of": 409,
+          "present": 58,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "rewardOf": {
-          "present": 2,
-          "of": 409,
+          "present": 3,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "rid": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "road": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "rwdRate": {
-          "present": 2,
-          "of": 409,
+          "present": 3,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "rwdStep": {
-          "present": 2,
-          "of": 409,
+          "present": 3,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
@@ -327,7 +327,7 @@
         },
         "settle": {
           "present": 2,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
@@ -335,31 +335,31 @@
         },
         "settledKg": {
           "present": 8,
-          "of": 409,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "settledRM": {
-          "present": 36,
-          "of": 409,
+          "present": 38,
+          "of": 422,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "total": {
-          "present": 409,
-          "of": 409,
+          "present": 422,
+          "of": 422,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "trip": {
-          "present": 31,
-          "of": 409,
+          "present": 36,
+          "of": 422,
           "optional": true,
           "types": [
             "string"
@@ -368,11 +368,11 @@
       }
     },
     "purchases": {
-      "rows": 58,
+      "rows": 60,
       "fields": {
         "amend": {
           "present": 11,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "array"
@@ -380,7 +380,7 @@
         },
         "cancelled": {
           "present": 1,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "boolean"
@@ -388,15 +388,15 @@
         },
         "cancelledOn": {
           "present": 1,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "cash": {
-          "present": 53,
-          "of": 58,
+          "present": 55,
+          "of": 60,
           "optional": true,
           "types": [
             "number"
@@ -404,15 +404,15 @@
         },
         "cost": {
           "present": 1,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "date": {
-          "present": 58,
-          "of": 58,
+          "present": 60,
+          "of": 60,
           "optional": false,
           "types": [
             "string"
@@ -420,15 +420,15 @@
         },
         "defaulted": {
           "present": 1,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "freight": {
-          "present": 24,
-          "of": 58,
+          "present": 25,
+          "of": 60,
           "optional": true,
           "types": [
             "number"
@@ -436,7 +436,7 @@
         },
         "handover": {
           "present": 22,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
@@ -444,23 +444,23 @@
         },
         "mod": {
           "present": 6,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "note": {
-          "present": 44,
-          "of": 58,
+          "present": 46,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "paidOn": {
-          "present": 47,
-          "of": 58,
+          "present": 49,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
@@ -468,71 +468,71 @@
         },
         "pending": {
           "present": 1,
-          "of": 58,
+          "of": 60,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "product": {
-          "present": 22,
-          "of": 58,
+          "present": 24,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "qty": {
-          "present": 58,
-          "of": 58,
+          "present": 60,
+          "of": 60,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "receivedOn": {
-          "present": 53,
-          "of": 58,
+          "present": 55,
+          "of": 60,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "receivedQty": {
-          "present": 47,
-          "of": 58,
+          "present": 49,
+          "of": 60,
           "optional": true,
           "types": [
             "number"
           ]
         },
         "rid": {
-          "present": 58,
-          "of": 58,
+          "present": 60,
+          "of": 60,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "status": {
-          "present": 58,
-          "of": 58,
+          "present": 60,
+          "of": 60,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "supplier": {
-          "present": 58,
-          "of": 58,
+          "present": 60,
+          "of": 60,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "total": {
-          "present": 58,
-          "of": 58,
+          "present": 60,
+          "of": 60,
           "optional": false,
           "types": [
             "number"
