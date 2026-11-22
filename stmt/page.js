@@ -123,7 +123,15 @@ const PLET_ROOM = {
    about 0.6 of its size a letter, stays under 13 in the 24 grid, its baseline on the same half-capital below the centre. */
 const pletSize = (l) => { const s = l.length > 1 ? Math.min(PLET_AT.s, 13 / (0.6 * l.length)) : PLET_AT.s; return { y: +(12 + 0.365 * s).toFixed(2), s: +s.toFixed(2) }; };
 const pletOf = (k) => (Object.hasOwn(PLET, k) && Object.hasOwn(PSYM, k)
-  ? { l: PLET[k], d: Object.hasOwn(PLET_ROOM, k) ? PLET_ROOM[k] : PSYM[k], ...pletSize(PLET[k]) } : null);
+  ? { l: PLET[k], d: Object.hasOwn(PLET_ROOM, k) ? PLET_ROOM[k] : PSYM[k], ...pletSize(PLET[k]), cy: Object.hasOwn(COIN_CY, k) ? COIN_CY[k] : 12 } : null);
+/* 22 NOV 2026, HIS WORD ("the letter inside the glyphs could work too", then "Every coin size"): IN A COIN THE LETTER STANDS INSIDE THE SHAPE,
+   cut out in the coin's ground, and the shape takes the coin (Ambient 0.7.34's mark thumb: a text.amb-thumb__letter on the shape's 24 grid,
+   sized by its class, never under 12px). It retires his answer of 17 Nov 2026, the 44px coin as the shape alone, and the letter under the shape.
+   The letter's middle is the grid's (12) but in the droplet, whose weight is its circle's (COIN_CY). Ambient's floor leaves two cases bare,
+   the shape alone as before: a 36px coin, and three letters (POP) in a 44px coin. coinLetter is the one rule; the page's markThumb is its twin. */
+const COIN_CY = { oil: 13.4 };
+const coinLetter = (L, size) => (L && L.l && size !== "sm" && !(size === "md" && L.l.length > 2)
+  ? '<text class="amb-thumb__letter' + (L.l.length > 1 ? " amb-thumb__letter--" + L.l.length : "") + '" x="12" y="' + L.cy + '"' + (L.l.length === 3 ? ' textLength="13.5" lengthAdjust="spacingAndGlyphs"' : "") + ">" + esc(L.l) + "</text>" : "");   /* three letters are held to 13.5 on the grid, so a wider face never reaches the shape's edge (the review, 22 Nov 2026) */
 /* THE SHORT MONTHS, NAMED ONCE (24 Sep 2026). Node and every browser write "Sept" for September in en-GB, and
    the house writes Sep: the page, his page, the statement and the price list all read the month from here. */
 export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -155,8 +163,8 @@ export function mtileSvg(product, said, px) {
 export function markThumbHtml(product, size) {
   const k = String(product || "").toLowerCase(), b = Object.keys(PSYM).filter((x) => x !== "_").indexOf(k), L = pletOf(k);
   return '<span class="amb-thumb amb-thumb--ring amb-thumb--mark' + (size ? " amb-thumb--" + size : "") + (b >= 0 && b < 6 ? " amb-kind-" + (b + 1) : "")
-    + '" aria-hidden="true"><svg class="amb-thumb__shape" viewBox="0 0 24 24" focusable="false"><path d="' + (L ? L.d : PSYM[k] || RING) + '"/></svg>'
-    + (L && L.l && size !== "md" ? '<span class="amb-thumb__word">' + esc(L.l) + "</span>" : "") + "</span>";   /* 17 Nov 2026, his answer: a 44px coin is the shape alone */
+    + '" aria-hidden="true"><svg class="amb-thumb__shape" viewBox="0 0 24 24" focusable="false"><path d="' + (L ? L.d : PSYM[k] || RING) + '"/>'
+    + coinLetter(L, size) + "</svg></span>";   /* 22 Nov 2026, his word: the letter inside the shape, on every coin Ambient's floor allows */
 }
 
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
@@ -6178,8 +6186,10 @@ const CLIENT_JS = `
     var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase(), b=COINB.indexOf(k), L=Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
     var t=el('span','amb-thumb amb-thumb--ring amb-thumb--mark'+(size?' amb-thumb--'+size:'')+(b>=0&&b<6?' amb-kind-'+(b+1):'')); t.setAttribute('aria-hidden','true'); t.setAttribute('data-shape',pshape(product));
     var svg=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
-    svg.setAttribute('class','amb-thumb__shape'); svg.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._)); svg.appendChild(d); t.appendChild(svg);
-    if(L&&L.l&&size!=='md') t.appendChild(el('span','amb-thumb__word',L.l));   /* 17 Nov 2026, his answer: a 44px coin is the shape alone, his letter on 56px and over */
+    svg.setAttribute('class','amb-thumb__shape'); svg.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._)); svg.appendChild(d);
+    /* 22 Nov 2026, his word: the letter stands inside the shape on every coin (coinLetter's twin); a 36px coin, and three letters at 44px, stay the shape alone */
+    if(L&&L.l&&size!=='sm'&&!(size==='md'&&L.l.length>2)){ var lt=document.createElementNS(NS,'text'); lt.setAttribute('class','amb-thumb__letter'+(L.l.length>1?' amb-thumb__letter--'+L.l.length:'')); lt.setAttribute('x','12'); lt.setAttribute('y',String(L.cy)); if(L.l.length===3){ lt.setAttribute('textLength','13.5'); lt.setAttribute('lengthAdjust','spacingAndGlyphs'); } lt.textContent=L.l; svg.appendChild(lt); }
+    t.appendChild(svg);
     return t;
   }
   /* a row's second line or title: words, or a node */
