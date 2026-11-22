@@ -8,6 +8,10 @@
  *   .amb-segment__opt       presses itself and releases its neighbours, then fires amb:change
  *     data-amb-mood="name"  ...and takes the shell to that mood
  *   .amb-more               opens and closes the drawer named by aria-controls
+ *   .amb-filter             its pill (.amb-filter__btn) opens and closes its menu; a choice (.amb-filter__opt) presses
+ *                           itself and releases the others, fires amb:change, closes the menu and puts its word
+ *                           (.amb-filter__word) in the pill (.amb-filter__value). Escape and a tap elsewhere close it
+ *   .amb-segment--slide     keeps its pressed part in view and marks the ends that are cut (data-amb-cut)
  *   .amb-drop               shows a file being dragged over it, and hands the files its input accepts to that input
  *   .amb-handle             fires amb:move (detail.by: -1 or 1) on the up and down arrow keys; so does a
  *     data-amb-move="-1|1"  click on anything that carries this. The app does the moving.
@@ -138,11 +142,12 @@
   /* ---- clicks ---- */
   /* where the press began: a selection dragged out of a sheet ends on the scrim, and is no tap on it */
   var down = { on: null, x: 0, y: 0 };
-  document.addEventListener("pointerdown", function (e) { down = { on: e.target, x: e.clientX, y: e.clientY }; }, true);
+  document.addEventListener("pointerdown", function (e) { down = { on: e.target, x: e.clientX, y: e.clientY, at: Date.now() }; }, true);
 
   document.addEventListener("click", function (e) {
     var t = e.target && e.target.closest ? e.target : null, el;
     if (!t) return;
+    shutFilters(t.closest(".amb-filter"));
 
     if ((el = t.closest("[data-amb-open]"))) {
       var sheet = document.getElementById(el.getAttribute("data-amb-open"));
@@ -179,6 +184,27 @@
     }
     if ((el = t.closest("[data-amb-move]"))) {
       el.dispatchEvent(new CustomEvent("amb:move", { bubbles: true, detail: { by: parseInt(el.getAttribute("data-amb-move"), 10) < 0 ? -1 : 1 } }));
+      return;
+    }
+    if ((el = t.closest(".amb-filter__btn"))) {
+      var fbox = el.closest(".amb-filter"), menu = fbox && fbox.querySelector(".amb-filter__menu");
+      if (!menu) return;
+      if (!menu.hidden) { shutFilter(fbox, false); return; }
+      menu.removeAttribute("data-amb-up");
+      menu.hidden = false;
+      el.setAttribute("aria-expanded", "true");
+      roomFor(el, menu);
+      if (menu.scrollIntoView) menu.scrollIntoView({ block: "nearest" });
+      var first = menu.querySelector('.amb-filter__opt[aria-pressed="true"]') || menu.querySelector(".amb-filter__opt");
+      if (first) first.focus();
+      return;
+    }
+    if ((el = t.closest(".amb-filter__opt"))) {
+      if (el.getAttribute("aria-disabled") === "true") return;
+      var box2 = el.closest(".amb-filter"), fopts = box2 ? box2.querySelectorAll(".amb-filter__opt") : [];
+      for (var k = 0; k < fopts.length; k++) fopts[k].setAttribute("aria-pressed", fopts[k] === el ? "true" : "false");
+      el.dispatchEvent(new CustomEvent("amb:change", { bubbles: true, detail: { value: el.value || el.getAttribute("data-value") || "" } }));
+      if (box2) { sayFilter(box2); shutFilter(box2, true); }
       return;
     }
     if ((el = t.closest(".amb-segment__opt"))) {
@@ -224,7 +250,14 @@
   function shown(el) { return el && el.getClientRects().length > 0; }
   function cap(sc) {
     var shell = sc && sc.parentElement, bar = shell && shell.querySelector(":scope > .amb-appbar");
-    if (!bar || !sc.classList.contains("amb-screen--docked")) return;
+    if (!shell || !sc.classList.contains("amb-screen--docked")) return;
+    /* 0.7.32: a working shell with no app bar is marked once it or a pane has scrolled, so its clip keeps the safe area clear */
+    if (!bar) {
+      var off = sc.scrollTop > 4;
+      [].forEach.call(sc.querySelectorAll(".amb-split--panes > .amb-stack"), function (s) { if (shown(s) && s.scrollTop > 4) off = true; });
+      shell.toggleAttribute("data-amb-moved", off);
+      return;
+    }
     var foot = bar.getBoundingClientRect().bottom, hero = [].filter.call(sc.querySelectorAll(":scope > .amb-hero, :scope .amb-place:not([hidden]) > .amb-hero"), shown)[0];
     var moved = hero ? hero.getBoundingClientRect().bottom <= foot : sc.scrollTop > 4;
     [].forEach.call(sc.querySelectorAll(".amb-split--panes > .amb-stack"), function (s) { if (shown(s) && s.scrollTop > 4 && s.getBoundingClientRect().top < foot) moved = true; });
@@ -246,6 +279,110 @@
     hush(live);
     if (unsaid) say(unsaid);
   }, true);
+
+  /* ---- a filter's menu (0.7.32): shut by a choice, by Escape and by a tap anywhere else; the pill always names the
+     pressed choice, whoever pressed it ---- */
+  function sayFilter(box) {
+    var val = box.querySelector(".amb-filter__value"), on = box.querySelector('.amb-filter__opt[aria-pressed="true"]');
+    if (!val) return;
+    var word = on ? (on.querySelector(".amb-filter__word") || on).textContent.trim() : "";
+    if (val.textContent !== word) val.textContent = word;
+  }
+  /* the room under the pill: to the foot of what scrolls it, the window, or a dock standing under it */
+  function roomFor(btn, menu) {
+    var b = btn.getBoundingClientRect(), lim = window.innerHeight, top = 0, n = btn.parentElement;
+    for (; n && n !== document.body; n = n.parentElement) {
+      var o = getComputedStyle(n).overflowY;
+      if (o === "auto" || o === "scroll") { var r = n.getBoundingClientRect(); lim = Math.min(lim, r.bottom); top = Math.max(top, r.top); break; }
+    }
+    var dock = document.querySelector(".amb-dock");
+    if (dock && shown(dock)) { var d = dock.getBoundingClientRect(); if (d.top > b.bottom && d.left < b.right && d.right > b.left) lim = Math.min(lim, d.top); }
+    var need = menu.getBoundingClientRect().height + 8, below = lim - b.bottom, above = b.top - top;
+    /* upward only where the whole menu fits above; else downward, and the opener brings it into view */
+    if (below < need && above >= need) menu.setAttribute("data-amb-up", "");
+  }
+  function shutFilter(box, back) {
+    var menu = box.querySelector(".amb-filter__menu"), btn = box.querySelector(".amb-filter__btn");
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    if (btn) { btn.setAttribute("aria-expanded", "false"); if (back) btn.focus({ preventScroll: true }); }
+  }
+  function shutFilters(keep) {
+    var open = document.querySelectorAll(".amb-filter__menu:not([hidden])");
+    for (var i = 0; i < open.length; i++) { var box = open[i].closest(".amb-filter"); if (box && box !== keep) shutFilter(box, false); }
+  }
+  /* the focus leaving the filter shuts it; a tap inside it (down within the moment) is the filter's own, and keeps it open for its click */
+  document.addEventListener("focusout", function (e) {
+    var box = e.target && e.target.closest ? e.target.closest(".amb-filter") : null;
+    if (!box || (e.relatedTarget && box.contains(e.relatedTarget))) return;
+    if (down.on && box.contains(down.on) && Date.now() - (down.at || 0) < 800) return;
+    shutFilter(box, false);
+  });
+  /* the arrow keys walk its choices, Home and End go to the ends; a dimmed choice is passed over */
+  document.addEventListener("keydown", function (e) {
+    var menu = e.target && e.target.closest ? e.target.closest(".amb-filter__menu") : null;
+    if (!menu || ["ArrowDown", "ArrowUp", "Home", "End"].indexOf(e.key) < 0) return;
+    var opts = [].filter.call(menu.querySelectorAll(".amb-filter__opt"), function (o) { return o.getAttribute("aria-disabled") !== "true"; });
+    if (!opts.length) return;
+    var at = opts.indexOf(document.activeElement), to = e.key === "Home" ? 0 : e.key === "End" ? opts.length - 1 : e.key === "ArrowDown" ? (at + 1) % opts.length : (at - 1 + opts.length) % opts.length;
+    e.preventDefault();
+    opts[to].focus();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var box = e.target && e.target.closest ? e.target.closest(".amb-filter") : null;
+    if (box && box.querySelector(".amb-filter__menu:not([hidden])")) { e.preventDefault(); shutFilter(box, true); }
+    else shutFilters(null);
+  });
+
+  /* ---- a sliding segment (0.7.32): the pressed part is brought into view inside the segment, never by scrolling the
+     page, and the ends that are cut are marked for their fade. Nothing here sets a size or a style ---- */
+  function slideCut(seg) {
+    var max = seg.scrollWidth - seg.clientWidth, at = Math.abs(seg.scrollLeft);
+    var cut = max <= 1 ? "" : at <= 1 ? "end" : at >= max - 1 ? "start" : "both";
+    if (cut) { if (seg.getAttribute("data-amb-cut") !== cut) seg.setAttribute("data-amb-cut", cut); }
+    else if (seg.hasAttribute("data-amb-cut")) seg.removeAttribute("data-amb-cut");
+  }
+  function slideShow(seg) {
+    var on = seg.querySelector('.amb-segment__opt[aria-pressed="true"]');
+    if (on && seg.scrollWidth > seg.clientWidth + 1) {
+      var r = on.getBoundingClientRect(), s = seg.getBoundingClientRect(), pad = 24;
+      if (r.width && r.left < s.left + pad) seg.scrollLeft += r.left - s.left - pad;
+      else if (r.width && r.right > s.right - pad) seg.scrollLeft += r.right - s.right + pad;
+    }
+    slideCut(seg);
+  }
+  document.addEventListener("scroll", function (e) {
+    var s = e.target;
+    if (s && s.classList && s.classList.contains("amb-segment--slide")) slideCut(s);
+  }, true);
+  var sized = typeof ResizeObserver === "function" ? new ResizeObserver(function (list) {
+    for (var i = 0; i < list.length; i++) slideShow(list[i].target);
+  }) : null;
+  function wire(rootEl) {
+    var slides = rootEl.querySelectorAll ? rootEl.querySelectorAll(".amb-segment--slide") : [];
+    for (var i = 0; i < slides.length; i++) if (!slides[i].ambSlide) { slides[i].ambSlide = true; if (sized) sized.observe(slides[i]); slideShow(slides[i]); }
+    var boxes = rootEl.querySelectorAll ? rootEl.querySelectorAll(".amb-filter") : [];
+    for (var j = 0; j < boxes.length; j++) sayFilter(boxes[j]);
+  }
+  /* what the app presses or draws itself is followed too: a pressed part brought into view, a filter's pill renamed */
+  if (typeof MutationObserver === "function") new MutationObserver(function (records) {
+    for (var i = 0; i < records.length; i++) {
+      var r = records[i], n = r.target;
+      if (r.type === "childList") {
+        for (var a = 0; a < r.addedNodes.length; a++) {
+          var x = r.addedNodes[a];
+          if (x.nodeType === 1 && (x.matches(".amb-segment--slide, .amb-filter") || x.querySelector(".amb-segment--slide, .amb-filter"))) wire(x.parentNode || x);
+        }
+        continue;
+      }
+      if (!n.closest) continue;
+      var box = n.closest(".amb-filter"), seg = n.closest(".amb-segment--slide");
+      if (box) sayFilter(box);
+      if (seg) slideShow(seg);
+    }
+  }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-pressed"] });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { wire(document); }); else wire(document);
 
   /* ---- a handle moves its row without a drag ---- */
   document.addEventListener("keydown", function (e) {

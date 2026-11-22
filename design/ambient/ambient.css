@@ -97,7 +97,7 @@
 .amb-stack { display: grid; gap: var(--amb-space-4); padding-inline: var(--amb-space-4); }
 .amb-stack > * { min-width: 0; }
 /* one block after another in a screen keeps the gap a stack keeps inside itself */
-:is(.amb-screen, .amb-place) > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-space-4); }
+:is(.amb-screen, .amb-place) > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split, .amb-head, .amb-lead) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split, .amb-lead) { margin-top: var(--amb-space-4); }
 
 /* ---- The mesh: a mood's three stops over its base, fading into the base at the foot ---- */
 /* Painted as gradients, never as blurred discs: a blur filter on a layer this size is drawn
@@ -152,6 +152,9 @@
 .amb-hero__time { margin: var(--amb-space-1) 0 0; font-size: var(--amb-text-caption); font-weight: 500; }
 /* a screen whose subject is below the hero (a code, a card): the stack alone, no flood to fill */
 .amb-hero--compact { min-height: 0; padding-bottom: var(--amb-space-5); }
+/* 0.7.32, the owner's answers of 22 Nov 2026: a place's title alone, a step under the safe area, with no room kept above it
+   for an app bar's circles. What the place says stands under its head (amb-head), never in this hero */
+.amb-hero--title { padding-top: calc(var(--amb-safe-top) + var(--amb-space-4)); padding-bottom: var(--amb-space-4); }
 .amb-cluster { display: flex; align-items: center; justify-content: center; gap: var(--amb-space-5); margin-top: var(--amb-space-5); }
 .amb-glyph { display: grid; place-items: center; width: 72px; height: 72px; border: 1px solid var(--amb-rim); border-radius: 50%; background: var(--amb-solid-circle); }
 .amb-glyph > .amb-icon { width: 32px; height: 32px; }
@@ -383,6 +386,106 @@ a.amb-row:active, button.amb-row:active, .amb-row__main:active { transform: scal
 /* an option with nothing behind it: dimmed, still read and reached by the keyboard; pressing it does nothing */
 .amb-segment__opt[aria-disabled="true"] { color: var(--amb-ink-3); cursor: default; }
 @media (forced-colors: active) { .amb-segment__opt[aria-disabled="true"], .amb-segment__opt[aria-disabled="true"] > .amb-segment__count { color: GrayText; } }
+/* 0.7.32: a segment of more parts than fit slides sideways inside itself, on one row. It is the one sideways scroll the
+   system allows, and only inside this box (the owner's answer of 22 Nov 2026): no scrollbar is drawn (tokens.css),
+   ambient.js keeps the pressed part in view and marks the ends that are cut (data-amb-cut), and a cut end fades out */
+.amb-segment--slide { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+.amb-segment--slide > .amb-segment__opt { flex: 1 0 auto; padding-inline: var(--amb-space-3); white-space: nowrap; scroll-snap-align: center; }
+.amb-segment--slide > .amb-segment__opt:focus-visible { outline-offset: -2px; }
+.amb-segment--slide[data-amb-cut="end"] { -webkit-mask-image: linear-gradient(to left, transparent, currentColor var(--amb-space-6)); mask-image: linear-gradient(to left, transparent, currentColor var(--amb-space-6)); }
+.amb-segment--slide[data-amb-cut="start"] { -webkit-mask-image: linear-gradient(to right, transparent, currentColor var(--amb-space-6)); mask-image: linear-gradient(to right, transparent, currentColor var(--amb-space-6)); }
+.amb-segment--slide[data-amb-cut="both"] { -webkit-mask-image: linear-gradient(to right, transparent, currentColor var(--amb-space-6), currentColor calc(100% - var(--amb-space-6)), transparent); mask-image: linear-gradient(to right, transparent, currentColor var(--amb-space-6), currentColor calc(100% - var(--amb-space-6)), transparent); }
+
+/* ---- A place's head (0.7.32, the owner's answers of 22 Nov 2026): what every place of an app opens with under its
+   title (amb-hero--title), in this order with nothing between: its parts, a segment (amb-segment--slide where more
+   than fit), then its status (amb-status). The two rows are one height on every place and every width,
+   --amb-head-row, and grow together when the text is larger. A place with one view has no parts, so its status
+   stands first. A filter is never in a head: it stands at the head of the list it narrows (amb-filter). ---- */
+.amb-head { display: grid; grid-auto-rows: minmax(var(--amb-head-row), 1fr); gap: var(--amb-space-2); min-width: 0; padding-inline: var(--amb-space-4); }
+.amb-head > * { min-width: 0; }
+/* the headline: what the place says, one or two lines under its head, before the first block (it was the hero's line) */
+.amb-lead { margin: 0; padding-inline: var(--amb-space-4); font-size: var(--amb-text-body); font-weight: 500; line-height: 1.35; color: var(--amb-ink); text-wrap: pretty; }
+/* the status: what is true on every place, at one place on every place. Whether it is live, the time, the state it is in
+   and any flag, each a dot and a word, then at its end the place's indicators (amb-status__end). One line, never wrapping:
+   the state's label gives way first, ending in an ellipsis, and the time never does */
+.amb-status { display: flex; align-items: center; gap: var(--amb-space-2); min-width: 0; font-size: var(--amb-text-footnote); color: var(--amb-ink-2); white-space: nowrap; }
+/* the live mark, the state and a flag are a dot and a word on the ground, never a chip: Live says itself on every phone */
+.amb-status__live, .amb-status__flag { display: inline-flex; flex: none; align-items: center; gap: 6px; font-weight: 600; color: var(--amb-ink); }
+.amb-status__live > .amb-chip__dot { background: var(--amb-pos); }
+.amb-status__live--off > .amb-chip__dot { background: var(--amb-neg); }
+.amb-status__flag > .amb-chip__dot { background: var(--amb-warn); }
+/* the state (Open to 22:00, Closed, Paused): a dot and its words, a quiet button 44px tall where it acts, the one thing in the row that gives way
+   (amb-status__label ends in an ellipsis). Its dot: the gain's colour while open, a warning's while paused, the third ink while closed */
+.amb-status__state { -webkit-appearance: none; appearance: none; display: inline-flex; flex: 0 1 auto; align-items: center; gap: 6px; min-width: var(--amb-tap); min-height: var(--amb-tap); margin: 0; padding: 0 var(--amb-space-1); border: 0; border-radius: var(--amb-radius-md); background: none; font: inherit; font-weight: 600; color: var(--amb-ink); white-space: nowrap; }
+button.amb-status__state { cursor: pointer; touch-action: manipulation; transition: background-color var(--amb-dur-fast) var(--amb-ease-fast); }
+button.amb-status__state:hover { background: var(--amb-well); }
+.amb-status__state > .amb-chip__dot { flex: none; background: var(--amb-ink-3); }
+.amb-status__state--pos > .amb-chip__dot { background: var(--amb-pos); }
+.amb-status__state--warn > .amb-chip__dot { background: var(--amb-warn); }
+.amb-status__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.amb-status__time { flex: none; min-width: 5ch; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-variant-numeric: tabular-nums; }
+/* a line of the status that is not a time (who is signed in): it gives way first too, ending in an ellipsis */
+.amb-status__text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.amb-status__end { display: flex; flex: none; align-items: center; gap: var(--amb-space-2); margin-left: auto; }
+.amb-status__end > .amb-pill { min-width: var(--amb-tap); min-height: var(--amb-tap); padding-inline: var(--amb-space-3); font-size: var(--amb-text-footnote); }
+/* a word of the status a narrow screen does without (when the state next changes, a flag's word, an indicator's once its tick or count
+   says it) stays for a reader and is not drawn under 480px, so the row keeps to one line on a 360px phone */
+@container amb (max-width: 479.98px) {
+  .amb-status .amb-status__word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* and the row draws closer, so the state keeps its word beside a flag, a count and Approve 12 on a 360px phone */
+  .amb-status { gap: 6px; }
+  .amb-status__end { gap: 6px; }
+  .amb-status__end > .amb-pill { padding-inline: var(--amb-space-2); }
+}
+/* an indicator: a pill that carries aria-pressed says a state and opens its view; a step under an action, pressed while
+   its view is open, and edged in the negative ink while it carries a negative count */
+.amb-status__end > .amb-pill[aria-pressed] { font-weight: 500; color: var(--amb-ink-2); }
+.amb-status__end > .amb-pill[aria-pressed]:has(> .amb-chip--neg:not([hidden])) { border-color: var(--amb-neg); color: var(--amb-ink); }
+.amb-status__end > .amb-pill[aria-pressed="true"] { border-color: var(--amb-accent); box-shadow: inset 0 0 0 1px var(--amb-accent); color: var(--amb-ink); }
+
+/* ---- Filter (0.7.32): a choice that narrows a list, at the head of that list and never in a place's head. A quiet pill
+   names the choice made and opens a menu of the choices under it, each counted, one pressed and ticked: the pull-down
+   button of iPhone, iPad and Mac. ambient.js opens and closes it, presses a choice as a segment's is pressed, and writes
+   the pressed choice's word (amb-filter__word) into the pill (amb-filter__value) ---- */
+.amb-filter { position: relative; display: inline-flex; align-self: start; max-width: 100%; }
+.amb-filter__btn { gap: var(--amb-space-1); }
+.amb-filter__value { overflow: hidden; text-overflow: ellipsis; }
+.amb-filter__btn > .amb-icon { width: 16px; height: 16px; transition: transform var(--amb-dur-fast) var(--amb-ease-fast); }
+.amb-filter__btn[aria-expanded="true"] > .amb-icon { transform: rotate(180deg); }
+.amb-filter__menu { position: absolute; z-index: 20; top: calc(100% + var(--amb-space-1)); left: 0; display: grid; gap: 2px; width: max-content; min-width: 14rem; max-width: min(20rem, calc(100cqi - 2 * var(--amb-space-4))); padding: var(--amb-space-1); border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-raised); box-shadow: var(--amb-shadow-card); }
+.amb-filter__menu[hidden] { display: none; }
+.amb-filter__menu { max-height: min(60dvh, 24rem); overflow-y: auto; overscroll-behavior: contain; }
+/* ambient.js opens it upward (data-amb-up) where the room under the pill is short and the room over it is not */
+.amb-filter__menu[data-amb-up] { top: auto; bottom: calc(100% + var(--amb-space-1)); }
+/* a filter at the end of its row (beside a find field) opens its menu toward the start, so it never leaves the screen */
+.amb-filter--end > .amb-filter__menu { left: auto; right: 0; }
+.amb-filter__opt {
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--amb-space-2);
+  min-height: var(--amb-tap);
+  padding: 0 var(--amb-space-3) 0 var(--amb-space-2);
+  border: 0;
+  border-radius: var(--amb-radius-md);
+  background: none;
+  font: inherit;
+  font-size: var(--amb-text-body);
+  color: var(--amb-ink);
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--amb-dur-fast) var(--amb-ease-fast);
+}
+.amb-filter__opt:hover, .amb-filter__opt:focus-visible { background: var(--amb-well); }
+.amb-filter__opt > .amb-icon { flex: none; width: 18px; height: 18px; visibility: hidden; }
+.amb-filter__opt[aria-pressed="true"] { font-weight: 600; }
+.amb-filter__word { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.amb-filter__opt[aria-pressed="true"] > .amb-icon { visibility: visible; }
+.amb-filter__opt > .amb-segment__count { margin-left: auto; padding-left: var(--amb-space-4); font-size: var(--amb-text-subhead); color: var(--amb-ink-2); }
+.amb-filter__opt[aria-disabled="true"] { color: var(--amb-ink-3); cursor: default; }
+@media (forced-colors: active) { .amb-filter__opt[aria-pressed="true"] { outline: 2px solid CanvasText; outline-offset: -2px; } }
 
 /* ---- Pane and plate: a raised surface; a plate is a pane of label-over-value rows ---- */
 .amb-pane, .amb-plate { border: 1px solid var(--amb-line); border-radius: var(--amb-radius-lg); background: var(--amb-surface); box-shadow: var(--amb-shadow-card); }
@@ -1648,6 +1751,8 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
   .amb-segment { max-width: 30rem; }
   /* filters wrap, so they take their row's width rather than wrap their words */
   .amb-segment--wrap { max-width: none; }
+  /* 0.7.32: a place head's two rows run the content's width together */
+  .amb-head > .amb-segment { max-width: none; }
   .amb-list { max-width: var(--amb-measure); }
   .amb-drawer { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .amb-tiles { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
@@ -1680,6 +1785,9 @@ polyline.amb-map__water { fill: none; stroke: var(--amb-water); stroke-width: 12
   /* a switch of a few choices stacks them, and a tab keeps its glyph and its name but shows only the glyph */
   .amb-segment { flex-wrap: wrap; border-radius: var(--amb-radius-lg); }
   .amb-segment__opt { flex: 1 1 auto; border-radius: var(--amb-radius-md); }
+  /* 0.7.32: a sliding segment never stacks; it slides */
+  .amb-segment--slide { flex-wrap: nowrap; border-radius: calc(var(--amb-tap) / 2 + 4px); }
+  .amb-segment--slide > .amb-segment__opt { flex: 1 0 auto; border-radius: var(--amb-radius-pill); }
   .amb-tab > span:not(.amb-tab__count) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* with its name out of sight, the tab one is on is marked by a bar as well as by its colour */
   .amb-tab[aria-current="page"]::after { content: ""; width: 1.25rem; height: 3px; border-radius: 2px; background: currentColor; }
@@ -1827,13 +1935,13 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
 /* ---- Work screens (0.7.9, 0.7.10): the owner's answers of 16 Nov 2026, on a docked screen in a shell with an app bar.
    A document, a dashboard, a deck or a paper has no dock, so keeps its look, and no shared token moves. The look is
    bounded at the next shell, so a framed mock-up inside a work screen keeps its own. ---- */
-@scope (.amb-shell:has(> .amb-appbar) > .amb-screen--docked) to (.amb-shell) {
+@scope (.amb-shell:has(> .amb-appbar) > .amb-screen--docked, .amb-shell--work > .amb-screen--docked) to (.amb-shell) {
   /* no drop shadow on a card (0.7.10, R25, the owner's fix of 16 Nov 2026, superseding 0.7.9's one shadow): a pane,
      a task, a settings group, a verdict, a tile and a plate keep their hairline and cast none, at any depth. Panes, and
      a work screen's own blocks, stand --amb-pane-gap apart */
   .amb-stack { gap: var(--amb-pane-gap); }
-  :scope > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split),
-  .amb-place > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split) { margin-top: var(--amb-pane-gap); }
+  :scope > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split, .amb-head, .amb-lead) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split, .amb-lead),
+  .amb-place > :where(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split, .amb-head, .amb-lead) + :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-split, .amb-lead) { margin-top: var(--amb-pane-gap); }
   .amb-tile:not(.amb-tiles--strip > .amb-tile), .amb-plate { box-shadow: none; }
   :is(.amb-pane, .amb-task, .amb-settings__list, .amb-verdict) { box-shadow: none; }
   .amb-tiles.amb-tiles--strip, .amb-card { box-shadow: none; }
@@ -1844,8 +1952,10 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
    under the bar has moved, ambient.js marks the shell (data-amb-moved) and what scrolls is drawn only from the bar's
    middle down, the bar's cap. At rest, and while any of a hero stands below the bar, its mesh stands whole. A control
    the keyboard takes to comes to rest under the bar, never in the clip */
-.amb-shell[data-amb-moved] > .amb-screen--docked { clip-path: inset(calc(var(--amb-bar-h) - var(--amb-tap) / 2) 0 0 0); }
+.amb-shell[data-amb-moved]:has(> .amb-appbar) > .amb-screen--docked { clip-path: inset(calc(var(--amb-bar-h) - var(--amb-tap) / 2) 0 0 0); }
+.amb-shell[data-amb-moved]:not(:has(> .amb-appbar)) > .amb-screen--docked { clip-path: inset(var(--amb-safe-top) 0 0 0); }
 :where(.amb-shell:has(> .amb-appbar)) > .amb-screen--docked { scroll-padding-top: calc(var(--amb-bar-h) + var(--amb-space-2)); }
+:where(.amb-shell--work:not(:has(> .amb-appbar))) > .amb-screen--docked { scroll-padding-top: calc(var(--amb-safe-top) + var(--amb-space-2)); }
 @media not print {
   /* a work screen with no hero opens a bar and --amb-space-5 down */
   :where(.amb-shell:has(> .amb-appbar)) > .amb-screen--docked:not(:has(> .amb-hero, .amb-place:not([hidden]) > .amb-hero)) { padding-top: calc(var(--amb-bar-h) + var(--amb-space-5)); scroll-padding-top: calc(var(--amb-bar-h) + var(--amb-space-5)); }
@@ -1865,10 +1975,10 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
        the queue's first card stands --amb-rail-gap from the rail, its outer edge the column's; the room is never past the
        screen's own inset, so nothing scrolls sideways, and a card never stands nearer the screen's edge than the room.
        The inner sides keep their inset, and the foot's ground reaches across the same room */
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child { margin-left: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-l))); padding-left: var(--amb-pane-room); }
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child { margin-right: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-r))); padding-right: var(--amb-pane-room); }
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child > .amb-foot { margin-left: calc(-1 * var(--amb-pane-room)); padding-left: var(--amb-pane-room); }
-    :where(.amb-shell:has(> .amb-appbar) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child > .amb-foot { margin-right: calc(-1 * var(--amb-pane-room)); padding-right: var(--amb-pane-room); }
+    :where(.amb-shell:is(:has(> .amb-appbar), .amb-shell--work) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child { margin-left: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-l))); padding-left: var(--amb-pane-room); }
+    :where(.amb-shell:is(:has(> .amb-appbar), .amb-shell--work) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child { margin-right: calc(-1 * min(var(--amb-pane-room), var(--amb-inset-r))); padding-right: var(--amb-pane-room); }
+    :where(.amb-shell:is(:has(> .amb-appbar), .amb-shell--work) > .amb-screen--docked) .amb-split--panes > .amb-stack:first-child > .amb-foot { margin-left: calc(-1 * var(--amb-pane-room)); padding-left: var(--amb-pane-room); }
+    :where(.amb-shell:is(:has(> .amb-appbar), .amb-shell--work) > .amb-screen--docked) .amb-split--panes > .amb-stack:last-child > .amb-foot { margin-right: calc(-1 * var(--amb-pane-room)); padding-right: var(--amb-pane-room); }
     /* the app bar's ends stand on the panes' card edges (the owner's answer of 16 Nov 2026): its first item over the
        queue's card, its last circle over the record's. The queue's card stands on the column's edge beside a rail, or
        the room in from the screen's edge with none; the record's stands max(the screen's inset, the room) in from the
@@ -1878,7 +1988,7 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
     /* beside a rail the queue's card stands on the column's edge, where the bar already stands: after the page rule, so it wins */
     .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-appbar { padding-left: var(--amb-safe-left); }
     /* the save bar beside the rail stands on the panes' content edge */
-    .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-dock > .amb-savebar { left: calc(100% + var(--amb-rail-gap)); width: min(520px, calc(100cqi - 100% - 2 * var(--amb-dock-inset) - var(--amb-rail-gap) - var(--amb-pane-room) - var(--amb-safe-left) - var(--amb-safe-right))); }
+    .amb-shell--rail:is(:has(> .amb-appbar), .amb-shell--work):has(> .amb-screen--docked > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden]), > .amb-screen--docked > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-place:not([hidden]) > .amb-split--panes:not([hidden])) > .amb-dock > .amb-savebar { left: calc(100% + var(--amb-rail-gap)); width: min(520px, calc(100cqi - 100% - 2 * var(--amb-dock-inset) - var(--amb-rail-gap) - var(--amb-pane-room) - var(--amb-safe-left) - var(--amb-safe-right))); }
   }
 }
 }
@@ -1886,7 +1996,7 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
    beside a work screen, its bars and the save bar beside it keep their rim and top highlight and cast none. On a
    phone the dock floats over the page, so keeps its shadow, as a sheet, a menu and a toast do */
 @container amb (min-width: 960px) {
-  .amb-shell--rail:has(> .amb-appbar):has(> .amb-screen--docked) > .amb-dock > :is(.amb-tabbar, .amb-mini, .amb-savebar) { box-shadow: inset 0 1px 0 var(--amb-sheen); }
+  .amb-shell--rail:is(:has(> .amb-appbar), .amb-shell--work):has(> .amb-screen--docked) > .amb-dock > :is(.amb-tabbar, .amb-mini, .amb-savebar) { box-shadow: inset 0 1px 0 var(--amb-sheen); }
 }
 @media print { .amb-shell[data-amb-moved] > .amb-screen--docked { clip-path: none; } }
 
@@ -1932,6 +2042,9 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
   .amb-shell--work .amb-segment--tabs > .amb-segment__opt:not([aria-pressed="true"]) > .amb-segment__count { color: inherit; }
   .amb-shell--work .amb-segment--tabs > .amb-segment__opt[aria-disabled="true"] { color: var(--amb-ink-2); }
   .amb-shell--work .amb-segment--tabs > .amb-segment__opt[aria-disabled="true"] > .amb-segment__count { color: var(--amb-ink-3); }
+  /* 0.7.32: tabs that slide clip both ways, so their hairline is drawn inside the box and the underline stands on it */
+  .amb-shell--work .amb-segment--tabs.amb-segment--slide { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--amb-line); }
+  .amb-shell--work .amb-segment--tabs.amb-segment--slide > .amb-segment__opt[aria-pressed="true"]::after { inset: auto 0 0 0; }
   @media (min-height: 640px) {
     .amb-shell--work .amb-hero--compact { --amb-bar-l: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))); --amb-bar-r: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
     /* 0.7.22: a stack standing before shown panes (a notice, filters, a place's tabs) takes the edges the panes' cards stand on, which are the bar's too, so one line runs down the page's two sides */
@@ -1944,7 +2057,7 @@ fieldset.amb-rating > .amb-rating__stars { margin-left: -7px; }
     /* 0.7.27: a plain split's outer columns start and end on the same edge */
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) > .amb-stack:first-child { padding-left: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))); }
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split:not(.amb-split--panes) > .amb-stack:last-child { padding-right: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
-    .amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form):not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
+    .amb-shell--work :is(.amb-screen, .amb-place) > :is(.amb-stack, .amb-list, .amb-tiles, .amb-form, .amb-head, .amb-lead):not(.amb-split) { padding-inline: calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-l))) calc(var(--amb-pane-room) - min(var(--amb-pane-room), var(--amb-inset-r))); }
     .amb-shell--work :is(.amb-screen, .amb-place) > .amb-split--panes { grid-template-columns: minmax(280px, min(440px, 40%)) minmax(0, 1fr); }
   }
   /* 0.7.17: one grid for every place of a working shell. A plain split takes the panes' own columns, so a place of two columns and a place of panes share their edges. */
