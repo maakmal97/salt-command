@@ -1,0 +1,156 @@
+<div class="amb-shell" data-mood="slate">
+<main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh">
+<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026</span>
+<h1 class="amb-hero__title">A small lot no longer sets a book's Floor</h1>
+<p class="amb-hero__sub">Today a book's cost is its latest landed purchase, whatever its size. So candy's 1-unit lot (p057, MYR 69 and MYR 25 freight, MYR 94 a unit) sets candy's Floor and lifts every candy price to MYR 95 a unit, over its MYR 60 board. From this version, a lot with fewer units than its book's minimum is blended with the lots before it: cost is what the newest units, up to that minimum, cost. One function changes, so every reader follows.</p>
+<p class="amb-hero__time">salt-command at 43015949, v1565 on master. Your five answers given on 24 Nov 2026. Plan only: nothing is built until your go.</p>
+</header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#rule">The rule, as you answered</a></li>
+<li><a class="amb-contents__link" href="#today">What it changes today</a></li>
+<li><a class="amb-contents__link" href="#history">Every lot since June, replayed</a></li>
+<li><a class="amb-contents__link" href="#engine">How the engine does it</a></li>
+<li><a class="amb-contents__link" href="#readers">Every reader of the cost</a></li>
+<li><a class="amb-contents__link" href="#surfaces">Salt Admin, Salt Counter and Salt Desk</a></li>
+<li><a class="amb-contents__link" href="#risks">Risks and how each is held</a></li>
+<li><a class="amb-contents__link" href="#order">The order of the work</a></li>
+<li><a class="amb-contents__link" href="#proof">How it is proved</a></li>
+<li><a class="amb-contents__link" href="#asks">One ask</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="rule"><h2 class="amb-section">The rule, as you answered <span class="amb-section__note">24 Nov 2026</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">What it means</th></tr></thead><tbody>
+<tr><td data-label="Question">A lot under the minimum</td><td data-label="Your answer">Blend it in by units</td><td data-label="What it means">The newest lots are taken together, newest first, until they reach the book's minimum, each at its own quote and freight over the units received.</td></tr>
+<tr><td data-label="Question">Counted how far</td><td data-label="Your answer">Only up to the minimum</td><td data-label="What it means">The last lot taken counts only for the units still needed. Cost is what the newest N units cost, so an old large lot cannot outweigh the newest price.</td></tr>
+<tr><td data-label="Question">Where each minimum lives</td><td data-label="Your answer">In the rules</td><td data-label="What it means"><code>COST_MIN</code> in <code>engine/rules.mjs</code>, beside each book's Ceiling multiple and board: salt 12.5, oil 10, candy 10, rice 100, gas 1. A version sets and changes it; nothing is written to the Book.</td></tr>
+<tr><td data-label="Question">Its source</td><td data-label="Your answer">Typed per book</td><td data-label="What it means">Your figures, not the supplier quotes and not worked out from history. Before the flip question it read "in each book's cost rule"; your second answer moved it into the rules.</td></tr>
+<tr><td data-label="Question">The two lots dated 27 Nov</td><td data-label="Your answer">Only fix the dates</td><td data-label="What it means">No engine change. You correct p059 (gas, 3 units) and p060 (oil, 50 units) on Salt Admin. Until then gas's cost reads MYR 54.67 and oil's MYR 7.60, against MYR 50 and MYR 7.23 on lots dated by today. <span class="amb-claim amb-claim--verified">Verified</span> by the engine's <code>latestCogs</code> with and without the day.</td></tr>
+</tbody></table>
+<p class="amb-basis">Unchanged: when the newest lot reaches its book's minimum, cost is that lot exactly as today (your rule of 05 Oct 2026). Also unchanged: the Floor is cost times the size, rounded up to MYR 5; salt's non-revenue share and its Ceiling curve; a partner pays the Floor; and a figure under the Floor is asked about once.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="today"><h2 class="amb-section">What it changes today <span class="amb-section__note">on the book at 43015949</span></h2>
+<div class="amb-stack">
+<div class="amb-tiles">
+<div class="amb-tile"><span class="amb-tile__label">Candy's cost, MYR a unit</span><span class="amb-tile__figure">94.00 to 47.20</span><span class="amb-tile__delta amb-muted">1 unit of p057 and 9 of p031's 15: MYR 447 goods and MYR 25 freight over 10 units</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Replayed with the engine's own lot readers (<code>poLive</code>, <code>poRecvUnits</code>) on <code>ledger/book.json</code>.</span></div>
+<div class="amb-tile"><span class="amb-tile__label">Candy's list at 1, 5, 10, 20, 30 units, MYR</span><span class="amb-tile__figure">95, 470, 940, 1,880, 2,820 to 60, 300, 550, 1,100, 1,500</span><span class="amb-tile__delta amb-muted">the board's rungs stand once the Floor (50, 240, 475, 945, 1,420) falls under them</span><span class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> From the board in <code>TIER_RULE.candy.fixed</code> and the Floor's rounding; read off <code>tools/pricelist.mjs</code> after the build.</span></div>
+<div class="amb-tile"><span class="amb-tile__label">Salt, oil, rice and gas, MYR a unit</span><span class="amb-tile__figure">no change</span><span class="amb-tile__delta amb-muted">each book's newest lot reaches its minimum: salt p058 (50), oil p060 (50), rice p056 (100), gas p059 (3)</span><span class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> The same replay: 53.00, 7.60, 2.95 and 54.67, identical to today's.</span></div>
+</div>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">When p062 lands</span>The pending candy lot (30 units at MYR 30 from CM4-TO-R) reaches the minimum alone, so candy's cost then reads MYR 30, exactly as it would under today's rule. <span class="amb-claim amb-claim--estimate">Estimate</span> It assumes the lot lands as entered, with no freight added.</span></div>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">The pending candy order</span>If s425 (20 units, MYR 1,000) is handed over before p062 lands, the fold books its cost at MYR 944 (20 at MYR 47.20), not MYR 1,880. <span class="amb-claim amb-claim--verified">Verified</span> From the replayed rate.</span></div>
+</div>
+</section>
+
+<section class="amb-sec" id="history"><h2 class="amb-section">Every lot since June, replayed <span class="amb-section__note">64 lots, each day one landed</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Day</th><th scope="col">Book</th><th scope="col">Today's rule, MYR a unit</th><th scope="col">The new rule, MYR a unit</th><th scope="col">What it touches</th></tr></thead><tbody>
+<tr><td data-label="Day">23 Jul 2026</td><td data-label="Book">Salt</td><td data-label="Today's rule, MYR a unit">64.00 (p010, 6.25 units)</td><td data-label="The new rule, MYR a unit">60.00 (6.25 of p010 and 6.25 of p009)</td><td data-label="What it touches">This was before the latest-lot rule existed, so no row is restated. A reading that works out July's Floor again shows MYR 60.</td></tr>
+<tr><td data-label="Day">17 Nov 2026</td><td data-label="Book">Candy</td><td data-label="Today's rule, MYR a unit">94.00 (p057, 1 unit)</td><td data-label="The new rule, MYR a unit">47.20</td><td data-label="What it touches">s380 (3 units, MYR 100) and s425 (20 units, MYR 1,000, pending) went through as one-offs under the Floor. Both are dated records and keep their marks; s425's MYR 1,000 is over the new Floor of MYR 945.</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> For each book and each day a lot landed, the engine's <code>latestCogs</code> was compared with the blend at these minimums. No other day differs.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="engine"><h2 class="amb-section">How the engine does it <span class="amb-section__note">one function, so no reader can miss it</span></h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li><code>engine/rules.mjs</code> gains <code>COST_MIN = {salt: 12.5, oil: 10, candy: 10, rice: 100, gas: 1}</code>, carried in <code>PRICING_RULES</code>. A book it does not name has a minimum of nought, which is today's rule. It is a rule, not ledger data, so it is added to <code>NOT_LEDGER</code> in <code>tools/ledger.mjs</code> (the gate refuses a data-shaped name in the master that is not classified), and to the names <code>test/engine-rules.mjs</code> pins for <code>PRICING_RULES</code>. It stays out of the PRICING snapshot's inputs, so no fixture changes for it.</li>
+<li><code>engine/position.mjs</code> <code>latestCogs(purchases, onOrBefore)</code> keeps its signature and reads the minimum itself, by the lots' book (an absent product means salt, <code>docs/PRODUCTS.md</code> section 6). The import is written exactly <code>import PRICING_RULES from "./rules.mjs";</code>, the one form <code>tools/engine.mjs --sync</code> drops. Any other name (<code>RULES</code>, say) would bind the master's other rules table, and the Desk would keep today's rule without any error. <code>rules.mjs</code> imports nothing, so there is no cycle, and in the master the rules block already stands before the position block.</li>
+<li>The lots it may read are exactly today's: live (not pending, defaulted or cancelled), with something received, landed on or before the day. On one day, the later in the list counts as the newer, and a partly landed lot counts over its received units.</li>
+<li>When the newest lot reaches the minimum, it answers the same object as today, byte for byte.</li>
+<li>Otherwise it takes lots newest first, each at its own rate, the last only for the units still needed. If all the landed lots together fall short of the minimum, they are all taken whole.</li>
+<li>What it answers: <code>p</code>, <code>rid</code> and <code>date</code> stay the newest lot's, so the non-revenue anchor and the order fault's date do not move. <code>quote</code> and <code>freight</code> are the shares counted, <code>units</code> the units counted, and <code>rate</code> is their sum over the units, to four places, as now. A new field, <code>lots</code> (<code>[{rid, date, units, rate, draft}]</code>), names each lot, the units taken from it and its own rate. It is present only when a blend is in force, both here and in its two copiers (<code>engine/snapshot.mjs</code> and <code>engine/pricing.mjs</code>), so every fixture that carries <code>latest</code> stays equal.</li>
+</ul>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">Why inside the function, not from each caller</span>Eight call sites read <code>latestCogs</code>. Passing the minimum in from each caller would let one of them forget it, and two figures for one cost is the drift that rule 1 forbids.</span></div>
+</div>
+</section>
+
+<section class="amb-sec" id="readers"><h2 class="amb-section">Every reader of the cost <span class="amb-section__note">mapped from the code at 43015949</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Reader</th><th scope="col">Where</th><th scope="col">What changes</th></tr></thead><tbody>
+<tr><td data-label="Reader">The Floor, and the Ceiling on a board</td><td data-label="Where"><code>engine/snapshot.mjs</code> <code>latest</code>; <code>engine/pricing.mjs</code> steps 1 and 2</td><td data-label="What changes">Reads goods over units and freight over units, as now. The snapshot copies <code>lots</code> beside <code>rid</code> and <code>date</code>, and the stack's own copy carries it too.</td></tr>
+<tr><td data-label="Reader">Replacement rate</td><td data-label="Where"><code>engine/snapshot.mjs</code> <code>replCost</code></td><td data-label="What changes">The rate; no wording.</td></tr>
+<tr><td data-label="Reader">Salt's non-revenue anchor</td><td data-label="Where"><code>engine/snapshot.mjs</code> <code>nrsAnchor</code></td><td data-label="What changes">Reads the newest lot's date only: unchanged.</td></tr>
+<tr><td data-label="Reader">The cost a sale is booked at</td><td data-label="Where"><code>engine/apply.mjs</code> (the fold and the tap)</td><td data-label="What changes">The blended rate. The row's note is left as it is: today neither it nor <code>tools/foldnotes.mjs</code> names a lot.</td></tr>
+<tr><td data-label="Reader">The associate reward step and its unit</td><td data-label="Where"><code>engine/position.mjs</code> <code>rewardStep</code>; <code>engine/apply.mjs</code></td><td data-label="What changes">The same rate. Every salt lot since July holds 12.5 units or more, so no step moves today.</td></tr>
+<tr><td data-label="Reader">The drafter</td><td data-label="Where"><code>src/drafter.js</code> <code>cogsFor</code> and <code>basisFlags</code></td><td data-label="What changes">Its note reads "COGS off the newest 10 units: 1 of purchase p057 at RM 94 and 9 of purchase p031 at RM 42", from each lot's own rate. Its flag line (", COGS off the latest purchase") says the same. A drafted lot anywhere in the blend raises the flag, not only the newest.</td></tr>
+<tr><td data-label="Reader">Salt Admin's Workbench</td><td data-label="Where"><code>src/maker-inputs.js</code></td><td data-label="What changes">"the newest 10 units" in place of "the latest purchase" when a blend is in force.</td></tr>
+<tr><td data-label="Reader">The Desk's Pricing</td><td data-label="Where">The master's Floor line, the cost stack's replacement and freight lines, the freight figure's note, the Pricing basis caption, and the line on how the basis moved with the lot</td><td data-label="What changes">The same words, naming each lot. The last line prints the goods rate beside the latest lot's size; with a blend it would show MYR 44.70 beside p057's 1 unit, so it names the units counted instead.</td></tr>
+<tr><td data-label="Reader">An order's fault date</td><td data-label="Where"><code>src/orders.js</code></td><td data-label="What changes">Reads the basis's date, the newest lot's: unchanged.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="surfaces"><h2 class="amb-section">Salt Admin, Salt Counter and Salt Desk <span class="amb-section__note">every batch maps onto both statements surfaces</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Surface</th><th scope="col">What it shows after</th></tr></thead><tbody>
+<tr><td data-label="Surface">Salt Admin</td><td data-label="What it shows after">The Workbench's cost and the Approve card's cost note name the blended lots. Nothing new to tap, and no new place.</td></tr>
+<tr><td data-label="Surface">Salt Counter</td><td data-label="What it shows after">A customer sees no cost. Candy's prices return to the board at the next publish, which this version's push triggers.</td></tr>
+<tr><td data-label="Surface">Salt Desk</td><td data-label="What it shows after">Pricing's Floor line and cost stack say "the newest N units" and name each lot.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="risks"><h2 class="amb-section">Risks and how each is held</h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Risk</th><th scope="col">How it is held</th></tr></thead><tbody>
+<tr><td data-label="Risk">Two readers drift apart</td><td data-label="How it is held">One function decides. A new check greps that no other file works out a cost from a lot's quote and freight, exempting the Workbench's figure for a purchase being entered (<code>src/maker-inputs.js:368</code>), which is that entry's own rate and not a cost.</td></tr>
+<tr><td data-label="Risk"><code>position.mjs</code> gains an import</td><td data-label="How it is held">The Desk Worker already bundles <code>rules.mjs</code> (<code>src/book.js</code>, <code>src/worker.js</code>). No file under <code>stmt/</code> imports the engine. The build, the gate and both Workers' bundles prove it.</td></tr>
+<tr><td data-label="Risk">Lots in the suite under a minimum</td><td data-label="How it is held">16 test files call <code>latestCogs</code>. Any made-up salt lot under 12.5 units, or candy or oil under 10, now blends. Each is re-aimed with a dated note, never deleted. Two are known already: <code>test/verify.mjs</code> line 52234 (a salt lot with 10 of its 12.5 units received now reads MYR 74.40, not MYR 80) and the needle in <code>test/maker-trade-reading.mutations.json</code> line 95.</td></tr>
+<tr><td data-label="Risk">A small costly lot is not fully recovered</td><td data-label="How it is held">Chosen: a 1-unit lot at MYR 94 moves candy's cost only a tenth of the way. The next full lot sets the cost alone.</td></tr>
+<tr><td data-label="Risk">Prices move at once</td><td data-label="How it is held">Candy's list falls from MYR 95 to MYR 60 a unit on the next publish. Their % on candy (CI5-PER +25%, CZ4-MK -25%) rides on the board again (today every candy price is the MYR 95 Floor, whatever the %), and the Floor still holds under it: CZ4-MK at 30 units comes to about MYR 1,375, so it is held at the MYR 1,420 Floor. <span class="amb-claim amb-claim--estimate">Estimate</span> From the engine's <code>shareAt</code> at -25%; read off the price list after the build.</td></tr>
+<tr><td data-label="Risk">Past readings move</td><td data-label="How it is held">Beyond candy's own change from 17 Nov, only 23 Jul 2026 on salt (MYR 64 to MYR 60), in readings that work out past Floors (the evidence and the floor chart). No dated row changes.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="order"><h2 class="amb-section">The order of the work <span class="amb-section__note">one version, one commit a part</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step is-done"><span class="amb-step__title">Your answers</span><span class="amb-step__text">Given on 24 Nov 2026: blend by units, only up to the minimum, the minimums typed per book in the rules, and the two dates corrected by you.</span><span class="amb-chip amb-chip--pos">Done</span></li>
+<li class="amb-step is-now"><span class="amb-step__title">Your go</span><span class="amb-step__text">The build starts on your word, in its own worktree, level with origin and with no Actions run in flight.</span><span class="amb-chip">Next</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 1, the rules</span><span class="amb-step__text"><code>COST_MIN</code> in <code>engine/rules.mjs</code> and <code>PRICING_RULES</code>, its name in <code>NOT_LEDGER</code> (<code>tools/ledger.mjs</code>) and in <code>test/engine-rules.mjs</code>'s list, then <code>tools/engine.mjs --sync</code> and the gate.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 2, the engine</span><span class="amb-step__text">The blend in <code>latestCogs</code>; <code>lots</code> carried by the snapshot and the stack.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 3, the Workers</span><span class="amb-step__text">The drafter's note and flag, and the Workbench's words.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 4, the Desk</span><span class="amb-step__text">The six places in the master: the Floor line, the cost stack's replacement and freight lines, the freight figure's note, the Pricing basis caption, and the line on how the basis moved with the lot.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 5, the checks</span><span class="amb-step__text">The new section and the re-aimed ones.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 6, the words</span><span class="amb-step__text">The cost line of rule 5 and the cost basis at the head of <code>docs/DESK.md</code> (lines 9 to 17), <code>docs/PRODUCTS.md</code> sections 2 and 7, and <code>MEMORY.md</code>.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">The version</span><span class="amb-step__text">The queue asked about first. A fresh Opus stand-in at max reviews the diff (it touches money, and the Fable pass is owed), and the same reviewer re-checks its applied findings. Only then the full suite on the unbumped tree, so the tree pushed is the tree the suite passed. Then fetch, bump off origin's tip, changelog, build, gate and push, under your standing yes for salt-command. Then Actions, the live <code>/rev</code>, and candy read at MYR 60 on the live list.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Your step</span><span class="amb-step__text">Correct the dates of p059 and p060 on Salt Admin, by a Correction you approve.</span><span class="amb-chip">Yours</span></li>
+</ol></div>
+</section>
+
+<section class="amb-sec" id="proof"><h2 class="amb-section">How it is proved</h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li>A new section, "a small lot does not set the Floor" (<code>test/floor-small-lot.mjs</code>). Each check is proved red by its own mutation before its green counts.</li>
+<li>The suite's frozen book (<code>test/fixtures/book-frozen.json</code>) ends at p039 (13 Oct 2026), before candy's small lot, so nothing blends on it. On that book, every reading must stay identical to today's: that is the check that nothing else moved.</li>
+<li>Candy's case is carried in the section itself: lots p027, p031, p057 and p062 written out as literals. They must answer MYR 47.20 over 10 units, naming 1 unit of p057 and 9 of p031, and MYR 30 once p062 lands.</li>
+<li>Three mutations go red: counting the last lot whole (MYR 45.25), taking the oldest lot first, and ignoring the minimum (MYR 94).</li>
+<li>The page against the module: on a temporary <code>SALT_BOOK</code> holding those lots, and a master rendered from it with <code>syncText</code> (as <code>test/frozen.mjs</code> does) passed as <code>SALT_MASTER</code>, the Desk's master in jsdom, the module and the drafter all give candy MYR 47.20. So a Desk that kept the old rule (an import bound to the wrong name) is caught.</li>
+<li>Edge cases: lots that together fall short of the minimum are taken whole; a lot after the day, or a pending, defaulted or cancelled lot, is never counted in a blend; a partly landed lot counts over its received units; the same-day order holds; and a book <code>COST_MIN</code> does not name keeps today's rule.</li>
+<li>On the snapshot of that temporary book: candy's Floor is MYR 50 at 1 unit and its board MYR 60. Pricing parity (the book's inputs against the page) stays equal on both books.</li>
+<li>The drafter's note names each lot, and a drafted lot second in the blend raises the flag.</li>
+<li>The grep check: no other copy of the cost arithmetic.</li>
+<li>Then the full suite, CI's run on the push, and the Counter drawn with <code>counter-render</code> to read candy's prices.</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">One ask <span class="amb-section__note">with your go</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">The other way</th></tr></thead><tbody>
+<tr><td data-label="Ask">1. A new book opened by <code>tools/product.mjs</code></td><td data-label="Recommended">It says, when it opens the book, that the book prices off its latest lot alone until a version names it in <code>COST_MIN</code>.</td><td data-label="The other way">It refuses to open a book that <code>COST_MIN</code> does not name, so a version adds the minimum first.</td></tr>
+</tbody></table>
+<p class="amb-basis">Answered on 24 Nov 2026 and not asked again: blend by units; only up to the minimum; typed per book; in the rules; only fix the two dates. The minimums are the five you were shown: salt 12.5, oil 10, candy 10, rice 100, gas 1. If you want different figures, say so with your go.</p>
+</div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
