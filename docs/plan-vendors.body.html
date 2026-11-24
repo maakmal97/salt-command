@@ -1,0 +1,349 @@
+<div class="amb-shell" data-mood="slate">
+<main class="amb-screen">
+<header class="amb-hero amb-hero--doc amb-mesh">
+<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026</span>
+<h1 class="amb-hero__title">Vendors beside Customers, and Orders for both sides</h1>
+<p class="amb-hero__sub">Salt Admin gets a Vendors place built as the mirror of Customers: a list, a page for each vendor with its prices, deliveries and notes, and Log a purchase as the one way to record a purchase, the twin of Order for them. Orders holds sales and purchases in the same four stages, on one order card. Record goes, and each of its forms moves to the page it acts on. Pricing does not move.</p>
+<p class="amb-hero__time">salt-command at bae2a744, v1565 on master. Your answers of 24 Nov 2026. Reviewed by Fable on your test; its findings applied and re-checked. Plan only: nothing is built until your go.</p>
+</header>
+<div class="amb-doc">
+<nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
+<li><a class="amb-contents__link" href="#answers">Your answers</a></li>
+<li><a class="amb-contents__link" href="#mirror">One idea, two sides</a></li>
+<li><a class="amb-contents__link" href="#words">One word a spot</a></li>
+<li><a class="amb-contents__link" href="#today">Today, in the code</a></li>
+<li><a class="amb-contents__link" href="#vendors">Your vendors on the book today</a></li>
+<li><a class="amb-contents__link" href="#place">The Vendors place</a></li>
+<li><a class="amb-contents__link" href="#log">Log a purchase</a></li>
+<li><a class="amb-contents__link" href="#orders">Orders, both sides</a></li>
+<li><a class="amb-contents__link" href="#record">Record retired: every form's new home</a></li>
+<li><a class="amb-contents__link" href="#data">Where each thing lives</a></li>
+<li><a class="amb-contents__link" href="#money">The money road</a></li>
+<li><a class="amb-contents__link" href="#pricing">Pricing stays still</a></li>
+<li><a class="amb-contents__link" href="#surfaces">Salt Admin, Salt Counter and Salt Desk</a></li>
+<li><a class="amb-contents__link" href="#parts">The parts</a></li>
+<li><a class="amb-contents__link" href="#proof">How it is proved</a></li>
+<li><a class="amb-contents__link" href="#risks">Risks and how each is held</a></li>
+<li><a class="amb-contents__link" href="#review">Fable's review</a></li>
+<li><a class="amb-contents__link" href="#asks">Ask list</a></li>
+</ol></nav>
+<div class="amb-doc__body">
+
+<section class="amb-sec" id="answers"><h2 class="amb-section">Your answers <span class="amb-section__note">24 Nov 2026, not asked again</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">What it means here</th></tr></thead><tbody>
+<tr><td data-label="Question">Where Vendors sits</td><td data-label="Your answer">Customers for customers, Vendors for vendors, Orders for both; Record removed</td><td data-label="What it means here">Five places: Needs you, Orders, Customers, Vendors, Settings. Vendors takes Record's place in the rail. Designed for the day vendors need as strict a process as customers.</td></tr>
+<tr><td data-label="Question">How a purchase is logged</td><td data-label="Your answer">Like Order for them, called Log a purchase</td><td data-label="What it means here">From the vendor's page and its row in the list, and nowhere else.</td></tr>
+<tr><td data-label="Question">Who is a vendor</td><td data-label="Your answer">Anyone you bought from</td><td data-label="What it means here">Read from the purchases, by owner code (an associate's resale account is the associate), plus any code an Add ID made with the Vendor role. CM4-TO shows under Customers and Vendors both.</td></tr>
+<tr><td data-label="Question">A purchase order</td><td data-label="Your answer">A pending purchase</td><td data-label="What it means here">Today's road and Approve. A pending lot never moves cost.</td></tr>
+<tr><td data-label="Question">What is recorded</td><td data-label="Your answer">All of it</td><td data-label="What it means here">On each delivery: on time or late, quality, units short and a line of words; dated notes on the vendor; and what the dates and units show by themselves.</td></tr>
+<tr><td data-label="Question">Where notes are kept</td><td data-label="Your answer">The Book's contact log</td><td data-label="What it means here">Rows in <code>contacts</code>, sent as an edit and approved under Approve. Purchase rows never change for a note.</td></tr>
+<tr><td data-label="Question">How it ships</td><td data-label="Your answer">One version, many commits</td><td data-label="What it means here">Vendors arrives as Record goes, so the rail holds five places in every build that ships.</td></tr>
+<tr><td data-label="Question">Record's other forms</td><td data-label="Your answer">To the page each acts on, as listed</td><td data-label="What it means here">The table under "Record retired".</td></tr>
+<tr><td data-label="Question">Orders</td><td data-label="Your answer">Reconfigured so it makes sense for both</td><td data-label="What it means here">The four stages say who must act; each holds sales and purchases on the one order card, with counted filters for each side.</td></tr>
+</tbody></table>
+<p class="amb-basis">Your test for the plan, 24 Nov 2026: user familiarity and ease of use first, then one concept for the seller and its twin for the buyer, so that the parts work together and either can stand in for the other. Fable reviewed it on that test first, then the data path, the money road and pricing.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="mirror"><h2 class="amb-section">One idea, two sides <span class="amb-section__note">each buying thing is drawn by its selling twin's function</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Idea</th><th scope="col">Selling</th><th scope="col">Buying</th><th scope="col">The one function both call</th></tr></thead><tbody>
+<tr><td data-label="Idea">The place</td><td data-label="Selling">Customers</td><td data-label="Buying">Vendors</td><td data-label="The one function both call">One list drawer, from <code>drawRoster</code>, with a side: find, counted filters, groups by what waits on you, the page beside from 960px</td></tr>
+<tr><td data-label="Idea">A row</td><td data-label="Selling">Code, one line, one small pill</td><td data-label="Buying">Code, one line, Log a purchase as the pill</td><td data-label="The one function both call">One row builder, from <code>acctRowNodes</code></td></tr>
+<tr><td data-label="Idea">Who</td><td data-label="Selling">A customer, by code</td><td data-label="Buying">A vendor, by owner code</td><td data-label="The one function both call">A roster code; the name and place sealed in the vault, shown on this device with Show names</td></tr>
+<tr><td data-label="Idea">Adding one</td><td data-label="Selling">New customer</td><td data-label="Buying">New vendor</td><td data-label="The one function both call">The Add ID form, its Role set to Customer or Vendor</td></tr>
+<tr><td data-label="Idea">Their page</td><td data-label="Selling">The account card</td><td data-label="Buying">The vendor page</td><td data-label="The one function both call">One party page frame, lifted from <code>acctCard</code>: head and big figure, Where it stands, Orders, the side's own groups, Notes, Loans, Also a, the end group, one pill at the foot</td></tr>
+<tr><td data-label="Idea">The big figure</td><td data-label="Selling">What they owe you, else goods to hand over</td><td data-label="Buying">To pay, else On the way, else On order, else Owed back</td><td data-label="The one function both call"><code>acctFig</code>'s order of cases, with a side</td></tr>
+<tr><td data-label="Idea">Their orders</td><td data-label="Selling">An Orders group: the row ("1 open, 12 done") and Order for them</td><td data-label="Buying">An Orders group: the row and Log a purchase</td><td data-label="The one function both call">One group, in the same place on both pages; the row opens Orders found by the code</td></tr>
+<tr><td data-label="Idea">Starting an order</td><td data-label="Selling">Order for them: opens their own page to order as them</td><td data-label="Buying">Log a purchase: opens a sheet, as there is no vendor page to open; also the foot's pill and the row's pill</td><td data-label="The one function both call">The same action row in the same group</td></tr>
+<tr><td data-label="Idea">An order</td><td data-label="Selling">The order card</td><td data-label="Buying">The same card</td><td data-label="The one function both call">One card function with a side: one stage pill, one Change row opening one Change sheet, Cancel last</td></tr>
+<tr><td data-label="Idea">Price</td><td data-label="Selling">This customer's last rates</td><td data-label="Buying">Each book's last lots, the live quote, Compare</td><td data-label="The one function both call">One rate tile with its spark line, lifted out of <code>paintCust</code> (776 to 785)</td></tr>
+<tr><td data-label="Idea">Notes</td><td data-label="Selling">Notes, on the account card</td><td data-label="Buying">Notes and delivery marks, on the vendor page</td><td data-label="The one function both call">One journal of the contact log (<code>amb-journal</code>) and Add a note</td></tr>
+<tr><td data-label="Idea">Loans</td><td data-label="Selling">On their page</td><td data-label="Buying">On their page</td><td data-label="The one function both call"><code>drawBooks</code> (CM4-TO has lent you stock three times)</td></tr>
+<tr><td data-label="Idea">Both at once</td><td data-label="Selling">Also a vendor</td><td data-label="Buying">Also a customer</td><td data-label="The one function both call">One row, opening the other page: one code, two pages</td></tr>
+<tr><td data-label="Idea">A form moved off Record</td><td data-label="Selling">One row opening a sheet</td><td data-label="Buying">One row opening a sheet</td><td data-label="The one function both call">The same group heads on both pages</td></tr>
+</tbody></table>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">Room for a stricter process later</span>A vendor is a roster code with its name and place in the vault, its state worked out the way a customer's is (To do, Pending, FYI), and its page drawn by the account card's own frame. A vendor sign-in or a statement of account could hang on the same code later; neither is built here, and nothing on the Salt Counter changes.</span></div>
+</div>
+</section>
+
+<section class="amb-sec" id="words"><h2 class="amb-section">One word a spot <span class="amb-section__note">each buying word is its selling twin's, in the same spot</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Act</th><th scope="col">Where</th><th scope="col">Selling</th><th scope="col">Buying</th></tr></thead><tbody>
+<tr><td data-label="Act">Who</td><td data-label="Where">On screen</td><td data-label="Selling">Customer</td><td data-label="Buying">Vendor (the Role "Supplier" becomes "Vendor"; the stored key <code>supplier</code> and the Add ID kind stay)</td></tr>
+<tr><td data-label="Act">Start</td><td data-label="Where">Their page</td><td data-label="Selling">Order for them</td><td data-label="Buying">Log a purchase</td></tr>
+<tr><td data-label="Act">New</td><td data-label="Where">Approve</td><td data-label="Selling">New sale</td><td data-label="Buying">New purchase</td></tr>
+<tr><td data-label="Act">Money</td><td data-label="Where">The card's head</td><td data-label="Selling">Money received</td><td data-label="Buying">Money paid</td></tr>
+<tr><td data-label="Act">Money</td><td data-label="Where">The Change sheet's field</td><td data-label="Selling">Received now, RM</td><td data-label="Buying">Paid now, RM (and in Log a purchase)</td></tr>
+<tr><td data-label="Act">Money</td><td data-label="Where">Approve</td><td data-label="Selling">Payment received</td><td data-label="Buying">Payment made</td></tr>
+<tr><td data-label="Act">Goods</td><td data-label="Where">The pill, the Change sheet, the stage words</td><td data-label="Selling">Handed over</td><td data-label="Buying">Goods received (and in Log a purchase), never "Received" alone, which the sale's sheet uses for money</td></tr>
+<tr><td data-label="Act">Goods</td><td data-label="Where">Approve</td><td data-label="Selling">Handover</td><td data-label="Buying">Goods received</td></tr>
+<tr><td data-label="Act">End</td><td data-label="Where">Card, Approve</td><td data-label="Selling">Cancel the order, Write off</td><td data-label="Buying">Cancel the order, Never delivered</td></tr>
+<tr><td data-label="Act">Money</td><td data-label="Where">Every figure on screen</td><td data-label="Selling">RM</td><td data-label="Buying">RM</td></tr>
+</tbody></table>
+<p class="amb-basis">Retired with Correct a row: "Paid the supplier", "Goods received" as a choice, "Nothing arrived" (<code>stmt/owner.js</code> 3097 to 3100). No screen says "supplier" in any case; the five refusals that send you to "Record, New customer" (<code>owner.js</code> 1311 to 1315) send you to New vendor or New customer at the head of its list. Every word sits in one table in <code>owner.js</code>, so a card, a sheet and Approve cannot say one act two ways. In a list showing both sides, a row carries a Sale or Purchase chip.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="today"><h2 class="amb-section">Today, in the code <span class="amb-section__note">read at bae2a744</span></h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li>Salt Admin has five places: Needs you, Orders, Customers, Record and Settings (<code>stmt/page.js</code> 663, parts at 671). <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>A purchase is entered only on Record, Entry, Sale or purchase (<code>stmt/owner.js</code> 4322 to 4590): Who from, Book, Date, Units, Price, Freight, Handed over, Cash paid, Handover, Add a book. Send posts <code>/all/maker/inputs/purchase</code> and the entry waits under Approve. <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>A lot's later moves (Payment, Receipt, Default, Correction, Cancellation) are on Correct a row (<code>owner.js</code> 3338, <code>kindsFor</code> 3408), posting <code>/all/maker/inputs/ledger-amend</code>. <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>Elsewhere a purchase shows only as an Approve card (<code>owner.js</code> 6536 to 6588), the Next lot column of Stock by book on Needs you (<code>drawStockBooks</code>, 8574), and the cost line on a sale's order card (<code>billCost</code>, 5318). Salt Admin has no purchase list, no purchase history and no vendor view. <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>A sale's order card has one stage pill (<code>ordMoveGhost</code>, 4958), one Change row opening one sheet for every change (your answer of 17 Nov 2026), and Cancel last. <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>On the account card, Order for them is an action row in the Sign-in group (527 to 530) that opens their own page (<code>makerForAccount</code>, 4779); the foot's one pill is Send a sign-in link. The card has no list of the customer's orders; its one spark line is drawn by hand in <code>paintCust</code> (776 to 785). <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>The statements Worker holds no purchase. Salt Admin's readings come from the Desk Worker over the maker bridge (<code>stmt/maker.js</code> <code>deskCall</code>, 116 to 174), which reads the Book (<code>readBook</code>); <code>customer-of/&lt;CODE&gt;</code> is the model for a reading by code (<code>src/worker.js</code> 1140, <code>src/maker-inputs.js</code> 289). <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li>The Desk's Sourcing tab (<code>master/salt_command.html</code> 14984) is the only vendor view anywhere: <code>supplierStats</code> (14943), its one caller, gives one row a supplier for the chosen book, and <code>drawSourcingCharts</code> (17031) a bar a lot. It reads the page's globals <code>PROD</code> and <code>TODAY</code>. <span class="amb-claim amb-claim--verified">Verified</span></li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="vendors"><h2 class="amb-section">Your vendors on the book today <span class="amb-section__note">64 purchases, 6 vendors, MYR</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Vendor</th><th scope="col">Lots</th><th scope="col">Bought, MYR</th><th scope="col">Quote a unit, MYR</th><th scope="col">First and last</th><th scope="col">Stands now</th></tr></thead><tbody>
+<tr><td data-label="Vendor"><code>SA5-BTR</code></td><td data-label="Lots">33: 32 landed, 0 open, 1 ended</td><td data-label="Bought, MYR">41,825 goods, 541 freight</td><td data-label="Quote a unit, MYR">salt 44 to 64 (newest landed 53, p058)</td><td data-label="First and last">2026-07-08 to 2026-11-18</td><td data-label="Stands now">nothing open</td></tr>
+<tr><td data-label="Vendor"><code>SP7-PUD</code></td><td data-label="Lots">19: 17 landed, 2 open, 0 ended</td><td data-label="Bought, MYR">5,534 goods, 134 freight</td><td data-label="Quote a unit, MYR">oil 7 to 8 (newest landed 7.6, p060); gas 50 to 70 (newest landed 54.67, p059)</td><td data-label="First and last">2026-08-06 to 2026-11-27</td><td data-label="Stands now">MYR 480 on order</td></tr>
+<tr><td data-label="Vendor"><code>SM4-KEP</code></td><td data-label="Lots">6: 6 landed, 0 open, 0 ended</td><td data-label="Bought, MYR">2,709 goods, 70 freight</td><td data-label="Quote a unit, MYR">oil 7.67 (newest landed 8.17, p022); candy 38 to 69 (newest landed 94, p057); rice 3.2 (newest landed 3.3, p045)</td><td data-label="First and last">2026-09-04 to 2026-11-22</td><td data-label="Stands now">nothing open</td></tr>
+<tr><td data-label="Vendor"><code>SF6-KLC</code></td><td data-label="Lots">3: 2 landed, 0 open, 1 ended</td><td data-label="Bought, MYR">2,350 goods, 0 freight</td><td data-label="Quote a unit, MYR">salt 60 to 64 (newest landed 64, p002)</td><td data-label="First and last">2026-06-27 to 2026-07-08</td><td data-label="Stands now">MYR 750 owed back, written off 2026-07-31</td></tr>
+<tr><td data-label="Vendor"><code>CM4-TO</code> (with <code>CM4-TO-R</code>)</td><td data-label="Lots">2: 1 landed, 1 open, 0 ended</td><td data-label="Bought, MYR">295 goods, 0 freight</td><td data-label="Quote a unit, MYR">rice 2.95 (newest landed 2.95, p056); candy 30</td><td data-label="First and last">2026-11-15 to 2026-11-22</td><td data-label="Stands now">MYR 900 on order</td></tr>
+<tr><td data-label="Vendor"><code>SD4-KB</code></td><td data-label="Lots">1: 0 landed, 1 open, 0 ended</td><td data-label="Bought, MYR">650 goods, 0 freight</td><td data-label="Quote a unit, MYR">salt 52</td><td data-label="First and last">2026-11-22 to 2026-11-22</td><td data-label="Stands now">12.5 units on the way, paid</td></tr>
+</tbody></table>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> Worked out by a script over <code>ledger/book.json</code> at bae2a744 with the engine's own lot readers (<code>poRecvUnits</code>, <code>poCash</code>, <code>ownerCode</code>). Goods count every lot not pending and not cancelled, a defaulted lot included (it was paid). "Newest landed" is that lot's own quote and freight over its received units, not the book's cost. <code>CM4-TO-R</code> is <code>CM4-TO</code>'s resale account (<code>engine/position.mjs</code> 1694 to 1695), so its lot p062 sits on <code>CM4-TO</code>'s page, as the account card already folds it.</p>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">What the dates can tell today</span>Of the 55 landed lots with a receiving day, 48 read as landing the day they were ordered, 6 a day or two later, and p057 five days before its own date (its date was moved forward by a correction). Most lots were logged when they landed, so lead time is thin until purchase orders are logged when placed; the page says so beside the figure. No lot is marked short today: p057 was corrected from 30 units to 1, which keeps no trace of the 29 that never came. A delivery mark keeps that from now on. <span class="amb-claim amb-claim--verified">Verified</span> The same script. p059 and p060, dated 27 Nov, are yours to correct (the small-lot plan).</span></div>
+</div>
+</section>
+
+<section class="amb-sec" id="place"><h2 class="amb-section">The Vendors place <span class="amb-section__note">the mirror of Customers, part by part</span></h2>
+<div class="amb-stack">
+<p class="amb-prose">Two parts in the place's tab row: <strong>Vendors</strong> (the list, the twin of Accounts) and <strong>Compare</strong> (each book's vendors side by side). The list and a page beside it from 960px, the page in the list's place below that, as Accounts does.</p>
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">On the list</th><th scope="col">What it shows</th><th scope="col">Its twin on Accounts</th></tr></thead><tbody>
+<tr><td data-label="On the list">Head</td><td data-label="What it shows">New vendor; find a code; filters All, To pay, On order, Late, Quiet, each counted</td><td data-label="Its twin on Accounts">The find field and the filter menu (<code>aFilter</code>, <code>FILTER</code>)</td></tr>
+<tr><td data-label="On the list">Groups</td><td data-label="What it shows">To do (a lot landed and unpaid, a lot late), Pending (orders open), FYI (the rest)</td><td data-label="Its twin on Accounts"><code>acctState</code>'s now, soon and watch</td></tr>
+<tr><td data-label="On the list">A row</td><td data-label="What it shows">The code (the name with Show names), each book's mark, one line ("RM 480 on order, 2 lots"), Log a purchase as its pill</td><td data-label="Its twin on Accounts">The row builder: code, line, one small pill</td></tr>
+<tr><td data-label="On the list">Foot</td><td data-label="What it shows">"6 vendors"</td><td data-label="Its twin on Accounts">"N accounts"</td></tr>
+</tbody></table>
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">On the vendor page, in order</th><th scope="col">What it shows</th><th scope="col">Its twin on the account card</th><th scope="col">Ambient part</th></tr></thead><tbody>
+<tr><td data-label="On the vendor page, in order">Head</td><td data-label="What it shows">Code, state chip, books; the big figure: To pay, else On the way, else On order, else Owed back</td><td data-label="Its twin on the account card">Head and <code>acctFig</code></td><td data-label="Ambient part"><code>amb-section</code>, <code>amb-chip</code>, <code>amb.stat</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Where it stands</td><td data-label="What it shows">On order, On the way, To pay, Owed back (a cancelled paid lot, or <code>supplierReceivable</code>), Written off</td><td data-label="Its twin on the account card">Where it stands (<code>aGroup</code>, <code>aLine</code>)</td><td data-label="Ambient part"><code>amb-list</code>, <code>amb-row</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Orders</td><td data-label="What it shows">"2 open, 17 done", opening Orders found by this code; Log a purchase</td><td data-label="Its twin on the account card">The same group: the row and Order for them</td><td data-label="Ambient part"><code>amb-row</code>, <code>amb-action</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Prices</td><td data-label="What it shows">A rate tile a book: the newest lot's landed rate a unit, its range and the last six lots as a spark line; the live quote's tiers when this vendor holds the book's quote, read only; the book's cost now, from the trade reading, named as such. Then two rows that open a sheet: Price history (a bar a lot, the last twelve, the figures beside it) and Spend (by month, goods and freight, and this vendor's share of each book's buying)</td><td data-label="Its twin on the account card">This customer's rate tile</td><td data-label="Ambient part"><code>amb-tile__spark</code>, <code>amb-chart</code>, <code>amb-sheet</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Deliveries</td><td data-label="What it shows">Lead time (median days from ordered to received), on time, short (units short over units ordered), quality, cancelled, never delivered; the last 90 days beside all time</td><td data-label="Its twin on the account card">Habits (<code>habitRows</code>)</td><td data-label="Ambient part"><code>amb-row--meter</code>, <code>amb-meter</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Notes</td><td data-label="What it shows">The contact log for this code, newest first, with Add a note</td><td data-label="Its twin on the account card">The same group</td><td data-label="Ambient part"><code>amb-journal</code>, <code>amb-action</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Loans</td><td data-label="What it shows">Loans with this code, Lend or borrow, Repaid</td><td data-label="Its twin on the account card">Loans and reward</td><td data-label="Ambient part"><code>amb-list</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Also a customer</td><td data-label="What it shows">Only when the code has an account or a sale</td><td data-label="Its twin on the account card">Also a vendor</td><td data-label="Ambient part"><code>amb-row</code></td></tr>
+<tr><td data-label="On the vendor page, in order">End</td><td data-label="What it shows">Change a name or place, Place on the map</td><td data-label="Its twin on the account card">The end group</td><td data-label="Ambient part"><code>amb-action</code></td></tr>
+<tr><td data-label="On the vendor page, in order">Foot</td><td data-label="What it shows">One pill: Log a purchase</td><td data-label="Its twin on the account card">One pill: Send a sign-in link</td><td data-label="Ambient part"><code>amb-foot</code>, <code>amb-pill</code></td></tr>
+</tbody></table>
+<p class="amb-basis">The lots themselves are not listed on the page: the Orders row opens them on Orders, where each is a card. Compare: a book chosen by its tab, one row a vendor who sold it, newest landed a unit, the median, lots, units, lead time, on time, last bought (<code>amb-table--compare</code>): the Desk's Sourcing figures, drawn on Salt Admin.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="log"><h2 class="amb-section">Log a purchase <span class="amb-section__note">the twin of Order for them</span></h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li>Opened from the vendor page's Orders group and foot, and from each vendor row's pill: a sheet with the vendor filled in and fixed. A vendor not on the list yet is added first with New vendor; a purchase may name a vendor whose Add ID waits under Approve, as today.</li>
+<li>Its fields are Record's purchase fields in the same order: Book, Units, Price, Freight, Paid now (RM), Goods received now, Handover, Ordered on; and one new, <strong>Expected</strong> (the day you expect it, optional), shown only while the lot is not wholly received, so a landed lot is never given a day ahead of it. Add a book stays and carries Expected too.</li>
+<li>Its reading is today's: the cost a unit against the book's cost now (<code>/all/maker/trade-reading</code>). A read; it never holds Send.</li>
+<li>Send posts <code>/all/maker/inputs/purchase</code> with the body Record's form sends today, key for key, plus <code>expectedOn</code>. It is kept on the phone until the Desk confirms it, under the same storage key, so an entry kept today still sends from here. It waits under Approve.</li>
+<li>Nothing paid and nothing received books a purchase order (pending). Paid only books it on the way. Goods received books it landed. Rate the delivery shows on its card once the lot is booked (a lot has no rid before Approve).</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="orders"><h2 class="amb-section">Orders, both sides <span class="amb-section__note">the four stages say who must act</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Stage</th><th scope="col">Sales</th><th scope="col">Purchases</th></tr></thead><tbody>
+<tr><td data-label="Stage">To do</td><td data-label="Sales">Placed, to accept; a payment they say they sent</td><td data-label="Purchases">Goods received, unpaid; Late (past its expected day, no goods received); goods short</td></tr>
+<tr><td data-label="Stage">Open</td><td data-label="Sales">Agreed, Ready, Out or paid</td><td data-label="Purchases">Ordered (nothing paid, no goods received), On the way (paid), Goods part received</td></tr>
+<tr><td data-label="Stage">Done</td><td data-label="Sales">Handed over and paid</td><td data-label="Purchases">Goods received and paid</td></tr>
+<tr><td data-label="Stage">Ended</td><td data-label="Sales">Cancelled, written off</td><td data-label="Purchases">Cancelled, never delivered</td></tr>
+</tbody></table>
+<ul class="amb-prose">
+<li>Filters All, Sales and Purchases, each counted, under the stage tabs; the find field takes any code on either side; in All each row carries a Sale or Purchase chip.</li>
+<li><strong>One order card, with a side.</strong> A purchase is drawn by the sale card's own function: the vendor's code, the book's mark, units and total, the stage words above, and the same three controls. One stage pill: Goods received while goods are due, then Money paid once the goods are in and money is owed. One Change row opening the one Change sheet: Paid now (RM), Goods received, units, price, freight and Expected, each a field, as a sale's Change sheet holds a sale's. Cancel the order and Never delivered last, as danger rows. Rate the delivery is asked inside Goods received (on time, quality, units short, a line); a later mark, like Late's note, is a row in the card's log, so the controls stay three.</li>
+<li>To pay and Money paid's figure are the engine's own <code>oweRM</code> (<code>engine/position.mjs</code> 1237): the total less what was paid, freight outside it, which is what the lot's guard measures. <span class="amb-claim amb-claim--verified">Verified</span> On the book, 19 of the 26 lots with freight were paid their total and 6 their total plus freight, so the freight is said beside the figure, never folded into it.</li>
+<li>Late has no act of its own: Add a note with a follow-up day, a row in the card's log, the day kept in the note's <code>next</code>.</li>
+<li>Needs you gains the purchase cards of To do, in the Action card's one shape.</li>
+<li>Sales still come from the order book and purchases from the Book. The page draws them together and stores nothing together: orders and the book stay two objects (your answer of 25 Oct 2026).</li>
+<li>Approve, Payments they sent and Ledger check are unchanged.</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="record"><h2 class="amb-section">Record retired: every form's new home <span class="amb-section__note">what each form sends is unchanged</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Form on Record today</th><th scope="col">Its new home</th></tr></thead><tbody>
+<tr><td data-label="Form on Record today">Sale or purchase, new</td><td data-label="Its new home">Log a purchase (a new sale is already placed with Order for them)</td></tr>
+<tr><td data-label="Form on Record today">Sale or purchase, a row changed</td><td data-label="Its new home">The order card's Change sheet, also opened from a row of Ledger check</td></tr>
+<tr><td data-label="Form on Record today">Correct a row (Payment, Receipt, Default, Correction, Cancellation)</td><td data-label="Its new home">A purchase's order card: its pill, its Change sheet, its two danger rows</td></tr>
+<tr><td data-label="Form on Record today">Reopen a cancelled order</td><td data-label="Its new home">The order card under Ended</td></tr>
+<tr><td data-label="Form on Record today">Loan, Repayment</td><td data-label="Its new home">Loans on the customer's or vendor's page</td></tr>
+<tr><td data-label="Form on Record today">Gift, Rewards</td><td data-label="Its new home">The account card</td></tr>
+<tr><td data-label="Form on Record today">Offsets</td><td data-label="Its new home">The page of the party whose debts it sets against each other</td></tr>
+<tr><td data-label="Form on Record today">Stock count</td><td data-label="Its new home">Needs you, Stock by book: Count</td></tr>
+<tr><td data-label="Form on Record today">New customer</td><td data-label="Its new home">The head of Customers' list; with Role Vendor, New vendor at the head of Vendors'</td></tr>
+<tr><td data-label="Form on Record today">Make an associate</td><td data-label="Its new home">The account card</td></tr>
+<tr><td data-label="Form on Record today">Change a name or place, Place on the map</td><td data-label="Its new home">The end group of either page</td></tr>
+<tr><td data-label="Form on Record today">Printed sizes, Desk reminders</td><td data-label="Its new home">Settings, a new Pricing part</td></tr>
+</tbody></table>
+<ul class="amb-prose">
+<li>Each moved form arrives as one row opening a sheet, under the same group heads on both pages.</li>
+<li>Every control keeps its <code>data-act</code> and <code>data-key</code> (the <code>record.*</code> names outlive the place, as <code>shop.*</code> outlived Shop); a new control gets a new act and a row in the act table of <code>docs/STATEMENTS.md</code>.</li>
+<li>The old addresses land on the new homes: <code>#record</code> and <code>#record/entry</code> on Vendors, <code>#record/customers</code> on Customers, <code>#record/pricing</code> on Settings, Pricing. The page's own jumps to Record (<code>owner.js</code> 878, 886, 2774, 7520, 8122) are re-aimed one by one.</li>
+<li>An entry kept on the phone and not yet confirmed still shows in the banner over every place and as a Soon card on Needs you; Send again, Update and send and Discard move with its form to the new home.</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="data"><h2 class="amb-section">Where each thing lives <span class="amb-section__note">the Book is the source since 10 Nov 2026</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Thing</th><th scope="col">Where it lives</th><th scope="col">Written by</th><th scope="col">Read by</th></tr></thead><tbody>
+<tr><td data-label="Thing">A vendor</td><td data-label="Where it lives">No record of its own: the owner code of each purchase's <code>supplier</code>, and each roster code an Add ID made with the Vendor role</td><td data-label="Written by">Log a purchase; New vendor (Add ID)</td><td data-label="Read by">The vendor readings</td></tr>
+<tr><td data-label="Thing">Its name and place</td><td data-label="Where it lives">The vault pair, ciphertext only</td><td data-label="Written by">New vendor; Change a name or place</td><td data-label="Read by">This device alone</td></tr>
+<tr><td data-label="Thing">A purchase order</td><td data-label="Where it lives">A purchase row with <code>pending: true</code></td><td data-label="Written by">Log a purchase, Approve, the tap</td><td data-label="Read by">The readings; cost passes it over (<code>poLive</code>)</td></tr>
+<tr><td data-label="Thing">The expected day</td><td data-label="Where it lives">A new optional key <code>expectedOn</code> on the purchase row, kept after it lands so on time reads off the dates</td><td data-label="Written by">Log a purchase; the Change sheet</td><td data-label="Read by">The readings alone</td></tr>
+<tr><td data-label="Thing">A delivery mark</td><td data-label="Where it lives">A <code>contacts</code> row: <code>{date, party, how: "delivery", lot, onTime, quality, short, note, at}</code></td><td data-label="Written by">The edit kind <code>lotMark</code>, approved</td><td data-label="Read by">The vendor page, the order card</td></tr>
+<tr><td data-label="Thing">A note</td><td data-label="Where it lives">A <code>contacts</code> row: <code>{date, party, how: "note", next, note, at}</code></td><td data-label="Written by">The edit kind <code>partyNote</code>, approved</td><td data-label="Read by">Both pages</td></tr>
+<tr><td data-label="Thing">The live quote</td><td data-label="Where it lives"><code>QUOTES</code>, a Book document</td><td data-label="Written by">As today, no road on Salt Admin</td><td data-label="Read by">The vendor page, read only</td></tr>
+<tr><td data-label="Thing">Money owed back</td><td data-label="Where it lives"><code>supplierReceivable</code>; a cancelled lot that was paid</td><td data-label="Written by">As today</td><td data-label="Read by">The vendor page</td></tr>
+</tbody></table>
+<ul class="amb-prose">
+<li><strong>The readings.</strong> <code>GET /all/maker/vendors</code> (the list, with each vendor's open and recent lots, which Orders and Needs you draw too) and <code>GET /all/maker/vendor-of/&lt;CODE&gt;</code> (one page), relayed to the Desk Worker's <code>/_internal/maker/vendors</code> and <code>/_internal/maker/vendor-of/&lt;CODE&gt;</code>, allowed in the same places as <code>customer-of</code> (<code>stmt/maker.js</code> 141 and 474, <code>src/worker.js</code> 923 and 1140). Each reads <code>readBook</code> with the lots sent and not yet approved (<code>withDraftLots</code>), shown as waiting under Approve. GET only, priced by nothing, codes only: no name or place is in an answer.</li>
+<li><strong>The figures.</strong> The Desk's <code>supplierStats</code> moves into <code>engine/position.mjs</code> as <code>vendorStats(lots, today)</code>, taking the lots and the day rather than the page's <code>PROD</code> and <code>TODAY</code>, with lead time and short per lot beside it. A lot's own rate comes from its own helper (its quote and freight over its received units), never from <code>latestCogs</code>, which the small-lot plan makes blend. The Desk calls it through a one-line wrapper (as <code>ledgerBuy</code> became one over <code>txStat</code>), and the readings call the same function: one copy, two drawings.</li>
+<li><strong>The contact log.</strong> Two new kinds on the existing <code>edit</code> entry (<code>makerEdit</code>, <code>src/maker-inputs.js</code> 1011; <code>editEntry</code>, <code>engine/position.mjs</code> 470; the drafter at 1520; the plan and apply at <code>engine/apply.mjs</code> 899 and 1231). The draft table's CHECK already names <code>edit</code> (<code>migrations/0024</code> line 17), so no migration. <code>EDIT_PURE</code> in <code>src/book.js</code> gains <code>contacts</code>. A mark names its lot as <code>lot</code>, never <code>rid</code>: the Book keys any row that carries a <code>rid</code> by it (<code>src/book.js</code> 100) across every list, so a mark holding p063 would stand in for p063 itself; a check refuses any <code>contacts</code> row with a <code>rid</code>. A row carries its <code>at</code>, so two like notes on one day stay two rows.</li>
+<li><strong>Names stay off the cloud.</strong> A note's words are checked on this device against the vault, case folded: a name is matched on any of its words of three letters or more (a first name typed alone is the likeliest slip), a place as a whole phrase (its words alone are often common ones), and the note is refused on a match. The same check runs again on the Approve card before it books, on the device that approves. With the vault shut, a note waits with "Open the vault to check the words"; a mark with no words needs no vault. The Workers also refuse a note over 300 characters, a code off the roster, or a mark on a lot whose vendor's owner code is not the page's (so p062, sold by <code>CM4-TO-R</code>, is marked from <code>CM4-TO</code>'s page).</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="money"><h2 class="amb-section">The money road <span class="amb-section__note">no new road for money</span></h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li><strong>Log a purchase</strong> posts today's route and body (plus <code>expectedOn</code>): <code>makerTradeEntry</code>'s checks (the vendor on the roster or a pending Add ID, the twin guard, <code>src/maker-inputs.js</code> 43 to 98), the drafter, Approve, the tap, and the replay guard on vendor, book, date, total and units (<code>engine/apply.mjs</code> 743 to 754). A new lot has no money on it yet, so there is nothing for <code>rowRoom</code> to measure, as today. <span class="amb-claim amb-claim--verified">Verified</span></li>
+<li><strong>The purchase card's pill, Change sheet and danger rows</strong> post today's <code>/all/maker/inputs/ledger-amend</code> with today's body (<code>{at, rid, kind, date}</code> and the cash, units or fields). <code>makerAmendmentRoom</code> (<code>src/maker-inputs.js</code> 1237 to 1264) runs in the route itself (<code>src/worker.js</code> 1401 and 1482), whichever page posts, and reads <code>rowRoom(db, "BUY")</code> (<code>src/orders.js</code> 1226 to 1259): a payment past what the lot can still take is refused, money on its way is held back, and Cancel and Never delivered are refused while money is on its way. At Approve the tap's <code>bookEntry</code> calls <code>planBatch</code> (<code>src/book.js</code> 190 to 195), which carries the draft row's paid figure as <code>drafted</code> (<code>engine/apply.mjs</code> 519 and 716) and calls <code>payFault</code> (<code>engine/position.mjs</code> 1379), refusing a payment measured before other money reached the lot. <span class="amb-claim amb-claim--verified">Verified</span> by Fable in the code; a check in Part 7 drives it.</li>
+<li><strong>Marks and notes carry no money.</strong> The two edit kinds refuse any cash, units, total or price, and write <code>contacts</code> alone.</li>
+<li>So the plan moves two forms onto new pages and adds no road. The check: every control on a purchase card posts one of those two routes with those bodies, and a mutation that sends anything else, or sends a payment without its <code>rid</code>, turns it red.</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="pricing"><h2 class="amb-section">Pricing stays still <span class="amb-section__note">every Floor byte for byte</span></h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li>No part touches <code>latestCogs</code>, <code>poLive</code>, <code>poRecvUnits</code>, <code>poCash</code>, <code>poRate</code>, <code>lotAlloc</code>, <code>stockBasis</code>, the snapshot or the pricing engine's steps. A lot moves cost when it lands, exactly as today.</li>
+<li><code>expectedOn</code> is the one new key on a purchase row, refused on a sale (the correctable keys are shared by both sides) and carried on each extra book of a trade (<code>makerTradeBatch</code>, <code>src/maker-inputs.js</code> 139). None of the cost readers names it: they read <code>qty</code>, <code>total</code>, <code>freight</code>, <code>receivedOn</code>, <code>receivedQty</code>, <code>date</code>, <code>rid</code>, <code>pending</code>, <code>defaulted</code>, <code>cancelled</code>, <code>inTransit</code>, <code>cash</code> and <code>status</code>. <span class="amb-claim amb-claim--verified">Verified</span> in <code>engine/position.mjs</code> 759 to 921. The check: the PRICING snapshot built from the frozen book with <code>expectedOn</code> on every row equals the one without, byte for byte (<code>pricingFromBook</code>, <code>pricingDiffer</code>).</li>
+<li><code>contacts</code> is read by no engine file. In the master it is listed (<code>BOOK_LISTS</code>, <code>BOOK_BASES</code>), taken by the Desk's own contact entries, and read by the no-reply follow-up, which takes only <code>outcome: "noreply"</code> (master 18408); the new rows carry no outcome. <span class="amb-claim amb-claim--verified">Verified</span> by grep. The check: the follow-up list and every pricing figure equal on a book with the new rows and without.</li>
+<li>Moving <code>supplierStats</code> into the engine changes the master's generated ENGINE block. The gate's pricing parity and the Desk's Sourcing figures on the frozen book must read the same before and after.</li>
+<li>The vendor page shows each lot's own rate and says so; the book's cost a unit is the trade reading's, labelled "Cost a unit now", never worked out on the page.</li>
+</ul>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">With the small-lot plan (filed 24 Nov 2026, not built)</span>That plan changes the body of <code>latestCogs</code> and adds <code>COST_MIN</code> to <code>engine/rules.mjs</code>; this one adds functions beside it and touches <code>editEntry</code> and <code>tradeEntry</code>. They share <code>engine/position.mjs</code> and the master's ENGINE block, not a function. Either may land first; the second re-syncs the block (<code>tools/engine.mjs --sync</code>) and runs the pricing parity again. <code>vendorStats</code>'s check runs with <code>COST_MIN</code> present, so p057 still reads its own MYR 94 a unit after small-lot lands, while "Cost a unit now" follows small-lot with no change here: the page shows both, each with its words.</span></div>
+</div>
+</section>
+
+<section class="amb-sec" id="surfaces"><h2 class="amb-section">Salt Admin, Salt Counter and Salt Desk <span class="amb-section__note">a statements Worker change maps onto both of its surfaces</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Surface</th><th scope="col">What changes</th></tr></thead><tbody>
+<tr><td data-label="Surface">Salt Admin</td><td data-label="What changes">Everything above.</td></tr>
+<tr><td data-label="Surface">Salt Counter</td><td data-label="What changes">Nothing, item by item: no vendor signs in; <code>OWNER_JS</code> is spliced only on your route, and the suite proves a customer's page carries none of it; the readings sit under <code>/all/maker/</code> behind Access and the owner check; a statement reads no purchase and no contact row (nothing under <code>stmt/</code> reads either); CM4-TO sees only its own orders, as today; no word is added to <code>stmt/words.js</code>; and an expected day never reaches the price list's restock date (Ask B).</td></tr>
+<tr><td data-label="Surface">Salt Desk</td><td data-label="What changes">The Sourcing tab reads the shared <code>vendorStats</code> through its wrapper and shows the same figures. The new contact rows show nowhere on the Desk.</td></tr>
+<tr><td data-label="Surface">Salt QR</td><td data-label="What changes">Nothing.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="parts"><h2 class="amb-section">The parts <span class="amb-section__note">one version, one commit a part</span></h2>
+<div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step is-done"><span class="amb-step__title">Your answers</span><span class="amb-step__text">Given on 24 Nov 2026.</span><span class="amb-chip amb-chip--pos">Done</span></li>
+<li class="amb-step is-now"><span class="amb-step__title">Your go and the Ask list</span><span class="amb-step__text">The build starts on your word, in its own worktree, level with origin, no Actions run in flight and the queue asked about.</span><span class="amb-chip">Next</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 1, the shared figures</span><span class="amb-step__text"><code>vendorStats(lots, today)</code> in <code>engine/position.mjs</code> with a lot's own rate helper, lead time and short; the Desk's <code>supplierStats</code> a wrapper; <code>tools/engine.mjs --sync</code>. Checks: Sourcing's figures and the pricing parity equal on the frozen book; a lot's rate unchanged with <code>COST_MIN</code> present; mutations red for sharing across books, a pending lot counted as a lot, an undated lot taken as the newest, the rate read through <code>latestCogs</code>. Full suite.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 2, the readings</span><span class="amb-step__text"><code>src/maker-inputs.js</code> (<code>vendorList</code>, <code>vendorReading</code>, keyed by <code>ownerCode</code>), <code>src/worker.js</code> (routes and the 404 guard), <code>stmt/maker.js</code> (the allow-list and the path). Checks: GET only; a code off the roster refused; a resale account read as its owner; no name or place in an answer; a lot waiting under Approve carried as waiting; the Book's revision stamped. Full suite.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 3, the contact log</span><span class="amb-step__text"><code>partyNote</code> and <code>lotMark</code> in <code>editEntry</code>, <code>makerEdit</code>, the drafter and <code>engine/apply.mjs</code>; <code>EDIT_PURE</code> gains <code>contacts</code>; Approve's words; the device's name check, on sending and on Approve. Checks: each refusal; the lot check by owner code; a row appended with its <code>at</code>; no <code>contacts</code> row carries <code>rid</code>; a replay books once; purchases byte for byte after. Full suite; Fable reviews.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 4, the expected day</span><span class="amb-step__text"><code>expectedOn</code> in the purchase's fields (<code>src/maker-inputs.js</code> 34) and its extras (139), <code>tradeEntry</code>, the drafter's <code>draftRow</code> and the correctable keys, refused on a sale. Checks: offered only while not wholly received, kept after; the PRICING snapshot byte for byte with <code>expectedOn</code> on every row. Full suite; Fable reviews.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 5, the shared page and the Vendors place</span><span class="amb-step__text">The party page frame, row builder, list drawer and rate tile lifted out of the account card's code with a side; then <code>stmt/page.js</code> (Vendors in Record's slot in the rail, its two parts, its mark) and <code>stmt/owner.js</code> (the list, the page, Compare, New vendor). Record's forms stay reachable by address until Part 8 within this unshipped branch. Checks: the act audit, the recipes worn, the dead-rule audit, 44px by hit test, the measure at 390, 1180, 1440 and 1920; the account card unchanged by the lift. Display checks.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 6, Log a purchase</span><span class="amb-step__text">The purchase half of the trade form moved into a sheet; the body byte for byte plus <code>expectedOn</code>; the kept-entry key unchanged. Full suite.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 7, Orders for both sides</span><span class="amb-step__text">The order card's function given a side; the counted filters and side chips; purchase cards in the four stages with their pill, Change sheet, danger rows and Rate; Needs you's purchase cards; the rail's count (Ask A); the check that the tap refuses a stale payment on a lot. Full suite; Fable reviews.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 8, Record retired</span><span class="amb-step__text">Each remaining form to its home as one row opening a sheet; Settings' Pricing part; the old addresses and the page's own jumps; the kept entries' new homes; the word table, the sweep of "supplier" on screen in any case, and the five refusals that name Record reworded. Full suite.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 9, the mirror on Customers</span><span class="amb-step__text">The account card's Orders group (the row, and Order for them moved into it from Sign-in, its act kept), Notes group and Also a vendor row. Full suite.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 10, the words and the checks</span><span class="amb-step__text"><code>docs/STATEMENTS.md</code> (the act table, the routes, the readings), <code>docs/DESK.md</code> (the contact rows, the two kinds, <code>expectedOn</code>), <code>MEMORY.md</code>; the older checks re-aimed (50 of 354 test files name Record today).</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">The version</span><span class="amb-step__text">Fable reviews the diff (money rows, routes and the Desk master), the same reviewer re-checks. The full suite on the unbumped tree; then fetch, bump off origin's tip, changelog, build, gate and push under your standing yes; Actions, the live <code>/rev</code>, and Salt Admin drawn at 390, 1180, 1440 and 1920.</span><span class="amb-chip">Then</span></li>
+</ol>
+<p class="amb-basis"><span class="amb-claim amb-claim--verified">Verified</span> in Ambient 0.7.37's <code>src/ambient.css</code>: no part is missing. The list and pane, find, counted filters, the action rows, the sheet, the foot's one pill, the rate tile with its spark line, the bar chart, the compare table, the journal, the meter and the rating all exist. A part the build finds missing goes to <code>Code\ambient-ds</code> first, never drawn here.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="proof"><h2 class="amb-section">How it is proved</h2>
+<div class="amb-stack">
+<ul class="amb-prose">
+<li>A section a part, each check proved red by its own mutation before its green counts (<code>tools/section.mjs --mutations</code>, the mutations file under <code>test/</code>).</li>
+<li>Pricing: on the frozen book and on today's, the PRICING snapshot, every Floor and the Desk's Sourcing figures equal before and after the version.</li>
+<li>The money road: the purchase card's controls post only <code>/inputs/ledger-amend</code> and <code>/inputs/edit</code>; <code>rowRoom</code>, <code>makerAmendmentRoom</code> and <code>payFault</code>'s own sections run untouched and green; one new check drives a stale payment on a lot through the tap and reads its refusal.</li>
+<li>The mirror, by function and not by class: each twin is drawn by the same function, which the check calls from both pages with each side and whose output it compares, so a lookalike copy on one side turns it red. The functions are the party page frame, the row builder, the list drawer, the rate tile and the order card.</li>
+<li>The words: one table in <code>owner.js</code>; a check that no screen shows a retired word ("Paid the supplier", "Nothing arrived"), "supplier" in any case, "Received" alone on a purchase, or a refusal naming Record.</li>
+<li>Names: a note holding any word of three letters or more of a vault name, or a whole vault place, is refused on sending and on Approve; the suite's search of the public desk for every name and place runs over the new rows too.</li>
+<li>Then the full suite, CI's run on the push, and the screens at four widths, looked at.</li>
+</ul>
+</div>
+</section>
+
+<section class="amb-sec" id="risks"><h2 class="amb-section">Risks and how each is held</h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Risk</th><th scope="col">How it is held</th></tr></thead><tbody>
+<tr><td data-label="Risk">A note carries a name to git, which can be public</td><td data-label="How it is held">The device's name check is the only net before the nightly export commits the book (the Cloud commit job checks no words), so it runs twice: on sending and on Approve. A shut vault holds the note. The suite's name search over the desk at the next version is a late second net. The refund edit's note has the same gap today: Ask E.</td></tr>
+<tr><td data-label="Risk">A mark's lot key collides with the lot</td><td data-label="How it is held">The key is <code>lot</code>, never <code>rid</code>, and a check refuses a <code>contacts</code> row with a <code>rid</code>.</td></tr>
+<tr><td data-label="Risk">Record's forms move and a check or a hand finds nothing</td><td data-label="How it is held">Acts and keys kept; old addresses and the page's own jumps re-aimed; 50 test files re-aimed with dated comments, none deleted to get green.</td></tr>
+<tr><td data-label="Risk">The account card's code is lifted into a shared frame</td><td data-label="How it is held">Part 5 lifts it first, and the account card must draw the same before and after (its sections, acts and the measure) before Vendors uses it.</td></tr>
+<tr><td data-label="Risk">Orders mixes two stores</td><td data-label="How it is held">Drawn together, stored apart: no purchase enters the order book and no sale is read from the vendor reading.</td></tr>
+<tr><td data-label="Risk">Lead time reads 0 days for most past lots</td><td data-label="How it is held">Said on the page beside the figure until logged orders give it real days.</td></tr>
+<tr><td data-label="Risk">Each note waits under Approve</td><td data-label="How it is held">Your choice; Approve's decide-many takes several at once.</td></tr>
+<tr><td data-label="Risk">The small-lot plan lands in between</td><td data-label="How it is held">Shared file, no shared function; the second to land re-syncs and re-runs the parity; <code>vendorStats</code> never reads <code>latestCogs</code>.</td></tr>
+<tr><td data-label="Risk">One large version</td><td data-label="How it is held">One commit a part, each part's checks green before the next starts; Fable on parts 3, 4 and 7 and on the diff.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="amb-sec" id="review"><h2 class="amb-section">Fable's review <span class="amb-section__note">24 Nov 2026, on your test first</span></h2>
+<div class="amb-stack">
+<p class="amb-prose">Verdict: sound with changes, two of them blockers. All sixteen findings are applied above. Fable's re-check closed both blockers and found three last edits, all applied: the buying side says "Goods received", never "Received" alone, since the sale's Change sheet says "Received now, RM" for money; a vault name is matched on any of its words, a place as a phrase; and a mark's lot is checked by owner code, so a resale account's lot is marked from its owner's page. It also asked that a later mark and Late's note sit as rows in the card's log, that the word check cover every "supplier" and the five refusals naming Record, and that the canvas draw the account card's new Orders group: applied.</p>
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Finding</th><th scope="col">Weight</th><th scope="col">Applied as</th></tr></thead><tbody>
+<tr><td data-label="Finding">The purchase card had six actions; the sale card has one pill, one Change sheet and Cancel last</td><td data-label="Weight">Blocker</td><td data-label="Applied as">One order card with a side ("Orders, both sides")</td></tr>
+<tr><td data-label="Finding">A mark keyed by <code>rid</code> would stand in for the lot in the Book</td><td data-label="Weight">Blocker</td><td data-label="Applied as">The key is <code>lot</code>; a check refuses <code>rid</code> on a contact row</td></tr>
+<tr><td data-label="Finding">"The same part" proved by classes alone is a lookalike</td><td data-label="Weight">Should</td><td data-label="Applied as">Five named shared functions, proved by function</td></tr>
+<tr><td data-label="Finding">Order for them is an action row opening their page, not a sheet</td><td data-label="Weight">Should</td><td data-label="Applied as">One Orders group on both pages, in the same place</td></tr>
+<tr><td data-label="Finding">One act, several words; Supplier as a role; MYR on screen</td><td data-label="Weight">Should</td><td data-label="Applied as">"One word a spot"</td></tr>
+<tr><td data-label="Finding">The big figure missed paid and not landed</td><td data-label="Weight">Should</td><td data-label="Applied as">To pay, else On the way, else On order, else Owed back</td></tr>
+<tr><td data-label="Finding"><code>CM4-TO-R</code> is <code>CM4-TO</code>'s resale account</td><td data-label="Weight">Should</td><td data-label="Applied as">Vendors keyed by owner code: six, not seven</td></tr>
+<tr><td data-label="Finding">Chase had no act</td><td data-label="Weight">Should</td><td data-label="Applied as">Late, with Add a note and a follow-up day</td></tr>
+<tr><td data-label="Finding">The vendor page was heavy; a Notes part had no twin</td><td data-label="Weight">Should</td><td data-label="Applied as">Price history and Spend as rows that open; no lot table; two parts, notes on each page</td></tr>
+<tr><td data-label="Finding">Rate cannot ride with Log a purchase</td><td data-label="Weight">Should</td><td data-label="Applied as">Rate shows once the lot is booked, asked inside Goods received</td></tr>
+<tr><td data-label="Finding"><code>due</code> is the wrong name and already means a payment's day</td><td data-label="Weight">Should</td><td data-label="Applied as"><code>expectedOn</code>, refused on a sale, carried on extras, kept after landing</td></tr>
+<tr><td data-label="Finding">The device check is the only net before the nightly commit</td><td data-label="Weight">Should</td><td data-label="Applied as">Said in Risks; run again on Approve; a name on any of its words, a place as a phrase</td></tr>
+<tr><td data-label="Finding">To pay was undefined against mixed freight</td><td data-label="Weight">Should</td><td data-label="Applied as">The engine's <code>oweRM</code>, freight said beside it</td></tr>
+<tr><td data-label="Finding"><code>vendorStats</code> must not read a lot's rate through <code>latestCogs</code></td><td data-label="Weight">Should</td><td data-label="Applied as">Its own helper, lots and day passed in, checked with <code>COST_MIN</code> present</td></tr>
+<tr><td data-label="Finding">Side words, sheet rows, Record's in-page jumps, the rail at Part 5</td><td data-label="Weight">Could</td><td data-label="Applied as">All four, in place</td></tr>
+<tr><td data-label="Finding">Expected beside Ordered invites a day ahead on a landed lot</td><td data-label="Weight">Could</td><td data-label="Applied as">Offered only while not wholly received</td></tr>
+</tbody></table>
+<p class="amb-basis">Held right as it stood: five places with Vendors in Record's slot, the list beside a page from 960px, To do, Pending and FYI, the four stages by who must act, two stores drawn together, quotes read only, the canvas ask, and all your answers honoured; the money road's claims and the pricing claims hold in the code.</p>
+</div>
+</section>
+
+<section class="amb-sec" id="asks"><h2 class="amb-section">Ask list <span class="amb-section__note">with your go</span></h2>
+<div class="amb-stack">
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">The other way</th></tr></thead><tbody>
+<tr><td data-label="Ask">A. The rail's Orders count</td><td data-label="Recommended">Every open order on both sides, as your rule of 3 Nov 2026 reads</td><td data-label="The other way">Sales only</td></tr>
+<tr><td data-label="Ask">B. A purchase order's expected day</td><td data-label="Recommended">Kept apart from the book's restock date, which the Counter's price list shows; Stock by book shows both</td><td data-label="The other way">It sets the restock date, so the Counter shows it</td></tr>
+<tr><td data-label="Ask">C. A vendor's new quote</td><td data-label="Recommended">Read only on the vendor page in this version, since a quote moves salt's Ceiling and the restock tiers</td><td data-label="The other way">Typed on the vendor page, as its own priced change</td></tr>
+<tr><td data-label="Ask">D. Notes across every vendor</td><td data-label="Recommended">On each page only, on both sides</td><td data-label="The other way">A Notes part on Vendors and on Customers both, newest first</td></tr>
+<tr><td data-label="Ask">E. The refund note</td><td data-label="Recommended">The same name check, in Part 3</td><td data-label="The other way">Left as it is</td></tr>
+<tr><td data-label="Ask">F. A canvas before Part 5</td><td data-label="Recommended">Vendors, the vendor page, the order card with a side, and the account card's new Orders group (Order for them moves there out of Sign-in) drawn on a Claude Design canvas and settled with you, as the design language asks for a whole place</td><td data-label="The other way">Built from this plan's tables</td></tr>
+</tbody></table>
+<p class="amb-basis">Answered on 24 Nov 2026 and not asked again: the nine answers at the top.</p>
+</div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
