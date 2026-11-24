@@ -134,7 +134,9 @@ export async function run({ ok, pageWork }) {
 
   /* B5b (22 Nov 2026, the place head, the reviewer's findings): View as them reads the Counter's hours too, so its status row says open or closed and when
      that changes, never an empty row */
-  const at22 = new Date(); at22.setUTCHours(14, 0, 0, 0);
+  /* 24 Nov 2026: 22:00 on today's Kuala Lumpur day (UTC+8, no summer time), never the UTC day's 14:00, which from 00:00 to 08:00 MYT falls on the KL day before
+     and reads "until <date>, 22:00" (red on CI from 189b9bf7) */
+  const kl = new Date(Date.now() + 8 * 3600e3), at22 = new Date(Date.UTC(kl.getUTCFullYear(), kl.getUTCMonth(), kl.getUTCDate(), 14, 0, 0));
   p = await richOwnerPage({ pageWork, extra: (route) => route === "/hours" ? { ok: true, open: true, source: "weekly", nextChange: at22.toISOString() } : extra(route) });
   try {
     await openAs(p, "acct.view-as");
