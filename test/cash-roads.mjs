@@ -3,10 +3,11 @@
  * lot's lower asked and naming the cash it was read with, a sale's lower by Undo). Each check red under its own mutation
  * (test/cash-roads.mutations.json), invented codes only (rule 2):
  *   P1  a lot stored paid with no cash figure, its total raised by Correction: it keeps the old total as its cash, reads partial, owes the difference,
- *       drops its paid day, and its trail says both
+ *       and its trail says the cash it kept (it keeps its paid day: P6)
  *   P2  its total lowered: it keeps the old total as its cash and reads paid (overpaid, as a lot with its cash written already reads)
  *   P3  the undo of P1's step puts the lot back: paid in full, at its old total, on its paid day
  *   P4  a Modification raising the total does the same as P1
+ *   P6  the payment that makes a raised lot paid in full is its paid day; a raise put back by a fresh Correction keeps the old day (p042, 24 Oct 2026)
  *   P5  a lot with its cash written, a total sent unchanged (by Correction or Modification), an unpaid lot and a lot only agreed are as before
  *   C1  Correct a row's catalog offers no Cash paid, Settled RM, units handed over or units received (his answers: each moves on Record)
  *   C2  the Desk refuses a Correction setting any of them, a sale's cash lower or higher, a lot's raised or cleared, naming Record
@@ -29,9 +30,8 @@ export async function run({ ok }) {
   correct(up, { total: 120 });
   const step = up.amend[up.amend.length - 1];
   ok(up.cash === 100 && up.status === "partial" && E.poCash(up) === 100 && E.poOwed(up) === 20 && E.poStat(up).pay === "Partial"
-    && J(step.was) === J({ total: 100, paidOn: D }) && up.paidOn === undefined
-    && /cash \(unset\) to 100, what was paid is kept as the price moves/.test(up.mod) && /paidOn 2026-11-20 to \(cleared\), the lot is no longer paid in full/.test(up.mod),
-    "P1: a paid lot with no cash figure, its total raised, keeps its old total as cash, owes the difference and drops its paid day: " + J([up.cash, up.status, E.poOwed(up), step.was, up.mod]));
+    && J(step.was) === J({ total: 100 }) && /cash \(unset\) to 100, what was paid is kept as the price moves/.test(up.mod),
+    "P1: a paid lot with no cash figure, its total raised, keeps its old total as cash and owes the difference: " + J([up.cash, up.status, E.poOwed(up), step.was, up.mod]));
 
   /* P2 */
   const down = bare("zr2");
@@ -42,15 +42,23 @@ export async function run({ ok }) {
   /* P3 */
   const u = E.undoOf(up, up.amend.length - 1);
   if (!u.fault) correct(up, u.fields, { undo: u.i });
-  ok(!u.fault && J(u.fields) === J({ total: 100, paidOn: D }) && up.total === 100 && up.cash === 100 && up.status === "paid" && up.paidOn === D && E.poCash(up) === 100 && E.poOwed(up) === 0,
+  ok(!u.fault && J(u.fields) === J({ total: 100 }) && up.total === 100 && up.cash === 100 && up.status === "paid" && up.paidOn === D && E.poCash(up) === 100 && E.poOwed(up) === 0,
     "P3: the undo of that step puts the lot back, paid in full at its old total on its paid day: " + J([u.fault || u.fields, up.total, up.cash, up.status, up.paidOn, E.poCash(up)]));
 
   /* P4 */
   const mod = bare("zr3");
   applyAmend(mod, { date: "2026-11-25", kind: "Modification", cash: 0, kg: 0, newQty: 2, newTotal: 130 }, "BUY", null);
-  ok(mod.cash === 100 && mod.status === "partial" && E.poOwed(mod) === 30 && mod.paidOn === undefined
-    && /; cash \(unset\) to 100, what was paid is kept as the price moves; paidOn 2026-11-20 to \(cleared\)/.test(mod.mod),
-    "P4: a Modification raising the total keeps what was paid as cash: " + J([mod.cash, mod.status, E.poOwed(mod)]));
+  ok(mod.cash === 100 && mod.status === "partial" && E.poOwed(mod) === 30 && /; cash \(unset\) to 100, what was paid is kept as the price moves$/.test(mod.mod),
+    "P4: a Modification raising the total keeps what was paid as cash: " + J([mod.cash, mod.status, E.poOwed(mod), mod.mod]));
+
+  /* P6 */
+  const late = bare("zr13"), back = bare("zr14"), over = bare("zr15", { cash: 100 });
+  correct(late, { total: 120 });
+  applyAmend(late, { date: "2026-11-27", kind: "Payment", cash: 20, kg: 0 }, "BUY", null);
+  correct(back, { total: 120 }); correct(back, { total: 100 });
+  applyAmend(over, { date: "2026-11-27", kind: "Payment", cash: 5, kg: 0 }, "BUY", null);
+  ok(late.status === "paid" && late.cash === 120 && late.paidOn === "2026-11-27" && back.status === "paid" && back.paidOn === D && E.poCash(back) === 100 && over.paidOn === D,
+    "P6: the payment that makes a raised lot paid in full is its paid day; a raise put back keeps the day it was paid, and a paid lot paid more keeps its day: " + J([late.paidOn, back.status, back.paidOn, over.paidOn]));
 
   /* P5 */
   const written = bare("zr4", { cash: 100 }), same = bare("zr9"), unpaid = bare("zr5", { status: "unpaid", paidOn: undefined }), agreed = bare("zr6", { pending: true, status: "unpaid", paidOn: undefined, receivedQty: 0 });

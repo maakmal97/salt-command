@@ -197,11 +197,6 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
         row.cash = r2(paidBefore); keptCash = true;
         reasons.cash = "what was paid is kept as the price moves";
       }
-      /* and a lot no longer paid in full keeps no day it was paid (lowerTap's rule), which `was` keeps for an undo */
-      if (before.status === "paid" && status !== "paid" && row.paidOn && !asked("paidOn")) {
-        delete row.paidOn;
-        reasons.paidOn = "the lot is no longer paid in full";
-      }
       row.status = status;
     }
 
@@ -278,19 +273,14 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
          seed and the same step the SELL tail writes, in the same order: before the figures move. */
       if (!row.amend || !row.amend.length) row.amend = [seedStep(row, dir)];
       { const step = { date: pay.date, kind: "Modification", cash: 0, kg: 0 }; if (note) step.note = note; row.amend = row.amend.concat([step]); }
-      const wasStatus = row.status;
       row.qty = pay.newQty;
       row.total = pay.newTotal;
       const paid = paidBefore;                       /* v416: what was paid, not what is now owed */
       row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
-      /* 25 Nov 2026: as a Correction does (above), a lot with no cash figure keeps what it paid as its cash, and one no longer paid in full its day */
+      /* 25 Nov 2026: as a Correction does (above), a lot with no cash figure keeps what it paid as its cash */
       if (row.cash == null && paid > 0.009 && Math.abs((+row.total || 0) - (+wasTotal || 0)) > 0.004) {
         row.cash = r2(paid);
         row.mod += `; cash (unset) to ${row.cash}, what was paid is kept as the price moves`;
-      }
-      if (wasStatus === "paid" && row.status !== "paid" && row.paidOn) {
-        row.mod += `; paidOn ${row.paidOn} to (cleared), the lot is no longer paid in full`;
-        delete row.paidOn;
       }
       if (note) row.note = note + " " + (row.note || "");
       return;
@@ -352,7 +342,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       if (movedB > 0.009) throw new Error(`cancelling this lot would leave it carrying ${movedB} unit already received, which contradicts itself: restate qty by Modification for what arrived, then cancel the remainder`);
       row.cancelled = true; if (pay.date) row.cancelledOn = pay.date; return;
     }
-    const wasPending = !!row.pending;
+    const wasPending = !!row.pending, wasPaid = row.status === "paid";
     if (((+pay.cash || 0) > 0.009) || ((+pay.kg || 0) > 0.009)) {
       delete row.pending;
       if (wasPending && row.receivedQty == null) { row.receivedQty = 0; row.inTransit = true; }
@@ -373,7 +363,9 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     const paid = E.poCash(row);
     row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
     if (!row.date) row.date = pay.date;
-    if (!row.paidOn && row.status === "paid" && (+pay.cash || 0) > 0.009) row.paidOn = pay.date;
+    /* 25 Nov 2026 (the review standing in for Fable): the payment that makes a lot paid in full is its paid day, over a day it kept from before its
+       price was raised; a lot already paid keeps its day, and a lot whose raise is corrected back keeps the day it was paid */
+    if (row.status === "paid" && (+pay.cash || 0) > 0.009 && (!row.paidOn || !wasPaid)) row.paidOn = pay.date;
     return;
   }
   if (!row.amend || !row.amend.length)
