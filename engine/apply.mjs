@@ -101,6 +101,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
        Reasons carry the one thing a diff cannot know: WHY a value the editor did not name
        moved. */
     const reasons = {};
+    let keptCash = false;   /* a lot's paid figure written as its cash when its total moved (below) */
 
     /* THE PLAIN FIELDS: set, or delete when cleared. Everything numeric, dated or textual goes
        through here, so adding a field to the drafter's table is all it takes to make it
@@ -187,7 +188,21 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
          paid and a price correction alone rewrote it to unpaid, inventing a payable for money
          already handed over. Five lots on the book are stored that way, RM 5,450 of them. */
       const paid = asked("cash") ? (row.cash != null ? +row.cash : 0) : paidBefore;
-      row.status = paid >= (row.total || 0) - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
+      const status = paid >= (row.total || 0) - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
+      /* 25 Nov 2026 (his answer: a lot's paid money stays what it was when its price moves, either way; the review's note 5): a lot stored paid
+         with NO cash figure reads its total as paid, so once the total moved it read the new total, or nothing once it went partial. What it held
+         paid is written as its cash, said in the trail but kept out of `was`, so an undo restores the total and the lot still reads paid. A lot
+         with its cash written holds that figure already, so nothing moves on it. */
+      if (!asked("cash") && paidBefore > 0.009 && Math.abs((+row.total || 0) - (+before.total || 0)) > 0.004) {
+        row.cash = r2(paidBefore); keptCash = true;
+        reasons.cash = "what was paid is kept as the price moves";
+      }
+      /* and a lot no longer paid in full keeps no day it was paid (lowerTap's rule), which `was` keeps for an undo */
+      if (before.status === "paid" && status !== "paid" && row.paidOn && !asked("paidOn")) {
+        delete row.paidOn;
+        reasons.paidOn = "the lot is no longer paid in full";
+      }
+      row.status = status;
     }
 
     /* NOW READ THE ROW BACK AND SAY WHAT ACTUALLY MOVED. attributionOf is the same function the
@@ -207,7 +222,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       if (JSON.stringify(was0) === JSON.stringify(now)) continue;
       const why = reasons[k] ? `, ${reasons[k]}` : "";
       said.push(`${k} ${was0 == null ? "(unset)" : was0} to ${now == null ? "(cleared)" : now}${why}`);
-      was[k] = was0;
+      if (!(k === "cash" && keptCash)) was[k] = was0;
     }
     if (undo && !said.length) throw new Error("the undo was refused: the row already says what undoing that move sets");
 
@@ -263,10 +278,20 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
          seed and the same step the SELL tail writes, in the same order: before the figures move. */
       if (!row.amend || !row.amend.length) row.amend = [seedStep(row, dir)];
       { const step = { date: pay.date, kind: "Modification", cash: 0, kg: 0 }; if (note) step.note = note; row.amend = row.amend.concat([step]); }
+      const wasStatus = row.status;
       row.qty = pay.newQty;
       row.total = pay.newTotal;
       const paid = paidBefore;                       /* v416: what was paid, not what is now owed */
       row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
+      /* 25 Nov 2026: as a Correction does (above), a lot with no cash figure keeps what it paid as its cash, and one no longer paid in full its day */
+      if (row.cash == null && paid > 0.009 && Math.abs((+row.total || 0) - (+wasTotal || 0)) > 0.004) {
+        row.cash = r2(paid);
+        row.mod += `; cash (unset) to ${row.cash}, what was paid is kept as the price moves`;
+      }
+      if (wasStatus === "paid" && row.status !== "paid" && row.paidOn) {
+        row.mod += `; paidOn ${row.paidOn} to (cleared), the lot is no longer paid in full`;
+        delete row.paidOn;
+      }
       if (note) row.note = note + " " + (row.note || "");
       return;
     }
