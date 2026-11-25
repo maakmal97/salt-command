@@ -37,6 +37,9 @@ carrying a `kind` and a dated note: `latestCogs` on every book since 05 Oct 2026
 latest purchase, no leak), with `stack`, `landed` and the retired `buyPlusPct` kept in the engine
 for a book that states one. `tools/product.mjs` opens a new book on `latestCogs`. The engine reads
 the `kind` and never the product's name, so a new rule needs no code.
+**The fewest units a cost is read over is not in the book** (25 Nov 2026): `COST_MIN` in `engine/rules.mjs`, keyed by product
+like `COST_RULE` but a rule a version sets, his figures typed per book. Under it `latestCogs` blends the newest lots
+(`docs/DESK.md`, "A small lot no longer sets the Floor"); a book it does not name prices off its latest lot alone.
 
 **The one structural outlier: quotes.** `supplierQuote` (salt, implicitly, carrying no
 `product` field) and `oilQuote` are two separate top-level keys NAMED AFTER THEIR PRODUCTS,
@@ -169,6 +172,12 @@ but a purchase defaults to null.
 5. `PRICE_SET.<id>` as `{prices: {}, hide: []}`
 6. A quote entry
 7. `TIER_OF` and `AWARDS` need nothing: both are created per customer on demand.
+
+**The rules, in a version:**
+
+- `COST_MIN.<id>` in `engine/rules.mjs`, the fewest units its cost is read over, his figure. Until a version names it the
+  book prices off its latest lot alone, however small, and `tools/product.mjs` says so when it opens the book (his answer
+  of 25 Nov 2026).
 
 **The look:**
 

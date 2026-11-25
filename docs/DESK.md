@@ -18,6 +18,22 @@
   `cogsFor` does; a gift or reward keeps the shelf's rate. A lot partly landed is costed over the units
   received (`poRecvUnits`), its whole quote and freight on what is on the shelf; a lot with nothing
   received is not landed and is passed over (review of 05 Oct 2026).
+- **A small lot no longer sets the Floor** (his answers of 24 and 25 Nov 2026, `docs/plan-small-lot.html`). `COST_MIN` in
+  `engine/rules.mjs`, carried in `PRICING_RULES`, is the fewest units a book's cost is read over, his figures typed per book: salt 12.5,
+  oil 10, candy 10, rice 100, gas 1; a book it does not name has nought, the latest lot alone. `latestCogs` reads it itself, by the
+  newest lot's book, so no caller can forget it (the import is exactly `import PRICING_RULES from "./rules.mjs";`, the form
+  `tools/engine.mjs --sync` drops; in the master the rules block's global answers it). When the newest landed lot reaches the minimum,
+  the answer is that lot alone, byte for byte as before. Under it, the lots it may read (live, something received, landed on or
+  before the day) are taken newest first, each at its own quote and freight over its units received, the last only for the units
+  still needed; lots that together fall short are all taken whole. `p`, `rid` and `date` stay the newest lot's; `quote`, `freight`
+  and `units` are the shares counted and `rate` their sum over the units; `lots` (`[{rid, date, units, rate, draft}]`, newest first)
+  is present only when a blend is in force, and the snapshot's `latest` and the stack's carry it. Every reader follows: the Floor and
+  the Ceiling on a board, the replacement rate, the fold's and the tap's sale cost, the reward step and the loyalty unit, the
+  drafter and the Workbench; the non-revenue anchor and an order's fault date read the newest lot's date, unmoved. The words say
+  "the newest 10 units" and name each lot ("1 of p057 at RM 94 and 9 of p031 at RM 42"): Pricing's seven places, the drafter's
+  note, flag 4, the Floor's refusal and the drafted-lot flag (raised by a drafted lot anywhere in the blend), and Salt Admin's
+  Workbench. A new book from `tools/product.mjs` prices off its latest lot alone until a version names it in `COST_MIN`, and the
+  tool says so. Checks: `test/floor-small-lot.mjs` (v1570).
 - **The Floor is the order total up to the next RM 5; the Ceiling is 3 times it** (his decisions of 18 Oct 2026).
   `floorTotal` is COGS times the size rounded up to the next RM 5, one per size on every book; `costTotal` is the
   exact cost, for the readers that measure cost and not price (the price band's segment floor `flOf`, `flRate` and
@@ -1272,6 +1288,9 @@ repeats outright; build the Restock planner and Month ahead (Cash on hand not bu
 
    - **COGS is the latest purchase: its quote plus its trip freight, over its units** (the
      engine's `latestCogs`, `COST_RULE` kind `latestCogs` on every book, his rule of 05 Oct 2026).
+     **A lot under its book's minimum is blended**: `COST_MIN` in the rules (salt 12.5, oil 10, candy 10, rice 100, gas 1), the newest
+     lots newest first, each at its own rate, the last only for the units still needed, so cost is what the newest N units cost (his
+     answers of 24 and 25 Nov 2026; the mechanism under "Pricing" at the head of this file).
      **The Floor is COGS times the size, the ORDER TOTAL rounded up to the next RM 5** (the engine's
      `floorTotal`, his decision of 18 Oct 2026), one per size and nothing else: no leak, no delivery, no
      time. **Salt's Floor also carries the non-revenue salt, re-measured only at a count, a recorded loss or a landed lot** (his decision of
