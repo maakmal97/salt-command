@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c24b86885c9ecebb";
+var SALT_BUILD_ID="c5831e36e2d120b0";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6542,6 +6542,8 @@ return {qrMatrix:qrMatrix, qrSvg:qrSvg, qrRectSvg:qrRectSvg, qrRuns:qrRuns, QR_V
  * The desk keeps every name as a one-line wrapper, so its hundreds of call sites are untouched.
  * Inlined into master/salt_command.html by `node tools/engine.mjs --sync`; CI proves the copy is
  * this file. See engine/pricing.mjs for the rules of the shape, which are the same here. */
+/* 25 Nov 2026: the rule tables, for COST_MIN (latestCogs). Written exactly so, the one form tools/engine.mjs drops: in the master the
+   rules block's PRICING_RULES is the global of the same name. Another name (RULES, say) would bind the master's other table. */
 const POSITION_ENGINE=(function(){
 function stockCountEntry({at,product,date,qty}){
   return {at,type:'COUNT',party:'stock count',qty,total:null,status:'count',
@@ -7437,20 +7439,39 @@ function stockBasis(purchases,stock,opening){
    what the inventory is CARRIED at and leaves freight out), not a trailing average, and no leakage. The caller passes one
    book's lots. A lot counts once something of it has landed (poLive, poRecvUnits), on its receivedOn else its date; with
    `onOrBefore`, a lot landing after that day is not yet the latest. On one day the lot later in the list wins, so a lot
-   appended after the book (a drafted one) is the newer. The row itself comes back as `p` for its caller to name. */
+   appended after the book (a drafted one) is the newer. The row itself comes back as `p` for its caller to name.
+   25 NOV 2026, HIS ANSWERS OF 24 AND 25 NOV 2026 (docs/plan-small-lot.html): A SMALL LOT NO LONGER SETS THE FLOOR. The book's
+   minimum is COST_MIN in the rules, read here by the newest lot's book (no product is salt), so no caller can forget it. When the
+   newest lot holds that many units or more, the answer is that lot alone, exactly as before. Under it, the lots that may be read are
+   taken newest first, each at its own quote and freight over its units received, the last only for the units still needed: cost is
+   what the newest N units cost. Lots that together fall short are all taken whole. p, rid and date stay the newest lot's; quote,
+   freight and units are the shares counted, rate their sum over the units; and `lots` ([{rid, date, units, rate, draft}], newest
+   first) names each lot, the units taken from it and its own rate. `lots` is present only when a blend is in force. */
 function latestCogs(purchases,onOrBefore){
-  let best=null;
-  (purchases||[]).forEach(p=>{
+  const live=[];
+  (purchases||[]).forEach((p,i)=>{
     if(!p||!poLive(p)||!(poRecvUnits(p)>0.0001)||!(+p.qty>0)||!Number.isFinite(+p.total))return;
     const d=p.receivedOn||p.date||null;
     if(onOrBefore&&d&&d>onOrBefore)return;
-    if(!best||(d||'')>=(best.date||''))best={p:p,date:d};
+    live.push({p:p,date:d,i:i});
   });
-  if(!best)return null;
+  if(!live.length)return null;
+  /* newest first: the later landed day, an undated lot the oldest, and on one day the later in the list */
+  live.sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:b.i-a.i;});
   /* 05 Oct 2026 (review): a lot partly landed is costed over the units RECEIVED, the whole quote and freight on what is on the
      shelf, so the floor never rests on goods still on the road; a lot with nothing received is not landed and is passed over */
-  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0, u=Math.min(+p.qty,poRecvUnits(p));
-  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+u,rate:+((+p.total+fr)/u).toFixed(4)};
+  const lotOf=x=>{const p=x.p,fr=Number.isFinite(+p.freight)?+p.freight:0,u=Math.min(+p.qty,poRecvUnits(p));return {p:p,date:x.date,quote:+p.total,freight:fr,units:+u,rate:+((+p.total+fr)/u).toFixed(4)};};
+  const n=lotOf(live[0]), book=n.p.product||'salt', min=+((PRICING_RULES.COST_MIN||{})[book])||0;
+  if(!(n.units<min-0.0001))return {p:n.p,rid:n.p.rid||null,date:n.date,quote:n.quote,freight:n.freight,units:n.units,rate:n.rate};
+  let need=min,quote=0,freight=0,units=0;const lots=[];
+  for(const x of live){
+    if(!(need>0.0001))break;
+    if((x.p.product||'salt')!==book)continue;
+    const L=lotOf(x),take=Math.min(L.units,need),f=take/L.units;
+    quote+=L.quote*f;freight+=L.freight*f;units+=take;need-=take;
+    lots.push({rid:L.p.rid||null,date:L.date,units:+take.toFixed(4),rate:L.rate,draft:L.p._draft||null});
+  }
+  return {p:n.p,rid:n.p.rid||null,date:n.date,quote:+quote.toFixed(6),freight:+freight.toFixed(6),units:+units.toFixed(4),rate:+((quote+freight)/units).toFixed(4),lots:lots};
 }
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
@@ -8619,7 +8640,8 @@ function costStack(I){
   const exRate=ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6));
   /* 11 Nov 2026, his answer H: `nrsAt` and `nrsBy`, the day the share was last measured and what measured it (a count, a loss, a lot), for the words */
   return Object.assign(nrs>0?Object.assign({nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)},I.nrs.at?{nrsAt:String(I.nrs.at),nrsBy:I.nrs.by||null}:{}):{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
-          latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
+          /* 25 Nov 2026: and the lots a small lot was blended with (latestCogs), only when there are any, for the words that name them */
+          latest:LC?Object.assign({rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units},Array.isArray(LC.lots)?{lots:LC.lots}:{}):null,
           afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
@@ -9570,7 +9592,8 @@ function inputs(C,p){
     over:{cost:o.cost,shrink:o.shrink}, lot:latestLot(C,p), meanLot:meanLotQty(C,p), quoteRate:quoteRate(C,p),
     repl:replRate(C,p), freightRate:freightRate(C,p), leak:leakCharge(C,p),
     costRule:(C.B.costRule||{})[p]||null,
-    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
+    /* 25 Nov 2026: `lots` rides beside the rest only when a small lot is blended (latestCogs), so a book with none reads as before */
+    latest:(x=>x&&Object.assign({rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate},x.lots?{lots:x.lots}:{}))(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
     costBasis:{freightPerTrip:{rm:R.COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:R.COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(C,p).v}},
     attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)});

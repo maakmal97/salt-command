@@ -9,6 +9,9 @@
  * The desk keeps every name as a one-line wrapper, so its hundreds of call sites are untouched.
  * Inlined into master/salt_command.html by `node tools/engine.mjs --sync`; CI proves the copy is
  * this file. See engine/pricing.mjs for the rules of the shape, which are the same here. */
+/* 25 Nov 2026: the rule tables, for COST_MIN (latestCogs). Written exactly so, the one form tools/engine.mjs drops: in the master the
+   rules block's PRICING_RULES is the global of the same name. Another name (RULES, say) would bind the master's other table. */
+import PRICING_RULES from "./rules.mjs";
 const POSITION_ENGINE=(function(){
 function stockCountEntry({at,product,date,qty}){
   return {at,type:'COUNT',party:'stock count',qty,total:null,status:'count',
@@ -904,20 +907,39 @@ function stockBasis(purchases,stock,opening){
    what the inventory is CARRIED at and leaves freight out), not a trailing average, and no leakage. The caller passes one
    book's lots. A lot counts once something of it has landed (poLive, poRecvUnits), on its receivedOn else its date; with
    `onOrBefore`, a lot landing after that day is not yet the latest. On one day the lot later in the list wins, so a lot
-   appended after the book (a drafted one) is the newer. The row itself comes back as `p` for its caller to name. */
+   appended after the book (a drafted one) is the newer. The row itself comes back as `p` for its caller to name.
+   25 NOV 2026, HIS ANSWERS OF 24 AND 25 NOV 2026 (docs/plan-small-lot.html): A SMALL LOT NO LONGER SETS THE FLOOR. The book's
+   minimum is COST_MIN in the rules, read here by the newest lot's book (no product is salt), so no caller can forget it. When the
+   newest lot holds that many units or more, the answer is that lot alone, exactly as before. Under it, the lots that may be read are
+   taken newest first, each at its own quote and freight over its units received, the last only for the units still needed: cost is
+   what the newest N units cost. Lots that together fall short are all taken whole. p, rid and date stay the newest lot's; quote,
+   freight and units are the shares counted, rate their sum over the units; and `lots` ([{rid, date, units, rate, draft}], newest
+   first) names each lot, the units taken from it and its own rate. `lots` is present only when a blend is in force. */
 function latestCogs(purchases,onOrBefore){
-  let best=null;
-  (purchases||[]).forEach(p=>{
+  const live=[];
+  (purchases||[]).forEach((p,i)=>{
     if(!p||!poLive(p)||!(poRecvUnits(p)>0.0001)||!(+p.qty>0)||!Number.isFinite(+p.total))return;
     const d=p.receivedOn||p.date||null;
     if(onOrBefore&&d&&d>onOrBefore)return;
-    if(!best||(d||'')>=(best.date||''))best={p:p,date:d};
+    live.push({p:p,date:d,i:i});
   });
-  if(!best)return null;
+  if(!live.length)return null;
+  /* newest first: the later landed day, an undated lot the oldest, and on one day the later in the list */
+  live.sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:b.i-a.i;});
   /* 05 Oct 2026 (review): a lot partly landed is costed over the units RECEIVED, the whole quote and freight on what is on the
      shelf, so the floor never rests on goods still on the road; a lot with nothing received is not landed and is passed over */
-  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0, u=Math.min(+p.qty,poRecvUnits(p));
-  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+u,rate:+((+p.total+fr)/u).toFixed(4)};
+  const lotOf=x=>{const p=x.p,fr=Number.isFinite(+p.freight)?+p.freight:0,u=Math.min(+p.qty,poRecvUnits(p));return {p:p,date:x.date,quote:+p.total,freight:fr,units:+u,rate:+((+p.total+fr)/u).toFixed(4)};};
+  const n=lotOf(live[0]), book=n.p.product||'salt', min=+((PRICING_RULES.COST_MIN||{})[book])||0;
+  if(!(n.units<min-0.0001))return {p:n.p,rid:n.p.rid||null,date:n.date,quote:n.quote,freight:n.freight,units:n.units,rate:n.rate};
+  let need=min,quote=0,freight=0,units=0;const lots=[];
+  for(const x of live){
+    if(!(need>0.0001))break;
+    if((x.p.product||'salt')!==book)continue;
+    const L=lotOf(x),take=Math.min(L.units,need),f=take/L.units;
+    quote+=L.quote*f;freight+=L.freight*f;units+=take;need-=take;
+    lots.push({rid:L.p.rid||null,date:L.date,units:+take.toFixed(4),rate:L.rate,draft:L.p._draft||null});
+  }
+  return {p:n.p,rid:n.p.rid||null,date:n.date,quote:+quote.toFixed(6),freight:+freight.toFixed(6),units:+units.toFixed(4),rate:+((quote+freight)/units).toFixed(4),lots:lots};
 }
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's

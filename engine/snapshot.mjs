@@ -219,7 +219,8 @@ function inputs(C,p){
     over:{cost:o.cost,shrink:o.shrink}, lot:latestLot(C,p), meanLot:meanLotQty(C,p), quoteRate:quoteRate(C,p),
     repl:replRate(C,p), freightRate:freightRate(C,p), leak:leakCharge(C,p),
     costRule:(C.B.costRule||{})[p]||null,
-    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
+    /* 25 Nov 2026: `lots` rides beside the rest only when a small lot is blended (latestCogs), so a book with none reads as before */
+    latest:(x=>x&&Object.assign({rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate},x.lots?{lots:x.lots}:{}))(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
     costBasis:{freightPerTrip:{rm:R.COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:R.COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(C,p).v}},
     attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)});

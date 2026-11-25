@@ -155,7 +155,8 @@ function costStack(I){
   const exRate=ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6));
   /* 11 Nov 2026, his answer H: `nrsAt` and `nrsBy`, the day the share was last measured and what measured it (a count, a loss, a lot), for the words */
   return Object.assign(nrs>0?Object.assign({nrs:nrs,floorEx:+(exRate*(1+nrs)).toFixed(6)},I.nrs.at?{nrsAt:String(I.nrs.at),nrsBy:I.nrs.by||null}:{}):{},{rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
-          latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
+          /* 25 Nov 2026: and the lots a small lot was blended with (latestCogs), only when there are any, for the words that name them */
+          latest:LC?Object.assign({rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units},Array.isArray(LC.lots)?{lots:LC.lots}:{}):null,
           afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
