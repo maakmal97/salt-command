@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1571",
+  "d": "25 Nov 2026",
+  "t": "RECORD READS ITS ROWS AGAIN",
+  "n": [
+   "<b>A ROW IS READ AGAIN AS IT OPENS.</b> On Salt Admin, a row opened on Record or Correct a row is read from the Desk again, so a payment or a receipt approved since is in its figures.",
+   "<b>NOTHING GOES ON A ROW THAT MOVED.</b> Record reads the row again before it sends; one that moved since it was opened sends nothing and is filled again with its new figures.",
+   "<b>A PAYMENT IS NEVER COUNTED TWICE.</b> What Record sends as paid or moved names the figures it was worked out on, and the Desk refuses it on a row that moved since, a retry after a failed send included.",
+   "<b>A LOWERED CASH REFUSED AS MOVED READS THE ROW AGAIN.</b> The next tap asks on the cash the lot now holds."
+  ]
+ },
+ {
   "v": "v1570",
   "d": "25 Nov 2026",
   "t": "A RENAMED CODE NO LONGER STOPS THE DAY&#39;S EXPORT",

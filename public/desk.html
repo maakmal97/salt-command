@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="f7e4f88ff8ea4258";
+var SALT_BUILD_ID="1db396b8bfdd3979";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12674,7 +12674,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1570","d":"25 Nov 2026","t":"A RENAMED CODE NO LONGER STOPS THE DAY&#39;S EXPORT","n":["<b>THE DAY&#39;S EXPORT TAKES A RENAME.</b> An Amend ID that re-keys a code already on the book moved its roster row, and the Book&#39;s compaction read that as a row lost and refused the export (25 Nov 2026). A row a rename moved now counts as moved when its renamed form is in the new base; any other row lost still refuses.","<b>THE DAY&#39;S APPROVALS ARE COMMITTED AGAIN.</b> With the export through, the day&#39;s approved rows are marked committed, and a second change to an order changed earlier that day is taken."]}];
+const evolution=[{"v":"v1571","d":"25 Nov 2026","t":"RECORD READS ITS ROWS AGAIN","n":["<b>A ROW IS READ AGAIN AS IT OPENS.</b> On Salt Admin, a row opened on Record or Correct a row is read from the Desk again, so a payment or a receipt approved since is in its figures.","<b>NOTHING GOES ON A ROW THAT MOVED.</b> Record reads the row again before it sends; one that moved since it was opened sends nothing and is filled again with its new figures.","<b>A PAYMENT IS NEVER COUNTED TWICE.</b> What Record sends as paid or moved names the figures it was worked out on, and the Desk refuses it on a row that moved since, a retry after a failed send included.","<b>A LOWERED CASH REFUSED AS MOVED READS THE ROW AGAIN.</b> The next tap asks on the cash the lot now holds."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12836,7 +12836,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Nov 2026, 20:48 KL';
+const LAST_UPDATED='25 Nov 2026, 21:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
