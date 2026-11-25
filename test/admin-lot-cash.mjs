@@ -113,7 +113,7 @@ export async function run({ ok, pageWork }) {
     A("record.trade.send").click(); await quiet();
     const sent = amends(go0);
     ok(sent.length === 2 && sent[0].kind === "Correction" && sent[0].rid === "zq1" && J(sent[0].fields) === J({ cash: 150 })
-      && J(sent[0].expect) === J({ cash: 164 }) && sent[1].kind === "Fulfilment" && sent[1].expect === undefined && sent[1].rid === "zq1" && sent[1].cash === 0 && sent[1].movedUnits === 1 && /wait under Approve/.test(status()),
+      && J(sent[0].expect) === J({ cash: 164 }) && sent[1].kind === "Fulfilment" && J(sent[1].expect) === J({ cash: 164, movedUnits: 2 }) && sent[1].rid === "zq1" && sent[1].cash === 0 && sent[1].movedUnits === 1 && /wait under Approve/.test(status()),
       "L2: Lower it posts one Correction setting the cash alone, and the unit received with it as a Fulfilment carrying no cash: " + J([sent, status()]));
 
     /* L3 */

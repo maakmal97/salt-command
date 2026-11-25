@@ -22,7 +22,7 @@
 {"name":"U3: the figures printed raw","file":"engine/expect.mjs","find":"+recvOf(row).toFixed(4) + \" unit received, not \" + +expect.receivedQty.toFixed(4)","replace":"recvOf(row) + \" unit received, not \" + expect.receivedQty"},
 {"name":"M1: a stale refusal names no figure","file":"src/maker-inputs.js","find":"stale: true, received: +(+got).toFixed(4) };","replace":"stale: true };"},
 {"name":"M1: a clear is taken","file":"src/maker-inputs.js","find":"if (lotRecv && body.fields.receivedQty === null)","replace":"if (false)"},
-{"name":"F2: the form keeps the figure it read","file":"stmt/owner.js","find":"if(body.expect&&picked&&error.detail&&error.detail.stale&&Number.isFinite(error.detail.received))picked.movedUnits=error.detail.received;","replace":""},
+{"name":"F2: the form keeps the figure it read","file":"stmt/owner.js","find":"if(body.expect&&picked&&error.detail&&error.detail.stale&&Number.isFinite(error.detail.received)){ var at0=rows.indexOf(picked); if(at0>=0) rows[at0]=Object.assign({},picked,{movedUnits:error.detail.received}); }","replace":""},
 {"name":"H1: a Correction not held behind a Receipt","file":"src/maker-inputs.js","find":"if (sets(entry) && others.some(moves)) return","replace":"if (false) return"},
 {"name":"H1: a Receipt not held behind a Correction","file":"src/maker-inputs.js","find":"if (moves(entry) && others.some(sets)) return","replace":"if (false) return"},
 {"name":"H1: a move on any lot holds it","file":"src/maker-inputs.js","find":"e.payload.direction === \"BUY\"\n      && (e.payload.rid ? e.payload.rid === row.rid :","replace":"e.payload.direction === \"BUY\"\n      && (e.payload.rid ? true :"},
