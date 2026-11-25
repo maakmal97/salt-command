@@ -20,7 +20,8 @@ const lot = (rid, date, qty, total) => ({ rid, product: "salt", date, receivedOn
 const sale = (rid, date, total, more = {}) => ({ rid, customer: "AX1-ZED", product: "salt", date, qty: 1, total, cost: 50, cash: total,
   deliveredQty: 1, deliveredOn: date, ...more });
 function book(sales, { purchases, open, since = "2026-10-20", extra = {} } = {}) {
-  return { sales, purchases: purchases || [lot("p1", "2026-10-01", 10, 500), lot("p2", "2026-10-25", 10, 600)],
+  /* 25 Nov 2026 (the small lot): each lot 12.5 units, salt's COST_MIN, at the same RM 50 and RM 60 a unit, so each day's COGS is one lot's as these checks mean (was 10) */
+  return { sales, purchases: purchases || [lot("p1", "2026-10-01", 12.5, 625), lot("p2", "2026-10-25", 12.5, 750)],
     state: { REWARD: { stated: { salt: { margin: 500, associate: { margin: 470, r3Hurdle: 1.2, times: 10, since } } } },
       REWARD_OPEN: open === undefined ? { "AX1-ZED": { earned: 2, share: 0.5, upTo: "s100", on: "2026-10-20" } } : open,
       associates: ["AX1-ZED"], INTRODUCTIONS: [], PEOPLE: { departed: [] }, PRODUCTS: { salt: {}, oil: {} },
@@ -48,7 +49,7 @@ export async function run({ ok }) {
   ok(kind.earned === 3 && kind.crossings[0].day === "2026-10-22",
     "a row made whole in kind and cash counts on its pOn: " + JSON.stringify(kind.crossings));
   /* 5: share 0.9 at RM 60 on the switch (RM 540), then a RM 50 lot lands: today's step is RM 500 */
-  const fell = book([], { purchases: [lot("p1", "2026-10-01", 10, 600), lot("p2", "2026-10-22", 10, 500)],
+  const fell = book([], { purchases: [lot("p1", "2026-10-01", 12.5, 750), lot("p2", "2026-10-22", 12.5, 625)],   /* 25 Nov 2026: 12.5 units, as above */
     open: { "AX1-ZED": { earned: 4, share: 0.9, upTo: "s100", on: "2026-10-20" } } });
   const f = walk(fell);
   ok(f.next === 1 && f.earned === 4 && f.crossings.length === 0 && f.progress === 540,

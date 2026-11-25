@@ -92,8 +92,8 @@
   {
     "name": "the source line always says the inventory cost",
     "file": "src/maker-inputs.js",
-    "find": "c.basis ? \"the latest purchase\" : c.source",
-    "replace": "c.basis ? \"the latest purchase\" : \"the inventory cost\""
+    "find": "(c.basis.lots ? newestUnits(c.basis.units) : \"the latest purchase\") : c.source",
+    "replace": "(c.basis.lots ? newestUnits(c.basis.units) : \"the latest purchase\") : \"the inventory cost\""
   },
   {
     "name": "the form does not send its date",

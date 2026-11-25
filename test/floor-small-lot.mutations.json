@@ -1,0 +1,190 @@
+[
+  {
+    "name": "counting the last lot whole (MYR 45.25)",
+    "file": "engine/position.mjs",
+    "find": "const L=lotOf(x),take=Math.min(L.units,need),f=take/L.units;",
+    "replace": "const L=lotOf(x),take=L.units,f=1;"
+  },
+  {
+    "name": "taking the oldest lot first",
+    "file": "engine/position.mjs",
+    "find": "for(const x of live){",
+    "replace": "for(const x of live.slice().reverse()){"
+  },
+  {
+    "name": "ignoring the minimum (MYR 94)",
+    "file": "engine/position.mjs",
+    "find": "min=+((PRICING_RULES.COST_MIN||{})[book])||0;",
+    "replace": "min=0;"
+  },
+  {
+    "name": "short of the minimum, the newest lot alone",
+    "file": "engine/position.mjs",
+    "find": "return {p:n.p,rid:n.p.rid||null,date:n.date,quote:+quote.toFixed(6)",
+    "replace": "if(need>0.0001)return {p:n.p,rid:n.p.rid||null,date:n.date,quote:n.quote,freight:n.freight,units:n.units,rate:n.rate};return {p:n.p,rid:n.p.rid||null,date:n.date,quote:+quote.toFixed(6)"
+  },
+  {
+    "name": "a lot after the day is counted",
+    "file": "engine/position.mjs",
+    "find": "if(onOrBefore&&d&&d>onOrBefore)return;",
+    "replace": ";"
+  },
+  {
+    "name": "a defaulted, cancelled or pending lot is counted (read by its receivedQty, not the engine's live test)",
+    "file": "engine/position.mjs",
+    "find": "if(!p||!poLive(p)||!(poRecvUnits(p)>0.0001)",
+    "replace": "if(!p||!(+(p.receivedQty!=null?p.receivedQty:p.qty)>0)"
+  },
+  {
+    "name": "a partly landed lot is read over its whole quantity",
+    "file": "engine/position.mjs",
+    "find": "u=Math.min(+p.qty,poRecvUnits(p));return {p:p,date:x.date",
+    "replace": "u=+p.qty;return {p:p,date:x.date"
+  },
+  {
+    "name": "on one day the earlier in the list is the newer",
+    "file": "engine/position.mjs",
+    "find": "return x<y?1:x>y?-1:b.i-a.i;",
+    "replace": "return x<y?1:x>y?-1:a.i-b.i;"
+  },
+  {
+    "name": "a book COST_MIN does not name has a minimum",
+    "file": "engine/position.mjs",
+    "find": "min=+((PRICING_RULES.COST_MIN||{})[book])||0;",
+    "replace": "min=+((PRICING_RULES.COST_MIN||{})[book])||10;"
+  },
+  {
+    "name": "the answer at the minimum carries lots",
+    "file": "engine/position.mjs",
+    "find": "units:n.units,rate:n.rate};",
+    "replace": "units:n.units,rate:n.rate,lots:[]};"
+  },
+  {
+    "name": "a blend takes another book's lots",
+    "file": "engine/position.mjs",
+    "find": "if((x.p.product||'salt')!==book)continue;",
+    "replace": ";"
+  },
+  {
+    "name": "candy's minimum is not his figure",
+    "file": "engine/rules.mjs",
+    "find": "candy:10, rice:100",
+    "replace": "candy:1, rice:100"
+  },
+  {
+    "name": "the snapshot drops the lots",
+    "file": "engine/snapshot.mjs",
+    "find": "x.lots?{lots:x.lots}:{}",
+    "replace": "{}"
+  },
+  {
+    "name": "the cost stack drops the lots",
+    "file": "engine/pricing.mjs",
+    "find": "Array.isArray(LC.lots)?{lots:LC.lots}:{}",
+    "replace": "{}"
+  },
+  {
+    "name": "the Desk binds the other rules table (the old rule, no error)",
+    "find": "min=+((PRICING_RULES.COST_MIN||{})[book])||0;",
+    "replace": "min=+((RULES.COST_MIN||{})[book])||0;"
+  },
+  {
+    "name": "the Desk's Floor line keeps the latest purchase",
+    "find": "${sC.latest?(sC.latest.lots?`, ${newestUnits",
+    "replace": "${sC.latest?(false?`, ${newestUnits"
+  },
+  {
+    "name": "the Desk's COGS sentence keeps the latest purchase",
+    "find": "a unit off ${sC.latest&&sC.latest.lots?newestUnits(sC.latest.units):'the latest purchase'}",
+    "replace": "a unit off ${false?newestUnits(sC.latest.units):'the latest purchase'}"
+  },
+  {
+    "name": "the Desk's replacement line keeps the latest purchase",
+    "find": "c.latest?(c.latest.lots?`${newestUnits(c.latest.units)}, ${lotsTaken(c.latest.lots)}: their quotes",
+    "replace": "c.latest?(false?`${newestUnits(c.latest.units)}, ${lotsTaken(c.latest.lots)}: their quotes"
+  },
+  {
+    "name": "the Desk's freight line keeps the latest purchase",
+    "find": "if(c.latest&&c.latest.lots)return c.latest.freight>0?`the trips of",
+    "replace": "if(false)return c.latest.freight>0?`the trips of"
+  },
+  {
+    "name": "the Desk's basis caption keeps the latest purchase",
+    "find": "(c.latest&&c.latest.lots?`COGS, the floor a unit: landed off",
+    "replace": "(false?`COGS, the floor a unit: landed off"
+  },
+  {
+    "name": "the Desk's moved line keeps the latest lot's size",
+    "find": "if(c.latest&&c.latest.lots) return `<div class=\"dsc\" style=\"margin-top:7px\">The basis moves with the lots",
+    "replace": "if(false) return `<div class=\"dsc\" style=\"margin-top:7px\">The basis moves with the lots"
+  },
+  {
+    "name": "the Desk's freight note keeps the latest purchase",
+    "find": "${c.latest?(c.latest.lots?`the trips over ${newestUnits(c.latest.units)}`",
+    "replace": "${c.latest?(false?`the trips over ${newestUnits(c.latest.units)}`"
+  },
+  {
+    "name": "the Desk names the lots without their rates",
+    "find": "+(rates?' at '+fmt(l.rate):'')",
+    "replace": "+''"
+  },
+  {
+    "name": "the Desk says the newest 10 unit",
+    "find": "(Math.abs(Number(n)-1)<1e-9?'':'s')",
+    "replace": "''"
+  },
+  {
+    "name": "the drafter's note keeps the latest purchase",
+    "file": "src/drafter.js",
+    "find": "const source = c.lots",
+    "replace": "const source = false && c.lots"
+  },
+  {
+    "name": "the drafter flags only a drafted newest lot",
+    "file": "src/drafter.js",
+    "find": "(Array.isArray(b.lots) ? b.lots.map((l) => l && l.draft).filter(Boolean) : (b.draft ? [b.draft] : []))",
+    "replace": "(b.draft ? [b.draft] : [])"
+  },
+  {
+    "name": "the drafter's below-cost flag keeps the latest purchase",
+    "file": "src/drafter.js",
+    "find": "(priced.basis.lots ? `, COGS off ${newestUnits(priced.basis.units)}` : \", COGS off the latest purchase\")",
+    "replace": "\", COGS off the latest purchase\""
+  },
+  {
+    "name": "the drafter's Floor flag keeps the latest lot",
+    "file": "src/drafter.js",
+    "find": "const off = isNum(fl.newest) ?",
+    "replace": "const off = false ?"
+  },
+  {
+    "name": "floorFor does not say the units counted",
+    "file": "src/drafter.js",
+    "find": "newest: C.latest && Array.isArray(C.latest.lots) && isNum(C.latest.units) ? +C.latest.units : null",
+    "replace": "newest: null"
+  },
+  {
+    "name": "the drafter says the newest 10 unit",
+    "file": "src/drafter.js",
+    "find": "Math.abs(n - 1) < 1e-9 ? \"\" : \"s\"",
+    "replace": "\"\""
+  },
+  {
+    "name": "the Workbench keeps the latest purchase",
+    "file": "src/maker-inputs.js",
+    "find": "(c.basis.lots ? newestUnits(c.basis.units) : \"the latest purchase\")",
+    "replace": "\"the latest purchase\""
+  },
+  {
+    "name": "a second copy of the cost arithmetic",
+    "file": "src/orders.js",
+    "find": "  const priced = cogsFor(book, product, agreed.date || null);",
+    "replace": "  const priced = cogsFor(book, product, agreed.date || null); const twin = (lot) => (+lot.total + (+lot.freight || 0)) / lot.qty; void twin;"
+  },
+  {
+    "name": "tools/product.mjs says nothing of COST_MIN",
+    "file": "tools/product.mjs",
+    "find": "  if (!(+((PRICING_RULES.COST_MIN || {})[id]) > 0))\n",
+    "replace": "  if (false)\n"
+  }
+]

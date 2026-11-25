@@ -4137,7 +4137,10 @@ await (async () => {
        RM73 with its freight, is laid down: the stack must read 70 and replCost 73 while the window's trailing rate is another figure. */
     {
       const extra = p === "salt" ? "{}" : JSON.stringify({ product: p });
-      w.eval(`purchases.push(Object.assign({rid:'zLT1',supplier:'SZ9-LTL',date:'2099-12-30',receivedOn:'2099-12-30',qty:10,total:700,freight:30,cash:700,status:'paid',receivedQty:10},${extra}));recompute();`);
+      /* 25 Nov 2026 (the small lot): the lot is laid down at the book's COST_MIN or 10, whichever is more, at the same RM 70 and RM 3 a unit, so it alone is
+         the cost as this check means; at 10 units salt (12.5) and rice (100) now blend it with the lots before it */
+      const q = Math.max(10, +(read("PRICING_RULES.COST_MIN") || {})[p] || 0);
+      w.eval(`purchases.push(Object.assign({rid:'zLT1',supplier:'SZ9-LTL',date:'2099-12-30',receivedOn:'2099-12-30',qty:${q},total:${70 * q},freight:${3 * q},cash:${70 * q},status:'paid',receivedQty:${q}},${extra}));recompute();`);
       const trail = expRepl(p), stack = read("pxCost().repl"), win = read("pxInputs().repl"), rc = read("replCost()");
       w.eval("purchases.splice(purchases.findIndex(function(x){return x.rid==='zLT1';}),1);recompute();");
       ok(stack === 70 && rc === 73 && win === trail && trail !== 70, `${p}: with a newest lot at RM70 laid down, the stack prices off its goods rate, 70, and replCost() off its COGS, 73 (${stack}, ${rc}), not the trailing ${trail} (${win})`);
@@ -48734,6 +48737,10 @@ section("11 Nov 2026: the Floor's unpaid share is re-measured only at a count, a
 await (async () => {
   await (await import("./floor-nrs-anchor.mjs")).run({ ok });
 })();
+section("25 Nov 2026: a small lot does not set the Floor: a lot under its book's minimum is blended with the lots before it");
+await (async () => {
+  await (await import("./floor-small-lot.mjs")).run({ ok });
+})();
 section("18 Oct 2026: the Floor rounds up to the next RM 5, the Ceiling is three times it on every book, the partner pays the Floor");
 await (async () => {
   await (await import("./floor-basis.mjs")).run({ ok });
@@ -52248,8 +52255,10 @@ await (async () => {
     { rid: "pB", date: "2026-10-01", qty: 12.5, total: 750, freight: 50, receivedQty: 10 },
     { rid: "pC", date: "2026-10-03", qty: 5, total: 300, inTransit: true }];
   const lc15 = PE.latestCogs(lots15);
-  ok(lc15 && lc15.rid === "pB" && lc15.units === 10 && lc15.rate === 80,
-    "a lot partly landed is costed over the 10 units received, RM 800 over 10, RM 80 a unit, and a lot still on the road is passed over: " + JSON.stringify(lc15 && [lc15.rid, lc15.units, lc15.rate]));
+  /* 25 Nov 2026 (the small lot): 10 units received is under salt's minimum of 12.5, so pB, at its own RM 80 over the 10 received, is blended
+     with 2.5 of pA at RM 52: RM 930 over 12.5, RM 74.40. pB's own rate is still its whole quote and freight over the units received */
+  ok(lc15 && lc15.rid === "pB" && lc15.units === 12.5 && lc15.rate === 74.4 && JSON.stringify((lc15.lots || []).map((l) => [l.rid, l.units, l.rate])) === JSON.stringify([["pB", 10, 80], ["pA", 2.5, 52]]),
+    "a lot partly landed is costed over the 10 units received, RM 800 over 10, RM 80 a unit, then blended to salt's minimum with 2.5 of pA, RM 74.40, and a lot still on the road is passed over: " + JSON.stringify(lc15 && [lc15.rid, lc15.units, lc15.rate, lc15.lots]));
   /* 16. A BUCKET'S ORDERS ARE ITS ASSOCIATE'S RECORD: driftSignals reads the owner's merged history, the -R bucket included */
   const s16 = rd("(function(){var b=roster.find(function(c){return /-R$/.test(c)&&pSales('salt').some(function(s){return s.customer===c&&s.total>0;});});if(!b)return null;"
     + "var o=ownerOf(b),own=pSales('salt').filter(function(s){return s.customer===o&&s.total>0;}).length,buck=pSales('salt').filter(function(s){return s.customer===b&&s.total>0;}).length;"
