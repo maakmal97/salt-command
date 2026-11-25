@@ -1,6 +1,6 @@
 {
- "v": "v1565",
- "stamped": "22 Nov 2026, 19:57 KL",
+ "v": "v1570",
+ "stamped": "25 Nov 2026, 20:48 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -68,22 +68,22 @@
    "candy": {
     "costPerKg": null,
     "qty": 0,
-    "stated": -20
+    "stated": 10
    },
    "gas": {
     "costPerKg": 50,
     "qty": 0,
-    "stated": 1
+    "stated": 3
    },
    "oil": {
     "costPerKg": 7.666666666666667,
     "qty": 5,
-    "stated": 2
+    "stated": 52
    },
    "rice": {
     "costPerKg": null,
     "qty": 0,
-    "stated": 50
+    "stated": 47
    },
    "salt": {
     "costPerKg": 64,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 2,
+  "STATED_STOCK": 25.5,
   "COUNT_ON": {
    "candy": "2026-11-07",
    "gas": "2026-11-02",
@@ -1552,12 +1552,38 @@
     "total": 69
    },
    {
+    "amend": [
+     {
+      "cash": 650,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 12.5,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": -12.5,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: receivedQty 12.5 to 0",
+      "was": {
+       "receivedQty": 12.5
+      }
+     }
+    ],
     "cash": 650,
     "date": "2026-11-22",
-    "inTransit": true,
+    "mod": "corrected on 2026-11-25: receivedQty 12.5 to 0",
     "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
     "paidOn": "2026-11-22",
     "qty": 12.5,
+    "receivedOn": "2026-11-25",
     "receivedQty": 0,
     "rid": "p061",
     "status": "paid",
@@ -1565,46 +1591,39 @@
     "total": 650
    },
    {
-    "cash": 0,
+    "amend": [
+     {
+      "cash": 164,
+      "date": "2026-11-27",
+      "kg": 3,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: date 2026-11-27 to 2026-11-22",
+      "was": {
+       "date": "2026-11-27"
+      }
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: cash 164 to 150",
+      "was": {
+       "cash": 164
+      }
+     }
+    ],
+    "cash": 150,
     "date": "2026-11-22",
-    "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
-    "pending": true,
-    "product": "candy",
-    "qty": 30,
-    "rid": "p062",
-    "status": "unpaid",
-    "supplier": "CM4-TO-R",
-    "total": 900
-   },
-   {
-    "cash": 0,
-    "date": "2026-11-23",
-    "freight": 15,
-    "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
-    "pending": true,
-    "product": "oil",
-    "qty": 50,
-    "rid": "p063",
-    "status": "unpaid",
-    "supplier": "SP7-PUD",
-    "total": 380
-   },
-   {
-    "cash": 0,
-    "date": "2026-11-23",
-    "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
-    "pending": true,
-    "product": "gas",
-    "qty": 2,
-    "rid": "p064",
-    "status": "unpaid",
-    "supplier": "SP7-PUD",
-    "total": 100
-   },
-   {
-    "cash": 164,
-    "date": "2026-11-27",
     "freight": 14,
+    "mod": "corrected on 2026-11-25: date 2026-11-27 to 2026-11-22, then corrected on 2026-11-25: cash 164 to 150",
     "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
     "paidOn": "2026-11-27",
     "product": "gas",
@@ -1617,8 +1636,28 @@
     "total": 150
    },
    {
+    "amend": [
+     {
+      "cash": 380,
+      "date": "2026-11-27",
+      "kg": 50,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: date 2026-11-27 to 2026-11-22",
+      "was": {
+       "date": "2026-11-27"
+      }
+     }
+    ],
     "cash": 380,
-    "date": "2026-11-27",
+    "date": "2026-11-22",
+    "mod": "corrected on 2026-11-25: date 2026-11-27 to 2026-11-22",
     "note": "Booked when it was approved and written into this book by the export of 2026-11-23. Written by the tool, not a model: the figures are the row's own.",
     "paidOn": "2026-11-27",
     "product": "oil",
@@ -1629,6 +1668,188 @@
     "status": "paid",
     "supplier": "SP7-PUD",
     "total": 380
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-22",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: freight (unset) to 30",
+      "was": {
+       "freight": null
+      }
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 30,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: date 2026-11-22 to 2026-11-26",
+      "was": {
+       "date": "2026-11-22"
+      }
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: freight 30 to 0; handover (unset) to collected",
+      "was": {
+       "freight": 30,
+       "handover": null
+      }
+     },
+     {
+      "cash": 900,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: date 2026-11-26 to 2026-11-25",
+      "was": {
+       "date": "2026-11-26"
+      }
+     }
+    ],
+    "cash": 900,
+    "date": "2026-11-25",
+    "freight": 0,
+    "handover": "collected",
+    "mod": "corrected on 2026-11-25: freight (unset) to 30, then corrected on 2026-11-25: date 2026-11-22 to 2026-11-26, then corrected on 2026-11-25: freight 30 to 0; handover (unset) to collected, then corrected on 2026-11-25: date 2026-11-26 to 2026-11-25",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "product": "candy",
+    "qty": 30,
+    "receivedOn": "2026-11-25",
+    "receivedQty": 30,
+    "rid": "p062",
+    "status": "paid",
+    "supplier": "CM4-TO-R",
+    "total": 900
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-23",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: freight 15 to 11; date 2026-11-23 to 2026-11-25; handover (unset) to delivered",
+      "was": {
+       "date": "2026-11-23",
+       "freight": 15,
+       "handover": null
+      }
+     },
+     {
+      "cash": 380,
+      "date": "2026-11-25",
+      "kg": 50,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 380,
+    "date": "2026-11-25",
+    "freight": 11,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-25: freight 15 to 11; date 2026-11-23 to 2026-11-25; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "product": "oil",
+    "qty": 50,
+    "receivedOn": "2026-11-25",
+    "receivedQty": 50,
+    "rid": "p063",
+    "status": "paid",
+    "supplier": "SP7-PUD",
+    "total": 380
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-23",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: qty 2 to 3; total 100 to 150; freight (unset) to 11; date 2026-11-23 to 2026-11-25; handover (unset) to delivered",
+      "was": {
+       "date": "2026-11-23",
+       "freight": null,
+       "handover": null,
+       "qty": 2,
+       "total": 100
+      }
+     },
+     {
+      "cash": 150,
+      "date": "2026-11-25",
+      "kg": 3,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 150,
+    "date": "2026-11-25",
+    "freight": 11,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-25: qty 2 to 3; total 100 to 150; freight (unset) to 11; date 2026-11-23 to 2026-11-25; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-24. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "product": "gas",
+    "qty": 3,
+    "receivedOn": "2026-11-25",
+    "receivedQty": 3,
+    "rid": "p064",
+    "status": "paid",
+    "supplier": "SP7-PUD",
+    "total": 150
+   },
+   {
+    "cash": 1350,
+    "date": "2026-11-25",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "qty": 25,
+    "receivedOn": "2026-11-25",
+    "receivedQty": 25,
+    "rid": "p065",
+    "status": "paid",
+    "supplier": "SA5-BTR",
+    "total": 1350
    }
   ],
   "sales": [
@@ -16143,9 +16364,15 @@
        "deliveredQty": 0,
        "handover": null
       }
+     },
+     {
+      "cash": 1000,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
      }
     ],
-    "cash": 0,
+    "cash": 1000,
     "cost": 1880,
     "customer": "CZ4-MK",
     "date": "2026-11-24",
@@ -16160,6 +16387,7 @@
      "side": "under",
      "why": "Pricing"
     },
+    "paidOn": "2026-11-25",
     "product": "candy",
     "qty": 20,
     "rid": "s425",
@@ -16180,27 +16408,77 @@
       "date": "2026-11-24",
       "kg": 0,
       "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "cost": 53,
+      "date": "2026-11-25",
+      "kg": 1,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: delivery 20 to 0",
+      "was": {
+       "delivery": 20
+      }
+     },
+     {
+      "cash": 5,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
      }
     ],
-    "cash": 120,
+    "cash": 125,
+    "cost": 53,
     "customer": "CF7-KUC",
     "date": "2026-11-24",
-    "deliveredQty": 0,
-    "delivery": 20,
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 1,
+    "delivery": 0,
+    "handover": "delivered",
     "listQty": 1,
     "listRM": 125,
+    "mod": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered, then corrected on 2026-11-25: delivery 20 to 0",
     "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
     "qty": 1,
     "rid": "s426",
     "road": "site",
     "total": 125
    },
    {
-    "cash": 0,
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-24",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 55,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 55,
     "customer": "CA2-SEN",
     "date": "2026-11-24",
     "deliveredQty": 0,
     "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
     "product": "gas",
     "qty": 1,
     "rid": "s427",
@@ -16208,6 +16486,23 @@
     "total": 55
    },
    {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-24",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Cancellation"
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-11-25",
     "cash": 0,
     "customer": "CA2-SEN",
     "date": "2026-11-24",
@@ -16218,6 +16513,385 @@
     "rid": "s428",
     "road": "site",
     "total": 80
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: total 260 to 200; delivery (unset) to 0",
+      "was": {
+       "delivery": null,
+       "total": 260
+      }
+     },
+     {
+      "cash": 0,
+      "cost": 132.5,
+      "date": "2026-11-25",
+      "kg": 2.5,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 2.5; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 200,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 200,
+    "cost": 132.5,
+    "customer": "CE4-CHE",
+    "date": "2026-11-25",
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 2.5,
+    "delivery": 0,
+    "handover": "collected",
+    "listQty": 2.5,
+    "listRM": 260,
+    "mod": "corrected on 2026-11-25: total 260 to 200; delivery (unset) to 0, then corrected on 2026-11-25: deliveredQty 0 to 2.5; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "qty": 2.5,
+    "rid": "s429",
+    "road": "site",
+    "total": 200
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "cost": 50,
+      "date": "2026-11-25",
+      "kg": 1,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 50,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: total 75 to 50; delivery (unset) to 0",
+      "was": {
+       "delivery": null,
+       "total": 75
+      }
+     }
+    ],
+    "cash": 50,
+    "cost": 50,
+    "customer": "CE4-CHE",
+    "date": "2026-11-25",
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 1,
+    "delivery": 0,
+    "handover": "collected",
+    "mod": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to collected, then corrected on 2026-11-25: total 75 to 50; delivery (unset) to 0",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "oneOff": {
+     "by": 5,
+     "side": "under",
+     "why": "Loyalty"
+    },
+    "product": "gas",
+    "qty": 1,
+    "rid": "s430",
+    "road": "site",
+    "total": 50
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "cost": 5.9,
+      "date": "2026-11-25",
+      "kg": 2,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 16,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 16,
+    "cost": 5.9,
+    "customer": "CB8-SEG-R",
+    "date": "2026-11-25",
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 2,
+    "handover": "delivered",
+    "mod": "corrected on 2026-11-25: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "product": "rice",
+    "qty": 2,
+    "rev": "R2",
+    "rid": "s431",
+    "road": "site",
+    "total": 16
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "cost": 52,
+      "date": "2026-11-25",
+      "kg": 1,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 134,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 134,
+    "cost": 52,
+    "customer": "CB8-SEG-R",
+    "date": "2026-11-25",
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 1,
+    "delivery": 14,
+    "handover": "delivered",
+    "listQty": 1,
+    "listRM": 120,
+    "mod": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "qty": 1,
+    "rev": "R2",
+    "rid": "s432",
+    "road": "site",
+    "total": 120,
+    "trip": "t7553227394564375"
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "cost": 104,
+      "date": "2026-11-25",
+      "kg": 2,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 215,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 215,
+    "cost": 104,
+    "customer": "CK4-SEN",
+    "date": "2026-11-25",
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 2,
+    "handover": "collected",
+    "listQty": 2,
+    "listRM": 215,
+    "mod": "corrected on 2026-11-25: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "qty": 2,
+    "rid": "s433",
+    "road": "site",
+    "total": 215
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "cost": 2.95,
+      "date": "2026-11-25",
+      "kg": 1,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+      "was": {
+       "deliveredOn": null,
+       "deliveredQty": 0,
+       "handover": null
+      }
+     },
+     {
+      "cash": 8,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 8,
+    "cost": 2.95,
+    "customer": "CK4-SEN",
+    "date": "2026-11-25",
+    "deliveredOn": "2026-11-25",
+    "deliveredQty": 1,
+    "handover": "collected",
+    "mod": "corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to collected",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "product": "rice",
+    "qty": 1,
+    "rid": "s434",
+    "road": "site",
+    "total": 8
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Correction",
+      "note": "corrected on 2026-11-25: delivery 15 to 0",
+      "was": {
+       "delivery": 15
+      }
+     },
+     {
+      "cash": 155,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 155,
+    "customer": "CA2-SEN",
+    "date": "2026-11-25",
+    "deliveredQty": 0,
+    "delivery": 0,
+    "mod": "corrected on 2026-11-25: delivery 15 to 0",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "paidOn": "2026-11-25",
+    "product": "oil",
+    "qty": 20,
+    "rid": "s435",
+    "road": "site",
+    "total": 155
+   },
+   {
+    "amend": [
+     {
+      "cash": 0,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment",
+      "note": "as booked"
+     },
+     {
+      "cash": 750,
+      "date": "2026-11-25",
+      "kg": 0,
+      "kind": "Fulfilment"
+     }
+    ],
+    "cash": 750,
+    "customer": "CA2-SEN",
+    "date": "2026-11-25",
+    "deliveredQty": 0,
+    "listQty": 12.5,
+    "listRM": 750,
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "oneOff": {
+     "by": 30,
+     "side": "under",
+     "why": "Allowable"
+    },
+    "paidOn": "2026-11-25",
+    "qty": 12.5,
+    "rid": "s436",
+    "road": "site",
+    "total": 750
    }
   ],
   "contacts": [
@@ -16360,6 +17034,30 @@
     "status": "open",
     "valueKg": null,
     "valueRM": 175
+   },
+   {
+    "date": "2026-11-25",
+    "direction": "in",
+    "form": "salt",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "party": "CM4-TO",
+    "product": "salt",
+    "rid": "l004",
+    "status": "open",
+    "valueKg": 2.5,
+    "valueRM": null
+   },
+   {
+    "date": "2026-11-24",
+    "direction": "in",
+    "form": "salt",
+    "note": "Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.",
+    "party": "CM4-TO",
+    "product": "salt",
+    "rid": "l005",
+    "status": "open",
+    "valueKg": 2.5,
+    "valueRM": null
    }
   ],
   "supplierReceivable": {
@@ -16473,7 +17171,7 @@
    "CZ6-WM-R",
    "CM4-CHE",
    "SD4-KB",
-   "CN3-TBC"
+   "CN3-PJ"
   ],
   "associates": [
    "CS6-BS",
@@ -16770,6 +17468,11 @@
     101.61,
     "Petaling Jaya"
    ],
+   "CN3-PJ": [
+    3.11,
+    101.61,
+    "Petaling Jaya"
+   ],
    "CN3-WM": [
     3.21,
     101.74,
@@ -16932,7 +17635,7 @@
    "CM6-PJ": {
     "salt": -0.24
    },
-   "CN3-TBC": {
+   "CN3-PJ": {
     "salt": 0.3
    },
    "CR3-DAM": {
@@ -17188,7 +17891,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-11-24T14:51:38.614Z",
+  "QUEUE_COMMITTED": "2026-11-25T09:00:38.112Z",
   "MARKET": {},
   "PRICING": {
    "sizes": [
@@ -17215,7 +17918,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "19 customers are past their own habit on salt"
+     "title": "18 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:oil",
@@ -17235,12 +17938,17 @@
     {
      "id": "int:underfloor",
      "sev": "watch",
-     "title": "2 recent sales sit under the ladder's floor at today's cost"
+     "title": "3 recent sales sit under the ladder's floor at today's cost"
+    },
+    {
+     "id": "rhythm:weekend:salt",
+     "sev": "watch",
+     "title": "Weekends run quieter than weekdays"
     },
     {
      "id": "promo:revive:salt",
      "sev": "note",
-     "title": "Three messages are worth about RM 720 on salt"
+     "title": "Three messages are worth about RM 731 on salt"
     },
     {
      "id": "dup:CS6-BS-R:2026-09-16:2026-09-19:420",
@@ -17345,7 +18053,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "21 of 60 customers have bought exactly once"
+     "title": "20 of 60 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -17356,11 +18064,6 @@
      "id": "promo:window:salt",
      "sev": "note",
      "title": "If you run one promotion this fortnight, run it on Sunday 2026-11-29"
-    },
-    {
-     "id": "rhythm:weekend:salt",
-     "sev": "note",
-     "title": "Weekends run quieter than weekdays"
     },
     {
      "id": "rhythm:dow:salt",
@@ -17578,13 +18281,13 @@
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
-      "orders": 17,
+      "orders": 18,
       "tenureDays": 128,
-      "sinceLastDays": 5,
-      "perMonth": 4.04,
-      "unitsPerMonth": 11.12,
+      "sinceLastDays": 0,
+      "perMonth": 4.28,
+      "unitsPerMonth": 11.71,
       "smallShare": 0,
-      "bigShare": 0.18,
+      "bigShare": 0.17,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -17633,6 +18336,21 @@
       "frequent": false,
       "small": false,
       "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "gas": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
       "loyal": false,
       "rare": false
      }
@@ -17736,13 +18454,13 @@
     "CK4-SEN": {
      "salt": {
       "name": "large and regular",
-      "orders": 9,
+      "orders": 10,
       "tenureDays": 86,
-      "sinceLastDays": 5,
-      "perMonth": 3.19,
-      "unitsPerMonth": 14.78,
+      "sinceLastDays": 0,
+      "perMonth": 3.54,
+      "unitsPerMonth": 15.49,
       "smallShare": 0,
-      "bigShare": 1,
+      "bigShare": 0.9,
       "frequent": true,
       "small": false,
       "bigger": true,
@@ -17751,17 +18469,17 @@
      },
      "rice": {
       "name": "consistent mid",
-      "orders": 5,
+      "orders": 6,
       "tenureDays": 56,
-      "sinceLastDays": 5,
-      "perMonth": 2.72,
-      "unitsPerMonth": 8.7,
-      "smallShare": 0.4,
-      "bigShare": 0.2,
+      "sinceLastDays": 0,
+      "perMonth": 3.26,
+      "unitsPerMonth": 9.24,
+      "smallShare": 0.5,
+      "bigShare": 0.17,
       "frequent": true,
       "small": false,
       "bigger": false,
-      "loyal": false,
+      "loyal": true,
       "rare": false
      }
     },
@@ -17814,6 +18532,53 @@
       "rare": false
      }
     },
+    "CA2-SEN": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 4,
+      "tenureDays": 100,
+      "sinceLastDays": 0,
+      "perMonth": 1.22,
+      "unitsPerMonth": 12.33,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "oil": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 20.29,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "gas": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "unitsPerMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CZ5-TM": {
      "salt": {
       "name": "consistent mid",
@@ -17861,23 +18626,6 @@
       "bigger": true,
       "loyal": false,
       "rare": false
-     }
-    },
-    "CA2-SEN": {
-     "salt": {
-      "name": "rare and large",
-      "orders": 3,
-      "tenureDays": 100,
-      "sinceLastDays": 13,
-      "perMonth": 0.91,
-      "unitsPerMonth": 8.52,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": true
      }
     },
     "CC9-OKR": {
@@ -18315,6 +19063,38 @@
       "rare": false
      }
     },
+    "CB8-SEG": {
+     "salt": {
+      "name": "small and often",
+      "orders": 6,
+      "tenureDays": 19,
+      "sinceLastDays": 0,
+      "perMonth": 6.09,
+      "unitsPerMonth": 5.58,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false
+     },
+     "rice": {
+      "name": "consistent mid",
+      "orders": 2,
+      "tenureDays": 19,
+      "sinceLastDays": 0,
+      "perMonth": 2.03,
+      "unitsPerMonth": 3.04,
+      "smallShare": 0.5,
+      "bigShare": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CS5-KLC": {
      "salt": {
       "name": "consistent mid",
@@ -18394,38 +19174,6 @@
       "bigger": false,
       "loyal": false,
       "rare": true
-     }
-    },
-    "CB8-SEG": {
-     "salt": {
-      "name": "small and often",
-      "orders": 5,
-      "tenureDays": 19,
-      "sinceLastDays": 3,
-      "perMonth": 5.07,
-      "unitsPerMonth": 4.57,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
-     },
-     "rice": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 19,
-      "sinceLastDays": 19,
-      "perMonth": 1.01,
-      "unitsPerMonth": 1.01,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
      }
     },
     "CF5-WM": {
@@ -18841,8 +19589,8 @@
    },
    "byProduct": {
     "salt": {
-     "stockCost": 52,
-     "replCost": 53,
+     "stockCost": 53.9608,
+     "replCost": 54,
      "floors": {
       "1": {
        "floor": 65
@@ -18851,49 +19599,49 @@
        "floor": 130
       },
       "3": {
-       "floor": 190
+       "floor": 195
       },
       "4": {
-       "floor": 255
+       "floor": 260
       },
       "5": {
-       "floor": 320
+       "floor": 325
       },
       "25": {
-       "floor": 1585
+       "floor": 1615
       },
       "50": {
-       "floor": 3170
+       "floor": 3230
       },
       "100": {
-       "floor": 6335
+       "floor": 6460
       },
       "0.5": {
        "floor": 35
       },
       "1.5": {
-       "floor": 95
+       "floor": 100
       },
       "2.5": {
-       "floor": 160
+       "floor": 165
       },
       "6.25": {
-       "floor": 400
+       "floor": 405
       },
       "12.5": {
-       "floor": 795
+       "floor": 810
       }
      },
      "inputs": {
       "cost": {
        "nrs": {
-        "share": 0.194701,
+        "share": 0.196084,
         "shortfall": 117.09,
         "gifts": 18.39,
         "writtenOff": 2.5,
-        "paid": 708.67,
-        "at": "2026-11-23",
-        "by": "count"
+        "paid": 703.67,
+        "at": "2026-11-25",
+        "by": "lot"
        },
        "prod": "salt",
        "lockOn": false,
@@ -18920,10 +19668,10 @@
          "why": "RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; what changed is the leak behind it and the attribution in front of it. The 33.14 count took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. These numbers are the unlocked path’s own output, captured rather than hand-computed: the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. Absorbed is 0 by definition at full attribution."
         },
         "cur": {
-         "qty": 50,
-         "total": 2600,
-         "rate": 52,
-         "date": "2026-11-19",
+         "qty": 25,
+         "total": 1350,
+         "rate": 54,
+         "date": "2026-11-25",
          "sup": "SA5-BTR"
         },
         "days": 111,
@@ -18954,15 +19702,15 @@
         "shrink": null
        },
        "lot": {
-        "qty": 50,
-        "total": 2600,
-        "rate": 52,
-        "date": "2026-11-19",
+        "qty": 25,
+        "total": 1350,
+        "rate": 54,
+        "date": "2026-11-25",
         "sup": "SA5-BTR"
        },
-       "meanLot": 24.464285714285715,
+       "meanLot": 24.479166666666668,
        "quoteRate": 56,
-       "repl": 52,
+       "repl": 51.6,
        "freightRate": 1,
        "leak": {
         "ratio": 0.0303,
@@ -18977,12 +19725,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p058",
-        "date": "2026-11-19",
-        "quote": 2600,
-        "freight": 50,
-        "units": 50,
-        "rate": 53
+        "rid": "p065",
+        "date": "2026-11-25",
+        "quote": 1350,
+        "freight": 0,
+        "units": 25,
+        "rate": 54
        },
        "costBasis": {
         "freightPerTrip": {
@@ -18992,15 +19740,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.37572254335260113
+         "v": 0.3785310734463277
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.09244093560360574,
+       "shrinkRate": 0.08979568477078922,
        "avgDel": {
-        "n": 297,
-        "kg": 727.56,
-        "mean": 2.4497
+        "n": 301,
+        "kg": 734.06,
+        "mean": 2.4387
        }
       },
       "policy": {
@@ -19281,8 +20029,8 @@
       {
        "q": 1.5,
        "prices": [
-        95,
-        185
+        100,
+        195
        ],
        "fixed": false,
        "drift": true
@@ -19299,7 +20047,7 @@
       {
        "q": 2.5,
        "prices": [
-        160,
+        165,
         305
        ],
        "fixed": false,
@@ -19308,8 +20056,8 @@
       {
        "q": 3,
        "prices": [
-        190,
-        355
+        195,
+        365
        ],
        "fixed": false,
        "drift": true
@@ -19317,7 +20065,7 @@
       {
        "q": 3.5,
        "prices": [
-        225,
+        230,
         410
        ],
        "fixed": false,
@@ -19326,8 +20074,8 @@
       {
        "q": 4,
        "prices": [
-        255,
-        460
+        260,
+        470
        ],
        "fixed": false,
        "drift": true
@@ -19335,8 +20083,8 @@
       {
        "q": 4.5,
        "prices": [
-        285,
-        505
+        295,
+        515
        ],
        "fixed": false,
        "drift": true
@@ -19344,8 +20092,8 @@
       {
        "q": 5,
        "prices": [
-        320,
-        550
+        325,
+        560
        ],
        "fixed": false,
        "drift": true
@@ -19353,8 +20101,8 @@
       {
        "q": 6.25,
        "prices": [
-        400,
-        680
+        405,
+        685
        ],
        "fixed": false,
        "drift": true
@@ -19362,8 +20110,8 @@
       {
        "q": 12.5,
        "prices": [
-        795,
-        1085
+        810,
+        1095
        ],
        "fixed": false,
        "drift": true
@@ -19371,8 +20119,8 @@
       {
        "q": 25,
        "prices": [
-        1585,
-        2145
+        1615,
+        2180
        ],
        "fixed": false,
        "drift": true
@@ -19380,8 +20128,8 @@
       {
        "q": 50,
        "prices": [
-        3170,
-        4255
+        3230,
+        4325
        ],
        "fixed": false,
        "drift": true
@@ -19389,7 +20137,7 @@
       {
        "q": 100,
        "prices": [
-        6335,
+        6460,
         8390
        ],
        "fixed": false,
@@ -19408,7 +20156,7 @@
        ],
        [
         1.5,
-        160
+        170
        ],
        [
         2,
@@ -19420,35 +20168,35 @@
        ],
        [
         3,
-        310
+        320
        ],
        [
         4,
-        405
+        415
        ],
        [
         5,
-        490
+        500
        ],
        [
         6.25,
-        605
+        615
        ],
        [
         12.5,
-        1015
+        1030
        ],
        [
         25,
-        2015
+        2050
        ],
        [
         50,
-        4010
+        4075
        ],
        [
         100,
-        7930
+        7960
        ]
       ],
       "CS6-PER": [
@@ -19462,11 +20210,11 @@
        ],
        [
         1.5,
-        150
+        155
        ],
        [
         2,
-        200
+        205
        ],
        [
         2.5,
@@ -19474,35 +20222,35 @@
        ],
        [
         3,
-        290
+        300
        ],
        [
         4,
-        385
+        390
        ],
        [
         5,
-        465
+        475
        ],
        [
         6.25,
-        575
+        585
        ],
        [
         12.5,
-        985
+        1000
        ],
        [
         25,
-        1955
+        1990
        ],
        [
         50,
-        3895
+        3960
        ],
        [
         100,
-        7710
+        7755
        ]
       ],
       "CM4-TO": [
@@ -19516,7 +20264,7 @@
        ],
        [
         1.5,
-        95
+        100
        ],
        [
         2,
@@ -19524,39 +20272,39 @@
        ],
        [
         2.5,
-        160
+        165
        ],
        [
         3,
-        190
+        195
        ],
        [
         4,
-        255
+        260
        ],
        [
         5,
-        320
+        325
        ],
        [
         6.25,
-        400
+        405
        ],
        [
         12.5,
-        795
+        810
        ],
        [
         25,
-        1585
+        1615
        ],
        [
         50,
-        3170
+        3230
        ],
        [
         100,
-        6335
+        6460
        ]
       ],
       "CE4-CHE": [
@@ -19570,7 +20318,7 @@
        ],
        [
         1.5,
-        160
+        170
        ],
        [
         2,
@@ -19582,35 +20330,35 @@
        ],
        [
         3,
-        310
+        320
        ],
        [
         4,
-        405
+        415
        ],
        [
         5,
-        490
+        500
        ],
        [
         6.25,
-        605
+        615
        ],
        [
         12.5,
-        1015
+        1030
        ],
        [
         25,
-        2015
+        2050
        ],
        [
         50,
-        4010
+        4075
        ],
        [
         100,
-        7930
+        7960
        ]
       ],
       "CZ4-MK": [
@@ -19624,11 +20372,11 @@
        ],
        [
         1.5,
-        170
+        175
        ],
        [
         2,
-        225
+        230
        ],
        [
         2.5,
@@ -19636,35 +20384,35 @@
        ],
        [
         3,
-        325
+        335
        ],
        [
         4,
-        425
+        435
        ],
        [
         5,
-        515
+        520
        ],
        [
         6.25,
-        630
+        640
        ],
        [
         12.5,
-        1045
+        1055
        ],
        [
         25,
-        2065
+        2100
        ],
        [
         50,
-        4105
+        4175
        ],
        [
         100,
-        8110
+        8130
        ]
       ],
       "CM4-MK": [
@@ -19678,11 +20426,11 @@
        ],
        [
         1.5,
-        190
+        195
        ],
        [
         2,
-        250
+        255
        ],
        [
         2.5,
@@ -19690,31 +20438,31 @@
        ],
        [
         3,
-        360
+        370
        ],
        [
         4,
-        465
+        475
        ],
        [
         5,
-        555
+        565
        ],
        [
         6.25,
-        685
+        690
        ],
        [
         12.5,
-        1100
+        1105
        ],
        [
         25,
-        2165
+        2190
        ],
        [
         50,
-        4275
+        4335
        ],
        [
         100,
@@ -19732,7 +20480,7 @@
        ],
        [
         1.5,
-        160
+        170
        ],
        [
         2,
@@ -19744,35 +20492,35 @@
        ],
        [
         3,
-        310
+        320
        ],
        [
         4,
-        405
+        415
        ],
        [
         5,
-        490
+        500
        ],
        [
         6.25,
-        605
+        615
        ],
        [
         12.5,
-        1015
+        1030
        ],
        [
         25,
-        2015
+        2050
        ],
        [
         50,
-        4010
+        4075
        ],
        [
         100,
-        7930
+        7960
        ]
       ],
       "CK4-SEN": [
@@ -19786,47 +20534,47 @@
        ],
        [
         1.5,
-        160
+        170
        ],
        [
         2,
-        215
+        220
        ],
        [
         2.5,
-        265
+        270
        ],
        [
         3,
-        315
+        320
        ],
        [
         4,
-        410
+        415
        ],
        [
         5,
-        495
+        500
        ],
        [
         6.25,
-        610
+        615
        ],
        [
         12.5,
-        1020
+        1030
        ],
        [
         25,
-        2020
+        2055
        ],
        [
         50,
-        4020
+        4090
        ],
        [
         100,
-        7950
+        7980
        ]
       ],
       "CN3-WM": [
@@ -19840,7 +20588,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -19852,31 +20600,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -19894,155 +20642,47 @@
        ],
        [
         1.5,
-        175
-       ],
-       [
-        2,
-        230
-       ],
-       [
-        2.5,
-        285
-       ],
-       [
-        3,
-        335
-       ],
-       [
-        4,
-        435
-       ],
-       [
-        5,
-        525
-       ],
-       [
-        6.25,
-        645
-       ],
-       [
-        12.5,
-        1055
-       ],
-       [
-        25,
-        2090
-       ],
-       [
-        50,
-        4155
-       ],
-       [
-        100,
-        8200
-       ]
-      ],
-      "CZ5-TM": [
-       [
-        0.5,
-        55
-       ],
-       [
-        1,
-        95
-       ],
-       [
-        1.5,
-        135
-       ],
-       [
-        2,
         180
        ],
        [
-        2.5,
-        225
-       ],
-       [
-        3,
-        265
-       ],
-       [
-        4,
-        350
-       ],
-       [
-        5,
-        430
-       ],
-       [
-        6.25,
-        530
-       ],
-       [
-        12.5,
-        940
-       ],
-       [
-        25,
-        1870
-       ],
-       [
-        50,
-        3725
-       ],
-       [
-        100,
-        7390
-       ]
-      ],
-      "CE4-AD": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        185
-       ],
-       [
         2,
-        250
+        235
        ],
        [
         2.5,
-        305
+        290
        ],
        [
         3,
-        355
+        345
        ],
        [
         4,
-        460
+        445
        ],
        [
         5,
-        550
+        535
        ],
        [
         6.25,
-        680
+        655
        ],
        [
         12.5,
-        1085
+        1065
        ],
        [
         25,
-        2145
+        2125
        ],
        [
         50,
-        4255
+        4225
        ],
        [
         100,
-        8390
+        8215
        ]
       ],
       "CA2-SEN": [
@@ -20056,7 +20696,7 @@
        ],
        [
         1.5,
-        95
+        100
        ],
        [
         2,
@@ -20064,39 +20704,147 @@
        ],
        [
         2.5,
-        160
+        165
        ],
        [
         3,
-        190
+        195
        ],
        [
         4,
-        255
+        260
        ],
        [
         5,
-        320
+        325
        ],
        [
         6.25,
-        400
+        405
        ],
        [
         12.5,
-        795
+        810
        ],
        [
         25,
-        1585
+        1615
        ],
        [
         50,
-        3170
+        3230
        ],
        [
         100,
-        6335
+        6460
+       ]
+      ],
+      "CZ5-TM": [
+       [
+        0.5,
+        55
+       ],
+       [
+        1,
+        95
+       ],
+       [
+        1.5,
+        140
+       ],
+       [
+        2,
+        185
+       ],
+       [
+        2.5,
+        230
+       ],
+       [
+        3,
+        275
+       ],
+       [
+        4,
+        360
+       ],
+       [
+        5,
+        435
+       ],
+       [
+        6.25,
+        540
+       ],
+       [
+        12.5,
+        955
+       ],
+       [
+        25,
+        1900
+       ],
+       [
+        50,
+        3790
+       ],
+       [
+        100,
+        7455
+       ]
+      ],
+      "CE4-AD": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        195
+       ],
+       [
+        2,
+        250
+       ],
+       [
+        2.5,
+        305
+       ],
+       [
+        3,
+        365
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        5,
+        560
+       ],
+       [
+        6.25,
+        685
+       ],
+       [
+        12.5,
+        1095
+       ],
+       [
+        25,
+        2180
+       ],
+       [
+        50,
+        4325
+       ],
+       [
+        100,
+        8390
        ]
       ],
       "CC9-OKR": [
@@ -20110,7 +20858,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20122,31 +20870,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20164,7 +20912,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20176,31 +20924,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20218,7 +20966,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20230,31 +20978,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20272,7 +21020,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20284,31 +21032,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20326,11 +21074,11 @@
        ],
        [
         1.5,
-        165
+        175
        ],
        [
         2,
-        220
+        225
        ],
        [
         2.5,
@@ -20338,35 +21086,35 @@
        ],
        [
         3,
-        325
+        330
        ],
        [
         4,
-        420
+        430
        ],
        [
         5,
-        505
+        515
        ],
        [
         6.25,
-        625
+        635
        ],
        [
         12.5,
-        1035
+        1045
        ],
        [
         25,
-        2050
+        2085
        ],
        [
         50,
-        4080
+        4150
        ],
        [
         100,
-        8065
+        8085
        ]
       ],
       "CD4-DAM": [
@@ -20380,11 +21128,11 @@
        ],
        [
         1.5,
-        150
+        155
        ],
        [
         2,
-        200
+        205
        ],
        [
         2.5,
@@ -20392,35 +21140,35 @@
        ],
        [
         3,
-        290
+        300
        ],
        [
         4,
-        385
+        390
        ],
        [
         5,
-        465
+        475
        ],
        [
         6.25,
-        575
+        585
        ],
        [
         12.5,
-        985
+        1000
        ],
        [
         25,
-        1955
+        1990
        ],
        [
         50,
-        3895
+        3960
        ],
        [
         100,
-        7710
+        7755
        ]
       ],
       "CJ2-KUC": [
@@ -20434,7 +21182,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20446,31 +21194,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20488,7 +21236,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20500,31 +21248,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20542,7 +21290,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20554,31 +21302,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20596,7 +21344,7 @@
        ],
        [
         1.5,
-        155
+        165
        ],
        [
         2,
@@ -20608,35 +21356,35 @@
        ],
        [
         3,
-        305
+        310
        ],
        [
         4,
-        395
+        405
        ],
        [
         5,
-        480
+        490
        ],
        [
         6.25,
-        595
+        600
        ],
        [
         12.5,
-        1005
+        1015
        ],
        [
         25,
-        1990
+        2025
        ],
        [
         50,
-        3960
+        4030
        ],
        [
         100,
-        7840
+        7875
        ]
       ],
       "CH4-KS": [
@@ -20650,7 +21398,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20662,31 +21410,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20704,11 +21452,11 @@
        ],
        [
         1.5,
-        165
+        175
        ],
        [
         2,
-        220
+        225
        ],
        [
         2.5,
@@ -20716,35 +21464,35 @@
        ],
        [
         3,
-        325
+        330
        ],
        [
         4,
-        420
+        430
        ],
        [
         5,
-        505
+        515
        ],
        [
         6.25,
-        625
+        635
        ],
        [
         12.5,
-        1035
+        1045
        ],
        [
         25,
-        2050
+        2085
        ],
        [
         50,
-        4080
+        4150
        ],
        [
         100,
-        8065
+        8085
        ]
       ],
       "CR4-PJ": [
@@ -20758,7 +21506,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20770,31 +21518,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -20812,47 +21560,47 @@
        ],
        [
         1.5,
-        135
+        140
        ],
        [
         2,
-        180
+        185
        ],
        [
         2.5,
-        225
+        230
        ],
        [
         3,
-        265
+        275
        ],
        [
         4,
-        350
+        360
        ],
        [
         5,
-        430
+        435
        ],
        [
         6.25,
-        530
+        540
        ],
        [
         12.5,
-        940
+        955
        ],
        [
         25,
-        1870
+        1900
        ],
        [
         50,
-        3725
+        3790
        ],
        [
         100,
-        7390
+        7455
        ]
       ],
       "CE5-SA": [
@@ -20866,7 +21614,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -20878,193 +21626,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
-       ],
-       [
-        100,
-        8390
-       ]
-      ],
-      "CS5-KLC": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        200
-       ],
-       [
-        2,
-        265
-       ],
-       [
-        2.5,
-        320
-       ],
-       [
-        3,
-        375
-       ],
-       [
-        4,
-        480
-       ],
-       [
-        5,
-        575
-       ],
-       [
-        6.25,
-        700
-       ],
-       [
-        12.5,
-        1130
-       ],
-       [
-        25,
-        2205
-       ],
-       [
-        50,
-        4315
-       ],
-       [
-        100,
-        8390
-       ]
-      ],
-      "CG5-SB": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        185
-       ],
-       [
-        2,
-        250
-       ],
-       [
-        2.5,
-        305
-       ],
-       [
-        3,
-        355
-       ],
-       [
-        4,
-        460
-       ],
-       [
-        5,
-        550
-       ],
-       [
-        6.25,
-        680
-       ],
-       [
-        12.5,
-        1085
-       ],
-       [
-        25,
-        2145
-       ],
-       [
-        50,
-        4255
-       ],
-       [
-        100,
-        8390
-       ]
-      ],
-      "CY2-NIL": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        185
-       ],
-       [
-        2,
-        250
-       ],
-       [
-        2.5,
-        305
-       ],
-       [
-        3,
-        355
-       ],
-       [
-        4,
-        460
-       ],
-       [
-        5,
-        550
-       ],
-       [
-        6.25,
-        680
-       ],
-       [
-        12.5,
-        1085
-       ],
-       [
-        25,
-        2145
-       ],
-       [
-        50,
-        4255
+        4325
        ],
        [
         100,
@@ -21082,7 +21668,7 @@
        ],
        [
         1.5,
-        170
+        180
        ],
        [
         2,
@@ -21094,35 +21680,197 @@
        ],
        [
         3,
-        330
+        340
        ],
        [
         4,
-        430
+        440
        ],
        [
         5,
-        520
+        530
        ],
        [
         6.25,
-        640
+        645
        ],
        [
         12.5,
-        1050
+        1060
        ],
        [
         25,
-        2075
+        2110
        ],
        [
         50,
-        4130
+        4200
        ],
        [
         100,
-        8155
+        8170
+       ]
+      ],
+      "CS5-KLC": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        205
+       ],
+       [
+        2,
+        265
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        380
+       ],
+       [
+        4,
+        485
+       ],
+       [
+        5,
+        580
+       ],
+       [
+        6.25,
+        705
+       ],
+       [
+        12.5,
+        1135
+       ],
+       [
+        25,
+        2230
+       ],
+       [
+        50,
+        4365
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CG5-SB": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        195
+       ],
+       [
+        2,
+        250
+       ],
+       [
+        2.5,
+        305
+       ],
+       [
+        3,
+        365
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        5,
+        560
+       ],
+       [
+        6.25,
+        685
+       ],
+       [
+        12.5,
+        1095
+       ],
+       [
+        25,
+        2180
+       ],
+       [
+        50,
+        4325
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CY2-NIL": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        195
+       ],
+       [
+        2,
+        250
+       ],
+       [
+        2.5,
+        305
+       ],
+       [
+        3,
+        365
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        5,
+        560
+       ],
+       [
+        6.25,
+        685
+       ],
+       [
+        12.5,
+        1095
+       ],
+       [
+        25,
+        2180
+       ],
+       [
+        50,
+        4325
+       ],
+       [
+        100,
+        8390
        ]
       ],
       "CF5-WM": [
@@ -21136,7 +21884,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21148,31 +21896,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21190,7 +21938,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21202,31 +21950,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21244,7 +21992,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21256,31 +22004,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21298,7 +22046,7 @@
        ],
        [
         1.5,
-        200
+        205
        ],
        [
         2,
@@ -21310,31 +22058,31 @@
        ],
        [
         3,
-        375
+        380
        ],
        [
         4,
-        480
+        485
        ],
        [
         5,
-        575
+        580
        ],
        [
         6.25,
-        700
+        705
        ],
        [
         12.5,
-        1130
+        1135
        ],
        [
         25,
-        2205
+        2230
        ],
        [
         50,
-        4315
+        4365
        ],
        [
         100,
@@ -21352,7 +22100,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21364,31 +22112,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21406,7 +22154,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21418,31 +22166,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21460,7 +22208,7 @@
        ],
        [
         1.5,
-        210
+        215
        ],
        [
         2,
@@ -21472,31 +22220,31 @@
        ],
        [
         3,
-        385
+        390
        ],
        [
         4,
-        495
+        500
        ],
        [
         5,
-        585
+        595
        ],
        [
         6.25,
-        710
+        715
        ],
        [
         12.5,
-        1155
+        1160
        ],
        [
         25,
-        2240
+        2260
        ],
        [
         50,
-        4345
+        4385
        ],
        [
         100,
@@ -21514,7 +22262,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21526,31 +22274,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21568,7 +22316,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21580,31 +22328,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21622,7 +22370,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21634,31 +22382,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21676,7 +22424,7 @@
        ],
        [
         1.5,
-        210
+        215
        ],
        [
         2,
@@ -21688,15 +22436,15 @@
        ],
        [
         3,
-        385
+        395
        ],
        [
         4,
-        495
+        500
        ],
        [
         5,
-        590
+        595
        ],
        [
         6.25,
@@ -21704,15 +22452,15 @@
        ],
        [
         12.5,
-        1160
+        1165
        ],
        [
         25,
-        2250
+        2265
        ],
        [
         50,
-        4350
+        4390
        ],
        [
         100,
@@ -21730,7 +22478,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21742,31 +22490,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21784,7 +22532,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21796,31 +22544,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21838,7 +22586,7 @@
        ],
        [
         1.5,
-        200
+        205
        ],
        [
         2,
@@ -21850,31 +22598,31 @@
        ],
        [
         3,
-        375
+        380
        ],
        [
         4,
-        480
+        490
        ],
        [
         5,
-        575
+        580
        ],
        [
         6.25,
-        700
+        705
        ],
        [
         12.5,
-        1130
+        1140
        ],
        [
         25,
-        2210
+        2230
        ],
        [
         50,
-        4315
+        4365
        ],
        [
         100,
@@ -21892,7 +22640,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -21904,31 +22652,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -21946,7 +22694,7 @@
        ],
        [
         1.5,
-        210
+        215
        ],
        [
         2,
@@ -21958,15 +22706,15 @@
        ],
        [
         3,
-        385
+        395
        ],
        [
         4,
-        495
+        500
        ],
        [
         5,
-        590
+        595
        ],
        [
         6.25,
@@ -21974,15 +22722,15 @@
        ],
        [
         12.5,
-        1160
+        1165
        ],
        [
         25,
-        2250
+        2265
        ],
        [
         50,
-        4350
+        4390
        ],
        [
         100,
@@ -22000,7 +22748,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22012,31 +22760,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22054,7 +22802,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22066,31 +22814,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22108,7 +22856,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22120,31 +22868,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22162,7 +22910,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22174,31 +22922,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22216,7 +22964,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22228,31 +22976,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22270,7 +23018,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22282,31 +23030,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22324,7 +23072,7 @@
        ],
        [
         1.5,
-        185
+        195
        ],
        [
         2,
@@ -22336,31 +23084,31 @@
        ],
        [
         3,
-        355
+        365
        ],
        [
         4,
-        460
+        470
        ],
        [
         5,
-        550
+        560
        ],
        [
         6.25,
-        680
+        685
        ],
        [
         12.5,
-        1085
+        1095
        ],
        [
         25,
-        2145
+        2180
        ],
        [
         50,
-        4255
+        4325
        ],
        [
         100,
@@ -22378,7 +23126,7 @@
        ],
        [
         1.5,
-        190
+        200
        ],
        [
         2,
@@ -22390,31 +23138,31 @@
        ],
        [
         3,
-        365
+        375
        ],
        [
         4,
-        470
+        480
        ],
        [
         5,
-        560
+        570
        ],
        [
         6.25,
-        690
+        695
        ],
        [
         12.5,
-        1110
+        1115
        ],
        [
         25,
-        2180
+        2205
        ],
        [
         50,
-        4285
+        4345
        ],
        [
         100,
@@ -22432,7 +23180,7 @@
        ],
        [
         1.5,
-        195
+        205
        ],
        [
         2,
@@ -22444,65 +23192,11 @@
        ],
        [
         3,
-        370
+        380
        ],
        [
         4,
-        475
-       ],
-       [
-        5,
-        570
-       ],
-       [
-        6.25,
-        695
-       ],
-       [
-        12.5,
-        1120
-       ],
-       [
-        25,
-        2195
-       ],
-       [
-        50,
-        4305
-       ],
-       [
-        100,
-        8390
-       ]
-      ],
-      "CN3-TBC": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        200
-       ],
-       [
-        2,
-        265
-       ],
-       [
-        2.5,
-        320
-       ],
-       [
-        3,
-        375
-       ],
-       [
-        4,
-        480
+        485
        ],
        [
         5,
@@ -22518,11 +23212,65 @@
        ],
        [
         25,
-        2205
+        2220
        ],
        [
         50,
-        4315
+        4355
+       ],
+       [
+        100,
+        8390
+       ]
+      ],
+      "CN3-PJ": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        205
+       ],
+       [
+        2,
+        265
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        380
+       ],
+       [
+        4,
+        485
+       ],
+       [
+        5,
+        580
+       ],
+       [
+        6.25,
+        705
+       ],
+       [
+        12.5,
+        1135
+       ],
+       [
+        25,
+        2230
+       ],
+       [
+        50,
+        4365
        ],
        [
         100,
@@ -22545,9 +23293,9 @@
       "CK4-SEN": -0.19,
       "CN3-WM": 0,
       "CR3-DAM": -0.08,
+      "CA2-SEN": "partner",
       "CZ5-TM": -0.45,
       "CE4-AD": 0,
-      "CA2-SEN": "partner",
       "CC9-OKR": 0,
       "CI5-PER": 0,
       "CM6-HCM": 0,
@@ -22563,10 +23311,10 @@
       "CR4-PJ": 0,
       "CM4-SK": -0.45,
       "CE5-SA": 0,
+      "CB8-SEG": -0.1,
       "CS5-KLC": 0.3,
       "CG5-SB": 0,
       "CY2-NIL": 0,
-      "CB8-SEG": -0.1,
       "CF5-WM": 0,
       "CA6-CYB": 0,
       "CF7-KUC": 0,
@@ -22592,7 +23340,7 @@
       "CJ5-CHE": 0,
       "CAY4-DAM": 0.17,
       "CA3-PJ": 0.25,
-      "CN3-TBC": 0.3
+      "CN3-PJ": 0.3
      },
      "suggest": {
       "CS6-BS": {
@@ -22620,7 +23368,7 @@
        "why": "paid late"
       },
       "CK4-SEN": {
-       "pct": -0.25,
+       "pct": -0.3,
        "why": "good record"
       },
       "CN3-WM": {
@@ -22699,6 +23447,10 @@
        "pct": -0.15,
        "why": "good record"
       },
+      "CB8-SEG": {
+       "pct": -0.25,
+       "why": "good record"
+      },
       "CS5-KLC": {
        "pct": -0.1,
        "why": "good record"
@@ -22709,10 +23461,6 @@
       },
       "CY2-NIL": {
        "pct": -0.15,
-       "why": "good record"
-      },
-      "CB8-SEG": {
-       "pct": -0.25,
        "why": "good record"
       },
       "CF5-WM": {
@@ -22815,7 +23563,7 @@
        "pct": 0,
        "why": ""
       },
-      "CN3-TBC": {
+      "CN3-PJ": {
        "pct": 0,
        "why": ""
       }
@@ -22837,12 +23585,12 @@
        "margin30": 327.95,
        "owes": 255,
        "warn": {
-        "perUnit": 77,
+        "perUnit": 76,
         "units30": 6.45,
         "bigger": {
          "q": 3,
-         "perUnit": 62,
-         "less30": 96.75
+         "perUnit": 64.33,
+         "less30": 75.25
         },
         "tenOff": {
          "less30": 64.5
@@ -22859,12 +23607,12 @@
        "margin30": 240.49,
        "owes": 0,
        "warn": {
-        "perUnit": 43,
+        "perUnit": 43.6,
         "units30": 10.99,
         "bigger": {
          "q": 25,
-         "perUnit": 26.6,
-         "less30": 180.24
+         "perUnit": 27,
+         "less30": 182.43
         },
         "tenOff": {
          "less30": 52.75
@@ -22881,12 +23629,12 @@
        "margin30": 231.14,
        "owes": 70,
        "warn": {
-        "perUnit": 67,
+        "perUnit": 66,
         "units30": 5.74,
         "bigger": {
          "q": 3,
-         "perUnit": 55.33,
-         "less30": 66.97
+         "perUnit": 57.67,
+         "less30": 47.83
         },
         "tenOff": {
          "less30": 57.4
@@ -22904,12 +23652,12 @@
        "owes": 0,
        "writeOff": true,
        "warn": {
-        "perUnit": 127,
+        "perUnit": 126,
         "units30": 1.99,
         "bigger": {
          "q": 1.5,
-         "perUnit": 67,
-         "less30": 119.4
+         "perUnit": 76,
+         "less30": 99.5
         },
         "tenOff": {
          "less30": 39.8
@@ -22926,12 +23674,12 @@
        "margin30": 100.25,
        "owes": 0,
        "warn": {
-        "perUnit": 77,
+        "perUnit": 76,
         "units30": 3.08,
         "bigger": {
          "q": 3,
-         "perUnit": 62,
-         "less30": 46.2
+         "perUnit": 64.33,
+         "less30": 35.93
         },
         "tenOff": {
          "less30": 30.8
@@ -22948,12 +23696,12 @@
        "margin30": 515.74,
        "owes": 0,
        "warn": {
-        "perUnit": 50.33,
+        "perUnit": 56,
         "units30": 11.91,
         "bigger": {
          "q": 5,
-         "perUnit": 44,
-         "less30": 75.43
+         "perUnit": 45,
+         "less30": 131.01
         },
         "tenOff": {
          "less30": 79.4
@@ -22970,37 +23718,15 @@
        "margin30": 389.14,
        "owes": 0,
        "warn": {
-        "perUnit": 43.67,
+        "perUnit": 49.33,
         "units30": 11.79,
         "bigger": {
          "q": 5,
          "perUnit": 39,
-         "less30": 55.02
+         "less30": 121.83
         },
         "tenOff": {
          "less30": 78.6
-        }
-       }
-      },
-      "CB8-SEG": {
-       "state": "late",
-       "gap": 1.5,
-       "usual": 1,
-       "last": "2026-11-22",
-       "since": 3,
-       "next": "2026-11-24",
-       "margin30": 365,
-       "owes": 0,
-       "warn": {
-        "perUnit": 67,
-        "units30": 4.5,
-        "bigger": {
-         "q": 3,
-         "perUnit": 55.33,
-         "less30": 52.5
-        },
-        "tenOff": {
-         "less30": 45
         }
        }
       },
@@ -23014,12 +23740,12 @@
        "margin30": 165.79,
        "owes": 0,
        "warn": {
-        "perUnit": 127,
+        "perUnit": 126,
         "units30": 1.97,
         "bigger": {
          "q": 1.5,
-         "perUnit": 67,
-         "less30": 118.2
+         "perUnit": 76,
+         "less30": 98.5
         },
         "tenOff": {
          "less30": 39.4
@@ -23036,12 +23762,12 @@
        "margin30": 143.63,
        "owes": 0,
        "warn": {
-        "perUnit": 77,
+        "perUnit": 76,
         "units30": 2.63,
         "bigger": {
          "q": 3,
-         "perUnit": 62,
-         "less30": 39.45
+         "perUnit": 64.33,
+         "less30": 30.68
         },
         "tenOff": {
          "less30": 26.3
@@ -23058,12 +23784,12 @@
        "margin30": 103.25,
        "owes": 0,
        "warn": {
-        "perUnit": 67,
+        "perUnit": 76,
         "units30": 2.5,
         "bigger": {
          "q": 5,
-         "perUnit": 55,
-         "less30": 30
+         "perUnit": 56,
+         "less30": 50
         },
         "tenOff": {
          "less30": 25
@@ -23080,15 +23806,15 @@
        "margin30": 511.82,
        "owes": 180,
        "warn": {
-        "perUnit": 69.5,
+        "perUnit": 71,
         "units30": 10.49,
         "bigger": {
          "q": 6.25,
-         "perUnit": 55,
-         "less30": 152.1
+         "perUnit": 55.6,
+         "less30": 161.55
         },
         "tenOff": {
-         "less30": 0
+         "less30": 26.23
         }
        }
       },
@@ -23100,17 +23826,17 @@
        "since": 29,
        "next": "2026-11-23",
        "margin30": 199.58,
-       "owes": 1000,
+       "owes": 0,
        "warn": {
-        "perUnit": 48,
+        "perUnit": 49,
         "units30": 5.08,
         "bigger": {
          "q": 25,
-         "perUnit": 28.4,
-         "less30": 99.57
+         "perUnit": 29,
+         "less30": 101.6
         },
         "tenOff": {
-         "less30": 25.4
+         "less30": 30.48
         }
        }
       },
@@ -23124,12 +23850,12 @@
        "margin30": 129.38,
        "owes": 0,
        "warn": {
-        "perUnit": 57,
+        "perUnit": 56,
         "units30": 3.13,
         "bigger": {
          "q": 3,
-         "perUnit": 45.33,
-         "less30": 36.52
+         "perUnit": 47.67,
+         "less30": 26.08
         },
         "tenOff": {
          "less30": 31.3
@@ -23146,37 +23872,37 @@
        "margin30": 99.45,
        "owes": 0,
        "warn": {
-        "perUnit": 53.67,
+        "perUnit": 62.67,
         "units30": 1.89,
         "bigger": {
          "q": 5,
-         "perUnit": 47,
-         "less30": 12.6
+         "perUnit": 48,
+         "less30": 27.72
         },
         "tenOff": {
-         "less30": 12.6
+         "less30": 18.9
         }
        }
       },
       "CK4-SEN": {
        "state": "early",
-       "gap": 10,
-       "usual": 5,
-       "last": "2026-11-20",
-       "since": 5,
-       "next": "2026-11-30",
-       "margin30": 503.02,
+       "gap": 9,
+       "usual": 4,
+       "last": "2026-11-25",
+       "since": 0,
+       "next": "2026-12-04",
+       "margin30": 541.74,
        "owes": 0,
        "warn": {
-        "perUnit": 44,
-        "units30": 14.56,
+        "perUnit": 48.5,
+        "units30": 15.26,
         "bigger": {
-         "q": 25,
-         "perUnit": 26.8,
-         "less30": 250.43
+         "q": 12.5,
+         "perUnit": 27.2,
+         "less30": 325.04
         },
         "tenOff": {
-         "less30": 72.8
+         "less30": 95.38
         }
        }
       },
@@ -23184,21 +23910,21 @@
        "state": "early",
        "gap": 8,
        "usual": 2.5,
-       "last": "2026-11-20",
-       "since": 5,
-       "next": "2026-11-28",
-       "margin30": 442.62,
+       "last": "2026-11-25",
+       "since": 0,
+       "next": "2026-12-03",
+       "margin30": 458.44,
        "owes": 0,
        "warn": {
-        "perUnit": 51,
-        "units30": 10.96,
+        "perUnit": 50,
+        "units30": 11.54,
         "bigger": {
          "q": 12.5,
-         "perUnit": 27,
-         "less30": 263.04
+         "perUnit": 27.2,
+         "less30": 263.11
         },
         "tenOff": {
-         "less30": 65.76
+         "less30": 69.24
         }
        }
       },
@@ -23212,15 +23938,37 @@
        "margin30": 439.25,
        "owes": 0,
        "warn": {
-        "perUnit": 37,
+        "perUnit": 39.33,
         "units30": 10.75,
         "bigger": {
          "q": 5,
          "perUnit": 32,
-         "less30": 53.75
+         "less30": 78.83
         },
         "tenOff": {
          "less30": 71.67
+        }
+       }
+      },
+      "CB8-SEG": {
+       "state": "early",
+       "gap": 2,
+       "usual": 1,
+       "last": "2026-11-25",
+       "since": 0,
+       "next": "2026-11-27",
+       "margin30": 433,
+       "owes": 0,
+       "warn": {
+        "perUnit": 66,
+        "units30": 5.5,
+        "bigger": {
+         "q": 3,
+         "perUnit": 56,
+         "less30": 55
+        },
+        "tenOff": {
+         "less30": 55
         }
        }
       },
@@ -23234,12 +23982,12 @@
        "margin30": 325.5,
        "owes": 0,
        "warn": {
-        "perUnit": 77,
+        "perUnit": 76,
         "units30": 4.5,
         "bigger": {
          "q": 3,
-         "perUnit": 62,
-         "less30": 67.5
+         "perUnit": 64.33,
+         "less30": 52.5
         },
         "tenOff": {
          "less30": 45
@@ -23256,12 +24004,12 @@
        "margin30": 183.75,
        "owes": 0,
        "warn": {
-        "perUnit": 55,
+        "perUnit": 56,
         "units30": 5,
         "bigger": {
          "q": 25,
-         "perUnit": 31.4,
-         "less30": 118
+         "perUnit": 32,
+         "less30": 120
         },
         "tenOff": {
          "less30": 30
@@ -23278,12 +24026,12 @@
        "margin30": 103.23,
        "owes": 0,
        "warn": {
-        "perUnit": 54.5,
+        "perUnit": 56,
         "units30": 2.36,
         "bigger": {
          "q": 6.25,
-         "perUnit": 45.4,
-         "less30": 21.48
+         "perUnit": 46.8,
+         "less30": 21.71
         },
         "tenOff": {
          "less30": 11.8
@@ -23448,10 +24196,10 @@
         "date": "2026-11-27",
         "sup": "SP7-PUD"
        },
-       "meanLot": 54.61538461538461,
+       "meanLot": 54.285714285714285,
        "quoteRate": 10,
        "repl": 7.3,
-       "freightRate": 0.23,
+       "freightRate": 0.2267,
        "leak": {
         "ratio": 0.4222,
         "leak": 38,
@@ -23484,7 +24232,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.30041958041958045,
+       "shrinkRate": 0.28078431372549023,
        "avgDel": {
         "n": 33,
         "kg": 471,
@@ -23860,6 +24608,28 @@
         450
        ]
       ],
+      "CA2-SEN": [
+       [
+        10,
+        80
+       ],
+       [
+        20,
+        155
+       ],
+       [
+        30,
+        230
+       ],
+       [
+        40,
+        305
+       ],
+       [
+        50,
+        380
+       ]
+      ],
       "CZ5-TM": [
        [
         10,
@@ -23902,28 +24672,6 @@
        [
         50,
         450
-       ]
-      ],
-      "CA2-SEN": [
-       [
-        10,
-        80
-       ],
-       [
-        20,
-        155
-       ],
-       [
-        30,
-        230
-       ],
-       [
-        40,
-        305
-       ],
-       [
-        50,
-        380
        ]
       ],
       "CC9-OKR": [
@@ -24256,6 +25004,28 @@
         450
        ]
       ],
+      "CB8-SEG": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CS5-KLC": [
        [
         10,
@@ -24301,28 +25071,6 @@
        ]
       ],
       "CY2-NIL": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CB8-SEG": [
        [
         10,
         130
@@ -24894,7 +25642,7 @@
         450
        ]
       ],
-      "CN3-TBC": [
+      "CN3-PJ": [
        [
         10,
         130
@@ -24932,9 +25680,9 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
+      "CA2-SEN": "partner",
       "CZ5-TM": 0,
       "CE4-AD": 0,
-      "CA2-SEN": "partner",
       "CC9-OKR": 0,
       "CI5-PER": 0,
       "CM6-HCM": 0,
@@ -24950,10 +25698,10 @@
       "CR4-PJ": 0,
       "CM4-SK": 0,
       "CE5-SA": 0,
+      "CB8-SEG": 0,
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
-      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
       "CF7-KUC": 0,
@@ -24979,28 +25727,28 @@
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
       "CA3-PJ": 0,
-      "CN3-TBC": 0
+      "CN3-PJ": 0
      },
      "suggest": null
     },
     "candy": {
-     "stockCost": 69,
-     "replCost": 94,
+     "stockCost": 30,
+     "replCost": 30,
      "floors": {
       "1": {
-       "floor": 95
+       "floor": 30
       },
       "5": {
-       "floor": 470
+       "floor": 150
       },
       "10": {
-       "floor": 940
+       "floor": 300
       },
       "20": {
-       "floor": 1880
+       "floor": 600
       },
       "30": {
-       "floor": 2820
+       "floor": 900
       }
      },
      "inputs": {
@@ -25011,11 +25759,11 @@
         "state": "none",
         "lock": null,
         "cur": {
-         "qty": 1,
-         "total": 69,
-         "rate": 69,
-         "date": "2026-11-17",
-         "sup": "SM4-KEP"
+         "qty": 30,
+         "total": 900,
+         "rate": 30,
+         "date": "2026-11-25",
+         "sup": "CM4-TO-R"
         }
        },
        "lockBase": null,
@@ -25024,16 +25772,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 1,
-        "total": 69,
-        "rate": 69,
-        "date": "2026-11-17",
-        "sup": "SM4-KEP"
+        "qty": 30,
+        "total": 900,
+        "rate": 30,
+        "date": "2026-11-25",
+        "sup": "CM4-TO-R"
        },
-       "meanLot": 15.333333333333334,
+       "meanLot": 19,
        "quoteRate": 55,
-       "repl": 39.98,
-       "freightRate": 25,
+       "repl": 34.76,
+       "freightRate": 0.8065,
        "leak": {
         "ratio": 0.3333,
         "leak": 3,
@@ -25047,12 +25795,12 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p057",
-        "date": "2026-11-17",
-        "quote": 69,
-        "freight": 25,
-        "units": 1,
-        "rate": 94
+        "rid": "p062",
+        "date": "2026-11-25",
+        "quote": 900,
+        "freight": 0,
+        "units": 30,
+        "rate": 30
        },
        "costBasis": {
         "freightPerTrip": {
@@ -25066,7 +25814,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.08695652173913043,
+       "shrinkRate": 0.05263157894736842,
        "avgDel": {
         "n": 9,
         "kg": 62,
@@ -25189,40 +25937,40 @@
       {
        "q": 1,
        "prices": [
-        95,
-        95
+        30,
+        60
        ],
        "fixed": true
       },
       {
        "q": 5,
        "prices": [
-        470,
-        470
+        150,
+        300
        ],
        "fixed": true
       },
       {
        "q": 10,
        "prices": [
-        940,
-        940
+        300,
+        550
        ],
        "fixed": true
       },
       {
        "q": 20,
        "prices": [
-        1880,
-        1880
+        600,
+        1100
        ],
        "fixed": true
       },
       {
        "q": 30,
        "prices": [
-        2820,
-        2820
+        900,
+        1500
        ],
        "fixed": true
       }
@@ -25231,1277 +25979,1277 @@
       "CS6-BS": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CS6-PER": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CM4-TO": [
        [
         1,
-        95
+        30
        ],
        [
         5,
-        470
+        150
        ],
        [
         10,
-        940
+        300
        ],
        [
         20,
-        1880
+        600
        ],
        [
         30,
-        2820
+        900
        ]
       ],
       "CE4-CHE": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CZ4-MK": [
        [
         1,
-        95
+        50
        ],
        [
         5,
-        470
+        250
        ],
        [
         10,
-        940
+        489
        ],
        [
         20,
-        1880
+        969
        ],
        [
         30,
-        2820
+        1375
        ]
       ],
       "CM4-MK": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CJ4-BJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CK4-SEN": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CN3-WM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CR3-DAM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
-       ]
-      ],
-      "CZ5-TM": [
-       [
-        1,
-        95
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        10,
-        940
-       ],
-       [
-        20,
-        1880
-       ],
-       [
-        30,
-        2820
-       ]
-      ],
-      "CE4-AD": [
-       [
-        1,
-        95
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        10,
-        940
-       ],
-       [
-        20,
-        1880
-       ],
-       [
-        30,
-        2820
+        1500
        ]
       ],
       "CA2-SEN": [
        [
         1,
-        95
+        30
        ],
        [
         5,
-        470
+        150
        ],
        [
         10,
-        940
+        300
        ],
        [
         20,
-        1880
+        600
        ],
        [
         30,
-        2820
+        900
+       ]
+      ],
+      "CZ5-TM": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CE4-AD": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
        ]
       ],
       "CC9-OKR": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CI5-PER": [
        [
         1,
-        110
+        70
        ],
        [
         5,
-        527
+        336
        ],
        [
         10,
-        1038
+        607
        ],
        [
         20,
-        2041
+        1194
        ],
        [
         30,
-        3031
+        1612
        ]
       ],
       "CM6-HCM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA4-DAM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CI4-OKR": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CD4-DAM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CJ2-KUC": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA7-AMP": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA5-BAN": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CM6-PJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CH4-KS": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CH6-SET": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CR4-PJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CM4-SK": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CE5-SA": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
-       ]
-      ],
-      "CS5-KLC": [
-       [
-        1,
-        95
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        10,
-        940
-       ],
-       [
-        20,
-        1880
-       ],
-       [
-        30,
-        2820
-       ]
-      ],
-      "CG5-SB": [
-       [
-        1,
-        95
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        10,
-        940
-       ],
-       [
-        20,
-        1880
-       ],
-       [
-        30,
-        2820
-       ]
-      ],
-      "CY2-NIL": [
-       [
-        1,
-        95
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        10,
-        940
-       ],
-       [
-        20,
-        1880
-       ],
-       [
-        30,
-        2820
+        1500
        ]
       ],
       "CB8-SEG": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
+       ]
+      ],
+      "CS5-KLC": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CG5-SB": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CY2-NIL": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
        ]
       ],
       "CF5-WM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA6-CYB": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CF7-KUC": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CM4-CHE": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA3-KP": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CZ6-WM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA5-SEN": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CJ4-OKR": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CH4-MAL": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CH6-WM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA4-SJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CN5-TAI": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CH5-KLC": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CS11-AMP": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CD4-CS": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA6-SET": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CR3-PUD": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CD7-SEG": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CB7-BJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CS6-DAM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CN4-MC": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA4-P1": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CJ5-CHE": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CAY4-DAM": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
       "CA3-PJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ],
-      "CN3-TBC": [
+      "CN3-PJ": [
        [
         1,
-        95
+        60
        ],
        [
         5,
-        470
+        300
        ],
        [
         10,
-        940
+        550
        ],
        [
         20,
-        1880
+        1100
        ],
        [
         30,
-        2820
+        1500
        ]
       ]
      },
@@ -26520,9 +27268,9 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
+      "CA2-SEN": "partner",
       "CZ5-TM": 0,
       "CE4-AD": 0,
-      "CA2-SEN": "partner",
       "CC9-OKR": 0,
       "CI5-PER": 0.25,
       "CM6-HCM": 0,
@@ -26538,10 +27286,10 @@
       "CR4-PJ": 0,
       "CM4-SK": 0,
       "CE5-SA": 0,
+      "CB8-SEG": 0,
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
-      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
       "CF7-KUC": 0,
@@ -26567,7 +27315,7 @@
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
       "CA3-PJ": 0,
-      "CN3-TBC": 0
+      "CN3-PJ": 0
      },
      "suggest": null
     },
@@ -26644,15 +27392,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2903225806451613
+         "v": 0.30303030303030304
         }
        },
        "attrib": 1,
        "shrinkRate": 0.15666666666666668,
        "avgDel": {
-        "n": 32,
-        "kg": 203,
-        "mean": 6.3438
+        "n": 34,
+        "kg": 206,
+        "mean": 6.0588
        }
       },
       "policy": {
@@ -26913,6 +27661,20 @@
         60
        ]
       ],
+      "CA2-SEN": [
+       [
+        1,
+        5
+       ],
+       [
+        5,
+        15
+       ],
+       [
+        10,
+        30
+       ]
+      ],
       "CZ5-TM": [
        [
         1,
@@ -26939,20 +27701,6 @@
        [
         10,
         60
-       ]
-      ],
-      "CA2-SEN": [
-       [
-        1,
-        5
-       ],
-       [
-        5,
-        15
-       ],
-       [
-        10,
-        30
        ]
       ],
       "CC9-OKR": [
@@ -27165,6 +27913,20 @@
         60
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CS5-KLC": [
        [
         1,
@@ -27194,20 +27956,6 @@
        ]
       ],
       "CY2-NIL": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CB8-SEG": [
        [
         1,
         8
@@ -27571,7 +28319,7 @@
         60
        ]
       ],
-      "CN3-TBC": [
+      "CN3-PJ": [
        [
         1,
         8
@@ -27601,9 +28349,9 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
+      "CA2-SEN": "partner",
       "CZ5-TM": 0,
       "CE4-AD": 0,
-      "CA2-SEN": "partner",
       "CC9-OKR": 0,
       "CI5-PER": 0,
       "CM6-HCM": 0,
@@ -27619,10 +28367,10 @@
       "CR4-PJ": 0,
       "CM4-SK": 0,
       "CE5-SA": 0,
+      "CB8-SEG": 0,
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
-      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
       "CF7-KUC": 0,
@@ -27648,7 +28396,7 @@
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
       "CA3-PJ": 0,
-      "CN3-TBC": 0
+      "CN3-PJ": 0
      },
      "suggest": null
     },
@@ -27696,10 +28444,10 @@
         "date": "2026-11-27",
         "sup": "SP7-PUD"
        },
-       "meanLot": 1.8,
+       "meanLot": 2,
        "quoteRate": 54.67,
-       "repl": 53.33,
-       "freightRate": 4.6667,
+       "repl": 50,
+       "freightRate": 4.1667,
        "leak": {
         "ratio": 0,
         "leak": 0,
@@ -27728,15 +28476,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4
+         "v": 0.3333333333333333
         }
        },
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 5,
-        "kg": 8,
-        "mean": 1.6
+        "n": 6,
+        "kg": 9,
+        "mean": 1.5
        }
       },
       "policy": {
@@ -28038,6 +28786,24 @@
         1500
        ]
       ],
+      "CA2-SEN": [
+       [
+        1,
+        55
+       ],
+       [
+        5,
+        275
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1095
+       ]
+      ],
       "CZ5-TM": [
        [
         1,
@@ -28072,24 +28838,6 @@
        [
         20,
         1500
-       ]
-      ],
-      "CA2-SEN": [
-       [
-        1,
-        55
-       ],
-       [
-        5,
-        275
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1095
        ]
       ],
       "CC9-OKR": [
@@ -28362,6 +29110,24 @@
         1500
        ]
       ],
+      "CB8-SEG": [
+       [
+        1,
+        75
+       ],
+       [
+        5,
+        375
+       ],
+       [
+        10,
+        750
+       ],
+       [
+        20,
+        1500
+       ]
+      ],
       "CS5-KLC": [
        [
         1,
@@ -28399,24 +29165,6 @@
        ]
       ],
       "CY2-NIL": [
-       [
-        1,
-        75
-       ],
-       [
-        5,
-        375
-       ],
-       [
-        10,
-        750
-       ],
-       [
-        20,
-        1500
-       ]
-      ],
-      "CB8-SEG": [
        [
         1,
         75
@@ -28884,7 +29632,7 @@
         1500
        ]
       ],
-      "CN3-TBC": [
+      "CN3-PJ": [
        [
         1,
         75
@@ -28918,9 +29666,9 @@
       "CK4-SEN": 0,
       "CN3-WM": 0,
       "CR3-DAM": 0,
+      "CA2-SEN": "partner",
       "CZ5-TM": 0,
       "CE4-AD": 0,
-      "CA2-SEN": "partner",
       "CC9-OKR": 0,
       "CI5-PER": 0,
       "CM6-HCM": 0,
@@ -28936,10 +29684,10 @@
       "CR4-PJ": 0,
       "CM4-SK": 0,
       "CE5-SA": 0,
+      "CB8-SEG": 0,
       "CS5-KLC": 0,
       "CG5-SB": 0,
       "CY2-NIL": 0,
-      "CB8-SEG": 0,
       "CF5-WM": 0,
       "CA6-CYB": 0,
       "CF7-KUC": 0,
@@ -28965,49 +29713,45 @@
       "CJ5-CHE": 0,
       "CAY4-DAM": 0,
       "CA3-PJ": 0,
-      "CN3-TBC": 0
+      "CN3-PJ": 0
      },
      "suggest": null
     }
    },
-   "v": "v1565"
+   "v": "v1570"
   },
   "OPEN": {
-   "at": "2026-11-24T16:06:07.812Z",
-   "count": 17,
+   "at": "2026-11-25T12:57:49.356Z",
+   "count": 13,
    "byKey": {
-    "CZ4-MK|2026-11-24|1000|candy": {
-     "d": "2026-11-24",
-     "p": "CZ4-MK",
+    "CA2-SEN|2026-11-25|155|oil": {
+     "d": "2026-11-25",
+     "p": "CA2-SEN",
      "dir": "S",
      "q": 20,
-     "t": 1000,
-     "cash": 0,
-     "mv": 20,
-     "st": "dueMoney",
-     "oweRM": 1000,
-     "pr": "candy",
-     "rid": "s425",
-     "deliveredOn": "2026-11-24",
-     "handover": "collected",
-     "key": "CZ4-MK|2026-11-24|1000|candy",
-     "age": 1,
-     "exp": 750
-    },
-    "CF7-KUC|2026-11-24|145": {
-     "d": "2026-11-24",
-     "p": "CF7-KUC",
-     "dir": "S",
-     "q": 1,
-     "t": 125,
-     "cash": 120,
+     "t": 155,
+     "cash": 155,
      "mv": 0,
-     "st": "part",
-     "oweRM": 25,
-     "oweUnits": 1,
-     "dv": 20,
-     "rid": "s426",
-     "key": "CF7-KUC|2026-11-24|145"
+     "st": "oweStock",
+     "oweUnits": 20,
+     "pr": "oil",
+     "rid": "s435",
+     "paidOn": "2026-11-25",
+     "key": "CA2-SEN|2026-11-25|155|oil"
+    },
+    "CA2-SEN|2026-11-25|750": {
+     "d": "2026-11-25",
+     "p": "CA2-SEN",
+     "dir": "S",
+     "q": 12.5,
+     "t": 750,
+     "cash": 750,
+     "mv": 0,
+     "st": "oweStock",
+     "oweUnits": 12.5,
+     "rid": "s436",
+     "paidOn": "2026-11-25",
+     "key": "CA2-SEN|2026-11-25|750"
     },
     "CA2-SEN|2026-11-24|55|gas": {
      "d": "2026-11-24",
@@ -29015,61 +29759,14 @@
      "dir": "S",
      "q": 1,
      "t": 55,
-     "cash": 0,
+     "cash": 55,
      "mv": 0,
-     "st": "part",
-     "oweRM": 55,
+     "st": "oweStock",
      "oweUnits": 1,
      "pr": "gas",
      "rid": "s427",
+     "paidOn": "2026-11-25",
      "key": "CA2-SEN|2026-11-24|55|gas"
-    },
-    "CA2-SEN|2026-11-24|80|oil": {
-     "d": "2026-11-24",
-     "p": "CA2-SEN",
-     "dir": "S",
-     "q": 10,
-     "t": 80,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 80,
-     "oweUnits": 10,
-     "pr": "oil",
-     "rid": "s428",
-     "key": "CA2-SEN|2026-11-24|80|oil"
-    },
-    "SP7-PUD|2026-11-23|380|oil": {
-     "d": "2026-11-23",
-     "p": "SP7-PUD",
-     "dir": "B",
-     "q": 50,
-     "t": 380,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 380,
-     "oweUnits": 50,
-     "pr": "oil",
-     "rid": "p063",
-     "pending": true,
-     "key": "SP7-PUD|2026-11-23|380|oil"
-    },
-    "SP7-PUD|2026-11-23|100|gas": {
-     "d": "2026-11-23",
-     "p": "SP7-PUD",
-     "dir": "B",
-     "q": 2,
-     "t": 100,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 100,
-     "oweUnits": 2,
-     "pr": "gas",
-     "rid": "p064",
-     "pending": true,
-     "key": "SP7-PUD|2026-11-23|100|gas"
     },
     "CZ5-TM|2026-11-22|53": {
      "d": "2026-11-22",
@@ -29101,25 +29798,9 @@
      "oweUnits": 12.5,
      "rid": "p061",
      "paidOn": "2026-11-22",
-     "inTransit": true,
+     "receivedOn": "2026-11-25",
      "receivedQty": 0,
      "key": "SD4-KB|2026-11-22|650"
-    },
-    "CM4-TO-R|2026-11-22|900|candy": {
-     "d": "2026-11-22",
-     "p": "CM4-TO-R",
-     "dir": "B",
-     "q": 30,
-     "t": 900,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 900,
-     "oweUnits": 30,
-     "pr": "candy",
-     "rid": "p062",
-     "pending": true,
-     "key": "CM4-TO-R|2026-11-22|900|candy"
     },
     "CM4-MK|2026-11-15|180": {
      "d": "2026-11-15",
@@ -29260,55 +29941,55 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 2,
-     "free": 0.17,
-     "owedOut": 1.83,
-     "coverDays": 0,
-     "rate": 4.68,
+     "onHand": 25.5,
+     "free": 12,
+     "owedOut": 13.5,
+     "coverDays": 2,
+     "rate": 5.55,
      "owedToYou": 490,
-     "promised": 2,
+     "promised": 13.5,
      "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 2,
-     "free": 2,
-     "owedOut": 0,
-     "coverDays": 0.3,
-     "rate": 7.11,
+     "onHand": 52,
+     "free": 32,
+     "owedOut": 20,
+     "coverDays": 5.6,
+     "rate": 7.62,
      "owedToYou": 0,
-     "promised": 10,
-     "short": 8
+     "promised": 20,
+     "short": 0
     },
     "candy": {
      "name": "Candy",
-     "onHand": -20,
-     "free": -20,
+     "onHand": 10,
+     "free": 10,
      "owedOut": 0,
-     "coverDays": 0,
+     "coverDays": 12.7,
      "rate": 1.21,
-     "owedToYou": 1000,
+     "owedToYou": 0,
      "promised": 0,
-     "short": 20
+     "short": 0
     },
     "rice": {
      "name": "Rice",
-     "onHand": 50,
-     "free": 50,
+     "onHand": 47,
+     "free": 47,
      "owedOut": 0,
-     "coverDays": 11.8,
-     "rate": 4.07,
+     "coverDays": 10.5,
+     "rate": 4.22,
      "owedToYou": 15,
      "promised": 0,
      "short": 0
     },
     "gas": {
      "name": "Gas",
-     "onHand": 1,
-     "free": 1,
-     "owedOut": 0,
-     "coverDays": 3.6,
-     "rate": 0.39,
+     "onHand": 3,
+     "free": 2,
+     "owedOut": 1,
+     "coverDays": 4.5,
+     "rate": 0.46,
      "owedToYou": 0,
      "promised": 1,
      "short": 0
@@ -29321,7 +30002,7 @@
     "rice": "2026-11-23",
     "salt": "2026-11-23"
    },
-   "v": "v1565"
+   "v": "v1570"
   },
   "TERMS": {
    "ceiling": 250,
@@ -29329,7 +30010,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1565"
+   "v": "v1570"
   },
   "REWARD": {
    "stated": {
@@ -29347,58 +30028,58 @@
      }
     }
    },
-   "v": "v1565"
+   "v": "v1570"
   },
   "STOCK": {
    "today": "2026-11-25",
    "books": {
     "salt": {
-     "shelf": 2,
-     "free": 0.17,
-     "commit": 2,
+     "shelf": 25.5,
+     "free": 12,
+     "commit": 13.5,
      "light": "amber",
-     "coverDays": 0,
+     "coverDays": 2,
      "transit": 12.5,
      "heat": "tight"
     },
     "oil": {
-     "shelf": 2,
-     "free": 2,
-     "commit": 10,
-     "light": "amber",
-     "coverDays": 0.3,
-     "transit": 50,
+     "shelf": 52,
+     "free": 32,
+     "commit": 20,
+     "light": "yellow",
+     "coverDays": 5.6,
+     "transit": 0,
      "heat": "neutral"
     },
     "candy": {
-     "shelf": -20,
-     "free": -20,
+     "shelf": 10,
+     "free": 10,
      "commit": 0,
-     "light": "red",
-     "coverDays": 0,
-     "transit": 30,
+     "light": "green",
+     "coverDays": 12.7,
+     "transit": 0,
      "heat": "neutral"
     },
     "rice": {
-     "shelf": 50,
-     "free": 50,
+     "shelf": 47,
+     "free": 47,
      "commit": 0,
      "light": "green",
-     "coverDays": 11.8,
+     "coverDays": 10.5,
      "transit": 0,
      "heat": "neutral"
     },
     "gas": {
-     "shelf": 1,
-     "free": 1,
+     "shelf": 3,
+     "free": 2,
      "commit": 1,
-     "light": "amber",
-     "coverDays": 3.6,
-     "transit": 2,
+     "light": "yellow",
+     "coverDays": 4.5,
+     "transit": 0,
      "heat": "neutral"
     }
    },
-   "v": "v1565"
+   "v": "v1570"
   }
  }
 }

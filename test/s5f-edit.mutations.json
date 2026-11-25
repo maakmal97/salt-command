@@ -80,14 +80,14 @@
  {
   "name": "a compaction refuses any row an edit takes",
   "file": "src/book.js",
-  "find": "tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded))",
-  "replace": "tap.open || n.goneOther > 0 || n.gone || !tap.folded))"
+  "find": "tap.open || n.goneOther - n.renamedOther > 0 || n.gone - n.renamed > (tap ? tap.edits : 0) || !tap.folded))",
+  "replace": "tap.open || n.goneOther - n.renamedOther > 0 || n.gone - n.renamed || !tap.folded))"
  },
  {
   "name": "a row lost outside the refunds is paid for by an edit",
   "file": "src/book.js",
-  "find": "tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded))",
-  "replace": "tap.open || n.gone > (tap ? tap.edits : 0) || !tap.folded))"
+  "find": "tap.open || n.goneOther - n.renamedOther > 0 || n.gone - n.renamed > (tap ? tap.edits : 0) || !tap.folded))",
+  "replace": "tap.open || n.gone - n.renamed > (tap ? tap.edits : 0) || !tap.folded))"
  },
  {
   "name": "the drafter drafts an edit nothing singles out",
