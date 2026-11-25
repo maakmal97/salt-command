@@ -12453,7 +12453,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1569","d":"25 Nov 2026","t":"A LOT&#39;S UNITS RECEIVED NAME WHAT THEY WERE READ WITH","n":["<b>A LOT&#39;S UNITS RECEIVED ARE CHECKED BEFORE THEY ARE SET.</b> On Salt Admin, Correct a row sends a lot&#39;s Units received with the units the row was read with. The Desk, the Approve card and the Book refuse it if a receipt reached the lot first, so the receipt is never written over and the inventory never rolls back.","<b>A RECEIPT AND A UNITS CHANGE NEVER WAIT TOGETHER.</b> While a receipt waits under Approve on a lot, a change of its units received is held, and a receipt is held while such a change waits.","<b>REFUSED AS MOVED, SENT AGAIN ON THE NEW FIGURE.</b> The refusal names the units the lot now holds, and the next tap is sent with them.","<b>UNITS RECEIVED ARE SET, NEVER CLEARED.</b> A lot&#39;s units received take a figure, 0 included."]}];
+const evolution=[{"v":"v1570","d":"25 Nov 2026","t":"A RENAMED CODE NO LONGER STOPS THE DAY&#39;S EXPORT","n":["<b>THE DAY&#39;S EXPORT TAKES A RENAME.</b> An Amend ID that re-keys a code already on the book moved its roster row, and the Book&#39;s compaction read that as a row lost and refused the export (25 Nov 2026). A row a rename moved now counts as moved when its renamed form is in the new base; any other row lost still refuses.","<b>THE DAY&#39;S APPROVALS ARE COMMITTED AGAIN.</b> With the export through, the day&#39;s approved rows are marked committed, and a second change to an order changed earlier that day is taken."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12615,7 +12615,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Nov 2026, 18:17 KL';
+const LAST_UPDATED='25 Nov 2026, 20:48 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -53014,6 +53014,11 @@ await (async () => {
   await (await import("./s5f-compact-mark.mjs")).run({ ok });
 })();
 
+section("Book S5f-2b: a rename of a code the base holds compacts, and nothing else lost does (25 Nov 2026)");
+await (async () => {
+  await (await import("./s5f-compact-rename.mjs")).run({ ok });
+})();
+
 section("Book S5f-3: the guards, a load needs an import, the laptop roads and the fold's dispatch stand down while the Book is the source (28 Oct 2026)");
 await (async () => {
   await (await import("./s5f-guards.mjs")).run({ ok });

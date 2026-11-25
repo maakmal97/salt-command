@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1570",
+  "d": "25 Nov 2026",
+  "t": "A RENAMED CODE NO LONGER STOPS THE DAY&#39;S EXPORT",
+  "n": [
+   "<b>THE DAY&#39;S EXPORT TAKES A RENAME.</b> An Amend ID that re-keys a code already on the book moved its roster row, and the Book&#39;s compaction read that as a row lost and refused the export (25 Nov 2026). A row a rename moved now counts as moved when its renamed form is in the new base; any other row lost still refuses.",
+   "<b>THE DAY&#39;S APPROVALS ARE COMMITTED AGAIN.</b> With the export through, the day&#39;s approved rows are marked committed, and a second change to an order changed earlier that day is taken."
+  ]
+ },
+ {
   "v": "v1569",
   "d": "25 Nov 2026",
   "t": "A LOT&#39;S UNITS RECEIVED NAME WHAT THEY WERE READ WITH",
