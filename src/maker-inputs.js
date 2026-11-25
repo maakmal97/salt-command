@@ -10,6 +10,10 @@ import { AGREED_ON_SITE } from "../engine/stages.mjs";
 const DESK_ONLY_FIELDS = ["note", "settle"];
 /* a trip is set by These are one order alone (makerTripJoin), which holds the whole trip together; Correct a row never offers it */
 const JOIN_ONLY_FIELDS = ["trip"];
+/* 25 Nov 2026 (his answers): what is paid, settled, handed over or received moves on Record, a payment or a handover adding to it and Undo
+   taking it back, so a move approved while a typed figure waits is never written over; Correct a row never offers them. A lot's cash set lower
+   on Record is the one Correction that carries one, naming the cash it was read with (lotDown below) */
+const RECORD_ONLY_FIELDS = ["cash", "settledRM", "deliveredQty", "receivedQty"];
 
 const object = (body) => !!body && typeof body === "object" && !Array.isArray(body);
 const timestamp = (at) => typeof at === "string" && Number.isFinite(Date.parse(at))
@@ -749,7 +753,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     /* 13 Nov 2026, the price band's version 3 (Salt Admin's customers): the regulars who are due, late or lapsed and the newest week's new buyers, as the snapshot reads them; nothing here prices */
     ...customersCatalog(book),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
-    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))
+    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field) && !RECORD_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
         kind: field === "orderCode" ? "text" : POSITION_ENGINE.CORRECT_BOOL.includes(field) ? "boolean"
           : POSITION_ENGINE.CORRECT_DATE.includes(field) ? "date"
@@ -1156,7 +1160,7 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
      would be written over. The form's figure is checked on the row now, and the row's own stored figure rides as `expect`, which the drafter, the
      fold's plan and the writer check again (engine/expect.mjs), so any move landing between refuses it */
   const lotDown = !sale && body.kind === "Correction" && body.undo === undefined && object(body.fields)
-    && Object.prototype.hasOwnProperty.call(body.fields, "cash") && !(figure(body.fields.cash) && body.fields.cash >= POSITION_ENGINE.poCash(row) - 0.004);
+    && figure(body.fields.cash) && body.fields.cash < POSITION_ENGINE.poCash(row) - 0.004;
   if (lotDown) {
     const e = body.expect, now = POSITION_ENGINE.poCash(row);
     if (!object(e) || Object.keys(e).join() !== "cash" || !figure(e.cash))
@@ -1164,6 +1168,9 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
     if (Math.abs(now - e.cash) > 0.004)
       return { error: "The lot's cash moved since it was read (RM " + now.toFixed(2) + ", not RM " + e.cash.toFixed(2) + "). Read the row again.", stale: true };
   } else if (body.expect !== undefined) return { error: "Only a lower cash paid on a lot names the cash it was read with." };
+  if (body.kind === "Correction" && body.undo === undefined && object(body.fields)
+    && Object.keys(body.fields).some((field) => RECORD_ONLY_FIELDS.includes(field) && !(field === "cash" && lotDown)))
+    return { error: "Paid, settled, handed over and received figures change on Record: a payment or a handover adds to them, Undo takes one back, and a lot's cash paid is set lower there." };
   if (body.kind === "Correction") {
     if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
       || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
