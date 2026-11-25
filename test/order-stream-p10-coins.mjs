@@ -75,6 +75,14 @@ export async function run({ ok, pageWork }) {
       "10b Home's Availability rows carry the book's mark thumb and the light's chip, a dot and its word");
     const card = p.d.querySelector("#pOrder [data-row]");   /* 16 Nov 2026: an order is the system's Row, its thumb the Row's own size */
     ok(!!card && !!card.querySelector(".amb-thumb--mark.amb-thumb--ring[class*='amb-kind-']") && !card.querySelector("svg.psym"), "10b an order row's mark is the ringed mark thumb in its book's hue");
+    /* C10, a card's mark (mtile, the open order's band) is the 44px coin, never the plain mark: open the listed order and read its band (25 Nov 2026; nothing drew a card here before) */
+    p.d.querySelector('#tabs button[data-t="order"]').click(); await p.settle();
+    await K.until(() => p.d.querySelector('#pOrder [data-row]')); const row = p.d.querySelector('#pOrder [data-row]'), oid = row.getAttribute('data-row'); row.click();
+    const bandAt = '#pOrder .oscreen[data-order="' + oid + '"] [data-part="head"] .mtile';
+    await K.until(() => p.d.querySelector(bandAt));
+    const band = p.d.querySelector(bandAt), bc = band && band.querySelector(".amb-thumb");
+    ok(!!bc && bc.classList.contains("amb-thumb--md") && bookOf(bc) === "salt" && oid === "o1" && inOf(bc) === P.PLET.salt && !band.querySelector("svg.psym"),
+      "10b C10 a card's mark, the open order's band, is the 44px coin with his letter inside, never the plain mark: " + (band ? band.innerHTML.slice(0, 200) : "none"));
     const fresh = await K.open({ ok, pageWork }); pages.push(fresh);
     const tile = fresh.d.querySelector("#pHome [data-hagain]");
     ok(!!tile && !!tile.querySelector(".amb-thumb--mark.amb-thumb--ring") && !tile.querySelector("svg.psym"), "10b Home's order-again rows carry the book's mark thumb");
