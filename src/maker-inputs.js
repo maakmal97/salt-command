@@ -15,6 +15,7 @@ const JOIN_ONLY_FIELDS = ["trip"];
    is the one Correction that carries one, naming the cash it was read with (lotDown below). A lot's units received stay on Correct a row: a lot
    has no Undo here, so it is the one road to lower a receipt typed too high */
 const RECORD_ONLY_FIELDS = ["cash", "settledRM", "deliveredQty"];
+const ONLY_SAID = "Only a lower cash paid or units received on a lot name the figure they were read with.";
 
 const object = (body) => !!body && typeof body === "object" && !Array.isArray(body);
 const timestamp = (at) => typeof at === "string" && Number.isFinite(Date.parse(at))
@@ -1162,13 +1163,28 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
      fold's plan and the writer check again (engine/expect.mjs), so any move landing between refuses it */
   const lotDown = !sale && body.kind === "Correction" && body.undo === undefined && object(body.fields)
     && figure(body.fields.cash) && body.fields.cash < POSITION_ENGINE.poCash(row) - 0.004;
-  if (lotDown) {
-    const e = body.expect, now = POSITION_ENGINE.poCash(row);
-    if (!object(e) || Object.keys(e).join() !== "cash" || !figure(e.cash))
-      return { error: "A lot's cash paid is lowered with Cash paid on Record, which sends the cash it was read with." };
-    if (Math.abs(now - e.cash) > 0.004)
+  /* 25 Nov 2026 (his answer: a lot's units received stay on Correct a row, since a lot has no Undo there): A LOT'S UNITS RECEIVED NAME THE UNITS THEY
+     WERE READ WITH, the same way. The figure is absolute, so a Receipt approved while it waited would be written over and the shelf rolled back by the
+     Correction's step. Read as the engine reads it (poRecvUnits: a lot stored with none has received its whole qty unless in transit) */
+  const lotRecv = !sale && body.kind === "Correction" && body.undo === undefined && object(body.fields)
+    && Object.prototype.hasOwnProperty.call(body.fields, "receivedQty");
+  /* the review standing in for Fable: a clear is refused, since the fold's shelf roll follows a figure and a lot with none reads its whole qty (or nothing, in transit) */
+  if (lotRecv && body.fields.receivedQty === null)
+    return { error: "A lot's units received are set to a figure, 0 included: a lot with none reads as received in full, or nothing in transit." };
+  if (lotDown || lotRecv) {
+    const e = body.expect, now = POSITION_ENGINE.poCash(row), got = POSITION_ENGINE.poRecvUnits(row);
+    const cashSaid = "A lot's cash paid is lowered with Cash paid on Record, which sends the cash it was read with.";
+    const recvSaid = "A lot's units received are set with the units it was read with. Read the row again.";
+    if (!object(e)) return { error: lotDown ? cashSaid : recvSaid };
+    if (Object.keys(e).some((k) => !(k === "cash" && lotDown || k === "receivedQty" && lotRecv))) return { error: ONLY_SAID };
+    if (lotDown && !figure(e.cash)) return { error: cashSaid };
+    if (lotRecv && !figure(e.receivedQty)) return { error: recvSaid };
+    if (lotDown && Math.abs(now - e.cash) > 0.004)
       return { error: "The lot's cash moved since it was read (RM " + now.toFixed(2) + ", not RM " + e.cash.toFixed(2) + "). Read the row again.", stale: true };
-  } else if (body.expect !== undefined) return { error: "Only a lower cash paid on a lot names the cash it was read with." };
+    if (lotRecv && Math.abs(got - e.receivedQty) > 0.0004)
+      return { error: "The lot's units received moved since it was read (" + +(+got).toFixed(4) + " unit, not " + +e.receivedQty.toFixed(4) + "). Send it again to set them from " + +(+got).toFixed(4) + ".",
+        stale: true, received: +(+got).toFixed(4) };
+  } else if (body.expect !== undefined) return { error: ONLY_SAID };
   if (body.kind === "Correction" && body.undo === undefined && object(body.fields)
     && Object.keys(body.fields).some((field) => RECORD_ONLY_FIELDS.includes(field) && !(field === "cash" && lotDown)))
     return { error: "Paid, settled and handed over figures change on Record: a payment or a handover adds to them, Undo takes one back, and a lot's cash paid is set lower there." };
@@ -1253,7 +1269,9 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
   const entry = POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: sale ? "SELL" : "BUY",
     kind: body.kind, date: body.date, cash: body.cash, movedUnits: body.movedUnits, fields: body.fields,
     ...(body.undo !== undefined ? { undo: body.undo } : {}) });
-  if (lotDown) entry.payload.expect = { cash: +(+row.cash || 0).toFixed(2) };   /* the stored figure, as expectFault reads it */
+  /* the stored figures, as expectFault reads them: the raw cash, and the units received as the engine reads them (engine/expect.mjs recvOf) */
+  if (lotDown || lotRecv) entry.payload.expect = { ...(lotDown ? { cash: +(+row.cash || 0).toFixed(2) } : {}),
+    ...(lotRecv ? { receivedQty: +(+POSITION_ENGINE.poRecvUnits(row)).toFixed(4) } : {}) };
   return proposed(entry, book);
 }
 
@@ -1262,6 +1280,18 @@ export async function makerAmendmentRoom(db, entry, book, held) {
   const found = findRow(book, p.rid);
   if (found.err) return found.err;
   const sale = found.collection === "sales", row = found.row;
+  /* 25 Nov 2026 (the review standing in for Fable): A LOT'S UNITS RECEIVED AND A MOVE OF ITS GOODS NEVER WAIT TOGETHER. The Correction's expect refuses it
+     behind a Receipt approved first; one approved after it would add its units to a figure that already counts them, the shelf rolled twice. So each is
+     held while the other waits, the moves read as an undo's are (`held`) */
+  if (!sale && Array.isArray(held)) {
+    const sets = (e) => e.payload.kind === "Correction" && e.payload.undo == null && !!e.payload.fields && typeof e.payload.fields === "object"
+      && Object.prototype.hasOwnProperty.call(e.payload.fields, "receivedQty");
+    const moves = (e) => ["Receipt", "Fulfilment"].includes(e.payload.kind) && +e.payload.kg > 0.0004;
+    const others = held.filter((e) => e && e.at !== entry.at && e.payload && e.payload.mode === "amend" && e.payload.direction === "BUY"
+      && (e.payload.rid ? e.payload.rid === row.rid : e.payload.orderKey === POSITION_ENGINE.ovKey(row)));
+    if (sets(entry) && others.some(moves)) return "Goods are already on their way to this lot. Decide that receipt under Approve before setting its units received.";
+    if (moves(entry) && others.some(sets)) return "A change of this lot's units received waits under Approve. Decide it first, and discard this one if that change already counts these goods.";
+  }
   const after = p.kind === "Correction" ? { ...row, ...p.fields } : row;
   const paid = (value) => sale ? POSITION_ENGINE.txPaid(value) : POSITION_ENGINE.poCash(value);
   const cash = p.kind === "Fulfilment" || p.kind === "Payment" ? +p.cash || 0
