@@ -1184,6 +1184,17 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
     if (lotRecv && Math.abs(got - e.receivedQty) > 0.0004)
       return { error: "The lot's units received moved since it was read (" + +(+got).toFixed(4) + " unit, not " + +e.receivedQty.toFixed(4) + "). Send it again to set them from " + +(+got).toFixed(4) + ".",
         stale: true, received: +(+got).toFixed(4) };
+  } else if (body.kind === "Fulfilment" && body.expect !== undefined) {
+    /* 25 Nov 2026 (the review standing in for Fable, on his answer "Re-read rows"): RECORD'S MOVEMENT NAMES THE ROW IT WAS WORKED OUT ON. Record sends the
+       difference from the row as it opened it, so a payment or a receipt folded since, a retry of one kept after a failed send included, would be counted
+       twice. Its paid and moved figures as Record read them are checked on the row now, as the catalog reads them, and nothing rides on the draft */
+    const e = body.expect, paidNow = sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row);
+    const movedNow = sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row);
+    if (!object(e) || Object.keys(e).sort().join() !== "cash,movedUnits" || !figure(e.cash) || !figure(e.movedUnits))
+      return { error: "A movement from Record names the paid and moved figures it was worked out on." };
+    if (Math.abs(paidNow - e.cash) > 0.005 || Math.abs(movedNow - e.movedUnits) > 0.0004)   /* half a cent: the page sends the figure to two places */
+      return { error: "This row moved since Record read it (paid RM " + (+paidNow).toFixed(2) + " and " + +(+movedNow).toFixed(4) + " unit moved, not RM "
+        + e.cash.toFixed(2) + " and " + +e.movedUnits.toFixed(4) + "), so nothing was sent. Open it again.", stale: true };
   } else if (body.expect !== undefined) return { error: ONLY_SAID };
   if (body.kind === "Correction" && body.undo === undefined && object(body.fields)
     && Object.keys(body.fields).some((field) => RECORD_ONLY_FIELDS.includes(field) && !(field === "cash" && lotDown)))
