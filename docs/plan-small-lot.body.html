@@ -1,10 +1,10 @@
 <div class="amb-shell" data-mood="slate">
 <main class="amb-screen">
 <header class="amb-hero amb-hero--doc amb-mesh">
-<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026</span>
+<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026; answered 25 Nov 2026</span>
 <h1 class="amb-hero__title">A small lot no longer sets a book's Floor</h1>
 <p class="amb-hero__sub">Today a book's cost is its latest landed purchase, whatever its size. So candy's 1-unit lot (p057, MYR 69 and MYR 25 freight, MYR 94 a unit) sets candy's Floor and lifts every candy price to MYR 95 a unit, over its MYR 60 board. From this version, a lot with fewer units than its book's minimum is blended with the lots before it: cost is what the newest units, up to that minimum, cost. One function changes, so every reader follows.</p>
-<p class="amb-hero__time">salt-command at 43015949, v1565 on master. Your five answers given on 24 Nov 2026. Plan only: nothing is built until your go.</p>
+<p class="amb-hero__time">salt-command at 43015949, v1565 on master. Your five answers given on 24 Nov 2026, and its one ask answered on 25 Nov 2026. Answered in full: it builds first of the three plans, in its own session.</p>
 </header>
 <div class="amb-doc">
 <nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
@@ -17,7 +17,7 @@
 <li><a class="amb-contents__link" href="#risks">Risks and how each is held</a></li>
 <li><a class="amb-contents__link" href="#order">The order of the work</a></li>
 <li><a class="amb-contents__link" href="#proof">How it is proved</a></li>
-<li><a class="amb-contents__link" href="#asks">One ask</a></li>
+<li><a class="amb-contents__link" href="#asks">Your answer</a></li>
 </ol></nav>
 <div class="amb-doc__body">
 
@@ -112,7 +112,7 @@
 <section class="amb-sec" id="order"><h2 class="amb-section">The order of the work <span class="amb-section__note">one version, one commit a part</span></h2>
 <div class="amb-stack"><ol class="amb-steps">
 <li class="amb-step is-done"><span class="amb-step__title">Your answers</span><span class="amb-step__text">Given on 24 Nov 2026: blend by units, only up to the minimum, the minimums typed per book in the rules, and the two dates corrected by you.</span><span class="amb-chip amb-chip--pos">Done</span></li>
-<li class="amb-step is-now"><span class="amb-step__title">Your go</span><span class="amb-step__text">The build starts on your word, in its own worktree, level with origin and with no Actions run in flight.</span><span class="amb-chip">Next</span></li>
+<li class="amb-step is-now"><span class="amb-step__title">Your go</span><span class="amb-step__text">Given on 25 Nov 2026. The build starts from its own session, first of the three plans, in its own worktree, level with origin and with no Actions run in flight.</span><span class="amb-chip">Next</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 1, the rules</span><span class="amb-step__text"><code>COST_MIN</code> in <code>engine/rules.mjs</code> and <code>PRICING_RULES</code>, its name in <code>NOT_LEDGER</code> (<code>tools/ledger.mjs</code>) and in <code>test/engine-rules.mjs</code>'s list, then <code>tools/engine.mjs --sync</code> and the gate.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 2, the engine</span><span class="amb-step__text">The blend in <code>latestCogs</code>; <code>lots</code> carried by the snapshot and the stack.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 3, the Workers</span><span class="amb-step__text">The drafter's note and flag, and the Workbench's words.</span><span class="amb-chip">Then</span></li>
@@ -141,12 +141,12 @@
 </div>
 </section>
 
-<section class="amb-sec" id="asks"><h2 class="amb-section">One ask <span class="amb-section__note">with your go</span></h2>
+<section class="amb-sec" id="asks"><h2 class="amb-section">Your answer <span class="amb-section__note">25 Nov 2026, not asked again</span></h2>
 <div class="amb-stack">
-<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">The other way</th></tr></thead><tbody>
-<tr><td data-label="Ask">1. A new book opened by <code>tools/product.mjs</code></td><td data-label="Recommended">It says, when it opens the book, that the book prices off its latest lot alone until a version names it in <code>COST_MIN</code>.</td><td data-label="The other way">It refuses to open a book that <code>COST_MIN</code> does not name, so a version adds the minimum first.</td></tr>
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Your answer</th></tr></thead><tbody>
+<tr><td data-label="Ask">1. A new book opened by <code>tools/product.mjs</code></td><td data-label="Your answer">It opens the book and says that the book prices off its latest lot alone until a version names it in <code>COST_MIN</code>.</td></tr>
 </tbody></table>
-<p class="amb-basis">Answered on 24 Nov 2026 and not asked again: blend by units; only up to the minimum; typed per book; in the rules; only fix the two dates. The minimums are the five you were shown: salt 12.5, oil 10, candy 10, rice 100, gas 1. If you want different figures, say so with your go.</p>
+<p class="amb-basis">Answered on 24 Nov 2026 and not asked again: blend by units; only up to the minimum; typed per book; in the rules; only fix the two dates. The minimums are the five you were shown: salt 12.5, oil 10, candy 10, rice 100, gas 1. They stand, by your answer of 25 Nov 2026.</p>
 </div>
 </section>
 
