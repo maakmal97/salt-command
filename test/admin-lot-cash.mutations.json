@@ -16,14 +16,14 @@
 {"name":"R2: a lowering is not held","file":"src/maker-inputs.js","find":"|| p.undo != null || lowers;","replace":"|| p.undo != null;"},
 {"name":"R2: the hold names cancelling","file":"src/maker-inputs.js","find":"lowers ? \"lowering what it holds paid.\" : \"cancelling.\"","replace":"lowers ? \"cancelling.\" : \"cancelling.\""},
 {"name":"E1: the step keeps no record","file":"engine/apply.mjs","find":"      if (!(k === \"cash\" && keptCash)) was[k] = was0;\n","replace":"\n"},
-{"name":"R3: a lowering needs no cash read with","file":"src/maker-inputs.js","find":"if (!object(e) || Object.keys(e).join() !== \"cash\" || !figure(e.cash))","replace":"if (false)"},
-{"name":"R3: a stale cash is not checked","file":"src/maker-inputs.js","find":"if (Math.abs(now - e.cash) > 0.004)","replace":"if (false)"},
+{"name":"R3: a lowering needs no cash read with","file":"src/maker-inputs.js","find":"const e = body.expect, now = POSITION_ENGINE.poCash(row), got = POSITION_ENGINE.poRecvUnits(row);","replace":"const now = POSITION_ENGINE.poCash(row), got = POSITION_ENGINE.poRecvUnits(row), e = body.expect || (lotDown ? { cash: now } : undefined);"},
+{"name":"R3: a stale cash is not checked","file":"src/maker-inputs.js","find":"if (lotDown && Math.abs(now - e.cash) > 0.004)","replace":"if (false)"},
 {"name":"R3: any Correction may name a cash","file":"src/maker-inputs.js","find":"} else if (body.expect !== undefined) return","replace":"} else if (false) return"},
-{"name":"R3: the draft carries no expect","file":"src/maker-inputs.js","find":"if (lotDown) entry.payload.expect =","replace":"if (false) entry.payload.expect ="},
+{"name":"R3: the draft carries no expect","file":"src/maker-inputs.js","find":"if (lotDown || lotRecv) entry.payload.expect =","replace":"if (false) entry.payload.expect ="},
 {"name":"L2: the form sends no expect","file":"stmt/owner.js","find":"lotDown?{expect:{cash:+(+r.cash||0).toFixed(2)}}:{}","replace":"{}"},
 {"name":"L4: a refused lowering is kept to retry","file":"stmt/owner.js","find":"pending.body.expect!==undefined||","replace":""},
 {"name":"L4: paidOn is kept under the total","file":"stmt/owner.js","find":"if(cashThen<lotOwes-0.004) f.paidOn=null;","replace":""},
 {"name":"F3: Find opens a row over a waiting move","file":"stmt/owner.js","find":"if(one&&!editAfter&&","replace":"if(one&&"},
 {"name":"E2: the writer reads no expect","file":"engine/apply.mjs","find":"const ex = expectFault(row, pay.expect);","replace":"const ex = \"\";"},
 {"name":"E2: the plan reads no expect","file":"engine/apply.mjs","find":"const ex = expectFault(simOf(hits[0]), pay.expect);","replace":"const ex = \"\";"},
-{"name":"R4: the draft stamps the paid figure, not the stored one","file":"src/maker-inputs.js","find":"if (lotDown) entry.payload.expect = { cash: +(+row.cash || 0).toFixed(2) };","replace":"if (lotDown) entry.payload.expect = { cash: +POSITION_ENGINE.poCash(row).toFixed(2) };"}]
+{"name":"R4: the draft stamps the paid figure, not the stored one","file":"src/maker-inputs.js","find":"...(lotDown ? { cash: +(+row.cash || 0).toFixed(2) } : {}),","replace":"...(lotDown ? { cash: +POSITION_ENGINE.poCash(row).toFixed(2) } : {}),"}]

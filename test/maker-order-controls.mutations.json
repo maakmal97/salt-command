@@ -80,13 +80,13 @@
  {
   "name": "the bridge drops the Desk fresh mark on a refusal",
   "file": "stmt/maker.js",
-  "find": "restate: result && result.restate, fresh: !!(result && result.fresh === true) });",
-  "replace": "restate: result && result.restate, fresh: false });"
+  "find": "restate: result && result.restate, fresh: !!(result && result.fresh === true),",
+  "replace": "restate: result && result.restate, fresh: false,"
  },
  {
   "name": "the bridge answer leaves out fresh",
   "file": "stmt/maker.js",
-  "find": "      ...(error.fresh === true ? { fresh: true } : {}) }, status);",
-  "replace": "      ...{} }, status);"
+  "find": "      ...(error.fresh === true ? { fresh: true } : {}),\n      ...(error.stale",
+  "replace": "      ...{},\n      ...(error.stale"
  }
 ]

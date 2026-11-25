@@ -11,7 +11,7 @@
  *   P5  a lot with its cash written, a total sent unchanged (by Correction or Modification), an unpaid lot and a lot only agreed are as before
  *   C1  Correct a row's catalog offers no Cash paid, Settled RM or units handed over (his answers: each moves on Record); a lot's units received stay
  *   C2  the Desk refuses a Correction setting any of them, a sale's cash lower or higher, a lot's raised or cleared, naming Record
- *   C3  and still drafts a lot's lower from Record, naming the cash it was read with
+ *   C3  and still drafts a lot's lower from Record, naming the cash it was read with, and a lot's units received naming theirs (test/lot-received.mjs)
  *   D1  the Approve card says a lot paid in full and raised owes the difference
  *   D2  and reads a lot whose cash is set lower in the same Correction on that cash (the review's finding 2) */
 import { applyAmend } from "../engine/apply.mjs";
@@ -97,9 +97,9 @@ export async function run({ ok }) {
       "C2: a Correction setting what a row holds paid, settled or handed over is refused, naming Record, a lot's lower carrying another alike: " + J(refused.map((r) => r.error)));
 
     /* C3 */
-    const lower = amend("zr8", { fields: { cash: 40 }, expect: { cash: 50 } }), recv = amend("zr8", { fields: { receivedQty: 1 } });
+    const lower = amend("zr8", { fields: { cash: 40 }, expect: { cash: 50 } }), recv = amend("zr8", { fields: { receivedQty: 1 }, expect: { receivedQty: 2 } });
     ok(lower.entry && !lower.error && J(lower.entry.payload.fields) === J({ cash: 40 }) && J(lower.entry.payload.expect) === J({ cash: 50 })
-      && recv.entry && !recv.error && J(recv.entry.payload.fields) === J({ receivedQty: 1 }),
+      && recv.entry && !recv.error && J(recv.entry.payload.fields) === J({ receivedQty: 1 }) && J(recv.entry.payload.expect) === J({ receivedQty: 2 }),
       "C3: a lot's lower from Record, naming the cash it was read with, is still drafted, and a lot's units received set on Correct a row: " + J([lower.error || lower.entry.payload, recv.error]));
 
     /* D1, D2 */

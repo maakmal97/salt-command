@@ -50948,6 +50948,11 @@ await (async () => {
   await (await import("./cash-roads.mjs")).run({ ok });
 })();
 
+section("25 Nov 2026: a lot's units received on Correct a row name the units they were read with");
+await (async () => {
+  await (await import("./lot-received.mjs")).run({ ok, pageWork });
+})();
+
 section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");
 await (async () => {
   await (await import("./admin-record-correct.mjs")).run({ ok, pageWork });

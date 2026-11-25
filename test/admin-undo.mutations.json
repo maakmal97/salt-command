@@ -218,8 +218,8 @@
  {
   "name": "the entry forgets the step it undoes",
   "file": "src/maker-inputs.js",
-  "find": "...(body.undo !== undefined ? { undo: body.undo } : {}) });\n  if (lotDown)",
-  "replace": "...({}) });\n  if (lotDown)"
+  "find": "...(body.undo !== undefined ? { undo: body.undo } : {}) });\n  /* the stored figures, as expectFault",
+  "replace": "...({}) });\n  /* the stored figures, as expectFault"
  },
  {
   "name": "the room check lets an undo over money on its way",
