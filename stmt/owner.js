@@ -3430,12 +3430,17 @@ export const OWNER_JS = `
       if(!editRow.value)throw new Error('Choose a row first.');
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
       if(body.kind==='Correction')body.fields=Object.assign({},changes);
+      /* 25 Nov 2026: a lot's units received go with the units the row was read with, so a Receipt approved while this waits refuses it at the Desk */
+      var picked=rows.find(function(item){return item.rid===editRow.value;});
+      if(body.kind==='Correction'&&picked&&picked.direction==='BUY'&&Object.prototype.hasOwnProperty.call(body.fields,'receivedQty'))body.expect={receivedQty:+(+picked.movedUnits||0).toFixed(4)};
       if(body.kind==='Fulfilment'){body.cash=Number(editCash.value);body.movedUnits=Number(editUnits.value);}
       if(body.kind==='Payment')body.cash=Number(editCash.value);
       if(body.kind==='Receipt')body.movedUnits=Number(editUnits.value);
       editStatus.textContent='Sending.';
       try{ await send('/all/maker/inputs/ledger-amend',body); }
       catch(error){
+        /* the review standing in for Fable: the row read once a page open, a lot's units received refused as moved come back with the Desk's figure, which the next tap is sent with */
+        if(body.expect&&picked&&error.detail&&error.detail.stale&&Number.isFinite(error.detail.received))picked.movedUnits=error.detail.received;
         /* a customer's order: the Desk names it, and the change goes as the order's Amend, so the order and the row change together */
         var rs=error.detail&&error.detail.restate;
         if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order))throw error;

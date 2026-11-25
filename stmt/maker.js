@@ -169,7 +169,9 @@ async function deskCall(env, path, method, body) {
       { status: response.ok ? 502 : response.status, state: result && result.state,
         /* 10 Nov 2026 (his ask D): a price outside the band, asked once: the figures Salt Admin draws its Reason field from */
         outside: result && result.outside, underFloor: !!(result && result.underFloor === true),
-        twin: result && result.twin, queuedTwin: result && result.queuedTwin, restate: result && result.restate, fresh: !!(result && result.fresh === true) });
+        twin: result && result.twin, queuedTwin: result && result.queuedTwin, restate: result && result.restate, fresh: !!(result && result.fresh === true),
+        /* 25 Nov 2026: a lot's units received refused as moved, with the Desk's figure the next tap is sent with */
+        stale: !!(result && result.stale === true), received: result && Number.isFinite(result.received) ? result.received : undefined });
   return result;
 }
 
@@ -1071,7 +1073,9 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       ...(error.restate && typeof error.restate === "object" ? { restate: error.restate } : {}),
       ...(error.outside && typeof error.outside === "object" ? { outside: error.outside } : {}),
       ...(error.underFloor === true ? { underFloor: true } : {}),
-      ...(error.fresh === true ? { fresh: true } : {}) }, status);
+      ...(error.fresh === true ? { fresh: true } : {}),
+      ...(error.stale === true ? { stale: true } : {}),
+      ...(Number.isFinite(error.received) ? { received: error.received } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);
 }
