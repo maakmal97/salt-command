@@ -416,18 +416,34 @@ export function cogsFor(book, product, onOrBefore) {
   const lots = (book.purchases || []).concat(book.draftLots || []).filter((x) => prodOf(x) === p);
   const c = POSITION_ENGINE.latestCogs(lots, onOrBefore || null);
   if (!c) return Object.assign({}, costFor(book, p), { basis: null });
-  const name = c.rid ? `purchase ${c.rid}` : (c.p._draft ? `drafted purchase ${c.p._draft} (not yet folded)` : "purchase, unnumbered,");
+  const nameOf = (rid, draft) => rid ? `purchase ${rid}` : (draft ? `drafted purchase ${draft} (not yet folded)` : "purchase, unnumbered,");
+  const name = nameOf(c.rid, c.p._draft);
+  /* 25 Nov 2026 (docs/plan-small-lot.html): under the book's minimum the engine blends the newest lots, and the note names the units
+     counted and each lot at its own rate, newest first */
+  const source = c.lots
+    ? `COGS off ${newestUnits(c.units)}: ${andList(c.lots.map((l) => `${round(l.units)} of ${nameOf(l.rid, l.draft)} at RM ${round(l.rate)}`))}`
+    : `COGS off the latest ${name} landed ${c.date || "undated"}: RM ${round(c.quote)} quote plus RM ${round(c.freight)} freight over ${round(c.units)} unit`;
   return {
     cost: c.rate,
-    source: `COGS off the latest ${name} landed ${c.date || "undated"}: RM ${round(c.quote)} quote plus RM ${round(c.freight)} freight over ${round(c.units)} unit`,
+    source,
     latestRate: c.rate,
     mayBlend: false,
-    basis: { rid: c.rid, draft: c.p._draft || null, date: c.date, quote: c.quote, freight: c.freight, units: c.units, rate: c.rate }
+    basis: Object.assign({ rid: c.rid, draft: c.p._draft || null, date: c.date, quote: c.quote, freight: c.freight, units: c.units, rate: c.rate }, c.lots ? { lots: c.lots } : {})
   };
 }
-/* the one line every sale's flags carry when its basis is a lot not yet on the book */
-const basisFlags = (priced) => (priced && priced.basis && priced.basis.draft)
-  ? [`The cost reads the drafted purchase ${priced.basis.draft}, which is not on the book yet: reject that lot and this row's cost is wrong, so decide the lot first.`] : [];
+/* 25 Nov 2026: the words for a blended cost, "the newest 10 units", and a list joined "a, b and c" */
+export const newestUnits = (n) => `the newest ${round(n)} unit${Math.abs(n - 1) < 1e-9 ? "" : "s"}`;
+const andList = (xs) => xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+/* the one line every sale's flags carry when its basis is a lot not yet on the book. 25 Nov 2026: a drafted lot anywhere in a blend
+   raises it, not only the newest */
+const basisFlags = (priced) => {
+  const b = priced && priced.basis;
+  const drafts = !b ? [] : (Array.isArray(b.lots) ? b.lots.map((l) => l && l.draft).filter(Boolean) : (b.draft ? [b.draft] : []));
+  if (!drafts.length) return [];
+  return drafts.length === 1
+    ? [`The cost reads the drafted purchase ${drafts[0]}, which is not on the book yet: reject that lot and this row's cost is wrong, so decide the lot first.`]
+    : [`The cost reads the drafted purchases ${andList(drafts)}, which are not on the book yet: reject any of those lots and this row's cost is wrong, so decide the lots first.`];
+};
 
 /* ---- what the desk would refuse ---------------------------------------------------- */
 export function floorFor(book, product, qty) {
@@ -452,7 +468,9 @@ export function floorFor(book, product, qty) {
       /* 19 Oct 2026: the Floor is the cost rounded up to the next RM 5, so what the order costs is its own figure (costTotal), never the Floor */
       const cost = PRICING_ENGINE.costTotal(qty, C, snap.inputs.policy);
       /* 10 Nov 2026: `nrs`, the non-revenue share the Floor carries over COGS where the stack has one (salt), so a flag can say what the Floor is made of */
-      if (isNum(x)) return { floor: +x.toFixed(2), cost: isNum(cost) ? +cost.toFixed(2) : null, at: qty, exact: true, time, nrs: isNum(C.nrs) && C.nrs > 0 ? C.nrs : null };
+      /* 25 Nov 2026: `newest`, the units a blended cost was read over (the stack's latest carries lots only then) */
+      if (isNum(x)) return { floor: +x.toFixed(2), cost: isNum(cost) ? +cost.toFixed(2) : null, at: qty, exact: true, time, nrs: isNum(C.nrs) && C.nrs > 0 ? C.nrs : null,
+        newest: C.latest && Array.isArray(C.latest.lots) && isNum(C.latest.units) ? +C.latest.units : null };
     } catch (e) { /* fall through to the carded sizes */ }
   }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
@@ -605,9 +623,11 @@ export function flagsFor(entry, row, book, priced) {
     /* v502: ONE FLOOR; since 05 Oct 2026 it is COGS times the size, no leak in it. Delivery is a figure on the order,
        taken out of the total before this comparison, and his time is not charged. */
     const at = fl.exact ? "" : ` (read at ${fl.at} unit, the nearest carded size)`;
+    /* 25 Nov 2026: a blended cost says the units it was read over (floorFor's `newest`) */
+    const off = isNum(fl.newest) ? `off ${newestUnits(fl.newest)}` : "off the latest lot";
     const made = isNum(fl.time) && fl.time > 0
-      ? `the goods at COGS, purchase plus freight off the latest lot, and RM ${round(fl.time)} for your time`
-      : "the goods at COGS, purchase plus freight off the latest lot";
+      ? `the goods at COGS, purchase plus freight ${off}, and RM ${round(fl.time)} for your time`
+      : `the goods at COGS, purchase plus freight ${off}`;
     /* 19 Oct 2026: THE FLOOR IS THE PRICE FLOOR, NOT THE COST. It is the cost rounded up to the next RM 5, so the flag names the
        Floor for the comparison and the exact cost (costTotal) where it says what the order costs. The carded-size road holds
        the Floor alone and says only what it is made of. */
@@ -625,7 +645,7 @@ export function flagsFor(entry, row, book, priced) {
   /* v496: the row's cost is absolute; the unit figure is the engine's derivation, and the inventory's figure is already per unit. */
   const ownCost = isNum(row && row.cost) ? POSITION_ENGINE.txUnitCost(row, priced.cost) : (isNum(priced.cost) ? priced.cost : null);
   if (isSale && ownCost != null && rate != null && rate < ownCost) {
-    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : (priced && priced.basis ? ", COGS off the latest purchase" : " from the inventory")}: it loses money on every unit.`);
+    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : (priced && priced.basis ? (priced.basis.lots ? `, COGS off ${newestUnits(priced.basis.units)}` : ", COGS off the latest purchase") : " from the inventory")}: it loses money on every unit.`);
   }
 
   /* 5. A BLENDED SHELF. The cost given is an average and the row may in truth draw two lots. */

@@ -1,6 +1,6 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
-import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
+import { costFor, cogsFor, newestUnits, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
 import { rewardReading, loyalReading } from "../engine/stages.mjs";
 import { rowFigures, moveRow } from "./approve-figures.js";
@@ -368,7 +368,8 @@ export function makerTradeReading(body, book) {
   /* a sale is costed at the latest purchase on or before its date, as the drafter does (drafter.js, cogsFor with pay.date) */
   const c = cogsFor(book, body.product, body.date || null);
   const rate = c.cost > 0 ? +c.cost.toFixed(2) : null;
-  const cogs = { rate, source: c.basis ? "the latest purchase" : c.source, basis: c.basis || null };
+  /* 25 Nov 2026: a blended cost reads "the newest 10 units" (docs/plan-small-lot.html) */
+  const cogs = { rate, source: c.basis ? (c.basis.lots ? newestUnits(c.basis.units) : "the latest purchase") : c.source, basis: c.basis || null };
   const price = +(goods / qty).toFixed(2);
   if (!sale) {
     const perUnit = +((goods + (body.freight || 0)) / qty).toFixed(2);
