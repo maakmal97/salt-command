@@ -916,7 +916,8 @@ export function draftRow(entry, book) {
       /* v626: EACH NAMES THE CORRECTED FIGURE, SO EACH WAITS FOR THAT FIGURE TO BE CORRECTED, and a sale is measured as it
          will stand, since the same correction can restate what was paid or handed over. s139 stood 45 sen overpaid until a
          correction set its settlement to RM 110, and that card said its unchanged RM 117.5 was under RM 117.95 paid. A lot
-         keeps the row it corrects: poCash reads a lot marked paid as paid its total, so the corrected lot always reads paid. */
+         is measured on the row it corrects: what it holds paid stays its cash when its total moves (engine/apply.mjs, 25 Nov 2026),
+         so a lot paid in full and raised owes the difference, which the card says. */
       const changed = (f) => chk.changes.some((c) => c.field === f);
       const paid = isSale ? POSITION_ENGINE.txPaid(after) : POSITION_ENGINE.poCash(target);
       const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(after) : POSITION_ENGINE.poRecvUnits(target);
@@ -927,6 +928,8 @@ export function draftRow(entry, book) {
         flags.push(`The corrected row comes to RM ${round(owedAfter)}, under the RM ${round(paid)} already paid: the fold raises a refund payable to the customer for RM ${round(paid - owedAfter)}, open and Now until it is returned (paidOn in the book).`);
       } else if (!isSale && changed("total") && isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
+      } else if (!isSale && changed("total") && isNum(after.total) && paid > 0.009 && paid >= (+target.total || 0) - 0.009 && after.total > paid + 0.005) {
+        flags.push(`The lot was paid in full at RM ${round(paid)}; at RM ${round(after.total)} it owes RM ${round(after.total - paid)}.`);
       }
       if (changed("qty") && isNum(after.qty) && after.qty < movedQty - 0.005) {
         flags.push(`The corrected quantity of ${round(after.qty)} unit is under the ${round(movedQty)} unit already ${isSale ? "handed over" : "received"}.`);
