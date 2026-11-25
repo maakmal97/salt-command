@@ -5904,7 +5904,14 @@ const LADDER={
 
 const PRICE_LOCK_ON=false;
 
-const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
+/* 25 NOV 2026, HIS ANSWERS OF 24 AND 25 NOV 2026 (docs/plan-small-lot.html): A SMALL LOT NO LONGER SETS A BOOK'S FLOOR. The fewest units a
+   book's cost is read over, typed per book, his figures. The position engine's latestCogs reads it by the lots' book: when the newest landed
+   lot holds this many units or more, cost is that lot alone, as before; under it, the newest lots are taken together, newest first, each at
+   its own quote and freight over its units received, the last only for the units still needed. A book not named here has a minimum of
+   nought, which is the latest lot alone. A version sets and changes it; nothing is written to the Book. No semicolon here. */
+const COST_MIN={salt:12.5, oil:10, candy:10, rice:100, gas:1};
+
+const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON, COST_MIN };
 /* ==== END ENGINE rules ==== */
 /* ==== ENGINE qr: generated from engine/qr.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
 /* engine/qr.mjs: A QR ENCODER, WRITTEN OUT RATHER THAN INSTALLED.

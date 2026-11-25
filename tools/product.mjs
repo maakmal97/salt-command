@@ -36,6 +36,7 @@
  * naming this book and another is refused rather than cut, so no other book's record is touched. The hue and the mark are
  * design and leave by their own roads (salt-ds, stmt/page.js PSYM, PSHAPE, PLET). */
 import { readFileSync, writeFileSync } from "node:fs";
+import PRICING_RULES from "../engine/rules.mjs";
 import { execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -103,6 +104,9 @@ function add(b, id, name, note, since) {
   b.COST_RULE[id] = { kind: "latestCogs", note: "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else." };
   b.QUOTES[id] = null;
   console.log(`added ${id} (${name}): registered in ${MAPS.length} maps and PROD_ORDER.`);
+  /* 25 Nov 2026, his answer to the small-lot plan's one ask: a book COST_MIN does not name prices off its latest lot alone, so say so */
+  if (!(+((PRICING_RULES.COST_MIN || {})[id]) > 0))
+    console.log(`  NO SMALL-LOT MINIMUM: COST_MIN in engine/rules.mjs does not name ${id}, so this book prices off its latest lot alone until a version names it there.`);
   /* Say what is actually missing, not what usually is: a hue and a mark may already have been
      drawn before the book was opened, and a reminder that is wrong is worse than none. */
   const has = (f, needle) => { try { return readFileSync(resolve(REPO, f), "utf8").includes(needle); } catch (e) { return false; } };
