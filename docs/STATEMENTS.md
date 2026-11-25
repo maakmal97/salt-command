@@ -3211,7 +3211,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.party` | Record, sale or purchase | The party. |
 | `record.trade.remove-book` | Record, sale or purchase, an extra book (key: extra<n>) | Removes the extra book. |
 | `record.trade.send` | Record, sale or purchase | Records the trade for review (Record the sale); with a row open, Record the change sends what differs as a Correction and what moved since as a Fulfilment, or Reopen this sale. |
-| `record.trade.edit` | Record, sale or purchase | Row: New, or a recorded row, which fills the form to change it (27 Oct 2026). |
+| `record.trade.edit` | Record, sale or purchase | Row: New, or a recorded row, which fills the form to change it (27 Oct 2026). The row is read again as it opens, and filled again if it moved since the page opened while nothing has been typed; Record reads it again before sending and sends nothing on a row that moved, and its Fulfilment names the paid and moved figures it was worked out on (`expect {cash, movedUnits}`), which the Desk refuses on a row that moved, a kept retry included (`makerFreshRows`, `makerLedgerAmendment`; his answer "Re-read rows", 25 Nov 2026). Correct a row reads its row again when one is chosen or opened from Needs you. |
 | `record.trade.find` | Record, sale or purchase | Find: narrows Row to the rows whose reference, code, book or date holds what is typed, says how many, and opens a reference typed whole or the one row left (25 Nov 2026). |
 | `record.trade.other` | Record, sale or purchase | Other fields, with a row open: opens Correct a row on it, at a Correction. |
 | `record.trade.cancel` | Record, sale or purchase | Cancel this sale, with a row open; asks once, then sends a Cancellation. |

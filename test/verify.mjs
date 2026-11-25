@@ -50950,6 +50950,11 @@ await (async () => {
   await (await import("./lot-received.mjs")).run({ ok, pageWork });
 })();
 
+section("25 Nov 2026: Salt Admin's Record reads its rows again when one opens and before it sends");
+await (async () => {
+  await (await import("./record-fresh.mjs")).run({ ok, pageWork });
+})();
+
 section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");
 await (async () => {
   await (await import("./admin-record-correct.mjs")).run({ ok, pageWork });
