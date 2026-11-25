@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="641c1519809d499d";
+var SALT_BUILD_ID="cddc0271f0338fa2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12658,7 +12658,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1568","d":"25 Nov 2026","t":"GAS IS LETTERED P","n":["<b>GAS IS LETTERED P.</b> On Salt Counter and Salt Admin the starburst carries P in place of POP, his word, set at the size of every other letter.","<b>ON THE 44PX COIN TOO.</b> One capital stands on every coin from 44px, as the other books&#39; do; a 36px coin stays the shape alone."]}];
+const evolution=[{"v":"v1569","d":"25 Nov 2026","t":"A LOT&#39;S UNITS RECEIVED NAME WHAT THEY WERE READ WITH","n":["<b>A LOT&#39;S UNITS RECEIVED ARE CHECKED BEFORE THEY ARE SET.</b> On Salt Admin, Correct a row sends a lot&#39;s Units received with the units the row was read with. The Desk, the Approve card and the Book refuse it if a receipt reached the lot first, so the receipt is never written over and the inventory never rolls back.","<b>A RECEIPT AND A UNITS CHANGE NEVER WAIT TOGETHER.</b> While a receipt waits under Approve on a lot, a change of its units received is held, and a receipt is held while such a change waits.","<b>REFUSED AS MOVED, SENT AGAIN ON THE NEW FIGURE.</b> The refusal names the units the lot now holds, and the next tap is sent with them.","<b>UNITS RECEIVED ARE SET, NEVER CLEARED.</b> A lot&#39;s units received take a figure, 0 included."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12820,7 +12820,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Nov 2026, 17:17 KL';
+const LAST_UPDATED='25 Nov 2026, 18:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

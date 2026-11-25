@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1569",
+  "d": "25 Nov 2026",
+  "t": "A LOT&#39;S UNITS RECEIVED NAME WHAT THEY WERE READ WITH",
+  "n": [
+   "<b>A LOT&#39;S UNITS RECEIVED ARE CHECKED BEFORE THEY ARE SET.</b> On Salt Admin, Correct a row sends a lot&#39;s Units received with the units the row was read with. The Desk, the Approve card and the Book refuse it if a receipt reached the lot first, so the receipt is never written over and the inventory never rolls back.",
+   "<b>A RECEIPT AND A UNITS CHANGE NEVER WAIT TOGETHER.</b> While a receipt waits under Approve on a lot, a change of its units received is held, and a receipt is held while such a change waits.",
+   "<b>REFUSED AS MOVED, SENT AGAIN ON THE NEW FIGURE.</b> The refusal names the units the lot now holds, and the next tap is sent with them.",
+   "<b>UNITS RECEIVED ARE SET, NEVER CLEARED.</b> A lot&#39;s units received take a figure, 0 included."
+  ]
+ },
+ {
   "v": "v1568",
   "d": "25 Nov 2026",
   "t": "GAS IS LETTERED P",
