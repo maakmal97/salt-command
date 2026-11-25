@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1567",
+  "d": "25 Nov 2026",
+  "t": "A LOT KEEPS WHAT IT PAID; CASH CHANGES ON RECORD",
+  "n": [
+   "<b>A LOT KEEPS WHAT IT PAID WHEN ITS PRICE MOVES.</b> A purchase lot paid in full before lots carried a cash figure keeps its old price as its cash when its price is raised or lowered: raised, it owes the difference; lowered, it reads overpaid, as any lot with its cash written does. Undo puts it back paid in full.",
+   "<b>THE PAID DAY.</b> A lot keeps its paid day when its price moves; the payment that makes it paid in full again is its paid day.",
+   "<b>CASH PAID, SETTLED AND HANDED OVER CHANGE ON RECORD.</b> Correct a row on Salt Admin no longer offers them and the Desk refuses them there, so a payment or a handover approved while a typed figure waits is never written over. A lot&#39;s units received stay on Correct a row.",
+   "<b>THE APPROVE CARD SAYS WHAT A RAISED LOT OWES.</b> A lot paid in full and raised says what it now owes; a lot whose cash is set lower in the same change is read on that cash."
+  ]
+ },
+ {
   "v": "v1566",
   "d": "25 Nov 2026",
   "t": "A LOT&#39;S CASH SET LOWER, AND FIND",
