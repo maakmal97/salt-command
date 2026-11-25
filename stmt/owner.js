@@ -3183,6 +3183,16 @@ export const OWNER_JS = `
       day=/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k)?k.slice(8,10)+' '+mon[+k.slice(5,7)-1]+' '+k.slice(0,4):'';
     return (Number.isFinite(e.lat)&&Number.isFinite(e.lng)?' with its point':' as an address alone')+(from?', from '+from:'')+(day?', filed '+day:'')+'.';
   }
+  /* 25 Nov 2026 (his answer: Record re-reads its rows): RECORD'S ROWS ARE READ AGAIN. They were read once a page open, so a payment or a receipt folded since
+     left Record and Correct a row on the old figures: a lowered cash was refused on every tap, and a Cash paid typed as the new total sent its difference
+     from the old one, the payment booked twice. Read when a row opens and before Record sends, into the same list, which each form finds its row in again */
+  async function makerFreshRows(cat){
+    var j=await refs('/all/maker/inputs'), c=j&&j.catalog;
+    if(!c||!Array.isArray(c.rows)) throw new Error('The rows could not be read again, so nothing was sent. Try again.');
+    if(!Array.isArray(cat.rows)) cat.rows=[];
+    cat.rows.splice.apply(cat.rows,[0,cat.rows.length].concat(c.rows));
+    return cat;
+  }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     pairDrafts.length=0;
     makerGeo.configure(catalog.placed); makerPlaced=catalog.placed||{};
@@ -3399,6 +3409,7 @@ export const OWNER_JS = `
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
     editRow.addEventListener('change',function(){changes={};drawChanges();drawRowCard();});drawRowCard();
+    editRow.addEventListener('change',function(){ makerFreshRows(catalog).then(function(){ drawRowCard(); }).catch(function(){}); });
     /* plan 4: the row picked has its History, and Undo on its newest move */
     var editHist=el('div','maker-fields');editor.appendChild(editHist);
     var drawHist=function(){editHist.replaceChildren();if(editRow.value&&rows.some(function(item){return item.rid===editRow.value&&item.direction!=='BUY';}))historyBlock(editHist,{rid:editRow.value},'row:'+editRow.value,null,'row:'+editRow.value);};
@@ -3425,7 +3436,7 @@ export const OWNER_JS = `
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     /* plan 1: Needs you's owed cards open this form on their row, as goods or cash moved (amendFor) */
-    amendPick=function(rid,kind){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; drawChanges(); drawRowCard(); kindsFor(); editKind.value=kind||'Fulfilment'; drawKind(); drawHist(); editorReady(); return true; };
+    amendPick=function(rid,kind){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; drawChanges(); drawRowCard(); kindsFor(); editKind.value=kind||'Fulfilment'; drawKind(); drawHist(); editorReady(); makerFreshRows(catalog).then(function(){ drawRowCard(); }).catch(function(){}); return true; };
     var editorButton=makerButton(editor,['Send the correction','record.amend.send'],async function(send){
       if(!editRow.value)throw new Error('Choose a row first.');
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
@@ -3440,7 +3451,7 @@ export const OWNER_JS = `
       try{ await send('/all/maker/inputs/ledger-amend',body); }
       catch(error){
         /* the review standing in for Fable: the row read once a page open, a lot's units received refused as moved come back with the Desk's figure, which the next tap is sent with */
-        if(body.expect&&picked&&error.detail&&error.detail.stale&&Number.isFinite(error.detail.received))picked.movedUnits=error.detail.received;
+        if(body.expect&&picked&&error.detail&&error.detail.stale&&Number.isFinite(error.detail.received)){ var at0=rows.indexOf(picked); if(at0>=0) rows[at0]=Object.assign({},picked,{movedUnits:error.detail.received}); }
         /* a customer's order: the Desk names it, and the change goes as the order's Amend, so the order and the row change together */
         var rs=error.detail&&error.detail.restate;
         if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order))throw error;
@@ -4647,8 +4658,14 @@ export const OWNER_JS = `
         },false),'Cancel this '+word,editMore,true);
         if(r.direction!=='BUY') historyBlock(editHist,{rid:r.rid},'row:'+r.rid,null,'row:'+r.rid);
       }
-      function editLoad(rid){
+      function editLoad(rid,fresh){
         var r=editRows().find(function(x){ return x.rid===rid; }); if(!r) return false;
+        /* the row read again as it opens (makerFreshRows); moved since the page opened, its figures are filled again */
+        if(!fresh){ var seen=JSON.stringify(r); makerFreshRows(catalog).then(function(){
+          var now=editRows().find(function(x){ return x.rid===rid; });
+          /* only while nothing is sending and nothing has been typed since it filled; otherwise the check before sending stops it */
+          if(tradeEditing&&tradeEditing.rid===rid&&!tradePending&&editVals()===filled&&now&&JSON.stringify(now)!==seen){ editLoad(rid,true); tradeAnswer.textContent='This row moved since the page opened: its figures are read again.'; }
+        }).catch(function(){}); }
         extraTrades.slice().forEach(function(x){ coverChoices.splice(coverChoices.indexOf(x.cover),1); x.row.remove(); }); extraTrades.length=0;
         var sale=r.direction==='SELL', r2=sale&&r.stream==='R2';
         tradeEditing=r; editAfter=null; direction.value=sale?'sale':'purchase'; fillTradeChoices(); fillEditPick();
@@ -4661,8 +4678,9 @@ export const OWNER_JS = `
         carriage.value=String(+(+(sale?r.delivery:r.freight)||0).toFixed(2)); handover.value=r.handover||'';
         makerWheelSet(tradeMoved,+(+r.movedUnits||0).toFixed(4)); tradeCash.value=String(+(+(r.cancelledRow?r.paid:r.cash)||0).toFixed(2));
         tradeAt=null; tradeSignature=''; tradeAnswer.textContent='';
-        editDraw(); readTrade(); return true;
+        editDraw(); readTrade(); var filled=editVals(); return true;
       }
+      function editVals(){ return JSON.stringify([tradeProduct.value,tradeParty.value,tradeDate.value,tradeQty.value,tradeTotal.value,carriage.value,handover.value,tradeMoved.value,tradeCash.value,tradeStream.value]); }
       function editClear(){
         tradeEditing=null; editAfter=null; fillEditPick();
         tradeParty.value=''; tradeDate.value=''; makerWheelSet(tradeQty,1); tradeTotal.value=''; tradePrice.mine(false);
@@ -4678,6 +4696,13 @@ export const OWNER_JS = `
       });
       tradeEditPick=function(rid){ return editLoad(rid); }; fillEditPick(); editDraw();
       async function submitEdit(send){
+        /* what Record sends is the difference from the row as it was opened, so the row is read again first, and nothing goes if it moved */
+        var seenRid=tradeEditing.rid, seenRow=JSON.stringify(tradeEditing);
+        await makerFreshRows(catalog);
+        var nowRow=editRows().find(function(x){ return x.rid===seenRid; });
+        if(!nowRow||JSON.stringify(nowRow)!==seenRow){ if(nowRow) editLoad(seenRid,true); else editClear();
+          throw new Error(nowRow?'This row moved since you opened it, so nothing was sent: its figures are read again. Check them and send again.'
+            :'This row was cancelled or closed since you opened it, so nothing was sent.'); }
         var r=tradeEditing, sale=r.direction==='SELL', same=function(a,b){ return Math.abs((+a||0)-(+b||0))<0.005; };
         if(r.cancelledRow){
           if(r.paid>0.009||r.movedUnits>0.009) throw new Error('Cancelled after money or goods moved, so it cannot be reopened.');
@@ -4719,10 +4744,13 @@ export const OWNER_JS = `
         tradeAnswer.textContent='Sending.';
         var said=[], at=Date.now();
         /* the movement waits as editAfter while the change goes, so a retry of the change sends it too (tradeAction.after) */
-        editAfter=moved?{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment',date:tripToday(),cash:dCash,movedUnits:dUnits}:null;
+        editAfter=moved?{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment',date:tripToday(),cash:dCash,movedUnits:dUnits,
+          expect:{cash:+(+r.cash||0).toFixed(2),movedUnits:+(+r.movedUnits||0).toFixed(4)}}:null;   /* the Desk refuses it on a row that moved since (25 Nov 2026) */
         if(Object.keys(f).length){
           try{ await send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date(at).toISOString(),rid:r.rid,kind:'Correction',date:tripToday(),fields:f},lotDown?{expect:{cash:+(+r.cash||0).toFixed(2)}}:{})); said.push('The change'); }
           catch(error){
+            /* refused as moved (a lowered cash measured on a figure the lot no longer holds): the row is read again and filled, and he sends again */
+            if(error.detail&&error.detail.stale){ try{ await makerFreshRows(catalog); editLoad(r.rid,true); }catch(e){} throw error; }
             /* a customer's order: the Desk names it, and the change goes as the order's Amend, so the order and the row change together */
             var rs=error.detail&&error.detail.restate;
             if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order)) throw error;
@@ -4731,7 +4759,13 @@ export const OWNER_JS = `
           }
         }
         if(editAfter){
-          var b=editAfter; editAfter=null; await send('/all/maker/inputs/ledger-amend',b);
+          var b=editAfter; editAfter=null;
+          try{ await send('/all/maker/inputs/ledger-amend',b); }
+          catch(error){
+            /* the change went and what moved was refused as moved (the review): said whole, so the change is not sent twice */
+            if(said.length&&error&&error.detail&&error.detail.stale) throw new Error(said.join(' ')+' waits under Approve, but what moved was not sent: '+String(error.message||error));
+            throw error;
+          }
           said.push(said.length?'and what moved':'What moved');
         }
         tradeAnswer.textContent=said.join(' ')+(said.length>1?' wait':' waits')+' under Approve.'; loadMaker();
