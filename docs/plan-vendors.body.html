@@ -1,10 +1,10 @@
 <div class="amb-shell" data-mood="slate">
 <main class="amb-screen">
 <header class="amb-hero amb-hero--doc amb-mesh">
-<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026</span>
+<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026; answered 25 Nov 2026</span>
 <h1 class="amb-hero__title">Vendors beside Customers, and Orders for both sides</h1>
 <p class="amb-hero__sub">Salt Admin gets a Vendors place built as the mirror of Customers: a list, a page for each vendor with its prices, deliveries and notes, and Log a purchase as the one way to record a purchase, the twin of Order for them. Orders holds sales and purchases in the same four stages, on one order card. Record goes, and each of its forms moves to the page it acts on. Pricing does not move.</p>
-<p class="amb-hero__time">salt-command at bae2a744, v1565 on master. Your answers of 24 Nov 2026. Reviewed by Fable on your test; its findings applied and re-checked. Plan only: nothing is built until your go.</p>
+<p class="amb-hero__time">salt-command at bae2a744, v1565 on master. Your answers of 24 Nov 2026, and the Ask list answered on 25 Nov 2026. Reviewed by Fable on your test; its findings applied and re-checked. Answered in full: its canvas starts now in its own session, and its code waits for the small-lot version.</p>
 </header>
 <div class="amb-doc">
 <nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
@@ -25,7 +25,7 @@
 <li><a class="amb-contents__link" href="#proof">How it is proved</a></li>
 <li><a class="amb-contents__link" href="#risks">Risks and how each is held</a></li>
 <li><a class="amb-contents__link" href="#review">Fable's review</a></li>
-<li><a class="amb-contents__link" href="#asks">Ask list</a></li>
+<li><a class="amb-contents__link" href="#asks">Ask list, answered</a></li>
 </ol></nav>
 <div class="amb-doc__body">
 
@@ -204,7 +204,7 @@
 <tr><td data-label="Thing">A vendor</td><td data-label="Where it lives">No record of its own: the owner code of each purchase's <code>supplier</code>, and each roster code an Add ID made with the Vendor role</td><td data-label="Written by">Log a purchase; New vendor (Add ID)</td><td data-label="Read by">The vendor readings</td></tr>
 <tr><td data-label="Thing">Its name and place</td><td data-label="Where it lives">The vault pair, ciphertext only</td><td data-label="Written by">New vendor; Change a name or place</td><td data-label="Read by">This device alone</td></tr>
 <tr><td data-label="Thing">A purchase order</td><td data-label="Where it lives">A purchase row with <code>pending: true</code></td><td data-label="Written by">Log a purchase, Approve, the tap</td><td data-label="Read by">The readings; cost passes it over (<code>poLive</code>)</td></tr>
-<tr><td data-label="Thing">The expected day</td><td data-label="Where it lives">A new optional key <code>expectedOn</code> on the purchase row, kept after it lands so on time reads off the dates</td><td data-label="Written by">Log a purchase; the Change sheet</td><td data-label="Read by">The readings alone</td></tr>
+<tr><td data-label="Thing">The expected day</td><td data-label="Where it lives">A new optional key <code>expectedOn</code> on the purchase row, kept after it lands so on time reads off the dates</td><td data-label="Written by">Log a purchase; the Change sheet</td><td data-label="Read by">The readings, and the book's restock date (Ask B)</td></tr>
 <tr><td data-label="Thing">A delivery mark</td><td data-label="Where it lives">A <code>contacts</code> row: <code>{date, party, how: "delivery", lot, onTime, quality, short, note, at}</code></td><td data-label="Written by">The edit kind <code>lotMark</code>, approved</td><td data-label="Read by">The vendor page, the order card</td></tr>
 <tr><td data-label="Thing">A note</td><td data-label="Where it lives">A <code>contacts</code> row: <code>{date, party, how: "note", next, note, at}</code></td><td data-label="Written by">The edit kind <code>partyNote</code>, approved</td><td data-label="Read by">Both pages</td></tr>
 <tr><td data-label="Thing">The live quote</td><td data-label="Where it lives"><code>QUOTES</code>, a Book document</td><td data-label="Written by">As today, no road on Salt Admin</td><td data-label="Read by">The vendor page, read only</td></tr>
@@ -247,7 +247,7 @@
 <div class="amb-stack">
 <table class="amb-table amb-table--stack"><thead><tr><th scope="col">Surface</th><th scope="col">What changes</th></tr></thead><tbody>
 <tr><td data-label="Surface">Salt Admin</td><td data-label="What changes">Everything above.</td></tr>
-<tr><td data-label="Surface">Salt Counter</td><td data-label="What changes">Nothing, item by item: no vendor signs in; <code>OWNER_JS</code> is spliced only on your route, and the suite proves a customer's page carries none of it; the readings sit under <code>/all/maker/</code> behind Access and the owner check; a statement reads no purchase and no contact row (nothing under <code>stmt/</code> reads either); CM4-TO sees only its own orders, as today; no word is added to <code>stmt/words.js</code>; and an expected day never reaches the price list's restock date (Ask B).</td></tr>
+<tr><td data-label="Surface">Salt Counter</td><td data-label="What changes">One change, by your answer to Ask B: a purchase's expected day sets its book's restock date, which the price list already shows while the light is not green and the day not past. Nothing else, item by item: no vendor signs in; <code>OWNER_JS</code> is spliced only on your route, and the suite proves a customer's page carries none of it; the readings sit under <code>/all/maker/</code> behind Access and the owner check; a statement reads no purchase and no contact row (nothing under <code>stmt/</code> reads either); CM4-TO sees only its own orders, as today; no word is added to <code>stmt/words.js</code>.</td></tr>
 <tr><td data-label="Surface">Salt Desk</td><td data-label="What changes">The Sourcing tab reads the shared <code>vendorStats</code> through its wrapper and shows the same figures. The new contact rows show nowhere on the Desk.</td></tr>
 <tr><td data-label="Surface">Salt QR</td><td data-label="What changes">Nothing.</td></tr>
 </tbody></table>
@@ -257,11 +257,12 @@
 <section class="amb-sec" id="parts"><h2 class="amb-section">The parts <span class="amb-section__note">one version, one commit a part</span></h2>
 <div class="amb-stack"><ol class="amb-steps">
 <li class="amb-step is-done"><span class="amb-step__title">Your answers</span><span class="amb-step__text">Given on 24 Nov 2026.</span><span class="amb-chip amb-chip--pos">Done</span></li>
-<li class="amb-step is-now"><span class="amb-step__title">Your go and the Ask list</span><span class="amb-step__text">The build starts on your word, in its own worktree, level with origin, no Actions run in flight and the queue asked about.</span><span class="amb-chip">Next</span></li>
+<li class="amb-step is-done"><span class="amb-step__title">Your go and the Ask list</span><span class="amb-step__text">Given on 25 Nov 2026. The build runs in its own session and worktree, level with origin, no Actions run in flight and the queue asked about.</span><span class="amb-chip amb-chip--pos">Done</span></li>
+<li class="amb-step is-now"><span class="amb-step__title">The canvas first (Ask F)</span><span class="amb-step__text">Vendors, the vendor page, the order card with a side, and the account card's new Orders group, drawn on a Claude Design canvas and settled with you while the small-lot version builds. No code until that version is live, since Part 1 checks a lot's rate with <code>COST_MIN</code> present.</span><span class="amb-chip">Next</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 1, the shared figures</span><span class="amb-step__text"><code>vendorStats(lots, today)</code> in <code>engine/position.mjs</code> with a lot's own rate helper, lead time and short; the Desk's <code>supplierStats</code> a wrapper; <code>tools/engine.mjs --sync</code>. Checks: Sourcing's figures and the pricing parity equal on the frozen book; a lot's rate unchanged with <code>COST_MIN</code> present; mutations red for sharing across books, a pending lot counted as a lot, an undated lot taken as the newest, the rate read through <code>latestCogs</code>. Full suite.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 2, the readings</span><span class="amb-step__text"><code>src/maker-inputs.js</code> (<code>vendorList</code>, <code>vendorReading</code>, keyed by <code>ownerCode</code>), <code>src/worker.js</code> (routes and the 404 guard), <code>stmt/maker.js</code> (the allow-list and the path). Checks: GET only; a code off the roster refused; a resale account read as its owner; no name or place in an answer; a lot waiting under Approve carried as waiting; the Book's revision stamped. Full suite.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 3, the contact log</span><span class="amb-step__text"><code>partyNote</code> and <code>lotMark</code> in <code>editEntry</code>, <code>makerEdit</code>, the drafter and <code>engine/apply.mjs</code>; <code>EDIT_PURE</code> gains <code>contacts</code>; Approve's words; the device's name check, on sending and on Approve. Checks: each refusal; the lot check by owner code; a row appended with its <code>at</code>; no <code>contacts</code> row carries <code>rid</code>; a replay books once; purchases byte for byte after. Full suite; Fable reviews.</span><span class="amb-chip">Then</span></li>
-<li class="amb-step"><span class="amb-step__title">Part 4, the expected day</span><span class="amb-step__text"><code>expectedOn</code> in the purchase's fields (<code>src/maker-inputs.js</code> 34) and its extras (139), <code>tradeEntry</code>, the drafter's <code>draftRow</code> and the correctable keys, refused on a sale. Checks: offered only while not wholly received, kept after; the PRICING snapshot byte for byte with <code>expectedOn</code> on every row. Full suite; Fable reviews.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 4, the expected day</span><span class="amb-step__text"><code>expectedOn</code> in the purchase's fields (<code>src/maker-inputs.js</code> 34) and its extras (139), <code>tradeEntry</code>, the drafter's <code>draftRow</code> and the correctable keys, refused on a sale. By your answer to Ask B, an approved purchase's expected day, or a change to it, sets its book's restock date through the existing <code>/expected</code> relay, to the earliest expected day among the book's purchases not yet wholly received. Nothing clears it, since the price list hides a past day and shows none while the light is green. Checks: offered only while not wholly received, kept after; the restock date set to the earliest day; the PRICING snapshot byte for byte with <code>expectedOn</code> on every row. Full suite; Fable reviews, the restock road included.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 5, the shared page and the Vendors place</span><span class="amb-step__text">The party page frame, row builder, list drawer and rate tile lifted out of the account card's code with a side; then <code>stmt/page.js</code> (Vendors in Record's slot in the rail, its two parts, its mark) and <code>stmt/owner.js</code> (the list, the page, Compare, New vendor). Record's forms stay reachable by address until Part 8 within this unshipped branch. Checks: the act audit, the recipes worn, the dead-rule audit, 44px by hit test, the measure at 390, 1180, 1440 and 1920; the account card unchanged by the lift. Display checks.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 6, Log a purchase</span><span class="amb-step__text">The purchase half of the trade form moved into a sheet; the body byte for byte plus <code>expectedOn</code>; the kept-entry key unchanged. Full suite.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 7, Orders for both sides</span><span class="amb-step__text">The order card's function given a side; the counted filters and side chips; purchase cards in the four stages with their pill, Change sheet, danger rows and Rate; Needs you's purchase cards; the rail's count (Ask A); the check that the tap refuses a stale payment on a lot. Full suite; Fable reviews.</span><span class="amb-chip">Then</span></li>
@@ -296,6 +297,7 @@
 <tr><td data-label="Risk">Record's forms move and a check or a hand finds nothing</td><td data-label="How it is held">Acts and keys kept; old addresses and the page's own jumps re-aimed; 50 test files re-aimed with dated comments, none deleted to get green.</td></tr>
 <tr><td data-label="Risk">The account card's code is lifted into a shared frame</td><td data-label="How it is held">Part 5 lifts it first, and the account card must draw the same before and after (its sections, acts and the measure) before Vendors uses it.</td></tr>
 <tr><td data-label="Risk">Orders mixes two stores</td><td data-label="How it is held">Drawn together, stored apart: no purchase enters the order book and no sale is read from the vendor reading.</td></tr>
+<tr><td data-label="Risk">A vendor's promised day reaches customers as the restock date</td><td data-label="How it is held">Your answer to Ask B. A late vendor's day lapses on its own, since the price list hides a past day, and a date typed on Enter still sets it, the later write standing.</td></tr>
 <tr><td data-label="Risk">Lead time reads 0 days for most past lots</td><td data-label="How it is held">Said on the page beside the figure until logged orders give it real days.</td></tr>
 <tr><td data-label="Risk">Each note waits under Approve</td><td data-label="How it is held">Your choice; Approve's decide-many takes several at once.</td></tr>
 <tr><td data-label="Risk">The small-lot plan lands in between</td><td data-label="How it is held">Shared file, no shared function; the second to land re-syncs and re-runs the parity; <code>vendorStats</code> never reads <code>latestCogs</code>.</td></tr>
@@ -329,17 +331,17 @@
 </div>
 </section>
 
-<section class="amb-sec" id="asks"><h2 class="amb-section">Ask list <span class="amb-section__note">with your go</span></h2>
+<section class="amb-sec" id="asks"><h2 class="amb-section">Ask list, answered <span class="amb-section__note">25 Nov 2026, not asked again</span></h2>
 <div class="amb-stack">
-<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">The other way</th></tr></thead><tbody>
-<tr><td data-label="Ask">A. The rail's Orders count</td><td data-label="Recommended">Every open order on both sides, as your rule of 3 Nov 2026 reads</td><td data-label="The other way">Sales only</td></tr>
-<tr><td data-label="Ask">B. A purchase order's expected day</td><td data-label="Recommended">Kept apart from the book's restock date, which the Counter's price list shows; Stock by book shows both</td><td data-label="The other way">It sets the restock date, so the Counter shows it</td></tr>
-<tr><td data-label="Ask">C. A vendor's new quote</td><td data-label="Recommended">Read only on the vendor page in this version, since a quote moves salt's Ceiling and the restock tiers</td><td data-label="The other way">Typed on the vendor page, as its own priced change</td></tr>
-<tr><td data-label="Ask">D. Notes across every vendor</td><td data-label="Recommended">On each page only, on both sides</td><td data-label="The other way">A Notes part on Vendors and on Customers both, newest first</td></tr>
-<tr><td data-label="Ask">E. The refund note</td><td data-label="Recommended">The same name check, in Part 3</td><td data-label="The other way">Left as it is</td></tr>
-<tr><td data-label="Ask">F. A canvas before Part 5</td><td data-label="Recommended">Vendors, the vendor page, the order card with a side, and the account card's new Orders group (Order for them moves there out of Sign-in) drawn on a Claude Design canvas and settled with you, as the design language asks for a whole place</td><td data-label="The other way">Built from this plan's tables</td></tr>
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Your answer</th></tr></thead><tbody>
+<tr><td data-label="Ask">A. The rail's Orders count</td><td data-label="Your answer">Every open order on both sides, as your rule of 3 Nov 2026 reads</td></tr>
+<tr><td data-label="Ask">B. A purchase order's expected day</td><td data-label="Your answer">It sets the book's restock date, so the Counter's price list shows it (Part 4)</td></tr>
+<tr><td data-label="Ask">C. A vendor's new quote</td><td data-label="Your answer">Read only on the vendor page in this version</td></tr>
+<tr><td data-label="Ask">D. Notes across every vendor</td><td data-label="Your answer">On each page only, on both sides</td></tr>
+<tr><td data-label="Ask">E. The refund note</td><td data-label="Your answer">The same name check, in Part 3</td></tr>
+<tr><td data-label="Ask">F. A canvas before Part 5</td><td data-label="Your answer">Drawn on a Claude Design canvas and settled with you first; it starts now, while the small-lot version builds</td></tr>
 </tbody></table>
-<p class="amb-basis">Answered on 24 Nov 2026 and not asked again: the nine answers at the top.</p>
+<p class="amb-basis">Answered on 24 Nov 2026 and not asked again: the nine answers at the top. The order of the builds, your answer of 25 Nov 2026: the small-lot version first; this plan's canvas meanwhile, and its code once small lots is live, beside the profit engine's build. Whichever of those two lands second re-lands on the moved tip.</p>
 </div>
 </section>
 

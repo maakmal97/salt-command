@@ -1,10 +1,10 @@
 <div class="amb-shell" data-mood="slate">
 <main class="amb-screen">
 <header class="amb-hero amb-hero--doc amb-mesh">
-<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026</span>
+<span class="amb-chip amb-chip--glass">Plan, 24 Nov 2026; answered 25 Nov 2026</span>
 <h1 class="amb-hero__title">One price rule for every book: the price that makes the most profit</h1>
 <p class="amb-hero__sub">Every book prices from the same five parameters: supply cost, demand cost, expected margin, your market-intel price and the tested market price. A price never goes under its Floor (all it costs to sell the unit) or over its Ceiling (what your intel says the market bears). It starts at your intel price. For eight weeks at a time, the whole list runs 10% up one week and 10% down another. When both halves of the test show the same side making more profit, the engine proposes moving the whole list 10% that way, and your Approve books it. The price climbs towards the most profit and stops where a step either way earns the same.</p>
-<p class="amb-hero__time">salt-command at bae2a744, v1565 on master. Your four answers of 24 Nov 2026; Fable's review applied. Plan only: nothing is built until your go.</p>
+<p class="amb-hero__time">salt-command at bae2a744, v1565 on master. Your four answers of 24 Nov 2026 and your nine of 25 Nov 2026; Fable's review applied. Answered in full: it builds in its own session once the small-lot version is live.</p>
 </header>
 <div class="amb-doc">
 <nav class="amb-contents" aria-label="Contents"><p class="amb-contents__title">Contents</p><ol class="amb-contents__list">
@@ -17,7 +17,7 @@
 <li><a class="amb-contents__link" href="#risks">Risks and how each is held</a></li>
 <li><a class="amb-contents__link" href="#order">The order of the work</a></li>
 <li><a class="amb-contents__link" href="#proof">How it is proved</a></li>
-<li><a class="amb-contents__link" href="#asks">Your asks</a></li>
+<li><a class="amb-contents__link" href="#asks">Your answers</a></li>
 </ol></nav>
 <div class="amb-doc__body">
 
@@ -56,7 +56,7 @@
 <div class="amb-stack">
 <table class="amb-table amb-table--stack"><thead><tr><th scope="col">Parameter</th><th scope="col">Salt</th><th scope="col">Oil</th><th scope="col">Candy</th><th scope="col">Rice</th><th scope="col">Gas</th></tr></thead><tbody>
 <tr><td data-label="Parameter">Supply cost, MYR a unit (latest lot)</td><td data-label="Salt">53.00 (p058, 50 units)</td><td data-label="Oil">7.60 (p060, dated 27 Nov 2026); 7.23 on lots landed by today (p054)</td><td data-label="Candy">94.00 (p057, 1 unit); 47.20 under the small-lot plan</td><td data-label="Rice">2.95 (p056, 100 units)</td><td data-label="Gas">54.67 (p059, dated 27 Nov 2026); 50.00 on lots landed by today</td></tr>
-<tr><td data-label="Parameter">Demand cost: shrink and samples, on the supply cost</td><td data-label="Salt">16.9% (19.5% with gifts, today's Floor)</td><td data-label="Oil">57.5%, to be checked</td><td data-label="Candy">10.3%, to be checked</td><td data-label="Rice">23.2%, to be checked</td><td data-label="Gas">none measured</td></tr>
+<tr><td data-label="Parameter">Demand cost: shrink and samples, on the supply cost</td><td data-label="Salt">16.9% (19.5% with gifts, today's Floor)</td><td data-label="Oil">20% fixed, your answer of 25 Nov 2026 (57.5% measured)</td><td data-label="Candy">None until you check its count (10.3% measured)</td><td data-label="Rice">20% fixed, your answer of 25 Nov 2026 (23.2% measured)</td><td data-label="Gas">none measured</td></tr>
 <tr><td data-label="Parameter">Demand cost: money on credit, on the price</td><td data-label="Salt">0.10% (0.93 days)</td><td data-label="Oil">0.02% (0.15 days)</td><td data-label="Candy">0%</td><td data-label="Rice">0% (0.04 days)</td><td data-label="Gas">0.07% (0.65 days)</td></tr>
 <tr><td data-label="Parameter">Demand cost: delivery and handling</td><td data-label="Salt">MYR 0 today; 64 of 282 orders delivered, 18 with no fee</td><td data-label="Oil">MYR 0 today; 13 of 33 delivered, 7 with no fee</td><td data-label="Candy">MYR 0 today; 2 of 9 delivered, 1 with no fee</td><td data-label="Rice">MYR 0 today; 9 of 32 delivered, 7 with no fee</td><td data-label="Gas">MYR 0 today; 2 of 5 delivered, 1 with no fee</td></tr>
 <tr><td data-label="Parameter">Expected margin: what the book has earned</td><td data-label="Salt">41.2% (42.4%, last 90 days)</td><td data-label="Oil">30.1%</td><td data-label="Candy">32.7%</td><td data-label="Rice">49.0%</td><td data-label="Gas">24.8%</td></tr>
@@ -72,7 +72,7 @@
 <li>salt's Median and its market move from <code>quoteAt</code>.</li>
 </ul></div>
 <p class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> Credit days run from handover to payment, weighted by the goods. The 46 salt rows still unpaid are not counted, so salt's figure is low. Delivery and handling are MYR 0 by your decisions of 06 and 07 Sep 2026, and the book holds no cost for a trip.</p>
-<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">Shrink outside salt</span>Oil's walk is short 242 units against 421 paid for, and each of its last four counts (07, 12, 18 and 23 Nov 2026) came in 10 to 15 units under the book. Rice's last six counts ran four under and two over. Candy's walk is short 4 units against 39 paid for. If that is real loss, it belongs in each Floor. If it is a count error or an unbooked sale, pricing it would raise prices for no reason. So no book's shrink but salt's prices until you have checked it (ask 9). <span class="amb-claim amb-claim--verified">Verified</span> From <code>COUNTS</code> and <code>nrsShare</code>.</span></div>
+<div class="amb-notice"><svg class="amb-icon" aria-hidden="true"><use href="#amb-info"/></svg><span><span class="amb-notice__title">Shrink outside salt</span>Oil's walk is short 242 units against 421 paid for, and each of its last four counts (07, 12, 18 and 23 Nov 2026) came in 10 to 15 units under the book. Rice's last six counts ran four under and two over. Candy's walk is short 4 units against 39 paid for. If that is real loss, it belongs in each Floor. If it is a count error or an unbooked sale, pricing it would raise prices for no reason. Your answer of 25 Nov 2026 (ask 9): oil and rice price a fixed 20% shrink in place of the measured share, and candy prices none until you have checked its count and given your word. <span class="amb-claim amb-claim--verified">Verified</span> From <code>COUNTS</code> and <code>nrsShare</code>.</span></div>
 </div>
 </section>
 
@@ -100,14 +100,15 @@
 <tr><td data-label="Book and size">Salt, 0.5, 1 and 1.5 units</td><td data-label="Floor today, MYR">35, 65, 95</td><td data-label="Floor under the plan, MYR">35, 65, 95</td><td data-label="Your board, MYR">Median 130 at 1 unit</td><td data-label="What happens">No change.</td></tr>
 <tr><td data-label="Book and size">Salt, 2, 5, 6.25 and 12.5 units</td><td data-label="Floor today, MYR">130, 320, 400, 795</td><td data-label="Floor under the plan, MYR">125, 315, 390, 780</td><td data-label="Your board, MYR">your four points</td><td data-label="What happens">Gifts leave the Floor and credit joins it, so the Floor falls by about 2%. The Median rests on the supply cost, not the Floor, and does not move.</td></tr>
 <tr><td data-label="Book and size">Salt, 25, 50 and 100 units</td><td data-label="Floor today, MYR">1,585, 3,170, 6,335</td><td data-label="Floor under the plan, MYR">1,555, 3,105, 6,205</td><td data-label="Your board, MYR">your four points</td><td data-label="What happens">The same 2%: MYR 30, MYR 65 and MYR 130.</td></tr>
-<tr><td data-label="Book and size">Oil, 10 to 50 units</td><td data-label="Floor today, MYR">80, 155, 230, 305, 380</td><td data-label="Floor under the plan, MYR">115, 230, 345, 460, 570 (on p054); 120, 240, 360, 480, 600 (on p060)</td><td data-label="Your board, MYR">130, 240, 330, 400, 450</td><td data-label="What happens">Only if you confirm oil's shrink (ask 9). Then 30, 40 and 50 units lose money at your board, and the Floor lifts them.</td></tr>
-<tr><td data-label="Book and size">Candy, 1, 10 and 30 units</td><td data-label="Floor today, MYR">95, 940, 2,820</td><td data-label="Floor under the plan, MYR">105, 1,040, 3,110 (55, 525, 1,565 under the small-lot plan)</td><td data-label="Your board, MYR">60, 550, 1,500</td><td data-label="What happens">Only if you confirm candy's shrink (ask 9). Candy's list stands on its Floor today, because p057 sets its cost. So the list itself would rise: MYR 95 to MYR 105 at 1 unit, and MYR 2,820 to MYR 3,110 at 30. Under the small-lot plan, only 30 units stays over the board, until p062 lands at MYR 30 a unit.</td></tr>
-<tr><td data-label="Book and size">Rice, 1, 5 and 10 units</td><td data-label="Floor today, MYR">5, 15, 30</td><td data-label="Floor under the plan, MYR">5, 20, 40</td><td data-label="Your board, MYR">8, 35, 60</td><td data-label="What happens">Only if you confirm rice's shrink (ask 9). The board stands.</td></tr>
+<tr><td data-label="Book and size">Oil, 10 to 50 units</td><td data-label="Floor today, MYR">80, 155, 230, 305, 380</td><td data-label="Floor under the plan, MYR">90, 175, 265, 350, 435 (on p054); 95, 185, 275, 365, 460 (on p060)</td><td data-label="Your board, MYR">130, 240, 330, 400, 450</td><td data-label="What happens">A fixed 20% shrink (ask 9). On p054 every size stays under your board. Once p060 lands, 50 units' Floor of MYR 460 stands MYR 10 over your board and lifts it.</td></tr>
+<tr><td data-label="Book and size">Candy, 1, 10 and 30 units</td><td data-label="Floor today, MYR">95, 940, 2,820</td><td data-label="Floor under the plan, MYR">95, 940, 2,820, no change (50, 475, 1,420 under the small-lot plan); 105, 1,040, 3,110 if you later confirm its measured 10.3% (55, 525, 1,565 under the small-lot plan)</td><td data-label="Your board, MYR">60, 550, 1,500</td><td data-label="What happens">No shrink until you have checked candy's count and given your word (ask 9), so no change. Candy's list stands on its Floor today, because p057 sets its cost. Under the small-lot plan with no shrink, every size falls under your board. With its measured share confirmed, the list would rise from MYR 95 to MYR 105 at 1 unit, and 30 units would stay over the board under the small-lot plan until p062 lands at MYR 30 a unit.</td></tr>
+<tr><td data-label="Book and size">Rice, 1, 5 and 10 units</td><td data-label="Floor today, MYR">5, 15, 30</td><td data-label="Floor under the plan, MYR">5, 20, 40</td><td data-label="Your board, MYR">8, 35, 60</td><td data-label="What happens">A fixed 20% shrink (ask 9) gives the same Floors as its measured 23.2%. The board stands.</td></tr>
 <tr><td data-label="Book and size">Gas, 1 unit</td><td data-label="Floor today, MYR">55</td><td data-label="Floor under the plan, MYR">55</td><td data-label="Your board, MYR">75</td><td data-label="What happens">No shrink measured yet; no change.</td></tr>
 </tbody></table>
 <div class="amb-basis"><span class="amb-claim amb-claim--estimate">Estimate</span> Each Floor is the supply cost, times one plus the shrink share, times the size, divided by one less the credit share, then rounded up to MYR 5. The inputs are the engine's own, and Fable re-derived every row:
 <ul>
 <li>Delivery and handling are at MYR 0.</li>
+<li>Oil and rice at a fixed 20%, and candy with none, re-run on 25 Nov 2026 through the engine's <code>latestCogs</code> for your answer to ask 9.</li>
 <li>Credit adds MYR 0.03 at half a unit to MYR 6.32 at 100 units, and tips six salt Floors up one MYR 5 step: 2.5, 5, 12.5, 25, 50 and 100 units.</li>
 <li>Over the last 90 days, partners' 13 salt orders (88 units) would have paid about MYR 95 less.</li>
 <li>21 orders from customers on a negative Their % would each have paid MYR 5 less, about MYR 105 in all (the engine's <code>quoteAt</code> with gifts out).</li>
@@ -121,7 +122,7 @@ The build reads each figure back through <code>floorTotal</code>.</div>
 <ul class="amb-prose">
 <li><strong>The rules</strong> (<code>engine/rules.mjs</code>). One <code>PROFIT_RULE</code> object holds every book's parameters:
 <ul>
-<li><code>demand</code>: shrink with gifts off, on for salt and off for the other books until you say; delivery and handling in MYR; credit on;</li>
+<li><code>demand</code>: shrink with gifts off: salt's measured share, a fixed 20% on oil and rice (ask 9), and none on candy and gas until you say; delivery and handling in MYR; credit on;</li>
 <li><code>test</code>: a 10% step (ask 4), 8 weeks, the order <code>UDDUDUUD</code>, 30 orders in all, both halves must agree, salt only.</li>
 </ul>
 Your intel stays where it is: salt's four points, the supplier's Ceiling and each typed board. Two lists must name the new object, or the gate and the suite refuse it: <code>tools/ledger.mjs</code> <code>NOT_LEDGER</code>, and the NAMES list in <code>test/engine-rules.mjs</code>. The small-lot plan has the same trap.</li>
@@ -149,7 +150,7 @@ Your intel stays where it is: salt's four points, the supplier's Ceiling and eac
 <tr><td data-label="Risk">A regular's price moves about 10% either way from week to week</td><td data-label="How it is held">Every customer's price moves with the list on test weeks, with Their % still on top. That is the price of a clear read. A 5% step halves it, for a little over half the gain (ask 4).</td></tr>
 <tr><td data-label="Risk">Demand grows or falls during a test</td><td data-label="How it is held">The order of the weeks cancels a steady trend, and both halves must agree.</td></tr>
 <tr><td data-label="Risk">A festival or a stock-out falls on one side</td><td data-label="How it is held">Days with no free stock are left out. A festival is not read from the calendar, so you see the week on the card and can decline the move.</td></tr>
-<tr><td data-label="Risk">A count error priced as shrink</td><td data-label="How it is held">Only salt's shrink prices until you have checked the others (ask 9).</td></tr>
+<tr><td data-label="Risk">A count error priced as shrink</td><td data-label="How it is held">Salt prices its measured shrink. Oil and rice price a fixed 20%, under their measured 57.5% and 23.2%, so a count error cannot price in full. Candy prices none until you have checked it (ask 9).</td></tr>
 <tr><td data-label="Risk">Two movers: the market move and the test</td><td data-label="How it is held">The market move is held at nought, during and between tests (ask 8).</td></tr>
 <tr><td data-label="Risk">The Floor falls for partners and negative-% customers</td><td data-label="How it is held">About MYR 95 and MYR 105 over 90 days. This is your ask 1, shown before you answer.</td></tr>
 <tr><td data-label="Risk">A quiet book never moves</td><td data-label="How it is held">By design. Under 30 orders in a test, your intel price stands between Floor and Ceiling. Only salt reaches the count today.</td></tr>
@@ -159,14 +160,16 @@ Your intel stays where it is: salt's four points, the supplier's Ceiling and eac
 
 <section class="amb-sec" id="order"><h2 class="amb-section">The order of the work <span class="amb-section__note">one version, one commit a part</span></h2>
 <div class="amb-stack"><ol class="amb-steps">
+<li class="amb-step is-done"><span class="amb-step__title">Your answers</span><span class="amb-step__text">Four on 24 Nov 2026 and nine on 25 Nov 2026.</span><span class="amb-chip amb-chip--pos">Done</span></li>
+<li class="amb-step is-now"><span class="amb-step__title">The small-lot version first</span><span class="amb-step__text">This build starts in its own session once the small-lot version is live, because its Floor builds on that plan's supply cost (your answer of 25 Nov 2026).</span><span class="amb-chip">Next</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 1, the rules</span><span class="amb-step__text"><code>PROFIT_RULE</code> in <code>engine/rules.mjs</code> and <code>PRICING_RULES</code>, added to <code>NOT_LEDGER</code> and the NAMES list, then <code>node tools/engine.mjs --sync</code>.</span><span class="amb-chip">First</span></li>
-<li class="amb-step"><span class="amb-step__title">Part 2, the Floor</span><span class="amb-step__text">Demand cost: salt's shrink with gifts off, the other books' shrink off until you say, delivery and handling at MYR 0, and credit as a share of the price.</span><span class="amb-chip">Then</span></li>
+<li class="amb-step"><span class="amb-step__title">Part 2, the Floor</span><span class="amb-step__text">Demand cost: salt's shrink with gifts off, a fixed 20% on oil and rice, none on candy and gas until you say, delivery and handling at MYR 0, and credit as a share of the price.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 3, the test</span><span class="amb-step__text"><code>testOf</code> and <code>testReading</code> on salt's whole list: the step, the order, the halves, 30 orders in all, the days left out, and the market move held at nought.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 4, the move</span><span class="amb-step__text">The verdict and the proposed move, the <code>MARKET</code> entry it books on your Approve, and the level read from the moves booked.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 5, who shows it</span><span class="amb-step__text">The card on Salt Admin and the Desk, and the drafter's note. Salt Counter shows prices only.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">Part 6, the checks and the words</span><span class="amb-step__text">The new section, the re-aimed ones, and the price mechanics in <code>docs/DESK.md</code>, <code>docs/PRODUCTS.md</code> and <code>MEMORY.md</code>.</span><span class="amb-chip">Then</span></li>
 <li class="amb-step"><span class="amb-step__title">The version</span><span class="amb-step__text">The queue is asked about first. It touches money, so Fable reviews the diff and re-checks its applied findings. Then the full suite on the unbumped tree. Then fetch, bump, changelog, build, gate and push under your standing yes. Then Actions, the live <code>/rev</code>, and the live list read back.</span><span class="amb-chip">Then</span></li>
-<li class="amb-step"><span class="amb-step__title">Your step</span><span class="amb-step__text">Check the oil, candy and rice counts, and correct the dates of p059 and p060 on Salt Admin.</span><span class="amb-chip">Yours</span></li>
+<li class="amb-step"><span class="amb-step__title">Your step</span><span class="amb-step__text">Check candy's count, and correct the dates of p059 and p060 on Salt Admin. Oil and rice price a fixed 20% meanwhile.</span><span class="amb-chip">Yours</span></li>
 </ol></div>
 </section>
 
@@ -206,18 +209,18 @@ Your intel stays where it is: salt's four points, the supplier's Ceiling and eac
 </div>
 </section>
 
-<section class="amb-sec" id="asks"><h2 class="amb-section">Your asks <span class="amb-section__note">with your go</span></h2>
+<section class="amb-sec" id="asks"><h2 class="amb-section">Your answers <span class="amb-section__note">25 Nov 2026, not asked again</span></h2>
 <div class="amb-stack">
-<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Recommended</th><th scope="col">The other way</th></tr></thead><tbody>
-<tr><td data-label="Ask">1. Gifts out of salt's Floor</td><td data-label="Recommended">Yes, as you answered. Salt's Floor falls by about 2% at 2 units and above. Over 90 days, partners would pay about MYR 95 less, and 21 orders from customers on a negative Their % MYR 5 less each, about MYR 105.</td><td data-label="The other way">Keep gifts in salt's Floor, your decision of 10 Nov 2026.</td></tr>
-<tr><td data-label="Ask">2. Delivery and handling</td><td data-label="Recommended">MYR 0 until you type a cost per delivered order and per order handled. The parameter is in place.</td><td data-label="The other way">Type both now, and every Floor carries them.</td></tr>
-<tr><td data-label="Ask">3. Expected margin</td><td data-label="Recommended">A reading beside the realised margin, and the start for a book that has no board. Not a floor, because a margin floor can stop the price reaching the most profit.</td><td data-label="The other way">A minimum: the engine never prices under the all-in cost divided by one less that margin.</td></tr>
-<tr><td data-label="Ask">4. The step</td><td data-label="Recommended">10%, for 8 weeks, with both halves agreeing: +18.6% to +2.3% over two years where the list is under its top, and minus 3.1% at most where it is already right. Its first read is wrong 3% to 11% of the time.</td><td data-label="The other way">5%: half the swing every regular sees and minus 1.0% at the top, but a little over half the gain and a weaker read (wrong 10% to 18%).</td></tr>
-<tr><td data-label="Ask">5. Salt's running test</td><td data-label="Recommended">Replace it when the version ships. Its weeks so far stay on record.</td><td data-label="The other way">Let it run at MYR 5 to 10 Jan 2027, then start the whole-list test.</td></tr>
-<tr><td data-label="Ask">6. Who books a move</td><td data-label="Recommended">You, on Approve: one tap every 8 weeks at most, booked once in the MARKET document, like every market change today.</td><td data-label="The other way">The chain books it by itself at the test's end, which is a new road into the book.</td></tr>
-<tr><td data-label="Ask">7. Their %</td><td data-label="Recommended">Stays on top of the moving list.</td><td data-label="The other way">Retire it, so one price per size is all the test moves.</td></tr>
-<tr><td data-label="Ask">8. The market move by stock cover</td><td data-label="Recommended">Held at nought, during a test and between tests. Its reading stays on the card.</td><td data-label="The other way">Keep it moving, and accept a test that reads it as noise.</td></tr>
-<tr><td data-label="Ask">9. Shrink outside salt</td><td data-label="Recommended">You check the oil, candy and rice counts first, and each book's shrink prices only on your word.</td><td data-label="The other way">All three price from the version. Oil's 30 to 50-unit lots and candy's list rise to their Floors.</td></tr>
+<table class="amb-table amb-table--stack"><thead><tr><th scope="col">Ask</th><th scope="col">Your answer</th></tr></thead><tbody>
+<tr><td data-label="Ask">1. Gifts out of salt's Floor</td><td data-label="Your answer">Gifts out. Salt's Floor falls by about 2% at 2 units and above.</td></tr>
+<tr><td data-label="Ask">2. Delivery and handling</td><td data-label="Your answer">MYR 0 until you type a cost per delivered order and per order handled. The parameter is in place.</td></tr>
+<tr><td data-label="Ask">3. Expected margin</td><td data-label="Your answer">A reading beside the realised margin, and the start for a book that has no board. Never a floor.</td></tr>
+<tr><td data-label="Ask">4. The step</td><td data-label="Your answer">10%, for 8 weeks, with both halves agreeing.</td></tr>
+<tr><td data-label="Ask">5. Salt's running test</td><td data-label="Your answer">Replaced when the version ships. Its weeks so far stay on record.</td></tr>
+<tr><td data-label="Ask">6. Who books a move</td><td data-label="Your answer">You, on Approve, booked once in the MARKET document.</td></tr>
+<tr><td data-label="Ask">7. Their %</td><td data-label="Your answer">Stays on top of the moving list.</td></tr>
+<tr><td data-label="Ask">8. The market move by stock cover</td><td data-label="Your answer">Held at nought, during a test and between tests. Its reading stays on the card.</td></tr>
+<tr><td data-label="Ask">9. Shrink outside salt</td><td data-label="Your answer">Oil and rice price a fixed 20% shrink, in place of the measured share. Candy prices none until you have checked its count and given your word. Gas has none measured. Salt keeps its measured share, with gifts out.</td></tr>
 </tbody></table>
 <div class="amb-basis">Answered on 24 Nov 2026 and not asked again:
 <ul>
@@ -226,7 +229,7 @@ Your intel stays where it is: salt's four points, the supplier's Ceiling and eac
 <li>the test leads;</li>
 <li>a typed board is that book's intel price.</li>
 </ul>
-The small-lot plan (<code>docs/plan-small-lot.html</code>) is separate and can land before or after this one.</div>
+The small-lot plan (<code>docs/plan-small-lot.html</code>) lands first, by your answer of 25 Nov 2026.</div>
 </div>
 </section>
 
