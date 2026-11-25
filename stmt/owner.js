@@ -4592,17 +4592,25 @@ export const OWNER_JS = `
          or paid since as one Fulfilment, the two kinds Correct a row sent; Cancel this sale and Reopen are its own rows; History and Undo sit under it.
          A customer's site order still changes through its order (restate), as Correct a row's did. Nothing here prices or books: the drafter does. */
       var tradeEditing=null, editAfter=null, editPick=actOn(el('select'),'record.trade.edit'), editHolder=el('div','maker-edit');
-      tradeSection.appendChild(editHolder); makerRow(editHolder,'Row',editPick); tradeSection.insertBefore(editHolder,direction.closest('.amb-field')||direction);
+      /* 25 Nov 2026, his word "a much easier entry to modify rows": Find narrows Row to the rows whose reference, code, book or date holds what he types,
+         and a reference typed whole, or the one row left, opens */
+      var editFind=actOn(el('input','amb-input'),'record.trade.find'), editFound=el('p','amb-field__hint');
+      editFind.type='search'; editFind.autocomplete='off'; editFind.spellcheck=false; editFind.placeholder='p059, a code or a date'; editFound.hidden=true;
+      tradeSection.appendChild(editHolder); makerRow(editHolder,'Find',editFind); editHolder.appendChild(editFound); makerRow(editHolder,'Row',editPick);
+      tradeSection.insertBefore(editHolder,direction.closest('.amb-field')||direction);
       var editMore=el('div','maker-edit-more'), editHist=el('div','maker-fields maker-edit-hist');
       tradeSection.appendChild(editMore); tradeSection.appendChild(editHist);
       function editRows(){
         return (catalog.rows||[]).concat((catalog.revivable||[]).map(function(r){ return Object.assign({cancelledRow:true},r); }))
           .slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||''))||String(b.rid).localeCompare(String(a.rid)); });
       }
+      function editQ(){ return String(editFind.value||'').toLowerCase().split(' ').join(''); }
+      function editMatch(r,q){ return !q||[r.rid,r.party,r.product,r.date,fmtWhen(r.date)].some(function(s){ return String(s||'').toLowerCase().split(' ').join('').indexOf(q)>=0; }); }
       function fillEditPick(){
-        var kept=tradeEditing?tradeEditing.rid:'';
+        var kept=tradeEditing?tradeEditing.rid:'', q=editQ(), hits=editRows().filter(function(r){ return editMatch(r,q); });
+        editFound.hidden=!q; editFound.textContent=!q?'':hits.length?hits.length+(hits.length===1?' row':' rows'):'No row matches that.';
         editPick.textContent=''; var none=el('option',null,'New'); none.value=''; editPick.appendChild(none);
-        editRows().forEach(function(r){ var o=el('option',null,r.rid+' · '+r.party+' · '+(fmtWhen(r.date)||'undated')+(r.cancelledRow?' · cancelled':r.defaulted?' · defaulted':'')); o.value=r.rid; editPick.appendChild(o); });
+        editRows().filter(function(r){ return r.rid===kept||editMatch(r,q); }).forEach(function(r){ var o=el('option',null,r.rid+' · '+r.party+' · '+(fmtWhen(r.date)||'undated')+(r.cancelledRow?' · cancelled':r.defaulted?' · defaulted':'')); o.value=r.rid; editPick.appendChild(o); });
         editPick.value=Array.from(editPick.options).some(function(o){ return o.value===kept; })?kept:'';
       }
       function tradeControls(){ return [tradeProduct,tradeParty,tradeDate,tradeQty,tradeTotal,carriage,handover,tradeMoved,tradeCash,tradeStream,tradeAssoc,tradeDown]; }
@@ -4657,6 +4665,12 @@ export const OWNER_JS = `
         tradeAt=null; tradeSignature=''; tradeAnswer.textContent=''; editDraw(); readTrade();
       }
       editPick.addEventListener('change',function(){ if(editPick.value) editLoad(editPick.value); else editClear(); });
+      editFind.addEventListener('input',function(){
+        fillEditPick(); var q=editQ(); if(!q) return;
+        var hits=editRows().filter(function(r){ return editMatch(r,q); }), whole=hits.filter(function(r){ return String(r.rid).toLowerCase()===q; });
+        var one=whole.length===1?whole[0]:hits.length===1?hits[0]:null;
+        if(one&&(!tradeEditing||tradeEditing.rid!==one.rid)) editLoad(one.rid);
+      });
       tradeEditPick=function(rid){ return editLoad(rid); }; fillEditPick(); editDraw();
       async function submitEdit(send){
         var r=tradeEditing, sale=r.direction==='SELL', same=function(a,b){ return Math.abs((+a||0)-(+b||0))<0.005; };
