@@ -2672,7 +2672,7 @@ export const OWNER_JS = `
         /* plan 3: an order's payment or join the Desk refused whole (a split that changed, a share its row cannot take) left nothing queued, so nothing is kept to retry */
         if((error.status===400||error.status===409)&&(path==='/all/maker/inputs/trip-pay'||path==='/all/maker/inputs/trip-join')){makerClear(path);pending=null;cancel.hidden=true;}
         /* plan 4: an undo the Desk refused (it waits on something, or the row moved since it was read) left nothing queued, so nothing is kept to retry */
-        if((error.status===400||error.status===409)&&path==='/all/maker/inputs/ledger-amend'&&pending&&pending.body&&(pending.body.undo!==undefined||error.detail&&error.detail.restate)){makerClear(path);pending=null;cancel.hidden=true;}
+        if((error.status===400||error.status===409)&&path==='/all/maker/inputs/ledger-amend'&&pending&&pending.body&&(pending.body.undo!==undefined||pending.body.expect!==undefined||error.detail&&error.detail.restate)){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
@@ -4669,7 +4669,7 @@ export const OWNER_JS = `
         fillEditPick(); var q=editQ(); if(!q) return;
         var hits=editRows().filter(function(r){ return editMatch(r,q); }), whole=hits.filter(function(r){ return String(r.rid).toLowerCase()===q; });
         var one=whole.length===1?whole[0]:hits.length===1?hits[0]:null;
-        if(one&&(!tradeEditing||tradeEditing.rid!==one.rid)) editLoad(one.rid);
+        if(one&&!editAfter&&(!tradeEditing||tradeEditing.rid!==one.rid)) editLoad(one.rid);   /* a move still waiting to go keeps its row (the review's note) */
       });
       tradeEditPick=function(rid){ return editLoad(rid); }; fillEditPick(); editDraw();
       async function submitEdit(send){
@@ -4707,7 +4707,7 @@ export const OWNER_JS = `
           if(!await ownerAsk(send.button,'cash-down:'+r.rid,{title:'Lower the cash paid on '+r.rid+'?',
             say:['Paid now: '+rm(cashNow)+'. After: '+rm(cashThen)+', with '+rm(Math.max(0,lotOwes-cashThen))+' left to pay.','It waits under Approve.'],
             go:'Lower it', keep:'Keep it'})){ tradeAnswer.textContent=''; return; }
-          f.cash=cashThen; dCash=0;
+          f.cash=cashThen; dCash=0; if(cashThen<lotOwes-0.004) f.paidOn=null;   /* a lot no longer paid in full keeps no day it was paid (lowerTap's rule) */
         }
         var moved=dCash>=0.005||dUnits>=0.00005;
         if(!Object.keys(f).length&&!moved) throw new Error('Nothing has changed.');
@@ -4716,7 +4716,7 @@ export const OWNER_JS = `
         /* the movement waits as editAfter while the change goes, so a retry of the change sends it too (tradeAction.after) */
         editAfter=moved?{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment',date:tripToday(),cash:dCash,movedUnits:dUnits}:null;
         if(Object.keys(f).length){
-          try{ await send('/all/maker/inputs/ledger-amend',{at:new Date(at).toISOString(),rid:r.rid,kind:'Correction',date:tripToday(),fields:f}); said.push('The change'); }
+          try{ await send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date(at).toISOString(),rid:r.rid,kind:'Correction',date:tripToday(),fields:f},lotDown?{expect:{cash:+(+r.cash||0).toFixed(2)}}:{})); said.push('The change'); }
           catch(error){
             /* a customer's order: the Desk names it, and the change goes as the order's Amend, so the order and the row change together */
             var rs=error.detail&&error.detail.restate;

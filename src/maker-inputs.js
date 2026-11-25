@@ -1107,7 +1107,7 @@ const realCode = (value, roster) => code(value, roster);
 
 export function makerLedgerAmendment(body, book, undoCtx = null) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
-  if (!exact(body, ["at", "rid", "kind", "date", "cash", "movedUnits", "fields", "undo"])
+  if (!exact(body, ["at", "rid", "kind", "date", "cash", "movedUnits", "fields", "undo", "expect"])
     || !timestamp(body.at) || !date(body.date) || typeof body.rid !== "string"
     || !/^[A-Za-z0-9_-]{1,64}$/.test(body.rid)
     || !["Correction", "Fulfilment", "Cancellation", "Payment", "Receipt", "Default"].includes(body.kind))
@@ -1151,6 +1151,19 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
   if (row.defaulted && body.kind !== "Correction") return { error: "A defaulted row takes a Correction only." };
   const lotKind = ["Payment", "Receipt", "Default"].includes(body.kind);
   if (lotKind && sale) return { error: "Payment, Receipt and Default are purchase-lot movements." };
+  /* 25 Nov 2026 (his answer: a lot's cash paid may be set lower; the review standing in for Fable): A LOWER CASH ON A LOT NAMES THE CASH IT WAS
+     MEASURED ON. The Correction sets an absolute figure, so a payment that reached the lot while it waited, or a retry sent after one was approved,
+     would be written over. The form's figure is checked on the row now, and the row's own stored figure rides as `expect`, which the drafter, the
+     fold's plan and the writer check again (engine/expect.mjs), so any move landing between refuses it */
+  const lotDown = !sale && body.kind === "Correction" && body.undo === undefined && object(body.fields)
+    && Object.prototype.hasOwnProperty.call(body.fields, "cash") && !(figure(body.fields.cash) && body.fields.cash >= POSITION_ENGINE.poCash(row) - 0.004);
+  if (lotDown) {
+    const e = body.expect, now = POSITION_ENGINE.poCash(row);
+    if (!object(e) || Object.keys(e).join() !== "cash" || !figure(e.cash))
+      return { error: "A lower cash paid on a lot names the cash it was read with. Read the row again." };
+    if (Math.abs(now - e.cash) > 0.004)
+      return { error: "The lot's cash moved since it was read (RM " + now.toFixed(2) + ", not RM " + e.cash.toFixed(2) + "). Read the row again.", stale: true };
+  } else if (body.expect !== undefined) return { error: "Only a lower cash paid on a lot names the cash it was read with." };
   if (body.kind === "Correction") {
     if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
       || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
@@ -1229,9 +1242,11 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
     return proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: "BUY", party: row.supplier,
       kind: body.kind, date: body.date, cash, movedUnits: units, status, raw }), book);
   }
-  return proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: sale ? "SELL" : "BUY",
+  const entry = POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: sale ? "SELL" : "BUY",
     kind: body.kind, date: body.date, cash: body.cash, movedUnits: body.movedUnits, fields: body.fields,
-    ...(body.undo !== undefined ? { undo: body.undo } : {}) }), book);
+    ...(body.undo !== undefined ? { undo: body.undo } : {}) });
+  if (lotDown) entry.payload.expect = { cash: +(+row.cash || 0).toFixed(2) };   /* the stored figure, as expectFault reads it */
+  return proposed(entry, book);
 }
 
 export async function makerAmendmentRoom(db, entry, book, held) {

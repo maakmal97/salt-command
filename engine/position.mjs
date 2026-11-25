@@ -1824,7 +1824,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'stream','associate','assoc','downstream','trip','level','tier','unit','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
-    'shares','rids','undo','introducer'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6) */
+    'shares','rids','undo','introducer','expect'];   /* introducer: R3, the associate whose join link brought a customer in (plan version 6); expect: a lot's lower cash names the cash it was read with (25 Nov 2026) */
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','gas','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct','band'];   /* band: the unit a salt % travels with since the price band (10 Nov 2026) */
