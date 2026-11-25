@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ee2518b3dd91d455";
+var SALT_BUILD_ID="17a6b53af6370fa4";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12704,7 +12704,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1571","d":"25 Nov 2026","t":"RECORD READS ITS ROWS AGAIN","n":["<b>A ROW IS READ AGAIN AS IT OPENS.</b> On Salt Admin, a row opened on Record or Correct a row is read from the Desk again, so a payment or a receipt approved since is in its figures.","<b>NOTHING GOES ON A ROW THAT MOVED.</b> Record reads the row again before it sends; one that moved since it was opened sends nothing and is filled again with its new figures.","<b>A PAYMENT IS NEVER COUNTED TWICE.</b> What Record sends as paid or moved names the figures it was worked out on, and the Desk refuses it on a row that moved since, a retry after a failed send included.","<b>A LOWERED CASH REFUSED AS MOVED READS THE ROW AGAIN.</b> The next tap asks on the cash the lot now holds."]}];
+const evolution=[{"v":"v1572","d":"25 Nov 2026","t":"A SMALL LOT NO LONGER SETS A BOOK&#39;S FLOOR","n":["<b>A LOT UNDER ITS BOOK&#39;S MINIMUM IS BLENDED.</b> Cost a unit is what the newest units cost, up to the book&#39;s minimum: salt 12.5, oil 10, candy 10, rice 100, gas 1. The newest lots are taken first, each at its own quote and freight, the last only for the units still needed. A newest lot at or over the minimum is the cost alone, as before.","<b>CANDY RETURNS TO ITS BOARD.</b> Its 1-unit lot p057 no longer sets the Floor: RM 47.20 a unit, 1 unit of p057 at RM 94 and 9 of p031 at RM 42. The list reads RM 60 at 1 unit, RM 550 at 10 and RM 1,500 at 30 from this version&#39;s publish. Salt, oil, rice and gas read as they did.","<b>EVERY READING NAMES THE UNITS COUNTED.</b> Pricing on the Desk, the drafter&#39;s note and flags, the Approve card and Salt Admin&#39;s Workbench say the newest 10 units and name each lot. A drafted lot anywhere among them is flagged.","<b>A BOOK THE MINIMUMS DO NOT NAME PRICES OFF ITS LATEST LOT.</b> Opening or renaming a book says so, until a version names it."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12871,7 +12871,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Nov 2026, 21:28 KL';
+const LAST_UPDATED='25 Nov 2026, 21:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -33,7 +33,7 @@
   "the newest 10 units" and name each lot ("1 of p057 at RM 94 and 9 of p031 at RM 42"): Pricing's seven places, the drafter's
   note, flag 4, the Floor's refusal and the drafted-lot flag (raised by a drafted lot anywhere in the blend), and Salt Admin's
   Workbench. A new book from `tools/product.mjs` prices off its latest lot alone until a version names it in `COST_MIN`, and the
-  tool says so. Checks: `test/floor-small-lot.mjs` (v1570).
+  tool says so. Checks: `test/floor-small-lot.mjs` (v1572).
 - **The Floor is the order total up to the next RM 5; the Ceiling is 3 times it** (his decisions of 18 Oct 2026).
   `floorTotal` is COGS times the size rounded up to the next RM 5, one per size on every book; `costTotal` is the
   exact cost, for the readers that measure cost and not price (the price band's segment floor `flOf`, `flRate` and

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1572",
+  "d": "25 Nov 2026",
+  "t": "A SMALL LOT NO LONGER SETS A BOOK&#39;S FLOOR",
+  "n": [
+   "<b>A LOT UNDER ITS BOOK&#39;S MINIMUM IS BLENDED.</b> Cost a unit is what the newest units cost, up to the book&#39;s minimum: salt 12.5, oil 10, candy 10, rice 100, gas 1. The newest lots are taken first, each at its own quote and freight, the last only for the units still needed. A newest lot at or over the minimum is the cost alone, as before.",
+   "<b>CANDY RETURNS TO ITS BOARD.</b> Its 1-unit lot p057 no longer sets the Floor: RM 47.20 a unit, 1 unit of p057 at RM 94 and 9 of p031 at RM 42. The list reads RM 60 at 1 unit, RM 550 at 10 and RM 1,500 at 30 from this version&#39;s publish. Salt, oil, rice and gas read as they did.",
+   "<b>EVERY READING NAMES THE UNITS COUNTED.</b> Pricing on the Desk, the drafter&#39;s note and flags, the Approve card and Salt Admin&#39;s Workbench say the newest 10 units and name each lot. A drafted lot anywhere among them is flagged.",
+   "<b>A BOOK THE MINIMUMS DO NOT NAME PRICES OFF ITS LATEST LOT.</b> Opening or renaming a book says so, until a version names it."
+  ]
+ },
+ {
   "v": "v1571",
   "d": "25 Nov 2026",
   "t": "RECORD READS ITS ROWS AGAIN",
