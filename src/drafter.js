@@ -922,7 +922,7 @@ export function draftRow(entry, book) {
       const paid = isSale ? POSITION_ENGINE.txPaid(after) : POSITION_ENGINE.poCash(target);
       const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(after) : POSITION_ENGINE.poRecvUnits(target);
       /* 25 Nov 2026 (the review): a lot's cash set lower on Record in the same Correction is what it then holds paid */
-      const lotPaid = !isSale && changed("cash") && isNum(after.cash) ? +after.cash : paid;
+      const lotPaid = !isSale && changed("cash") ? (+after.cash || 0) : paid;   /* a cleared cash reads as nothing, as the writer reads it */
       /* 06 Oct 2026: ON A SALE THE DIFFERENCE IS A REFUND THE FOLD RAISES (the engine's refundOnOverpay), so a close at what
          was handed over or an amendment under what they paid is approved like any row, and the card says what opens */
       const owedAfter = isSale && isNum(after.total) ? +after.total + (isNum(after.delivery) ? +after.delivery : 0) : null;

@@ -18,6 +18,7 @@ import { applyAmend } from "../engine/apply.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { makerInputCatalog, makerLedgerAmendment } from "../src/maker-inputs.js";
 import { readBook } from "../tools/book.mjs";
+import { draftRow } from "../src/drafter.js";
 
 const J = JSON.stringify, E = POSITION_ENGINE;
 const D = "2026-11-20";
@@ -109,5 +110,10 @@ export async function run({ ok }) {
     const said2 = J([(upLow.draft && upLow.draft.flags) || [], (downLow.draft && downLow.draft.flags) || []]);
     ok(upLow.entry && downLow.entry && !/was paid in full|already paid against this row/.test(said2),
       "D2: a lot raised or cut with its cash set lower is read on the cash it will hold, so the card claims neither paid in full nor overpaid: " + J([upLow.error, downLow.error, said2]));
+    /* a cleared cash, which another road than Salt Admin's may still send, reads as nothing on the card, as the writer reads it */
+    const cleared = draftRow(E.ledgerAmendmentEntry({ at: "2026-11-25T03:01:00.000Z", row: book.purchases.find((r) => r.rid === "zr8"), direction: "BUY",
+      kind: "Correction", date: today, fields: { total: 40, cash: null } }), book);
+    ok(!cleared.skip && !/already paid against this row/.test(J(cleared.flags || [])),
+      "D2: a lot's cleared cash reads as nothing paid, so a cut total is not called overpaid: " + J(cleared.skip || cleared.flags));
   } finally { w.close(); }
 }
