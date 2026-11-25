@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ea67189d37556c6d";
+var SALT_BUILD_ID="f2dac802deaf7869";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -22787,6 +22787,9 @@ function tabPricing(){
          What is worth saying is the move that did happen, against the lot that did precede it. */
       if(c.sim) return `<div class="dsc" style="margin-top:7px">An override is in force, so this is not the live basis: ${pxOver.cost!=null?`${fmt(pxOver.cost)} a unit assumed`:''}${pxOver.cost!=null&&pxOver.shrink!=null?', ':''}${pxOver.shrink!=null?`${(pxOver.shrink*100).toFixed(1)}% shrinkage assumed`:''}, giving ${fmt(c.eff)}.</div>`;
       if(c.locked) return `<div class="dsc" style="margin-top:7px">Frozen on the ${units(c.lotQty)} lot of ${c.lotDate||'not dated'}. Selling, losing, counting and delivering do not move it; the next lot does.</div>`;
+      /* 25 Nov 2026: with a blended cost c.lot is the goods rate over the newest units counted, not the latest lot's, and the lot before the
+         latest is among them, so a move against it would read as a move against itself (review of the small lot): the line names the lots */
+      if(c.latest&&c.latest.lots) return `<div class="dsc" style="margin-top:7px">The basis moves with the lots: ${fmt(c.lot)} on ${newestUnits(c.latest.units)}, ${lotsTaken(c.latest.lots)}, each at its own quote.</div>`;
       /* the lot before the one the basis is built on. Same filter and sort as latestLot(), one
          step back, so the two cannot name different lots. */
       const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0)
@@ -22795,8 +22798,6 @@ function tabPricing(){
       if(!pv) return '';
       const pr=+(pv.total/pv.qty).toFixed(4), d=c.lot-pr;
       const dir=Math.abs(d)<0.005?'held at':d>0?'up from':'down from';
-      /* 25 Nov 2026: with a blended cost c.lot is the goods rate over the newest units counted, not the latest lot's, so the line names those units */
-      if(c.latest&&c.latest.lots) return `<div class="dsc" style="margin-top:7px">The basis moves with the lots, and the newest units ${dir} the lot before the latest: ${fmt(c.lot)} on ${newestUnits(c.latest.units)}, against ${fmt(pr)} on ${units(pv.qty)} of ${esc(pv.receivedOn||pv.date)}${Math.abs(d)<0.005?'':`, ${d>0?'+':''}${(d/pr*100).toFixed(1)}%`}.</div>`;
       return `<div class="dsc" style="margin-top:7px">The basis moves with the lot, and the last one ${dir} the one before it: ${fmt(c.lot)} on ${units(c.lotQty)} of ${c.lotDate||'not dated'}, against ${fmt(pr)} on ${units(pv.qty)} of ${esc(pv.receivedOn||pv.date)}${Math.abs(d)<0.005?'':`, ${d>0?'+':''}${(d/pr*100).toFixed(1)}%`}.</div>`;})()}
     ${(()=>{
       /* ============ v568: THE PRICE BUILD LIVES HERE NOW, AND THE DUPLICATE STACK IS GONE ============

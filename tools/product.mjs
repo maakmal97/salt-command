@@ -147,6 +147,10 @@ function rename(b, from, to, done) {
     if (t && from in t) { t[to] = t[from]; delete t[from]; tiers++; }
   }
   console.log(`renamed ${from} to ${to}: ${moved} rows, ${tiers} customer tiers, and every map key.`);
+  /* 25 Nov 2026 (review of the small lot): COST_MIN is a rule a version sets, keyed by the book's name, so a rename leaves it on the old name */
+  const min = PRICING_RULES.COST_MIN || {};
+  if (+min[from] > 0 && !(+min[to] > 0))
+    console.log(`  NO SMALL-LOT MINIMUM: COST_MIN in engine/rules.mjs names ${from} (${min[from]}) and not ${to}, so ${to} prices off its latest lot alone until a version names it there.`);
 }
 
 const MONEY = ["sales", "purchases", "loans"];

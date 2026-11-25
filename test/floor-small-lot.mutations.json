@@ -186,5 +186,23 @@
     "file": "tools/product.mjs",
     "find": "  if (!(+((PRICING_RULES.COST_MIN || {})[id]) > 0))\n",
     "replace": "  if (false)\n"
+  },
+  {
+    "name": "an undated lot sorts as the newest",
+    "file": "engine/position.mjs",
+    "find": "const x=a.date||'',y=b.date||'';",
+    "replace": "const x=a.date||'~',y=b.date||'~';"
+  },
+  {
+    "name": "a second copy of the cost arithmetic, another shape",
+    "file": "src/drafter.js",
+    "find": "  const name = nameOf(c.rid, c.p._draft);",
+    "replace": "  const name = nameOf(c.rid, c.p._draft); const twin2 = (p, u) => +p.total / u + (+p.freight || 0) / u; void twin2;"
+  },
+  {
+    "name": "a rename says nothing of COST_MIN",
+    "file": "tools/product.mjs",
+    "find": "  if (+min[from] > 0 && !(+min[to] > 0))\n",
+    "replace": "  if (false)\n"
   }
 ]

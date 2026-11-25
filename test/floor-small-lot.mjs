@@ -90,9 +90,10 @@ export async function run({ ok }) {
   ok(rf.same.length >= 30 && rf.differ.every((d) => d.under) && J(fm) === J([["salt@2026-07-22", 56, 56], ["salt@2026-07-23", 64, 60]]),
     "L2: on the frozen book every book and every day a lot landed reads the old rule's object byte for byte, " + rf.same.length + " readings, but salt's 22 and 23 Jul 2026, a 6.25-unit lot each (MYR 56 held, MYR 64 to MYR 60): " + J(fm));
   const rl = replay(live), lm = rl.differ.map((d) => [d.at, d.was, d.rate]);
-  /* the live book moves, so this half holds what cannot: a reading moves only where the newest lot was under its minimum, and the dated days read as replayed */
-  ok(rl.same.length >= 30 && rl.differ.every((d) => d.under) && fm.every((x) => lm.some((y) => J(y) === J(x))) && lm.some((x) => x[0] === "candy@2026-11-17" && x[1] === 94 && x[2] === 47.2),
-    "L2: on the live book a reading moves only where the newest lot was under its minimum, salt's two July days as on the frozen book and candy's 17 Nov 2026 MYR 94 to MYR 47.20: " + J(lm));
+  /* the live book moves with every fold, so this half holds only what no fold can change (review of the small lot; L1 pins candy from its own lots):
+     a reading moves only where the newest lot was under its minimum */
+  ok(rl.same.length >= 30 && rl.differ.every((d) => d.under),
+    "L2: on the live book a reading moves only where the newest lot was under its minimum: " + J(lm));
 
   /* L3: the edges, on invented lots */
   const lot = (rid, day, qty, total, more = {}) => Object.assign({ rid, product: "candy", date: day, receivedOn: day, qty, receivedQty: qty, total, cash: total, status: "paid" }, more);
@@ -121,6 +122,21 @@ export async function run({ ok }) {
   const atMin = PE.latestCogs([lot("pA", "2026-01-01", 20, 400), lot("pB", "2026-01-05", 10, 600, { freight: 5 })]);
   ok(atMin && J(atMin) === J(oldLatest([lot("pA", "2026-01-01", 20, 400), lot("pB", "2026-01-05", 10, 600, { freight: 5 })])) && atMin.rate === 60.5,
     "L3: a newest lot exactly at the minimum is that lot alone, the old answer: " + J(atMin && [atMin.rid, atMin.rate]));
+  /* undated lots (review of the small lot: neither book holds one): an undated lot is the oldest, as the old rule read it, the later in the list the newer
+     among them, and the day passes it as before */
+  const U = (rid, qty, total) => Object.assign(lot(rid, undefined, qty, total), { date: undefined, receivedOn: undefined });
+  const u1 = PE.latestCogs([U("pU", 50, 2000), lot("pA", "2026-01-01", 20, 400), lot("pB", "2026-01-05", 1, 60)]);
+  ok(u1 && u1.rid === "pB" && u1.rate === 24 && J((u1.lots || []).map((l) => l.rid)) === J(["pB", "pA"]),
+    "L3: an undated lot is the oldest: 1 of pB and 9 of pA, MYR 24, and the undated 50 units at MYR 40 are not reached: " + J(u1 && [u1.rid, u1.rate, u1.lots]));
+  const u2 = PE.latestCogs([U("pU", 20, 400), U("pV", 1, 60)]);
+  ok(u2 && u2.rid === "pV" && u2.rate === 24 && u2.date === null && J((u2.lots || []).map((l) => l.rid)) === J(["pV", "pU"]),
+    "L3: among undated lots the later in the list is the newer: 1 of pV and 9 of pU, MYR 24: " + J(u2 && [u2.rid, u2.rate, u2.lots]));
+  const uAt = [U("pU", 5, 150), lot("pB", "2026-01-05", 10, 600)], uAll = [U("pU", 30, 600), U("pV", 12, 600)];
+  ok(J(PE.latestCogs(uAt)) === J(oldLatest(uAt)) && J(PE.latestCogs(uAll)) === J(oldLatest(uAll)) && PE.latestCogs(uAt).rid === "pB" && PE.latestCogs(uAll).rid === "pV",
+    "L3: beside undated lots, a newest lot at the minimum is the old answer byte for byte, dated or undated: " + J([PE.latestCogs(uAt).rid, PE.latestCogs(uAll).rid]));
+  const uDay = PE.latestCogs([U("pU", 50, 2000), lot("pB", "2026-01-05", 1, 60), lot("pC", "2026-01-09", 20, 2000)], "2026-01-06");
+  ok(uDay && uDay.rid === "pB" && uDay.rate === 42 && J((uDay.lots || []).map((l) => l.rid)) === J(["pB", "pU"]),
+    "L3: an undated lot passes the day, as before, and is taken last: 1 of pB and 9 of pU at MYR 40, MYR 42: " + J(uDay && [uDay.rid, uDay.rate, uDay.lots]));
 
   /* L4: the rule itself */
   ok(J(RULES.COST_MIN) === J({ salt: 12.5, oil: 10, candy: 10, rice: 100, gas: 1 }), "L4: COST_MIN is his five figures, typed per book in the rules: " + J(RULES.COST_MIN));
@@ -162,7 +178,7 @@ export async function run({ ok }) {
       repl: /Replacement rate the newest 10 units, 1 of p057 and 9 of p031: their quotes over those units RM 44\.70/.test(pg),
       freight: /the trips of 1 of p057 and 9 of p031, RM 25 over the newest 10 units RM 2\.50/.test(pg),
       caption: /Pricing basis COGS, the floor a unit: landed off the newest 10 units RM 47\.20/.test(pg),
-      moved: /The basis moves with the lots, and the newest units up from the lot before the latest: RM 44\.70 on the newest 10 units, against RM 42 on 15 unit of 2026-09-24/.test(pg),
+      moved: /The basis moves with the lots: RM 44\.70 on the newest 10 units, 1 of p057 and 9 of p031, each at its own quote\./.test(pg),
       kpi: /Freight per unit RM 2\.50 the trips over the newest 10 units/.test(so),
       none: !/latest purchase/.test(pg + so)
     };
@@ -192,22 +208,28 @@ export async function run({ ok }) {
   const wb1 = makerTradeReading({ direction: "purchase", product: "candy", qty: 1, total: 30 }, mirror([P027, P031]));
   ok(wb1 && wb1.cogs && wb1.cogs.source === "the latest purchase" && wb1.cogs.rate === 42, "L6: and from the latest purchase where that lot reaches the minimum: " + J(wb1 && wb1.cogs && [wb1.cogs.rate, wb1.cogs.source]));
 
-  /* L7: one function decides the cost */
-  const COST = [/\(\s*\+?[\w.]*\b(?:total|quote|goods)\s*\+\s*\(?\s*\+?[\w.]*freight\b[^)]*\)?\s*\)\s*\//, /\(\s*\+?[\w.]*freight\b[^)]*\+\s*\+?[\w.]*\b(?:total|quote|goods)\b[^)]*\)\s*\//];
-  const EXEMPT = ["const perUnit = +((goods + (body.freight || 0)) / qty).toFixed(2);"];   /* the Workbench's figure for a purchase being entered: that entry's own rate, not a cost */
-  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
+  /* L7: one function decides the cost. Widened on review of the small lot (four shapes slipped past two patterns): any code line outside the position
+     engine that names a lot's total, quote or goods, names its freight, and divides */
+  const COST = (l) => /\b(?:total|quote|goods)\b/.test(l) && /\b(?:freight|fr)\b/.test(l) && /[\w)\]]\s*\/\s*[\w(+]/.test(l);
+  const EXEMPT = [
+    "const perUnit = +((goods + (body.freight || 0)) / qty).toFixed(2);",   /* the Workbench's figure for a purchase being entered: that entry's own rate, not a cost */
+    "COGS is ${fmt(sC.landed)} a unit off"                                   /* Pricing's sentence: "quote plus freight" in its words, the leak's share in its sum */
+  ];
+  const GENERATED = ["stmt/maker-geo.js"];   /* the map's points, one line of data */
+  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").map((l) => l.replace(/(^|[^:"'`\\])\/\/.*$/, "$1")).join("\n");
   const files = [["engine", ".mjs"], ["src", ".js"], ["stmt", ".js"], ["tools", ".mjs"]].flatMap(([d, x]) => readdirSync(join(REPO, d)).filter((f) => f.endsWith(x)).map((f) => d + "/" + f));
   const hits = [];
   for (const f of files) {
-    if (f === "engine/position.mjs") continue;   /* latestCogs itself, the one copy */
-    strip(readFileSync(join(REPO, f), "utf8")).split("\n").forEach((l, i) => { if (COST.some((re) => re.test(l)) && !EXEMPT.some((e) => l.includes(e))) hits.push(f + ":" + (i + 1)); });
+    if (f === "engine/position.mjs" || GENERATED.includes(f)) continue;   /* latestCogs itself, the one copy */
+    strip(readFileSync(join(REPO, f), "utf8")).split("\n").forEach((l, i) => { if (COST(l) && !EXEMPT.some((e) => l.includes(e))) hits.push(f + ":" + (i + 1)); });
   }
   const m = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const own = m.replace(/\/\* ==== ENGINE (\w+):[\s\S]*?\/\* ==== END ENGINE \1 ==== \*\//g, "").replace(/\/\* ==== BOOK[\s\S]*?\/\* ==== END BOOK ==== \*\//, "");
-  strip(own).split("\n").forEach((l, i) => { if (COST.some((re) => re.test(l))) hits.push("master:" + (i + 1)); });
+  strip(own).split("\n").forEach((l, i) => { if (COST(l) && !EXEMPT.some((e) => l.includes(e))) hits.push("master:" + (i + 1)); });
   const pos = strip(readFileSync(join(REPO, "engine", "position.mjs"), "utf8")).split("\n").filter((l) => /\(\+p\.total\+fr\)\/u/.test(l)).length;
-  ok(files.length > 40 && hits.length === 0 && pos === 1 && COST[0].test("x=(+lot.total+(+lot.freight||0))/lot.qty") && COST[1].test("r=(freight + total) / units"),
-    "L7: no file but the position engine works out a cost from a lot's quote and freight (" + files.length + " files and the master's own script read): " + (hits.join(", ") || "none"));
+  const shapes = ["x=(+lot.total+(+lot.freight||0))/lot.qty", "r=(freight + total) / units", "(+p.total+fr)/u", "((+p.total||0)+(+p.freight||0))/q", "(Number(p.total)+Number(p.freight))/u", "+p.total/u+(+p.freight||0)/u"];
+  ok(files.length > 40 && hits.length === 0 && pos === 1 && shapes.every(COST) && !COST("const lot=+LC.quote/+LC.units;") && strip("a=1; // (+p.total+p.freight)/u") === "a=1; ",
+    "L7: no file but the position engine works out a cost from a lot's quote and freight (" + files.length + " files and the master's own script read, six shapes caught): " + (hits.join(", ") || "none"));
 
   /* L8: a book COST_MIN does not name is said so when opened */
   const tmp8 = join(REPO, "test", "tmp", "small-lot-product-" + process.pid + "-" + Date.now());
@@ -219,5 +241,9 @@ export async function run({ ok }) {
     const r = spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), "--add", "zz", "--name", "Zed"], { env: Object.assign({}, process.env, { SALT_BOOK: bk, SALT_MASTER: ms }), encoding: "utf8" });
     ok(r.status === 0 && /NO SMALL-LOT MINIMUM: COST_MIN in engine\/rules\.mjs does not name zz, so this book prices off its latest lot alone until a version names it there\./.test(r.stdout || ""),
       "L8: tools/product.mjs opens a book and says it prices off its latest lot alone until a version names it in COST_MIN: " + J([r.status, (r.stdout || "").split("\n").filter((l) => /SMALL-LOT|added/.test(l))]));
+    /* review of the small lot: a rename moves every key but COST_MIN's, which a version sets, so the tool says the renamed book has lost its minimum */
+    const rn = spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), "--rename", "candy", "sweets", "--orders-done"], { env: Object.assign({}, process.env, { SALT_BOOK: bk, SALT_MASTER: ms }), encoding: "utf8" });
+    ok(rn.status === 0 && /NO SMALL-LOT MINIMUM: COST_MIN in engine\/rules\.mjs names candy \(10\) and not sweets, so sweets prices off its latest lot alone until a version names it there\./.test(rn.stdout || ""),
+      "L8: and renaming candy says the new name prices off its latest lot alone until a version names it: " + J([rn.status, (rn.stdout || "").split("\n").filter((l) => /SMALL-LOT|renamed/.test(l)), (rn.stderr || "").slice(0, 200)]));
   } finally { rmSync(tmp8, { recursive: true, force: true }); }
 }
