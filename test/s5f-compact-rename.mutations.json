@@ -1,0 +1,62 @@
+[
+ {
+  "name": "a moved row is still counted lost (the refusal of 25 Nov)",
+  "file": "src/book.js",
+  "find": "tap.open || n.goneOther - n.renamedOther > 0 || n.gone - n.renamed > (tap ? tap.edits : 0) || !tap.folded))",
+  "replace": "tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded))"
+ },
+ {
+  "name": "every row gone is taken as moved",
+  "file": "src/book.js",
+  "find": "if (i >= 0) { pool.splice(i, 1); n.renamed++; if (r.coll !== \"customerRefunds\") n.renamedOther++; }",
+  "replace": "{ n.renamed++; if (r.coll !== \"customerRefunds\") n.renamedOther++; }"
+ },
+ {
+  "name": "a row is moved without its new form being put in",
+  "file": "src/book.js",
+  "find": "i = moved === doc ? -1 : pool.indexOf(moved);",
+  "replace": "i = moved === doc ? -1 : 0;"
+ },
+ {
+  "name": "one new row accounts for any number of moved rows",
+  "file": "src/book.js",
+  "find": "{ pool.splice(i, 1); n.renamed++;",
+  "replace": "{ n.renamed++;"
+ },
+ {
+  "name": "a refund that moved is still counted lost",
+  "file": "src/book.js",
+  "find": "n.gone - n.renamed > (tap ? tap.edits : 0)",
+  "replace": "n.gone - n.renamedOther > (tap ? tap.edits : 0)"
+ },
+ {
+  "name": "a loan is never moved",
+  "file": "src/book.js",
+  "find": "        for (const r of goneRows) {\n          const doc",
+  "replace": "        for (const r of goneRows) {\n          if (r.coll === \"loans\") continue;\n          const doc"
+ },
+ {
+  "name": "only the first pair of a rename is read (a reseller's -R account is left)",
+  "file": "src/book.js",
+  "find": ".map((rn) => ({ pairs: rn.pairs || [] }));",
+  "replace": ".map((rn) => ({ pairs: (rn.pairs || []).slice(0, 1) }));"
+ },
+ {
+  "name": "the rename is not applied to the gone row",
+  "file": "src/book.js",
+  "find": "for (const rn of movedBy) applyRename(box, rn);",
+  "replace": ""
+ },
+ {
+  "name": "the new form is looked for in another list",
+  "file": "src/book.js",
+  "find": "pool = fresh.get(r.coll) || []",
+  "replace": "pool = [].concat(...[...fresh.entries()].filter(([c]) => c !== r.coll).map(([, d]) => d))"
+ },
+ {
+  "name": "a row the base already held counts as new",
+  "file": "src/book.js",
+  "find": "if (!was || was.gone_at) (fresh.get(r.coll)",
+  "replace": "if (true) (fresh.get(r.coll)"
+ }
+]

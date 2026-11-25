@@ -303,9 +303,11 @@ export class Book {
       const n = { added: 0, revised: 0, gone: 0, returned: 0 };
       const held = new Map();
       for (const r of sql.exec("SELECT coll, key, h, gone_at, seq FROM rows").toArray()) held.set(r.coll + "\u0000" + r.key, r);
+      const fresh = new Map();   /* 25 Nov 2026: the rows this load put in under a key the live base did not hold (new, or back from gone), by list: what a renamed row may have become */
       for (const r of p.rows) {
         const was = held.get(r.coll + "\u0000" + r.key);
         held.delete(r.coll + "\u0000" + r.key);
+        if (!was || was.gone_at) (fresh.get(r.coll) || fresh.set(r.coll, []).get(r.coll)).push(r.doc);
         if (!was) { sql.exec("INSERT INTO rows (coll, key, doc, h, booked_at, seq) VALUES (?, ?, ?, ?, ?, ?)", r.coll, r.key, r.doc, r.h, at, r.seq); n.added++; continue; }
         if (was.h !== r.h) { sql.exec("UPDATE rows SET doc = ?, h = ?, revised_at = ?, gone_at = NULL, seq = ? WHERE coll = ? AND key = ?", r.doc, r.h, at, r.seq, r.coll, r.key); n.revised++; continue; }
         if (was.gone_at) { sql.exec("UPDATE rows SET gone_at = NULL WHERE coll = ? AND key = ?", r.coll, r.key); n.returned++; }
@@ -313,7 +315,8 @@ export class Book {
         if (was.seq !== r.seq) sql.exec("UPDATE rows SET seq = ? WHERE coll = ? AND key = ?", r.seq, r.coll, r.key);
       }
       n.goneOther = 0;   /* Fable's review (29 Oct 2026): rows gone outside customerRefunds, and keys of the state that left: an edit entry may take refunds and nothing else */
-      for (const r of held.values()) if (!r.gone_at) { sql.exec("UPDATE rows SET gone_at = ? WHERE coll = ? AND key = ?", at, r.coll, r.key); n.gone++; if (r.coll !== "customerRefunds") n.goneOther++; }
+      const goneRows = [];
+      for (const r of held.values()) if (!r.gone_at) { sql.exec("UPDATE rows SET gone_at = ? WHERE coll = ? AND key = ?", at, r.coll, r.key); n.gone++; goneRows.push(r); if (r.coll !== "customerRefunds") n.goneOther++; }
       const keep = new Set(p.state.map((s) => s.k));
       for (const s of p.state) {
         const was = sql.exec("SELECT h FROM state WHERE k = ?", s.k).toArray()[0];
@@ -326,7 +329,7 @@ export class Book {
       if (p.snap) sql.exec("INSERT OR REPLACE INTO snap (one, v, stamped, at) VALUES (1, ?, ?, ?)", p.snap.v, p.snap.stamped, at);
       /* S4a: THE ENTRIES THIS LOAD FOLDED. One is folded when D1 says its draft is committed (`opts.folded`, ids the Worker checked) or when the new base holds every rid it minted;
          the rest stay open and are replayed on the new base. The view before and after is compared for the folded ones (tapDiffer). */
-      let tap = null;
+      let tap = null, movedBy = [];
       if (evs.length) {
         const said = new Set(opts.folded || []), clash = [];
         const heldDoc = new Map(sql.exec("SELECT key, doc FROM rows WHERE gone_at IS NULL AND key LIKE 'r:%'").toArray().map((r) => [r.key, r.doc]));
@@ -353,13 +356,28 @@ export class Book {
         };
         const done = evs.filter((e) => said.has(e.draft_id) || byRid(e) || byEffect(e));
         for (const e of done) sql.exec("UPDATE booked SET folded_at = ? WHERE seq = ?", at, e.seq);
+        movedBy = done.flatMap((e) => { const fx = e.effects ? JSON.parse(e.effects) : null; return ((fx && fx.renames) || []).map((rn) => ({ pairs: rn.pairs || [] })); });   /* in booked order */
         const rest = evs.filter((e) => !done.includes(e)), post = this.viewOf(rest);
         tap = { folded: done.length, open: rest.length, edits: done.filter((e) => JSON.parse(e.item).collection === "edit").length, stuck: post.stuck.map((s) => s.id), clash,
           differ: done.length ? tapDiffer(pre, post, done.map((e) => ({ rids: JSON.parse(e.rids), coll: JSON.parse(e.item).collection, fx: e.effects ? JSON.parse(e.effects) : null })), !!opts.pure && !rest.length) : [] };
       }
+      /* 25 Nov 2026: A RENAME MOVES ROWS THAT CARRY NO RID. A roster code, an associate, a partner: a list of plain codes is keyed by its content, so a rename this load folds takes the
+         old code's row out and puts the new one's in, and the strict check below read that as a row lost (the day's export refused, gone 1, CN3-TBC to CN3-PJ). A row gone is MOVED,
+         not lost, only when the folded renames, applied to it by the engine's own applyRename in booked order, change it AND it then matches a row this load put into the same list
+         (new, or back from gone), each such row matched once (Opus's review: a twin lost beside its moved twin, or a row the base already held, excuses nothing). A row with a rid is
+         revised under its own key, never moved (some loans and refunds have none, and move); anything else gone refuses. */
+      n.renamed = 0; n.renamedOther = 0;
+      if (movedBy.length && goneRows.length) {
+        for (const r of goneRows) {
+          const doc = sql.exec("SELECT doc FROM rows WHERE coll = ? AND key = ?", r.coll, r.key).toArray()[0].doc, box = { row: JSON.parse(doc) };
+          for (const rn of movedBy) applyRename(box, rn);
+          const moved = canon(box.row), pool = fresh.get(r.coll) || [], i = moved === doc ? -1 : pool.indexOf(moved);
+          if (i >= 0) { pool.splice(i, 1); n.renamed++; if (r.coll !== "customerRefunds") n.renamedOther++; }
+        }
+      }
       /* S5a: a strict load (compaction) is refused, and the whole transaction with it, when the view it would write is not the view that was read, or when it would lose a row */
-      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.goneOther > 0 || n.gone > (tap ? tap.edits : 0) || !tap.folded))
-        throw new Refused("compaction refused: " + JSON.stringify(tap ? { differ: tap.differ, stuck: tap.stuck, open: tap.open, gone: n.gone, folded: tap.folded } : { entries: 0 }));
+      if (opts.strict && (!tap || tap.differ.length || tap.stuck.length || tap.open || n.goneOther - n.renamedOther > 0 || n.gone - n.renamed > (tap ? tap.edits : 0) || !tap.folded))
+        throw new Refused("compaction refused: " + JSON.stringify(tap ? { differ: tap.differ, stuck: tap.stuck, open: tap.open, gone: n.gone, renamed: n.renamed, folded: tap.folded } : { entries: 0 }));
       const moved = n.added + n.revised + n.gone + n.returned > 0 || !!(tap && tap.folded);
       /* S5f-4: a load's derived documents are as fresh as the revision it leaves; a compaction rewrites the documents it already held, so it leaves where they were computed (`keepDerived`) */
       if (p.snap) sql.exec("UPDATE snap SET rev = ?, derived_rev = ? WHERE one = 1", prevRev + (moved ? 1 : 0), opts.keepDerived ? prevDerived : prevRev + (moved ? 1 : 0));
@@ -608,8 +626,8 @@ export class Book {
       entries: this.allEvents(), outbox: sql.exec("SELECT seq, draft_id, at, sent_at, tries, err FROM outbox ORDER BY seq").toArray(), loads: sql.exec("SELECT seq, at, rev, digest, added, revised, gone, returned, rows FROM loads ORDER BY seq DESC LIMIT 30").toArray() };
   }
 
-  /* S5a: COMPACTION. (A row with no rid is keyed by its content, so a replay that edits one in place would read as one row gone and one added and refuse for good: no entry kind does that today,
-     and the dry rehearsal on every fold is the alarm for the first one that does.) The Book's own view (the base with every open entry replayed) becomes the new base, by the SAME load path (prepare, load) as a git load, with every open entry marked
+  /* S5a: COMPACTION. (A row with no rid is keyed by its content, so a replay that edits one in place reads as one row gone and one added. A rename does, to a code the base holds (the
+     roster, the associates, a loan with no rid: 25 Nov 2026), and `load` accounts for those rows as moved; any other entry kind that does refuses, and the dry rehearsal is the alarm.) The Book's own view (the base with every open entry replayed) becomes the new base, by the SAME load path (prepare, load) as a git load, with every open entry marked
      folded in that transaction. STRICT: the load's own tap check must find the view unchanged, no entry stuck, and no row lost, or the whole transaction is thrown away. `dry` prepares it,
      reads the same checks off the plan and writes nothing: what the chain asks after every fold. Entries are kept (the event log), only closed. */
   compact(dry, expect) {
