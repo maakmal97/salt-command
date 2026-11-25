@@ -50934,6 +50934,11 @@ await (async () => {
   await (await import("./admin-record-sale-edit.mjs")).run({ ok, pageWork });
 })();
 
+section("25 Nov 2026: Salt Admin Record, a lot's cash paid set lower, and Find");
+await (async () => {
+  await (await import("./admin-lot-cash.mjs")).run({ ok, pageWork });
+})();
+
 section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");
 await (async () => {
   await (await import("./admin-record-correct.mjs")).run({ ok, pageWork });

@@ -1,0 +1,110 @@
+[
+{
+"name": "L1: a lot's lower cash is not asked",
+"file": "stmt/owner.js",
+"find": "if(!await ownerAsk(send.button,'cash-down:'+r.rid,",
+"replace": "if(false&&!await ownerAsk(send.button,'cash-down:'+r.rid,"
+},
+{
+"name": "L1: the ask names the figure now as after",
+"file": "stmt/owner.js",
+"find": "'. After: '+rm(cashThen)",
+"replace": "'. After: '+rm(cashNow)"
+},
+{
+"name": "L2: the lower cash is not a field",
+"file": "stmt/owner.js",
+"find": "f.cash=cashThen; dCash=0;",
+"replace": "dCash=0;"
+},
+{
+"name": "L2: the difference still goes as a Fulfilment",
+"file": "stmt/owner.js",
+"find": "f.cash=cashThen; dCash=0;",
+"replace": "f.cash=cashThen;"
+},
+{
+"name": "L3: a sale's cash may be set lower too",
+"file": "stmt/owner.js",
+"find": "lotDown=!sale&&dCash<-0.004",
+"replace": "lotDown=dCash<-0.004"
+},
+{
+"name": "L3: a lot's units may be set lower",
+"file": "stmt/owner.js",
+"find": "if(dUnits<-0.00005||dCash<-0.004&&!lotDown) throw",
+"replace": "if(dCash<-0.004&&!lotDown) throw"
+},
+{
+"name": "F1: Find narrows nothing",
+"file": "stmt/owner.js",
+"find": "editRows().filter(function(r){ return r.rid===kept||editMatch(r,q); })",
+"replace": "editRows().filter(function(r){ return true; })"
+},
+{
+"name": "F1: Find says no count",
+"file": "stmt/owner.js",
+"find": "hits.length+(hits.length===1?' row':' rows')",
+"replace": "''"
+},
+{
+"name": "F1: Find stands after Row",
+"file": "stmt/owner.js",
+"find": "makerRow(editHolder,'Find',editFind); editHolder.appendChild(editFound); makerRow(editHolder,'Row',editPick);",
+"replace": "makerRow(editHolder,'Row',editPick); makerRow(editHolder,'Find',editFind); editHolder.appendChild(editFound);"
+},
+{
+"name": "F1: two rows left open the first",
+"file": "stmt/owner.js",
+"find": "var one=whole.length===1?whole[0]:hits.length===1?hits[0]:null;",
+"replace": "var one=whole.length===1?whole[0]:hits[0]||null;"
+},
+{
+"name": "F2: a reference typed whole is not preferred",
+"file": "stmt/owner.js",
+"find": "var one=whole.length===1?whole[0]:hits.length===1?hits[0]:null;",
+"replace": "var one=hits.length===1?hits[0]:null;"
+},
+{
+"name": "F2: one row left does not open",
+"file": "stmt/owner.js",
+"find": "var one=whole.length===1?whole[0]:hits.length===1?hits[0]:null;",
+"replace": "var one=whole.length===1?whole[0]:null;"
+},
+{
+"name": "F2: a date is not matched",
+"file": "stmt/owner.js",
+"find": "[r.rid,r.party,r.product,r.date,fmtWhen(r.date)]",
+"replace": "[r.rid,r.party,r.product]"
+},
+{
+"name": "F2: nothing matching says nothing",
+"file": "stmt/owner.js",
+"find": "'No row matches that.'",
+"replace": "''"
+},
+{
+"name": "R1: a lowering is always held",
+"file": "src/maker-inputs.js",
+"find": "if (stops && reading.on > 0.004)",
+"replace": "if (stops)"
+},
+{
+"name": "R2: a lowering is not held",
+"file": "src/maker-inputs.js",
+"find": "|| p.undo != null || lowers;",
+"replace": "|| p.undo != null;"
+},
+{
+"name": "R2: the hold names cancelling",
+"file": "src/maker-inputs.js",
+"find": "lowers ? \"lowering what it holds paid.\" : \"cancelling.\"",
+"replace": "lowers ? \"cancelling.\" : \"cancelling.\""
+},
+{
+"name": "E1: the step keeps no record",
+"file": "engine/apply.mjs",
+"find": "      was[k] = was0;\n",
+"replace": "\n"
+}
+]

@@ -3186,7 +3186,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.add-book` | Record, sale or purchase | Adds another book to the same trip. |
 | `record.trade.associate` | Record, sale or purchase | The associate. |
 | `record.trade.book` | Record, sale or purchase | The book. |
-| `record.trade.cash` | Record, sale or purchase | The cash recorded, in RM. |
+| `record.trade.cash` | Record, sale or purchase | The cash recorded, in RM. With a row open, more than the book holds goes as a Fulfilment of the difference; less is refused on a sale (Undo under History) and, on a purchase lot, asked first and sent as a Correction of `cash`, which the Desk holds while money is on its way to the lot (`makerAmendmentRoom`, 25 Nov 2026). |
 | `record.trade.cover` | Record, sale or purchase | Takes the reward cover offered on this book. |
 | `record.trade.cover-retry` | Record, sale or purchase | Reads the cover again after a failed read. |
 | `record.trade.date` | Record, sale or purchase | The date. |
@@ -3212,6 +3212,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.remove-book` | Record, sale or purchase, an extra book (key: extra<n>) | Removes the extra book. |
 | `record.trade.send` | Record, sale or purchase | Records the trade for review (Record the sale); with a row open, Record the change sends what differs as a Correction and what moved since as a Fulfilment, or Reopen this sale. |
 | `record.trade.edit` | Record, sale or purchase | Row: New, or a recorded row, which fills the form to change it (27 Oct 2026). |
+| `record.trade.find` | Record, sale or purchase | Find: narrows Row to the rows whose reference, code, book or date holds what is typed, says how many, and opens a reference typed whole or the one row left (25 Nov 2026). |
 | `record.trade.other` | Record, sale or purchase | Other fields, with a row open: opens Correct a row on it, at a Correction. |
 | `record.trade.cancel` | Record, sale or purchase | Cancel this sale, with a row open; asks once, then sends a Cancellation. |
 | `ledger.open` | Orders > Ledger | A row's reference: opens the row in the sale form. |
