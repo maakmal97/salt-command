@@ -1243,14 +1243,17 @@ export async function makerAmendmentRoom(db, entry, book, held) {
   const paid = (value) => sale ? POSITION_ENGINE.txPaid(value) : POSITION_ENGINE.poCash(value);
   const cash = p.kind === "Fulfilment" || p.kind === "Payment" ? +p.cash || 0
     : p.kind === "Correction" ? Math.max(0, paid(after) - paid(row)) : 0;
-  const stops = p.kind === "Cancellation" || p.kind === "Default" || p.undo != null;
+  /* 25 Nov 2026 (his answer: a lot's cash paid may be set lower): a Correction that lowers what a row holds paid is held while money is on its way to it, as an undo is */
+  const lowers = p.kind === "Correction" && p.undo == null && paid(after) < paid(row) - 0.004;
+  const stops = p.kind === "Cancellation" || p.kind === "Default" || p.undo != null || lowers;
   if (!(cash > 0.004) && !stops) return "";
   const room = await rowRoom(db, sale ? "SELL" : "BUY");
   if (!room.version || room.version !== book.version) return "The mirror changed or could not be read. Read the row again.";
   const reading = room(POSITION_ENGINE.ovKey(row), entry);
   if (!reading) return "The row's remaining money could not be confirmed.";
   if (stops && reading.on > 0.004)
-    return "Money is already on its way to this row. Decide it before " + (p.undo != null ? "undoing a move." : p.kind === "Default" ? "defaulting it." : "cancelling.");
+    return "Money is already on its way to this row. Decide it before " + (p.undo != null ? "undoing a move." : p.kind === "Default" ? "defaulting it."
+      : lowers ? "lowering what it holds paid." : "cancelling.");
   const changedTotal = p.kind === "Correction" && p.fields.total != null ? p.fields.total - (+row.total || 0) : 0;
   const changedDelivery = sale && p.kind === "Correction" && p.fields.delivery != null
     ? p.fields.delivery - (+row.delivery || 0) : 0;

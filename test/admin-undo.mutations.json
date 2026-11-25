@@ -224,8 +224,8 @@
  {
   "name": "the room check lets an undo over money on its way",
   "file": "src/maker-inputs.js",
-  "find": "const stops = p.kind === \"Cancellation\" || p.kind === \"Default\" || p.undo != null;",
-  "replace": "const stops = p.kind === \"Cancellation\" || p.kind === \"Default\";"
+  "find": "const stops = p.kind === \"Cancellation\" || p.kind === \"Default\" || p.undo != null || lowers;",
+  "replace": "const stops = p.kind === \"Cancellation\" || p.kind === \"Default\" || lowers;"
  },
  {
   "name": "the undo's context finds no site order",
