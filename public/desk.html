@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0c8b676f8afcab24";
+var SALT_BUILD_ID="ea67189d37556c6d";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12745,6 +12745,11 @@ const NF_2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:2,maximumFractio
 const fmt=n=>CUR+' '+noNegZero((Math.abs(n%1)>1e-9?NF_2:NF_0to2).format(Number(n)));
 const fmt0=n=>CUR+' '+noNegZero(NF_0.format(Number(n)));
 const units=n=>noNegZero(NF_U.format(Number(n)))+' unit';
+/* 25 Nov 2026 (docs/plan-small-lot.html): A BLENDED COST'S WORDS. The engine's latestCogs carries `lots` only when a lot under its book's
+   minimum (COST_MIN) is blended with those before it, and the cost then reads "the newest 10 units", each lot named with the units taken
+   from it, newest first, and with `rates` its own rate */
+const newestUnits=n=>'the newest '+units(n)+(Math.abs(Number(n)-1)<1e-9?'':'s');
+const lotsTaken=(L,rates)=>{const xs=(L||[]).map(l=>noNegZero(NF_U.format(Number(l.units)))+' of '+esc(l.rid||'a lot not numbered')+(rates?' at '+fmt(l.rate):''));return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1];};
 /* D2 (29 Sep 2026, the fault list): ONE nil for a cell or a figure with nothing to show. It was an em
    dash in some 96 places, a mark the house never writes; a hyphen is the accountant's nil. */
 const NIL='-';
@@ -15255,7 +15260,7 @@ function tabSourcing(){
     <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Effective cost</div><div class="v salt-kpi__value">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n salt-kpi__note">${c.rule==='buyPlusPct'
       ? `${fmt(c.repl)} to buy plus ${c.rulePct}%${c.rulePlaceholder?', a placeholder':''}; freight and the ${(c.shrink*100).toFixed(1)}% leak are inside it, not added`
       : `${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak`}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Freight per unit</div><div class="v salt-kpi__value">${fmt(c.freight)}</div><div class="n salt-kpi__note">${c.latest?`the latest purchase's trip over its units`:ml?`typed on the lots, per unit over the replacement window`:'no lot received to average'}</div></div>
+    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Freight per unit</div><div class="v salt-kpi__value">${fmt(c.freight)}</div><div class="n salt-kpi__note">${c.latest?(c.latest.lots?`the trips over ${newestUnits(c.latest.units)}`:`the latest purchase's trip over its units`):ml?`typed on the lots, per unit over the replacement window`:'no lot received to average'}</div></div>
     <div class="kpi salt-kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l salt-kpi__label">Lost to defaults</div><div class="v salt-kpi__value">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n salt-kpi__note">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
@@ -22681,7 +22686,7 @@ function tabPricing(){
       ${LD.anchorG!=null?sR('Anchor',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Anchor',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):NIL),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}${sC.floorEx!=null?`; plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)}, ${fmt(sC.floorEx)} a unit`:''}; times the size, up to the next RM 5; no ${sC.floorEx!=null?'':'leak, '}delivery or time in it`)
+      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?(sC.latest.lots?`, ${newestUnits(sC.latest.units)}: ${lotsTaken(sC.latest.lots,true)}`:`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`):''}${sC.floorEx!=null?`; plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)}, ${fmt(sC.floorEx)} a unit`:''}; times the size, up to the next RM 5; no ${sC.floorEx!=null?'':'leak, '}delivery or time in it`)
         :sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
       ${sC.rule==='latestCogs'&&sC.shrink>=RULES.leakInfoFrom?sR('After the leak',fmt(sC.afterLeak),`information only: ${(sC.shrink*100).toFixed(0)}% of what is bought never sells; nothing prices off it`):''}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
@@ -22705,7 +22710,7 @@ function tabPricing(){
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l salt-table__label">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)},`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off ${sC.latest&&sC.latest.lots?newestUnits(sC.latest.units):'the latest purchase'}, quote plus freight; the Floor is ${sC.floorEx!=null?`${fmt(sC.floorEx)} a unit, COGS plus ${(sC.nrs*100).toFixed(1)}% for the units that left unpaid${nrsWhen(sC)},`:'that'} times the size, up to the next RM 5; it earns nothing${sC.floorEx!=null?(TIER_RULE[PROD]&&TIER_RULE[PROD].band?', the Median Price is struck on COGS and the Ceiling on the price your supplier quotes':', and the Median Price and the Ceiling are struck on COGS'):' and carries no leak'}.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Median Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Median Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${marketPanels()}
@@ -22752,7 +22757,7 @@ function tabPricing(){
            lot on the book the old chain took the LOT's rate; the quote was the no-lot fallback).
            RM 48.50 under a caption naming a RM 56 tier is the kind of line that teaches the
            reader to ignore captions. The row says what the figure is on each branch instead. -->
-      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.latest?`the latest purchase${c.latest.rid?' '+esc(c.latest.rid):''}, ${units(c.latest.units)} landed ${c.latest.date||'not dated'}: its quote over its units`:c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:pxRecentBuyRate(30)==null?`no lot inside 30 days, so this is the latest lot's own rate: ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate||'not dated'}`)}
+      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.latest?(c.latest.lots?`${newestUnits(c.latest.units)}, ${lotsTaken(c.latest.lots)}: their quotes over those units`:`the latest purchase${c.latest.rid?' '+esc(c.latest.rid):''}, ${units(c.latest.units)} landed ${c.latest.date||'not dated'}: its quote over its units`):c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:pxRecentBuyRate(30)==null?`no lot inside 30 days, so this is the latest lot's own rate: ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate||'not dated'}`)}
       ${r('Collection',c.freight,'inventory',(()=>{
         /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
            sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
@@ -22760,12 +22765,13 @@ function tabPricing(){
            rather than recomputed here, the same discipline the floor markup follows, so it cannot
            drift from the engine and it stays right under a lock, where the freight is frozen. */
         const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.freight!=null);
+        if(c.latest&&c.latest.lots)return c.latest.freight>0?`the trips of ${lotsTaken(c.latest.lots)}, ${fmt(c.latest.freight)} over ${newestUnits(c.latest.units)}`:`no freight typed on ${newestUnits(c.latest.units)}, so nought`;   /* 25 Nov 2026: a blended cost */
         if(c.latest)return c.latest.freight>0?`the latest purchase's trip, ${fmt(c.latest.freight)} over its ${units(c.latest.units)}`:'no freight typed on the latest purchase, so nought';
         return ls.length?`freight typed on ${ls.length} lot${ls.length===1?'':'s'}, per unit over the replacement window`:'no lot carries a typed freight yet, so nothing is charged (v503)';})())}
       <tr class="tot"><td class="l salt-table__label"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag salt-status paid">Inventory</span></td></tr>
       ${r('Non-revenue '+PRODUCTS[PROD].name.toLowerCase(),c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:c.rule==='latestCogs'?`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells; measured, and not in the price`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
       ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${units(c.avgDel)}, the average order${c.rule==='latestCogs'?'; not in the price, delivery is typed on the order':''}`;})())}
-      <tr class="tot"><td class="l salt-table__label"><b>Pricing basis</b><div class="iref">${c.rule==='latestCogs'?'COGS, the floor a unit: landed off the latest purchase':'what a price has to return'}</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
+      <tr class="tot"><td class="l salt-table__label"><b>Pricing basis</b><div class="iref">${c.rule==='latestCogs'?(c.latest&&c.latest.lots?`COGS, the floor a unit: landed off ${newestUnits(c.latest.units)}`:'COGS, the floor a unit: landed off the latest purchase'):'what a price has to return'}</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
     </tbody></table>
     ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}
     ${(()=>{
@@ -22789,6 +22795,8 @@ function tabPricing(){
       if(!pv) return '';
       const pr=+(pv.total/pv.qty).toFixed(4), d=c.lot-pr;
       const dir=Math.abs(d)<0.005?'held at':d>0?'up from':'down from';
+      /* 25 Nov 2026: with a blended cost c.lot is the goods rate over the newest units counted, not the latest lot's, so the line names those units */
+      if(c.latest&&c.latest.lots) return `<div class="dsc" style="margin-top:7px">The basis moves with the lots, and the newest units ${dir} the lot before the latest: ${fmt(c.lot)} on ${newestUnits(c.latest.units)}, against ${fmt(pr)} on ${units(pv.qty)} of ${esc(pv.receivedOn||pv.date)}${Math.abs(d)<0.005?'':`, ${d>0?'+':''}${(d/pr*100).toFixed(1)}%`}.</div>`;
       return `<div class="dsc" style="margin-top:7px">The basis moves with the lot, and the last one ${dir} the one before it: ${fmt(c.lot)} on ${units(c.lotQty)} of ${c.lotDate||'not dated'}, against ${fmt(pr)} on ${units(pv.qty)} of ${esc(pv.receivedOn||pv.date)}${Math.abs(d)<0.005?'':`, ${d>0?'+':''}${(d/pr*100).toFixed(1)}%`}.</div>`;})()}
     ${(()=>{
       /* ============ v568: THE PRICE BUILD LIVES HERE NOW, AND THE DUPLICATE STACK IS GONE ============
