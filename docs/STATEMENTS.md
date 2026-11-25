@@ -3126,7 +3126,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.amend.cash` | Record, amend a ledger row | The RM moved. |
 | `record.amend.clear-field` | Record, amend a ledger row | Clears an optional field in the request. |
 | `record.amend.date` | Record, amend a ledger row | The day recorded. |
-| `record.amend.field` | Record, amend a ledger row | The field a Correction changes. |
+| `record.amend.field` | Record, amend a ledger row | The field a Correction changes. Never cash, Settled RM or units handed over or received: those change on Record (a payment or a handover adds, Undo takes back, a lot's cash is set lower on Record with the cash it was read with), and the Desk refuses them on this road (25 Nov 2026, his answers). A lot paid in full with no cash figure keeps what it paid as its cash when its price moves, either way, and one no longer paid in full drops its paid day (engine/apply.mjs). |
 | `record.amend.kind` | Record, amend a ledger row | Correction, Fulfilment, Cancellation or, on a purchase lot, Payment, Receipt or Default. |
 | `record.amend.row` | Record, amend a ledger row | The ledger row. |
 | `record.amend.send` | Record, amend a ledger row | Sends the amendment for review. |

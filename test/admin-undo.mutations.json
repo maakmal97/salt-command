@@ -98,7 +98,7 @@
  {
   "name": "a Correction keeps no record of what it replaced",
   "file": "engine/apply.mjs",
-  "find": "      was[k] = was0;\n",
+  "find": "      if (!(k === \"cash\" && keptCash)) was[k] = was0;\n",
   "replace": "\n"
  },
  {

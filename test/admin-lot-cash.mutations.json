@@ -15,7 +15,7 @@
 {"name":"R1: a lowering is always held","file":"src/maker-inputs.js","find":"if (stops && reading.on > 0.004)","replace":"if (stops)"},
 {"name":"R2: a lowering is not held","file":"src/maker-inputs.js","find":"|| p.undo != null || lowers;","replace":"|| p.undo != null;"},
 {"name":"R2: the hold names cancelling","file":"src/maker-inputs.js","find":"lowers ? \"lowering what it holds paid.\" : \"cancelling.\"","replace":"lowers ? \"cancelling.\" : \"cancelling.\""},
-{"name":"E1: the step keeps no record","file":"engine/apply.mjs","find":"      was[k] = was0;\n","replace":"\n"},
+{"name":"E1: the step keeps no record","file":"engine/apply.mjs","find":"      if (!(k === \"cash\" && keptCash)) was[k] = was0;\n","replace":"\n"},
 {"name":"R3: a lowering needs no cash read with","file":"src/maker-inputs.js","find":"if (!object(e) || Object.keys(e).join() !== \"cash\" || !figure(e.cash))","replace":"if (false)"},
 {"name":"R3: a stale cash is not checked","file":"src/maker-inputs.js","find":"if (Math.abs(now - e.cash) > 0.004)","replace":"if (false)"},
 {"name":"R3: any Correction may name a cash","file":"src/maker-inputs.js","find":"} else if (body.expect !== undefined) return","replace":"} else if (false) return"},

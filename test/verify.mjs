@@ -49959,8 +49959,10 @@ await (async () => {
     const correctionMoney = await editCall({ ...editBody, at: "2026-09-29T19:05:00.000Z", fields: { cash: 60 } });
     const cancellationWaiting = await editCall({ at: "2026-09-29T19:06:00.000Z", rid: editSale.rid,
       kind: "Cancellation", date: "2026-09-29" });
-    ok(correctionMoney.status === 409 && cancellationWaiting.status === 409,
-      "a correction cannot book money already on its way and cancellation waits for pending money decisions");
+    /* re-aimed 25 Nov 2026 (his answer): Correct a row sets no cash on this road, which moves on Record, so it is refused before any room is read */
+    const correctionMoneyWhy = (await correctionMoney.json()).error || "";
+    ok(correctionMoney.status === 400 && /change on Record/.test(correctionMoneyWhy) && cancellationWaiting.status === 409,
+      "a correction sets no cash on Salt Admin's road (Record moves it), and cancellation waits for pending money decisions: " + correctionMoneyWhy);
     const cancelRow = { ...editSale, rid: "editor-cancel", total: 100 };
     const movedRow = { ...editSale, rid: "editor-moved", deliveredQty: 1 };
     countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)").run("sales", 2, JSON.stringify(cancelRow), cancelRow.rid);
@@ -49983,8 +49985,10 @@ await (async () => {
       fields: { cash: 90 } });
     const behindCorrection = await editCall({ ...fulfilBody, at: "2026-09-29T19:11:00.000Z",
       rid: correctedCashRow.rid, cash: 40, movedUnits: 0 });
-    ok(correctedCash.status === 200 && behindCorrection.status === 409,
-      "a pending cash correction reserves its positive change before another road books a payment to that rid");
+    /* re-aimed 25 Nov 2026: a cash correction is refused on this road, so it reserves nothing and a payment to that rid books; a pending payment's
+       reservation stays proved above (the fulfilment and the purchase fulfilment), and a lot's lower held while money is on its way in test/admin-lot-cash.mjs R2 */
+    ok(correctedCash.status === 400 && behindCorrection.status === 200,
+      "a refused cash correction reserves nothing, so a payment to that rid books");
     const freshLedger = { sales: [{ ...editSale, cash: 100 }], purchases: [], PRODUCTS: { salt: {} } };
     const paymentDraft = countDb.prepare("SELECT row,entry,collection,amends,amend_kind FROM draft WHERE id=?").get(fulfilBody.at);
     const stalePaymentPlan = paymentDraft ? (await import("../tools/fold.mjs")).plan(freshLedger, { approved: [{
@@ -50937,6 +50941,11 @@ await (async () => {
 section("25 Nov 2026: Salt Admin Record, a lot's cash paid set lower, and Find");
 await (async () => {
   await (await import("./admin-lot-cash.mjs")).run({ ok, pageWork });
+})();
+
+section("25 Nov 2026: a lot keeps what it paid when its price moves, and Cash paid changes on Record alone");
+await (async () => {
+  await (await import("./cash-roads.mjs")).run({ ok });
 })();
 
 section("25 Oct 2026: Salt Admin Record, P5: the row chosen a card, What to do tiles with their notes, the changes a ledger, Reopen alike");

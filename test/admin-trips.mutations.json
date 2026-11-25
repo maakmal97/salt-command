@@ -86,8 +86,8 @@
  {
   "name": "Correct a row offers the trip",
   "file": "src/maker-inputs.js",
-  "find": "!DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))",
-  "replace": "!DESK_ONLY_FIELDS.includes(field))"
+  "find": "!DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field) && !RECORD_ONLY_FIELDS",
+  "replace": "!DESK_ONLY_FIELDS.includes(field) && !RECORD_ONLY_FIELDS"
  },
  {
   "name": "Correct a row takes a trip typed",
