@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="18c3c979e74b3a08";
+var SALT_BUILD_ID="641c1519809d499d";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12658,7 +12658,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1567","d":"25 Nov 2026","t":"A LOT KEEPS WHAT IT PAID; CASH CHANGES ON RECORD","n":["<b>A LOT KEEPS WHAT IT PAID WHEN ITS PRICE MOVES.</b> A purchase lot paid in full before lots carried a cash figure keeps its old price as its cash when its price is raised or lowered: raised, it owes the difference; lowered, it reads overpaid, as any lot with its cash written does. Undo puts it back paid in full.","<b>THE PAID DAY.</b> A lot keeps its paid day when its price moves; the payment that makes it paid in full again is its paid day.","<b>CASH PAID, SETTLED AND HANDED OVER CHANGE ON RECORD.</b> Correct a row on Salt Admin no longer offers them and the Desk refuses them there, so a payment or a handover approved while a typed figure waits is never written over. A lot&#39;s units received stay on Correct a row.","<b>THE APPROVE CARD SAYS WHAT A RAISED LOT OWES.</b> A lot paid in full and raised says what it now owes; a lot whose cash is set lower in the same change is read on that cash."]}];
+const evolution=[{"v":"v1568","d":"25 Nov 2026","t":"GAS IS LETTERED P","n":["<b>GAS IS LETTERED P.</b> On Salt Counter and Salt Admin the starburst carries P in place of POP, his word, set at the size of every other letter.","<b>ON THE 44PX COIN TOO.</b> One capital stands on every coin from 44px, as the other books&#39; do; a 36px coin stays the shape alone."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12820,7 +12820,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Nov 2026, 15:29 KL';
+const LAST_UPDATED='25 Nov 2026, 17:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

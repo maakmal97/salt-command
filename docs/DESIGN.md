@@ -324,7 +324,7 @@ keep theirs; one list with filters; History newest first; nothing opens by itsel
   0.7.34): his letter stands INSIDE the shape, a `text.amb-thumb__letter` on the shape's 24 grid cut out in the coin's ground, and the shape
   takes the coin (24, 32, 40 and 52px in the 36, 44, 56 and 72px coins); no word stands under a shape. It retires his answer of 17 Nov 2026,
   the 44px coin as the shape alone. Ambient draws no letter under 12px, so two cases stay the shape alone: every 36px coin, and three
-  letters (POP) at 44px. The one rule is `coinLetter` in `stmt/page.js`, the page's `markThumb` its twin, the suite holding the two to one
+  letters at 44px (none today: gas is P since his word of 25 Nov 2026, POP before). The one rule is `coinLetter` in `stmt/page.js`, the page's `markThumb` its twin, the suite holding the two to one
   svg; the letter's middle is the grid's but in the droplet (`COIN_CY`). A plain mark of 20px and over keeps its letter as before. The year
   card reads an older line's book by its shape when no letter is drawn (`yearMark`).
 - **The toast.** Ambient's one toast (`[data-amb-toast]`, a popover) stands after the Counter's shell, as Ambient's guide places it, never

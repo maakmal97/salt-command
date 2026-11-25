@@ -1,7 +1,6 @@
 /* test/gas-prep-books.mjs: gas, the fifth book (27 Oct 2026, his word; it took the place of the retired spare book), and PrEP,
    opened beside it and REMOVED ENTIRELY on his word of 10 Nov 2026. On the LIVE book: gas is live, spare and PrEP are gone with no
-   row and no map key, the Counter's word list names exactly the books, gas has its mark, shape and letter (POP, a starburst, set
-   small), PrEP has none of them, no rule names it, and the `multiples` grid made for it still cuts a grid that carries one. */
+   row and no map key, the Counter's word list names exactly the books, gas has its mark, shape and letter (P, a starburst, his word of 25 Nov 2026; POP before), PrEP has none of them, no rule names it, and the `multiples` grid made for it still cuts a grid that carries one. */
 import { readFileSync } from "node:fs";
 import { LIVE_BOOK } from "./frozen.mjs";
 
@@ -18,12 +17,12 @@ export async function run({ ok }) {
     "gas is a live book, and spare and PrEP are gone with no row, no map key, no customer % and no note: " + JSON.stringify({ order: book.PROD_ORDER, spare: keyed("spare"), prep: keyed("prep"), prepRows: rowsOf("prep") }));
   const live = Object.values(book.PRODUCTS).filter((p) => !p.retired).map((p) => String(p.name).toLowerCase());
   ok(live.length === 5 && JSON.stringify(O.PRODUCT_WORDS.slice().sort()) === JSON.stringify(live.slice().sort()), "the Counter's product words are exactly the live books: " + JSON.stringify({ live, words: O.PRODUCT_WORDS }));
-  ok(P.PLET.gas === "POP" && P.PSHAPE.gas === "Starburst" && !!P.PSYM.gas && !("prep" in P.PLET) && !("prep" in P.PSHAPE) && !("prep" in P.PSYM),
-    "gas is a starburst lettered POP, and PrEP has no mark, shape or letter");
+  ok(P.PLET.gas === "P" && P.PSHAPE.gas === "Starburst" && !!P.PSYM.gas && !("prep" in P.PLET) && !("prep" in P.PSHAPE) && !("prep" in P.PSYM),
+    "gas is a starburst lettered P, and PrEP has no mark, shape or letter");
   const g = P.psymSvg("gas", 28), q = P.psymSvg("prep", 28);
   const fs = (s) => Number((s.match(/font-size="([0-9.]+)"/) || [])[1]);
-  ok(/>POP<\/text>/.test(g) && fs(g) < 8 && fs(g) * 0.6 * 3 <= 13.01 && !/<text/.test(q) && /A8\.6 8\.6/.test(q),
-    "gas sets POP small enough to sit inside the starburst, and a mark asked for PrEP is the bare Ring");
+  ok(/>P<\/text>/.test(g) && fs(g) === 8 && !/<text/.test(q) && /A8\.6 8\.6/.test(q),
+    "gas sets P at the one capital size, 8, like every other book, and a mark asked for PrEP is the bare Ring");
   const R = await import("../engine/rules.mjs"), D = R.default || R;
   const TR = R.TIER_RULE || D.TIER_RULE, PE = R.PRICE_ENGINE || D.PRICE_ENGINE, LB = R.LADDER_BY || D.LADDER_BY;
   const css = readFileSync(new URL("../design/salt-ds.css", import.meta.url), "utf8");

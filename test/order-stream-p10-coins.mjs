@@ -34,17 +34,21 @@ export async function run({ ok, pageWork }) {
     ok(big.some((c) => !ringOf(c)) && big.every((c) => (ringOf(c) ? wordOf(c) === "" : Object.values(P.PLET).includes(wordOf(c)))),
       "10b every coin of 56px and over carries his letter inside its shape, the Ring bare: " + big.length);
     /* 22 Nov 2026: THE TWINS DRAW ONE COIN. Every coin on the page (the script's markThumb) holds the very svg the markup's markThumbHtml gives for its
-       book and size, the letter, its class and its place included; and Ambient's floor leaves two cases the shape alone, a 36px coin and three letters at 44px. */
+       book and size, the letter, its class and its place included; and Ambient's floor leaves a 36px coin the shape alone (three letters at 44px too, none today: gas is P since 25 Nov 2026). */
     const KEYS = Object.keys(P.PSYM).filter((x) => x !== "_"), sizeOf = (c) => (["sm", "md", "lg"].find((z) => c.classList.contains("amb-thumb--" + z)) || "");
     const bookOf = (c) => KEYS[+(([...c.classList].find((x) => /^amb-kind-\d$/.test(x)) || "").slice(9)) - 1];
     const svgOf = (html) => new JSDOM("<body>" + html + "</body>").window.document.querySelector("svg").innerHTML;
     const drawn = [...p.d.querySelectorAll(".amb-thumb--mark")].filter((c) => bookOf(c)), apart = drawn.filter((c) => c.querySelector("svg").innerHTML !== svgOf(P.markThumbHtml(bookOf(c), sizeOf(c))));
-    ok(drawn.length >= 4 && new Set(drawn.map(sizeOf)).size >= 2 && drawn.some((c) => bookOf(c) === "gas" && !!c.querySelector("text.amb-thumb__letter--3")) && drawn.some((c) => bookOf(c) === "gas" && sizeOf(c) === "md" && !c.querySelector("text")) && !apart.length,
+    ok(drawn.length >= 4 && new Set(drawn.map(sizeOf)).size >= 2 && drawn.some((c) => bookOf(c) === "gas" && sizeOf(c) !== "md" && (c.querySelector("text.amb-thumb__letter") || {}).textContent === "P") && drawn.some((c) => bookOf(c) === "gas" && sizeOf(c) === "md" && (c.querySelector("text") || {}).textContent === "P") && !apart.length,
       "10b every coin the page draws is the markup's own for its book and size, letter and all: " + JSON.stringify([drawn.map((c) => bookOf(c) + ":" + sizeOf(c)).join(" "), apart.slice(0, 2).map((c) => c.outerHTML.slice(0, 200))]));
     const lt = (book, size) => { const x = new JSDOM("<body>" + P.markThumbHtml(book, size) + "</body>").window.document.querySelector("text"); return x ? [x.textContent, x.getAttribute("class"), x.getAttribute("x"), x.getAttribute("y")].concat(x.getAttribute("textLength") ? [x.getAttribute("textLength"), x.getAttribute("lengthAdjust")] : []).join("|") : ""; };
     const rule = [lt("gas"), lt("gas", "lg"), lt("gas", "md"), lt("gas", "sm"), lt("salt", "sm"), lt("salt", "md"), lt("oil", "md"), lt("tin")];
-    ok(JSON.stringify(rule) === JSON.stringify(["POP|amb-thumb__letter amb-thumb__letter--3|12|12|13.5|spacingAndGlyphs", "POP|amb-thumb__letter amb-thumb__letter--3|12|12|13.5|spacingAndGlyphs", "", "", "", "I|amb-thumb__letter|12|12", "G|amb-thumb__letter|12|13.4", ""]),
-      "10b three letters stand from 56px and are the shape alone at 44px, every 36px coin and the Ring are bare, a letter is sized by its class and centred, lower in the droplet, three held to 13.5 on the grid: " + JSON.stringify(rule));
+    ok(JSON.stringify(rule) === JSON.stringify(["P|amb-thumb__letter|12|12", "P|amb-thumb__letter|12|12", "P|amb-thumb__letter|12|12", "", "", "I|amb-thumb__letter|12|12", "G|amb-thumb__letter|12|13.4", ""]),
+      "10b gas's P stands on every coin from 44px like the other capitals (his word of 25 Nov 2026), every 36px coin and the Ring are bare, a letter is sized by its class and centred, lower in the droplet: " + JSON.stringify(rule));
+    /* the word path stays for a book lettered with a word (gas was POP until 25 Nov 2026); no book carries one, so gas lends POP for this check alone */
+    const was = P.PLET.gas; let word; try { P.PLET.gas = "POP"; word = [lt("gas"), lt("gas", "md")]; } finally { P.PLET.gas = was; }
+    ok(JSON.stringify(word) === JSON.stringify(["POP|amb-thumb__letter amb-thumb__letter--3|12|12|13.5|spacingAndGlyphs", ""]) && P.PLET.gas === "P",
+      "10b a word of three letters stands from 56px, sized by its class and held to 13.5 on the grid, and is the shape alone at 44px: " + JSON.stringify(word));
     ok(cs.getAttribute("aria-hidden") === "true" && /^Cube/.test(hs.getAttribute("aria-label")) && !hs.querySelector("svg.psym"),
       "10b the thumb is hidden from a reader and the head names the shape; the old mark is gone from the head");
     ok(attrsOf(p.d.getElementById("pPrices")).every((v) => !WORDS.some((w) => new RegExp("(^|[^a-z])" + w + "([^a-z]|$)").test(v))) && [...p.d.querySelectorAll("#pPrices .amb-thumb")].every((c) => [...c.classList].every((k) => /^amb-(thumb|thumb--(ring|mark|sm|md|lg)|kind-[1-6])$/.test(k))),

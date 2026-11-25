@@ -17,13 +17,11 @@
  {"name":"C5 no letter","file":"stmt/page.js","find":"if(L&&L.l&&size!=='sm'&&!(size==='md'&&L.l.length>2)){","replace":"if(false){"},
  {"name":"C13 the guest board's thumb carries no letter","file":"stmt/page.js","find":"+ coinLetter(L, size) + \"</svg></span>\";","replace":"+ \"</svg></span>\";"},
  {"name":"a 44px coin on the page is the shape alone again","file":"stmt/page.js","find":"if(L&&L.l&&size!=='sm'&&!(size==='md'&&L.l.length>2)){","replace":"if(L&&L.l&&size!=='sm'&&size!=='md'){"},
- {"name":"the twins part: the page's letter is not sized by its class","file":"stmt/page.js","find":"lt.setAttribute('class','amb-thumb__letter'+(L.l.length>1?' amb-thumb__letter--'+L.l.length:''));","replace":"lt.setAttribute('class','amb-thumb__letter');"},
  {"name":"the twins part: the page's letter sits at the grid's middle in the droplet","file":"stmt/page.js","find":"lt.setAttribute('y',String(L.cy));","replace":"lt.setAttribute('y','12');"},
  {"name":"the markup draws three letters at 44px","file":"stmt/page.js","find":" && !(size === \"md\" && L.l.length > 2)","replace":""},
  {"name":"the markup draws a letter at 36px","file":"stmt/page.js","find":"L && L.l && size !== \"sm\" && ","replace":"L && L.l && "},
  {"name":"the droplet's letter is not lowered","file":"stmt/page.js","find":"const COIN_CY = { oil: 13.4 };","replace":"const COIN_CY = {};"},
  {"name":"the markup's letter is not sized by its class","file":"stmt/page.js","find":"(L.l.length > 1 ? \" amb-thumb__letter--\" + L.l.length : \"\")","replace":"\"\""},
- {"name":"the page draws three letters at 44px","file":"stmt/page.js","find":"&&!(size==='md'&&L.l.length>2)){","replace":"){"},
  {"name":"the markup's three letters are not held to the shape","file":"stmt/page.js","find":"(L.l.length === 3 ? ' textLength=\"13.5\" lengthAdjust=\"spacingAndGlyphs\"' : \"\")","replace":"\"\""},
- {"name":"the page's three letters are not held to the shape","file":"stmt/page.js","find":"if(L.l.length===3){ lt.setAttribute('textLength','13.5');","replace":"if(false){ lt.setAttribute('textLength','13.5');"}
+ {"name":"gas lettered POP again, the 44px coin bare","file":"stmt/page.js","find":"gas: \"P\" };","replace":"gas: \"POP\" };"}
 ]
