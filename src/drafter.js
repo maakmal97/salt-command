@@ -921,14 +921,16 @@ export function draftRow(entry, book) {
       const changed = (f) => chk.changes.some((c) => c.field === f);
       const paid = isSale ? POSITION_ENGINE.txPaid(after) : POSITION_ENGINE.poCash(target);
       const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(after) : POSITION_ENGINE.poRecvUnits(target);
+      /* 25 Nov 2026 (the review): a lot's cash set lower on Record in the same Correction is what it then holds paid */
+      const lotPaid = !isSale && changed("cash") && isNum(after.cash) ? +after.cash : paid;
       /* 06 Oct 2026: ON A SALE THE DIFFERENCE IS A REFUND THE FOLD RAISES (the engine's refundOnOverpay), so a close at what
          was handed over or an amendment under what they paid is approved like any row, and the card says what opens */
       const owedAfter = isSale && isNum(after.total) ? +after.total + (isNum(after.delivery) ? +after.delivery : 0) : null;
       if (isSale && (changed("total") || changed("delivery")) && owedAfter != null && owedAfter < paid - 0.005) {
         flags.push(`The corrected row comes to RM ${round(owedAfter)}, under the RM ${round(paid)} already paid: the fold raises a refund payable to the customer for RM ${round(paid - owedAfter)}, open and Now until it is returned (paidOn in the book).`);
-      } else if (!isSale && changed("total") && isNum(after.total) && after.total < paid - 0.005) {
-        flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
-      } else if (!isSale && changed("total") && isNum(after.total) && paid > 0.009 && paid >= (+target.total || 0) - 0.009 && after.total > paid + 0.005) {
+      } else if (!isSale && changed("total") && isNum(after.total) && after.total < lotPaid - 0.005) {
+        flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(lotPaid)} already paid against this row.`);
+      } else if (!isSale && changed("total") && !changed("cash") && isNum(after.total) && paid > 0.009 && paid >= (+target.total || 0) - 0.009 && after.total > paid + 0.005) {
         flags.push(`The lot was paid in full at RM ${round(paid)}; at RM ${round(after.total)} it owes RM ${round(after.total - paid)}.`);
       }
       if (changed("qty") && isNum(after.qty) && after.qty < movedQty - 0.005) {

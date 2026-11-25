@@ -9,10 +9,11 @@
  *   P4  a Modification raising the total does the same as P1
  *   P6  the payment that makes a raised lot paid in full is its paid day; a raise put back by a fresh Correction keeps the old day (p042, 24 Oct 2026)
  *   P5  a lot with its cash written, a total sent unchanged (by Correction or Modification), an unpaid lot and a lot only agreed are as before
- *   C1  Correct a row's catalog offers no Cash paid, Settled RM, units handed over or units received (his answers: each moves on Record)
+ *   C1  Correct a row's catalog offers no Cash paid, Settled RM or units handed over (his answers: each moves on Record); a lot's units received stay
  *   C2  the Desk refuses a Correction setting any of them, a sale's cash lower or higher, a lot's raised or cleared, naming Record
  *   C3  and still drafts a lot's lower from Record, naming the cash it was read with
- *   D1  the Approve card says a lot paid in full and raised owes the difference */
+ *   D1  the Approve card says a lot paid in full and raised owes the difference
+ *   D2  and reads a lot whose cash is set lower in the same Correction on that cash (the review's finding 2) */
 import { applyAmend } from "../engine/apply.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { makerInputCatalog, makerLedgerAmendment } from "../src/maker-inputs.js";
@@ -84,24 +85,29 @@ export async function run({ ok }) {
 
     /* C1 */
     const fields = makerInputCatalog(book).correctionFields.map((f) => f.field);
-    ok(["cash", "settledRM", "deliveredQty", "receivedQty"].every((f) => !fields.includes(f)) && ["total", "qty", "paidOn", "deliveredOn", "handover"].every((f) => fields.includes(f)),
-      "C1: Correct a row offers no paid, settled, handed over or received figure: " + fields.join(","));
+    ok(["cash", "settledRM", "deliveredQty"].every((f) => !fields.includes(f)) && ["total", "qty", "paidOn", "deliveredOn", "handover", "receivedQty"].every((f) => fields.includes(f)),
+      "C1: Correct a row offers no paid, settled or handed over figure, and still a lot's units received: " + fields.join(","));
 
     /* C2 */
     const refused = [amend("zr7", { fields: { cash: 20 } }), amend("zr7", { fields: { cash: 80 } }), amend("zr8", { fields: { cash: 70 } }), amend("zr7", { fields: { cash: 20, total: 210 } }),
-      amend("zr7", { fields: { settledRM: 30 } }), amend("zr7", { fields: { deliveredQty: 2 } }), amend("zr8", { fields: { receivedQty: 1 } }),
-      amend("zr8", { fields: { cash: 40, receivedQty: 1 }, expect: { cash: 50 } }), amend("zr8", { fields: { cash: null } })];
-    ok(refused.every((r) => !r.entry && /^Paid, settled, handed over and received figures change on Record/.test(r.error || "")),
-      "C2: a Correction setting what a row holds paid, settled, handed over or received is refused, naming Record, a lot's lower carrying another alike: " + J(refused.map((r) => r.error)));
+      amend("zr7", { fields: { settledRM: 30 } }), amend("zr7", { fields: { deliveredQty: 2 } }),
+      amend("zr8", { fields: { cash: 40, settledRM: 5 }, expect: { cash: 50 } }), amend("zr8", { fields: { cash: null } })];
+    ok(refused.every((r) => !r.entry && /^Paid, settled and handed over figures change on Record/.test(r.error || "")),
+      "C2: a Correction setting what a row holds paid, settled or handed over is refused, naming Record, a lot's lower carrying another alike: " + J(refused.map((r) => r.error)));
 
     /* C3 */
-    const lower = amend("zr8", { fields: { cash: 40 }, expect: { cash: 50 } });
-    ok(lower.entry && !lower.error && J(lower.entry.payload.fields) === J({ cash: 40 }) && J(lower.entry.payload.expect) === J({ cash: 50 }),
-      "C3: a lot's lower from Record, naming the cash it was read with, is still drafted: " + J(lower.error || lower.entry.payload));
+    const lower = amend("zr8", { fields: { cash: 40 }, expect: { cash: 50 } }), recv = amend("zr8", { fields: { receivedQty: 1 } });
+    ok(lower.entry && !lower.error && J(lower.entry.payload.fields) === J({ cash: 40 }) && J(lower.entry.payload.expect) === J({ cash: 50 })
+      && recv.entry && !recv.error && J(recv.entry.payload.fields) === J({ receivedQty: 1 }),
+      "C3: a lot's lower from Record, naming the cash it was read with, is still drafted, and a lot's units received set on Correct a row: " + J([lower.error || lower.entry.payload, recv.error]));
 
-    /* D1 */
+    /* D1, D2 */
     const raised = amend("zr10", { fields: { total: 130 } }), said = J((raised.draft && raised.draft.flags) || []);
     ok(raised.entry && /The lot was paid in full at RM 100; at RM 130 it owes RM 30\./.test(said),
       "D1: the Approve card says a lot paid in full and raised owes the difference: " + J(raised.error || said));
+    const upLow = amend("zr10", { fields: { total: 120, cash: 80 }, expect: { cash: 100 } }), downLow = amend("zr10", { fields: { total: 80, cash: 60 }, expect: { cash: 100 } });
+    const said2 = J([(upLow.draft && upLow.draft.flags) || [], (downLow.draft && downLow.draft.flags) || []]);
+    ok(upLow.entry && downLow.entry && !/was paid in full|already paid against this row/.test(said2),
+      "D2: a lot raised or cut with its cash set lower is read on the cash it will hold, so the card claims neither paid in full nor overpaid: " + J([upLow.error, downLow.error, said2]));
   } finally { w.close(); }
 }

@@ -10,10 +10,11 @@ import { AGREED_ON_SITE } from "../engine/stages.mjs";
 const DESK_ONLY_FIELDS = ["note", "settle"];
 /* a trip is set by These are one order alone (makerTripJoin), which holds the whole trip together; Correct a row never offers it */
 const JOIN_ONLY_FIELDS = ["trip"];
-/* 25 Nov 2026 (his answers): what is paid, settled, handed over or received moves on Record, a payment or a handover adding to it and Undo
-   taking it back, so a move approved while a typed figure waits is never written over; Correct a row never offers them. A lot's cash set lower
-   on Record is the one Correction that carries one, naming the cash it was read with (lotDown below) */
-const RECORD_ONLY_FIELDS = ["cash", "settledRM", "deliveredQty", "receivedQty"];
+/* 25 Nov 2026 (his answers): what is paid, settled or handed over moves on Record, a payment or a handover adding to it and Undo taking it
+   back, so a move approved while a typed figure waits is never written over; Correct a row never offers them. A lot's cash set lower on Record
+   is the one Correction that carries one, naming the cash it was read with (lotDown below). A lot's units received stay on Correct a row: a lot
+   has no Undo here, so it is the one road to lower a receipt typed too high */
+const RECORD_ONLY_FIELDS = ["cash", "settledRM", "deliveredQty"];
 
 const object = (body) => !!body && typeof body === "object" && !Array.isArray(body);
 const timestamp = (at) => typeof at === "string" && Number.isFinite(Date.parse(at))
@@ -1170,7 +1171,7 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
   } else if (body.expect !== undefined) return { error: "Only a lower cash paid on a lot names the cash it was read with." };
   if (body.kind === "Correction" && body.undo === undefined && object(body.fields)
     && Object.keys(body.fields).some((field) => RECORD_ONLY_FIELDS.includes(field) && !(field === "cash" && lotDown)))
-    return { error: "Paid, settled, handed over and received figures change on Record: a payment or a handover adds to them, Undo takes one back, and a lot's cash paid is set lower there." };
+    return { error: "Paid, settled and handed over figures change on Record: a payment or a handover adds to them, Undo takes one back, and a lot's cash paid is set lower there." };
   if (body.kind === "Correction") {
     if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
       || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
