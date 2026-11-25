@@ -1160,7 +1160,7 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
   if (lotDown) {
     const e = body.expect, now = POSITION_ENGINE.poCash(row);
     if (!object(e) || Object.keys(e).join() !== "cash" || !figure(e.cash))
-      return { error: "A lower cash paid on a lot names the cash it was read with. Read the row again." };
+      return { error: "A lot's cash paid is lowered with Cash paid on Record, which sends the cash it was read with." };
     if (Math.abs(now - e.cash) > 0.004)
       return { error: "The lot's cash moved since it was read (RM " + now.toFixed(2) + ", not RM " + e.cash.toFixed(2) + "). Read the row again.", stale: true };
   } else if (body.expect !== undefined) return { error: "Only a lower cash paid on a lot names the cash it was read with." };

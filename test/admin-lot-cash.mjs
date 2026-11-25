@@ -11,6 +11,7 @@
  *   R1  the Desk's road drafts the lowered cash as a Correction under Approve
  *   R2  and holds it while money is on its way to the lot, naming why
  *   R3  a lowering names the cash it was read with: none, or a figure the lot no longer holds, is refused; the draft carries the stored figure as expect
+ *   R4  a lot stored paid with no cash field is checked on its paid figure and carries the stored 0, which the writer then takes (the re-check's note 2)
  *   E1  the writer (the fold and the Book's tap alike) sets the cash, keeps the lot paid, and records the figure it replaced
  *   E2  and refuses it, as the fold's plan does, on a lot whose cash moved since it was measured (a payment approved first is never written over)
  * Drawn by the maker harness (test/maker-act.mjs) and a migrated in-memory D1, as test/admin-undo.mjs does. */
@@ -46,7 +47,8 @@ async function fixture() {
   const source = await toolsBook();
   const ledger = JSON.parse(JSON.stringify(source.ledger)), version = source.version;
   source.w.close();
-  ledger.purchases.push(lot("zq1"), { ...lot("zq2"), cash: 100, status: "partial" });
+  const bare = lot("zq3"); delete bare.cash;
+  ledger.purchases.push(lot("zq1"), { ...lot("zq2"), cash: 100, status: "partial" }, bare);
   const db = new DatabaseSync(":memory:"), migrations = new URL("../migrations/", import.meta.url);
   for (const file of readdirSync(migrations).filter((f) => /^\d+_.*\.sql$/.test(f)).sort()) db.exec(readFileSync(new URL(file, migrations), "utf8"));
   db.exec(buildSeed({ v: version, stamped: ledger.stamped || null, ledger }).sql);
@@ -193,6 +195,13 @@ export async function run({ ok, pageWork }) {
     ok(r2.status === 409 && /lowering what it holds paid/.test(r2.j.error || "") && fx.drafts().filter((x) => x.amends === "zq2" && x.amend_kind === "Correction").length === 0
       && /Money is already on its way to this row\. Decide it before lowering what it holds paid\./.test(room) && free === "",
       "R2: a lowered cash is held while a payment is on its way to the lot, and passes on a lot with none: " + J([r2.status, r2.j.error, room, free]));
+    /* R4 */
+    const r4 = await fx.call(AMEND, { at: "2026-11-25T02:00:04.000Z", rid: "zq3", kind: "Correction", date: "2026-11-25", fields: { cash: 140 }, expect: { cash: 150 } });
+    const made4 = fx.drafts().filter((x) => x.amends === "zq3");
+    const row4 = lot("zq3"); delete row4.cash;
+    applyAmend(row4, { date: "2026-11-25", kind: "Correction", cash: 0, kg: 0, fields: { cash: 140 }, expect: made4.length ? made4[0].entry.payload.expect : undefined }, "BUY", null);
+    ok(r4.status === 200 && made4.length === 1 && J(made4[0].entry.payload.expect) === J({ cash: 0 }) && row4.cash === 140 && row4.status === "partial",
+      "R4: a lot stored paid with no cash field is read on its paid figure, carries the stored 0, and the writer takes it: " + J([r4.status, r4.j.error, made4.map((x) => x.entry.payload.expect), row4.cash, row4.status]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
 
   /* E1 */
