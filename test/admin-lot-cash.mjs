@@ -4,11 +4,15 @@
  *   L1  a purchase row's Cash paid typed lower asks first, naming the figure now and after; Keep it posts nothing
  *   L2  Lower it posts ONE Correction whose fields are the cash alone; units received with it go as a Fulfilment carrying no cash
  *   L3  a sale's Cash paid typed lower still posts nothing and points to Undo; a lot's units typed lower still posts nothing
+ *   L4  a lowering the Desk refuses is not kept to retry: the next tap asks again (the review standing in for Fable, finding 2); one under the total clears paidOn
  *   F1  Find narrows Row to the rows whose reference, code, book or date holds what is typed, and says how many
  *   F2  a reference typed whole opens that row; one row left opens it; nothing matching leaves Row at New alone and says so
+ *   F3  while a move waits to go after a refused change, Find opens no other row (the review's note 4)
  *   R1  the Desk's road drafts the lowered cash as a Correction under Approve
  *   R2  and holds it while money is on its way to the lot, naming why
+ *   R3  a lowering names the cash it was read with: none, or a figure the lot no longer holds, is refused; the draft carries the stored figure as expect
  *   E1  the writer (the fold and the Book's tap alike) sets the cash, keeps the lot paid, and records the figure it replaced
+ *   E2  and refuses it, as the fold's plan does, on a lot whose cash moved since it was measured (a payment approved first is never written over)
  * Drawn by the maker harness (test/maker-act.mjs) and a migrated in-memory D1, as test/admin-undo.mjs does. */
 import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -19,6 +23,7 @@ import { buildSeed } from "../tools/d1.mjs";
 import { readBook } from "../src/drafter.js";
 import { makerAmendmentRoom } from "../src/maker-inputs.js";
 import { applyAmend } from "../engine/apply.mjs";
+import { plan } from "../tools/fold.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { richOwnerPage, byAct, enter, answerSheets } from "./maker-act.mjs";
 
@@ -106,7 +111,7 @@ export async function run({ ok, pageWork }) {
     A("record.trade.send").click(); await quiet();
     const sent = amends(go0);
     ok(sent.length === 2 && sent[0].kind === "Correction" && sent[0].rid === "zq1" && J(sent[0].fields) === J({ cash: 150 })
-      && sent[1].kind === "Fulfilment" && sent[1].rid === "zq1" && sent[1].cash === 0 && sent[1].movedUnits === 1 && /wait under Approve/.test(status()),
+      && J(sent[0].expect) === J({ cash: 164 }) && sent[1].kind === "Fulfilment" && sent[1].expect === undefined && sent[1].rid === "zq1" && sent[1].cash === 0 && sent[1].movedUnits === 1 && /wait under Approve/.test(status()),
       "L2: Lower it posts one Correction setting the cash alone, and the unit received with it as a Fulfilment carrying no cash: " + J([sent, status()]));
 
     /* L3 */
@@ -120,6 +125,17 @@ export async function run({ ok, pageWork }) {
     const units = [amends(u0).length, status()];
     ok(sale[0] === 0 && sale[1] === 0 && /Undo under History/.test(sale[2]) && units[0] === 0 && /less than the book holds/.test(units[1]),
       "L3: a sale's Cash paid typed lower posts nothing and points to Undo, unasked; a lot's units typed lower post nothing: " + J([sale, units]));
+
+    /* L4 */
+    await choose("zq1"); put("record.trade.cash", "120");
+    p.refuse[AMEND] = "Money is already on its way to this row. Decide it before lowering what it holds paid.";
+    A("record.trade.send").click(); await quiet();
+    const kept4 = [w.localStorage.getItem("saltMakerPending:" + AMEND), status(), asked.length];
+    delete p.refuse[AMEND];
+    const l4 = p.posts.length;
+    A("record.trade.send").click(); await quiet();
+    ok(kept4[0] === null && /on its way/.test(kept4[1]) && asked.length === kept4[2] + 1 && amends(l4).length === 1 && J(amends(l4)[0].fields) === J({ cash: 120, paidOn: null }),
+      "L4: a lowering the Desk refuses is not kept to retry, and the next tap asks again: " + J([kept4, asked.length, amends(l4).length]));
 
     /* F1, F2 */
     await choose("");
@@ -141,17 +157,36 @@ export async function run({ ok, pageWork }) {
     const none = [opts(), hint()];
     ok(whole[0] === "zq1" && whole[1] === "164" && oneLeft[0] === "zs1" && oneLeft[1] === "CX1-ZED" && J(none[0]) === J([""]) && none[1] === "No row matches that.",
       "F2: a reference typed whole opens that row, a date leaving one row opens it, and nothing matching leaves Row at New and says so: " + J([whole, oneLeft, none]));
+
+    /* F3 */
+    await type(""); await choose("zq10"); put("record.trade.total", "110"); put("record.trade.cash", "10");
+    p.refuse[AMEND] = "Refused for the fixture.";
+    A("record.trade.send").click(); await quiet();
+    await type("zs1");
+    const held = [A("record.trade.edit").value, A("record.trade.party").value];
+    delete p.refuse[AMEND];
+    const f3 = p.posts.length;
+    A("record.trade.send").click(); await quiet();
+    const went = amends(f3).map((b) => [b.rid, b.kind]);
+    ok(J(held) === J(["zq10", "SX1-ZED"]) && J(went) === J([["zq10", "Correction"], ["zq10", "Fulfilment"]]),
+      "F3: while a move waits after a refused change, Find opens no other row, and the retry sends both: " + J([held, went]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
 
   /* R1, R2 */
   const fx = await fixture();
   try {
     const n0 = fx.drafts().length;
-    const r1 = await fx.call(AMEND, { at: "2026-11-25T02:00:00.000Z", rid: "zq1", kind: "Correction", date: "2026-11-25", fields: { cash: 150 } });
+    const bare = await fx.call(AMEND, { at: "2026-11-25T01:59:58.000Z", rid: "zq1", kind: "Correction", date: "2026-11-25", fields: { cash: 150 } });
+    const stale = await fx.call(AMEND, { at: "2026-11-25T01:59:59.000Z", rid: "zq1", kind: "Correction", date: "2026-11-25", fields: { cash: 150 }, expect: { cash: 160 } });
+    const raise = await fx.call(AMEND, { at: "2026-11-25T01:59:57.000Z", rid: "zq1", kind: "Correction", date: "2026-11-25", fields: { cash: 170 }, expect: { cash: 164 } });
+    ok(bare.status === 400 && /read with/.test(bare.j.error || "") && stale.status === 400 && /moved since it was read \(RM 164\.00, not RM 160\.00\)/.test(stale.j.error || "")
+      && raise.status === 400 && /Only a lower cash/.test(raise.j.error || "") && fx.drafts().length === n0,
+      "R3: a lowering naming no cash, or a cash the lot no longer holds, is refused, and only a lowering names one: " + J([bare.j.error, stale.j.error, raise.j.error]));
+    const r1 = await fx.call(AMEND, { at: "2026-11-25T02:00:00.000Z", rid: "zq1", kind: "Correction", date: "2026-11-25", fields: { cash: 150 }, expect: { cash: 164 } });
     const made = fx.drafts().filter((x) => x.amends === "zq1");
-    ok(r1.status === 200 && made.length === 1 && made[0].amend_kind === "Correction" && J(made[0].entry.payload.fields) === J({ cash: 150 }) && fx.drafts().length === n0 + 1,
+    ok(r1.status === 200 && made.length === 1 && made[0].amend_kind === "Correction" && J(made[0].entry.payload.fields) === J({ cash: 150 }) && J(made[0].entry.payload.expect) === J({ cash: 164 }) && fx.drafts().length === n0 + 1,
       "R1: the Desk drafts a lot's lowered cash as one Correction under Approve: " + J([r1.status, r1.j.error, made.map((x) => x.entry.payload.fields)]));
-    const r2 = await fx.call(AMEND, { at: "2026-11-25T02:00:01.000Z", rid: "zq2", kind: "Correction", date: "2026-11-25", fields: { cash: 90 } });
+    const r2 = await fx.call(AMEND, { at: "2026-11-25T02:00:01.000Z", rid: "zq2", kind: "Correction", date: "2026-11-25", fields: { cash: 90 }, expect: { cash: 100 } });
     const book = await fx.mirror();
     const room = await makerAmendmentRoom(fx.D1, E.ledgerAmendmentEntry({ at: "2026-11-25T02:00:02.000Z", row: book.purchases.find((x) => x.rid === "zq2"), direction: "BUY", kind: "Correction", date: "2026-11-25", fields: { cash: 90 } }), book);
     const free = await makerAmendmentRoom(fx.D1, E.ledgerAmendmentEntry({ at: "2026-11-25T02:00:03.000Z", row: book.purchases.find((x) => x.rid === "zq1"), direction: "BUY", kind: "Correction", date: "2026-11-25", fields: { cash: 150 } }), book);
@@ -167,4 +202,15 @@ export async function run({ ok, pageWork }) {
   ok(row.cash === 150 && row.status === "paid" && E.poCash(row) === 150 && row.freight === 14 && last.kind === "Correction" && J(last.was) === J({ cash: 164 }) && last.cash === 0 && last.kg === 0
     && row.amend[0].note === "as booked" && row.amend[0].cash === 164,
     "E1: the writer sets the lot's cash, keeps it paid with its freight beside it, and records the figure it replaced: " + J([row.cash, row.status, last, row.amend[0]]));
+
+  /* E2 */
+  const paidSince = { ...lot("zq1"), cash: 184 };
+  let threw = "";
+  try { applyAmend(paidSince, { date: "2026-11-25", kind: "Correction", cash: 0, kg: 0, fields: { cash: 150 }, expect: { cash: 164 } }, "BUY", null); } catch (e) { threw = e.message; }
+  const item = { id: "e2", collection: "purchases", amends: "zq1", amendKind: "Correction", row: { rid: "zq1", qty: 3, total: 150, cash: 164 },
+    entry: { payload: { mode: "amend", direction: "BUY", rid: "zq1", kind: "Correction", date: "2026-11-25", fields: { cash: 150 }, expect: { cash: 164 } } } };
+  const pPaid = plan({ sales: [], purchases: [{ ...lot("zq1"), cash: 184 }] }, { approved: [item] }), pSame = plan({ sales: [], purchases: [lot("zq1")] }, { approved: [item] });
+  ok(/money moved since it was measured \(RM 184\.00, not RM 164\.00\)/.test(threw) && paidSince.cash === 184
+    && pPaid.refused.length === 1 && /money moved since/.test(pPaid.refused[0].why) && pSame.refused.length === 0 && pSame.items.length === 1,
+    "E2: the writer and the fold's plan refuse a lowering on a lot whose cash moved since, and take it on the lot as measured: " + J([threw, pPaid.refused, pSame.refused]));
 }
