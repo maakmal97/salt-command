@@ -4683,9 +4683,18 @@ export const OWNER_JS = `
           if(assocNow!==assocWas) f.assoc=assocNow;
           if(r2&&(tradeDown.value||null)!==(r.downstream||null)) f.downstream=tradeDown.value||null;
         }
-        /* what was handed over and paid since is a movement, the difference; less than the book holds is taken back with Undo, never typed down */
-        var dCash=+(Number(tradeCash.value||0)-(+r.cash||0)).toFixed(2), dUnits=+(Number(tradeMoved.value||0)-(+r.movedUnits||0)).toFixed(4);
-        if(dCash<-0.004||dUnits<-0.00005) throw new Error('That is less than the book holds. Take it back with Undo under History.');
+        /* what was handed over and paid since is a movement, the difference; less than the book holds is taken back with Undo, never typed down.
+           25 Nov 2026, his answer: A LOT'S CASH PAID MAY BE SET LOWER, a purchase's alone (p059 had its freight typed into its cash, the double count
+           engine/position.mjs warns of). It is asked first and goes as the Correction's own cash; the Desk holds it while money is on its way to the lot */
+        var dCash=+(Number(tradeCash.value||0)-(+r.cash||0)).toFixed(2), dUnits=+(Number(tradeMoved.value||0)-(+r.movedUnits||0)).toFixed(4), lotDown=!sale&&dCash<-0.004;
+        if(dUnits<-0.00005||dCash<-0.004&&!lotDown) throw new Error('That is less than the book holds. Take it back with Undo under History.');
+        if(lotDown){
+          var cashNow=+(+r.cash||0).toFixed(2), cashThen=+Number(tradeCash.value||0).toFixed(2), lotOwes=f.total!=null?f.total:(+r.total||0);
+          if(!await ownerAsk(send.button,'cash-down:'+r.rid,{title:'Lower the cash paid on '+r.rid+'?',
+            say:['Paid now: '+rm(cashNow)+'. After: '+rm(cashThen)+', with '+rm(Math.max(0,lotOwes-cashThen))+' left to pay.','It waits under Approve.'],
+            go:'Lower it', keep:'Keep it'})){ tradeAnswer.textContent=''; return; }
+          f.cash=cashThen; dCash=0;
+        }
         var moved=dCash>=0.005||dUnits>=0.00005;
         if(!Object.keys(f).length&&!moved) throw new Error('Nothing has changed.');
         tradeAnswer.textContent='Sending.';

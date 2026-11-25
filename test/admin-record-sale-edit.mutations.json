@@ -13,7 +13,7 @@
  {"name":"c: their price is asked with a total","file":"stmt/owner.js","find":"{direction:'sale',product:productCtl.value,qty:Number(qtyCtl.value),party:who}","replace":"{direction:'sale',product:productCtl.value,qty:Number(qtyCtl.value),party:who,total:1}"},
  {"name":"d: the row's cash is not loaded","file":"stmt/owner.js","find":"tradeCash.value=String(+(+(r.cancelledRow?r.paid:r.cash)||0).toFixed(2));","replace":"tradeCash.value='0';"},
  {"name":"d: an unchanged form sends","file":"stmt/owner.js","find":"if(!Object.keys(f).length&&!moved) throw new Error('Nothing has changed.');","replace":""},
- {"name":"d: less than the book holds is sent","file":"stmt/owner.js","find":"if(dCash<-0.004||dUnits<-0.00005) throw","replace":"if(false) throw"},
+ {"name":"d: less than the book holds is sent","file":"stmt/owner.js","find":"if(dUnits<-0.00005||dCash<-0.004&&!lotDown) throw","replace":"if(false) throw"},
  {"name":"d: a changed price is not a Correction","file":"stmt/owner.js","find":"if(!same(tradeTotal.value,r.total)) f.total=Number(tradeTotal.value);","replace":""},
  {"name":"d: the movement is a Correction too","file":"stmt/owner.js","find":"editAfter=moved?{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Fulfilment'","replace":"editAfter=moved?{at:new Date(at+1).toISOString(),rid:r.rid,kind:'Correction'"},
  {"name":"d: the pill of an open row","file":"stmt/owner.js","find":"r.cancelledRow?'Reopen this '+word:'Record the change';","replace":"r.cancelledRow?'Reopen this '+word:'Send the change';"},
