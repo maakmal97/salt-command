@@ -1,0 +1,50 @@
+[
+  {
+    "name": "cached winner is counted twice",
+    "file": "src/drafter.js",
+    "find": "if (i < 0) lots.push(lot); else lots[i] = lot;",
+    "replace": "lots.push(lot);"
+  },
+  {
+    "name": "losing row replaces stored winner",
+    "file": "src/drafter.js",
+    "find": "const lot = Object.assign(row, { _draft: at });",
+    "replace": "const lot = Object.assign({}, d.row, { _draft: at });"
+  },
+  {
+    "name": "winning-row read failure is hidden",
+    "file": "src/drafter.js",
+    "find": "AND collection='purchases' AND status IN ('pending','approved') AND amends IS NULL\").bind(at).first();",
+    "replace": "AND collection='purchases' AND status IN ('pending','approved') AND amends IS NULL\").bind(at).first().catch(() => null);"
+  },
+  {
+    "name": "dry run counts cached winner twice",
+    "file": "src/drafter.js",
+    "find": " && !(book.draftLots || []).some((lot) => lot._draft === at)",
+    "replace": ""
+  },
+  {
+    "name": "rejected winner is admitted",
+    "file": "src/drafter.js",
+    "find": "AND collection='purchases' AND status IN ('pending','approved') AND amends IS NULL\").bind(at).first();",
+    "replace": "AND collection='purchases' AND amends IS NULL\").bind(at).first();"
+  },
+  {
+    "name": "cached rejected winner remains",
+    "file": "src/drafter.js",
+    "find": "else if (i >= 0) lots.splice(i, 1);",
+    "replace": "else {}"
+  },
+  {
+    "name": "cached winner is not refreshed",
+    "file": "src/drafter.js",
+    "find": "else lots[i] = lot;",
+    "replace": "else {}"
+  },
+  {
+    "name": "fresh purchase is not added",
+    "file": "src/drafter.js",
+    "find": "if (made && made.meta && made.meta.changes) lots.push(Object.assign({}, d.row, { _draft: at }));",
+    "replace": "if (made && made.meta && made.meta.changes) {}"
+  }
+]

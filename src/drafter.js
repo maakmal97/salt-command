@@ -2086,7 +2086,8 @@ export async function dryRunDrafter(env) {
     else {
       out.would.push({ at, collection: d.collection, row: d.row, reasoning: d.reasoning, flags: d.flags });
       reservedEntries.push(entry);
-      if (d.collection === "purchases" && !d.amends) (book.draftLots = book.draftLots || []).push(Object.assign({}, d.row, { _draft: at }));
+      if (d.collection === "purchases" && !d.amends && !(book.draftLots || []).some((lot) => lot._draft === at))
+        (book.draftLots = book.draftLots || []).push(Object.assign({}, d.row, { _draft: at }));
     }
   }
   return out;
@@ -2377,8 +2378,22 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
     if (made && made.meta && made.meta.changes) out.drafted++;
     else out.raced++;
     reservedEntries.push(entry);
-    /* 05 Oct 2026: a lot drafted in this pass is the latest purchase for a sale after it in the same pass */
-    if (d.collection === "purchases" && !d.amends) (book.draftLots = book.draftLots || []).push(Object.assign({}, d.row, { _draft: at }));
+    /* A raced lot must be the stored winner, once, whether it arrived before or after the lot read. */
+    if (d.collection === "purchases" && !d.amends) {
+      const lots = book.draftLots = book.draftLots || [];
+      if (made && made.meta && made.meta.changes) lots.push(Object.assign({}, d.row, { _draft: at }));
+      else {
+        const saved = await env.SALT_LEDGER.prepare("SELECT id,row FROM draft WHERE id=?1 AND " + unfolded(boundOf(book))
+          + " AND collection='purchases' AND status IN ('pending','approved') AND amends IS NULL").bind(at).first();
+        const i = lots.findIndex((lot) => lot._draft === at);
+        if (saved) {
+          const row = JSON.parse(saved.row);
+          if (!row || typeof row !== "object" || Array.isArray(row)) throw new Error("raced purchase draft has an invalid row: " + at);
+          const lot = Object.assign(row, { _draft: at });
+          if (i < 0) lots.push(lot); else lots[i] = lot;
+        } else if (i >= 0) lots.splice(i, 1);
+      }
+    }
     /* S11 (D6): A ROW A SITE ORDER MADE MAY ALREADY HAVE HIS YES, given on the order card before it existed. It is
        spent here, where the row is made, only by the pass that made it and only on an exact match; a fault
        leaves the row pending, as every row was before. */

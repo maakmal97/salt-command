@@ -32947,6 +32947,7 @@ await (async () => {
   const q = await pass([deskSale, siteSale]);
   ok(q.r.ok && q.refused(deskSale.at) && q.by(deskSale.at) === null && q.r.skipped.some((x) => /a new sale is a site order now/.test(x.why)) && q.by(siteSale.at) !== null,
     "a new sale from the queue with no site order is refused by the pass and filed refused, while a site order's sale drafts: " + say(q.r));
+  await (await import("./floor-draft-race.mjs")).run({ ok });
 
   /* THE WAKE, through the quarter-hour net itself, with the push service stubbed */
   const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
