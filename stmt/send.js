@@ -61,19 +61,11 @@ export function linkMessage(row) {
  *  message, no password in it, and it says plainly what the link is: theirs, once, and not for
  *  passing on. It does not promise it cannot be forwarded, because it can.
  *  S3 3.4, HIS D1 OF 24 SEP 2026: THE LINK KEEPS THE PHONE SIGNED IN, and the message says so and names the
- *  username, so the customer knows what to type if they ever meet the door. It still carries no home screen
- *  steps: on an iPhone the saved app is carried across by a code the page shows, not by this message.
+ *  username, so the customer knows what to type if they ever meet the door. v771: it sends the Home Screen
+ *  step to Account, This device, where the page shows the code that carries an iPhone's sign-in across.
  *  A second argument from an old caller changes nothing (v769). */
 export function signInMessage(row) {
-  return "Salt Counter access is ready.\n\n"
-    + "Website: " + new URL(row.url).origin + "\n"
-    + "Account link, works once and expires after 3 days: " + row.url + "\n"
-    + "Username: " + row.user + "\n\n"
-    + "Open the account link once. Then save Salt Counter to the Home Screen and turn on notifications "
-    + "under Account, This device.\n\n"
-    + "Later access: create a passkey under Account, This device. In private browsing, generate a "
-    + "one-time passcode under Account.\n\n"
-    + "Keep the account link private: it opens the account until it is used.";
+  return "Salt Counter:\n" + new URL(row.url).origin + "\n\n" + "Account access:\n" + row.url + "\n\n" + "Username: " + row.user + "\n\n" + "Open the account link once, then save Salt Counter to the phone's Home Screen and turn on notifications in Account, This device.\n\n" + "For future access, create a passkey in Account, This device. For private browsing, get a one-time code from Sign in another device in Account.\n\n" + "The account link works once and expires after three days.";
 }
 
 /** The second message: the password, and nothing that says which account it opens. */

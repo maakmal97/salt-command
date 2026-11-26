@@ -22064,8 +22064,8 @@ await (async () => {
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
   /* v771 (his word of 26 Nov 2026): the message sends the saved app's steps through Account, This device, where the keep page carries
      the sign-in across by a code; it still promises no tick and no sign-in by the link alone */
-  ok(!/Remember me|Keep me signed in|signs you in/.test(sign) && /Open the account link once\. Then save Salt Counter to the Home Screen/.test(sign)
-    && /under Account, This device/.test(sign) && /expires after 3 days/.test(sign),
+  ok(!/Remember me|Keep me signed in|signs you in/.test(sign) && /Open the account link once, then save Salt Counter to the phone's Home Screen/.test(sign)
+    && /in Account, This device\./.test(sign) && /expires after three days/.test(sign),
     "the message promises no tick and no sign-in by the link alone, sends the saved app through Account, and says the link expires after three days: "
     + JSON.stringify(sign.slice(-160)));
   ok(/Open it from there and sign in with Keep me signed in ticked/.test(link),
@@ -24309,7 +24309,7 @@ await (async () => {
     "English is the only table, with no language keys and no Malay list exported: " + Object.keys(WD.WORDS).join());
   const row = { url: "https://site.test/s/" + "Ab3_x".repeat(6) + "Zq", user: "abcd-efgh", pw: "2345-6789-abcd-efgh" };
   const m = S.signInMessage(row);
-  ok(m.startsWith("Salt Counter access is ready.") && !/Akaun|pautan|kata laluan/i.test(m) && m.split("\n\n").length === 5 && S.signInMessage(row, { langs: ["en", "ms"] }) === m,
+  ok(m.startsWith("Salt Counter:\n") && !/Akaun|pautan|kata laluan/i.test(m) && m.split("\n\n").length === 6 && S.signInMessage(row, { langs: ["en", "ms"] }) === m,
     "the sign-in message is the English alone, whatever a caller hands in: " + JSON.stringify(m.slice(-80)));
   const served = [P.landingPage("abcd-efgh", "nM1", null, null), P.landingPage("abcd-efgh", "nM2", null, null, { langs: ["en", "ms"] }), P.landingPage("", "nM3", { master: "m", accounts: [] }, null)];
   ok(served.every((h) => h.length > 1000 && !/data-l="/.test(h) && !/class="salt-tabs lang"/.test(h) && !/salt-lang/.test(h) && !/\/lang['"]/.test(h) && !/Bahasa/.test(h) && !/__LIVE__/.test(h)),
@@ -26796,9 +26796,9 @@ await (async () => {
 
   /* ---- the words ---- */
   const msg = SEND34.signInMessage({ url: "https://site.test/s/" + t34, user: u34 });
-  ok(/^Salt Counter access is ready\./.test(msg) && msg.includes("Username: " + u34 + "\n")
-    && msg.includes("Account link, works once and expires after 3 days: https://site.test/s/" + t34)
-    && msg.includes("Website: https://site.test\n"),
+  ok(/^Salt Counter:\n/.test(msg) && msg.includes("Username: " + u34 + "\n")
+    && msg.includes("Account access:\nhttps://site.test/s/" + t34)
+    && msg.includes("Salt Counter:\nhttps://site.test\n\n"),
     "the message names the website, the link (works once, three days) and the username: " + JSON.stringify(msg.slice(0, 160)));
 })();
 section("S3 3.5: a lapsed session reopens itself from the remembered phone and repeats the request once, the page re-reads on every return, and only with nothing remembered does a Sheet ask, keeping the draft");
@@ -28892,8 +28892,7 @@ await (async () => {
   const msg10 = SEND10.signInMessage({ url: "https://k7m3p2.example/s/" + tok10, user: u10 }, "September 2026");
   ok(!/password/i.test(msg10.replace(/username and password/i, "")) && !msg10.includes(pw10),
     "the message carries no password at all, which is the whole of why the link exists");
-  ok(/works once/.test(msg10) && /Keep the account link private: it opens the account until it is used\./.test(msg10)
-    && /expires after 3 days/.test(msg10),
+  ok(/works once/.test(msg10) && /expires after three days/.test(msg10),
     "and it says plainly what the link is: it works once, is kept private, and expires after three days");
   const sendSrc = readFileSync(join(REPO, "stmt", "send.js"), "utf8");
   ok((sendSrc.match(/export function signInMessage/g) || []).length === 1
@@ -39395,7 +39394,7 @@ await (async () => {
     ok(!/statement of account for /.test(msg) && !/\bmonthly\b/.test(msg)
       && !/January|February|March|April|May|June|July|August|September|October|November|December/.test(msg),
       what + "'s message names no month and promises no monthly statement: " + JSON.stringify(msg.slice(0, 60)));
-    ok(/^(Salt Counter access is ready\.|Your (Salt Counter )?account is ready[ .])/.test(msg), what + "'s message opens on the account, not on a document");
+    ok(/^(Salt Counter:\n|Your (Salt Counter )?account is ready[ .])/.test(msg), what + "'s message opens on the account, not on a document");
     /* v771: the link's message is the short one the owner asked for, so only the username road still says what the account is for and where a question goes */
     if (what === "the username") ok(/statement of account, which keeps up with your orders/.test(msg) && /latest prices/.test(msg)
       && /a form to place an order/.test(msg) && /write it on the order and I will answer you there/.test(msg),
@@ -39403,7 +39402,7 @@ await (async () => {
     /* S1 1.3, 24 SEP 2026: the door's two switches only where the reader reaches the door. The link route
        never shows the tick, so the link's message promising it was false (B03). */
     /* F5, UX3 (v771): the link's message sends the Home Screen step through Account, where the keep page carries the sign-in; the username's keeps its own steps */
-    ok(what === "the link" ? !/Install app|Remember me|Keep me signed in/.test(msg) && /save Salt Counter to the Home Screen and turn on notifications under Account, This device/.test(msg)
+    ok(what === "the link" ? !/Install app|Remember me|Keep me signed in/.test(msg) && /save Salt Counter to the phone's Home Screen and turn on notifications in Account, This device/.test(msg)
       : /Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Keep me signed in/.test(msg) && /Log out/.test(msg),
       what + "'s message carries the home screen steps and the door's two switches only where the reader reaches the door");
     ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
@@ -39411,8 +39410,7 @@ await (async () => {
   }
 
   /* ---- AND WHAT EACH ONE STILL HAS TO SAY ---- */
-  ok(/works once/.test(sign) && /expires after 3 days/.test(sign)
-    && /Keep the account link private: it opens the account until it is used\./.test(sign),
+  ok(/works once/.test(sign) && /expires after three days/.test(sign),
     "the link's own message still says it works once, expires after three days, and is to be kept private: it can be forwarded "
     + "and the message does not pretend otherwise");
   ok(/Username: 27a4-gkgw/.test(link) && /password is in a separate message/.test(link) && !/signs you in/.test(link),
