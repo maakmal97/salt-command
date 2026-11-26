@@ -65,11 +65,15 @@ export function linkMessage(row) {
  *  steps: on an iPhone the saved app is carried across by a code the page shows, not by this message.
  *  A second argument from an old caller changes nothing (v769). */
 export function signInMessage(row) {
-  return "Your Salt Counter account is ready. Tap to open it on this phone:\n" + row.url + "\n\n"
-    + "Your username is " + row.user + ". The link works once and keeps this phone signed in.\n\n"
-    + INSIDE + "\n\n"
-    + "Open it yourself and do not pass it on: anybody holding it can open your account until you "
-    + "have used it. It stops working after three days; if it has, ask me for a new link.";
+  return "Salt Counter access is ready.\n\n"
+    + "Website: " + new URL(row.url).origin + "\n"
+    + "Account link, works once and expires after 3 days: " + row.url + "\n"
+    + "Username: " + row.user + "\n\n"
+    + "Open the account link once. Then save Salt Counter to the Home Screen and turn on notifications "
+    + "under Account, This device.\n\n"
+    + "Later access: create a passkey under Account, This device. In private browsing, generate a "
+    + "one-time passcode under Account.\n\n"
+    + "Keep the account link private: it opens the account until it is used.";
 }
 
 /** The second message: the password, and nothing that says which account it opens. */
