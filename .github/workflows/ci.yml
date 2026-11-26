@@ -38,6 +38,7 @@ jobs:
     timeout-minutes: 20
     outputs:
       covered: ${{ steps.chain.outputs.covered }}
+      tier: ${{ steps.tier.outputs.tier }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09      # v5, which runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
 
@@ -155,6 +156,22 @@ jobs:
       # .deployed.json.id, NEVER by hashing the build output before and after". Same fault,
       # same fix. The id hashes the master, the app, the service worker and every src/*.js,
       # which is the question actually being asked.
+      # PATH-TIERED PR SUITES: a PR touching only docs/ or *.md runs the fast docs tier (banned-word,
+      # workflow lint, mutation needles) instead of all 1,014 sections. Code PRs and pushes to master always run full.
+      - name: Which suite tier does this PR need?
+        id: tier
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          tier=full
+          files=$(gh api "repos/$REPO/pulls/$PR/files?per_page=100" --paginate --jq '.[].filename') || files=""
+          if [ -n "$files" ] && ! grep -Evq '^(docs/.*|[^/]+\.md)$' <<< "$files"; then tier=docs; fi
+          echo "tier=$tier" >> "$GITHUB_OUTPUT"
+          echo "PR suite tier: $tier"
+
       - name: The committed build matches the master
         run: |
           set -euo pipefail
@@ -197,3 +214,5 @@ jobs:
       - run: npm ci
       - name: Tests
         run: npm test -- --part ${{ matrix.part }}/3 --jobs 2
+        env:
+          SALT_SUITE_TIER: ${{ needs.verify.outputs.tier }}

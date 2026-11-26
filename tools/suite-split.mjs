@@ -120,13 +120,33 @@ export function pack(units, jobs, cost) {
   return shards;
 }
 
+/* Path/domain tiers for fast local iteration (--tier <name>) and docs-only PRs in CI (SALT_SUITE_TIER). */
+export const TIERS = {
+  docs: (b) => /mutation needle|workflow|banned|copy|glossary|surface-words|CLAUDE\.md|waits for what it checks|frees its windows/i.test(b.title + " " + b.text.slice(0, 240)),
+  admin: (b) => /salt admin|admin|maker|vault|access|queue/i.test(b.title),
+  counter: (b) => /counter|statement|stmt|order stream|pay|slip|remind|hours|pool/i.test(b.title),
+  desk: (b) => /desk|b5 of #62|design|theme|tide|chart|rail|ambient|perf:|round 7|s1 1\.12|fold 3\.2/i.test(b.title),
+  engine: (b) => /engine|pric|floor|band|loyalty|reward|fold|ledger|book|d1|refund|lot/i.test(b.title),
+};
+export function tierFor(argv, env = process.env) {
+  const ti = argv.indexOf("--tier");
+  const raw = ti >= 0 ? String(argv[ti + 1] || "") : String(env.SALT_SUITE_TIER || "");
+  if (!raw || raw === "full") return null;
+  return Object.prototype.hasOwnProperty.call(TIERS, raw) ? raw : { bad: raw };
+}
+export function filterTier(blocks, tier) {
+  if (!tier || tier === "full") return blocks;
+  return blocks.filter(TIERS[tier]);
+}
+
 /* the one road from verify.mjs to shards */
-export function plan(text, { jobs, past = {}, costs = {} }) {
+export function plan(text, { jobs, past = {}, costs = {}, tier = null } = {}) {
   const suite = readSuite(text);
   if (!suite) return null;
-  const { serial, units } = unitsOf(suite.blocks);
-  const cost = coster(suite.blocks, past, costs);
-  return { ...suite, serial, cost, shards: pack(units, jobs, cost) };
+  const blocks = filterTier(suite.blocks, tier);
+  const { serial, units } = unitsOf(blocks);
+  const cost = coster(blocks, past, costs);
+  return { ...suite, blocks, serial, cost, shards: pack(units, jobs, cost) };
 }
 
 /* ONE SHARD, THE ONE WAY A SECTION IS RUN OUT OF verify.mjs (27 Sep 2026). The prelude, the blocks in the suite's order and
@@ -202,12 +222,14 @@ if (isMain) {
     process.exit(0);
   }
 
+  const tier = tierFor(process.argv.slice(2));
+  if (tier && tier.bad !== undefined) { console.log(`  FAIL  --tier takes full|${Object.keys(TIERS).join("|")}: ${tier.bad}`); process.exit(1); }
   const part = partFor(process.argv.slice(2));
   if (part && part.bad !== undefined) { console.log(`  FAIL  --part takes i/n, 1 <= i <= n <= 10: ${part.bad}`); process.exit(1); }
   /* a part packs by the committed costs alone, so every runner cuts the suite the same way */
   const JOBS = part ? part.n : jobsFor(process.argv.slice(2), cpus().length);
   if (!part) console.log(`${cpus().length} cores, ${(totalmem() / GB).toFixed(1)} GB, ${(freemem() / GB).toFixed(1)} GB free: ${JOBS} shards`);
-  const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs });
+  const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs, tier });
   if (!p) { console.log("  FAIL  cannot find the sections or the footer in test/verify.mjs"); process.exit(1); }
   const { prelude, footer, blocks, serial, cost } = p;
   const shards = part ? partShards(p.shards[part.i - 1], process.argv.slice(2), cpus().length, cost) : p.shards;
