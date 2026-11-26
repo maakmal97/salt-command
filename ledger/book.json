@@ -61,7 +61,8 @@
     {"date":"2026-11-18","drift":-10,"product":"rice","qty":85,"was":95},
     {"date":"2026-11-23","drift":-2.25,"product":"salt","qty":2,"was":4.25},
     {"date":"2026-11-23","drift":-13,"product":"oil","qty":52,"was":65},
-    {"date":"2026-11-23","drift":6,"product":"rice","qty":50,"was":44}
+    {"date":"2026-11-23","drift":6,"product":"rice","qty":50,"was":44},
+    {"date":"2026-11-26","drift":-5,"product":"oil","qty":17,"was":22}
   ],
   "INTRODUCTIONS": [
     {"by":"CJ4-OKR","customer":"CC9-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
@@ -706,7 +707,9 @@
     {"amend":[{"cash":0,"date":"2026-11-25","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"cost":2.95,"date":"2026-11-25","kg":1,"kind":"Correction","note":"corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":8,"date":"2026-11-25","kg":0,"kind":"Fulfilment"}],"cash":8,"cost":2.95,"customer":"CK4-SEN","date":"2026-11-25","deliveredOn":"2026-11-25","deliveredQty":1,"handover":"collected","mod":"corrected on 2026-11-25: deliveredQty 0 to 1; deliveredOn (unset) to 2026-11-25; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-25","product":"rice","qty":1,"rid":"s434","road":"site","total":8},
     {"amend":[{"cash":0,"date":"2026-11-25","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"date":"2026-11-25","kg":0,"kind":"Correction","note":"corrected on 2026-11-25: delivery 15 to 0","was":{"delivery":15}},{"cash":155,"date":"2026-11-25","kg":0,"kind":"Fulfilment"},{"cash":0,"date":"2026-11-25","kg":0,"kind":"Correction","note":"corrected on 2026-11-25: qty 20 to 30; total 155 to 230","was":{"qty":20,"total":155}},{"cash":75,"date":"2026-11-25","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":234.6,"date":"2026-11-25","kg":30,"kind":"Correction","note":"corrected on 2026-11-25: deliveredQty 0 to 30; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":230,"cost":234.6,"customer":"CA2-SEN","date":"2026-11-25","deliveredOn":"2026-11-25","deliveredQty":30,"delivery":0,"handover":"delivered","mod":"corrected on 2026-11-25: delivery 15 to 0, then corrected on 2026-11-25: qty 20 to 30; total 155 to 230, then corrected on 2026-11-25: deliveredQty 0 to 30; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered","note":"Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-25","product":"oil","qty":30,"rid":"s435","road":"site","total":230},
     {"amend":[{"cash":0,"date":"2026-11-25","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":750,"date":"2026-11-25","kg":0,"kind":"Fulfilment"},{"cash":0,"cost":675,"date":"2026-11-25","kg":12.5,"kind":"Correction","note":"corrected on 2026-11-25: deliveredQty 0 to 12.5; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}}],"cash":750,"cost":675,"customer":"CA2-SEN","date":"2026-11-25","deliveredOn":"2026-11-25","deliveredQty":12.5,"handover":"delivered","listQty":12.5,"listRM":750,"mod":"corrected on 2026-11-25: deliveredQty 0 to 12.5; deliveredOn (unset) to 2026-11-25; handover (unset) to delivered","note":"Booked when it was approved and written into this book by the export of 2026-11-25. Written by the tool, not a model: the figures are the row's own.","oneOff":{"by":30,"side":"under","why":"Allowable"},"paidOn":"2026-11-25","qty":12.5,"rid":"s436","road":"site","total":750},
-    {"cash":0,"customer":"CF7-KUC","date":"2026-11-25","deliveredQty":0,"listQty":1,"listRM":130,"note":"Booked when it was approved and written into this book by the export of 2026-11-26. Written by the tool, not a model: the figures are the row's own.","oneOff":{"by":64,"side":"under","why":"Sllowed"},"qty":1,"rid":"s437","road":"site","total":1}
+    {"amend":[{"cash":0,"date":"2026-11-25","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"date":"2026-11-26","kg":0,"kind":"Cancellation"}],"cancelled":true,"cancelledOn":"2026-11-26","cash":0,"customer":"CF7-KUC","date":"2026-11-25","deliveredQty":0,"listQty":1,"listRM":130,"note":"Booked when it was approved and written into this book by the export of 2026-11-26. Written by the tool, not a model: the figures are the row's own.","oneOff":{"by":64,"side":"under","why":"Sllowed"},"qty":1,"rid":"s437","road":"site","total":1},
+    {"amend":[{"cash":0,"date":"2026-11-26","kg":0,"kind":"Fulfilment","note":"as booked"},{"cash":0,"cost":60,"date":"2026-11-26","kg":2,"kind":"Correction","note":"corrected on 2026-11-26: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-26; handover (unset) to collected","was":{"deliveredOn":null,"deliveredQty":0,"handover":null}},{"cash":60,"date":"2026-11-26","kg":0,"kind":"Fulfilment"}],"cash":60,"cost":60,"customer":"CM4-TO-R","date":"2026-11-26","deliveredOn":"2026-11-26","deliveredQty":2,"handover":"collected","mod":"corrected on 2026-11-26: deliveredQty 0 to 2; deliveredOn (unset) to 2026-11-26; handover (unset) to collected","note":"Booked when it was approved and written into this book by the export of 2026-11-27. Written by the tool, not a model: the figures are the row's own.","paidOn":"2026-11-26","product":"candy","qty":2,"rev":"R2","rid":"s438","road":"site","total":60},
+    {"cash":0,"cost":54,"customer":"CF7-KUC","date":"2026-11-26","deliveredOn":"2026-11-26","deliveredQty":1,"goodwill":true,"note":"Booked when it was approved and written into this book by the export of 2026-11-27. Written by the tool, not a model: the figures are the row's own.","qty":1,"rid":"s439","road":"admin","settledRM":54,"total":54}
   ],
   "selfUseLog": [
     {"date":"2026-08-23","kg":6.8,"note":"Self use, the 20 in his 20:80; dated at the count.","product":"oil","why":"personal"},
@@ -752,7 +755,7 @@
   "COUNT_ON": {
     "candy": "2026-11-07",
     "gas": "2026-11-02",
-    "oil": "2026-11-23",
+    "oil": "2026-11-26",
     "rice": "2026-11-23",
     "salt": "2026-11-23"
   },
@@ -769,6 +772,7 @@
       "v781, 22 Sep 2026: WHO EARNS IS A FIELD ON THE BOOK NOW. The reward scheme was salt-only by five bare string comparisons in the master and two in the drafter, so no book opened after salt could ever earn without a code edit, whatever the book said about itself. reward is true on salt and false on every other book, which is exactly what those comparisons meant, so nothing moves today. Whether candy or rice ever earn is his decision and a data one."
     ],
     "PROD_OPENING": [
+      "COUNTED AT the tap on 2026-11-26: the oil inventory held 17 against 22 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-11-26.",
       "COUNTED AT the tap on 2026-11-23: the rice inventory held 50 against 44 on the roll, a difference of 6. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-11-23.",
       "COUNTED AT the tap on 2026-11-23: the oil inventory held 52 against 65 on the roll, a difference of -13. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-11-23.",
       "COUNTED AT the tap on 2026-11-18: the rice inventory held 85 against 95 on the roll, a difference of -10. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-11-18.",
@@ -1510,7 +1514,7 @@
     "candy": {
       "costPerKg": null,
       "qty": 0,
-      "stated": 10
+      "stated": 8
     },
     "gas": {
       "costPerKg": 50,
@@ -1520,7 +1524,7 @@
     "oil": {
       "costPerKg": 7.666666666666667,
       "qty": 5,
-      "stated": 22
+      "stated": 17
     },
     "rice": {
       "costPerKg": null,
@@ -1533,7 +1537,7 @@
       "stated": null
     }
   },
-  "QUEUE_COMMITTED": "2026-11-25T14:51:28.541Z",
+  "QUEUE_COMMITTED": "2026-11-25T20:19:25.114Z",
   "QUOTES": {
     "candy": {
       "kind": "live quote",
@@ -1697,7 +1701,7 @@
       "upTo": "s411"
     }
   },
-  "STATED_STOCK": 13,
+  "STATED_STOCK": 12,
   "TIER_OF": {
     "CA2-SEN": {
       "salt": -0.8
