@@ -44691,8 +44691,15 @@ section("v824: one rate, one cover and one run-out date on every page, the resto
 await (async () => {
   /* HIS REPORT OF 24 SEP 2026: To do, Stock and Sourcing said 5.96 unit a day, 1.2 days and dry on 25 Sep while the restock
      card said 5.68, 1.3 days and 26 Sep. Each live book's readers are compared with that book's own restockFor. */
+  /* 27 Nov 2026: THE CLOCK IS THE FROZEN BOOK'S DAY. On the real clock the frozen book's sales (last row 15 Oct 2026) aged out
+     of every plan's demand, so from about 22 Nov no book had a cover and this section went red on the calendar alone. The
+     window reads 16 Oct 2026, the day test/engine-*.mjs pin, for Date.now() and every new Date() alike. */
   const { openMaster } = await import("../tools/payload.mjs");
-  const { w } = await openMaster();
+  const FROZEN_DAY = Date.UTC(2026, 9, 16, 4, 0, 0);
+  const { w } = await openMaster(undefined, { before: (win) => {
+    const D = win.Date;
+    win.Date = class extends D { constructor(...a) { if (a.length) super(...a); else super(FROZEN_DAY); } static now() { return FROZEN_DAY; } };
+  } });
   const v = JSON.parse(w.eval("JSON.stringify(eachBook(function(p){var r=restockFor(p),cv=coverStats(),L=currentLot(),a=actions().filter(function(x){return x.kind==='buy';})[0];"
     + "var fr=+(currentStock-defUnits).toFixed(2),call=shelfCall(cv,fr<0,fr),f=forecast();"
     + "return {plan:r&&!r.empty?{base:r.base,days:r.coverDays,date:r.coverDate}:null,rate:cv.rate,days:cv.days,"
