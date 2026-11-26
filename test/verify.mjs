@@ -225,7 +225,9 @@ const pageWork = (win) => {
      connects to nothing, so no section reaches for a network it is not about */
   if (!win.__liveFake) win.WebSocket = class { constructor(url, protocols) { this.url = String(url); this.protocols = protocols; this.readyState = 0; } send() {} close() { this.readyState = 3; } };
   let n = 0;
-  const track = (p) => { n++; return Promise.resolve(p).finally(() => { n--; }); };
+  const waiters = [];
+  const wake = () => { if (n === 0 && waiters.length) for (const fn of waiters.splice(0)) fn(); };
+  const track = (p) => { n++; return Promise.resolve(p).finally(() => { n--; wake(); }); };
   const reads = (r) => {
     if (r && typeof r === "object") for (const k of ["json", "text", "arrayBuffer"]) {
       const g = r[k];
@@ -245,7 +247,18 @@ const pageWork = (win) => {
     inFlight: () => n,
     quiet: async () => {
       const end = Date.now() + 60000;
-      for (let still = 0; still < 3 && Date.now() < end; still = n ? 0 : still + 1) await new Promise((r) => setTimeout(r, 5));
+      for (let still = 0; still < 3 && Date.now() < end; ) {
+        if (n > 0) {
+          still = 0;
+          await new Promise((r) => {
+            const t = setTimeout(r, 50);
+            waiters.push(() => { clearTimeout(t); r(); });
+          });
+        } else {
+          await new Promise((r) => setImmediate(r));
+          still = n === 0 ? still + 1 : 0;
+        }
+      }
       return n === 0;
     }
   };
@@ -37404,6 +37417,7 @@ await (async () => {
         w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
         w.scrollTo = () => {};
         w.HTMLCanvasElement.prototype.getContext = () => null;
+        w.WebSocket = class { constructor(url, protocols) { this.url = String(url); this.protocols = protocols; this.readyState = 0; } send() {} close() { this.readyState = 3; } };
         w.fetch = async (path) => {
           const p = String(path); asked.push(p);
           const j = (b) => ({ ok: true, status: 200, json: async () => b, text: async () => JSON.stringify(b) });
@@ -37440,11 +37454,12 @@ await (async () => {
     const hasRow = a.w.eval("actions().some(function(x){return x.kind==='orders';})") === true;
     ok(hasRow && badge(a.w, "today") === String(now),
       "and Today's count, with Site orders not on screen, is the Now list that carries it: " + JSON.stringify({ badge: badge(a.w, "today"), now, hasRow }));
+    a.w.close(); open.length = 0;
 
-    const b = await cold("orders", "k-fixture"); open.push(b.w);
     const e = await cold("enter", "k-fixture"); open.push(e.w);
     const landed = JSON.parse(e.w.eval("JSON.stringify([curTab,curAddr,location.hash])"));
     ok(JSON.stringify(landed) === '["money","money","#money"]', "an old #enter address lands on Money: " + JSON.stringify(landed));
+    e.w.close(); open.length = 0;
 
     const c = await cold("today", ""); open.push(c.w);
     await new Promise((r) => setTimeout(r, 200));
@@ -37509,6 +37524,7 @@ await (async () => {
       w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
       w.scrollTo = () => {};
       w.HTMLCanvasElement.prototype.getContext = () => null;
+      w.WebSocket = class { constructor(url, protocols) { this.url = String(url); this.protocols = protocols; this.readyState = 0; } send() {} close() { this.readyState = 3; } };
       const every = w.setInterval.bind(w);
       w.setInterval = (f, ms, ...rest) => (ms >= 10000 ? 0 : every(f, ms, ...rest));
       sw = new w.EventTarget();
@@ -49040,25 +49056,68 @@ await (async () => {
   await (await import("./admin-bar-status.mjs")).run({ ok });
 })();
 
+section("Counter maker — maker-inputs");
+await (async () => {
+  await (await import("./maker-inputs.mjs")).run({ ok });
+})();
+
+section("Counter maker — maker-geography");
+await (async () => {
+  await (await import("./maker-geography.mjs")).run({ ok });
+})();
+
+section("Counter maker — vault-pair");
+await (async () => {
+  await (await import("./vault-pair.mjs")).run({ ok });
+})();
+
+section("Counter maker — vault-write-gate");
+await (async () => {
+  await (await import("./vault-write-gate.mjs")).run({ ok });
+})();
+
+section("Counter maker — vault-writers");
+await (async () => {
+  await (await import("./vault-writers.mjs")).run({ ok });
+})();
+
+section("Counter maker — desk-vault-pair");
+await (async () => {
+  await (await import("./desk-vault-pair.mjs")).run({ ok });
+})();
+
+section("Counter maker — desk-maker-constructors");
+await (async () => {
+  await (await import("./desk-maker-constructors.mjs")).run({ ok });
+})();
+
+section("Counter maker — maker-offsets");
+await (async () => {
+  await (await import("./maker-offsets.mjs")).run({ ok });
+})();
+
+section("Counter maker — maker-house-sizes");
+await (async () => {
+  await (await import("./maker-house-sizes.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+})();
+
+section("Counter maker — maker-addid-tiers");
+await (async () => {
+  await (await import("./maker-addid-tiers.mjs")).run({ ok });
+})();
+
+section("Counter maker — maker-hush");
+await (async () => {
+  await (await import("./maker-hush.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+})();
+
+section("Counter maker — vault-local-files");
+await (async () => {
+  await (await import("./vault-local-files.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
-  const inputChecks = await import("./maker-inputs.mjs");
-  await inputChecks.run({ ok });
-  const geographyChecks = await import("./maker-geography.mjs");
-  await geographyChecks.run({ ok });
-  const vaultPairChecks = await import("./vault-pair.mjs");
-  await vaultPairChecks.run({ ok });
-  const vaultWriterChecks = await import("./vault-writers.mjs");
-  await (await import("./vault-write-gate.mjs")).run({ ok });
-  await vaultWriterChecks.run({ ok });
-  const deskVaultChecks = await import("./desk-vault-pair.mjs");
-  await deskVaultChecks.run({ ok });
-  const incumbentChecks = await import("./desk-maker-constructors.mjs");
-  await incumbentChecks.run({ ok });
-  await (await import("./maker-offsets.mjs")).run({ ok });
-  await (await import("./maker-house-sizes.mjs")).run({ ok, KV, worker, handleMaker, REPO });
-  await (await import("./maker-addid-tiers.mjs")).run({ ok });
-  await (await import("./maker-hush.mjs")).run({ ok, KV, worker, handleMaker, REPO });
   const owner = { email: "  MAAKMAL97@ICLOUD.COM " };
   const calls = [];
   const key = "counter-maker-test-key-0123456789abcdef";
@@ -49327,7 +49386,6 @@ await (async () => {
       "closed hours do not block the customer order POST");
   } finally { page.close(); }
   const countBody = { at: "2026-09-29T12:00:00.000Z", date: "2026-09-29", product: "salt", qty: 0 };
-  await (await import("./vault-local-files.mjs")).run({ ok });
   const savedMapFetch = globalThis.fetch, mapFetches = [];
   try {
     globalThis.fetch = async (url, options) => {

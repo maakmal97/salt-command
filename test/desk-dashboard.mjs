@@ -33,23 +33,44 @@ export async function run({ ok }) {
     ];
     const refused = [{ id: "2026-10-01T00:00:00.000Z", why: "Invented refusal.", entry: { raw: "Invented entry" } }, { id: "fold:1", why: "A notice.", seenAt: NOW }];
     const answer = (body, status = 200) => ({ ok: status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
+    let inFlight = 0;
+    const waiters = [];
+    const wake = () => { if (inFlight === 0 && waiters.length) for (const fn of waiters.splice(0)) fn(); };
     w.fetch = async (path, options = {}) => {
-      path = String(path); const method = (options.method || "GET").toUpperCase();
-      if (method !== "GET") {
-        posts.push({ path, method, body: options.body || "", headers: options.headers || {}, in: ctl.where });
-        if (path === "queue" && ctl.first401) { ctl.first401 = false; return answer({ ok: false }, 401); }
-        return answer({ ok: true, revision: 1, entries: 1, droppedAts: [], sent: 0 });
+      inFlight++;
+      try {
+        path = String(path); const method = (options.method || "GET").toUpperCase();
+        if (method !== "GET") {
+          posts.push({ path, method, body: options.body || "", headers: options.headers || {}, in: ctl.where });
+          if (path === "queue" && ctl.first401) { ctl.first401 = false; return answer({ ok: false }, 401); }
+          return answer({ ok: true, revision: 1, entries: 1, droppedAts: [], sent: 0 });
+        }
+        if (path.startsWith("drafts")) return answer({ ok: true, drafts, refused, clock: null });
+        if (path.startsWith("orders")) return answer({ ok: true, orders, claims: [{ kind: "account", id: "k1", u: "abcd-efgh", code: "CC9-OKR", amount: 100, state: "waiting", at: NOW }], threads: [{ u: "abcd-efgh", code: "CC9-OKR", msgs: [{ by: "customer", at: NOW, text: "hello" }] }], links: 0 });
+        if (path === "expected") return answer({ ok: true, expected: {} });
+        if (path === "bulletin") return answer({ ok: true, lines: ["A notice"] });
+        if (path === "hush") return answer({ ok: true, hush: {} });
+        if (path === "push/key") return answer({ key: "" });
+        return answer({ ok: false }, 404);
+      } finally {
+        inFlight--;
+        wake();
       }
-      if (path.startsWith("drafts")) return answer({ ok: true, drafts, refused, clock: null });
-      if (path.startsWith("orders")) return answer({ ok: true, orders, claims: [{ kind: "account", id: "k1", u: "abcd-efgh", code: "CC9-OKR", amount: 100, state: "waiting", at: NOW }], threads: [{ u: "abcd-efgh", code: "CC9-OKR", msgs: [{ by: "customer", at: NOW, text: "hello" }] }], links: 0 });
-      if (path === "expected") return answer({ ok: true, expected: {} });
-      if (path === "bulletin") return answer({ ok: true, lines: ["A notice"] });
-      if (path === "hush") return answer({ ok: true, hush: {} });
-      if (path === "push/key") return answer({ key: "" });
-      return answer({ ok: false }, 404);
     };
     const ctl = { where: "" };
-    const settle = () => new Promise((r) => setTimeout(r, 40));
+    /* Event-driven settle: drains microtasks + immediate turns until all fetches settle (0 ms idle vs 40 ms fixed sleep) */
+    const settle = async () => {
+      const end = Date.now() + 10000;
+      for (let still = 0; still < 2 && Date.now() < end; ) {
+        if (inFlight > 0) {
+          still = 0;
+          await new Promise((r) => { waiters.push(r); setTimeout(r, 50); });
+        } else {
+          await new Promise((r) => setImmediate(r));
+          still = inFlight === 0 ? still + 1 : 0;
+        }
+      }
+    };
     /* one entry this device holds and the Worker has not confirmed: the recovery panel offers it Send and Discard */
     w.eval("qSyncState='server';qReceipts=new Set();qSentThrough=qSentAtLoad='2000-01-01T00:00:00.000Z';queue=" + JSON.stringify([
       { at: "2099-01-01T00:00:01.000Z", type: "LOSS", party: null, qty: 2, total: null, status: "unpaid", raw: "Self-use 2 units", payload: { mode: "loss", date: "2026-10-01", product: "salt", kg: 2, why: "other", note: "" } }])
@@ -59,14 +80,16 @@ export async function run({ ok }) {
     await w.eval("apLoad(true)"); await w.eval("ordLoad(true)");
 
     /* ---- draw every part, with the fixture, and press every control that is not the recovery panel's ---- */
+    /* WeakSet deduplicates persistent DOM nodes across parts so controls outside the active panel are not re-clicked 13x */
     const D = w.document;
     const views = JSON.parse(w.eval("JSON.stringify(VIEWS.map(function(v){return [v.id,[v.lead].concat(v.parts)];}))"));
     const seen = []; const handlers = []; let pressed = 0;
+    const clicked = new WeakSet();
     const sources = (el) => (el.getAttribute("onclick") || "") + " " + (typeof el.onclick === "function" ? el.onclick.name : "");
     for (const [, parts] of views) {
       for (const part of parts) {
         w.eval("switchTab(" + JSON.stringify(part) + ")");
-        await settle(); await settle();
+        await settle();
         if (part === "inventory") { w.eval("expDraw();"); }
         const scope = D.body;
         const controls = [...scope.querySelectorAll("button, a[onclick], [onclick], summary")].filter((e) => !e.closest("#queueBox") && !e.closest(".rail") && !e.closest("#tabs") && !e.closest(".vnav"));
@@ -75,7 +98,8 @@ export async function run({ ok }) {
           handlers.push(sources(e));
         }
         for (const e of controls) {
-          if (e.disabled || !e.isConnected) continue;
+          if (e.disabled || !e.isConnected || clicked.has(e)) continue;
+          clicked.add(e);
           ctl.where = part; pressed++;
           try { e.click(); } catch (err) { /* a handler that throws is not a post */ }
         }
@@ -99,7 +123,7 @@ export async function run({ ok }) {
 
     /* ---- the writes the Desk keeps still work ---- */
     posts.length = 0;
-    w.eval("switchTab('inventory')"); await settle(); await settle();   /* the restock date is on Stock since 17 Oct 2026 */
+    w.eval("switchTab('inventory')"); await settle();   /* the restock date is on Stock since 17 Oct 2026 */
     w.eval("EXPECTED={salt:'2099-01-01'};expDraw()");   /* 15 Nov 2026: a held day keeps the control on whatever the light */
     const inp = D.getElementById("exp_salt");
     if (inp) inp.value = "2099-12-31";
@@ -123,12 +147,12 @@ export async function run({ ok }) {
 
     /* ---- the recovery panel is the one road to /queue ---- */
     posts.length = 0;
-    w.eval("switchTab('today')"); await settle(); await settle();   /* the recovery panel is #queueBox on To do since 18 Oct 2026 */
+    w.eval("switchTab('today')"); await settle();   /* the recovery panel is #queueBox on To do since 18 Oct 2026 */
     w.eval("qSyncState='server';qRecBusy=false;qReceipts=new Set();qRecMsg='';renderQueue()");
     const send = D.querySelector("#qRecovery button[onclick^=\"qRecSend\"]");
     ctl.where = "recovery";
     if (send) send.click();
-    await settle(); await settle();
+    await settle();
     ok(!!send && posts.some((p) => p.path === "queue" && p.in === "recovery"),
       "the recovery panel's Send still posts the entry it holds to /queue: " + JSON.stringify(posts.map((p) => p.path)));
     /* the road a missing or wrong key takes: the first post is answered 401, the key is asked for, and the same entry goes again with it */

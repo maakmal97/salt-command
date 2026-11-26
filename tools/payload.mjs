@@ -75,6 +75,7 @@ export async function openMaster(masterPath = MASTER, opts = {}) {
       if (!opts.fresh) store.set("salt-look", "night");
       if (opts.before) opts.before(w, store);
       w.fetch = () => Promise.reject(new Error("no network during a payload build"));
+      if (!w.__liveFake) w.WebSocket = class { constructor(url, protocols) { this.url = String(url); this.protocols = protocols; this.readyState = 0; } send() {} close() { this.readyState = 3; } };
       w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() { }, removeListener() { }, addEventListener() { }, removeEventListener() { } }));
       w.scrollTo = () => { };
       w.HTMLCanvasElement.prototype.getContext = () => null;   // charts are not needed here

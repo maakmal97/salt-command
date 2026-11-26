@@ -38,7 +38,7 @@
  *   node tools/suite-split.mjs --part 2/3      the build phase and the second of three shards (CI, one runner a part)
  *   node tools/suite-split.mjs --write-costs   test/suite-costs.json from this machine's last run; runs nothing
  */
-import { readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, readdirSync, statSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -84,14 +84,28 @@ export function unitsOf(blocks) {
 }
 
 /* a section's cost: this machine's last time, else the committed cost, else its length at the rate the costed ones run */
+const importLenCache = new Map();
+function effectiveLen(text) {
+  let len = text.length;
+  for (const m of text.matchAll(/import\s*\(["']\.\/([^"']+\.mjs)["']\)/g)) {
+    const f = m[1];
+    if (!importLenCache.has(f)) {
+      let n = 0;
+      try { n = statSync(join(REPO, "test", f)).size; } catch (e) { n = 0; }
+      importLenCache.set(f, n);
+    }
+    len += importLenCache.get(f);
+  }
+  return len;
+}
 export function coster(blocks, past = {}, costs = {}) {
   const has = (o, t) => Object.prototype.hasOwnProperty.call(o, t) && Number.isFinite(o[t]);
   const from = (b) => (has(past, b.title) ? "run" : has(costs, b.title) ? "file" : "length");
   const known = (b) => (has(past, b.title) ? past[b.title] : costs[b.title]);
   let ms = 0, chars = 0;
-  for (const b of blocks) if (from(b) !== "length") { ms += known(b); chars += b.text.length; }
+  for (const b of blocks) if (from(b) !== "length") { ms += known(b); chars += effectiveLen(b.text); }
   const rate = ms > 0 && chars > 0 ? ms / chars : 1 / 20;
-  const cost = (b) => (from(b) === "length" ? b.text.length * rate : known(b));
+  const cost = (b) => (from(b) === "length" ? effectiveLen(b.text) * rate : known(b));
   cost.from = from;
   return cost;
 }
@@ -215,6 +229,8 @@ if (isMain) {
       .then(({ code, res }) => { if (last) times[last] = Date.now() - lastAt; return { name, code, res, n: bl.length }; });
   };
 
+  /* Build the frozen master copy ONCE in the orchestrator so shards inherit SALT_MASTER & SALT_BOOK */
+  await import("../test/frozen.mjs");
   const t0 = Date.now();
   const results = [];
   if (serial.length) results.push(await run("serial", serial));

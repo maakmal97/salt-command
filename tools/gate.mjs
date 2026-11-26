@@ -12,16 +12,28 @@
  * suite runs after the phone is live and fails the run loudly if it fails; it never pulls a
  * correct ledger back off the phone.
  *
- *   node tools/gate.mjs        exit 0 when every check passes, 1 on the first that does not
+ * PARALLEL CHECKS: CHECKS are independent read-only verifications, so the CLI runs them concurrently
+ * via async execFile + Promise.all and prints results in CHECKS order (cutting 14 cold Node starts
+ * in series down to the single slowest check).
+ *
+ *   node tools/gate.mjs                exit 0 when every check passes, 1 on the first that does not
+ *   node tools/gate.mjs --verify-only  run the 12 ci.yml verify checks concurrently (skips extract & build)
  */
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { oneCodeEach } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const run = (args) => execFileSync(process.execPath, args.map((a) => a.startsWith("tools/") ? resolve(REPO, a) : a), { cwd: REPO, encoding: "utf8", stdio: "pipe" });
+const resolveArgs = (args) => args.map((a) => (a.startsWith("tools/") ? resolve(REPO, a) : a));
+const run = (args) => execFileSync(process.execPath, resolveArgs(args), { cwd: REPO, encoding: "utf8", stdio: "pipe" });
+const runAsync = (args) => new Promise((done) => {
+  const t = Date.now();
+  execFile(process.execPath, resolveArgs(args), { cwd: REPO, encoding: "utf8", maxBuffer: 1 << 24 }, (err, stdout, stderr) => {
+    done({ ok: !err, ms: Date.now() - t, out: String(stdout || stderr || (err && err.message) || "") });
+  });
+});
 
 export const CHECKS = [
   ["the workflows parse", ["tools/lint-workflows.mjs"]],
@@ -81,24 +93,47 @@ export function buildMatches() {
    the v522 deploy. */
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
+  const verifyOnly = process.argv.includes("--verify-only");
+  const list = verifyOnly ? CHECKS.slice(0, 12) : CHECKS;
   const t0 = Date.now();
   let failed = false;
-  try { console.log(`  ok    every statement username has one code (${usersCheck()} codes)`); }
-  catch (e) { failed = true; console.log(`  FAIL  ${e.message}`); }
-  for (const [what, args] of failed ? [] : CHECKS) {
-    const t = Date.now();
-    try { run(args); console.log(`  ok    ${what} (${((Date.now() - t) / 1000).toFixed(1)} s)`); }
-    catch (e) { failed = true; console.log(`  FAIL  ${what}\n        ${String((e && e.stdout) || (e && e.message) || e).trim().split("\n").slice(-4).join("\n        ")}`); break; }
-  }
-  if (!failed) {
-    try { const st = stampCheck(); console.log(`  ok    the master's stamp is not in the future (${st})`); }
+  if (!verifyOnly) {
+    try { console.log(`  ok    every statement username has one code (${usersCheck()} codes)`); }
     catch (e) { failed = true; console.log(`  FAIL  ${e.message}`); }
   }
   if (!failed) {
+    /* Stage 1: run all fast read-only checks concurrently; Stage 2: run slow jsdom ledger.mjs --check only if Stage 1 passed */
+    const fast = list.filter(([, args]) => args[0] !== "tools/ledger.mjs");
+    const slow = list.filter(([, args]) => args[0] === "tools/ledger.mjs");
+    const fastResults = await Promise.all(fast.map(async ([what, args]) => ({ what, ...(await runAsync(args)) })));
+    for (const r of fastResults) {
+      if (r.ok) {
+        console.log(`  ok    ${r.what} (${(r.ms / 1000).toFixed(1)} s)`);
+      } else {
+        failed = true;
+        console.log(`  FAIL  ${r.what}\n        ${r.out.trim().split("\n").slice(-4).join("\n        ")}`);
+        break;
+      }
+    }
+    if (!failed && slow.length) {
+      for (const [what, args] of slow) {
+        const r = await runAsync(args);
+        if (r.ok) console.log(`  ok    ${what} (${(r.ms / 1000).toFixed(1)} s)`);
+        else { failed = true; console.log(`  FAIL  ${what}\n        ${r.out.trim().split("\n").slice(-4).join("\n        ")}`); break; }
+      }
+    }
+  }
+  if (!failed && !verifyOnly) {
+    try { const st = stampCheck(); console.log(`  ok    the master's stamp is not in the future (${st})`); }
+    catch (e) { failed = true; console.log(`  FAIL  ${e.message}`); }
+  }
+  if (!failed && !verifyOnly) {
     const t = Date.now();
     try { const id = buildMatches(); console.log(`  ok    public/ is what this master builds, id ${id} (${((Date.now() - t) / 1000).toFixed(1)} s)`); }
     catch (e) { failed = true; console.log(`  FAIL  ${e.message}`); }
   }
-  console.log(failed ? `\n  GATE FAILED after ${((Date.now() - t0) / 1000).toFixed(1)} s: nothing deploys.` : `\n  GATE OK in ${((Date.now() - t0) / 1000).toFixed(1)} s.`);
+  console.log(failed
+    ? `\n  GATE FAILED after ${((Date.now() - t0) / 1000).toFixed(1)} s: nothing deploys.`
+    : `\n  GATE OK in ${((Date.now() - t0) / 1000).toFixed(1)} s.`);
   process.exit(failed ? 1 : 0);
 }
