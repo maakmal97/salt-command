@@ -12504,7 +12504,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1572","d":"25 Nov 2026","t":"A SMALL LOT NO LONGER SETS A BOOK&#39;S FLOOR","n":["<b>A LOT UNDER ITS BOOK&#39;S MINIMUM IS BLENDED.</b> Cost a unit is what the newest units cost, up to the book&#39;s minimum: salt 12.5, oil 10, candy 10, rice 100, gas 1. The newest lots are taken first, each at its own quote and freight, the last only for the units still needed. A newest lot at or over the minimum is the cost alone, as before.","<b>CANDY RETURNS TO ITS BOARD.</b> Its 1-unit lot p057 no longer sets the Floor: RM 47.20 a unit, 1 unit of p057 at RM 94 and 9 of p031 at RM 42. The list reads RM 60 at 1 unit, RM 550 at 10 and RM 1,500 at 30 from this version&#39;s publish. Salt, oil, rice and gas read as they did.","<b>EVERY READING NAMES THE UNITS COUNTED.</b> Pricing on the Desk, the drafter&#39;s note and flags, the Approve card and Salt Admin&#39;s Workbench say the newest 10 units and name each lot. A drafted lot anywhere among them is flagged.","<b>A BOOK THE MINIMUMS DO NOT NAME PRICES OFF ITS LATEST LOT.</b> Opening or renaming a book says so, until a version names it."]}];
+const evolution=[{"v":"v1573","d":"27 Nov 2026","t":"A RACED LOT IS COSTED ONCE","n":["<b>A DRAFTED LOT IS NO LONGER COUNTED TWICE.</b> When two drafting passes met on one purchase, the pass that lost the insert still added its own copy to the lots a later sale is costed from, so a blended cost took the same units twice. The pass now reads the stored row, once, where a fresh read would put it.","<b>THE STORED ROW WINS.</b> A lot another pass wrote, edited or rejected between this pass&#39;s reads is costed as stored, or left out, never as this pass proposed it. A refused read stops the pass before it costs a sale. A dry run counts a lot once too."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -12671,7 +12671,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Nov 2026, 21:53 KL';
+const LAST_UPDATED='27 Nov 2026, 01:22 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

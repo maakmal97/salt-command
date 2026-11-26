@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1573",
+  "d": "27 Nov 2026",
+  "t": "A RACED LOT IS COSTED ONCE",
+  "n": [
+   "<b>A DRAFTED LOT IS NO LONGER COUNTED TWICE.</b> When two drafting passes met on one purchase, the pass that lost the insert still added its own copy to the lots a later sale is costed from, so a blended cost took the same units twice. The pass now reads the stored row, once, where a fresh read would put it.",
+   "<b>THE STORED ROW WINS.</b> A lot another pass wrote, edited or rejected between this pass&#39;s reads is costed as stored, or left out, never as this pass proposed it. A refused read stops the pass before it costs a sale. A dry run counts a lot once too."
+  ]
+ },
+ {
   "v": "v1572",
   "d": "25 Nov 2026",
   "t": "A SMALL LOT NO LONGER SETS A BOOK&#39;S FLOOR",
