@@ -161,12 +161,18 @@ function copyLoose(s, d) {
   let es = []; try { es = readdirSync(s); } catch (e) { gone(e); }
   for (const e of es) copyLoose(join(s, e), join(d, e));
 }
-export function copyCheckout(from, to, gitDir) {
+const LINKABLE_DIRS = new Set(["docs", "geo", "migrations", "statements"]);
+export function copyCheckout(from, to, gitDir, mutDirs = new Set()) {
   mkdirSync(to, { recursive: true });
   const skip = new Set([".git", ".claude", ".worktrees", "node_modules"]), shards = join(from, "test"); /* .worktrees: Copilot's, whose node_modules links refuse a copy (EPERM), 20 Nov 2026 */
   for (const e of readdirSync(from)) {
     if (skip.has(e)) continue;
-    cpSync(join(from, e), join(to, e), { recursive: true, filter: (src) => src !== join(shards, "tmp") && !(dirname(src) === shards && /^\.shard-.+\.mjs$/.test(src.slice(shards.length + 1))) });
+    const srcPath = join(from, e), dstPath = join(to, e);
+    if (LINKABLE_DIRS.has(e) && !mutDirs.has(e) && lstatSync(srcPath).isDirectory()) {
+      symlinkSync(srcPath, dstPath, "junction");
+      continue;
+    }
+    cpSync(srcPath, dstPath, { recursive: true, filter: (src) => src !== join(shards, "tmp") && !(dirname(src) === shards && /^\.shard-.+\.mjs$/.test(src.slice(shards.length + 1))) });
   }
   if (existsSync(join(shards, "tmp"))) copyLoose(join(shards, "tmp"), join(to, "test", "tmp"));
   if (existsSync(join(from, "node_modules"))) symlinkSync(join(from, "node_modules"), join(to, "node_modules"), "junction");
@@ -194,7 +200,9 @@ if (isMain) {
   /* a lane's node_modules junction is unlinked first, so the folder's removal can never walk into the real node_modules */
   process.on("exit", () => {
     for (const n of flying) rmSync(shardFile(n), { force: true });
-    for (const l of readdirSync(tmp)) if (/^lane\d+$/.test(l)) try { unlinkSync(join(tmp, l, "node_modules")); } catch (e) { /* no junction */ }
+    for (const l of readdirSync(tmp)) if (/^lane\d+$/.test(l)) {
+      for (const link of ["node_modules", ...LINKABLE_DIRS]) try { const p = join(tmp, l, link); if (lstatSync(p).isSymbolicLink()) unlinkSync(p); } catch (e) { /* no junction */ }
+    }
     try { rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* a lane's run still closing holds a file: the temp folder keeps it */ }
   });
   for (const s of ["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"]) process.on(s, () => process.exit(130));
@@ -271,7 +279,8 @@ if (isMain) {
       const file = join(root, rel(m.path));
       return withEdit(file, mutate(readFileSync(file, "utf8"), m), () => run(envIn(root), root));
     }), lanes, async (n) => {
-      const root = copyCheckout(REPO, join(tmp, `lane${n}`), gitDir);
+      const mutDirs = new Set(inCheckout.map((m) => rel(m.path).split("/")[0]));
+      const root = copyCheckout(REPO, join(tmp, `lane${n}`), gitDir, mutDirs);
       const ctl = await run(envIn(root), root);
       laneGreen(ctl, n, tally(ctl));
       return root;

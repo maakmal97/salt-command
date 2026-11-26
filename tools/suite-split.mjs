@@ -38,7 +38,7 @@
  *   node tools/suite-split.mjs --part 2/3      the build phase and the second of three shards (CI, one runner a part)
  *   node tools/suite-split.mjs --write-costs   test/suite-costs.json from this machine's last run; runs nothing
  */
-import { readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, readdirSync, statSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -84,14 +84,28 @@ export function unitsOf(blocks) {
 }
 
 /* a section's cost: this machine's last time, else the committed cost, else its length at the rate the costed ones run */
+const importLenCache = new Map();
+function effectiveLen(text) {
+  let len = text.length;
+  for (const m of text.matchAll(/import\s*\(["']\.\/([^"']+\.mjs)["']\)/g)) {
+    const f = m[1];
+    if (!importLenCache.has(f)) {
+      let n = 0;
+      try { n = statSync(join(REPO, "test", f)).size; } catch (e) { n = 0; }
+      importLenCache.set(f, n);
+    }
+    len += importLenCache.get(f);
+  }
+  return len;
+}
 export function coster(blocks, past = {}, costs = {}) {
   const has = (o, t) => Object.prototype.hasOwnProperty.call(o, t) && Number.isFinite(o[t]);
   const from = (b) => (has(past, b.title) ? "run" : has(costs, b.title) ? "file" : "length");
   const known = (b) => (has(past, b.title) ? past[b.title] : costs[b.title]);
   let ms = 0, chars = 0;
-  for (const b of blocks) if (from(b) !== "length") { ms += known(b); chars += b.text.length; }
+  for (const b of blocks) if (from(b) !== "length") { ms += known(b); chars += effectiveLen(b.text); }
   const rate = ms > 0 && chars > 0 ? ms / chars : 1 / 20;
-  const cost = (b) => (from(b) === "length" ? b.text.length * rate : known(b));
+  const cost = (b) => (from(b) === "length" ? effectiveLen(b.text) * rate : known(b));
   cost.from = from;
   return cost;
 }
@@ -106,13 +120,33 @@ export function pack(units, jobs, cost) {
   return shards;
 }
 
+/* Path/domain tiers for fast local iteration (--tier <name>) and docs-only PRs in CI (SALT_SUITE_TIER). */
+export const TIERS = {
+  docs: (b) => /mutation needle|workflow|banned|copy|glossary|surface-words|CLAUDE\.md|waits for what it checks|frees its windows/i.test(b.title + " " + b.text.slice(0, 240)),
+  admin: (b) => /salt admin|admin|maker|vault|access|queue/i.test(b.title),
+  counter: (b) => /counter|statement|stmt|order stream|pay|slip|remind|hours|pool/i.test(b.title),
+  desk: (b) => /desk|b5 of #62|design|theme|tide|chart|rail|ambient|perf:|round 7|s1 1\.12|fold 3\.2/i.test(b.title),
+  engine: (b) => /engine|pric|floor|band|loyalty|reward|fold|ledger|book|d1|refund|lot/i.test(b.title),
+};
+export function tierFor(argv, env = process.env) {
+  const ti = argv.indexOf("--tier");
+  const raw = ti >= 0 ? String(argv[ti + 1] || "") : String(env.SALT_SUITE_TIER || "");
+  if (!raw || raw === "full") return null;
+  return Object.prototype.hasOwnProperty.call(TIERS, raw) ? raw : { bad: raw };
+}
+export function filterTier(blocks, tier) {
+  if (!tier || tier === "full") return blocks;
+  return blocks.filter(TIERS[tier]);
+}
+
 /* the one road from verify.mjs to shards */
-export function plan(text, { jobs, past = {}, costs = {} }) {
+export function plan(text, { jobs, past = {}, costs = {}, tier = null } = {}) {
   const suite = readSuite(text);
   if (!suite) return null;
-  const { serial, units } = unitsOf(suite.blocks);
-  const cost = coster(suite.blocks, past, costs);
-  return { ...suite, serial, cost, shards: pack(units, jobs, cost) };
+  const blocks = filterTier(suite.blocks, tier);
+  const { serial, units } = unitsOf(blocks);
+  const cost = coster(blocks, past, costs);
+  return { ...suite, blocks, serial, cost, shards: pack(units, jobs, cost) };
 }
 
 /* ONE SHARD, THE ONE WAY A SECTION IS RUN OUT OF verify.mjs (27 Sep 2026). The prelude, the blocks in the suite's order and
@@ -188,12 +222,14 @@ if (isMain) {
     process.exit(0);
   }
 
+  const tier = tierFor(process.argv.slice(2));
+  if (tier && tier.bad !== undefined) { console.log(`  FAIL  --tier takes full|${Object.keys(TIERS).join("|")}: ${tier.bad}`); process.exit(1); }
   const part = partFor(process.argv.slice(2));
   if (part && part.bad !== undefined) { console.log(`  FAIL  --part takes i/n, 1 <= i <= n <= 10: ${part.bad}`); process.exit(1); }
   /* a part packs by the committed costs alone, so every runner cuts the suite the same way */
   const JOBS = part ? part.n : jobsFor(process.argv.slice(2), cpus().length);
   if (!part) console.log(`${cpus().length} cores, ${(totalmem() / GB).toFixed(1)} GB, ${(freemem() / GB).toFixed(1)} GB free: ${JOBS} shards`);
-  const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs });
+  const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs, tier });
   if (!p) { console.log("  FAIL  cannot find the sections or the footer in test/verify.mjs"); process.exit(1); }
   const { prelude, footer, blocks, serial, cost } = p;
   const shards = part ? partShards(p.shards[part.i - 1], process.argv.slice(2), cpus().length, cost) : p.shards;
@@ -215,6 +251,8 @@ if (isMain) {
       .then(({ code, res }) => { if (last) times[last] = Date.now() - lastAt; return { name, code, res, n: bl.length }; });
   };
 
+  /* Build the frozen master copy ONCE in the orchestrator so shards inherit SALT_MASTER & SALT_BOOK */
+  await import("../test/frozen.mjs");
   const t0 = Date.now();
   const results = [];
   if (serial.length) results.push(await run("serial", serial));

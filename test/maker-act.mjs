@@ -6,7 +6,9 @@
  * a chat, a group order, the notice, the hours, the hand-over sheet. actAudit reads every control on it. */
 import { JSDOM } from "jsdom";
 import { webcrypto } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { landingPage, PSHAPE } from "../stmt/page.js";
 import * as C from "../tools/stmt-crypto.mjs";
 import { slipSeal } from "../tools/seed-vault.mjs";
@@ -15,8 +17,17 @@ import { installSockets } from "./live-fakes.mjs";
 /* ONE SLIP KEY, as the vault holds it (12 Oct 2026, Phase 2b): an ECDH P-256 pair whose private half is sealed under an invented passphrase exactly as the vault seals
    it (PBKDF2 150,000 rounds, AES-GCM), and a four-byte JPEG sealed to its public half by the laptop's own slipSeal. Made once and kept, since the key takes a moment. */
 let slipFix = null;
+const SLIP_CACHE = join(resolve(dirname(fileURLToPath(import.meta.url)), ".."), "test", "tmp", ".slip-fixture-cache.json");
 export async function slipFixture() {
   if (slipFix) return slipFix;
+  try {
+    if (existsSync(SLIP_CACHE)) {
+      const cached = JSON.parse(readFileSync(SLIP_CACHE, "utf8"));
+      if (cached && cached.pass === "invented-local-pass" && cached.envelope && cached.sealed && cached.names && cached.places && cached.pub) {
+        return (slipFix = cached);
+      }
+    }
+  } catch (e) { /* cache miss or concurrent write: compute fresh */ }
   const keys = await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const pass = "invented-local-pass", jwk = await webcrypto.subtle.exportKey("jwk", keys.privateKey);
   const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
@@ -31,7 +42,14 @@ export async function slipFixture() {
   /* the vault's other two envelopes, under the same password: an invented name and an invented place for the first customer's code (CX1-ZED) and nothing for the others */
   const nameOf = { "CX1-ZED": "Invented Person (Pudu)" }, placeOf = { "CX1-ZED": { addr: "Invented Lane", lat: 3.1, lng: 101.7, src: "waze", at: "2026-10-03T16:30:00.000Z" }, _base: { addr: "Invented base", lat: 3.1, lng: 101.6 } };
   /* pub, the slip key's public half, for a test that seals as a phone does (a spot under 'salt-pin v1', test/admin-ac-spot.mjs) */
-  return (slipFix = { pass, envelope: await seal(jwk), sealed, names: await seal(nameOf), places: await seal(placeOf), nameOf, placeOf, pub: await webcrypto.subtle.exportKey("jwk", keys.publicKey) });
+  slipFix = { pass, envelope: await seal(jwk), sealed, names: await seal(nameOf), places: await seal(placeOf), nameOf, placeOf, pub: await webcrypto.subtle.exportKey("jwk", keys.publicKey) };
+  try {
+    mkdirSync(dirname(SLIP_CACHE), { recursive: true });
+    const tmp = SLIP_CACHE + "." + process.pid;
+    writeFileSync(tmp, JSON.stringify(slipFix));
+    renameSync(tmp, SLIP_CACHE);
+  } catch (e) { /* cache is best-effort */ }
+  return slipFix;
 }
 
 /* what a card, or an item of a list, is told apart by */

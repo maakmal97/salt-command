@@ -53,7 +53,7 @@ export async function run({ ok }) {
      process that pushes its own --ledger was read this one (the fold takes the first), so "Associate reward" went red by shard packing alone */
   const argv0 = process.argv.slice();
   if (!process.argv.includes("--ledger")) process.argv.push("--ledger", extract);
-  const { apply } = await import("../tools/fold.mjs");
+  const { apply } = await import("../tools/fold.mjs?reward=" + Date.now());
   process.argv.splice(0, process.argv.length, ...argv0);
   try {
     w.eval(`(function(){var rows=${JSON.stringify(SCENARIO)};rows.forEach(function(r){sales.push(JSON.parse(JSON.stringify(r)));
